@@ -3,11 +3,11 @@ import { PaginationError, ValidationError } from './errors.js';
 
 /**
  * Validate a pagination size value (maxResults / pageSize / limit).
- * Throws RangeError for zero, negative, non-integer, or non-finite values.
+ * Throws {@link ValidationError} for zero, negative, non-integer, or non-finite values.
  */
 export function validatePageSize(value: number, name = 'pageSize'): void {
   if (!Number.isFinite(value) || !Number.isInteger(value) || value <= 0) {
-    throw new RangeError(`${name} must be a positive integer, got: ${value}`);
+    throw new ValidationError(`${name} must be a positive integer, got: ${value}`);
   }
 }
 

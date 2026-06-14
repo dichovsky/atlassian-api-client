@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { SpacePermissionsResource } from '../../src/confluence/resources/space-permissions.js';
 import { MockTransport } from '../helpers/mock-transport.js';
+import { ValidationError } from '../../src/core/errors.js';
 import type {
   BulkAssignRolesRequest,
   BulkRemoveAccessRequest,
@@ -86,13 +87,13 @@ describe('SpacePermissionsResource', () => {
       expect(transport.lastCall?.options.query).toEqual({ cursor: 'c1' });
     });
 
-    it('throws RangeError when limit is zero', async () => {
-      await expect(resource.list({ limit: 0 })).rejects.toThrow(RangeError);
+    it('throws ValidationError when limit is zero', async () => {
+      await expect(resource.list({ limit: 0 })).rejects.toThrow(ValidationError);
       expect(transport.calls).toHaveLength(0);
     });
 
-    it('throws RangeError when limit is negative', async () => {
-      await expect(resource.list({ limit: -1 })).rejects.toThrow(RangeError);
+    it('throws ValidationError when limit is negative', async () => {
+      await expect(resource.list({ limit: -1 })).rejects.toThrow(ValidationError);
       expect(transport.calls).toHaveLength(0);
     });
 
@@ -142,9 +143,9 @@ describe('SpacePermissionsResource', () => {
       expect(transport.lastCall?.options.query).toMatchObject({ limit: 25 });
     });
 
-    it('throws RangeError when limit is invalid before any request', async () => {
+    it('throws ValidationError when limit is invalid before any request', async () => {
       const iter = resource.listAll({ limit: 0 });
-      await expect(iter.next()).rejects.toThrow(RangeError);
+      await expect(iter.next()).rejects.toThrow(ValidationError);
       expect(transport.calls).toHaveLength(0);
     });
   });
@@ -226,13 +227,13 @@ describe('SpacePermissionsResource', () => {
       expect(transport.lastCall?.options.query).toEqual({ limit: 50, cursor: 'curs1' });
     });
 
-    it('throws RangeError when limit is zero', async () => {
-      await expect(resource.listCombinations({ limit: 0 })).rejects.toThrow(RangeError);
+    it('throws ValidationError when limit is zero', async () => {
+      await expect(resource.listCombinations({ limit: 0 })).rejects.toThrow(ValidationError);
       expect(transport.calls).toHaveLength(0);
     });
 
-    it('throws RangeError when limit is negative', async () => {
-      await expect(resource.listCombinations({ limit: -5 })).rejects.toThrow(RangeError);
+    it('throws ValidationError when limit is negative', async () => {
+      await expect(resource.listCombinations({ limit: -5 })).rejects.toThrow(ValidationError);
       expect(transport.calls).toHaveLength(0);
     });
   });
@@ -269,9 +270,9 @@ describe('SpacePermissionsResource', () => {
       expect(transport.lastCall?.options.query).toMatchObject({ limit: 100 });
     });
 
-    it('throws RangeError when limit is invalid before any request', async () => {
+    it('throws ValidationError when limit is invalid before any request', async () => {
       const iter = resource.listAllCombinations({ limit: 0 });
-      await expect(iter.next()).rejects.toThrow(RangeError);
+      await expect(iter.next()).rejects.toThrow(ValidationError);
       expect(transport.calls).toHaveLength(0);
     });
 

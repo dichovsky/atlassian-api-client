@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { SprintsResource } from '../../src/jira/resources/sprints.js';
 import { MockTransport } from '../helpers/mock-transport.js';
+import { ValidationError } from '../../src/core/errors.js';
 
 const BASE_URL = 'https://test.atlassian.net/rest/agile/1.0';
 const SOFTWARE_BASE_URL = 'https://test.atlassian.net/rest/software/1.0';
@@ -310,20 +311,22 @@ describe('SprintsResource', () => {
       expect(transport.lastCall?.options.query).not.toHaveProperty('fields');
     });
 
-    it('throws RangeError for maxResults: 0', async () => {
-      await expect(sprints.getIssues(42, { maxResults: 0 })).rejects.toThrow(RangeError);
+    it('throws ValidationError for maxResults: 0', async () => {
+      await expect(sprints.getIssues(42, { maxResults: 0 })).rejects.toThrow(ValidationError);
     });
 
-    it('throws RangeError for maxResults: -1', async () => {
-      await expect(sprints.getIssues(42, { maxResults: -1 })).rejects.toThrow(RangeError);
+    it('throws ValidationError for maxResults: -1', async () => {
+      await expect(sprints.getIssues(42, { maxResults: -1 })).rejects.toThrow(ValidationError);
     });
 
-    it('throws RangeError for maxResults: 1.5', async () => {
-      await expect(sprints.getIssues(42, { maxResults: 1.5 })).rejects.toThrow(RangeError);
+    it('throws ValidationError for maxResults: 1.5', async () => {
+      await expect(sprints.getIssues(42, { maxResults: 1.5 })).rejects.toThrow(ValidationError);
     });
 
-    it('throws RangeError for maxResults: Infinity', async () => {
-      await expect(sprints.getIssues(42, { maxResults: Infinity })).rejects.toThrow(RangeError);
+    it('throws ValidationError for maxResults: Infinity', async () => {
+      await expect(sprints.getIssues(42, { maxResults: Infinity })).rejects.toThrow(
+        ValidationError,
+      );
     });
 
     it('throws ValidationError for non-positive sprintId', async () => {
@@ -741,8 +744,8 @@ describe('SprintsResource.getIssuesEnhanced()', () => {
     );
   });
 
-  it('throws RangeError for maxResults: 0', async () => {
-    await expect(sprints.getIssuesEnhanced(42, { maxResults: 0 })).rejects.toThrow(RangeError);
+  it('throws ValidationError for maxResults: 0', async () => {
+    await expect(sprints.getIssuesEnhanced(42, { maxResults: 0 })).rejects.toThrow(ValidationError);
   });
 
   it('derives softwareBaseUrl from agile baseUrl when not provided', async () => {

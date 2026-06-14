@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "2.0.0"
   },
-  "sourceHash": "86621284fb0a77d3b18b73c0300a2e1891e9ee56d17d3ceaff814823941b452e",
+  "sourceHash": "adb128ce5fbf940c1a0479e99dcc24c0b9ec6716ed038705c74d1b7b9cb3e6ff",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -13937,7 +13937,7 @@
           "line": 8,
           "exported": true,
           "signature": "export function validatePageSize(value: number, name = 'pageSize'): void",
-          "jsdoc": "Validate a pagination size value (maxResults / pageSize / limit). Throws RangeError for zero, negative, non-integer, or non-finite values."
+          "jsdoc": "Validate a pagination size value (maxResults / pageSize / limit). Throws {@link ValidationError} for zero, negative, non-integer, or non-finite values."
         },
         {
           "name": "CursorPaginatedResponse",

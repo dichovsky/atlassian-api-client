@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { CustomContentResource } from '../../src/confluence/resources/custom-content.js';
 import { MockTransport } from '../helpers/mock-transport.js';
+import { ValidationError } from '../../src/core/errors.js';
 
 const BASE_URL = 'https://test.atlassian.net/wiki/api/v2';
 
@@ -69,8 +70,8 @@ describe('CustomContentResource', () => {
       expect(query).not.toHaveProperty('status');
     });
 
-    it('throws RangeError for invalid limit', async () => {
-      await expect(resource.list({ limit: 0 })).rejects.toThrow(RangeError);
+    it('throws ValidationError for invalid limit', async () => {
+      await expect(resource.list({ limit: 0 })).rejects.toThrow(ValidationError);
       expect(transport.calls).toHaveLength(0);
     });
 
@@ -373,8 +374,8 @@ describe('CustomContentResource', () => {
       });
     });
 
-    it('rejects invalid limit with RangeError', async () => {
-      await expect(resource.listProperties('cc-1', { limit: 0 })).rejects.toThrow(RangeError);
+    it('rejects invalid limit with ValidationError', async () => {
+      await expect(resource.listProperties('cc-1', { limit: 0 })).rejects.toThrow(ValidationError);
       expect(transport.calls).toHaveLength(0);
     });
 
@@ -404,9 +405,9 @@ describe('CustomContentResource', () => {
       expect(transport.calls[1]?.options.query).toMatchObject({ cursor: 'p2' });
     });
 
-    it('rejects invalid limit with RangeError', async () => {
+    it('rejects invalid limit with ValidationError', async () => {
       const iter = resource.listPropertiesAll('cc-1', { limit: 0 });
-      await expect(iter.next()).rejects.toThrow(RangeError);
+      await expect(iter.next()).rejects.toThrow(ValidationError);
       expect(transport.calls).toHaveLength(0);
     });
 
@@ -530,7 +531,7 @@ describe('CustomContentResource', () => {
     });
 
     it('rejects invalid limit', async () => {
-      await expect(resource.listVersions('cc-1', { limit: 0 })).rejects.toThrow(RangeError);
+      await expect(resource.listVersions('cc-1', { limit: 0 })).rejects.toThrow(ValidationError);
       expect(transport.calls).toHaveLength(0);
     });
   });
@@ -562,7 +563,7 @@ describe('CustomContentResource', () => {
 
     it('rejects invalid limit', async () => {
       const iter = resource.listVersionsAll('cc-1', { limit: 0 });
-      await expect(iter.next()).rejects.toThrow(RangeError);
+      await expect(iter.next()).rejects.toThrow(ValidationError);
     });
 
     it('omits all optional keys when called with no params', async () => {
@@ -651,7 +652,7 @@ describe('CustomContentResource', () => {
     });
 
     it('rejects invalid limit', async () => {
-      await expect(resource.listAttachments('cc-1', { limit: 0 })).rejects.toThrow(RangeError);
+      await expect(resource.listAttachments('cc-1', { limit: 0 })).rejects.toThrow(ValidationError);
     });
   });
 
@@ -675,7 +676,7 @@ describe('CustomContentResource', () => {
 
     it('rejects invalid limit', async () => {
       const iter = resource.listAttachmentsAll('cc-1', { limit: 0 });
-      await expect(iter.next()).rejects.toThrow(RangeError);
+      await expect(iter.next()).rejects.toThrow(ValidationError);
     });
   });
 
@@ -703,7 +704,7 @@ describe('CustomContentResource', () => {
     });
 
     it('rejects invalid limit', async () => {
-      await expect(resource.listChildren('cc-1', { limit: 0 })).rejects.toThrow(RangeError);
+      await expect(resource.listChildren('cc-1', { limit: 0 })).rejects.toThrow(ValidationError);
     });
   });
 
@@ -727,7 +728,7 @@ describe('CustomContentResource', () => {
 
     it('rejects invalid limit', async () => {
       const iter = resource.listChildrenAll('cc-1', { limit: 0 });
-      await expect(iter.next()).rejects.toThrow(RangeError);
+      await expect(iter.next()).rejects.toThrow(ValidationError);
     });
 
     it('omits all optional keys when called with no params', async () => {
@@ -777,7 +778,9 @@ describe('CustomContentResource', () => {
     });
 
     it('rejects invalid limit', async () => {
-      await expect(resource.listFooterComments('cc-1', { limit: 0 })).rejects.toThrow(RangeError);
+      await expect(resource.listFooterComments('cc-1', { limit: 0 })).rejects.toThrow(
+        ValidationError,
+      );
     });
 
     it('passes only body-format when other keys are absent', async () => {
@@ -813,7 +816,7 @@ describe('CustomContentResource', () => {
 
     it('rejects invalid limit', async () => {
       const iter = resource.listFooterCommentsAll('cc-1', { limit: 0 });
-      await expect(iter.next()).rejects.toThrow(RangeError);
+      await expect(iter.next()).rejects.toThrow(ValidationError);
     });
 
     it('omits all optional keys when called with no params', async () => {
@@ -855,7 +858,7 @@ describe('CustomContentResource', () => {
     });
 
     it('rejects invalid limit', async () => {
-      await expect(resource.listLabels('cc-1', { limit: 0 })).rejects.toThrow(RangeError);
+      await expect(resource.listLabels('cc-1', { limit: 0 })).rejects.toThrow(ValidationError);
     });
   });
 
@@ -879,7 +882,7 @@ describe('CustomContentResource', () => {
 
     it('rejects invalid limit', async () => {
       const iter = resource.listLabelsAll('cc-1', { limit: 0 });
-      await expect(iter.next()).rejects.toThrow(RangeError);
+      await expect(iter.next()).rejects.toThrow(ValidationError);
     });
 
     it('omits all optional keys when called with no params', async () => {

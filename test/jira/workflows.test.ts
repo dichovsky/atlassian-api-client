@@ -106,20 +106,20 @@ describe('WorkflowsResource', () => {
       expect(query['isActive']).toBeUndefined();
     });
 
-    it('throws RangeError for maxResults: 0', async () => {
-      await expect(workflows.list({ maxResults: 0 })).rejects.toThrow(RangeError);
+    it('throws ValidationError for maxResults: 0', async () => {
+      await expect(workflows.list({ maxResults: 0 })).rejects.toThrow(ValidationError);
     });
 
-    it('throws RangeError for maxResults: -1', async () => {
-      await expect(workflows.list({ maxResults: -1 })).rejects.toThrow(RangeError);
+    it('throws ValidationError for maxResults: -1', async () => {
+      await expect(workflows.list({ maxResults: -1 })).rejects.toThrow(ValidationError);
     });
 
-    it('throws RangeError for maxResults: 1.5', async () => {
-      await expect(workflows.list({ maxResults: 1.5 })).rejects.toThrow(RangeError);
+    it('throws ValidationError for maxResults: 1.5', async () => {
+      await expect(workflows.list({ maxResults: 1.5 })).rejects.toThrow(ValidationError);
     });
 
-    it('throws RangeError for maxResults: Infinity', async () => {
-      await expect(workflows.list({ maxResults: Infinity })).rejects.toThrow(RangeError);
+    it('throws ValidationError for maxResults: Infinity', async () => {
+      await expect(workflows.list({ maxResults: Infinity })).rejects.toThrow(ValidationError);
     });
   });
 
@@ -251,10 +251,10 @@ describe('WorkflowsResource', () => {
     it('rejects out-of-range maxResults', async () => {
       await expect(
         workflows.getIssueTypeUsages(WORKFLOW_ID, PROJECT_ID, { maxResults: 0 }),
-      ).rejects.toThrow(RangeError);
+      ).rejects.toThrow(ValidationError);
       await expect(
         workflows.getIssueTypeUsages(WORKFLOW_ID, PROJECT_ID, { maxResults: -1 }),
-      ).rejects.toThrow(RangeError);
+      ).rejects.toThrow(ValidationError);
     });
   });
 
@@ -307,10 +307,10 @@ describe('WorkflowsResource', () => {
 
     it('rejects out-of-range maxResults', async () => {
       await expect(workflows.getProjectUsages(WORKFLOW_ID, { maxResults: 0 })).rejects.toThrow(
-        RangeError,
+        ValidationError,
       );
       await expect(workflows.getProjectUsages(WORKFLOW_ID, { maxResults: -5 })).rejects.toThrow(
-        RangeError,
+        ValidationError,
       );
     });
   });
@@ -365,10 +365,10 @@ describe('WorkflowsResource', () => {
     it('rejects out-of-range maxResults', async () => {
       await expect(
         workflows.getWorkflowSchemeUsages(WORKFLOW_ID, { maxResults: 0 }),
-      ).rejects.toThrow(RangeError);
+      ).rejects.toThrow(ValidationError);
       await expect(
         workflows.getWorkflowSchemeUsages(WORKFLOW_ID, { maxResults: -2 }),
-      ).rejects.toThrow(RangeError);
+      ).rejects.toThrow(ValidationError);
     });
   });
 
@@ -840,10 +840,10 @@ describe('WorkflowsResource', () => {
       );
     });
 
-    it('throws RangeError for maxResults out of range', async () => {
+    it('throws ValidationError for maxResults out of range', async () => {
       await expect(
         workflows.getTransitionRuleConfigs({ types: ['postfunction'], maxResults: 0 }),
-      ).rejects.toThrow(RangeError);
+      ).rejects.toThrow(ValidationError);
     });
   });
 
@@ -1289,12 +1289,12 @@ describe('WorkflowsResource', () => {
       expect(query['isActive']).toBeUndefined();
     });
 
-    it('throws RangeError for maxResults: 0', async () => {
-      await expect(workflows.searchWorkflows({ maxResults: 0 })).rejects.toThrow(RangeError);
+    it('throws ValidationError for maxResults: 0', async () => {
+      await expect(workflows.searchWorkflows({ maxResults: 0 })).rejects.toThrow(ValidationError);
     });
 
-    it('throws RangeError for maxResults: -1', async () => {
-      await expect(workflows.searchWorkflows({ maxResults: -1 })).rejects.toThrow(RangeError);
+    it('throws ValidationError for maxResults: -1', async () => {
+      await expect(workflows.searchWorkflows({ maxResults: -1 })).rejects.toThrow(ValidationError);
     });
 
     it('accepts startAt: 0 (valid)', async () => {

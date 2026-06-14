@@ -83,7 +83,7 @@ describe('ComponentResource', () => {
     });
 
     it.each([0, -1, 1.5, Infinity])('rejects invalid maxResults: %s', async (maxResults) => {
-      await expect(component.list({ maxResults })).rejects.toThrow(RangeError);
+      await expect(component.list({ maxResults })).rejects.toThrow(ValidationError);
     });
   });
 

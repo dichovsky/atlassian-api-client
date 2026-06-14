@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { FoldersResource } from '../../src/confluence/resources/folders.js';
 import { MockTransport } from '../helpers/mock-transport.js';
+import { ValidationError } from '../../src/core/errors.js';
 
 const BASE_URL = 'https://test.atlassian.net/wiki/api/v2';
 
@@ -179,8 +180,10 @@ describe('FoldersResource', () => {
       expect(transport.lastCall?.options.query).toEqual({ limit: 10 });
     });
 
-    it('throws RangeError when limit is non-positive', async () => {
-      await expect(resource.listAncestors('folder-1', { limit: 0 })).rejects.toThrow(RangeError);
+    it('throws ValidationError when limit is non-positive', async () => {
+      await expect(resource.listAncestors('folder-1', { limit: 0 })).rejects.toThrow(
+        ValidationError,
+      );
       expect(transport.calls).toHaveLength(0);
     });
   });
@@ -227,8 +230,10 @@ describe('FoldersResource', () => {
       expect(transport.lastCall?.options.query).toEqual({});
     });
 
-    it('throws RangeError when limit is invalid', async () => {
-      await expect(resource.listDescendants('folder-1', { limit: 0 })).rejects.toThrow(RangeError);
+    it('throws ValidationError when limit is invalid', async () => {
+      await expect(resource.listDescendants('folder-1', { limit: 0 })).rejects.toThrow(
+        ValidationError,
+      );
     });
   });
 
@@ -260,9 +265,9 @@ describe('FoldersResource', () => {
       expect(transport.calls[1]?.options.query).toMatchObject({ cursor: 'c2' });
     });
 
-    it('throws RangeError when limit is invalid before any request', async () => {
+    it('throws ValidationError when limit is invalid before any request', async () => {
       const iter = resource.listDescendantsAll('folder-1', { limit: -1 });
-      await expect(iter.next()).rejects.toThrow(RangeError);
+      await expect(iter.next()).rejects.toThrow(ValidationError);
       expect(transport.calls).toHaveLength(0);
     });
 
@@ -321,9 +326,9 @@ describe('FoldersResource', () => {
       expect(transport.lastCall?.options.query).toEqual({});
     });
 
-    it('throws RangeError when limit is invalid', async () => {
+    it('throws ValidationError when limit is invalid', async () => {
       await expect(resource.listDirectChildren('folder-1', { limit: 0 })).rejects.toThrow(
-        RangeError,
+        ValidationError,
       );
     });
   });
@@ -351,9 +356,9 @@ describe('FoldersResource', () => {
       expect(transport.calls[0]?.options.query).toMatchObject({ sort: 'title' });
     });
 
-    it('throws RangeError when limit is invalid before any request', async () => {
+    it('throws ValidationError when limit is invalid before any request', async () => {
       const iter = resource.listDirectChildrenAll('folder-1', { limit: 0 });
-      await expect(iter.next()).rejects.toThrow(RangeError);
+      await expect(iter.next()).rejects.toThrow(ValidationError);
       expect(transport.calls).toHaveLength(0);
     });
 
@@ -446,8 +451,10 @@ describe('FoldersResource', () => {
       expect(transport.lastCall?.options.query).toEqual({});
     });
 
-    it('throws RangeError when limit is non-positive', async () => {
-      await expect(resource.listProperties('folder-1', { limit: 0 })).rejects.toThrow(RangeError);
+    it('throws ValidationError when limit is non-positive', async () => {
+      await expect(resource.listProperties('folder-1', { limit: 0 })).rejects.toThrow(
+        ValidationError,
+      );
       expect(transport.calls).toHaveLength(0);
     });
   });
@@ -492,9 +499,9 @@ describe('FoldersResource', () => {
       });
     });
 
-    it('throws RangeError when limit is invalid before any request', async () => {
+    it('throws ValidationError when limit is invalid before any request', async () => {
       const iter = resource.listPropertiesAll('folder-1', { limit: -1 });
-      await expect(iter.next()).rejects.toThrow(RangeError);
+      await expect(iter.next()).rejects.toThrow(ValidationError);
       expect(transport.calls).toHaveLength(0);
     });
   });

@@ -65,8 +65,8 @@ describe('InlineCommentsResource', () => {
       expect(transport.lastCall?.options.query).toEqual({ sort: '-modified-date' });
     });
 
-    it('throws RangeError when limit is invalid before any request', async () => {
-      await expect(resource.list({ limit: 0 })).rejects.toThrow(RangeError);
+    it('throws ValidationError when limit is invalid before any request', async () => {
+      await expect(resource.list({ limit: 0 })).rejects.toThrow(ValidationError);
       expect(transport.calls).toHaveLength(0);
     });
   });
@@ -93,9 +93,9 @@ describe('InlineCommentsResource', () => {
       expect(transport.calls[1]?.options.query).toMatchObject({ cursor: 'c2' });
     });
 
-    it('throws RangeError when limit is invalid before any request', async () => {
+    it('throws ValidationError when limit is invalid before any request', async () => {
       const iter = resource.listAll({ limit: -1 });
-      await expect(iter.next()).rejects.toThrow(RangeError);
+      await expect(iter.next()).rejects.toThrow(ValidationError);
       expect(transport.calls).toHaveLength(0);
     });
 
@@ -164,8 +164,8 @@ describe('InlineCommentsResource', () => {
       );
     });
 
-    it('throws RangeError when limit is invalid', async () => {
-      await expect(resource.listChildren('88888', { limit: 0 })).rejects.toThrow(RangeError);
+    it('throws ValidationError when limit is invalid', async () => {
+      await expect(resource.listChildren('88888', { limit: 0 })).rejects.toThrow(ValidationError);
     });
   });
 
@@ -194,9 +194,9 @@ describe('InlineCommentsResource', () => {
       expect(transport.calls[1]?.options.query).toMatchObject({ cursor: 'c2' });
     });
 
-    it('throws RangeError when limit is invalid before any request', async () => {
+    it('throws ValidationError when limit is invalid before any request', async () => {
       const iter = resource.listChildrenAll('88888', { limit: 0 });
-      await expect(iter.next()).rejects.toThrow(RangeError);
+      await expect(iter.next()).rejects.toThrow(ValidationError);
       expect(transport.calls).toHaveLength(0);
     });
 
@@ -267,8 +267,8 @@ describe('InlineCommentsResource', () => {
       expect(transport.lastCall?.options.query).toEqual({ cursor: 'c1', limit: 50 });
     });
 
-    it('throws RangeError when limit is invalid', async () => {
-      await expect(resource.listLikeUsers('88888', { limit: -1 })).rejects.toThrow(RangeError);
+    it('throws ValidationError when limit is invalid', async () => {
+      await expect(resource.listLikeUsers('88888', { limit: -1 })).rejects.toThrow(ValidationError);
     });
   });
 
@@ -291,9 +291,9 @@ describe('InlineCommentsResource', () => {
       expect(transport.calls[1]?.options.query).toMatchObject({ cursor: 'c2' });
     });
 
-    it('throws RangeError when limit is invalid before any request', async () => {
+    it('throws ValidationError when limit is invalid before any request', async () => {
       const iter = resource.listLikeUsersAll('88888', { limit: 0 });
-      await expect(iter.next()).rejects.toThrow(RangeError);
+      await expect(iter.next()).rejects.toThrow(ValidationError);
       expect(transport.calls).toHaveLength(0);
     });
 
@@ -359,8 +359,8 @@ describe('InlineCommentsResource', () => {
       });
     });
 
-    it('throws RangeError when limit is invalid', async () => {
-      await expect(resource.listVersions('88888', { limit: 0 })).rejects.toThrow(RangeError);
+    it('throws ValidationError when limit is invalid', async () => {
+      await expect(resource.listVersions('88888', { limit: 0 })).rejects.toThrow(ValidationError);
     });
   });
 
@@ -389,9 +389,9 @@ describe('InlineCommentsResource', () => {
       expect(transport.calls[1]?.options.query).toMatchObject({ cursor: 'c2' });
     });
 
-    it('throws RangeError when limit is invalid before any request', async () => {
+    it('throws ValidationError when limit is invalid before any request', async () => {
       const iter = resource.listVersionsAll('88888', { limit: -1 });
-      await expect(iter.next()).rejects.toThrow(RangeError);
+      await expect(iter.next()).rejects.toThrow(ValidationError);
       expect(transport.calls).toHaveLength(0);
     });
 

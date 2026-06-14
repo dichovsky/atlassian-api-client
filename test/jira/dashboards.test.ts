@@ -4,6 +4,7 @@ import {
   type ListAvailableGadgetsParams,
 } from '../../src/jira/resources/dashboards.js';
 import { MockTransport } from '../helpers/mock-transport.js';
+import { ValidationError } from '../../src/core/errors.js';
 
 const BASE_URL = 'https://test.atlassian.net/rest/api/3';
 
@@ -85,20 +86,20 @@ describe('DashboardsResource', () => {
       expect(transport.lastCall?.options.query).toMatchObject({ filter: 'favourite' });
     });
 
-    it('throws RangeError for maxResults: 0', async () => {
-      await expect(dashboards.list({ maxResults: 0 })).rejects.toThrow(RangeError);
+    it('throws ValidationError for maxResults: 0', async () => {
+      await expect(dashboards.list({ maxResults: 0 })).rejects.toThrow(ValidationError);
     });
 
-    it('throws RangeError for maxResults: -1', async () => {
-      await expect(dashboards.list({ maxResults: -1 })).rejects.toThrow(RangeError);
+    it('throws ValidationError for maxResults: -1', async () => {
+      await expect(dashboards.list({ maxResults: -1 })).rejects.toThrow(ValidationError);
     });
 
-    it('throws RangeError for maxResults: 1.5', async () => {
-      await expect(dashboards.list({ maxResults: 1.5 })).rejects.toThrow(RangeError);
+    it('throws ValidationError for maxResults: 1.5', async () => {
+      await expect(dashboards.list({ maxResults: 1.5 })).rejects.toThrow(ValidationError);
     });
 
-    it('throws RangeError for maxResults: Infinity', async () => {
-      await expect(dashboards.list({ maxResults: Infinity })).rejects.toThrow(RangeError);
+    it('throws ValidationError for maxResults: Infinity', async () => {
+      await expect(dashboards.list({ maxResults: Infinity })).rejects.toThrow(ValidationError);
     });
   });
 
@@ -892,7 +893,7 @@ describe('DashboardsResource', () => {
     });
 
     it.each([0, -1, 1.5, Infinity])('rejects bad maxResults: %s', async (maxResults) => {
-      await expect(dashboards.search({ maxResults })).rejects.toThrow(RangeError);
+      await expect(dashboards.search({ maxResults })).rejects.toThrow(ValidationError);
     });
 
     it('PR review: returns total as undefined when server omits it', async () => {

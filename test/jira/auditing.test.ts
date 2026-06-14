@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { AuditingResource } from '../../src/jira/resources/auditing.js';
 import { MockTransport } from '../helpers/mock-transport.js';
+import { ValidationError } from '../../src/core/errors.js';
 
 const BASE_URL = 'https://test.atlassian.net/rest/api/3';
 
@@ -123,9 +124,9 @@ describe('AuditingResource', () => {
       });
     });
 
-    it('throws RangeError for invalid limit', async () => {
+    it('throws ValidationError for invalid limit', async () => {
       // Act / Assert
-      await expect(auditing.list({ limit: 0 })).rejects.toThrow(RangeError);
+      await expect(auditing.list({ limit: 0 })).rejects.toThrow(ValidationError);
     });
 
     it('propagates transport errors', async () => {
