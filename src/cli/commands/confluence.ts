@@ -602,11 +602,14 @@ async function executeBlogPosts(client: ConfluenceClient, cmd: ParsedCommand): P
         : client.blogPosts.get(getBlogId);
     }
     case 'create':
-      return client.blogPosts.create({
-        spaceId: requireOpt(opts['space-id'], '--space-id'),
-        title: requireOpt(opts['title'], '--title'),
-        body: makeBody(asString(opts['body'])),
-      });
+      return client.blogPosts.create(
+        {
+          spaceId: requireOpt(opts['space-id'], '--space-id'),
+          title: requireOpt(opts['title'], '--title'),
+          body: makeBody(asString(opts['body'])),
+        },
+        { private: opts['private'] === true ? true : undefined },
+      );
     case 'update': {
       const blogVersionNum = requirePositiveInt(opts['version-number'], '--version-number');
       // `body` is required by the spec (BlogPostUpdateRequest required array).
@@ -622,7 +625,10 @@ async function executeBlogPosts(client: ConfluenceClient, cmd: ParsedCommand): P
       });
     }
     case 'delete':
-      await client.blogPosts.delete(requireArg(cmd.positionalArgs[0], 'blog post ID'));
+      await client.blogPosts.delete(requireArg(cmd.positionalArgs[0], 'blog post ID'), {
+        purge: opts['purge'] === true ? true : undefined,
+        draft: opts['draft'] === true ? true : undefined,
+      });
       return { deleted: true };
 
     // ── content properties (B066-B070) ────────────────────────────────────

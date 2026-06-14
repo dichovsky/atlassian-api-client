@@ -2938,8 +2938,20 @@ describe('executeConfluenceCommand', () => {
       // Assert
       expect(confluenceBlogPostsMock.create).toHaveBeenCalledWith(
         expect.objectContaining({ spaceId: 'S1', title: 'Post' }),
+        { private: undefined },
       );
       expect(result).toEqual({ id: 'bp-new' });
+    });
+
+    it('blog-posts create forwards --private', async () => {
+      confluenceBlogPostsMock.create.mockResolvedValue({ id: 'bp-priv' });
+      await executeConfluenceCommand(
+        cmd('blog-posts', 'create', [], { 'space-id': 'S1', title: 'Post', private: true }),
+        GLOBALS,
+      );
+      expect(confluenceBlogPostsMock.create).toHaveBeenCalledWith(expect.any(Object), {
+        private: true,
+      });
     });
 
     it('blog-posts create throws when space-id is missing', async () => {
@@ -2969,6 +2981,7 @@ describe('executeConfluenceCommand', () => {
         expect.objectContaining({
           body: { representation: 'storage', value: '<p>content</p>' },
         }),
+        { private: undefined },
       );
     });
 
@@ -3056,8 +3069,23 @@ describe('executeConfluenceCommand', () => {
       const result = await executeConfluenceCommand(cmd('blog-posts', 'delete', ['bp-1']), GLOBALS);
 
       // Assert
-      expect(confluenceBlogPostsMock.delete).toHaveBeenCalledWith('bp-1');
+      expect(confluenceBlogPostsMock.delete).toHaveBeenCalledWith('bp-1', {
+        purge: undefined,
+        draft: undefined,
+      });
       expect(result).toEqual({ deleted: true });
+    });
+
+    it('blog-posts delete forwards --purge and --draft', async () => {
+      confluenceBlogPostsMock.delete.mockResolvedValue(undefined);
+      await executeConfluenceCommand(
+        cmd('blog-posts', 'delete', ['bp-1'], { purge: true, draft: true }),
+        GLOBALS,
+      );
+      expect(confluenceBlogPostsMock.delete).toHaveBeenCalledWith('bp-1', {
+        purge: true,
+        draft: true,
+      });
     });
 
     it('blog-posts delete throws when ID is missing', async () => {
