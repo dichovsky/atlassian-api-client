@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "2.0.0"
   },
-  "sourceHash": "259524c86cac7137e41701c24b6d7e7319fe8b9c4665248ff3d8cca136a52f91",
+  "sourceHash": "03898586f8de6e73c6b6348ed38534982a2a407fda7ae76cf347e0a2a5adea30",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -18960,6 +18960,10 @@
           "typeOnly": true,
           "names": [
             {
+              "exported": "GroupLabel",
+              "original": "GroupLabel"
+            },
+            {
               "exported": "GroupSuggestion",
               "original": "GroupSuggestion"
             },
@@ -20811,6 +20815,18 @@
             {
               "exported": "Resolution",
               "original": "Resolution"
+            },
+            {
+              "exported": "ResolutionJsonBean",
+              "original": "ResolutionJsonBean"
+            },
+            {
+              "exported": "ResolutionId",
+              "original": "ResolutionId"
+            },
+            {
+              "exported": "ResolutionTaskProgress",
+              "original": "ResolutionTaskProgress"
             },
             {
               "exported": "CreateResolutionData",
@@ -26783,49 +26799,57 @@
       "path": "src/jira/resources/group-user-picker.ts",
       "symbols": [
         {
+          "name": "GroupLabel",
+          "kind": "interface",
+          "line": 9,
+          "exported": true,
+          "signature": "export interface GroupLabel { readonly text?: string; readonly title?: string; readonly type?: 'ADMIN' | 'SINGLE' | 'MUL…",
+          "jsdoc": "A label attached to a group, as returned by the group picker."
+        },
+        {
           "name": "GroupSuggestion",
           "kind": "interface",
-          "line": 5,
+          "line": 16,
           "exported": true,
-          "signature": "export interface GroupSuggestion { readonly groupId: string; readonly name: string; readonly html?: string; }",
+          "signature": "export interface GroupSuggestion { readonly groupId?: string; readonly name?: string; readonly html?: string; readonly a…",
           "jsdoc": "A single group suggestion from the combined picker."
         },
         {
           "name": "UserSuggestion",
           "kind": "interface",
-          "line": 12,
+          "line": 27,
           "exported": true,
-          "signature": "export interface UserSuggestion { readonly accountId: string; readonly displayName: string; readonly avatarUrl?: string;…",
+          "signature": "export interface UserSuggestion { readonly accountId?: string; readonly displayName?: string; readonly avatarUrl?: strin…",
           "jsdoc": "A single user suggestion from the combined picker."
         },
         {
           "name": "GroupSuggestionsSection",
           "kind": "interface",
-          "line": 20,
+          "line": 44,
           "exported": true,
-          "signature": "export interface GroupSuggestionsSection { readonly label: string; readonly sub: string; readonly id: string; readonly m…",
+          "signature": "export interface GroupSuggestionsSection { readonly groups?: GroupSuggestion[]; readonly header?: string; readonly total…",
           "jsdoc": "Group suggestions section returned by the combined picker."
         },
         {
           "name": "UserSuggestionsSection",
           "kind": "interface",
-          "line": 29,
+          "line": 55,
           "exported": true,
-          "signature": "export interface UserSuggestionsSection { readonly label: string; readonly sub: string; readonly id: string; readonly ms…",
+          "signature": "export interface UserSuggestionsSection { readonly users?: UserSuggestion[]; readonly header?: string; readonly total?: …",
           "jsdoc": "User suggestions section returned by the combined picker."
         },
         {
           "name": "GroupUserPickerResponse",
           "kind": "interface",
-          "line": 38,
+          "line": 62,
           "exported": true,
-          "signature": "export interface GroupUserPickerResponse { readonly groups: GroupSuggestionsSection; readonly users: UserSuggestionsSect…",
+          "signature": "export interface GroupUserPickerResponse { readonly groups?: GroupSuggestionsSection; readonly users?: UserSuggestionsSe…",
           "jsdoc": "Response envelope for GET /rest/api/3/groupuserpicker."
         },
         {
           "name": "GroupUserPickerParams",
           "kind": "interface",
-          "line": 46,
+          "line": 68,
           "exported": true,
           "signature": "export interface GroupUserPickerParams { readonly query?: string; readonly maxResults?: number; readonly showAvatar?: bo…",
           "jsdoc": "Query parameters for the combined group+user picker."
@@ -26833,7 +26857,7 @@
         {
           "name": "GroupUserPickerResource",
           "kind": "class",
-          "line": 88,
+          "line": 154,
           "exported": true,
           "signature": "export class GroupUserPickerResource",
           "jsdoc": "Jira Group+User Picker resource — GET /rest/api/3/groupuserpicker.",
@@ -26841,12 +26865,12 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 89
+              "line": 155
             },
             {
               "name": "pick",
               "kind": "method",
-              "line": 98
+              "line": 164
             }
           ]
         }
@@ -32802,15 +32826,39 @@
         {
           "name": "Resolution",
           "kind": "interface",
-          "line": 14,
+          "line": 18,
           "exported": true,
           "signature": "export interface Resolution { readonly id: string; readonly name: string; readonly self?: string; readonly description?:…",
           "jsdoc": "A Jira issue resolution (e.g. Fixed, Won't Fix, Duplicate)."
         },
         {
+          "name": "ResolutionJsonBean",
+          "kind": "interface",
+          "line": 31,
+          "exported": true,
+          "signature": "export interface ResolutionJsonBean { readonly id?: string; readonly name?: string; readonly self?: string; readonly des…",
+          "jsdoc": "A resolution as returned by the search endpoint (GET /resolution/search)."
+        },
+        {
+          "name": "ResolutionId",
+          "kind": "interface",
+          "line": 47,
+          "exported": true,
+          "signature": "export interface ResolutionId { readonly id: string; }",
+          "jsdoc": "The ID of a newly created resolution."
+        },
+        {
+          "name": "ResolutionTaskProgress",
+          "kind": "interface",
+          "line": 58,
+          "exported": true,
+          "signature": "export interface ResolutionTaskProgress { readonly id: string; readonly description?: string; readonly status: string; r…",
+          "jsdoc": "A running task for an async operation."
+        },
+        {
           "name": "CreateResolutionData",
           "kind": "interface",
-          "line": 24,
+          "line": 74,
           "exported": true,
           "signature": "export interface CreateResolutionData { readonly name: string; readonly description?: string; }",
           "jsdoc": "Request body for POST /rest/api/3/resolution."
@@ -32818,15 +32866,15 @@
         {
           "name": "UpdateResolutionData",
           "kind": "interface",
-          "line": 30,
+          "line": 80,
           "exported": true,
-          "signature": "export interface UpdateResolutionData { readonly name?: string; readonly description?: string; }",
+          "signature": "export interface UpdateResolutionData { readonly name: string; readonly description?: string; }",
           "jsdoc": "Request body for PUT /rest/api/3/resolution/{id}."
         },
         {
           "name": "DeleteResolutionParams",
           "kind": "interface",
-          "line": 36,
+          "line": 87,
           "exported": true,
           "signature": "export interface DeleteResolutionParams { readonly replaceWith?: string; }",
           "jsdoc": "Query parameters for DELETE /rest/api/3/resolution/{id}."
@@ -32834,7 +32882,7 @@
         {
           "name": "SetDefaultResolutionData",
           "kind": "interface",
-          "line": 45,
+          "line": 98,
           "exported": true,
           "signature": "export interface SetDefaultResolutionData { readonly id: string; }",
           "jsdoc": "Request body for PUT /rest/api/3/resolution/default."
@@ -32842,7 +32890,7 @@
         {
           "name": "MoveResolutionData",
           "kind": "interface",
-          "line": 51,
+          "line": 107,
           "exported": true,
           "signature": "export interface MoveResolutionData { readonly ids: string[]; readonly after?: string; readonly position?: string; }",
           "jsdoc": "Request body for PUT /rest/api/3/resolution/move."
@@ -32850,7 +32898,7 @@
         {
           "name": "SearchResolutionsParams",
           "kind": "interface",
-          "line": 64,
+          "line": 120,
           "exported": true,
           "signature": "export interface SearchResolutionsParams { readonly startAt?: number; readonly maxResults?: number; readonly id?: string…",
           "jsdoc": "Query parameters for GET /rest/api/3/resolution/search."
@@ -32858,7 +32906,7 @@
         {
           "name": "ResolutionResource",
           "kind": "class",
-          "line": 84,
+          "line": 140,
           "exported": true,
           "signature": "export class ResolutionResource",
           "jsdoc": "Jira Issue Resolutions resource — CRUD endpoints under `/rest/api/3/resolution` plus the `default` and `move` sub-resources.",
@@ -32866,59 +32914,59 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 85
+              "line": 141
             },
             {
               "name": "list",
               "kind": "method",
-              "line": 100
+              "line": 156
             },
             {
               "name": "get",
               "kind": "method",
-              "line": 112
+              "line": 168
             },
             {
               "name": "create",
               "kind": "method",
-              "line": 124
+              "line": 182
             },
             {
               "name": "update",
               "kind": "method",
-              "line": 142
+              "line": 200
             },
             {
               "name": "delete",
               "kind": "method",
-              "line": 165
+              "line": 226
             },
             {
               "name": "setDefault",
               "kind": "method",
-              "line": 180
+              "line": 242
             },
             {
               "name": "moveResolutions",
               "kind": "method",
-              "line": 192
+              "line": 254
             },
             {
               "name": "search",
               "kind": "method",
-              "line": 219
+              "line": 282
             },
             {
               "name": "searchAll",
               "kind": "method",
-              "line": 234
+              "line": 299
             }
           ]
         },
         {
           "name": "buildSearchQuery",
           "kind": "function",
-          "line": 250,
+          "line": 317,
           "signature": "function buildSearchQuery( params: SearchResolutionsParams | undefined, ): Record<string, string | number | boolean | un…"
         }
       ],

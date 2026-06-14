@@ -541,6 +541,7 @@ export type {
 } from './resources/groups.js';
 export { GroupsResource } from './resources/groups.js';
 export type {
+  GroupLabel,
   GroupSuggestion,
   UserSuggestion,
   GroupSuggestionsSection,
@@ -696,6 +697,9 @@ export type {
 export { RoleResource } from './resources/role.js';
 export type {
   Resolution,
+  ResolutionJsonBean,
+  ResolutionId,
+  ResolutionTaskProgress,
   CreateResolutionData,
   UpdateResolutionData,
   DeleteResolutionParams,
