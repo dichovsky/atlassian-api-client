@@ -1,6 +1,38 @@
 import type { Transport } from '../../core/types.js';
 import { encodePathSegment } from '../../core/path.js';
 
+// ─── Enum types ────────────────────────────────────────────────────────────
+
+/** Plan status values. */
+export type PlanStatus = 'Active' | 'Trashed' | 'Archived';
+
+/** Planning style values for teams. */
+export type PlanningStyle = 'Scrum' | 'Kanban';
+
+/** Scheduling dependencies values. */
+export type SchedulingDependencies = 'Sequential' | 'Concurrent';
+
+/** Scheduling estimation values. */
+export type SchedulingEstimation = 'StoryPoints' | 'Days' | 'Hours';
+
+/** Scheduling inferred dates values. */
+export type SchedulingInferredDates = 'None' | 'SprintDates' | 'ReleaseDates';
+
+/** Date field type values. */
+export type DateFieldType = 'DueDate' | 'TargetStartDate' | 'TargetEndDate' | 'DateCustomField';
+
+/** Issue source type values. */
+export type IssueSourceType = 'Board' | 'Project' | 'Filter' | 'Custom';
+
+/** Permission holder type values. */
+export type PermissionHolderType = 'Group' | 'AccountId';
+
+/** Permission type values. */
+export type PermissionType = 'View' | 'Edit';
+
+/** Team type values for the list-teams response. */
+export type PlanTeamType = 'PlanOnly' | 'Atlassian';
+
 // ─── Pagination ────────────────────────────────────────────────────────────
 
 /** Cursor-paginated response for GET /rest/api/3/plans/plan. */
@@ -31,28 +63,28 @@ export interface PlanSummary {
   readonly issueSources?: PlanIssueSource[];
   readonly name: string;
   readonly scenarioId: string;
-  readonly status: string;
+  readonly status: PlanStatus;
 }
 
 /** A team summary as returned by the list teams endpoint (GetTeamResponseForPage). */
 export interface PlanTeamSummary {
   readonly id: string;
   readonly name?: string;
-  readonly type: string;
+  readonly type: PlanTeamType;
 }
 
 /** Date field configuration returned in a plan. */
 export interface PlanDateField {
   readonly dateCustomFieldId?: number;
-  readonly type: string;
+  readonly type: DateFieldType;
 }
 
 /** Scheduling configuration returned in a plan. */
 export interface PlanScheduling {
-  readonly dependencies: string;
+  readonly dependencies: SchedulingDependencies;
   readonly endDate: PlanDateField;
-  readonly estimation: string;
-  readonly inferredDates: string;
+  readonly estimation: SchedulingEstimation;
+  readonly inferredDates: SchedulingInferredDates;
   readonly startDate: PlanDateField;
 }
 
@@ -74,26 +106,26 @@ export interface PlanCrossProjectRelease {
 
 /** Custom field returned in a plan. */
 export interface PlanCustomField {
-  readonly customFieldId?: number;
+  readonly customFieldId: number;
   readonly filter?: boolean;
 }
 
 /** Issue source returned in a plan. */
 export interface PlanIssueSource {
-  readonly type?: string;
-  readonly value?: number;
-}
-
-/** Permission returned in a plan. */
-export interface PlanPermission {
-  readonly holder?: PlanPermissionHolder;
-  readonly type?: string;
+  readonly type: IssueSourceType;
+  readonly value: number;
 }
 
 /** Permission holder returned in a plan. */
 export interface PlanPermissionHolder {
-  readonly type?: string;
-  readonly value?: string;
+  readonly type: PermissionHolderType;
+  readonly value: string;
+}
+
+/** Permission returned in a plan. */
+export interface PlanPermission {
+  readonly holder: PlanPermissionHolder;
+  readonly type: PermissionType;
 }
 
 /** Full plan response from GET /rest/api/3/plans/plan/{planId}. */
@@ -131,31 +163,18 @@ export interface PlanOnlyTeamResponse {
   readonly sprintLength?: number;
 }
 
-// ─── Enum types ────────────────────────────────────────────────────────────
+// ─── JSON Patch ───────────────────────────────────────────────────────────
 
-/** Plan status values. */
-export type PlanStatus = 'Active' | 'Trashed' | 'Archived';
-
-/** Planning style values for teams. */
-export type PlanningStyle = 'Scrum' | 'Kanban';
-
-/** Scheduling dependencies values. */
-export type SchedulingDependencies = 'Sequential' | 'Concurrent';
-
-/** Scheduling estimation values. */
-export type SchedulingEstimation = 'StoryPoints' | 'Days' | 'Hours';
-
-/** Scheduling inferred dates values. */
-export type SchedulingInferredDates = 'None' | 'SprintDates' | 'ReleaseDates';
-
-/** Date field type values. */
-export type DateFieldType = 'DueDate' | 'TargetStartDate' | 'TargetEndDate' | 'DateCustomField';
-
-/** Issue source type values. */
-export type IssueSourceType = 'Board' | 'Project' | 'Filter';
-
-/** Permission holder type values. */
-export type PermissionHolderType = 'Group' | 'AccountId';
+/**
+ * A single JSON Patch operation as defined by RFC 6902.
+ * Used for PUT endpoints that accept `application/json-patch+json`.
+ */
+export interface JsonPatchOperation {
+  readonly op: 'add' | 'remove' | 'replace' | 'move' | 'copy' | 'test';
+  readonly path: string;
+  readonly value?: unknown;
+  readonly from?: string;
+}
 
 // ─── Request body types ───────────────────────────────────────────────────
 
@@ -211,7 +230,7 @@ export interface CreatePermissionHolderData {
 /** Permission for plan creation. */
 export interface CreatePermissionData {
   readonly holder: CreatePermissionHolderData;
-  readonly type: string;
+  readonly type: PermissionType;
 }
 
 /** Request body for POST /rest/api/3/plans/plan. */
@@ -260,7 +279,7 @@ export interface ListPlansParams {
   readonly maxResults?: number;
 }
 
-/** Query parameters for GET /rest/api/3/plans/plan (single-page). */
+/** Query parameters for GET /rest/api/3/plans/plan/{planId}. */
 export interface GetPlanParams {
   readonly useGroupId?: boolean;
 }
@@ -382,10 +401,14 @@ export class PlansResource {
    * Spec media type is `application/json-patch+json`. The patch is serialised
    * to JSON and sent as a raw binary blob so the transport sets the correct
    * `Content-Type` header instead of the default `application/json`.
+   *
+   * Pass a `JsonPatchOperation[]` array (RFC 6902). Passing a single
+   * `Record<string, unknown>` is accepted for backward compatibility but callers
+   * should migrate to the array form.
    */
   async update(
     planId: number,
-    patch: Record<string, unknown>,
+    patch: JsonPatchOperation[] | Record<string, unknown>,
     useGroupId?: boolean,
   ): Promise<void> {
     const query: Record<string, boolean | undefined> = {};
@@ -517,12 +540,14 @@ export class PlansResource {
    * B635: Update an Atlassian team in a plan (JSON-patch).
    * PUT /rest/api/3/plans/plan/{planId}/team/atlassian/{atlassianTeamId}
    *
-   * Spec media type is `application/json-patch+json`.
+   * Spec media type is `application/json-patch+json`. Pass a `JsonPatchOperation[]`
+   * array (RFC 6902). Passing a single `Record<string, unknown>` is accepted for
+   * backward compatibility but callers should migrate to the array form.
    */
   async updateAtlassianTeam(
     planId: number,
     atlassianTeamId: string,
-    patch: Record<string, unknown>,
+    patch: JsonPatchOperation[] | Record<string, unknown>,
   ): Promise<void> {
     await this.transport.request<undefined>({
       method: 'PUT',
@@ -580,12 +605,14 @@ export class PlansResource {
    * B639: Update a plan-only team in a plan (JSON-patch).
    * PUT /rest/api/3/plans/plan/{planId}/team/planonly/{planOnlyTeamId}
    *
-   * Spec media type is `application/json-patch+json`.
+   * Spec media type is `application/json-patch+json`. Pass a `JsonPatchOperation[]`
+   * array (RFC 6902). Passing a single `Record<string, unknown>` is accepted for
+   * backward compatibility but callers should migrate to the array form.
    */
   async updatePlanOnlyTeam(
     planId: number,
     planOnlyTeamId: number,
-    patch: Record<string, unknown>,
+    patch: JsonPatchOperation[] | Record<string, unknown>,
   ): Promise<void> {
     await this.transport.request<undefined>({
       method: 'PUT',
