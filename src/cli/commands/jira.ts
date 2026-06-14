@@ -2853,35 +2853,33 @@ async function executeApp(client: JiraClient, cmd: ParsedCommand): Promise<unkno
     case 'update-field-value': {
       const fieldIdOrKey = requireArg(cmd.positionalArgs[0], 'fieldIdOrKey');
       const valueRaw = requireOpt(opts['value'], '--value');
-      let updates: { value: unknown }[];
+      let updates: { issueIds: number[]; value: unknown }[];
       try {
         updates = JSON.parse(valueRaw) as typeof updates;
       } catch {
-        throw new Error('--value must be valid JSON (array of update objects)');
+        throw new Error(
+          '--value must be valid JSON (array of update objects with issueIds and value)',
+        );
       }
       await client.app.updateFieldValue(fieldIdOrKey, { updates });
       return { updated: true };
     }
     case 'list-field-context-configurations': {
       const fieldIdsOrKeys = parseCsv(opts['field-ids-or-keys']);
-      const contextIds = parseCsv(opts['context-ids']);
-      if (fieldIdsOrKeys === undefined && contextIds === undefined) {
-        throw new Error(
-          'list-field-context-configurations requires at least one of: --field-ids-or-keys, --context-ids',
-        );
+      if (fieldIdsOrKeys === undefined) {
+        throw new Error('list-field-context-configurations requires --field-ids-or-keys');
       }
-      const body: { fieldIdsOrKeys?: string[]; contextIds?: string[] } = {};
-      if (fieldIdsOrKeys !== undefined) body.fieldIdsOrKeys = fieldIdsOrKeys;
-      if (contextIds !== undefined) body.contextIds = contextIds;
-      return client.app.listFieldContextConfigurations(body);
+      return client.app.listFieldContextConfigurations({ fieldIdsOrKeys });
     }
     case 'bulk-update-field-value': {
       const valueRaw = requireOpt(opts['value'], '--value');
-      let updates: { fieldIdOrKey: string; updates: { value: unknown }[] }[];
+      let updates: { customField: string; issueIds: number[]; value: unknown }[];
       try {
         updates = JSON.parse(valueRaw) as typeof updates;
       } catch {
-        throw new Error('--value must be valid JSON (array of per-field update objects)');
+        throw new Error(
+          '--value must be valid JSON (array of {customField, issueIds, value} objects)',
+        );
       }
       await client.app.bulkUpdateFieldValue({ updates });
       return { updated: true };

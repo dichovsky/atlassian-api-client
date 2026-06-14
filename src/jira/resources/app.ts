@@ -1,17 +1,19 @@
 import type { Transport } from '../../core/types.js';
 import { ValidationError } from '../../core/errors.js';
 import { encodePathSegment } from '../../core/path.js';
+import { appendRepeatedParams } from '../../core/query.js';
 
 /**
  * Field context configuration for an app-defined custom field.
  *
- * Returned by GET /rest/api/3/app/field/{fieldIdOrKey}/context/configuration.
+ * Maps to the spec `ContextualConfiguration` schema returned by
+ * GET /rest/api/3/app/field/{fieldIdOrKey}/context/configuration.
  */
 export interface FieldContextConfiguration {
-  /** The ID of the field context configuration. */
+  /** The ID of the configuration. */
   readonly id: string;
-  /** The ID of the context the configuration belongs to. */
-  readonly contextId: string;
+  /** The ID of the field context the configuration is associated with (read-only). */
+  readonly fieldContextId: string;
   /** The configuration payload (app-defined opaque JSON). */
   readonly configuration?: unknown;
   /** The schema for the configuration payload (app-defined opaque JSON). */
@@ -21,8 +23,8 @@ export interface FieldContextConfiguration {
 /**
  * A single field-context configuration to update.
  *
- * Maps to the spec `ContextualConfiguration`: `id` identifies the configuration
- * to update and is **required**; `fieldContextId` is read-only (not sent).
+ * Maps to the spec `ContextualConfiguration` (write shape): `id` identifies the
+ * configuration to update and is **required**; `fieldContextId` is read-only (not sent).
  */
 export interface FieldContextConfigurationUpdate {
   /** The ID of the configuration to update (required by the spec). */
@@ -46,18 +48,52 @@ export interface UpdateFieldContextConfigurationData {
 }
 
 /**
+ * Query parameters for GET /rest/api/3/app/field/{fieldIdOrKey}/context/configuration.
+ *
+ * Filters the paginated result set. Mutually exclusive filter groups:
+ * `id` or `fieldContextId` or `issueId` or (`projectKeyOrId` + `issueTypeId`).
+ */
+export interface GetFieldContextConfigurationParams {
+  /** Configuration IDs to filter by (repeated query param, type:array). */
+  readonly id?: readonly number[];
+  /** Field context IDs to filter by (repeated query param, type:array). */
+  readonly fieldContextId?: readonly number[];
+  /** Issue ID to filter results by. */
+  readonly issueId?: number;
+  /** Project ID or key to filter by (must be paired with issueTypeId). */
+  readonly projectKeyOrId?: string;
+  /** Issue type ID to filter by (must be paired with projectKeyOrId). */
+  readonly issueTypeId?: string;
+  /** Page offset (0-based). */
+  readonly startAt?: number;
+  /** Maximum items per page. */
+  readonly maxResults?: number;
+}
+
+/**
+ * Paginated response from GET /rest/api/3/app/field/{fieldIdOrKey}/context/configuration.
+ *
+ * Maps to spec `PageBeanContextualConfiguration`.
+ */
+export interface PageBeanContextualConfiguration {
+  readonly isLast?: boolean;
+  readonly maxResults?: number;
+  readonly nextPage?: string;
+  readonly self?: string;
+  readonly startAt?: number;
+  readonly total?: number;
+  readonly values?: readonly FieldContextConfiguration[];
+}
+
+/**
  * Single field-value entry for PUT /rest/api/3/app/field/{fieldIdOrKey}/value.
  *
- * Either `issueIds`, `issueIdsOrKeys`, or `issueKeys` must be supplied; the
- * `value` is the new app-defined value for the field on the listed issues.
+ * Maps to spec `CustomFieldValueUpdate`: `issueIds` is required, `value` is required.
+ * Fields `issueIdsOrKeys` and `issueKeys` do NOT exist in the spec.
  */
 export interface FieldValueUpdate {
-  /** Issue IDs to update. */
-  readonly issueIds?: readonly number[];
-  /** Issue IDs or keys to update. */
-  readonly issueIdsOrKeys?: readonly string[];
-  /** Issue keys to update. */
-  readonly issueKeys?: readonly string[];
+  /** Issue IDs to update (required). */
+  readonly issueIds: readonly number[];
   /** The app-defined value to set for the field on the listed issues. */
   readonly value: unknown;
 }
@@ -65,46 +101,109 @@ export interface FieldValueUpdate {
 /** Request body for PUT /rest/api/3/app/field/{fieldIdOrKey}/value. */
 export interface UpdateFieldValueData {
   /** List of value updates to apply (one entry per distinct value). */
-  readonly updates: readonly FieldValueUpdate[];
+  readonly updates?: readonly FieldValueUpdate[];
+}
+
+/**
+ * Query parameters for PUT /rest/api/3/app/field/{fieldIdOrKey}/value and
+ * POST /rest/api/3/app/field/value.
+ */
+export interface UpdateFieldValueParams {
+  /** Whether to generate a changelog for this update (default: true). */
+  readonly generateChangelog?: boolean;
+  /** Whether to generate app events for this update (default: true). */
+  readonly generateAppEvents?: boolean;
 }
 
 /**
  * Request body for POST /rest/api/3/app/field/context/configuration/list.
  *
- * The endpoint returns the configuration for every listed `(fieldIdOrKey,
- * contextId)` pair — both arrays are sized independently and any pair can be
- * absent from the response when the field/context does not exist.
+ * Maps to spec `ConfigurationsListParameters`. `fieldIdsOrKeys` is **required**
+ * (minItems: 1). The spec does NOT include a `contextIds` field.
  */
 export interface ListFieldContextConfigurationsData {
-  /** Field IDs or keys to fetch configurations for. */
-  readonly fieldIdsOrKeys?: readonly string[];
-  /** Context IDs to fetch configurations for. */
-  readonly contextIds?: readonly string[];
+  /** Field IDs or keys to fetch configurations for (required, 1+ items). */
+  readonly fieldIdsOrKeys: readonly string[];
 }
 
-/** Response from POST /rest/api/3/app/field/context/configuration/list. */
+/**
+ * Query parameters for POST /rest/api/3/app/field/context/configuration/list.
+ *
+ * Filters the paginated result. Mutually exclusive filter groups:
+ * `id` or `fieldContextId` or `issueId` or (`projectKeyOrId` + `issueTypeId`).
+ */
+export interface ListFieldContextConfigurationsParams {
+  /** Configuration IDs to filter by (repeated query param, type:array). */
+  readonly id?: readonly number[];
+  /** Field context IDs to filter by (repeated query param, type:array). */
+  readonly fieldContextId?: readonly number[];
+  /** Issue ID to filter results by. */
+  readonly issueId?: number;
+  /** Project ID or key to filter by (must be paired with issueTypeId). */
+  readonly projectKeyOrId?: string;
+  /** Issue type ID to filter by (must be paired with projectKeyOrId). */
+  readonly issueTypeId?: string;
+  /** Page offset (0-based). */
+  readonly startAt?: number;
+  /** Maximum items per page. */
+  readonly maxResults?: number;
+}
+
+/**
+ * A single field-context configuration item in the bulk listing response.
+ *
+ * Maps to spec `BulkContextualConfiguration` which includes `customFieldId`
+ * in addition to the base `ContextualConfiguration` fields.
+ */
+export interface BulkContextualConfiguration {
+  /** The ID of the configuration. */
+  readonly id: string;
+  /** The ID of the custom field this configuration belongs to. */
+  readonly customFieldId: string;
+  /** The ID of the field context the configuration is associated with (read-only). */
+  readonly fieldContextId: string;
+  /** The configuration payload (app-defined opaque JSON). */
+  readonly configuration?: unknown;
+  /** The schema for the configuration payload (app-defined opaque JSON). */
+  readonly schema?: unknown;
+}
+
+/**
+ * Paginated response from POST /rest/api/3/app/field/context/configuration/list.
+ *
+ * Maps to spec `PageBeanBulkContextualConfiguration`.
+ */
 export interface FieldContextConfigurationList {
+  readonly isLast?: boolean;
+  readonly maxResults?: number;
+  readonly nextPage?: string;
+  readonly self?: string;
+  readonly startAt?: number;
+  readonly total?: number;
   /** The configuration entries for the requested fields/contexts. */
-  readonly configurations: readonly FieldContextConfiguration[];
+  readonly values?: readonly BulkContextualConfiguration[];
 }
 
 /**
  * Single bulk field-value entry for POST /rest/api/3/app/field/value.
  *
- * Mirrors the per-field shape used by the Jira "set custom field values"
- * Forge endpoint — combine many field updates in a single request.
+ * Maps to spec `MultipleCustomFieldValuesUpdate`: a flat shape with
+ * `customField` (the field ID/key), `issueIds`, and `value` — NOT a nested
+ * `updates` array. Each entry covers exactly one field and one value.
  */
 export interface BulkFieldValueUpdate {
   /** The ID or key of the app-defined custom field to set. */
-  readonly fieldIdOrKey: string;
-  /** List of value updates to apply for this field. */
-  readonly updates: readonly FieldValueUpdate[];
+  readonly customField: string;
+  /** The list of issue IDs to update. */
+  readonly issueIds: readonly number[];
+  /** The app-defined value to set for the field on the listed issues. */
+  readonly value: unknown;
 }
 
 /** Request body for POST /rest/api/3/app/field/value. */
 export interface BulkUpdateFieldValueData {
   /** List of per-field value updates. */
-  readonly updates: readonly BulkFieldValueUpdate[];
+  readonly updates?: readonly BulkFieldValueUpdate[];
 }
 
 /**
@@ -190,13 +289,26 @@ export class AppResource {
   // ── Field context configuration (B326, B327, B329) ─────────────────────
 
   /**
-   * Get the field context configuration for an app-defined custom field.
+   * Get the paginated field context configurations for an app-defined custom field.
    * GET /rest/api/3/app/field/{fieldIdOrKey}/context/configuration
    */
-  async getFieldContextConfiguration(fieldIdOrKey: string): Promise<FieldContextConfiguration> {
-    const response = await this.transport.request<FieldContextConfiguration>({
+  async getFieldContextConfiguration(
+    fieldIdOrKey: string,
+    params: GetFieldContextConfigurationParams = {},
+  ): Promise<PageBeanContextualConfiguration> {
+    let path = `${this.apiBaseUrl}/app/field/${encodePathSegment(fieldIdOrKey, 'fieldIdOrKey')}/context/configuration`;
+    path = appendRepeatedParams(path, 'id', params.id?.map(String));
+    path = appendRepeatedParams(path, 'fieldContextId', params.fieldContextId?.map(String));
+    const query: Record<string, string | number | undefined> = {};
+    if (params.issueId !== undefined) query['issueId'] = params.issueId;
+    if (params.projectKeyOrId !== undefined) query['projectKeyOrId'] = params.projectKeyOrId;
+    if (params.issueTypeId !== undefined) query['issueTypeId'] = params.issueTypeId;
+    if (params.startAt !== undefined) query['startAt'] = params.startAt;
+    if (params.maxResults !== undefined) query['maxResults'] = params.maxResults;
+    const response = await this.transport.request<PageBeanContextualConfiguration>({
       method: 'GET',
-      path: `${this.apiBaseUrl}/app/field/${encodePathSegment(fieldIdOrKey, 'fieldIdOrKey')}/context/configuration`,
+      path,
+      query,
     });
     return response.data;
   }
@@ -223,16 +335,27 @@ export class AppResource {
   }
 
   /**
-   * Fetch field context configurations for the given fields/contexts.
+   * Fetch paginated field context configurations for the given fields.
    * POST /rest/api/3/app/field/context/configuration/list
    */
   async listFieldContextConfigurations(
     data: ListFieldContextConfigurationsData,
+    params: ListFieldContextConfigurationsParams = {},
   ): Promise<FieldContextConfigurationList> {
+    let path = `${this.apiBaseUrl}/app/field/context/configuration/list`;
+    path = appendRepeatedParams(path, 'id', params.id?.map(String));
+    path = appendRepeatedParams(path, 'fieldContextId', params.fieldContextId?.map(String));
+    const query: Record<string, string | number | undefined> = {};
+    if (params.issueId !== undefined) query['issueId'] = params.issueId;
+    if (params.projectKeyOrId !== undefined) query['projectKeyOrId'] = params.projectKeyOrId;
+    if (params.issueTypeId !== undefined) query['issueTypeId'] = params.issueTypeId;
+    if (params.startAt !== undefined) query['startAt'] = params.startAt;
+    if (params.maxResults !== undefined) query['maxResults'] = params.maxResults;
     const response = await this.transport.request<FieldContextConfigurationList>({
       method: 'POST',
-      path: `${this.apiBaseUrl}/app/field/context/configuration/list`,
+      path,
       body: data,
+      query,
     });
     return response.data;
   }
@@ -243,11 +366,21 @@ export class AppResource {
    * Update values for a single app-defined custom field on a set of issues.
    * PUT /rest/api/3/app/field/{fieldIdOrKey}/value
    */
-  async updateFieldValue(fieldIdOrKey: string, data: UpdateFieldValueData): Promise<void> {
+  async updateFieldValue(
+    fieldIdOrKey: string,
+    data: UpdateFieldValueData,
+    params: UpdateFieldValueParams = {},
+  ): Promise<void> {
+    const query: Record<string, boolean | undefined> = {};
+    if (params.generateChangelog !== undefined)
+      query['generateChangelog'] = params.generateChangelog;
+    if (params.generateAppEvents !== undefined)
+      query['generateAppEvents'] = params.generateAppEvents;
     await this.transport.request<undefined>({
       method: 'PUT',
       path: `${this.apiBaseUrl}/app/field/${encodePathSegment(fieldIdOrKey, 'fieldIdOrKey')}/value`,
       body: data,
+      query,
     });
   }
 
@@ -255,11 +388,20 @@ export class AppResource {
    * Bulk-update values across multiple app-defined custom fields.
    * POST /rest/api/3/app/field/value
    */
-  async bulkUpdateFieldValue(data: BulkUpdateFieldValueData): Promise<void> {
+  async bulkUpdateFieldValue(
+    data: BulkUpdateFieldValueData,
+    params: UpdateFieldValueParams = {},
+  ): Promise<void> {
+    const query: Record<string, boolean | undefined> = {};
+    if (params.generateChangelog !== undefined)
+      query['generateChangelog'] = params.generateChangelog;
+    if (params.generateAppEvents !== undefined)
+      query['generateAppEvents'] = params.generateAppEvents;
     await this.transport.request<undefined>({
       method: 'POST',
       path: `${this.apiBaseUrl}/app/field/value`,
       body: data,
+      query,
     });
   }
 
