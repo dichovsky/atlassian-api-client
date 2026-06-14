@@ -1,8 +1,12 @@
-/** Version information for Confluence content. */
+/** Version information for Confluence content. Mirrors the OpenAPI `Version` schema. */
 export interface ConfluenceVersion {
   readonly number: number;
   readonly message?: string;
   readonly createdAt?: string;
+  /** Whether this version is a minor version (no email / activity-stream notifications). */
+  readonly minorEdit?: boolean;
+  /** Account ID of the user who created this version. */
+  readonly authorId?: string;
 }
 
 /** Body representation format. */
@@ -112,7 +116,7 @@ export type ContentSortOrder =
  * Mirrors the OpenAPI `ContentStatus` enum subset used by the comment
  * collections (`current`, `deleted`, `trashed`, `historical`, `draft`).
  */
-export type CommentStatus = 'current' | 'deleted' | 'trashed' | 'historical' | 'draft';
+export type CommentStatus = 'current' | 'archived' | 'deleted' | 'trashed' | 'historical' | 'draft';
 
 /**
  * Resolution-status filter accepted by `GET /blogposts/{id}/inline-comments`

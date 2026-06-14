@@ -509,6 +509,8 @@ const matrix: readonly MatrixRow[] = [
       'Renamed',
       '--version-number',
       '2',
+      '--body',
+      '<p>updated</p>', // body is required by spec (BlogPostUpdateRequest)
     ],
     routes: [{ method: 'PUT', path: `${P}/blogposts/99999`, body: F.blogPost }],
     expectCall: { method: 'PUT', pathname: `${P}/blogposts/99999` },
@@ -518,6 +520,7 @@ const matrix: readonly MatrixRow[] = [
         title: 'Renamed',
         status: 'current',
         version: { number: 2 },
+        body: { representation: 'storage', value: '<p>updated</p>' },
       });
     },
   },

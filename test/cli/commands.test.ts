@@ -2978,6 +2978,7 @@ describe('executeConfluenceCommand', () => {
       const parsed = cmd('blog-posts', 'update', ['bp-1'], {
         title: 'Updated Post',
         'version-number': '2',
+        body: '<p>content</p>', // body is required by spec (BlogPostUpdateRequest)
       });
 
       // Act
@@ -3012,19 +3013,31 @@ describe('executeConfluenceCommand', () => {
     });
 
     it('blog-posts update throws when ID is missing', async () => {
-      const parsed = cmd('blog-posts', 'update', [], { title: 'T', 'version-number': '1' });
+      const parsed = cmd('blog-posts', 'update', [], {
+        title: 'T',
+        'version-number': '1',
+        body: '<p/>', // body is required
+      });
       await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
         'Missing required argument: blog post ID',
       );
     });
 
     it('blog-posts update throws when title is missing', async () => {
-      const parsed = cmd('blog-posts', 'update', ['bp-1'], { 'version-number': '1' });
+      const parsed = cmd('blog-posts', 'update', ['bp-1'], {
+        'version-number': '1',
+        body: '<p/>', // body is required
+      });
       await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow('--title');
     });
 
+    it('blog-posts update throws when --body is missing', async () => {
+      const parsed = cmd('blog-posts', 'update', ['bp-1'], { title: 'T', 'version-number': '1' });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow('--body');
+    });
+
     it('blog-posts update throws when version-number is missing', async () => {
-      const parsed = cmd('blog-posts', 'update', ['bp-1'], { title: 'T' });
+      const parsed = cmd('blog-posts', 'update', ['bp-1'], { title: 'T', body: '<p/>' });
       await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow('--version-number');
     });
 

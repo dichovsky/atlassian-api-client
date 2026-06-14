@@ -45,7 +45,7 @@ describe('BlogPostsResource', () => {
       const params = {
         spaceId: 'SPACE',
         title: 'My Post',
-        status: 'current',
+        status: 'current' as const,
         sort: '-created-date' as const,
         'body-format': 'storage' as const,
         limit: 20,
@@ -59,16 +59,18 @@ describe('BlogPostsResource', () => {
       // `spaceId` is the ergonomic public input; the Confluence v2 GET /blogposts
       // query parameter is the kebab-case `space-id` (camelCase `spaceId` is the
       // response-body field and is silently ignored as a query param).
+      // `status` is `type: array` → repeated path param (B1059), not a query param.
       expect(transport.lastCall?.options.query).toMatchObject({
         'space-id': 'SPACE',
         title: 'My Post',
-        status: 'current',
         sort: '-created-date',
         'body-format': 'storage',
         limit: 20,
         cursor: 'tok',
       });
       expect(transport.lastCall?.options.query).not.toHaveProperty('spaceId');
+      expect(transport.lastCall?.options.query).not.toHaveProperty('status');
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/blogposts?status=current`);
     });
 
     it('maps the spaceId filter onto the space-id query param', async () => {
@@ -79,6 +81,22 @@ describe('BlogPostsResource', () => {
       const query = transport.lastCall?.options.query as Record<string, unknown>;
       expect(query['space-id']).toBe('ENG');
       expect(query).not.toHaveProperty('spaceId');
+    });
+
+    it('serializes status array as repeated path params (B1059)', async () => {
+      transport.respondWith({ results: [], _links: {} });
+      await blogPosts.list({ status: ['current', 'trashed'] });
+      expect(transport.lastCall?.options.query).not.toHaveProperty('status');
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/blogposts?status=current&status=trashed`,
+      );
+    });
+
+    it('serializes id array as repeated path params (B1059)', async () => {
+      transport.respondWith({ results: [], _links: {} });
+      await blogPosts.list({ id: ['1', '2', '3'] });
+      expect(transport.lastCall?.options.query).not.toHaveProperty('id');
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/blogposts?id=1&id=2&id=3`);
     });
 
     it('rejects non-positive --limit before the request', async () => {
@@ -197,7 +215,8 @@ describe('BlogPostsResource', () => {
   // ── update ────────────────────────────────────────────────────────────────
 
   describe('update()', () => {
-    it('calls PUT /blogposts/{id} with the provided body', async () => {
+    it('calls PUT /blogposts/{id} with the provided body including required body field', async () => {
+      // `body` is required by the Confluence spec (BlogPostUpdateRequest required array).
       // Arrange
       const updated = makeBlogPost('5');
       transport.respondWith(updated);
@@ -206,6 +225,7 @@ describe('BlogPostsResource', () => {
         title: 'Updated Post',
         status: 'current' as const,
         version: { number: 2 },
+        body: { representation: 'storage' as const, value: '<p>updated</p>' },
       };
 
       // Act
@@ -221,7 +241,24 @@ describe('BlogPostsResource', () => {
     });
   });
 
-  // ── delete ────────────────────────────────────────────────────────────────
+  // ── create (B1059: private query param) ──────────────────────────────────
+
+  describe('create() private param', () => {
+    it('sends private=true as a query param when specified (B1059)', async () => {
+      transport.respondWith(makeBlogPost('new'));
+      await blogPosts.create({ spaceId: 'S', title: 'Private Post' }, { private: true });
+      expect(transport.lastCall?.options.query).toMatchObject({ private: true });
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/blogposts`);
+    });
+
+    it('omits query entirely when no params are passed', async () => {
+      transport.respondWith(makeBlogPost('new'));
+      await blogPosts.create({ spaceId: 'S', title: 'Public Post' });
+      expect(transport.lastCall?.options.query).toBeUndefined();
+    });
+  });
+
+  // ── delete (B1059: purge / draft query params) ────────────────────────────
 
   describe('delete()', () => {
     it('calls DELETE /blogposts/{id}', async () => {
@@ -236,6 +273,31 @@ describe('BlogPostsResource', () => {
         method: 'DELETE',
         path: `${BASE_URL}/blogposts/7`,
       });
+    });
+
+    it('sends purge=true as a query param (B1059)', async () => {
+      transport.respondWith(undefined);
+      await blogPosts.delete('7', { purge: true });
+      expect(transport.lastCall?.options.query).toMatchObject({ purge: true });
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/blogposts/7`);
+    });
+
+    it('sends draft=true as a query param (B1059)', async () => {
+      transport.respondWith(undefined);
+      await blogPosts.delete('7', { draft: true });
+      expect(transport.lastCall?.options.query).toMatchObject({ draft: true });
+    });
+
+    it('sends both purge and draft together', async () => {
+      transport.respondWith(undefined);
+      await blogPosts.delete('7', { purge: true, draft: true });
+      expect(transport.lastCall?.options.query).toMatchObject({ purge: true, draft: true });
+    });
+
+    it('omits query entirely when no params are passed', async () => {
+      transport.respondWith(undefined);
+      await blogPosts.delete('7');
+      expect(transport.lastCall?.options.query).toBeUndefined();
     });
   });
 

@@ -73,10 +73,17 @@ export class PagesResource {
   /** List pages with optional filtering. */
   async list(params?: ListPagesParams): Promise<CursorPaginatedResponse<Page>> {
     if (params?.limit !== undefined) validatePageSize(params.limit, 'limit');
+    // `id` and `status` are `type: array` → repeated path params (B1059).
+    const id = params?.id;
+    const status = params?.status;
+    const rest = params !== undefined ? (({ id: _i, status: _s, ...r }) => r)(params) : undefined;
+    let path = `${this.baseUrl}/pages`;
+    path = appendScalarOrArrayParam(path, 'id', id);
+    path = appendScalarOrArrayParam(path, 'status', status);
     const response = await this.transport.request<CursorPaginatedResponse<Page>>({
       method: 'GET',
-      path: `${this.baseUrl}/pages`,
-      query: withSpaceIdParam(params),
+      path,
+      query: withSpaceIdParam(rest),
     });
     return response.data;
   }
@@ -122,7 +129,14 @@ export class PagesResource {
 
   /** Iterate over all pages across all result pages. */
   async *listAll(params?: Omit<ListPagesParams, 'cursor'>): AsyncGenerator<Page> {
-    yield* paginateCursor<Page>(this.transport, `${this.baseUrl}/pages`, withSpaceIdParam(params));
+    // `id` and `status` are `type: array` → repeated path params (B1059).
+    const id = params?.id;
+    const status = params?.status;
+    const rest = params !== undefined ? (({ id: _i, status: _s, ...r }) => r)(params) : undefined;
+    let basePath = `${this.baseUrl}/pages`;
+    basePath = appendScalarOrArrayParam(basePath, 'id', id);
+    basePath = appendScalarOrArrayParam(basePath, 'status', status);
+    yield* paginateCursor<Page>(this.transport, basePath, withSpaceIdParam(rest));
   }
 
   // ── hierarchy ─────────────────────────────────────────────────────────────

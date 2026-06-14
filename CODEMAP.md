@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "2.0.0"
   },
-  "sourceHash": "a7e403a704f94e72227d0fb82b248a8bebe3a49b960ddfdfeadb0ee17a1f2288",
+  "sourceHash": "250cfc25c6209e9267074fbbbf34c016b990409675d5ec23a1e12910b9700a5c",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -108,7 +108,7 @@
       "name": "AttachmentStatus",
       "kind": "type",
       "file": "src/confluence/types/common.ts",
-      "line": 66,
+      "line": 70,
       "signature": "export type AttachmentStatus = 'current' | 'archived' | 'trashed';",
       "jsdoc": "Status filter accepted by `GET /attachments`. Mirrors the OpenAPI `ContentStatus` enum subset (`current`, `archived`, `trashed`).",
       "typeOnly": true
@@ -170,16 +170,16 @@
       "name": "BlogPost",
       "kind": "interface",
       "file": "src/confluence/types/blog-posts.ts",
-      "line": 17,
-      "signature": "export interface BlogPost { readonly id: string; readonly status: string; readonly title: string; readonly spaceId: stri…",
-      "jsdoc": "Confluence Blog Post.",
+      "line": 37,
+      "signature": "export interface BlogPost { readonly id: string; readonly status: BlogPostContentStatus; readonly title: string; readonl…",
+      "jsdoc": "Confluence Blog Post. Covers fields from both `BlogPostBulk` and `BlogPostSingle` schemas.",
       "typeOnly": true
     },
     {
       "name": "BlogPostBodyRepresentation",
       "kind": "type",
       "file": "src/confluence/types/blog-posts.ts",
-      "line": 67,
+      "line": 130,
       "signature": "export type BlogPostBodyRepresentation = | 'storage' | 'atlas_doc_format' | 'view' | 'export_view' | 'anonymous_export_v…",
       "jsdoc": "Primary body representation accepted by `GET /blogposts/{id}` — mirrors the spec's `PrimaryBodyRepresentationSingle` enum.",
       "typeOnly": true
@@ -188,7 +188,7 @@
       "name": "BlogPostLikeUser",
       "kind": "interface",
       "file": "src/confluence/types/blog-posts.ts",
-      "line": 178,
+      "line": 241,
       "signature": "export interface BlogPostLikeUser { readonly accountId?: string; }",
       "jsdoc": "Entry returned by `GET /blogposts/{id}/likes/users` (Atlassian `Like` schema).",
       "typeOnly": true
@@ -197,7 +197,7 @@
       "name": "BlogPostLikesCount",
       "kind": "interface",
       "file": "src/confluence/types/blog-posts.ts",
-      "line": 173,
+      "line": 236,
       "signature": "export interface BlogPostLikesCount { readonly count?: number; }",
       "jsdoc": "Response shape for `GET /blogposts/{id}/likes/count`.",
       "typeOnly": true
@@ -206,7 +206,7 @@
       "name": "BlogPostLookupStatus",
       "kind": "type",
       "file": "src/confluence/types/blog-posts.ts",
-      "line": 80,
+      "line": 143,
       "signature": "export type BlogPostLookupStatus = 'current' | 'trashed' | 'deleted' | 'historical' | 'draft';",
       "jsdoc": "Status filter accepted by `GET /blogposts/{id}` — mirrors the spec's `ContentStatus` array values for blog-post lookups.",
       "typeOnly": true
@@ -215,7 +215,7 @@
       "name": "BlogPostOperation",
       "kind": "interface",
       "file": "src/confluence/types/blog-posts.ts",
-      "line": 183,
+      "line": 246,
       "signature": "export interface BlogPostOperation { readonly operation?: string; readonly targetType?: string; }",
       "jsdoc": "Permitted operation entry returned by `GET /blogposts/{id}/operations`.",
       "typeOnly": true
@@ -224,7 +224,7 @@
       "name": "BlogPostOperationsResponse",
       "kind": "interface",
       "file": "src/confluence/types/blog-posts.ts",
-      "line": 189,
+      "line": 252,
       "signature": "export interface BlogPostOperationsResponse { readonly operations?: readonly BlogPostOperation[]; }",
       "jsdoc": "Response shape for `GET /blogposts/{id}/operations`.",
       "typeOnly": true
@@ -431,7 +431,7 @@
       "name": "ChildPage",
       "kind": "interface",
       "file": "src/confluence/types/pages.ts",
-      "line": 163,
+      "line": 261,
       "signature": "export interface ChildPage { readonly id: string; readonly status?: 'current' | 'archived'; readonly title?: string; rea…",
       "jsdoc": "Child-page entry returned by `GET /pages/{id}/children`.",
       "typeOnly": true
@@ -440,7 +440,7 @@
       "name": "ChildPageSortOrder",
       "kind": "type",
       "file": "src/confluence/types/pages.ts",
-      "line": 152,
+      "line": 250,
       "signature": "export type ChildPageSortOrder = | 'created-date' | '-created-date' | 'id' | '-id' | 'child-position' | '-child-position…",
       "jsdoc": "Sort tokens accepted by `GET /pages/{id}/children`. Mirrors the OpenAPI `ChildPageSortOrder` enum — narrower than `ContentSortOrder` (no `title`).",
       "typeOnly": true
@@ -484,7 +484,7 @@
       "name": "CommentSortOrder",
       "kind": "type",
       "file": "src/confluence/types/common.ts",
-      "line": 40,
+      "line": 44,
       "signature": "export type CommentSortOrder = | 'created-date' | '-created-date' | 'modified-date' | '-modified-date';",
       "jsdoc": "Sort tokens accepted by the footer/inline comment list endpoints. Default direction is ascending; prefix with `-` for descending. Mirrors the OpenAPI `CommentSortOrder` enum.",
       "typeOnly": true
@@ -493,8 +493,8 @@
       "name": "CommentStatus",
       "kind": "type",
       "file": "src/confluence/types/common.ts",
-      "line": 115,
-      "signature": "export type CommentStatus = 'current' | 'deleted' | 'trashed' | 'historical' | 'draft';",
+      "line": 119,
+      "signature": "export type CommentStatus = 'current' | 'archived' | 'deleted' | 'trashed' | 'historical' | 'draft';",
       "jsdoc": "Status filter accepted by comment list endpoints on pages / blog posts. Mirrors the OpenAPI `ContentStatus` enum subset used by the comment collections (`current`, `deleted`, `trashed`, `historical`, `draft`).",
       "typeOnly": true
     },
@@ -520,7 +520,7 @@
       "name": "ConfluenceAttachmentSortOrder",
       "kind": "type",
       "file": "src/confluence/types/common.ts",
-      "line": 56,
+      "line": 60,
       "signature": "export type AttachmentSortOrder = | 'modified-date' | '-modified-date' | 'created-date' | '-created-date';",
       "jsdoc": "Sort tokens accepted by attachment list endpoints. Mirrors the OpenAPI `AttachmentSortOrder` enum.",
       "typeOnly": true,
@@ -530,7 +530,7 @@
       "name": "ConfluenceBlogPostSortOrder",
       "kind": "type",
       "file": "src/confluence/types/common.ts",
-      "line": 167,
+      "line": 171,
       "signature": "export type BlogPostSortOrder = | 'id' | '-id' | 'created-date' | '-created-date' | 'modified-date' | '-modified-date';",
       "jsdoc": "Sort tokens accepted by `GET /labels/{id}/blogposts`. The default direction is ascending; prefix with `-` for descending. Matches the OpenAPI `BlogPostSortOrder` enum.",
       "typeOnly": true,
@@ -577,7 +577,7 @@
       "name": "ConfluencePageSortOrder",
       "kind": "type",
       "file": "src/confluence/types/common.ts",
-      "line": 180,
+      "line": 184,
       "signature": "export type PageSortOrder = | 'id' | '-id' | 'created-date' | '-created-date' | 'modified-date' | '-modified-date' | 'ti…",
       "jsdoc": "Sort tokens accepted by `GET /labels/{id}/pages`. The default direction is ascending; prefix with `-` for descending. Matches the OpenAPI `PageSortOrder` enum.",
       "typeOnly": true,
@@ -615,8 +615,8 @@
       "kind": "interface",
       "file": "src/confluence/types/common.ts",
       "line": 2,
-      "signature": "export interface ConfluenceVersion { readonly number: number; readonly message?: string; readonly createdAt?: string; }",
-      "jsdoc": "Version information for Confluence content.",
+      "signature": "export interface ConfluenceVersion { readonly number: number; readonly message?: string; readonly createdAt?: string; re…",
+      "jsdoc": "Version information for Confluence content. Mirrors the OpenAPI `Version` schema.",
       "typeOnly": true
     },
     {
@@ -632,7 +632,7 @@
       "name": "ContentProperty",
       "kind": "interface",
       "file": "src/confluence/types/common.ts",
-      "line": 28,
+      "line": 32,
       "signature": "export interface ContentProperty { readonly id: string; readonly key: string; readonly value: unknown; readonly version?…",
       "jsdoc": "Confluence Content Property.",
       "typeOnly": true
@@ -641,7 +641,7 @@
       "name": "ContentSortOrder",
       "kind": "type",
       "file": "src/confluence/types/common.ts",
-      "line": 98,
+      "line": 102,
       "signature": "export type ContentSortOrder = | 'created-date' | '-created-date' | 'id' | '-id' | 'modified-date' | '-modified-date' | …",
       "jsdoc": "Sort order tokens accepted by `/databases/{id}/direct-children`. The same vocabulary is documented under the OpenAPI `ContentSortOrder` schema.",
       "typeOnly": true
@@ -677,16 +677,16 @@
       "name": "CreateBlogPostData",
       "kind": "interface",
       "file": "src/confluence/types/blog-posts.ts",
-      "line": 41,
+      "line": 91,
       "signature": "export interface CreateBlogPostData { readonly spaceId: string; readonly title: string; readonly status?: 'current' | 'd…",
-      "jsdoc": "Request body for creating a Confluence blog post.",
+      "jsdoc": "Request body for creating a Confluence blog post (`POST /blogposts`).",
       "typeOnly": true
     },
     {
       "name": "CreateContentPropertyData",
       "kind": "interface",
       "file": "src/confluence/types/common.ts",
-      "line": 157,
+      "line": 161,
       "signature": "export interface CreateContentPropertyData { readonly key: string; readonly value: unknown; }",
       "jsdoc": "Request body for creating a content property on a page.",
       "typeOnly": true
@@ -803,9 +803,9 @@
       "name": "CreatePageData",
       "kind": "interface",
       "file": "src/confluence/types/pages.ts",
-      "line": 52,
+      "line": 134,
       "signature": "export interface CreatePageData { readonly spaceId: string; readonly title: string; readonly parentId?: string; readonly…",
-      "jsdoc": "Request body for creating a Confluence page.",
+      "jsdoc": "Request body for creating a Confluence page (`POST /pages`).",
       "typeOnly": true
     },
     {
@@ -956,7 +956,7 @@
       "name": "CustomContentSortOrder",
       "kind": "type",
       "file": "src/confluence/types/common.ts",
-      "line": 84,
+      "line": 88,
       "signature": "export type CustomContentSortOrder = | 'id' | '-id' | 'created-date' | '-created-date' | 'modified-date' | '-modified-da…",
       "jsdoc": "Sort tokens accepted by `GET /blogposts/{id}/custom-content`. Mirrors the OpenAPI `CustomContentSortOrder` enum.",
       "typeOnly": true
@@ -1100,7 +1100,7 @@
       "name": "DeletePageParams",
       "kind": "interface",
       "file": "src/confluence/types/pages.ts",
-      "line": 80,
+      "line": 179,
       "signature": "export interface DeletePageParams { readonly purge?: boolean; readonly draft?: boolean; }",
       "jsdoc": "Parameters for deleting a Confluence page.",
       "typeOnly": true
@@ -1378,7 +1378,7 @@
       "name": "GetBlogPostClassificationLevelParams",
       "kind": "interface",
       "file": "src/confluence/types/blog-posts.ts",
-      "line": 168,
+      "line": 231,
       "signature": "export interface GetBlogPostClassificationLevelParams { readonly status?: 'current' | 'draft' | 'archived'; }",
       "jsdoc": "Parameters for `GET /blogposts/{id}/classification-level`.",
       "typeOnly": true
@@ -1387,7 +1387,7 @@
       "name": "GetBlogPostParams",
       "kind": "interface",
       "file": "src/confluence/types/blog-posts.ts",
-      "line": 89,
+      "line": 152,
       "signature": "export interface GetBlogPostParams { readonly 'body-format'?: BlogPostBodyRepresentation; readonly 'get-draft'?: boolean…",
       "jsdoc": "Parameters for `GET /blogposts/{id}`. Mirrors `getBlogPostById` in the v2 OpenAPI spec — every `include-*` flag asks the server to inline an extra sub-resource block on the response (each capped server-side at 50 with a `_links.next` pointer for the full collection). Leaving the flags unset keeps the payload minimal.",
       "typeOnly": true
@@ -1450,7 +1450,7 @@
       "name": "GetPageClassificationLevelParams",
       "kind": "interface",
       "file": "src/confluence/types/pages.ts",
-      "line": 188,
+      "line": 286,
       "signature": "export interface GetPageClassificationLevelParams { readonly status?: 'current' | 'draft' | 'archived'; }",
       "jsdoc": "Parameters for `GET /pages/{id}/classification-level`.",
       "typeOnly": true
@@ -1459,9 +1459,9 @@
       "name": "GetPageParams",
       "kind": "interface",
       "file": "src/confluence/types/pages.ts",
-      "line": 42,
-      "signature": "export interface GetPageParams { readonly 'body-format'?: BodyFormat; readonly 'include-labels'?: boolean; readonly 'inc…",
-      "jsdoc": "Parameters for retrieving a single Confluence page.",
+      "line": 93,
+      "signature": "export interface GetPageParams { readonly 'body-format'?: | 'storage' | 'atlas_doc_format' | 'view' | 'export_view' | 'a…",
+      "jsdoc": "Parameters for retrieving a single Confluence page (`GET /pages/{id}`).",
       "typeOnly": true
     },
     {
@@ -1547,7 +1547,7 @@
       "name": "InlineCommentResolutionStatus",
       "kind": "type",
       "file": "src/confluence/types/common.ts",
-      "line": 121,
+      "line": 125,
       "signature": "export type InlineCommentResolutionStatus = 'resolved' | 'open' | 'dangling' | 'reopened';",
       "jsdoc": "Resolution-status filter accepted by `GET /blogposts/{id}/inline-comments` (and the page counterpart). Spec: enum {resolved, open, dangling, reopened}.",
       "typeOnly": true
@@ -1655,7 +1655,7 @@
       "name": "Label",
       "kind": "interface",
       "file": "src/confluence/types/common.ts",
-      "line": 21,
+      "line": 25,
       "signature": "export interface Label { readonly id: string; readonly name: string; readonly prefix?: string; }",
       "jsdoc": "Confluence Label.",
       "typeOnly": true
@@ -1664,7 +1664,7 @@
       "name": "LabelPrefix",
       "kind": "type",
       "file": "src/confluence/types/common.ts",
-      "line": 72,
+      "line": 76,
       "signature": "export type LabelPrefix = 'my' | 'team' | 'global' | 'system';",
       "jsdoc": "Prefix filter accepted by `GET /attachments/{id}/labels` (and several other label-listing endpoints). Mirrors the OpenAPI `LabelPrefix` enum.",
       "typeOnly": true
@@ -1673,7 +1673,7 @@
       "name": "LabelSortOrder",
       "kind": "type",
       "file": "src/confluence/types/common.ts",
-      "line": 78,
+      "line": 82,
       "signature": "export type LabelSortOrder = 'created-date' | '-created-date' | 'id' | '-id' | 'name' | '-name';",
       "jsdoc": "Sort tokens accepted by `GET /labels`. The default direction is ascending; prefix with `-` for descending. Matches the OpenAPI `LabelSortOrder` enum.",
       "typeOnly": true
@@ -1745,7 +1745,7 @@
       "name": "ListBlogPostAttachmentsParams",
       "kind": "interface",
       "file": "src/confluence/types/blog-posts.ts",
-      "line": 106,
+      "line": 169,
       "signature": "export interface ListBlogPostAttachmentsParams { readonly sort?: AttachmentSortOrder; readonly cursor?: string; readonly…",
       "jsdoc": "Parameters for `GET /blogposts/{id}/attachments`.",
       "typeOnly": true
@@ -1754,7 +1754,7 @@
       "name": "ListBlogPostCustomContentParams",
       "kind": "interface",
       "file": "src/confluence/types/blog-posts.ts",
-      "line": 145,
+      "line": 208,
       "signature": "export interface ListBlogPostCustomContentParams { readonly type: string; readonly sort?: CustomContentSortOrder; readon…",
       "jsdoc": "Parameters for `GET /blogposts/{id}/custom-content`. The `type` filter is required by the server.",
       "typeOnly": true
@@ -1763,7 +1763,7 @@
       "name": "ListBlogPostFooterCommentsParams",
       "kind": "interface",
       "file": "src/confluence/types/blog-posts.ts",
-      "line": 116,
+      "line": 179,
       "signature": "export interface ListBlogPostFooterCommentsParams { readonly 'body-format'?: 'storage' | 'atlas_doc_format'; readonly st…",
       "jsdoc": "Parameters for `GET /blogposts/{id}/footer-comments`.",
       "typeOnly": true
@@ -1772,7 +1772,7 @@
       "name": "ListBlogPostInlineCommentsParams",
       "kind": "interface",
       "file": "src/confluence/types/blog-posts.ts",
-      "line": 125,
+      "line": 188,
       "signature": "export interface ListBlogPostInlineCommentsParams { readonly 'body-format'?: 'storage' | 'atlas_doc_format'; readonly st…",
       "jsdoc": "Parameters for `GET /blogposts/{id}/inline-comments`.",
       "typeOnly": true
@@ -1781,7 +1781,7 @@
       "name": "ListBlogPostLabelsParams",
       "kind": "interface",
       "file": "src/confluence/types/blog-posts.ts",
-      "line": 137,
+      "line": 200,
       "signature": "export interface ListBlogPostLabelsParams { readonly prefix?: 'my' | 'team' | 'global' | 'system'; readonly sort?: Label…",
       "jsdoc": "Parameters for `GET /blogposts/{id}/labels`.",
       "typeOnly": true
@@ -1790,7 +1790,7 @@
       "name": "ListBlogPostLikeUsersParams",
       "kind": "interface",
       "file": "src/confluence/types/blog-posts.ts",
-      "line": 154,
+      "line": 217,
       "signature": "export interface ListBlogPostLikeUsersParams { readonly cursor?: string; readonly limit?: number; }",
       "jsdoc": "Parameters for `GET /blogposts/{id}/likes/users`.",
       "typeOnly": true
@@ -1799,7 +1799,7 @@
       "name": "ListBlogPostVersionsParams",
       "kind": "interface",
       "file": "src/confluence/types/blog-posts.ts",
-      "line": 160,
+      "line": 223,
       "signature": "export interface ListBlogPostVersionsParams { readonly 'body-format'?: 'storage' | 'atlas_doc_format'; readonly sort?: V…",
       "jsdoc": "Parameters for `GET /blogposts/{id}/versions`.",
       "typeOnly": true
@@ -1817,9 +1817,9 @@
       "name": "ListBlogPostsParams",
       "kind": "interface",
       "file": "src/confluence/types/blog-posts.ts",
-      "line": 30,
-      "signature": "export interface ListBlogPostsParams { readonly spaceId?: string; readonly title?: string; readonly status?: string; rea…",
-      "jsdoc": "Parameters for listing Confluence blog posts.",
+      "line": 52,
+      "signature": "export interface ListBlogPostsParams { readonly id?: readonly string[]; readonly spaceId?: string; readonly title?: stri…",
+      "jsdoc": "Parameters for listing Confluence blog posts (`GET /blogposts`).",
       "typeOnly": true
     },
     {
@@ -1844,7 +1844,7 @@
       "name": "ListChildPagesParams",
       "kind": "interface",
       "file": "src/confluence/types/pages.ts",
-      "line": 172,
+      "line": 270,
       "signature": "export interface ListChildPagesParams { readonly cursor?: string; readonly limit?: number; readonly sort?: ChildPageSort…",
       "jsdoc": "Parameters for listing child pages (cursor-paginated).",
       "typeOnly": true
@@ -2159,7 +2159,7 @@
       "name": "ListPageAncestorsParams",
       "kind": "interface",
       "file": "src/confluence/types/pages.ts",
-      "line": 104,
+      "line": 202,
       "signature": "export interface ListPageAncestorsParams { readonly limit?: number; }",
       "jsdoc": "Parameters for listing page ancestors.",
       "typeOnly": true
@@ -2168,7 +2168,7 @@
       "name": "ListPageCustomContentParams",
       "kind": "interface",
       "file": "src/confluence/types/pages.ts",
-      "line": 179,
+      "line": 277,
       "signature": "export interface ListPageCustomContentParams { readonly type: string; readonly sort?: CustomContentSortOrder; readonly c…",
       "jsdoc": "Parameters for `GET /pages/{id}/custom-content`. The `type` filter is required by the server.",
       "typeOnly": true
@@ -2177,7 +2177,7 @@
       "name": "ListPageDescendantsParams",
       "kind": "interface",
       "file": "src/confluence/types/pages.ts",
-      "line": 120,
+      "line": 218,
       "signature": "export interface ListPageDescendantsParams { readonly limit?: number; readonly depth?: number; readonly cursor?: string;…",
       "jsdoc": "Parameters for listing page descendants (cursor-paginated).",
       "typeOnly": true
@@ -2186,7 +2186,7 @@
       "name": "ListPageDirectChildrenParams",
       "kind": "interface",
       "file": "src/confluence/types/pages.ts",
-      "line": 142,
+      "line": 240,
       "signature": "export interface ListPageDirectChildrenParams { readonly limit?: number; readonly cursor?: string; readonly sort?: Conte…",
       "jsdoc": "Parameters for listing direct children of a page.",
       "typeOnly": true
@@ -2195,7 +2195,7 @@
       "name": "ListPageFooterCommentsParams",
       "kind": "interface",
       "file": "src/confluence/types/pages.ts",
-      "line": 260,
+      "line": 358,
       "signature": "export interface ListPageFooterCommentsParams { readonly 'body-format'?: 'storage' | 'atlas_doc_format'; readonly status…",
       "jsdoc": "Parameters for `GET /pages/{id}/footer-comments`.",
       "typeOnly": true
@@ -2204,7 +2204,7 @@
       "name": "ListPageInlineCommentsParams",
       "kind": "interface",
       "file": "src/confluence/types/pages.ts",
-      "line": 269,
+      "line": 367,
       "signature": "export interface ListPageInlineCommentsParams { readonly 'body-format'?: 'storage' | 'atlas_doc_format'; readonly status…",
       "jsdoc": "Parameters for `GET /pages/{id}/inline-comments`.",
       "typeOnly": true
@@ -2213,7 +2213,7 @@
       "name": "ListPageLikeUsersParams",
       "kind": "interface",
       "file": "src/confluence/types/pages.ts",
-      "line": 224,
+      "line": 322,
       "signature": "export interface ListPageLikeUsersParams { readonly cursor?: string; readonly limit?: number; }",
       "jsdoc": "Parameters for `GET /pages/{id}/likes/users`.",
       "typeOnly": true
@@ -2231,9 +2231,9 @@
       "name": "ListPagesParams",
       "kind": "interface",
       "file": "src/confluence/types/pages.ts",
-      "line": 32,
-      "signature": "export interface ListPagesParams { readonly spaceId?: string; readonly title?: string; readonly status?: string; readonl…",
-      "jsdoc": "Parameters for listing Confluence pages.",
+      "line": 70,
+      "signature": "export interface ListPagesParams { readonly id?: readonly string[]; readonly spaceId?: string; readonly title?: string; …",
+      "jsdoc": "Parameters for listing Confluence pages (`GET /pages`).",
       "typeOnly": true
     },
     {
@@ -2249,7 +2249,7 @@
       "name": "ListSharedContentPropertiesParams",
       "kind": "interface",
       "file": "src/confluence/types/common.ts",
-      "line": 136,
+      "line": 140,
       "signature": "export interface ListSharedContentPropertiesParams { readonly key?: string; readonly sort?: 'key' | '-key'; readonly cur…",
       "jsdoc": "Parameters for listing content properties on comments, attachments, or databases. Supports optional `sort` and pagination via `cursor` and `limit`.",
       "typeOnly": true
@@ -2525,16 +2525,16 @@
       "name": "Page",
       "kind": "interface",
       "file": "src/confluence/types/pages.ts",
-      "line": 15,
-      "signature": "export interface Page { readonly id: string; readonly status: string; readonly title: string; readonly spaceId: string; …",
-      "jsdoc": "Confluence Page.",
+      "line": 47,
+      "signature": "export interface Page { readonly id: string; readonly status: PageContentStatus; readonly title: string; readonly spaceI…",
+      "jsdoc": "Confluence Page. Covers fields from both `PageBulk` and `PageSingle` schemas.",
       "typeOnly": true
     },
     {
       "name": "PageAncestor",
       "kind": "interface",
       "file": "src/confluence/types/pages.ts",
-      "line": 86,
+      "line": 185,
       "signature": "export interface PageAncestor { readonly id: string; readonly type?: 'page' | 'whiteboard' | 'database' | 'embed' | 'fol…",
       "jsdoc": "Ancestor entry returned by `GET /pages/{id}/ancestors`.",
       "typeOnly": true
@@ -2543,8 +2543,8 @@
       "name": "PageAncestorsResponse",
       "kind": "interface",
       "file": "src/confluence/types/pages.ts",
-      "line": 99,
-      "signature": "export interface PageAncestorsResponse { readonly results: readonly PageAncestor[]; }",
+      "line": 196,
+      "signature": "export interface PageAncestorsResponse { readonly results: readonly PageAncestor[]; readonly _links?: Record<string, str…",
       "jsdoc": "Response shape for `GET /pages/{id}/ancestors`.",
       "typeOnly": true
     },
@@ -2552,7 +2552,7 @@
       "name": "PageChild",
       "kind": "interface",
       "file": "src/confluence/types/pages.ts",
-      "line": 127,
+      "line": 225,
       "signature": "export interface PageChild { readonly id: string; readonly status?: 'current' | 'archived'; readonly title?: string; rea…",
       "jsdoc": "Direct child entry returned by `GET /pages/{id}/direct-children`.",
       "typeOnly": true
@@ -2561,7 +2561,7 @@
       "name": "PageDescendant",
       "kind": "interface",
       "file": "src/confluence/types/pages.ts",
-      "line": 109,
+      "line": 207,
       "signature": "export interface PageDescendant { readonly id: string; readonly status?: 'current' | 'archived'; readonly title?: string…",
       "jsdoc": "Descendant entry returned by `GET /pages/{id}/descendants`.",
       "typeOnly": true
@@ -2570,7 +2570,7 @@
       "name": "PageLikeUser",
       "kind": "interface",
       "file": "src/confluence/types/pages.ts",
-      "line": 219,
+      "line": 317,
       "signature": "export interface PageLikeUser { readonly accountId?: string; }",
       "jsdoc": "Entry returned by `GET /pages/{id}/likes/users` (Atlassian `Like` schema).",
       "typeOnly": true
@@ -2579,7 +2579,7 @@
       "name": "PageLikesCount",
       "kind": "interface",
       "file": "src/confluence/types/pages.ts",
-      "line": 214,
+      "line": 312,
       "signature": "export interface PageLikesCount { readonly count?: number; }",
       "jsdoc": "Response shape for `GET /pages/{id}/likes/count`.",
       "typeOnly": true
@@ -2588,7 +2588,7 @@
       "name": "PageOperation",
       "kind": "interface",
       "file": "src/confluence/types/pages.ts",
-      "line": 230,
+      "line": 328,
       "signature": "export interface PageOperation { readonly operation?: string; readonly targetType?: string; }",
       "jsdoc": "Permitted operation entry returned by `GET /pages/{id}/operations`.",
       "typeOnly": true
@@ -2597,7 +2597,7 @@
       "name": "PageOperationsResponse",
       "kind": "interface",
       "file": "src/confluence/types/pages.ts",
-      "line": 236,
+      "line": 334,
       "signature": "export interface PageOperationsResponse { readonly operations?: readonly PageOperation[]; }",
       "jsdoc": "Response shape for `GET /pages/{id}/operations`.",
       "typeOnly": true
@@ -2693,7 +2693,7 @@
       "name": "RedactBlogPostData",
       "kind": "interface",
       "file": "src/confluence/types/common.ts",
-      "line": 248,
+      "line": 252,
       "signature": "export interface RedactBlogPostData { readonly createdAt: string; readonly cleanHistory?: boolean; readonly versionNumbe…",
       "jsdoc": "Request body for `POST /blogposts/{id}/redact` (shared with page variant). Mirrors the OpenAPI `RedactionRequest` schema; `createdAt` is required so the server can detect stale clients submitting redactions against an outdated version of the content.",
       "typeOnly": true
@@ -2702,7 +2702,7 @@
       "name": "RedactBlogPostResponse",
       "kind": "interface",
       "file": "src/confluence/types/common.ts",
-      "line": 262,
+      "line": 266,
       "signature": "export interface RedactBlogPostResponse { readonly body?: { readonly redactions?: readonly RedactionPointerResponse[] };…",
       "jsdoc": "Response from `POST /blogposts/{id}/redact` — mirrors `RedactionResponse`.",
       "typeOnly": true
@@ -2711,7 +2711,7 @@
       "name": "RedactPageData",
       "kind": "type",
       "file": "src/confluence/types/pages.ts",
-      "line": 241,
+      "line": 339,
       "signature": "export type RedactPageData = RedactBlogPostData;",
       "jsdoc": "Request body for `POST /pages/{id}/redact`. Type-aliased to the shared redaction type.",
       "typeOnly": true
@@ -2720,7 +2720,7 @@
       "name": "RedactPageResponse",
       "kind": "type",
       "file": "src/confluence/types/pages.ts",
-      "line": 244,
+      "line": 342,
       "signature": "export type RedactPageResponse = RedactBlogPostResponse;",
       "jsdoc": "Response from `POST /pages/{id}/redact`. Type-aliased to the shared redaction response type.",
       "typeOnly": true
@@ -2729,7 +2729,7 @@
       "name": "RedactionPointer",
       "kind": "interface",
       "file": "src/confluence/types/common.ts",
-      "line": 219,
+      "line": 223,
       "signature": "export interface RedactionPointer { readonly pointer: string; readonly from?: number; readonly to?: number; readonly rea…",
       "jsdoc": "A single redaction target — mirrors the OpenAPI `RedactionPointer` schema.",
       "typeOnly": true
@@ -2738,7 +2738,7 @@
       "name": "RedactionPointerResponse",
       "kind": "interface",
       "file": "src/confluence/types/common.ts",
-      "line": 235,
+      "line": 239,
       "signature": "export interface RedactionPointerResponse extends RedactionPointer { readonly id?: string; }",
       "jsdoc": "Echo of an applied redaction — server returns the original pointer plus a UUID the caller can use to restore the redaction later (except for code blocks, which the spec calls out as non-restorable).",
       "typeOnly": true
@@ -2783,9 +2783,9 @@
       "name": "ResetBlogPostClassificationLevelData",
       "kind": "interface",
       "file": "src/confluence/types/blog-posts.ts",
-      "line": 210,
-      "signature": "export interface ResetBlogPostClassificationLevelData { readonly status: 'current'; }",
-      "jsdoc": "Request body for `POST /blogposts/{id}/classification-level/reset`. Only `status: \"current\"` is required by the server; the request signals that the blog post should fall back to the space-level default.",
+      "line": 272,
+      "signature": "export interface ResetBlogPostClassificationLevelData { readonly status: 'current' | 'draft'; }",
+      "jsdoc": "Request body for `POST /blogposts/{id}/classification-level/reset`. `status` accepts `\"current\"` or `\"draft\"` per the `ContentClassificationLevelDeleteRequest` spec schema.",
       "typeOnly": true
     },
     {
@@ -2801,7 +2801,7 @@
       "name": "ResetPageClassificationLevelData",
       "kind": "interface",
       "file": "src/confluence/types/pages.ts",
-      "line": 209,
+      "line": 307,
       "signature": "export interface ResetPageClassificationLevelData { readonly status: 'current' | 'draft'; }",
       "jsdoc": "Request body for `POST /pages/{id}/classification-level/reset`. `status` accepts `current` or `draft` — the reset falls back to the space-level default for the chosen revision stream.",
       "typeOnly": true
@@ -2998,7 +2998,7 @@
       "name": "SpaceRoleAssignment",
       "kind": "interface",
       "file": "src/confluence/types/common.ts",
-      "line": 210,
+      "line": 214,
       "signature": "export interface SpaceRoleAssignment { readonly principal: { readonly principalType?: SpaceRolePrincipalType; readonly p…",
       "jsdoc": "A `(principal, roleId)` grant — used both in the `POST /spaces` create payload and as the entry shape inside `POST /spaces/{id}/role-assignments` arrays. Mirrors the spec's `SpaceRoleAssignment` schema and `Principal` subobject.",
       "typeOnly": true
@@ -3025,7 +3025,7 @@
       "name": "SpaceRolePrincipalType",
       "kind": "type",
       "file": "src/confluence/types/common.ts",
-      "line": 200,
+      "line": 204,
       "signature": "export type SpaceRolePrincipalType = 'USER' | 'GROUP' | 'ACCESS_CLASS';",
       "jsdoc": "The principal-type filter accepted by `GET /space-roles`. Restricts the available-roles listing to those compatible with the named principal class.",
       "typeOnly": true
@@ -3034,7 +3034,7 @@
       "name": "SpaceRoleType",
       "kind": "type",
       "file": "src/confluence/types/common.ts",
-      "line": 194,
+      "line": 198,
       "signature": "export type SpaceRoleType = 'SYSTEM' | 'CUSTOM';",
       "jsdoc": "The role type of a {@link SpaceRole}. `SYSTEM` roles are platform-defined and not user-editable; `CUSTOM` roles are created and managed by the tenant.",
       "typeOnly": true
@@ -3096,8 +3096,8 @@
       "name": "UpdateBlogPostClassificationLevelData",
       "kind": "interface",
       "file": "src/confluence/types/blog-posts.ts",
-      "line": 200,
-      "signature": "export interface UpdateBlogPostClassificationLevelData { readonly id: string; readonly status: 'current'; }",
+      "line": 262,
+      "signature": "export interface UpdateBlogPostClassificationLevelData { readonly id: string; readonly status: 'current' | 'draft'; }",
       "jsdoc": "Request body for `PUT /blogposts/{id}/classification-level`.",
       "typeOnly": true
     },
@@ -3105,16 +3105,16 @@
       "name": "UpdateBlogPostData",
       "kind": "interface",
       "file": "src/confluence/types/blog-posts.ts",
-      "line": 52,
+      "line": 108,
       "signature": "export interface UpdateBlogPostData { readonly id: string; readonly title: string; readonly status: 'current' | 'draft';…",
-      "jsdoc": "Request body for updating a Confluence blog post.",
+      "jsdoc": "Request body for updating a Confluence blog post (`PUT /blogposts/{id}`). `body` is required by the spec (`BlogPostUpdateRequest` schema `required` array lists `id`, `status`, `title`, `body`, `version`).",
       "typeOnly": true
     },
     {
       "name": "UpdateCommentData",
       "kind": "interface",
       "file": "src/confluence/types/common.ts",
-      "line": 124,
+      "line": 128,
       "signature": "export interface UpdateCommentData { readonly version: { readonly number: number; readonly message?: string }; readonly …",
       "jsdoc": "Request body for updating an existing comment.",
       "typeOnly": true
@@ -3213,7 +3213,7 @@
       "name": "UpdatePageClassificationLevelData",
       "kind": "interface",
       "file": "src/confluence/types/pages.ts",
-      "line": 199,
+      "line": 297,
       "signature": "export interface UpdatePageClassificationLevelData { readonly id: string; readonly status: 'current' | 'draft'; }",
       "jsdoc": "Request body for `PUT /pages/{id}/classification-level`.",
       "typeOnly": true
@@ -3222,16 +3222,16 @@
       "name": "UpdatePageData",
       "kind": "interface",
       "file": "src/confluence/types/pages.ts",
-      "line": 68,
+      "line": 155,
       "signature": "export interface UpdatePageData { readonly id: string; readonly title: string; readonly status: 'current' | 'draft'; rea…",
-      "jsdoc": "Request body for updating a Confluence page. `body` is required by the spec (`PageUpdateRequest` schema `required` array lists `id`, `status`, `title`, `body`, `version`).",
+      "jsdoc": "Request body for updating a Confluence page (`PUT /pages/{id}`). `body` is required by the spec (`PageUpdateRequest` schema `required` array lists `id`, `status`, `title`, `body`, `version`).",
       "typeOnly": true
     },
     {
       "name": "UpdatePageTitleData",
       "kind": "interface",
       "file": "src/confluence/types/pages.ts",
-      "line": 254,
+      "line": 352,
       "signature": "export interface UpdatePageTitleData { readonly status: 'current' | 'draft'; readonly title: string; }",
       "jsdoc": "Request body for `PUT /pages/{id}/title`.",
       "typeOnly": true
@@ -3240,7 +3240,7 @@
       "name": "UpdateSharedContentPropertyData",
       "kind": "interface",
       "file": "src/confluence/types/common.ts",
-      "line": 150,
+      "line": 154,
       "signature": "export interface UpdateSharedContentPropertyData { readonly key: string; readonly value: unknown; readonly version: { re…",
       "jsdoc": "Request body for updating a content property on comments, attachments, or databases.",
       "typeOnly": true
@@ -3320,7 +3320,7 @@
       "name": "VersionSortOrder",
       "kind": "type",
       "file": "src/confluence/types/common.ts",
-      "line": 50,
+      "line": 54,
       "signature": "export type VersionSortOrder = 'modified-date' | '-modified-date';",
       "jsdoc": "Sort tokens accepted by version list endpoints. Mirrors the OpenAPI `VersionSortOrder` enum — only `modified-date` is sortable.",
       "typeOnly": true
@@ -3636,7 +3636,7 @@
         {
           "name": "executeConfluenceCommand",
           "kind": "function",
-          "line": 31,
+          "line": 32,
           "exported": true,
           "signature": "export async function executeConfluenceCommand( cmd: ParsedCommand, globals: GlobalOptions, ): Promise<unknown>",
           "jsdoc": "Execute a Confluence CLI command. Returns the data to be printed."
@@ -3644,481 +3644,481 @@
         {
           "name": "executePages",
           "kind": "function",
-          "line": 91,
+          "line": 92,
           "signature": "async function executePages(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeSpaces",
           "kind": "function",
-          "line": 363,
+          "line": 364,
           "signature": "async function executeSpaces(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeBlogPosts",
           "kind": "function",
-          "line": 579,
+          "line": 580,
           "signature": "async function executeBlogPosts(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeComments",
           "kind": "function",
-          "line": 834,
+          "line": 837,
           "signature": "async function executeComments(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeAttachments",
           "kind": "function",
-          "line": 949,
+          "line": 952,
           "signature": "async function executeAttachments(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "parseAttachmentStatuses",
           "kind": "function",
-          "line": 1093,
+          "line": 1096,
           "signature": "function parseAttachmentStatuses(raw: string | undefined): readonly AttachmentStatus[] | undefined",
           "jsdoc": "Parse the `--status` CLI flag into a non-empty list of {@link AttachmentStatus} values. Accepts a single value (`current`) or comma-separated (`current,archived`); rejects unknown tokens with the standard `must be one of` error to match other enum flags. Duplicate tokens are collapsed so the wire format never carries `status=a,a`."
         },
         {
           "name": "executeAdminKey",
           "kind": "function",
-          "line": 1109,
+          "line": 1112,
           "signature": "async function executeAdminKey(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeLabels",
           "kind": "function",
-          "line": 1130,
+          "line": 1133,
           "signature": "async function executeLabels(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "normalizeOptionalString",
           "kind": "function",
-          "line": 1216,
+          "line": 1219,
           "signature": "function normalizeOptionalString(value: string | undefined): string | undefined",
           "jsdoc": "Normalize an optional CLI string flag: trim whitespace and collapse the empty case to `undefined`. The resource layer accepts the raw (possibly comma-separated) string and forwards it as a single query value, so we deliberately do not split — we only drop empties so callers can treat \"unset\" and \"blank\" identically."
         },
         {
           "name": "executeApp",
           "kind": "function",
-          "line": 1222,
+          "line": 1225,
           "signature": "async function executeApp(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "parseJsonValue",
           "kind": "function",
-          "line": 1254,
+          "line": 1257,
           "signature": "function parseJsonValue(raw: string): unknown",
           "jsdoc": "Parse `--value` from the CLI as JSON when possible, falling back to the raw string. Confluence app properties accept arbitrary JSON values, so callers should typically pass JSON (e.g. `--value '{\"enabled\":true}'`); a bare unquoted string like `--value hello` is preserved as the string `\"hello\"`."
         },
         {
           "name": "executeClassificationLevels",
           "kind": "function",
-          "line": 1262,
+          "line": 1265,
           "signature": "async function executeClassificationLevels( client: ConfluenceClient, cmd: ParsedCommand, ): Promise<unknown>"
         },
         {
           "name": "executeContent",
           "kind": "function",
-          "line": 1274,
+          "line": 1277,
           "signature": "async function executeContent(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "parseContentIds",
           "kind": "function",
-          "line": 1293,
+          "line": 1296,
           "signature": "function parseContentIds(raw: string): readonly (string | number)[]",
           "jsdoc": "Parse the `--ids` flag into a non-empty array of content ids. Accepts either a JSON array (`'[\"1\",\"2\",3]'`) or a comma-separated string (`\"1,2,3\"`). JSON wins when the raw value parses successfully; otherwise we fall back to splitting on commas. Numeric strings stay strings — the server accepts both forms and we don't want to silently coerce ids that happen to be all-digit."
         },
         {
           "name": "executeCustomContent",
           "kind": "function",
-          "line": 1322,
+          "line": 1325,
           "signature": "async function executeCustomContent( client: ConfluenceClient, cmd: ParsedCommand, ): Promise<unknown>"
         },
         {
           "name": "makeCustomContentBody",
           "kind": "function",
-          "line": 1538,
+          "line": 1541,
           "signature": "function makeCustomContentBody(value: string)",
           "jsdoc": "Build a custom-content body envelope from a raw storage-format string."
         },
         {
           "name": "executeDataPolicies",
           "kind": "function",
-          "line": 1542,
+          "line": 1545,
           "signature": "async function executeDataPolicies(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "parseCsvList",
           "kind": "function",
-          "line": 1570,
+          "line": 1573,
           "signature": "function parseCsvList(raw: string | undefined): readonly string[] | undefined",
           "jsdoc": "Split a comma-separated CLI flag into a trimmed, non-empty array. Returns `undefined` when the input is unset so optional query params drop out cleanly via spread-omit on the call site."
         },
         {
           "name": "executeSpacePermissions",
           "kind": "function",
-          "line": 1579,
+          "line": 1582,
           "signature": "async function executeSpacePermissions( client: ConfluenceClient, cmd: ParsedCommand, ): Promise<unknown>"
         },
         {
           "name": "executeSpaceRoleMode",
           "kind": "function",
-          "line": 1637,
+          "line": 1640,
           "signature": "async function executeSpaceRoleMode( client: ConfluenceClient, cmd: ParsedCommand, ): Promise<unknown>"
         },
         {
           "name": "executeSpaceRoles",
           "kind": "function",
-          "line": 1649,
+          "line": 1652,
           "signature": "async function executeSpaceRoles(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "SPACE_ROLE_TYPES",
           "kind": "variable",
-          "line": 1701,
+          "line": 1704,
           "signature": "const SPACE_ROLE_TYPES: readonly SpaceRoleType[] = ['SYSTEM', 'CUSTOM'];"
         },
         {
           "name": "SPACE_ROLE_PRINCIPAL_TYPES",
           "kind": "variable",
-          "line": 1703,
+          "line": 1706,
           "signature": "const SPACE_ROLE_PRINCIPAL_TYPES: readonly SpaceRolePrincipalType[] = [ 'USER', 'GROUP', 'ACCESS_CLASS', ];"
         },
         {
           "name": "SPACE_BLOG_POST_STATUSES",
           "kind": "variable",
-          "line": 1718,
+          "line": 1721,
           "signature": "const SPACE_BLOG_POST_STATUSES = ['current', 'deleted', 'trashed'] as const;"
         },
         {
           "name": "SPACE_CONTENT_LABEL_PREFIXES",
           "kind": "variable",
-          "line": 1720,
+          "line": 1723,
           "signature": "const SPACE_CONTENT_LABEL_PREFIXES = ['my', 'team'] as const;"
         },
         {
           "name": "SPACE_PAGE_DEPTHS",
           "kind": "variable",
-          "line": 1722,
+          "line": 1725,
           "signature": "const SPACE_PAGE_DEPTHS = ['all', 'root'] as const;"
         },
         {
           "name": "SPACE_PAGE_STATUSES",
           "kind": "variable",
-          "line": 1724,
+          "line": 1727,
           "signature": "const SPACE_PAGE_STATUSES = ['current', 'archived', 'deleted', 'trashed'] as const;"
         },
         {
           "name": "parseSpacePermissions",
           "kind": "function",
-          "line": 1733,
+          "line": 1736,
           "signature": "function parseSpacePermissions(raw: string): readonly string[]",
           "jsdoc": "Split `--space-permissions` from the CLI into a non-empty array. Accepts a comma-separated list of permission ids (e.g. `read/space,write/space`); surrounding whitespace per entry is trimmed and empty entries are dropped. Rejects an all-empty payload with a clear error so callers fail fast before the HTTP round trip."
         },
         {
           "name": "executeTasks",
           "kind": "function",
-          "line": 1744,
+          "line": 1747,
           "signature": "async function executeTasks(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "TASK_STATUSES",
           "kind": "variable",
-          "line": 1780,
+          "line": 1783,
           "signature": "const TASK_STATUSES = ['incomplete', 'complete'] as const;"
         },
         {
           "name": "executeUsers",
           "kind": "function",
-          "line": 1782,
+          "line": 1785,
           "signature": "async function executeUsers(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "parseRequiredCsvList",
           "kind": "function",
-          "line": 1807,
+          "line": 1810,
           "signature": "function parseRequiredCsvList(raw: string, emptyError: string): readonly string[]",
           "jsdoc": "Split a required comma-separated CLI flag into a non-empty, trimmed list. Surrounding whitespace per entry is trimmed and empty entries are dropped; an all-empty payload throws `emptyError` so callers fail fast before the HTTP round trip. Shared by `--emails` (users) and `--account-ids` (users-bulk) so both get identical comma-separated batch semantics."
         },
         {
           "name": "parseEmailList",
           "kind": "function",
-          "line": 1824,
+          "line": 1827,
           "signature": "function parseEmailList(raw: string): readonly string[]",
           "jsdoc": "Parse `--emails` from the CLI into a non-empty list. Mirrors the `--account-ids` parsing used by `users-bulk` so callers get consistent comma-separated batch semantics across both user resources: surrounding whitespace per entry is trimmed and empty entries are dropped."
         },
         {
           "name": "executeUsersBulk",
           "kind": "function",
-          "line": 1828,
+          "line": 1831,
           "signature": "async function executeUsersBulk(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeDatabases",
           "kind": "function",
-          "line": 1843,
+          "line": 1846,
           "signature": "async function executeDatabases(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeEmbeds",
           "kind": "function",
-          "line": 1945,
+          "line": 1948,
           "signature": "async function executeEmbeds(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeFolders",
           "kind": "function",
-          "line": 2028,
+          "line": 2031,
           "signature": "async function executeFolders(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeFooterComments",
           "kind": "function",
-          "line": 2110,
+          "line": 2113,
           "signature": "async function executeFooterComments( client: ConfluenceClient, cmd: ParsedCommand, ): Promise<unknown>"
         },
         {
           "name": "executeInlineComments",
           "kind": "function",
-          "line": 2193,
+          "line": 2196,
           "signature": "async function executeInlineComments( client: ConfluenceClient, cmd: ParsedCommand, ): Promise<unknown>"
         },
         {
           "name": "executeWhiteboards",
           "kind": "function",
-          "line": 2251,
+          "line": 2254,
           "signature": "async function executeWhiteboards(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "requireArg",
           "kind": "function",
-          "line": 2363,
+          "line": 2366,
           "signature": "function requireArg(value: string | undefined, name: string): string"
         },
         {
           "name": "requireOpt",
           "kind": "function",
-          "line": 2368,
+          "line": 2371,
           "signature": "function requireOpt(value: string | boolean | undefined, name: string): string"
         },
         {
           "name": "asString",
           "kind": "function",
-          "line": 2373,
+          "line": 2376,
           "signature": "function asString(value: string | boolean | undefined): string | undefined"
         },
         {
           "name": "asPositiveInt",
           "kind": "function",
-          "line": 2377,
+          "line": 2380,
           "signature": "function asPositiveInt(value: string | boolean | undefined, name: string): number | undefined"
         },
         {
           "name": "requirePositiveInt",
           "kind": "function",
-          "line": 2392,
+          "line": 2395,
           "signature": "function requirePositiveInt(value: string | boolean | undefined, name: string): number",
           "jsdoc": "Like {@link asPositiveInt} but rejects missing values: requires the flag, then validates it is a positive integer. Returns the parsed number. The thrown message matches the hand-rolled sites it replaces (`<name> must be a positive integer, got: <value>`)."
         },
         {
           "name": "asDepth",
           "kind": "function",
-          "line": 2405,
+          "line": 2408,
           "signature": "function asDepth(value: string | boolean | undefined): number | undefined",
           "jsdoc": "Validate depth parameter for descendant/child queries (must be 1–10 per spec). Returns `undefined` when unset, otherwise validates and returns the integer."
         },
         {
           "name": "asEnum",
           "kind": "function",
-          "line": 2419,
+          "line": 2422,
           "signature": "function asEnum<T extends string>( value: string | boolean | undefined, allowed: readonly T[], flagName: string, ): T | …",
           "jsdoc": "Narrow a free-form CLI string to a typed enum, rejecting anything outside the allowlist with a user-facing error. Returns `undefined` when the flag is unset so callers can use spread-omit on optional query keys."
         },
         {
           "name": "asEnumArray",
           "kind": "function",
-          "line": 2437,
+          "line": 2440,
           "signature": "function asEnumArray<T extends string>( value: string | boolean | undefined, allowed: readonly T[], flagName: string, ):…",
           "jsdoc": "Parse a comma-separated CLI value into a typed enum array. Each comma-split token is validated against the allowlist; an empty or missing input returns `undefined` so callers can spread-omit the key. Use for query params that the spec models as `array<enum>` (e.g. attachment `status`)."
         },
         {
           "name": "requireEnum",
           "kind": "function",
-          "line": 2461,
+          "line": 2464,
           "signature": "function requireEnum<T extends string>( value: string | boolean | undefined, allowed: readonly T[], flagName: string, ):…",
           "jsdoc": "Like `asEnum` but rejects missing values. Use when the flag is required and must come from a fixed allowlist (e.g. `tasks update --status`)."
         },
         {
           "name": "CONTENT_SORT_ORDERS",
           "kind": "variable",
-          "line": 2475,
+          "line": 2478,
           "signature": "const CONTENT_SORT_ORDERS: readonly ContentSortOrder[] = [ 'created-date', '-created-date', 'id', '-id', 'modified-date'…"
         },
         {
           "name": "PROPERTY_SORT_ORDERS",
           "kind": "variable",
-          "line": 2488,
+          "line": 2491,
           "signature": "const PROPERTY_SORT_ORDERS = ['key', '-key'] as const;"
         },
         {
           "name": "COMMENT_SORT_ORDERS",
           "kind": "variable",
-          "line": 2490,
+          "line": 2493,
           "signature": "const COMMENT_SORT_ORDERS: readonly CommentSortOrder[] = [ 'created-date', '-created-date', 'modified-date', '-modified-…"
         },
         {
           "name": "VERSION_SORT_ORDERS",
           "kind": "variable",
-          "line": 2497,
+          "line": 2500,
           "signature": "const VERSION_SORT_ORDERS: readonly VersionSortOrder[] = ['modified-date', '-modified-date'];"
         },
         {
           "name": "DATA_POLICY_SPACE_SORT_ORDERS",
           "kind": "variable",
-          "line": 2499,
+          "line": 2502,
           "signature": "const DATA_POLICY_SPACE_SORT_ORDERS: readonly DataPolicySpaceSortOrder[] = [ 'id', '-id', 'key', '-key', 'name', '-name'…"
         },
         {
           "name": "LABEL_SORT_ORDERS",
           "kind": "variable",
-          "line": 2508,
+          "line": 2511,
           "signature": "const LABEL_SORT_ORDERS: readonly LabelSortOrder[] = [ 'created-date', '-created-date', 'id', '-id', 'name', '-name', ];"
         },
         {
           "name": "ATTACHMENT_SORT_ORDERS",
           "kind": "variable",
-          "line": 2517,
+          "line": 2520,
           "signature": "const ATTACHMENT_SORT_ORDERS: readonly AttachmentSortOrder[] = [ 'created-date', '-created-date', 'modified-date', '-mod…"
         },
         {
           "name": "ATTACHMENT_STATUSES",
           "kind": "variable",
-          "line": 2524,
+          "line": 2527,
           "signature": "const ATTACHMENT_STATUSES: readonly AttachmentStatus[] = ['current', 'archived', 'trashed'];"
         },
         {
           "name": "LABEL_PREFIXES",
           "kind": "variable",
-          "line": 2526,
+          "line": 2529,
           "signature": "const LABEL_PREFIXES: readonly LabelPrefix[] = ['my', 'team', 'global', 'system'];"
         },
         {
           "name": "BLOG_POST_SORT_ORDERS",
           "kind": "variable",
-          "line": 2528,
+          "line": 2531,
           "signature": "const BLOG_POST_SORT_ORDERS: readonly BlogPostSortOrder[] = [ 'id', '-id', 'created-date', '-created-date', 'modified-da…"
         },
         {
           "name": "PAGE_SORT_ORDERS",
           "kind": "variable",
-          "line": 2537,
+          "line": 2540,
           "signature": "const PAGE_SORT_ORDERS: readonly PageSortOrder[] = [ 'id', '-id', 'created-date', '-created-date', 'modified-date', '-mo…"
         },
         {
           "name": "CONTENT_BODY_FORMATS",
           "kind": "variable",
-          "line": 2548,
+          "line": 2551,
           "signature": "const CONTENT_BODY_FORMATS = ['storage', 'atlas_doc_format'] as const;"
         },
         {
           "name": "WHITEBOARD_TEMPLATE_KEYS",
           "kind": "variable",
-          "line": 2550,
+          "line": 2553,
           "signature": "const WHITEBOARD_TEMPLATE_KEYS: readonly WhiteboardTemplateKey[] = [ '2x2-prioritization', '4ls-retro', 'annual-calendar…"
         },
         {
           "name": "WHITEBOARD_LOCALES",
           "kind": "variable",
-          "line": 2606,
+          "line": 2609,
           "signature": "const WHITEBOARD_LOCALES: readonly WhiteboardLocale[] = [ 'de-DE', 'cs-CZ', 'ko-KR', 'fr-FR', 'it-IT', 'ja-JP', 'nl-NL',…"
         },
         {
           "name": "CUSTOM_CONTENT_BODY_FORMATS",
           "kind": "variable",
-          "line": 2630,
+          "line": 2633,
           "signature": "const CUSTOM_CONTENT_BODY_FORMATS = ['raw', 'storage', 'atlas_doc_format'] as const;"
         },
         {
           "name": "CUSTOM_CONTENT_BODY_FORMATS_SINGLE",
           "kind": "variable",
-          "line": 2637,
+          "line": 2640,
           "signature": "const CUSTOM_CONTENT_BODY_FORMATS_SINGLE = [ 'raw', 'storage', 'atlas_doc_format', 'view', 'export_view', 'anonymous_exp…",
           "jsdoc": "Extended body-format vocabulary accepted only by `GET /custom-content/{id}` — adds the read-only `view`, `export_view`, and `anonymous_export_view` projections from the spec's `CustomContentBodyRepresentationSingle` enum."
         },
         {
           "name": "CUSTOM_CONTENT_SORT_ORDERS",
           "kind": "variable",
-          "line": 2646,
+          "line": 2649,
           "signature": "const CUSTOM_CONTENT_SORT_ORDERS: readonly CustomContentSortOrder[] = [ 'id', '-id', 'created-date', '-created-date', 'm…"
         },
         {
           "name": "CHILD_CUSTOM_CONTENT_SORT_ORDERS",
           "kind": "variable",
-          "line": 2657,
+          "line": 2660,
           "signature": "const CHILD_CUSTOM_CONTENT_SORT_ORDERS: readonly ChildCustomContentSortOrder[] = [ 'id', '-id', 'created-date', '-create…"
         },
         {
           "name": "COMMENT_STATUSES",
           "kind": "variable",
-          "line": 2666,
+          "line": 2669,
           "signature": "const COMMENT_STATUSES: readonly CommentStatus[] = [ 'current', 'deleted', 'trashed', 'historical', 'draft', ];"
         },
         {
           "name": "INLINE_COMMENT_RESOLUTION_STATUSES",
           "kind": "variable",
-          "line": 2674,
+          "line": 2677,
           "signature": "const INLINE_COMMENT_RESOLUTION_STATUSES: readonly InlineCommentResolutionStatus[] = [ 'resolved', 'open', 'dangling', '…"
         },
         {
           "name": "CLASSIFICATION_STATUS",
           "kind": "variable",
-          "line": 2681,
+          "line": 2684,
           "signature": "const CLASSIFICATION_STATUS = ['current', 'draft', 'archived'] as const;"
         },
         {
           "name": "PAGE_CLASSIFICATION_STATUSES",
           "kind": "variable",
-          "line": 2688,
+          "line": 2691,
           "signature": "const PAGE_CLASSIFICATION_STATUSES = ['current', 'draft'] as const;",
           "jsdoc": "Status enum accepted by `PUT /pages/{id}/classification-level` and the matching reset endpoint — page allows both `current` and `draft` (unlike the blog-post variant which is locked to `current`)."
         },
         {
           "name": "PAGE_TITLE_STATUSES",
           "kind": "variable",
-          "line": 2694,
+          "line": 2697,
           "signature": "const PAGE_TITLE_STATUSES = ['current', 'draft'] as const;",
           "jsdoc": "Status enum accepted by `PUT /pages/{id}/title`. The endpoint targets either the published (`current`) revision or the in-flight `draft`."
         },
         {
           "name": "CHILD_PAGE_SORT_ORDERS",
           "kind": "variable",
-          "line": 2701,
+          "line": 2704,
           "signature": "const CHILD_PAGE_SORT_ORDERS: readonly ChildPageSortOrder[] = [ 'created-date', '-created-date', 'id', '-id', 'child-pos…",
           "jsdoc": "Sort tokens accepted by `GET /pages/{id}/children`. Mirrors the OpenAPI `ChildPageSortOrder` enum — narrower than `ContentSortOrder` (no `title` sort because child-page rows don't reliably carry a title field)."
         },
         {
           "name": "BLOG_POST_LOOKUP_STATUSES",
           "kind": "variable",
-          "line": 2712,
+          "line": 2715,
           "signature": "const BLOG_POST_LOOKUP_STATUSES: readonly BlogPostLookupStatus[] = [ 'current', 'trashed', 'deleted', 'historical', 'dra…"
         },
         {
           "name": "BLOG_POST_BODY_REPRESENTATIONS",
           "kind": "variable",
-          "line": 2720,
+          "line": 2723,
           "signature": "const BLOG_POST_BODY_REPRESENTATIONS: readonly BlogPostBodyRepresentation[] = [ 'storage', 'atlas_doc_format', 'view', '…"
         },
         {
           "name": "makeBody",
           "kind": "function",
-          "line": 2730,
+          "line": 2733,
           "signature": "function makeBody(value: string | undefined)"
         },
         {
           "name": "buildGetBlogPostParams",
           "kind": "function",
-          "line": 2746,
+          "line": 2749,
           "signature": "function buildGetBlogPostParams( opts: Record<string, string | boolean | undefined>, ): GetBlogPostParams | undefined",
           "jsdoc": "Project the CLI flag bag onto a `GetBlogPostParams` query bag. Returns `undefined` when no spec-mapped flag is present so the caller can short-circuit to the no-arg `blogPosts.get(id)` overload (avoids sending an empty `query={}` object to the transport)."
         }
@@ -6257,6 +6257,14 @@
               "original": "BlogPostBodyRepresentation"
             },
             {
+              "exported": "BlogPostBodyWriteRepresentation",
+              "original": "BlogPostBodyWriteRepresentation"
+            },
+            {
+              "exported": "BlogPostContentStatus",
+              "original": "BlogPostContentStatus"
+            },
+            {
               "exported": "BlogPostLikeUser",
               "original": "BlogPostLikeUser"
             },
@@ -6279,6 +6287,14 @@
             {
               "exported": "CreateBlogPostData",
               "original": "CreateBlogPostData"
+            },
+            {
+              "exported": "CreateBlogPostParams",
+              "original": "CreateBlogPostParams"
+            },
+            {
+              "exported": "DeleteBlogPostParams",
+              "original": "DeleteBlogPostParams"
             },
             {
               "exported": "GetBlogPostClassificationLevelParams",
@@ -7013,6 +7029,10 @@
               "original": "ListPagesParams"
             },
             {
+              "exported": "ListPagesSortOrder",
+              "original": "ListPagesSortOrder"
+            },
+            {
               "exported": "Page",
               "original": "Page"
             },
@@ -7025,8 +7045,16 @@
               "original": "PageAncestorsResponse"
             },
             {
+              "exported": "PageBodyWriteRepresentation",
+              "original": "PageBodyWriteRepresentation"
+            },
+            {
               "exported": "PageChild",
               "original": "PageChild"
+            },
+            {
+              "exported": "PageContentStatus",
+              "original": "PageContentStatus"
             },
             {
               "exported": "PageDescendant",
@@ -7720,7 +7748,7 @@
         {
           "name": "BlogPostsResource",
           "kind": "class",
-          "line": 58,
+          "line": 60,
           "exported": true,
           "signature": "export class BlogPostsResource",
           "jsdoc": "Resource for Confluence v2 blog posts.",
@@ -7728,187 +7756,187 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 59
+              "line": 61
             },
             {
               "name": "list",
               "kind": "method",
-              "line": 67
+              "line": 69
             },
             {
               "name": "get",
               "kind": "method",
-              "line": 88
+              "line": 97
             },
             {
               "name": "create",
               "kind": "method",
-              "line": 134
+              "line": 143
             },
             {
               "name": "update",
               "kind": "method",
-              "line": 144
+              "line": 156
             },
             {
               "name": "delete",
               "kind": "method",
-              "line": 154
+              "line": 166
             },
             {
               "name": "listAll",
               "kind": "method",
-              "line": 162
+              "line": 178
             },
             {
               "name": "listProperties",
               "kind": "method",
-              "line": 186
+              "line": 205
             },
             {
               "name": "listPropertiesAll",
               "kind": "method",
-              "line": 210
+              "line": 229
             },
             {
               "name": "createProperty",
               "kind": "method",
-              "line": 231
+              "line": 250
             },
             {
               "name": "getProperty",
               "kind": "method",
-              "line": 248
+              "line": 267
             },
             {
               "name": "updateProperty",
               "kind": "method",
-              "line": 265
+              "line": 284
             },
             {
               "name": "deleteProperty",
               "kind": "method",
-              "line": 283
+              "line": 302
             },
             {
               "name": "listAttachments",
               "kind": "method",
-              "line": 297
+              "line": 316
             },
             {
               "name": "listAttachmentsAll",
               "kind": "method",
-              "line": 319
+              "line": 338
             },
             {
               "name": "getClassificationLevel",
               "kind": "method",
-              "line": 338
+              "line": 357
             },
             {
               "name": "updateClassificationLevel",
               "kind": "method",
-              "line": 360
+              "line": 379
             },
             {
               "name": "resetClassificationLevel",
               "kind": "method",
-              "line": 378
+              "line": 397
             },
             {
               "name": "listCustomContent",
               "kind": "method",
-              "line": 396
+              "line": 415
             },
             {
               "name": "listCustomContentAll",
               "kind": "method",
-              "line": 415
+              "line": 434
             },
             {
               "name": "listFooterComments",
               "kind": "method",
-              "line": 435
+              "line": 454
             },
             {
               "name": "listFooterCommentsAll",
               "kind": "method",
-              "line": 457
+              "line": 476
             },
             {
               "name": "listInlineComments",
               "kind": "method",
-              "line": 476
+              "line": 495
             },
             {
               "name": "listInlineCommentsAll",
               "kind": "method",
-              "line": 498
+              "line": 517
             },
             {
               "name": "getLikeCount",
               "kind": "method",
-              "line": 520
+              "line": 539
             },
             {
               "name": "listLikeUsers",
               "kind": "method",
-              "line": 533
+              "line": 552
             },
             {
               "name": "listLikeUsersAll",
               "kind": "method",
-              "line": 554
+              "line": 573
             },
             {
               "name": "getOperations",
               "kind": "method",
-              "line": 575
+              "line": 594
             },
             {
               "name": "redact",
               "kind": "method",
-              "line": 596
+              "line": 615
             },
             {
               "name": "listLabels",
               "kind": "method",
-              "line": 617
+              "line": 636
             },
             {
               "name": "listLabelsAll",
               "kind": "method",
-              "line": 640
+              "line": 659
             },
             {
               "name": "listVersions",
               "kind": "method",
-              "line": 667
+              "line": 686
             },
             {
               "name": "listVersionsAll",
               "kind": "method",
-              "line": 690
+              "line": 709
             },
             {
               "name": "buildAttachments",
               "kind": "method",
-              "line": 712
+              "line": 731
             },
             {
               "name": "buildComments",
               "kind": "method",
-              "line": 731
+              "line": 750
             },
             {
               "name": "buildInlineComments",
               "kind": "method",
-              "line": 750
+              "line": 769
             },
             {
               "name": "buildCustomContentQuery",
               "kind": "method",
-              "line": 766
+              "line": 785
             }
           ]
         }
@@ -9025,182 +9053,182 @@
             {
               "name": "get",
               "kind": "method",
-              "line": 85
+              "line": 92
             },
             {
               "name": "create",
               "kind": "method",
-              "line": 95
+              "line": 102
             },
             {
               "name": "update",
               "kind": "method",
-              "line": 105
+              "line": 112
             },
             {
               "name": "delete",
               "kind": "method",
-              "line": 115
+              "line": 122
             },
             {
               "name": "listAll",
               "kind": "method",
-              "line": 124
+              "line": 131
             },
             {
               "name": "listAncestors",
               "kind": "method",
-              "line": 139
+              "line": 153
             },
             {
               "name": "listDescendants",
               "kind": "method",
-              "line": 160
+              "line": 174
             },
             {
               "name": "listDescendantsAll",
               "kind": "method",
-              "line": 179
+              "line": 193
             },
             {
               "name": "listDirectChildren",
               "kind": "method",
-              "line": 202
+              "line": 216
             },
             {
               "name": "listDirectChildrenAll",
               "kind": "method",
-              "line": 221
+              "line": 235
             },
             {
               "name": "listChildren",
               "kind": "method",
-              "line": 245
+              "line": 259
             },
             {
               "name": "listChildrenAll",
               "kind": "method",
-              "line": 264
+              "line": 278
             },
             {
               "name": "getClassificationLevel",
               "kind": "method",
-              "line": 286
+              "line": 300
             },
             {
               "name": "updateClassificationLevel",
               "kind": "method",
-              "line": 310
+              "line": 324
             },
             {
               "name": "resetClassificationLevel",
               "kind": "method",
-              "line": 329
+              "line": 343
             },
             {
               "name": "listCustomContent",
               "kind": "method",
-              "line": 347
+              "line": 361
             },
             {
               "name": "listCustomContentAll",
               "kind": "method",
-              "line": 366
+              "line": 380
             },
             {
               "name": "listFooterComments",
               "kind": "method",
-              "line": 391
+              "line": 405
             },
             {
               "name": "listFooterCommentsAll",
               "kind": "method",
-              "line": 409
+              "line": 423
             },
             {
               "name": "listInlineComments",
               "kind": "method",
-              "line": 426
+              "line": 440
             },
             {
               "name": "listInlineCommentsAll",
               "kind": "method",
-              "line": 444
+              "line": 458
             },
             {
               "name": "getLikeCount",
               "kind": "method",
-              "line": 466
+              "line": 480
             },
             {
               "name": "listLikeUsers",
               "kind": "method",
-              "line": 479
+              "line": 493
             },
             {
               "name": "listLikeUsersAll",
               "kind": "method",
-              "line": 500
+              "line": 514
             },
             {
               "name": "getOperations",
               "kind": "method",
-              "line": 521
+              "line": 535
             },
             {
               "name": "redact",
               "kind": "method",
-              "line": 542
+              "line": 556
             },
             {
               "name": "updateTitle",
               "kind": "method",
-              "line": 563
+              "line": 577
             },
             {
               "name": "listProperties",
               "kind": "method",
-              "line": 586
+              "line": 600
             },
             {
               "name": "listPropertiesAll",
               "kind": "method",
-              "line": 610
+              "line": 624
             },
             {
               "name": "createProperty",
               "kind": "method",
-              "line": 631
+              "line": 645
             },
             {
               "name": "getProperty",
               "kind": "method",
-              "line": 645
+              "line": 659
             },
             {
               "name": "updateProperty",
               "kind": "method",
-              "line": 662
+              "line": 676
             },
             {
               "name": "deleteProperty",
               "kind": "method",
-              "line": 680
+              "line": 694
             },
             {
               "name": "buildCustomContentQuery",
               "kind": "method",
-              "line": 690
+              "line": 704
             },
             {
               "name": "buildFooterComments",
               "kind": "method",
-              "line": 706
+              "line": 720
             },
             {
               "name": "buildInlineComments",
               "kind": "method",
-              "line": 725
+              "line": 739
             }
           ]
         }
@@ -10147,41 +10175,73 @@
       "path": "src/confluence/types/blog-posts.ts",
       "symbols": [
         {
+          "name": "BlogPostContentStatus",
+          "kind": "type",
+          "line": 19,
+          "exported": true,
+          "signature": "export type BlogPostContentStatus = | 'current' | 'draft' | 'historical' | 'trashed' | 'deleted' | 'any';",
+          "jsdoc": "Content status enum for Confluence blog posts. Mirrors the OpenAPI `BlogPostContentStatus` schema."
+        },
+        {
+          "name": "BlogPostBodyWriteRepresentation",
+          "kind": "type",
+          "line": 31,
+          "exported": true,
+          "signature": "export type BlogPostBodyWriteRepresentation = 'storage' | 'atlas_doc_format' | 'wiki';",
+          "jsdoc": "Body-write representation accepted by `POST /blogposts` and `PUT /blogposts/{id}`. Mirrors the OpenAPI `BlogPostBodyWrite.representation` enum."
+        },
+        {
           "name": "BlogPost",
           "kind": "interface",
-          "line": 17,
+          "line": 37,
           "exported": true,
-          "signature": "export interface BlogPost { readonly id: string; readonly status: string; readonly title: string; readonly spaceId: stri…",
-          "jsdoc": "Confluence Blog Post."
+          "signature": "export interface BlogPost { readonly id: string; readonly status: BlogPostContentStatus; readonly title: string; readonl…",
+          "jsdoc": "Confluence Blog Post. Covers fields from both `BlogPostBulk` and `BlogPostSingle` schemas."
         },
         {
           "name": "ListBlogPostsParams",
           "kind": "interface",
-          "line": 30,
+          "line": 52,
           "exported": true,
-          "signature": "export interface ListBlogPostsParams { readonly spaceId?: string; readonly title?: string; readonly status?: string; rea…",
-          "jsdoc": "Parameters for listing Confluence blog posts."
+          "signature": "export interface ListBlogPostsParams { readonly id?: readonly string[]; readonly spaceId?: string; readonly title?: stri…",
+          "jsdoc": "Parameters for listing Confluence blog posts (`GET /blogposts`)."
+        },
+        {
+          "name": "CreateBlogPostParams",
+          "kind": "interface",
+          "line": 74,
+          "exported": true,
+          "signature": "export interface CreateBlogPostParams { readonly private?: boolean; }",
+          "jsdoc": "Query parameters for creating a Confluence blog post (`POST /blogposts`)."
+        },
+        {
+          "name": "DeleteBlogPostParams",
+          "kind": "interface",
+          "line": 83,
+          "exported": true,
+          "signature": "export interface DeleteBlogPostParams { readonly purge?: boolean; readonly draft?: boolean; }",
+          "jsdoc": "Query parameters for deleting a Confluence blog post (`DELETE /blogposts/{id}`)."
         },
         {
           "name": "CreateBlogPostData",
           "kind": "interface",
-          "line": 41,
+          "line": 91,
           "exported": true,
           "signature": "export interface CreateBlogPostData { readonly spaceId: string; readonly title: string; readonly status?: 'current' | 'd…",
-          "jsdoc": "Request body for creating a Confluence blog post."
+          "jsdoc": "Request body for creating a Confluence blog post (`POST /blogposts`)."
         },
         {
           "name": "UpdateBlogPostData",
           "kind": "interface",
-          "line": 52,
+          "line": 108,
           "exported": true,
           "signature": "export interface UpdateBlogPostData { readonly id: string; readonly title: string; readonly status: 'current' | 'draft';…",
-          "jsdoc": "Request body for updating a Confluence blog post."
+          "jsdoc": "Request body for updating a Confluence blog post (`PUT /blogposts/{id}`). `body` is required by the spec (`BlogPostUpdateRequest` schema `required` array lists `id`, `status`, `title`, `body`, `version`)."
         },
         {
           "name": "BlogPostBodyRepresentation",
           "kind": "type",
-          "line": 67,
+          "line": 130,
           "exported": true,
           "signature": "export type BlogPostBodyRepresentation = | 'storage' | 'atlas_doc_format' | 'view' | 'export_view' | 'anonymous_export_v…",
           "jsdoc": "Primary body representation accepted by `GET /blogposts/{id}` — mirrors the spec's `PrimaryBodyRepresentationSingle` enum."
@@ -10189,7 +10249,7 @@
         {
           "name": "BlogPostLookupStatus",
           "kind": "type",
-          "line": 80,
+          "line": 143,
           "exported": true,
           "signature": "export type BlogPostLookupStatus = 'current' | 'trashed' | 'deleted' | 'historical' | 'draft';",
           "jsdoc": "Status filter accepted by `GET /blogposts/{id}` — mirrors the spec's `ContentStatus` array values for blog-post lookups."
@@ -10197,7 +10257,7 @@
         {
           "name": "GetBlogPostParams",
           "kind": "interface",
-          "line": 89,
+          "line": 152,
           "exported": true,
           "signature": "export interface GetBlogPostParams { readonly 'body-format'?: BlogPostBodyRepresentation; readonly 'get-draft'?: boolean…",
           "jsdoc": "Parameters for `GET /blogposts/{id}`. Mirrors `getBlogPostById` in the v2 OpenAPI spec — every `include-*` flag asks the server to inline an extra sub-resource block on the response (each capped server-side at 50 with a `_links.next` pointer for the full collection). Leaving the flags unset keeps the payload minimal."
@@ -10205,7 +10265,7 @@
         {
           "name": "ListBlogPostAttachmentsParams",
           "kind": "interface",
-          "line": 106,
+          "line": 169,
           "exported": true,
           "signature": "export interface ListBlogPostAttachmentsParams { readonly sort?: AttachmentSortOrder; readonly cursor?: string; readonly…",
           "jsdoc": "Parameters for `GET /blogposts/{id}/attachments`."
@@ -10213,7 +10273,7 @@
         {
           "name": "ListBlogPostFooterCommentsParams",
           "kind": "interface",
-          "line": 116,
+          "line": 179,
           "exported": true,
           "signature": "export interface ListBlogPostFooterCommentsParams { readonly 'body-format'?: 'storage' | 'atlas_doc_format'; readonly st…",
           "jsdoc": "Parameters for `GET /blogposts/{id}/footer-comments`."
@@ -10221,7 +10281,7 @@
         {
           "name": "ListBlogPostInlineCommentsParams",
           "kind": "interface",
-          "line": 125,
+          "line": 188,
           "exported": true,
           "signature": "export interface ListBlogPostInlineCommentsParams { readonly 'body-format'?: 'storage' | 'atlas_doc_format'; readonly st…",
           "jsdoc": "Parameters for `GET /blogposts/{id}/inline-comments`."
@@ -10229,7 +10289,7 @@
         {
           "name": "ListBlogPostLabelsParams",
           "kind": "interface",
-          "line": 137,
+          "line": 200,
           "exported": true,
           "signature": "export interface ListBlogPostLabelsParams { readonly prefix?: 'my' | 'team' | 'global' | 'system'; readonly sort?: Label…",
           "jsdoc": "Parameters for `GET /blogposts/{id}/labels`."
@@ -10237,7 +10297,7 @@
         {
           "name": "ListBlogPostCustomContentParams",
           "kind": "interface",
-          "line": 145,
+          "line": 208,
           "exported": true,
           "signature": "export interface ListBlogPostCustomContentParams { readonly type: string; readonly sort?: CustomContentSortOrder; readon…",
           "jsdoc": "Parameters for `GET /blogposts/{id}/custom-content`. The `type` filter is required by the server."
@@ -10245,7 +10305,7 @@
         {
           "name": "ListBlogPostLikeUsersParams",
           "kind": "interface",
-          "line": 154,
+          "line": 217,
           "exported": true,
           "signature": "export interface ListBlogPostLikeUsersParams { readonly cursor?: string; readonly limit?: number; }",
           "jsdoc": "Parameters for `GET /blogposts/{id}/likes/users`."
@@ -10253,7 +10313,7 @@
         {
           "name": "ListBlogPostVersionsParams",
           "kind": "interface",
-          "line": 160,
+          "line": 223,
           "exported": true,
           "signature": "export interface ListBlogPostVersionsParams { readonly 'body-format'?: 'storage' | 'atlas_doc_format'; readonly sort?: V…",
           "jsdoc": "Parameters for `GET /blogposts/{id}/versions`."
@@ -10261,7 +10321,7 @@
         {
           "name": "GetBlogPostClassificationLevelParams",
           "kind": "interface",
-          "line": 168,
+          "line": 231,
           "exported": true,
           "signature": "export interface GetBlogPostClassificationLevelParams { readonly status?: 'current' | 'draft' | 'archived'; }",
           "jsdoc": "Parameters for `GET /blogposts/{id}/classification-level`."
@@ -10269,7 +10329,7 @@
         {
           "name": "BlogPostLikesCount",
           "kind": "interface",
-          "line": 173,
+          "line": 236,
           "exported": true,
           "signature": "export interface BlogPostLikesCount { readonly count?: number; }",
           "jsdoc": "Response shape for `GET /blogposts/{id}/likes/count`."
@@ -10277,7 +10337,7 @@
         {
           "name": "BlogPostLikeUser",
           "kind": "interface",
-          "line": 178,
+          "line": 241,
           "exported": true,
           "signature": "export interface BlogPostLikeUser { readonly accountId?: string; }",
           "jsdoc": "Entry returned by `GET /blogposts/{id}/likes/users` (Atlassian `Like` schema)."
@@ -10285,7 +10345,7 @@
         {
           "name": "BlogPostOperation",
           "kind": "interface",
-          "line": 183,
+          "line": 246,
           "exported": true,
           "signature": "export interface BlogPostOperation { readonly operation?: string; readonly targetType?: string; }",
           "jsdoc": "Permitted operation entry returned by `GET /blogposts/{id}/operations`."
@@ -10293,7 +10353,7 @@
         {
           "name": "BlogPostOperationsResponse",
           "kind": "interface",
-          "line": 189,
+          "line": 252,
           "exported": true,
           "signature": "export interface BlogPostOperationsResponse { readonly operations?: readonly BlogPostOperation[]; }",
           "jsdoc": "Response shape for `GET /blogposts/{id}/operations`."
@@ -10301,18 +10361,18 @@
         {
           "name": "UpdateBlogPostClassificationLevelData",
           "kind": "interface",
-          "line": 200,
+          "line": 262,
           "exported": true,
-          "signature": "export interface UpdateBlogPostClassificationLevelData { readonly id: string; readonly status: 'current'; }",
+          "signature": "export interface UpdateBlogPostClassificationLevelData { readonly id: string; readonly status: 'current' | 'draft'; }",
           "jsdoc": "Request body for `PUT /blogposts/{id}/classification-level`."
         },
         {
           "name": "ResetBlogPostClassificationLevelData",
           "kind": "interface",
-          "line": 210,
+          "line": 272,
           "exported": true,
-          "signature": "export interface ResetBlogPostClassificationLevelData { readonly status: 'current'; }",
-          "jsdoc": "Request body for `POST /blogposts/{id}/classification-level/reset`. Only `status: \"current\"` is required by the server; the request signals that the blog post should fall back to the space-level default."
+          "signature": "export interface ResetBlogPostClassificationLevelData { readonly status: 'current' | 'draft'; }",
+          "jsdoc": "Request body for `POST /blogposts/{id}/classification-level/reset`. `status` accepts `\"current\"` or `\"draft\"` per the `ContentClassificationLevelDeleteRequest` spec schema."
         }
       ],
       "imports": [
@@ -10580,13 +10640,13 @@
           "kind": "interface",
           "line": 2,
           "exported": true,
-          "signature": "export interface ConfluenceVersion { readonly number: number; readonly message?: string; readonly createdAt?: string; }",
-          "jsdoc": "Version information for Confluence content."
+          "signature": "export interface ConfluenceVersion { readonly number: number; readonly message?: string; readonly createdAt?: string; re…",
+          "jsdoc": "Version information for Confluence content. Mirrors the OpenAPI `Version` schema."
         },
         {
           "name": "BodyFormat",
           "kind": "type",
-          "line": 9,
+          "line": 13,
           "exported": true,
           "signature": "export type BodyFormat = 'storage' | 'atlas_doc_format' | 'view' | 'raw';",
           "jsdoc": "Body representation format."
@@ -10594,7 +10654,7 @@
         {
           "name": "ContentBody",
           "kind": "interface",
-          "line": 12,
+          "line": 16,
           "exported": true,
           "signature": "export interface ContentBody { readonly storage?: { readonly value: string; readonly representation: 'storage' }; readon…",
           "jsdoc": "Confluence content body."
@@ -10602,7 +10662,7 @@
         {
           "name": "Label",
           "kind": "interface",
-          "line": 21,
+          "line": 25,
           "exported": true,
           "signature": "export interface Label { readonly id: string; readonly name: string; readonly prefix?: string; }",
           "jsdoc": "Confluence Label."
@@ -10610,7 +10670,7 @@
         {
           "name": "ContentProperty",
           "kind": "interface",
-          "line": 28,
+          "line": 32,
           "exported": true,
           "signature": "export interface ContentProperty { readonly id: string; readonly key: string; readonly value: unknown; readonly version?…",
           "jsdoc": "Confluence Content Property."
@@ -10618,7 +10678,7 @@
         {
           "name": "CommentSortOrder",
           "kind": "type",
-          "line": 40,
+          "line": 44,
           "exported": true,
           "signature": "export type CommentSortOrder = | 'created-date' | '-created-date' | 'modified-date' | '-modified-date';",
           "jsdoc": "Sort tokens accepted by the footer/inline comment list endpoints. Default direction is ascending; prefix with `-` for descending. Mirrors the OpenAPI `CommentSortOrder` enum."
@@ -10626,7 +10686,7 @@
         {
           "name": "VersionSortOrder",
           "kind": "type",
-          "line": 50,
+          "line": 54,
           "exported": true,
           "signature": "export type VersionSortOrder = 'modified-date' | '-modified-date';",
           "jsdoc": "Sort tokens accepted by version list endpoints. Mirrors the OpenAPI `VersionSortOrder` enum — only `modified-date` is sortable."
@@ -10634,7 +10694,7 @@
         {
           "name": "AttachmentSortOrder",
           "kind": "type",
-          "line": 56,
+          "line": 60,
           "exported": true,
           "signature": "export type AttachmentSortOrder = | 'modified-date' | '-modified-date' | 'created-date' | '-created-date';",
           "jsdoc": "Sort tokens accepted by attachment list endpoints. Mirrors the OpenAPI `AttachmentSortOrder` enum."
@@ -10642,7 +10702,7 @@
         {
           "name": "AttachmentStatus",
           "kind": "type",
-          "line": 66,
+          "line": 70,
           "exported": true,
           "signature": "export type AttachmentStatus = 'current' | 'archived' | 'trashed';",
           "jsdoc": "Status filter accepted by `GET /attachments`. Mirrors the OpenAPI `ContentStatus` enum subset (`current`, `archived`, `trashed`)."
@@ -10650,7 +10710,7 @@
         {
           "name": "LabelPrefix",
           "kind": "type",
-          "line": 72,
+          "line": 76,
           "exported": true,
           "signature": "export type LabelPrefix = 'my' | 'team' | 'global' | 'system';",
           "jsdoc": "Prefix filter accepted by `GET /attachments/{id}/labels` (and several other label-listing endpoints). Mirrors the OpenAPI `LabelPrefix` enum."
@@ -10658,7 +10718,7 @@
         {
           "name": "LabelSortOrder",
           "kind": "type",
-          "line": 78,
+          "line": 82,
           "exported": true,
           "signature": "export type LabelSortOrder = 'created-date' | '-created-date' | 'id' | '-id' | 'name' | '-name';",
           "jsdoc": "Sort tokens accepted by `GET /labels`. The default direction is ascending; prefix with `-` for descending. Matches the OpenAPI `LabelSortOrder` enum."
@@ -10666,7 +10726,7 @@
         {
           "name": "CustomContentSortOrder",
           "kind": "type",
-          "line": 84,
+          "line": 88,
           "exported": true,
           "signature": "export type CustomContentSortOrder = | 'id' | '-id' | 'created-date' | '-created-date' | 'modified-date' | '-modified-da…",
           "jsdoc": "Sort tokens accepted by `GET /blogposts/{id}/custom-content`. Mirrors the OpenAPI `CustomContentSortOrder` enum."
@@ -10674,7 +10734,7 @@
         {
           "name": "ContentSortOrder",
           "kind": "type",
-          "line": 98,
+          "line": 102,
           "exported": true,
           "signature": "export type ContentSortOrder = | 'created-date' | '-created-date' | 'id' | '-id' | 'modified-date' | '-modified-date' | …",
           "jsdoc": "Sort order tokens accepted by `/databases/{id}/direct-children`. The same vocabulary is documented under the OpenAPI `ContentSortOrder` schema."
@@ -10682,15 +10742,15 @@
         {
           "name": "CommentStatus",
           "kind": "type",
-          "line": 115,
+          "line": 119,
           "exported": true,
-          "signature": "export type CommentStatus = 'current' | 'deleted' | 'trashed' | 'historical' | 'draft';",
+          "signature": "export type CommentStatus = 'current' | 'archived' | 'deleted' | 'trashed' | 'historical' | 'draft';",
           "jsdoc": "Status filter accepted by comment list endpoints on pages / blog posts. Mirrors the OpenAPI `ContentStatus` enum subset used by the comment collections (`current`, `deleted`, `trashed`, `historical`, `draft`)."
         },
         {
           "name": "InlineCommentResolutionStatus",
           "kind": "type",
-          "line": 121,
+          "line": 125,
           "exported": true,
           "signature": "export type InlineCommentResolutionStatus = 'resolved' | 'open' | 'dangling' | 'reopened';",
           "jsdoc": "Resolution-status filter accepted by `GET /blogposts/{id}/inline-comments` (and the page counterpart). Spec: enum {resolved, open, dangling, reopened}."
@@ -10698,7 +10758,7 @@
         {
           "name": "UpdateCommentData",
           "kind": "interface",
-          "line": 124,
+          "line": 128,
           "exported": true,
           "signature": "export interface UpdateCommentData { readonly version: { readonly number: number; readonly message?: string }; readonly …",
           "jsdoc": "Request body for updating an existing comment."
@@ -10706,7 +10766,7 @@
         {
           "name": "ListSharedContentPropertiesParams",
           "kind": "interface",
-          "line": 136,
+          "line": 140,
           "exported": true,
           "signature": "export interface ListSharedContentPropertiesParams { readonly key?: string; readonly sort?: 'key' | '-key'; readonly cur…",
           "jsdoc": "Parameters for listing content properties on comments, attachments, or databases. Supports optional `sort` and pagination via `cursor` and `limit`."
@@ -10714,7 +10774,7 @@
         {
           "name": "UpdateSharedContentPropertyData",
           "kind": "interface",
-          "line": 150,
+          "line": 154,
           "exported": true,
           "signature": "export interface UpdateSharedContentPropertyData { readonly key: string; readonly value: unknown; readonly version: { re…",
           "jsdoc": "Request body for updating a content property on comments, attachments, or databases."
@@ -10722,7 +10782,7 @@
         {
           "name": "CreateContentPropertyData",
           "kind": "interface",
-          "line": 157,
+          "line": 161,
           "exported": true,
           "signature": "export interface CreateContentPropertyData { readonly key: string; readonly value: unknown; }",
           "jsdoc": "Request body for creating a content property on a page."
@@ -10730,7 +10790,7 @@
         {
           "name": "BlogPostSortOrder",
           "kind": "type",
-          "line": 167,
+          "line": 171,
           "exported": true,
           "signature": "export type BlogPostSortOrder = | 'id' | '-id' | 'created-date' | '-created-date' | 'modified-date' | '-modified-date';",
           "jsdoc": "Sort tokens accepted by `GET /labels/{id}/blogposts`. The default direction is ascending; prefix with `-` for descending. Matches the OpenAPI `BlogPostSortOrder` enum."
@@ -10738,7 +10798,7 @@
         {
           "name": "PageSortOrder",
           "kind": "type",
-          "line": 180,
+          "line": 184,
           "exported": true,
           "signature": "export type PageSortOrder = | 'id' | '-id' | 'created-date' | '-created-date' | 'modified-date' | '-modified-date' | 'ti…",
           "jsdoc": "Sort tokens accepted by `GET /labels/{id}/pages`. The default direction is ascending; prefix with `-` for descending. Matches the OpenAPI `PageSortOrder` enum."
@@ -10746,7 +10806,7 @@
         {
           "name": "SpaceRoleType",
           "kind": "type",
-          "line": 194,
+          "line": 198,
           "exported": true,
           "signature": "export type SpaceRoleType = 'SYSTEM' | 'CUSTOM';",
           "jsdoc": "The role type of a {@link SpaceRole}. `SYSTEM` roles are platform-defined and not user-editable; `CUSTOM` roles are created and managed by the tenant."
@@ -10754,7 +10814,7 @@
         {
           "name": "SpaceRolePrincipalType",
           "kind": "type",
-          "line": 200,
+          "line": 204,
           "exported": true,
           "signature": "export type SpaceRolePrincipalType = 'USER' | 'GROUP' | 'ACCESS_CLASS';",
           "jsdoc": "The principal-type filter accepted by `GET /space-roles`. Restricts the available-roles listing to those compatible with the named principal class."
@@ -10762,7 +10822,7 @@
         {
           "name": "SpaceRoleAssignment",
           "kind": "interface",
-          "line": 210,
+          "line": 214,
           "exported": true,
           "signature": "export interface SpaceRoleAssignment { readonly principal: { readonly principalType?: SpaceRolePrincipalType; readonly p…",
           "jsdoc": "A `(principal, roleId)` grant — used both in the `POST /spaces` create payload and as the entry shape inside `POST /spaces/{id}/role-assignments` arrays. Mirrors the spec's `SpaceRoleAssignment` schema and `Principal` subobject."
@@ -10770,7 +10830,7 @@
         {
           "name": "RedactionPointer",
           "kind": "interface",
-          "line": 219,
+          "line": 223,
           "exported": true,
           "signature": "export interface RedactionPointer { readonly pointer: string; readonly from?: number; readonly to?: number; readonly rea…",
           "jsdoc": "A single redaction target — mirrors the OpenAPI `RedactionPointer` schema."
@@ -10778,7 +10838,7 @@
         {
           "name": "RedactionPointerResponse",
           "kind": "interface",
-          "line": 235,
+          "line": 239,
           "exported": true,
           "signature": "export interface RedactionPointerResponse extends RedactionPointer { readonly id?: string; }",
           "jsdoc": "Echo of an applied redaction — server returns the original pointer plus a UUID the caller can use to restore the redaction later (except for code blocks, which the spec calls out as non-restorable)."
@@ -10786,7 +10846,7 @@
         {
           "name": "RedactBlogPostData",
           "kind": "interface",
-          "line": 248,
+          "line": 252,
           "exported": true,
           "signature": "export interface RedactBlogPostData { readonly createdAt: string; readonly cleanHistory?: boolean; readonly versionNumbe…",
           "jsdoc": "Request body for `POST /blogposts/{id}/redact` (shared with page variant). Mirrors the OpenAPI `RedactionRequest` schema; `createdAt` is required so the server can detect stale clients submitting redactions against an outdated version of the content."
@@ -10794,7 +10854,7 @@
         {
           "name": "RedactBlogPostResponse",
           "kind": "interface",
-          "line": 262,
+          "line": 266,
           "exported": true,
           "signature": "export interface RedactBlogPostResponse { readonly body?: { readonly redactions?: readonly RedactionPointerResponse[] };…",
           "jsdoc": "Response from `POST /blogposts/{id}/redact` — mirrors `RedactionResponse`."
@@ -11468,49 +11528,73 @@
       "path": "src/confluence/types/pages.ts",
       "symbols": [
         {
+          "name": "PageContentStatus",
+          "kind": "type",
+          "line": 17,
+          "exported": true,
+          "signature": "export type PageContentStatus = | 'current' | 'draft' | 'archived' | 'historical' | 'trashed' | 'deleted' | 'any';",
+          "jsdoc": "Content status enum for Confluence pages. Mirrors the OpenAPI `ContentStatus` schema. Used for both the `status` field on `Page` and the `status` filter on list/get endpoints."
+        },
+        {
+          "name": "ListPagesSortOrder",
+          "kind": "type",
+          "line": 30,
+          "exported": true,
+          "signature": "export type ListPagesSortOrder = | 'id' | '-id' | 'created-date' | '-created-date' | 'modified-date' | '-modified-date' …",
+          "jsdoc": "Sort tokens accepted by `GET /pages`. Mirrors the OpenAPI `PageSortOrder` enum. Default direction is ascending; prefix with `-` for descending."
+        },
+        {
+          "name": "PageBodyWriteRepresentation",
+          "kind": "type",
+          "line": 44,
+          "exported": true,
+          "signature": "export type PageBodyWriteRepresentation = 'storage' | 'atlas_doc_format' | 'wiki';",
+          "jsdoc": "Body-write representation accepted by `POST /pages` and `PUT /pages/{id}`. Mirrors the OpenAPI `PageBodyWrite.representation` enum."
+        },
+        {
           "name": "Page",
           "kind": "interface",
-          "line": 15,
+          "line": 47,
           "exported": true,
-          "signature": "export interface Page { readonly id: string; readonly status: string; readonly title: string; readonly spaceId: string; …",
-          "jsdoc": "Confluence Page."
+          "signature": "export interface Page { readonly id: string; readonly status: PageContentStatus; readonly title: string; readonly spaceI…",
+          "jsdoc": "Confluence Page. Covers fields from both `PageBulk` and `PageSingle` schemas."
         },
         {
           "name": "ListPagesParams",
           "kind": "interface",
-          "line": 32,
+          "line": 70,
           "exported": true,
-          "signature": "export interface ListPagesParams { readonly spaceId?: string; readonly title?: string; readonly status?: string; readonl…",
-          "jsdoc": "Parameters for listing Confluence pages."
+          "signature": "export interface ListPagesParams { readonly id?: readonly string[]; readonly spaceId?: string; readonly title?: string; …",
+          "jsdoc": "Parameters for listing Confluence pages (`GET /pages`)."
         },
         {
           "name": "GetPageParams",
           "kind": "interface",
-          "line": 42,
+          "line": 93,
           "exported": true,
-          "signature": "export interface GetPageParams { readonly 'body-format'?: BodyFormat; readonly 'include-labels'?: boolean; readonly 'inc…",
-          "jsdoc": "Parameters for retrieving a single Confluence page."
+          "signature": "export interface GetPageParams { readonly 'body-format'?: | 'storage' | 'atlas_doc_format' | 'view' | 'export_view' | 'a…",
+          "jsdoc": "Parameters for retrieving a single Confluence page (`GET /pages/{id}`)."
         },
         {
           "name": "CreatePageData",
           "kind": "interface",
-          "line": 52,
+          "line": 134,
           "exported": true,
           "signature": "export interface CreatePageData { readonly spaceId: string; readonly title: string; readonly parentId?: string; readonly…",
-          "jsdoc": "Request body for creating a Confluence page."
+          "jsdoc": "Request body for creating a Confluence page (`POST /pages`)."
         },
         {
           "name": "UpdatePageData",
           "kind": "interface",
-          "line": 68,
+          "line": 155,
           "exported": true,
           "signature": "export interface UpdatePageData { readonly id: string; readonly title: string; readonly status: 'current' | 'draft'; rea…",
-          "jsdoc": "Request body for updating a Confluence page. `body` is required by the spec (`PageUpdateRequest` schema `required` array lists `id`, `status`, `title`, `body`, `version`)."
+          "jsdoc": "Request body for updating a Confluence page (`PUT /pages/{id}`). `body` is required by the spec (`PageUpdateRequest` schema `required` array lists `id`, `status`, `title`, `body`, `version`)."
         },
         {
           "name": "DeletePageParams",
           "kind": "interface",
-          "line": 80,
+          "line": 179,
           "exported": true,
           "signature": "export interface DeletePageParams { readonly purge?: boolean; readonly draft?: boolean; }",
           "jsdoc": "Parameters for deleting a Confluence page."
@@ -11518,7 +11602,7 @@
         {
           "name": "PageAncestor",
           "kind": "interface",
-          "line": 86,
+          "line": 185,
           "exported": true,
           "signature": "export interface PageAncestor { readonly id: string; readonly type?: 'page' | 'whiteboard' | 'database' | 'embed' | 'fol…",
           "jsdoc": "Ancestor entry returned by `GET /pages/{id}/ancestors`."
@@ -11526,15 +11610,15 @@
         {
           "name": "PageAncestorsResponse",
           "kind": "interface",
-          "line": 99,
+          "line": 196,
           "exported": true,
-          "signature": "export interface PageAncestorsResponse { readonly results: readonly PageAncestor[]; }",
+          "signature": "export interface PageAncestorsResponse { readonly results: readonly PageAncestor[]; readonly _links?: Record<string, str…",
           "jsdoc": "Response shape for `GET /pages/{id}/ancestors`."
         },
         {
           "name": "ListPageAncestorsParams",
           "kind": "interface",
-          "line": 104,
+          "line": 202,
           "exported": true,
           "signature": "export interface ListPageAncestorsParams { readonly limit?: number; }",
           "jsdoc": "Parameters for listing page ancestors."
@@ -11542,7 +11626,7 @@
         {
           "name": "PageDescendant",
           "kind": "interface",
-          "line": 109,
+          "line": 207,
           "exported": true,
           "signature": "export interface PageDescendant { readonly id: string; readonly status?: 'current' | 'archived'; readonly title?: string…",
           "jsdoc": "Descendant entry returned by `GET /pages/{id}/descendants`."
@@ -11550,7 +11634,7 @@
         {
           "name": "ListPageDescendantsParams",
           "kind": "interface",
-          "line": 120,
+          "line": 218,
           "exported": true,
           "signature": "export interface ListPageDescendantsParams { readonly limit?: number; readonly depth?: number; readonly cursor?: string;…",
           "jsdoc": "Parameters for listing page descendants (cursor-paginated)."
@@ -11558,7 +11642,7 @@
         {
           "name": "PageChild",
           "kind": "interface",
-          "line": 127,
+          "line": 225,
           "exported": true,
           "signature": "export interface PageChild { readonly id: string; readonly status?: 'current' | 'archived'; readonly title?: string; rea…",
           "jsdoc": "Direct child entry returned by `GET /pages/{id}/direct-children`."
@@ -11566,7 +11650,7 @@
         {
           "name": "ListPageDirectChildrenParams",
           "kind": "interface",
-          "line": 142,
+          "line": 240,
           "exported": true,
           "signature": "export interface ListPageDirectChildrenParams { readonly limit?: number; readonly cursor?: string; readonly sort?: Conte…",
           "jsdoc": "Parameters for listing direct children of a page."
@@ -11574,7 +11658,7 @@
         {
           "name": "ChildPageSortOrder",
           "kind": "type",
-          "line": 152,
+          "line": 250,
           "exported": true,
           "signature": "export type ChildPageSortOrder = | 'created-date' | '-created-date' | 'id' | '-id' | 'child-position' | '-child-position…",
           "jsdoc": "Sort tokens accepted by `GET /pages/{id}/children`. Mirrors the OpenAPI `ChildPageSortOrder` enum — narrower than `ContentSortOrder` (no `title`)."
@@ -11582,7 +11666,7 @@
         {
           "name": "ChildPage",
           "kind": "interface",
-          "line": 163,
+          "line": 261,
           "exported": true,
           "signature": "export interface ChildPage { readonly id: string; readonly status?: 'current' | 'archived'; readonly title?: string; rea…",
           "jsdoc": "Child-page entry returned by `GET /pages/{id}/children`."
@@ -11590,7 +11674,7 @@
         {
           "name": "ListChildPagesParams",
           "kind": "interface",
-          "line": 172,
+          "line": 270,
           "exported": true,
           "signature": "export interface ListChildPagesParams { readonly cursor?: string; readonly limit?: number; readonly sort?: ChildPageSort…",
           "jsdoc": "Parameters for listing child pages (cursor-paginated)."
@@ -11598,7 +11682,7 @@
         {
           "name": "ListPageCustomContentParams",
           "kind": "interface",
-          "line": 179,
+          "line": 277,
           "exported": true,
           "signature": "export interface ListPageCustomContentParams { readonly type: string; readonly sort?: CustomContentSortOrder; readonly c…",
           "jsdoc": "Parameters for `GET /pages/{id}/custom-content`. The `type` filter is required by the server."
@@ -11606,7 +11690,7 @@
         {
           "name": "GetPageClassificationLevelParams",
           "kind": "interface",
-          "line": 188,
+          "line": 286,
           "exported": true,
           "signature": "export interface GetPageClassificationLevelParams { readonly status?: 'current' | 'draft' | 'archived'; }",
           "jsdoc": "Parameters for `GET /pages/{id}/classification-level`."
@@ -11614,7 +11698,7 @@
         {
           "name": "UpdatePageClassificationLevelData",
           "kind": "interface",
-          "line": 199,
+          "line": 297,
           "exported": true,
           "signature": "export interface UpdatePageClassificationLevelData { readonly id: string; readonly status: 'current' | 'draft'; }",
           "jsdoc": "Request body for `PUT /pages/{id}/classification-level`."
@@ -11622,7 +11706,7 @@
         {
           "name": "ResetPageClassificationLevelData",
           "kind": "interface",
-          "line": 209,
+          "line": 307,
           "exported": true,
           "signature": "export interface ResetPageClassificationLevelData { readonly status: 'current' | 'draft'; }",
           "jsdoc": "Request body for `POST /pages/{id}/classification-level/reset`. `status` accepts `current` or `draft` — the reset falls back to the space-level default for the chosen revision stream."
@@ -11630,7 +11714,7 @@
         {
           "name": "PageLikesCount",
           "kind": "interface",
-          "line": 214,
+          "line": 312,
           "exported": true,
           "signature": "export interface PageLikesCount { readonly count?: number; }",
           "jsdoc": "Response shape for `GET /pages/{id}/likes/count`."
@@ -11638,7 +11722,7 @@
         {
           "name": "PageLikeUser",
           "kind": "interface",
-          "line": 219,
+          "line": 317,
           "exported": true,
           "signature": "export interface PageLikeUser { readonly accountId?: string; }",
           "jsdoc": "Entry returned by `GET /pages/{id}/likes/users` (Atlassian `Like` schema)."
@@ -11646,7 +11730,7 @@
         {
           "name": "ListPageLikeUsersParams",
           "kind": "interface",
-          "line": 224,
+          "line": 322,
           "exported": true,
           "signature": "export interface ListPageLikeUsersParams { readonly cursor?: string; readonly limit?: number; }",
           "jsdoc": "Parameters for `GET /pages/{id}/likes/users`."
@@ -11654,7 +11738,7 @@
         {
           "name": "PageOperation",
           "kind": "interface",
-          "line": 230,
+          "line": 328,
           "exported": true,
           "signature": "export interface PageOperation { readonly operation?: string; readonly targetType?: string; }",
           "jsdoc": "Permitted operation entry returned by `GET /pages/{id}/operations`."
@@ -11662,7 +11746,7 @@
         {
           "name": "PageOperationsResponse",
           "kind": "interface",
-          "line": 236,
+          "line": 334,
           "exported": true,
           "signature": "export interface PageOperationsResponse { readonly operations?: readonly PageOperation[]; }",
           "jsdoc": "Response shape for `GET /pages/{id}/operations`."
@@ -11670,7 +11754,7 @@
         {
           "name": "RedactPageData",
           "kind": "type",
-          "line": 241,
+          "line": 339,
           "exported": true,
           "signature": "export type RedactPageData = RedactBlogPostData;",
           "jsdoc": "Request body for `POST /pages/{id}/redact`. Type-aliased to the shared redaction type."
@@ -11678,7 +11762,7 @@
         {
           "name": "RedactPageResponse",
           "kind": "type",
-          "line": 244,
+          "line": 342,
           "exported": true,
           "signature": "export type RedactPageResponse = RedactBlogPostResponse;",
           "jsdoc": "Response from `POST /pages/{id}/redact`. Type-aliased to the shared redaction response type."
@@ -11686,7 +11770,7 @@
         {
           "name": "UpdatePageTitleData",
           "kind": "interface",
-          "line": 254,
+          "line": 352,
           "exported": true,
           "signature": "export interface UpdatePageTitleData { readonly status: 'current' | 'draft'; readonly title: string; }",
           "jsdoc": "Request body for `PUT /pages/{id}/title`."
@@ -11694,7 +11778,7 @@
         {
           "name": "ListPageFooterCommentsParams",
           "kind": "interface",
-          "line": 260,
+          "line": 358,
           "exported": true,
           "signature": "export interface ListPageFooterCommentsParams { readonly 'body-format'?: 'storage' | 'atlas_doc_format'; readonly status…",
           "jsdoc": "Parameters for `GET /pages/{id}/footer-comments`."
@@ -11702,7 +11786,7 @@
         {
           "name": "ListPageInlineCommentsParams",
           "kind": "interface",
-          "line": 269,
+          "line": 367,
           "exported": true,
           "signature": "export interface ListPageInlineCommentsParams { readonly 'body-format'?: 'storage' | 'atlas_doc_format'; readonly status…",
           "jsdoc": "Parameters for `GET /pages/{id}/inline-comments`."
