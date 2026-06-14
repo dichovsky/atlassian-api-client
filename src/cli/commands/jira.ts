@@ -2869,7 +2869,13 @@ async function executeApp(client: JiraClient, cmd: ParsedCommand): Promise<unkno
       if (fieldIdsOrKeys === undefined) {
         throw new Error('list-field-context-configurations requires --field-ids-or-keys');
       }
-      return client.app.listFieldContextConfigurations({ fieldIdsOrKeys });
+      // `--context-ids` filters by field-context ID via the spec `fieldContextId`
+      // query param (type:array) — NOT a request-body field.
+      const fieldContextId = asIntArray(opts['context-ids'], '--context-ids');
+      return client.app.listFieldContextConfigurations(
+        { fieldIdsOrKeys },
+        fieldContextId !== undefined ? { fieldContextId } : {},
+      );
     }
     case 'bulk-update-field-value': {
       const valueRaw = requireOpt(opts['value'], '--value');

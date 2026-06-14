@@ -205,6 +205,21 @@ describe('AppResource', () => {
       expect(path).toContain('fieldContextId=10010');
     });
 
+    it('passes scalar issue/project/issueType filters via query object', async () => {
+      transport.respondWith({ isLast: true, values: [] });
+
+      await app.listFieldContextConfigurations(
+        { fieldIdsOrKeys: ['customfield_10042'] },
+        { issueId: 9999, projectKeyOrId: 'PROJ', issueTypeId: 'it-1' },
+      );
+
+      expect(transport.lastCall?.options.query).toMatchObject({
+        issueId: 9999,
+        projectKeyOrId: 'PROJ',
+        issueTypeId: 'it-1',
+      });
+    });
+
     it('passes pagination query params', async () => {
       transport.respondWith({ isLast: false, values: [] });
 

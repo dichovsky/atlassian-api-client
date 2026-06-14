@@ -12,28 +12,28 @@ App-scoped resource grouping three distinct API surfaces used by Forge and Atlas
 
 Most actions require Forge/Connect-issued credentials (OAuth 2.0 3LO scopes or Connect JWT). Basic auth with an API token will return `401`/`403` on every action.
 
-| Action                               | Positional       | Required flags                                         | Optional flags                |
-| ------------------------------------ | ---------------- | ------------------------------------------------------ | ----------------------------- |
-| `get-field-context-configuration`    | `<fieldIdOrKey>` | —                                                      | —                             |
-| `update-field-context-configuration` | `<fieldIdOrKey>` | `--id`                                                 | `--configuration`, `--schema` |
-| `update-field-value`                 | `<fieldIdOrKey>` | `--value`                                              | —                             |
-| `list-field-context-configurations`  | —                | at least one of `--field-ids-or-keys`, `--context-ids` | —                             |
-| `bulk-update-field-value`            | —                | `--value`                                              | —                             |
-| `get-dynamic-modules`                | —                | —                                                      | —                             |
-| `register-dynamic-modules`           | —                | `--value`                                              | —                             |
-| `delete-dynamic-modules`             | —                | —                                                      | `--module-keys`               |
-| `list-forge-properties`              | —                | —                                                      | —                             |
-| `get-forge-property`                 | `<propertyKey>`  | —                                                      | —                             |
-| `set-forge-property`                 | `<propertyKey>`  | `--value`                                              | —                             |
-| `delete-forge-property`              | `<propertyKey>`  | —                                                      | —                             |
+| Action                               | Positional       | Required flags        | Optional flags                |
+| ------------------------------------ | ---------------- | --------------------- | ----------------------------- |
+| `get-field-context-configuration`    | `<fieldIdOrKey>` | —                     | —                             |
+| `update-field-context-configuration` | `<fieldIdOrKey>` | `--id`                | `--configuration`, `--schema` |
+| `update-field-value`                 | `<fieldIdOrKey>` | `--value`             | —                             |
+| `list-field-context-configurations`  | —                | `--field-ids-or-keys` | `--context-ids`               |
+| `bulk-update-field-value`            | —                | `--value`             | —                             |
+| `get-dynamic-modules`                | —                | —                     | —                             |
+| `register-dynamic-modules`           | —                | `--value`             | —                             |
+| `delete-dynamic-modules`             | —                | —                     | `--module-keys`               |
+| `list-forge-properties`              | —                | —                     | —                             |
+| `get-forge-property`                 | `<propertyKey>`  | —                     | —                             |
+| `set-forge-property`                 | `<propertyKey>`  | `--value`             | —                             |
+| `delete-forge-property`              | `<propertyKey>`  | —                     | —                             |
 
 - `update-field-context-configuration` sends the spec body `{ configurations: [{ id, configuration?, schema? }] }`; `--id` is the required configuration ID. `--configuration` and `--schema` accept opaque JSON (stored verbatim).
-- `--value` for `update-field-value` is a JSON array of `{ issueIds | issueIdsOrKeys | issueKeys, value }` entries.
-- `--value` for `bulk-update-field-value` is a JSON array of `{ fieldIdOrKey, updates: [...] }` entries.
+- `--value` for `update-field-value` is a JSON array of `{ issueIds, value }` entries (spec `CustomFieldValueUpdate`; `issueIds` is required).
+- `--value` for `bulk-update-field-value` is a JSON array of flat `{ customField, issueIds, value }` entries (spec `MultipleCustomFieldValuesUpdate`).
 - `--value` for `register-dynamic-modules` is a JSON array of Connect module descriptors (each `{ key, type, ... }`).
 - `--value` for `set-forge-property` is any JSON value (stored verbatim and returned as-is by `get-forge-property`).
 - `--module-keys` is comma-separated. When omitted, `delete-dynamic-modules` removes every dynamic module registered by the calling app.
-- `--field-ids-or-keys` and `--context-ids` are comma-separated. At least one must be supplied for `list-field-context-configurations`.
+- `--field-ids-or-keys` and `--context-ids` are comma-separated. `--field-ids-or-keys` is required for `list-field-context-configurations`; `--context-ids` is an optional filter that maps to the spec `fieldContextId` query param.
 
 ```sh
 # Read the configuration the app stored for one of its custom fields
@@ -53,7 +53,7 @@ atlas jira app list-field-context-configurations \
 
 # Bulk-update many fields in one request
 atlas jira app bulk-update-field-value \
-  --value '[{"fieldIdOrKey":"customfield_10042","updates":[{"issueIds":[10001],"value":"hi"}]}]'
+  --value '[{"customField":"customfield_10042","issueIds":[10001],"value":"hi"}]'
 
 # List dynamic Connect modules registered by the calling app
 atlas jira app get-dynamic-modules

@@ -16453,11 +16453,12 @@ describe('executeJiraCommand', () => {
         GLOBALS,
       );
 
-      // Spec ConfigurationsListParameters only has fieldIdsOrKeys (required).
-      // contextIds is not a spec body field.
-      expect(jiraAppMock.listFieldContextConfigurations).toHaveBeenCalledWith({
-        fieldIdsOrKeys: ['customfield_10042', 'customfield_10043'],
-      });
+      // Spec ConfigurationsListParameters body only has fieldIdsOrKeys (required);
+      // context filtering uses the fieldContextId query param (2nd arg), empty here.
+      expect(jiraAppMock.listFieldContextConfigurations).toHaveBeenCalledWith(
+        { fieldIdsOrKeys: ['customfield_10042', 'customfield_10043'] },
+        {},
+      );
     });
 
     it('app list-field-context-configurations accepts just field-ids-or-keys', async () => {
@@ -16470,9 +16471,27 @@ describe('executeJiraCommand', () => {
         GLOBALS,
       );
 
-      expect(jiraAppMock.listFieldContextConfigurations).toHaveBeenCalledWith({
-        fieldIdsOrKeys: ['customfield_10042'],
-      });
+      expect(jiraAppMock.listFieldContextConfigurations).toHaveBeenCalledWith(
+        { fieldIdsOrKeys: ['customfield_10042'] },
+        {},
+      );
+    });
+
+    it('app list-field-context-configurations maps --context-ids to fieldContextId query param', async () => {
+      jiraAppMock.listFieldContextConfigurations.mockResolvedValue({ values: [] });
+
+      await executeJiraCommand(
+        cmd('app', 'list-field-context-configurations', [], {
+          'field-ids-or-keys': 'customfield_10042',
+          'context-ids': '10100,10101',
+        }),
+        GLOBALS,
+      );
+
+      expect(jiraAppMock.listFieldContextConfigurations).toHaveBeenCalledWith(
+        { fieldIdsOrKeys: ['customfield_10042'] },
+        { fieldContextId: [10100, 10101] },
+      );
     });
 
     it('app list-field-context-configurations rejects missing field-ids-or-keys', async () => {
