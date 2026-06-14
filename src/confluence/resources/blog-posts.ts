@@ -11,6 +11,8 @@ import type {
   BlogPostLikeUser,
   BlogPostOperationsResponse,
   CreateBlogPostData,
+  CreateBlogPostParams,
+  DeleteBlogPostParams,
   GetBlogPostClassificationLevelParams,
   GetBlogPostParams,
   ListBlogPostAttachmentsParams,
@@ -66,10 +68,17 @@ export class BlogPostsResource {
   /** List blog posts with optional filtering. */
   async list(params?: ListBlogPostsParams): Promise<CursorPaginatedResponse<BlogPost>> {
     if (params?.limit !== undefined) validatePageSize(params.limit, 'limit');
+    // `id` and `status` are `type: array` → repeated path params (B1059).
+    const id = params?.id;
+    const status = params?.status;
+    const rest = params !== undefined ? (({ id: _i, status: _s, ...r }) => r)(params) : undefined;
+    let path = `${this.baseUrl}/blogposts`;
+    path = appendScalarOrArrayParam(path, 'id', id);
+    path = appendScalarOrArrayParam(path, 'status', status);
     const response = await this.transport.request<CursorPaginatedResponse<BlogPost>>({
       method: 'GET',
-      path: `${this.baseUrl}/blogposts`,
-      query: withSpaceIdParam(params),
+      path,
+      query: withSpaceIdParam(rest),
     });
     return response.data;
   }
@@ -131,10 +140,13 @@ export class BlogPostsResource {
   }
 
   /** Create a new blog post. */
-  async create(data: CreateBlogPostData): Promise<BlogPost> {
+  async create(data: CreateBlogPostData, params?: CreateBlogPostParams): Promise<BlogPost> {
+    const query: Record<string, boolean | undefined> = {};
+    if (params?.private !== undefined) query['private'] = params.private;
     const response = await this.transport.request<BlogPost>({
       method: 'POST',
       path: `${this.baseUrl}/blogposts`,
+      query: Object.keys(query).length > 0 ? query : undefined,
       body: data,
     });
     return response.data;
@@ -151,21 +163,28 @@ export class BlogPostsResource {
   }
 
   /** Delete a blog post. */
-  async delete(id: string): Promise<void> {
+  async delete(id: string, params?: DeleteBlogPostParams): Promise<void> {
+    const query: Record<string, boolean | undefined> = {};
+    if (params?.purge !== undefined) query['purge'] = params.purge;
+    if (params?.draft !== undefined) query['draft'] = params.draft;
     await this.transport.request<undefined>({
       method: 'DELETE',
       path: `${this.baseUrl}/blogposts/${encodePathSegment(id)}`,
+      query: Object.keys(query).length > 0 ? query : undefined,
     });
   }
 
   /** Iterate over all blog posts across all result pages. */
   async *listAll(params?: Omit<ListBlogPostsParams, 'cursor'>): AsyncGenerator<BlogPost> {
     if (params?.limit !== undefined) validatePageSize(params.limit, 'limit');
-    yield* paginateCursor<BlogPost>(
-      this.transport,
-      `${this.baseUrl}/blogposts`,
-      withSpaceIdParam(params),
-    );
+    // `id` and `status` are `type: array` → repeated path params (B1059).
+    const id = params?.id;
+    const status = params?.status;
+    const rest = params !== undefined ? (({ id: _i, status: _s, ...r }) => r)(params) : undefined;
+    let basePath = `${this.baseUrl}/blogposts`;
+    basePath = appendScalarOrArrayParam(basePath, 'id', id);
+    basePath = appendScalarOrArrayParam(basePath, 'status', status);
+    yield* paginateCursor<BlogPost>(this.transport, basePath, withSpaceIdParam(rest));
   }
 
   // ── content properties (B066-B070) ────────────────────────────────────────

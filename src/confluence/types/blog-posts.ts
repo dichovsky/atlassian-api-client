@@ -2,7 +2,6 @@ import type {
   AttachmentSortOrder,
   AttachmentStatus,
   BlogPostSortOrder,
-  BodyFormat,
   CommentSortOrder,
   CommentStatus,
   CustomContentSortOrder,
@@ -13,51 +12,115 @@ import type {
   ContentBody,
 } from './common.js';
 
-/** Confluence Blog Post. */
+/**
+ * Content status enum for Confluence blog posts. Mirrors the OpenAPI
+ * `BlogPostContentStatus` schema.
+ */
+export type BlogPostContentStatus =
+  | 'current'
+  | 'draft'
+  | 'historical'
+  | 'trashed'
+  | 'deleted'
+  | 'any';
+
+/**
+ * Body-write representation accepted by `POST /blogposts` and `PUT /blogposts/{id}`.
+ * Mirrors the OpenAPI `BlogPostBodyWrite.representation` enum.
+ */
+export type BlogPostBodyWriteRepresentation = 'storage' | 'atlas_doc_format' | 'wiki';
+
+/**
+ * Confluence Blog Post. Covers fields from both `BlogPostBulk` and
+ * `BlogPostSingle` schemas.
+ */
 export interface BlogPost {
   readonly id: string;
-  readonly status: string;
+  readonly status: BlogPostContentStatus;
   readonly title: string;
   readonly spaceId: string;
   readonly authorId?: string;
   readonly createdAt?: string;
   readonly version?: ConfluenceVersion;
   readonly body?: ContentBody;
+  /** Whether this blog post has been favorited by the current user (`BlogPostSingle` only). */
+  readonly isFavoritedByCurrentUser?: boolean;
   readonly _links?: Record<string, string>;
 }
 
-/** Parameters for listing Confluence blog posts. */
+/** Parameters for listing Confluence blog posts (`GET /blogposts`). */
 export interface ListBlogPostsParams {
+  /** Filter by one or more blog post IDs (type:array — sent as repeated `id` params). */
+  readonly id?: readonly string[];
   readonly spaceId?: string;
   readonly title?: string;
-  readonly status?: string;
-  readonly 'body-format'?: BodyFormat;
+  /**
+   * Status filter; `type:array` in the spec — sent as repeated path params.
+   * Accepts `'current'`, `'deleted'`, or `'trashed'`.
+   */
+  readonly status?:
+    | 'current'
+    | 'deleted'
+    | 'trashed'
+    | readonly ('current' | 'deleted' | 'trashed')[];
+  /** Primary body representation to include in the response. */
+  readonly 'body-format'?: 'storage' | 'atlas_doc_format';
   readonly sort?: BlogPostSortOrder;
   readonly limit?: number;
   readonly cursor?: string;
 }
 
-/** Request body for creating a Confluence blog post. */
+/** Query parameters for creating a Confluence blog post (`POST /blogposts`). */
+export interface CreateBlogPostParams {
+  /**
+   * When `true`, the blog post is private — only the creating user can view and edit it.
+   * Defaults to `false` server-side.
+   */
+  readonly private?: boolean;
+}
+
+/** Query parameters for deleting a Confluence blog post (`DELETE /blogposts/{id}`). */
+export interface DeleteBlogPostParams {
+  /** When `true`, permanently deletes the blog post (bypass trash). */
+  readonly purge?: boolean;
+  /** When `true`, deletes the draft version instead of the published version. */
+  readonly draft?: boolean;
+}
+
+/** Request body for creating a Confluence blog post (`POST /blogposts`). */
 export interface CreateBlogPostData {
   readonly spaceId: string;
   readonly title: string;
   readonly status?: 'current' | 'draft';
   readonly body?: {
-    readonly representation: 'storage' | 'atlas_doc_format';
+    readonly representation: BlogPostBodyWriteRepresentation;
     readonly value: string;
   };
+  /** Created date of the blog post in the format `"yyyy-MM-ddTHH:mm:ss.SSSZ"`. */
+  readonly createdAt?: string;
 }
 
-/** Request body for updating a Confluence blog post. */
+/**
+ * Request body for updating a Confluence blog post (`PUT /blogposts/{id}`).
+ * `body` is required by the spec (`BlogPostUpdateRequest` schema `required` array
+ * lists `id`, `status`, `title`, `body`, `version`).
+ */
 export interface UpdateBlogPostData {
   readonly id: string;
   readonly title: string;
   readonly status: 'current' | 'draft';
   readonly version: { readonly number: number; readonly message?: string };
-  readonly body?: {
-    readonly representation: 'storage' | 'atlas_doc_format';
+  readonly body: {
+    readonly representation: BlogPostBodyWriteRepresentation;
     readonly value: string;
   };
+  /**
+   * ID of the containing space.
+   * Note: moving a blog post to a different space is not currently supported.
+   */
+  readonly spaceId?: string;
+  /** Created date override in the format `"yyyy-MM-ddTHH:mm:ss.SSSZ"`. */
+  readonly createdAt?: string;
 }
 
 /**
@@ -193,20 +256,19 @@ export interface BlogPostOperationsResponse {
 /**
  * Request body for `PUT /blogposts/{id}/classification-level`.
  *
- * Same shape as the database / page variants — `id` is the classification
- * level being applied and `status` must always be `"current"` (the only
- * value the server accepts).
+ * `id` is the classification level being applied and `status` must be `"current"`
+ * or `"draft"` per the `ContentClassificationLevelUpdateRequest` spec schema.
  */
 export interface UpdateBlogPostClassificationLevelData {
   readonly id: string;
-  readonly status: 'current';
+  readonly status: 'current' | 'draft';
 }
 
 /**
  * Request body for `POST /blogposts/{id}/classification-level/reset`.
- * Only `status: "current"` is required by the server; the request signals
- * that the blog post should fall back to the space-level default.
+ * `status` accepts `"current"` or `"draft"` per the
+ * `ContentClassificationLevelDeleteRequest` spec schema.
  */
 export interface ResetBlogPostClassificationLevelData {
-  readonly status: 'current';
+  readonly status: 'current' | 'draft';
 }

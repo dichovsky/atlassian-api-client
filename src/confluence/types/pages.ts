@@ -1,5 +1,4 @@
 import type {
-  BodyFormat,
   CommentSortOrder,
   CommentStatus,
   ContentSortOrder,
@@ -11,57 +10,145 @@ import type {
   RedactBlogPostResponse,
 } from './common.js';
 
-/** Confluence Page. */
+/**
+ * Content status enum for Confluence pages. Mirrors the OpenAPI `ContentStatus` schema.
+ * Used for both the `status` field on `Page` and the `status` filter on list/get endpoints.
+ */
+export type PageContentStatus =
+  | 'current'
+  | 'draft'
+  | 'archived'
+  | 'historical'
+  | 'trashed'
+  | 'deleted'
+  | 'any';
+
+/**
+ * Sort tokens accepted by `GET /pages`. Mirrors the OpenAPI `PageSortOrder` enum.
+ * Default direction is ascending; prefix with `-` for descending.
+ */
+export type ListPagesSortOrder =
+  | 'id'
+  | '-id'
+  | 'created-date'
+  | '-created-date'
+  | 'modified-date'
+  | '-modified-date'
+  | 'title'
+  | '-title';
+
+/**
+ * Body-write representation accepted by `POST /pages` and `PUT /pages/{id}`.
+ * Mirrors the OpenAPI `PageBodyWrite.representation` enum.
+ */
+export type PageBodyWriteRepresentation = 'storage' | 'atlas_doc_format' | 'wiki';
+
+/** Confluence Page. Covers fields from both `PageBulk` and `PageSingle` schemas. */
 export interface Page {
   readonly id: string;
-  readonly status: string;
+  readonly status: PageContentStatus;
   readonly title: string;
   readonly spaceId: string;
   readonly parentId?: string;
   readonly parentType?: string;
-  readonly position?: number;
+  readonly position?: number | null;
   readonly authorId?: string;
-  readonly ownerId?: string;
+  readonly ownerId?: string | null;
+  /** Account ID of the previous owner, or null if there is no previous owner. */
+  readonly lastOwnerId?: string | null;
+  /** The subtype of the page (e.g. `'live'` for live docs). */
+  readonly subtype?: string | null;
   readonly createdAt?: string;
   readonly version?: ConfluenceVersion;
   readonly body?: ContentBody;
+  /** Whether this page has been favorited by the current user (`PageSingle` only). */
+  readonly isFavoritedByCurrentUser?: boolean;
   readonly _links?: Record<string, string>;
 }
 
-/** Parameters for listing Confluence pages. */
+/** Parameters for listing Confluence pages (`GET /pages`). */
 export interface ListPagesParams {
+  /** Filter by one or more page IDs (type:array — sent as repeated `id` params). */
+  readonly id?: readonly string[];
   readonly spaceId?: string;
   readonly title?: string;
-  readonly status?: string;
-  readonly 'body-format'?: BodyFormat;
+  /**
+   * Status filter; `type:array` in the spec — sent as repeated path params.
+   * Accepts a single value or an array.
+   */
+  readonly status?: PageContentStatus | readonly PageContentStatus[];
+  /**
+   * Subtype filter. Pass `'live'` to list only live docs, `'page'` for
+   * standard pages, or omit to return all subtypes.
+   */
+  readonly subtype?: 'live' | 'page';
+  readonly sort?: ListPagesSortOrder;
+  /** Primary body representation to include in the response. */
+  readonly 'body-format'?: 'storage' | 'atlas_doc_format';
   readonly limit?: number;
   readonly cursor?: string;
 }
 
-/** Parameters for retrieving a single Confluence page. */
+/** Parameters for retrieving a single Confluence page (`GET /pages/{id}`). */
 export interface GetPageParams {
-  readonly 'body-format'?: BodyFormat;
-  readonly 'include-labels'?: boolean;
-  readonly 'include-properties'?: boolean;
-  readonly 'include-operations'?: boolean;
-  readonly 'include-versions'?: boolean;
+  /** Primary body representation to return. */
+  readonly 'body-format'?:
+    | 'storage'
+    | 'atlas_doc_format'
+    | 'view'
+    | 'export_view'
+    | 'anonymous_export_view'
+    | 'styled_view'
+    | 'editor';
+  /** Return the draft version of the page instead of the current. */
+  readonly 'get-draft'?: boolean;
+  /**
+   * Status filter for the page; `type:array` in the spec — sent as repeated path params.
+   * Accepts a single value or an array.
+   */
+  readonly status?: PageContentStatus | readonly PageContentStatus[];
   readonly version?: number;
+  /** Inline up to 50 labels in the response. */
+  readonly 'include-labels'?: boolean;
+  /** Inline up to 50 content properties in the response. */
+  readonly 'include-properties'?: boolean;
+  /** Inline permitted operations in the response. */
+  readonly 'include-operations'?: boolean;
+  /** Inline up to 50 likes in the response. */
+  readonly 'include-likes'?: boolean;
+  /** Inline up to 50 versions in the response. */
+  readonly 'include-versions'?: boolean;
+  /** Inline the current version object in the response (default true server-side). */
+  readonly 'include-version'?: boolean;
+  /** Inline whether the current user has favorited the page. */
+  readonly 'include-favorited-by-current-user-status'?: boolean;
+  /** Inline web resources (CSS/JS). */
+  readonly 'include-webresources'?: boolean;
+  /** Inline collaborators. */
+  readonly 'include-collaborators'?: boolean;
+  /** Inline up to 50 direct children. */
+  readonly 'include-direct-children'?: boolean;
 }
 
-/** Request body for creating a Confluence page. */
+/** Request body for creating a Confluence page (`POST /pages`). */
 export interface CreatePageData {
   readonly spaceId: string;
   readonly title: string;
   readonly parentId?: string;
   readonly status?: 'current' | 'draft';
+  /**
+   * Pass `'live'` to create a live doc. Omit for a standard page.
+   * Only `'live'` is a valid value per spec.
+   */
+  readonly subtype?: 'live';
   readonly body?: {
-    readonly representation: 'storage' | 'atlas_doc_format';
+    readonly representation: PageBodyWriteRepresentation;
     readonly value: string;
   };
 }
 
 /**
- * Request body for updating a Confluence page.
+ * Request body for updating a Confluence page (`PUT /pages/{id}`).
  * `body` is required by the spec (`PageUpdateRequest` schema `required` array
  * lists `id`, `status`, `title`, `body`, `version`).
  */
@@ -71,9 +158,21 @@ export interface UpdatePageData {
   readonly status: 'current' | 'draft';
   readonly version: { readonly number: number; readonly message?: string };
   readonly body: {
-    readonly representation: 'storage' | 'atlas_doc_format';
+    readonly representation: PageBodyWriteRepresentation;
     readonly value: string;
   };
+  /**
+   * ID of the containing space.
+   * Note: moving a page to a different space is not currently supported.
+   */
+  readonly spaceId?: string;
+  /**
+   * ID of the parent content.
+   * Allows the page to be moved under a different parent within the same space.
+   */
+  readonly parentId?: string;
+  /** Account ID of the page owner. Allows transferring ownership to another user. */
+  readonly ownerId?: string;
 }
 
 /** Parameters for deleting a Confluence page. */
@@ -91,13 +190,12 @@ export interface PageAncestor {
 /**
  * Response shape for `GET /pages/{id}/ancestors`.
  *
- * The endpoint returns a wrapped `{ results }` object **without** the
- * `_links.next` cursor — ancestor pagination is driven by re-calling with
- * the highest ancestor's ID rather than a cursor token (same convention as
- * `/folders/{id}/ancestors` and `/databases/{id}/ancestors`).
+ * The spec wraps the result in `MultiEntityResult<Ancestor>` which includes a
+ * `_links` object. Ancestor pagination is cursor-driven via `_links.next`.
  */
 export interface PageAncestorsResponse {
   readonly results: readonly PageAncestor[];
+  readonly _links?: Record<string, string>;
 }
 
 /** Parameters for listing page ancestors. */

@@ -19,6 +19,7 @@ import type {
   InlineCommentResolutionStatus,
   LabelPrefix,
   LabelSortOrder,
+  PageContentStatus,
   PageSortOrder,
   SpaceRolePrincipalType,
   SpaceRoleType,
@@ -96,7 +97,7 @@ async function executePages(client: ConfluenceClient, cmd: ParsedCommand): Promi
       return client.pages.list({
         spaceId: asString(opts['space-id']),
         title: asString(opts['title']),
-        status: asString(opts['status']),
+        status: asString(opts['status']) as PageContentStatus | undefined,
         limit: asPositiveInt(opts['limit'], '--limit'),
         cursor: asString(opts['cursor']),
         'body-format': asString(opts['body-format']) as 'storage' | undefined,
@@ -586,7 +587,7 @@ async function executeBlogPosts(client: ConfluenceClient, cmd: ParsedCommand): P
       return client.blogPosts.list({
         spaceId: asString(opts['space-id']),
         title: asString(opts['title']),
-        status: asString(opts['status']),
+        status: asString(opts['status']) as 'current' | 'deleted' | 'trashed' | undefined,
         ...(bpListBodyFormat !== undefined ? { 'body-format': bpListBodyFormat } : {}),
         ...(bpListSort !== undefined ? { sort: bpListSort } : {}),
         limit: asPositiveInt(opts['limit'], '--limit'),
@@ -608,6 +609,8 @@ async function executeBlogPosts(client: ConfluenceClient, cmd: ParsedCommand): P
       });
     case 'update': {
       const blogVersionNum = requirePositiveInt(opts['version-number'], '--version-number');
+      // `body` is required by the spec (BlogPostUpdateRequest required array).
+      const blogBodyValue = requireOpt(opts['body'], '--body');
       return client.blogPosts.update(requireArg(cmd.positionalArgs[0], 'blog post ID'), {
         id: requireArg(cmd.positionalArgs[0], 'blog post ID'),
         title: requireOpt(opts['title'], '--title'),
@@ -615,7 +618,7 @@ async function executeBlogPosts(client: ConfluenceClient, cmd: ParsedCommand): P
         version: {
           number: blogVersionNum,
         },
-        body: makeBody(asString(opts['body'])),
+        body: { representation: 'storage' as const, value: blogBodyValue },
       });
     }
     case 'delete':

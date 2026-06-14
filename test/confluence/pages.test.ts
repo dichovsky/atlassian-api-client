@@ -42,7 +42,7 @@ describe('PagesResource', () => {
       const params = {
         spaceId: 'SPACE',
         title: 'My Page',
-        status: 'current',
+        status: 'current' as const,
         'body-format': 'storage' as const,
         limit: 25,
         cursor: 'abc',
@@ -54,15 +54,17 @@ describe('PagesResource', () => {
       // `spaceId` is the ergonomic public input; the Confluence v2 GET /pages
       // query parameter is the kebab-case `space-id` (camelCase `spaceId` is
       // the response-body field and is silently ignored as a query param).
+      // `status` is `type: array` → repeated path param (B1059), not a query param.
       expect(transport.lastCall?.options.query).toMatchObject({
         'space-id': 'SPACE',
         title: 'My Page',
-        status: 'current',
         'body-format': 'storage',
         limit: 25,
         cursor: 'abc',
       });
       expect(transport.lastCall?.options.query).not.toHaveProperty('spaceId');
+      expect(transport.lastCall?.options.query).not.toHaveProperty('status');
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/pages?status=current`);
     });
 
     it('maps the spaceId filter onto the space-id query param', async () => {
@@ -83,6 +85,22 @@ describe('PagesResource', () => {
       const query = transport.lastCall?.options.query as Record<string, unknown>;
       expect(query).toEqual({ title: 'Runbook', limit: 5 });
       expect(query).not.toHaveProperty('space-id');
+    });
+
+    it('serializes status array as repeated path params (B1059)', async () => {
+      transport.respondWith({ results: [], _links: {} });
+      await pages.list({ status: ['current', 'archived'] });
+      expect(transport.lastCall?.options.query).not.toHaveProperty('status');
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/pages?status=current&status=archived`,
+      );
+    });
+
+    it('serializes id array as repeated path params (B1059)', async () => {
+      transport.respondWith({ results: [], _links: {} });
+      await pages.list({ id: ['10', '20'] });
+      expect(transport.lastCall?.options.query).not.toHaveProperty('id');
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/pages?id=10&id=20`);
     });
 
     it('rejects non-positive --limit before the request', async () => {
