@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "2.0.0"
   },
-  "sourceHash": "8fd73b3fb69e3b1e49f6b159837cf1d383c204bee1bc3f939d7f84bc0b4e764b",
+  "sourceHash": "259524c86cac7137e41701c24b6d7e7319fe8b9c4665248ff3d8cca136a52f91",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -287,7 +287,7 @@
       "name": "BulkIssueIsWatchingResult",
       "kind": "interface",
       "file": "src/jira/resources/issues.ts",
-      "line": 206,
+      "line": 246,
       "signature": "export interface BulkIssueIsWatchingResult { readonly issuesIsWatching?: Record<string, boolean>; }",
       "jsdoc": "Result of the bulk \"is watching\" read-check. Spec: POST /rest/api/3/issue/watching (operationId getIsWatchingIssueBulk). Maps each issue ID to `true` if the current user is watching it, `false` otherwise.",
       "typeOnly": true
@@ -19284,6 +19284,10 @@
               "original": "IssueChangelog"
             },
             {
+              "exported": "PageOfChangelogs",
+              "original": "PageOfChangelogs"
+            },
+            {
               "exported": "ListChangelogParams",
               "original": "ListChangelogParams"
             },
@@ -19320,6 +19324,10 @@
               "original": "IssueVotes"
             },
             {
+              "exported": "IssueUserDetails",
+              "original": "IssueUserDetails"
+            },
+            {
               "exported": "IssueWatchers",
               "original": "IssueWatchers"
             },
@@ -19334,6 +19342,54 @@
             {
               "exported": "BulkIssueIsWatchingResult",
               "original": "BulkIssueIsWatchingResult"
+            },
+            {
+              "exported": "BulkFetchIssueError",
+              "original": "BulkFetchIssueError"
+            },
+            {
+              "exported": "BulkFetchResult",
+              "original": "BulkFetchResult"
+            },
+            {
+              "exported": "IssueArchiveResult",
+              "original": "IssueArchiveResult"
+            },
+            {
+              "exported": "IssueLimitReport",
+              "original": "IssueLimitReport"
+            },
+            {
+              "exported": "DateRangeFilterRequest",
+              "original": "DateRangeFilterRequest"
+            },
+            {
+              "exported": "IssueArchiveExportData",
+              "original": "IssueArchiveExportData"
+            },
+            {
+              "exported": "ExportArchivedIssuesResult",
+              "original": "ExportArchivedIssuesResult"
+            },
+            {
+              "exported": "UpdateIssueParams",
+              "original": "UpdateIssueParams"
+            },
+            {
+              "exported": "DeleteIssueParams",
+              "original": "DeleteIssueParams"
+            },
+            {
+              "exported": "GetTransitionsParams",
+              "original": "GetTransitionsParams"
+            },
+            {
+              "exported": "GetAgileIssueParams",
+              "original": "GetAgileIssueParams"
+            },
+            {
+              "exported": "DeleteAllWorklogsParams",
+              "original": "DeleteAllWorklogsParams"
             }
           ]
         },
@@ -27842,128 +27898,147 @@
           "signature": "export interface DeleteWorklogParams { readonly notifyUsers?: boolean; readonly adjustEstimate?: string; readonly newEst…"
         },
         {
+          "name": "DeleteAllWorklogsParams",
+          "kind": "interface",
+          "line": 78,
+          "exported": true,
+          "signature": "export interface DeleteAllWorklogsParams { readonly adjustEstimate?: 'leave' | 'auto'; readonly overrideEditableFlag?: b…",
+          "jsdoc": "Optional query parameters for DELETE /rest/api/3/issue/{issueIdOrKey}/worklog (bulkDeleteWorklogs). Spec: adjustEstimate (enum: \"leave\" | \"auto\"), overrideEditableFlag (boolean)."
+        },
+        {
           "name": "GetWorklogParams",
           "kind": "interface",
-          "line": 74,
+          "line": 85,
           "exported": true,
           "signature": "export interface GetWorklogParams { readonly expand?: string; }"
         },
         {
           "name": "UpdateWorklogParams",
           "kind": "interface",
-          "line": 78,
+          "line": 89,
           "exported": true,
           "signature": "export interface UpdateWorklogParams { readonly notifyUsers?: boolean; readonly adjustEstimate?: string; readonly newEst…"
         },
         {
           "name": "WorklogMoveData",
           "kind": "interface",
-          "line": 86,
+          "line": 97,
           "exported": true,
           "signature": "export interface WorklogMoveData { readonly ids: number[]; readonly issueIdOrKey?: string; }"
         },
         {
           "name": "MoveWorklogParams",
           "kind": "interface",
-          "line": 93,
+          "line": 104,
           "exported": true,
           "signature": "export interface MoveWorklogParams { readonly adjustEstimate?: string; readonly overrideEditableFlag?: boolean; }"
         },
         {
           "name": "WorklogPropertyKey",
           "kind": "interface",
-          "line": 100,
+          "line": 111,
           "exported": true,
           "signature": "export interface WorklogPropertyKey { readonly self?: string; readonly key?: string; }"
         },
         {
           "name": "WorklogPropertyKeys",
           "kind": "interface",
-          "line": 105,
+          "line": 116,
           "exported": true,
           "signature": "export interface WorklogPropertyKeys { readonly keys: WorklogPropertyKey[]; }"
         },
         {
           "name": "WorklogProperty",
           "kind": "interface",
-          "line": 109,
+          "line": 120,
           "exported": true,
           "signature": "export interface WorklogProperty { readonly key: string; readonly value: unknown; }"
         },
         {
           "name": "IssueArchiveResult",
           "kind": "interface",
-          "line": 116,
+          "line": 133,
           "exported": true,
-          "signature": "export interface IssueArchiveResult { readonly archived?: number; readonly errors?: Record<string, unknown>; readonly fa…"
+          "signature": "export interface IssueArchiveResult { readonly errors?: Record<string, { count?: number; issueIdsOrKeys?: string[]; mess…",
+          "jsdoc": "Result of a synchronous archive/unarchive operation. Spec: IssueArchivalSyncResponse — { errors?, numberOfIssuesUpdated? }. Note: the spec `errors` field is a named-error-category object (Errors schema), not an array; `numberOfIssuesUpdated` is the count of successfully processed issues."
         },
         {
           "name": "BulkFetchData",
           "kind": "interface",
-          "line": 124,
+          "line": 140,
           "exported": true,
           "signature": "export interface BulkFetchData { readonly issueIdsOrKeys: string[]; readonly fieldsByKeys?: boolean; readonly fields?: s…"
         },
         {
+          "name": "BulkFetchIssueError",
+          "kind": "interface",
+          "line": 152,
+          "exported": true,
+          "signature": "export interface BulkFetchIssueError { readonly id?: string; readonly errorMessage?: string; }",
+          "jsdoc": "A single issue-level error from a bulk fetch. Spec: IssueError — { id (issue ID), errorMessage }."
+        },
+        {
           "name": "BulkFetchResult",
           "kind": "interface",
-          "line": 132,
+          "line": 162,
           "exported": true,
-          "signature": "export interface BulkFetchResult { readonly issues?: Record<string, unknown>[]; readonly errors?: Record<string, unknown…"
+          "signature": "export interface BulkFetchResult { readonly issues?: Record<string, unknown>[]; readonly issueErrors?: BulkFetchIssueErr…",
+          "jsdoc": "Result of a bulk issue fetch. Spec: BulkIssueResults — { issues?, issueErrors? }. Note: the spec field is `issueErrors`, not `errors`."
         },
         {
           "name": "CreateMetaParams",
           "kind": "interface",
-          "line": 139,
+          "line": 169,
           "exported": true,
           "signature": "export interface CreateMetaParams { readonly projectIds?: string[]; readonly projectKeys?: string[]; readonly issuetypeI…"
         },
         {
           "name": "CreateMetaIssueTypesParams",
           "kind": "interface",
-          "line": 147,
+          "line": 177,
           "exported": true,
           "signature": "export interface CreateMetaIssueTypesParams { readonly startAt?: number; readonly maxResults?: number; }"
         },
         {
           "name": "IssueLimitReport",
           "kind": "interface",
-          "line": 154,
+          "line": 189,
           "exported": true,
-          "signature": "export interface IssueLimitReport { readonly issueIds?: number[]; }"
+          "signature": "export interface IssueLimitReport { readonly issuesApproachingLimit?: Record<string, Record<string, number>>; readonly i…",
+          "jsdoc": "Issue limit report response. Spec: IssueLimitReportResponseBean — { issuesApproachingLimit?, issuesBreachingLimit?, limits? }. Each map key is an issue ID; each value is a sub-map of field-name → field-count."
         },
         {
           "name": "IssuePickerResult",
           "kind": "interface",
-          "line": 160,
+          "line": 200,
           "exported": true,
           "signature": "export interface IssuePickerResult { readonly sections?: { id?: string; label?: string; sub?: string; issues?: unknown[]…"
         },
         {
           "name": "IssuePickerParams",
           "kind": "interface",
-          "line": 170,
+          "line": 210,
           "exported": true,
           "signature": "export interface IssuePickerParams { readonly query?: string; readonly currentJQL?: string; readonly currentIssueKey?: s…"
         },
         {
           "name": "SetIssuePropertiesData",
           "kind": "interface",
-          "line": 181,
+          "line": 221,
           "exported": true,
           "signature": "export interface SetIssuePropertiesData { readonly entitiesIds?: number[]; readonly properties?: Record<string, unknown>…"
         },
         {
           "name": "MultiIssueProperties",
           "kind": "interface",
-          "line": 186,
+          "line": 226,
           "exported": true,
           "signature": "export interface MultiIssueProperties { readonly issues: { issueID?: number; properties?: Record<string, unknown> }[]; }"
         },
         {
           "name": "IssueBulkWatchResult",
           "kind": "interface",
-          "line": 197,
+          "line": 237,
           "exported": true,
           "signature": "export interface IssueBulkWatchResult { readonly taskId: string; }",
           "jsdoc": "Result of a bulk-watch submission. Spec: POST /rest/api/3/bulk/issues/watch (operationId submitBulkWatch) responds 201 with SubmittedBulkOperation { taskId } — not { watched, failed } (#207)."
@@ -27971,22 +28046,39 @@
         {
           "name": "BulkIssueIsWatchingResult",
           "kind": "interface",
-          "line": 206,
+          "line": 246,
           "exported": true,
           "signature": "export interface BulkIssueIsWatchingResult { readonly issuesIsWatching?: Record<string, boolean>; }",
           "jsdoc": "Result of the bulk \"is watching\" read-check. Spec: POST /rest/api/3/issue/watching (operationId getIsWatchingIssueBulk). Maps each issue ID to `true` if the current user is watching it, `false` otherwise."
         },
         {
+          "name": "DateRangeFilterRequest",
+          "kind": "interface",
+          "line": 257,
+          "exported": true,
+          "signature": "export interface DateRangeFilterRequest { readonly dateAfter?: string; readonly dateBefore?: string; }",
+          "jsdoc": "Date range filter for archived issue export. Spec: DateRangeFilterRequest — { dateAfter?, dateBefore? }."
+        },
+        {
           "name": "IssueArchiveExportData",
           "kind": "interface",
-          "line": 213,
+          "line": 274,
           "exported": true,
-          "signature": "export interface IssueArchiveExportData { readonly jql?: string; readonly exportType?: 'CSV' | 'XLSX'; }"
+          "signature": "export interface IssueArchiveExportData { readonly jql?: string; readonly exportType?: 'CSV' | 'XLSX'; readonly archived…",
+          "jsdoc": "Request body for PUT /rest/api/3/issues/archive/export. Spec: ArchivedIssuesFilterRequest — { archivedBy?, archivedDateRange?, issueTypes?, projects?, reporters? }. @deprecated jql — not a spec field; use the filter fields (archivedBy, archivedDateRange, etc.) @deprecated exportType — not a spec field; the API emails a download link, no format choice exposed"
+        },
+        {
+          "name": "ExportArchivedIssuesResult",
+          "kind": "interface",
+          "line": 301,
+          "exported": true,
+          "signature": "export interface ExportArchivedIssuesResult { readonly taskId?: string; readonly status?: string; readonly progress?: nu…",
+          "jsdoc": "Response from PUT /rest/api/3/issues/archive/export (202 Accepted). Spec: ExportArchivedIssuesTaskProgressResponse."
         },
         {
           "name": "AgileIssue",
           "kind": "interface",
-          "line": 224,
+          "line": 316,
           "exported": true,
           "signature": "export interface AgileIssue { readonly id: string; readonly key: string; readonly self: string; readonly fields: Record<…",
           "jsdoc": "Agile view of a Jira issue as returned by /rest/agile/1.0/issue/{key}."
@@ -27994,7 +28086,7 @@
         {
           "name": "IssueEstimation",
           "kind": "interface",
-          "line": 239,
+          "line": 331,
           "exported": true,
           "signature": "export interface IssueEstimation { readonly fieldId: string; readonly value: string | null; }",
           "jsdoc": "Estimation value returned by GET /rest/agile/1.0/issue/{key}/estimation."
@@ -28002,7 +28094,7 @@
         {
           "name": "GetEstimationParams",
           "kind": "interface",
-          "line": 245,
+          "line": 337,
           "exported": true,
           "signature": "export interface GetEstimationParams { readonly boardId?: number; }",
           "jsdoc": "Params for GET /rest/agile/1.0/issue/{key}/estimation."
@@ -28010,7 +28102,7 @@
         {
           "name": "SetEstimationData",
           "kind": "interface",
-          "line": 251,
+          "line": 343,
           "exported": true,
           "signature": "export interface SetEstimationData { readonly value: string | null; }",
           "jsdoc": "Request body for PUT /rest/agile/1.0/issue/{key}/estimation."
@@ -28018,7 +28110,7 @@
         {
           "name": "RankIssuesData",
           "kind": "interface",
-          "line": 257,
+          "line": 349,
           "exported": true,
           "signature": "export interface RankIssuesData { readonly issues: readonly string[]; readonly rankBeforeIssue?: string; readonly rankAf…",
           "jsdoc": "Request body for PUT /rest/agile/1.0/issue/rank."
@@ -28026,402 +28118,451 @@
         {
           "name": "IssueChangelogEntry",
           "kind": "interface",
-          "line": 270,
+          "line": 362,
           "exported": true,
           "signature": "export interface IssueChangelogEntry { readonly id?: string; readonly author?: Record<string, unknown>; readonly created…"
         },
         {
           "name": "IssueChangelog",
           "kind": "interface",
-          "line": 285,
+          "line": 381,
           "exported": true,
-          "signature": "export interface IssueChangelog { readonly startAt: number; readonly maxResults: number; readonly total: number; readonl…"
+          "signature": "export interface IssueChangelog { readonly startAt?: number; readonly maxResults?: number; readonly total?: number; read…",
+          "jsdoc": "Page of changelogs from GET /issue/{key}/changelog. Spec: PageBeanChangelog — cursor-paginated page with `values[]` and optional `isLast`/`nextPage`."
+        },
+        {
+          "name": "PageOfChangelogs",
+          "kind": "interface",
+          "line": 398,
+          "exported": true,
+          "signature": "export interface PageOfChangelogs { readonly startAt?: number; readonly maxResults?: number; readonly total?: number; re…",
+          "jsdoc": "Page of changelogs from POST /issue/{key}/changelog/list (filterChangelog). Spec: PageOfChangelogs — uses `histories[]`, not `values[]`."
         },
         {
           "name": "ListChangelogParams",
           "kind": "interface",
-          "line": 292,
+          "line": 405,
           "exported": true,
           "signature": "export interface ListChangelogParams { readonly startAt?: number; readonly maxResults?: number; }"
         },
         {
           "name": "IssuePropertyKey",
           "kind": "interface",
-          "line": 299,
+          "line": 412,
           "exported": true,
           "signature": "export interface IssuePropertyKey { readonly self?: string; readonly key?: string; }"
         },
         {
           "name": "IssuePropertyKeys",
           "kind": "interface",
-          "line": 304,
+          "line": 417,
           "exported": true,
           "signature": "export interface IssuePropertyKeys { readonly keys: IssuePropertyKey[]; }"
         },
         {
           "name": "IssueProperty",
           "kind": "interface",
-          "line": 308,
+          "line": 421,
           "exported": true,
           "signature": "export interface IssueProperty { readonly key: string; readonly value: unknown; }"
         },
         {
           "name": "RemoteIssueLinkObject",
           "kind": "interface",
-          "line": 315,
+          "line": 428,
           "exported": true,
           "signature": "export interface RemoteIssueLinkObject { readonly url?: string; readonly title?: string; readonly summary?: string; read…"
         },
         {
           "name": "RemoteIssueLink",
           "kind": "interface",
-          "line": 326,
+          "line": 439,
           "exported": true,
           "signature": "export interface RemoteIssueLink { readonly id?: number; readonly self?: string; readonly globalId?: string; readonly ap…"
         },
         {
           "name": "CreateRemoteLinkData",
           "kind": "interface",
-          "line": 335,
+          "line": 448,
           "exported": true,
           "signature": "export interface CreateRemoteLinkData { readonly globalId?: string; readonly application?: { type?: string; name?: strin…"
         },
         {
           "name": "CreateRemoteLinkResult",
           "kind": "interface",
-          "line": 342,
+          "line": 455,
           "exported": true,
           "signature": "export interface CreateRemoteLinkResult { readonly id?: number; readonly self?: string; }"
         },
         {
           "name": "IssueVotes",
           "kind": "interface",
-          "line": 349,
+          "line": 462,
           "exported": true,
           "signature": "export interface IssueVotes { readonly self?: string; readonly votes?: number; readonly hasVoted?: boolean; readonly vot…"
         },
         {
+          "name": "IssueUserDetails",
+          "kind": "interface",
+          "line": 475,
+          "exported": true,
+          "signature": "export interface IssueUserDetails { readonly accountId?: string; readonly accountType?: string; readonly active?: boolea…",
+          "jsdoc": "A Jira user as returned in watchers/voters lists. Spec: UserDetails — subset of the full user object returned in watcher/voter contexts."
+        },
+        {
           "name": "IssueWatchers",
           "kind": "interface",
-          "line": 358,
+          "line": 485,
           "exported": true,
           "signature": "export interface IssueWatchers { readonly self?: string; readonly isWatching?: boolean; readonly watchCount?: number; re…"
         },
         {
           "name": "IssueNotifyData",
           "kind": "interface",
-          "line": 367,
+          "line": 494,
           "exported": true,
           "signature": "export interface IssueNotifyData { readonly htmlBody?: string; readonly subject?: string; readonly textBody?: string; re…"
         },
         {
+          "name": "UpdateIssueParams",
+          "kind": "interface",
+          "line": 508,
+          "exported": true,
+          "signature": "export interface UpdateIssueParams { readonly notifyUsers?: boolean; readonly overrideScreenSecurity?: boolean; readonly…",
+          "jsdoc": "Optional query parameters for PUT /rest/api/3/issue/{issueIdOrKey} (editIssue). Spec: 5 query params: notifyUsers, overrideScreenSecurity, overrideEditableFlag, returnIssue, expand."
+        },
+        {
+          "name": "DeleteIssueParams",
+          "kind": "interface",
+          "line": 527,
+          "exported": true,
+          "signature": "export interface DeleteIssueParams { readonly deleteSubtasks?: 'true' | 'false'; }",
+          "jsdoc": "Optional query parameters for DELETE /rest/api/3/issue/{issueIdOrKey} (deleteIssue). Spec: { deleteSubtasks: \"true\" | \"false\" } — string enum, not boolean."
+        },
+        {
+          "name": "GetTransitionsParams",
+          "kind": "interface",
+          "line": 538,
+          "exported": true,
+          "signature": "export interface GetTransitionsParams { readonly expand?: string; readonly transitionId?: string; readonly skipRemoteOnl…",
+          "jsdoc": "Optional query parameters for GET /rest/api/3/issue/{issueIdOrKey}/transitions. Spec: expand, transitionId, skipRemoteOnlyCondition, includeUnavailableTransitions, sortByOpsBarAndStatus."
+        },
+        {
+          "name": "GetAgileIssueParams",
+          "kind": "interface",
+          "line": 557,
+          "exported": true,
+          "signature": "export interface GetAgileIssueParams { readonly fields?: string[]; readonly expand?: string; readonly updateHistory?: bo…",
+          "jsdoc": "Optional query parameters for GET /rest/agile/1.0/issue/{issueIdOrKey}. Spec: fields (array), expand (string), updateHistory (boolean)."
+        },
+        {
           "name": "AssignIssueData",
           "kind": "interface",
-          "line": 377,
+          "line": 568,
           "exported": true,
           "signature": "export interface AssignIssueData { readonly accountId?: string | null; }"
         },
         {
           "name": "IssuesResource",
           "kind": "class",
-          "line": 381,
+          "line": 572,
           "exported": true,
           "signature": "export class IssuesResource",
           "members": [
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 382
+              "line": 573
             },
             {
               "name": "get",
               "kind": "method",
-              "line": 389
+              "line": 580
             },
             {
               "name": "create",
               "kind": "method",
-              "line": 410
+              "line": 601
             },
             {
               "name": "update",
               "kind": "method",
-              "line": 420
+              "line": 611
             },
             {
               "name": "delete",
               "kind": "method",
-              "line": 429
+              "line": 633
             },
             {
               "name": "getTransitions",
               "kind": "method",
-              "line": 437
+              "line": 644
             },
             {
               "name": "transition",
               "kind": "method",
-              "line": 446
+              "line": 663
             },
             {
               "name": "requireAgileBaseUrl",
               "kind": "method",
-              "line": 456
+              "line": 673
             },
             {
               "name": "buildBoardIdQuery",
               "kind": "method",
-              "line": 463
+              "line": 680
             },
             {
               "name": "getAgile",
               "kind": "method",
-              "line": 480
+              "line": 697
             },
             {
               "name": "getEstimation",
               "kind": "method",
-              "line": 493
+              "line": 719
             },
             {
               "name": "setEstimation",
               "kind": "method",
-              "line": 511
+              "line": 737
             },
             {
               "name": "rank",
               "kind": "method",
-              "line": 531
+              "line": 757
             },
             {
               "name": "assign",
               "kind": "method",
-              "line": 558
+              "line": 784
             },
             {
               "name": "getChangelog",
               "kind": "method",
-              "line": 570
+              "line": 796
             },
             {
               "name": "filterChangelog",
               "kind": "method",
-              "line": 586
+              "line": 813
             },
             {
               "name": "getEditMeta",
               "kind": "method",
-              "line": 599
+              "line": 826
             },
             {
               "name": "notify",
               "kind": "method",
-              "line": 611
+              "line": 838
             },
             {
               "name": "listProperties",
               "kind": "method",
-              "line": 623
+              "line": 850
             },
             {
               "name": "deleteProperty",
               "kind": "method",
-              "line": 635
+              "line": 862
             },
             {
               "name": "getProperty",
               "kind": "method",
-              "line": 649
+              "line": 876
             },
             {
               "name": "setProperty",
               "kind": "method",
-              "line": 664
+              "line": 891
             },
             {
               "name": "deleteAllRemoteLinks",
               "kind": "method",
-              "line": 679
+              "line": 906
             },
             {
               "name": "listRemoteLinks",
               "kind": "method",
-              "line": 693
+              "line": 920
             },
             {
               "name": "createRemoteLink",
               "kind": "method",
-              "line": 711
+              "line": 938
             },
             {
               "name": "deleteRemoteLink",
               "kind": "method",
-              "line": 727
+              "line": 954
             },
             {
               "name": "getRemoteLink",
               "kind": "method",
-              "line": 738
+              "line": 965
             },
             {
               "name": "updateRemoteLink",
               "kind": "method",
-              "line": 750
+              "line": 977
             },
             {
               "name": "removeVote",
               "kind": "method",
-              "line": 766
+              "line": 993
             },
             {
               "name": "getVotes",
               "kind": "method",
-              "line": 777
+              "line": 1004
             },
             {
               "name": "addVote",
               "kind": "method",
-              "line": 789
+              "line": 1017
             },
             {
               "name": "removeWatcher",
               "kind": "method",
-              "line": 801
+              "line": 1028
             },
             {
               "name": "getWatchers",
               "kind": "method",
-              "line": 815
+              "line": 1042
             },
             {
               "name": "addWatcher",
               "kind": "method",
-              "line": 828
+              "line": 1055
             },
             {
               "name": "deleteAllWorklogs",
               "kind": "method",
-              "line": 847
+              "line": 1074
             },
             {
               "name": "listWorklogs",
               "kind": "method",
-              "line": 859
+              "line": 1095
             },
             {
               "name": "addWorklog",
               "kind": "method",
-              "line": 878
+              "line": 1114
             },
             {
               "name": "deleteWorklog",
               "kind": "method",
-              "line": 904
+              "line": 1140
             },
             {
               "name": "getWorklog",
               "kind": "method",
-              "line": 927
+              "line": 1163
             },
             {
               "name": "updateWorklog",
               "kind": "method",
-              "line": 946
+              "line": 1182
             },
             {
               "name": "listWorklogProperties",
               "kind": "method",
-              "line": 972
+              "line": 1208
             },
             {
               "name": "deleteWorklogProperty",
               "kind": "method",
-              "line": 987
+              "line": 1223
             },
             {
               "name": "getWorklogProperty",
               "kind": "method",
-              "line": 1002
+              "line": 1238
             },
             {
               "name": "setWorklogProperty",
               "kind": "method",
-              "line": 1018
+              "line": 1254
             },
             {
               "name": "moveWorklog",
               "kind": "method",
-              "line": 1036
+              "line": 1272
             },
             {
               "name": "archiveIssues",
               "kind": "method",
-              "line": 1061
+              "line": 1297
             },
             {
               "name": "archiveIssuesByJql",
               "kind": "method",
-              "line": 1076
+              "line": 1312
             },
             {
               "name": "unarchiveIssues",
               "kind": "method",
-              "line": 1089
+              "line": 1325
             },
             {
               "name": "bulkFetch",
               "kind": "method",
-              "line": 1104
+              "line": 1340
             },
             {
               "name": "getCreateMeta",
               "kind": "method",
-              "line": 1119
+              "line": 1355
             },
             {
               "name": "getCreateMetaIssueTypes",
               "kind": "method",
-              "line": 1142
+              "line": 1378
             },
             {
               "name": "getCreateMetaIssueType",
               "kind": "method",
-              "line": 1161
+              "line": 1397
             },
             {
               "name": "getLimitReport",
               "kind": "method",
-              "line": 1183
+              "line": 1419
             },
             {
               "name": "picker",
               "kind": "method",
-              "line": 1197
+              "line": 1433
             },
             {
               "name": "setPropertiesByEntityIds",
               "kind": "method",
-              "line": 1220
+              "line": 1456
             },
             {
               "name": "setPropertiesMulti",
               "kind": "method",
-              "line": 1235
+              "line": 1471
             },
             {
               "name": "watchIssuesBulk",
               "kind": "method",
-              "line": 1251
+              "line": 1487
             },
             {
               "name": "isWatchingIssuesBulk",
               "kind": "method",
-              "line": 1268
+              "line": 1504
             },
             {
               "name": "exportArchivedIssues",
               "kind": "method",
-              "line": 1283
+              "line": 1520
             }
           ]
         }
