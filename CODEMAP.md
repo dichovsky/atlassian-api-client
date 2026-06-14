@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "2.0.0"
   },
-  "sourceHash": "b68ad0321dc88176b957a3d1f0cafa00f8d6f8d02edf40819be178f8fa5144ff",
+  "sourceHash": "9def52802d7d95678d5884dada5ebc143e694776638b39e9cae93af67da92b15",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -3480,7 +3480,7 @@
       "name": "createCacheMiddleware",
       "kind": "function",
       "file": "src/core/cache.ts",
-      "line": 58,
+      "line": 62,
       "signature": "export function createCacheMiddleware(options?: CacheOptions): Middleware",
       "jsdoc": "Creates a middleware that caches API responses in memory."
     },
@@ -12701,7 +12701,7 @@
         {
           "name": "createCacheMiddleware",
           "kind": "function",
-          "line": 58,
+          "line": 62,
           "exported": true,
           "signature": "export function createCacheMiddleware(options?: CacheOptions): Middleware",
           "jsdoc": "Creates a middleware that caches API responses in memory."
@@ -12709,14 +12709,14 @@
         {
           "name": "sweepExpired",
           "kind": "function",
-          "line": 138,
+          "line": 142,
           "signature": "function sweepExpired(cache: Map<string, CacheEntry>, now: number): void",
           "jsdoc": "Delete every expired entry from the cache. Called on eviction to reclaim TTL-expired slots before resorting to LRU, so that a still-valid entry is not pushed out by a dead one that happened to be inserted earlier."
         },
         {
           "name": "buildCacheKey",
           "kind": "function",
-          "line": 146,
+          "line": 150,
           "signature": "function buildCacheKey(opts: RequestOptions): string"
         }
       ],
