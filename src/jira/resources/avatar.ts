@@ -4,11 +4,13 @@ import { encodePathSegment } from '../../core/path.js';
 /** A Jira avatar (icon) object. */
 export interface Avatar {
   readonly id: string;
-  readonly isSystemAvatar: boolean;
-  readonly isSelected: boolean;
-  readonly isDeletable: boolean;
+  readonly isSystemAvatar?: boolean;
+  readonly isSelected?: boolean;
+  readonly isDeletable?: boolean;
   readonly fileName?: string;
   readonly urls?: Record<string, string>;
+  /** The owner of the avatar. Null for system avatars; entity ID for custom avatars. */
+  readonly owner?: string;
 }
 
 /** Response for system avatar listing. */

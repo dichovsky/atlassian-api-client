@@ -516,7 +516,14 @@ export type {
   BulkForgeActionResponse,
 } from './resources/forge.js';
 export { ForgeResource } from './resources/forge.js';
-export type { Incident } from './resources/incidents.js';
+export type {
+  Incident,
+  IncidentStatus,
+  IncidentSeverityLevel,
+  IncidentSeverity,
+  IncidentAssociationType,
+  IncidentAssociation,
+} from './resources/incidents.js';
 export { IncidentsResource } from './resources/incidents.js';
 export type {
   PostIncidentReview,
@@ -670,8 +677,10 @@ export type {
   IssueTypeScreenSchemeMapping,
   IssueTypeScreenSchemeDefaultMapping,
   IssueTypeScreenSchemeMappingDetails,
+  ProjectCategory,
   ProjectDetails,
   IssueTypeScreenSchemesProjects,
+  IssueTypeScreenSchemeOrderBy,
   ListIssueTypeScreenSchemesParams,
   CreateIssueTypeScreenSchemeData,
   UpdateIssueTypeScreenSchemeData,
@@ -699,6 +708,7 @@ export { PermissionSchemeResource } from './resources/permissionscheme.js';
 export type {
   IssueTypeScheme,
   CreatedIssueTypeScheme,
+  IssueTypeSchemeOrderBy,
   ListIssueTypeSchemesParams,
   CreateIssueTypeSchemeData,
   UpdateIssueTypeSchemeData,

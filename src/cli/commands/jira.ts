@@ -46,6 +46,7 @@ import type {
   SearchDashboardsOrderBy,
   ListSoftwareIssuesParams,
   RedactionItem,
+  IssueTypeScreenSchemeOrderBy,
 } from '../../jira/index.js';
 import type {
   AddWorklogData,
@@ -3969,7 +3970,7 @@ async function executeIssueTypeScreenSchemes(
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
         id: ids,
         queryString: asString(opts['query']),
-        orderBy: asString(opts['order-by']),
+        orderBy: asString(opts['order-by']) as IssueTypeScreenSchemeOrderBy,
         expand: asString(opts['expand']),
       });
     }
@@ -4275,11 +4276,11 @@ async function executeIssueTypeSchemes(client: JiraClient, cmd: ParsedCommand): 
       });
     }
     case 'list-project': {
-      const projectId = parseCsv(opts['project-ids']);
+      const projectId = parseCsv(opts['project-ids']) ?? [];
       return client.issueTypeSchemes.listProject({
         startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
-        ...(projectId !== undefined && { projectId }),
+        projectId,
       });
     }
     case 'create': {
@@ -4287,14 +4288,14 @@ async function executeIssueTypeSchemes(client: JiraClient, cmd: ParsedCommand): 
       const description = asString(opts['description']);
       const defaultIssueTypeId = asString(opts['default-issue-type-id']);
       const issueTypeIds = parseCsv(opts['issue-type-ids']);
-      if (opts['issue-type-ids'] !== undefined && issueTypeIds === undefined) {
-        throw new Error('--issue-type-ids must contain at least one issue type ID');
+      if (!issueTypeIds || issueTypeIds.length === 0) {
+        throw new Error('--issue-type-ids is required and must contain at least one issue type ID');
       }
       return client.issueTypeSchemes.create({
         name,
+        issueTypeIds,
         ...(description !== undefined && { description }),
         ...(defaultIssueTypeId !== undefined && { defaultIssueTypeId }),
-        ...(issueTypeIds !== undefined && { issueTypeIds }),
       });
     }
     case 'update': {

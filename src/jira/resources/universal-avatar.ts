@@ -9,10 +9,12 @@ export type { Avatar };
 /**
  * Collection of system and custom avatars for a project, issue type, or
  * priority. Mirrors `Avatars` in the Jira REST v3 OpenAPI spec.
+ *
+ * Both arrays are optional per spec (no required fields on Avatars).
  */
 export interface Avatars {
-  readonly system: Avatar[];
-  readonly custom: Avatar[];
+  readonly system?: Avatar[];
+  readonly custom?: Avatar[];
 }
 
 /**
@@ -120,19 +122,19 @@ export class UniversalAvatarResource {
     params: StoreAvatarParams,
   ): Promise<Avatar> {
     asAvatarEntityType(type); // validate
-    if (!Number.isInteger(params.size) || params.size <= 0) {
-      throw new ValidationError('size must be a positive integer');
+    if (!Number.isInteger(params.size)) {
+      throw new ValidationError('size must be an integer');
     }
     const query: Record<string, string | number> = { size: params.size };
     if (params.x !== undefined) {
-      if (!Number.isInteger(params.x) || params.x < 0) {
-        throw new ValidationError('x must be a non-negative integer');
+      if (!Number.isInteger(params.x)) {
+        throw new ValidationError('x must be an integer');
       }
       query['x'] = params.x;
     }
     if (params.y !== undefined) {
-      if (!Number.isInteger(params.y) || params.y < 0) {
-        throw new ValidationError('y must be a non-negative integer');
+      if (!Number.isInteger(params.y)) {
+        throw new ValidationError('y must be an integer');
       }
       query['y'] = params.y;
     }

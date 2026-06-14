@@ -13,6 +13,7 @@ const makeAvatar = (id: string) => ({
   urls: { '16x16': 'https://example.com/avatar/16' },
 });
 
+// Spec: Avatars.system and Avatars.custom are optional (no required[] in spec)
 const makeAvatars = () => ({
   system: [{ id: '1000', isSystemAvatar: true, isSelected: false, isDeletable: false }],
   custom: [makeAvatar('1010')],
@@ -64,6 +65,33 @@ describe('UniversalAvatarResource', () => {
         ValidationError,
       );
     });
+
+    it('returns Avatar with optional owner field when present (spec: Avatar.owner)', async () => {
+      // Spec: Avatar.owner is an optional readOnly field returned by the API.
+      const avatarWithOwner = { id: '2000', owner: '10001', isDeletable: true };
+      transport.respondWith({ system: [avatarWithOwner], custom: [] });
+
+      const result = await resource.getAvatars('project', '10001');
+
+      expect(result.system?.[0]).toMatchObject({ id: '2000', owner: '10001' });
+    });
+
+    it('accepts Avatars response with only system or only custom (both are optional per spec)', async () => {
+      // Spec: Avatars has no required[] — both system and custom are optional.
+      transport.respondWith({ system: [{ id: '100' }] });
+      const result = await resource.getAvatars('project', '10001');
+      expect(result.system).toHaveLength(1);
+      expect(result.custom).toBeUndefined();
+    });
+
+    it('accepts Avatar with optional booleans absent (spec: only id is required)', async () => {
+      // Spec: Avatar requires only id; isSystemAvatar/isSelected/isDeletable are optional.
+      const minimalAvatar = { id: '3000' };
+      transport.respondWith({ system: [minimalAvatar], custom: [] });
+      const result = await resource.getAvatars('issuetype', '10002');
+      expect(result.system?.[0]).toMatchObject({ id: '3000' });
+      expect(result.system?.[0]?.isSystemAvatar).toBeUndefined();
+    });
   });
 
   // ── storeAvatar (B792) ────────────────────────────────────────────────────
@@ -111,31 +139,57 @@ describe('UniversalAvatarResource', () => {
       expect(query['y']).toBeUndefined();
     });
 
-    it('throws ValidationError when size is zero', async () => {
+    it('accepts size=0 (spec default is 0, no minimum constraint)', async () => {
+      // Spec: size has default=0 and no minimum — size=0 must be accepted.
+      transport.respondWith(makeAvatar('2023'), 201);
       const blob = new Blob([new Uint8Array([0])]);
-      await expect(resource.storeAvatar('project', '10001', blob, { size: 0 })).rejects.toThrow(
-        ValidationError,
-      );
+      await expect(
+        resource.storeAvatar('project', '10001', blob, { size: 0 }),
+      ).resolves.toBeDefined();
     });
 
-    it('throws ValidationError when size is negative', async () => {
+    it('accepts negative size (spec imposes no minimum)', async () => {
+      transport.respondWith(makeAvatar('2024'), 201);
       const blob = new Blob([new Uint8Array([0])]);
-      await expect(resource.storeAvatar('project', '10001', blob, { size: -1 })).rejects.toThrow(
-        ValidationError,
-      );
+      await expect(
+        resource.storeAvatar('project', '10001', blob, { size: -1 }),
+      ).resolves.toBeDefined();
     });
 
-    it('throws ValidationError when x is negative', async () => {
+    it('accepts negative x (spec imposes no minimum)', async () => {
+      transport.respondWith(makeAvatar('2025'), 201);
       const blob = new Blob([new Uint8Array([0])]);
       await expect(
         resource.storeAvatar('project', '10001', blob, { size: 48, x: -1 }),
-      ).rejects.toThrow(ValidationError);
+      ).resolves.toBeDefined();
     });
 
-    it('throws ValidationError when y is negative', async () => {
+    it('accepts negative y (spec imposes no minimum)', async () => {
+      transport.respondWith(makeAvatar('2026'), 201);
       const blob = new Blob([new Uint8Array([0])]);
       await expect(
         resource.storeAvatar('project', '10001', blob, { size: 48, y: -1 }),
+      ).resolves.toBeDefined();
+    });
+
+    it('throws ValidationError when size is not an integer', async () => {
+      const blob = new Blob([new Uint8Array([0])]);
+      await expect(resource.storeAvatar('project', '10001', blob, { size: 1.5 })).rejects.toThrow(
+        ValidationError,
+      );
+    });
+
+    it('throws ValidationError when x is not an integer', async () => {
+      const blob = new Blob([new Uint8Array([0])]);
+      await expect(
+        resource.storeAvatar('project', '10001', blob, { size: 48, x: 1.5 }),
+      ).rejects.toThrow(ValidationError);
+    });
+
+    it('throws ValidationError when y is not an integer', async () => {
+      const blob = new Blob([new Uint8Array([0])]);
+      await expect(
+        resource.storeAvatar('project', '10001', blob, { size: 48, y: 1.5 }),
       ).rejects.toThrow(ValidationError);
     });
 
