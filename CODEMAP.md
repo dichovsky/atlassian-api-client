@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "2.0.0"
   },
-  "sourceHash": "a7e403a704f94e72227d0fb82b248a8bebe3a49b960ddfdfeadb0ee17a1f2288",
+  "sourceHash": "4c3dcd92dbf92d6573bc8053cacd2eaa6ba97b21bd19cd848dbb4ff8c27d35bc",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -20083,6 +20083,18 @@
               "original": "PermissionHolderType"
             },
             {
+              "exported": "PermissionType",
+              "original": "PermissionType"
+            },
+            {
+              "exported": "PlanTeamType",
+              "original": "PlanTeamType"
+            },
+            {
+              "exported": "JsonPatchOperation",
+              "original": "JsonPatchOperation"
+            },
+            {
               "exported": "CreateDateFieldData",
               "original": "CreateDateFieldData"
             },
@@ -30569,129 +30581,9 @@
       "path": "src/jira/resources/plans.ts",
       "symbols": [
         {
-          "name": "PlanPage",
-          "kind": "interface",
-          "line": 7,
-          "exported": true,
-          "signature": "export interface PlanPage { readonly cursor?: string; readonly last?: boolean; readonly nextPageCursor?: string; readonl…",
-          "jsdoc": "Cursor-paginated response for GET /rest/api/3/plans/plan."
-        },
-        {
-          "name": "PlanTeamPage",
-          "kind": "interface",
-          "line": 17,
-          "exported": true,
-          "signature": "export interface PlanTeamPage { readonly cursor?: string; readonly last?: boolean; readonly nextPageCursor?: string; rea…",
-          "jsdoc": "Cursor-paginated response for GET /rest/api/3/plans/plan/{planId}/team."
-        },
-        {
-          "name": "PlanSummary",
-          "kind": "interface",
-          "line": 29,
-          "exported": true,
-          "signature": "export interface PlanSummary { readonly id: string; readonly issueSources?: PlanIssueSource[]; readonly name: string; re…",
-          "jsdoc": "A plan summary as returned by the list endpoint (GetPlanResponseForPage)."
-        },
-        {
-          "name": "PlanTeamSummary",
-          "kind": "interface",
-          "line": 38,
-          "exported": true,
-          "signature": "export interface PlanTeamSummary { readonly id: string; readonly name?: string; readonly type: string; }",
-          "jsdoc": "A team summary as returned by the list teams endpoint (GetTeamResponseForPage)."
-        },
-        {
-          "name": "PlanDateField",
-          "kind": "interface",
-          "line": 45,
-          "exported": true,
-          "signature": "export interface PlanDateField { readonly dateCustomFieldId?: number; readonly type: string; }",
-          "jsdoc": "Date field configuration returned in a plan."
-        },
-        {
-          "name": "PlanScheduling",
-          "kind": "interface",
-          "line": 51,
-          "exported": true,
-          "signature": "export interface PlanScheduling { readonly dependencies: string; readonly endDate: PlanDateField; readonly estimation: s…",
-          "jsdoc": "Scheduling configuration returned in a plan."
-        },
-        {
-          "name": "PlanExclusionRules",
-          "kind": "interface",
-          "line": 60,
-          "exported": true,
-          "signature": "export interface PlanExclusionRules { readonly issueIds?: number[]; readonly issueTypeIds?: number[]; readonly numberOfD…",
-          "jsdoc": "Exclusion rules returned in a plan."
-        },
-        {
-          "name": "PlanCrossProjectRelease",
-          "kind": "interface",
-          "line": 70,
-          "exported": true,
-          "signature": "export interface PlanCrossProjectRelease { readonly name?: string; readonly releaseIds?: number[]; }",
-          "jsdoc": "Cross-project release returned in a plan."
-        },
-        {
-          "name": "PlanCustomField",
-          "kind": "interface",
-          "line": 76,
-          "exported": true,
-          "signature": "export interface PlanCustomField { readonly customFieldId?: number; readonly filter?: boolean; }",
-          "jsdoc": "Custom field returned in a plan."
-        },
-        {
-          "name": "PlanIssueSource",
-          "kind": "interface",
-          "line": 82,
-          "exported": true,
-          "signature": "export interface PlanIssueSource { readonly type?: string; readonly value?: number; }",
-          "jsdoc": "Issue source returned in a plan."
-        },
-        {
-          "name": "PlanPermission",
-          "kind": "interface",
-          "line": 88,
-          "exported": true,
-          "signature": "export interface PlanPermission { readonly holder?: PlanPermissionHolder; readonly type?: string; }",
-          "jsdoc": "Permission returned in a plan."
-        },
-        {
-          "name": "PlanPermissionHolder",
-          "kind": "interface",
-          "line": 94,
-          "exported": true,
-          "signature": "export interface PlanPermissionHolder { readonly type?: string; readonly value?: string; }",
-          "jsdoc": "Permission holder returned in a plan."
-        },
-        {
-          "name": "PlanResponse",
-          "kind": "interface",
-          "line": 100,
-          "exported": true,
-          "signature": "export interface PlanResponse { readonly crossProjectReleases?: PlanCrossProjectRelease[]; readonly customFields?: PlanC…",
-          "jsdoc": "Full plan response from GET /rest/api/3/plans/plan/{planId}."
-        },
-        {
-          "name": "AtlassianTeamResponse",
-          "kind": "interface",
-          "line": 115,
-          "exported": true,
-          "signature": "export interface AtlassianTeamResponse { readonly capacity?: number; readonly id: string; readonly issueSourceId?: numbe…",
-          "jsdoc": "Atlassian team response from GET /rest/api/3/plans/plan/{planId}/team/atlassian/{atlassianTeamId}."
-        },
-        {
-          "name": "PlanOnlyTeamResponse",
-          "kind": "interface",
-          "line": 124,
-          "exported": true,
-          "signature": "export interface PlanOnlyTeamResponse { readonly capacity?: number; readonly id: number; readonly issueSourceId?: number…",
-          "jsdoc": "Plan-only team response from GET /rest/api/3/plans/plan/{planId}/team/planonly/{planOnlyTeamId}."
-        },
-        {
           "name": "PlanStatus",
           "kind": "type",
-          "line": 137,
+          "line": 7,
           "exported": true,
           "signature": "export type PlanStatus = 'Active' | 'Trashed' | 'Archived';",
           "jsdoc": "Plan status values."
@@ -30699,7 +30591,7 @@
         {
           "name": "PlanningStyle",
           "kind": "type",
-          "line": 140,
+          "line": 10,
           "exported": true,
           "signature": "export type PlanningStyle = 'Scrum' | 'Kanban';",
           "jsdoc": "Planning style values for teams."
@@ -30707,7 +30599,7 @@
         {
           "name": "SchedulingDependencies",
           "kind": "type",
-          "line": 143,
+          "line": 13,
           "exported": true,
           "signature": "export type SchedulingDependencies = 'Sequential' | 'Concurrent';",
           "jsdoc": "Scheduling dependencies values."
@@ -30715,7 +30607,7 @@
         {
           "name": "SchedulingEstimation",
           "kind": "type",
-          "line": 146,
+          "line": 16,
           "exported": true,
           "signature": "export type SchedulingEstimation = 'StoryPoints' | 'Days' | 'Hours';",
           "jsdoc": "Scheduling estimation values."
@@ -30723,7 +30615,7 @@
         {
           "name": "SchedulingInferredDates",
           "kind": "type",
-          "line": 149,
+          "line": 19,
           "exported": true,
           "signature": "export type SchedulingInferredDates = 'None' | 'SprintDates' | 'ReleaseDates';",
           "jsdoc": "Scheduling inferred dates values."
@@ -30731,7 +30623,7 @@
         {
           "name": "DateFieldType",
           "kind": "type",
-          "line": 152,
+          "line": 22,
           "exported": true,
           "signature": "export type DateFieldType = 'DueDate' | 'TargetStartDate' | 'TargetEndDate' | 'DateCustomField';",
           "jsdoc": "Date field type values."
@@ -30739,23 +30631,167 @@
         {
           "name": "IssueSourceType",
           "kind": "type",
-          "line": 155,
+          "line": 25,
           "exported": true,
-          "signature": "export type IssueSourceType = 'Board' | 'Project' | 'Filter';",
+          "signature": "export type IssueSourceType = 'Board' | 'Project' | 'Filter' | 'Custom';",
           "jsdoc": "Issue source type values."
         },
         {
           "name": "PermissionHolderType",
           "kind": "type",
-          "line": 158,
+          "line": 28,
           "exported": true,
           "signature": "export type PermissionHolderType = 'Group' | 'AccountId';",
           "jsdoc": "Permission holder type values."
         },
         {
+          "name": "PermissionType",
+          "kind": "type",
+          "line": 31,
+          "exported": true,
+          "signature": "export type PermissionType = 'View' | 'Edit';",
+          "jsdoc": "Permission type values."
+        },
+        {
+          "name": "PlanTeamType",
+          "kind": "type",
+          "line": 34,
+          "exported": true,
+          "signature": "export type PlanTeamType = 'PlanOnly' | 'Atlassian';",
+          "jsdoc": "Team type values for the list-teams response."
+        },
+        {
+          "name": "PlanPage",
+          "kind": "interface",
+          "line": 39,
+          "exported": true,
+          "signature": "export interface PlanPage { readonly cursor?: string; readonly last?: boolean; readonly nextPageCursor?: string; readonl…",
+          "jsdoc": "Cursor-paginated response for GET /rest/api/3/plans/plan."
+        },
+        {
+          "name": "PlanTeamPage",
+          "kind": "interface",
+          "line": 49,
+          "exported": true,
+          "signature": "export interface PlanTeamPage { readonly cursor?: string; readonly last?: boolean; readonly nextPageCursor?: string; rea…",
+          "jsdoc": "Cursor-paginated response for GET /rest/api/3/plans/plan/{planId}/team."
+        },
+        {
+          "name": "PlanSummary",
+          "kind": "interface",
+          "line": 61,
+          "exported": true,
+          "signature": "export interface PlanSummary { readonly id: string; readonly issueSources?: PlanIssueSource[]; readonly name: string; re…",
+          "jsdoc": "A plan summary as returned by the list endpoint (GetPlanResponseForPage)."
+        },
+        {
+          "name": "PlanTeamSummary",
+          "kind": "interface",
+          "line": 70,
+          "exported": true,
+          "signature": "export interface PlanTeamSummary { readonly id: string; readonly name?: string; readonly type: PlanTeamType; }",
+          "jsdoc": "A team summary as returned by the list teams endpoint (GetTeamResponseForPage)."
+        },
+        {
+          "name": "PlanDateField",
+          "kind": "interface",
+          "line": 77,
+          "exported": true,
+          "signature": "export interface PlanDateField { readonly dateCustomFieldId?: number; readonly type: DateFieldType; }",
+          "jsdoc": "Date field configuration returned in a plan."
+        },
+        {
+          "name": "PlanScheduling",
+          "kind": "interface",
+          "line": 83,
+          "exported": true,
+          "signature": "export interface PlanScheduling { readonly dependencies: SchedulingDependencies; readonly endDate: PlanDateField; readon…",
+          "jsdoc": "Scheduling configuration returned in a plan."
+        },
+        {
+          "name": "PlanExclusionRules",
+          "kind": "interface",
+          "line": 92,
+          "exported": true,
+          "signature": "export interface PlanExclusionRules { readonly issueIds?: number[]; readonly issueTypeIds?: number[]; readonly numberOfD…",
+          "jsdoc": "Exclusion rules returned in a plan."
+        },
+        {
+          "name": "PlanCrossProjectRelease",
+          "kind": "interface",
+          "line": 102,
+          "exported": true,
+          "signature": "export interface PlanCrossProjectRelease { readonly name?: string; readonly releaseIds?: number[]; }",
+          "jsdoc": "Cross-project release returned in a plan."
+        },
+        {
+          "name": "PlanCustomField",
+          "kind": "interface",
+          "line": 108,
+          "exported": true,
+          "signature": "export interface PlanCustomField { readonly customFieldId: number; readonly filter?: boolean; }",
+          "jsdoc": "Custom field returned in a plan."
+        },
+        {
+          "name": "PlanIssueSource",
+          "kind": "interface",
+          "line": 114,
+          "exported": true,
+          "signature": "export interface PlanIssueSource { readonly type: IssueSourceType; readonly value: number; }",
+          "jsdoc": "Issue source returned in a plan."
+        },
+        {
+          "name": "PlanPermissionHolder",
+          "kind": "interface",
+          "line": 120,
+          "exported": true,
+          "signature": "export interface PlanPermissionHolder { readonly type: PermissionHolderType; readonly value: string; }",
+          "jsdoc": "Permission holder returned in a plan."
+        },
+        {
+          "name": "PlanPermission",
+          "kind": "interface",
+          "line": 126,
+          "exported": true,
+          "signature": "export interface PlanPermission { readonly holder: PlanPermissionHolder; readonly type: PermissionType; }",
+          "jsdoc": "Permission returned in a plan."
+        },
+        {
+          "name": "PlanResponse",
+          "kind": "interface",
+          "line": 132,
+          "exported": true,
+          "signature": "export interface PlanResponse { readonly crossProjectReleases?: PlanCrossProjectRelease[]; readonly customFields?: PlanC…",
+          "jsdoc": "Full plan response from GET /rest/api/3/plans/plan/{planId}."
+        },
+        {
+          "name": "AtlassianTeamResponse",
+          "kind": "interface",
+          "line": 147,
+          "exported": true,
+          "signature": "export interface AtlassianTeamResponse { readonly capacity?: number; readonly id: string; readonly issueSourceId?: numbe…",
+          "jsdoc": "Atlassian team response from GET /rest/api/3/plans/plan/{planId}/team/atlassian/{atlassianTeamId}."
+        },
+        {
+          "name": "PlanOnlyTeamResponse",
+          "kind": "interface",
+          "line": 156,
+          "exported": true,
+          "signature": "export interface PlanOnlyTeamResponse { readonly capacity?: number; readonly id: number; readonly issueSourceId?: number…",
+          "jsdoc": "Plan-only team response from GET /rest/api/3/plans/plan/{planId}/team/planonly/{planOnlyTeamId}."
+        },
+        {
+          "name": "JsonPatchOperation",
+          "kind": "interface",
+          "line": 172,
+          "exported": true,
+          "signature": "export interface JsonPatchOperation { readonly op: 'add' | 'remove' | 'replace' | 'move' | 'copy' | 'test'; readonly pat…",
+          "jsdoc": "A single JSON Patch operation as defined by RFC 6902. Used for PUT endpoints that accept `application/json-patch+json`."
+        },
+        {
           "name": "CreateDateFieldData",
           "kind": "interface",
-          "line": 163,
+          "line": 182,
           "exported": true,
           "signature": "export interface CreateDateFieldData { readonly dateCustomFieldId?: number; readonly type: DateFieldType; }",
           "jsdoc": "Date field configuration for plan creation."
@@ -30763,7 +30799,7 @@
         {
           "name": "CreateSchedulingData",
           "kind": "interface",
-          "line": 169,
+          "line": 188,
           "exported": true,
           "signature": "export interface CreateSchedulingData { readonly dependencies?: SchedulingDependencies; readonly endDate?: CreateDateFie…",
           "jsdoc": "Scheduling configuration for plan creation."
@@ -30771,7 +30807,7 @@
         {
           "name": "CreateExclusionRulesData",
           "kind": "interface",
-          "line": 178,
+          "line": 197,
           "exported": true,
           "signature": "export interface CreateExclusionRulesData { readonly issueIds?: number[]; readonly issueTypeIds?: number[]; readonly num…",
           "jsdoc": "Exclusion rules configuration for plan creation."
@@ -30779,7 +30815,7 @@
         {
           "name": "CreateCrossProjectReleaseData",
           "kind": "interface",
-          "line": 188,
+          "line": 207,
           "exported": true,
           "signature": "export interface CreateCrossProjectReleaseData { readonly name: string; readonly releaseIds?: number[]; }",
           "jsdoc": "Cross-project release for plan creation."
@@ -30787,7 +30823,7 @@
         {
           "name": "CreateCustomFieldData",
           "kind": "interface",
-          "line": 194,
+          "line": 213,
           "exported": true,
           "signature": "export interface CreateCustomFieldData { readonly customFieldId: number; readonly filter?: boolean; }",
           "jsdoc": "Custom field for plan creation."
@@ -30795,7 +30831,7 @@
         {
           "name": "CreateIssueSourceData",
           "kind": "interface",
-          "line": 200,
+          "line": 219,
           "exported": true,
           "signature": "export interface CreateIssueSourceData { readonly type: IssueSourceType; readonly value: number; }",
           "jsdoc": "Issue source for plan creation."
@@ -30803,7 +30839,7 @@
         {
           "name": "CreatePermissionHolderData",
           "kind": "interface",
-          "line": 206,
+          "line": 225,
           "exported": true,
           "signature": "export interface CreatePermissionHolderData { readonly type: PermissionHolderType; readonly value: string; }",
           "jsdoc": "Permission holder for plan creation."
@@ -30811,15 +30847,15 @@
         {
           "name": "CreatePermissionData",
           "kind": "interface",
-          "line": 212,
+          "line": 231,
           "exported": true,
-          "signature": "export interface CreatePermissionData { readonly holder: CreatePermissionHolderData; readonly type: string; }",
+          "signature": "export interface CreatePermissionData { readonly holder: CreatePermissionHolderData; readonly type: PermissionType; }",
           "jsdoc": "Permission for plan creation."
         },
         {
           "name": "CreatePlanData",
           "kind": "interface",
-          "line": 218,
+          "line": 237,
           "exported": true,
           "signature": "export interface CreatePlanData { readonly crossProjectReleases?: CreateCrossProjectReleaseData[]; readonly customFields…",
           "jsdoc": "Request body for POST /rest/api/3/plans/plan."
@@ -30827,7 +30863,7 @@
         {
           "name": "DuplicatePlanData",
           "kind": "interface",
-          "line": 230,
+          "line": 249,
           "exported": true,
           "signature": "export interface DuplicatePlanData { readonly name: string; }",
           "jsdoc": "Request body for POST /rest/api/3/plans/plan/{planId}/duplicate."
@@ -30835,7 +30871,7 @@
         {
           "name": "AddAtlassianTeamData",
           "kind": "interface",
-          "line": 235,
+          "line": 254,
           "exported": true,
           "signature": "export interface AddAtlassianTeamData { readonly capacity?: number; readonly id: string; readonly issueSourceId?: number…",
           "jsdoc": "Request body for POST /rest/api/3/plans/plan/{planId}/team/atlassian."
@@ -30843,7 +30879,7 @@
         {
           "name": "CreatePlanOnlyTeamData",
           "kind": "interface",
-          "line": 244,
+          "line": 263,
           "exported": true,
           "signature": "export interface CreatePlanOnlyTeamData { readonly capacity?: number; readonly issueSourceId?: number; readonly memberAc…",
           "jsdoc": "Request body for POST /rest/api/3/plans/plan/{planId}/team/planonly."
@@ -30851,7 +30887,7 @@
         {
           "name": "ListPlansParams",
           "kind": "interface",
-          "line": 256,
+          "line": 275,
           "exported": true,
           "signature": "export interface ListPlansParams { readonly cursor?: string; readonly includeTrashed?: boolean; readonly includeArchived…",
           "jsdoc": "Query parameters for GET /rest/api/3/plans/plan."
@@ -30859,15 +30895,15 @@
         {
           "name": "GetPlanParams",
           "kind": "interface",
-          "line": 264,
+          "line": 283,
           "exported": true,
           "signature": "export interface GetPlanParams { readonly useGroupId?: boolean; }",
-          "jsdoc": "Query parameters for GET /rest/api/3/plans/plan (single-page)."
+          "jsdoc": "Query parameters for GET /rest/api/3/plans/plan/{planId}."
         },
         {
           "name": "ListPlanTeamsParams",
           "kind": "interface",
-          "line": 269,
+          "line": 288,
           "exported": true,
           "signature": "export interface ListPlanTeamsParams { readonly cursor?: string; readonly maxResults?: number; }",
           "jsdoc": "Query parameters for GET /rest/api/3/plans/plan/{planId}/team."
@@ -30875,7 +30911,7 @@
         {
           "name": "PlansResource",
           "kind": "class",
-          "line": 282,
+          "line": 301,
           "exported": true,
           "signature": "export class PlansResource",
           "jsdoc": "Jira Plans resource — B625-B640.",
@@ -30883,97 +30919,97 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 283
+              "line": 302
             },
             {
               "name": "list",
               "kind": "method",
-              "line": 292
+              "line": 311
             },
             {
               "name": "listAll",
               "kind": "method",
-              "line": 309
+              "line": 328
             },
             {
               "name": "create",
               "kind": "method",
-              "line": 340
+              "line": 359
             },
             {
               "name": "get",
               "kind": "method",
-              "line": 367
+              "line": 386
             },
             {
               "name": "update",
               "kind": "method",
-              "line": 386
+              "line": 409
             },
             {
               "name": "archive",
               "kind": "method",
-              "line": 405
+              "line": 428
             },
             {
               "name": "duplicate",
               "kind": "method",
-              "line": 417
+              "line": 440
             },
             {
               "name": "listTeams",
               "kind": "method",
-              "line": 430
+              "line": 453
             },
             {
               "name": "listTeamsAll",
               "kind": "method",
-              "line": 445
+              "line": 468
             },
             {
               "name": "addAtlassianTeam",
               "kind": "method",
-              "line": 478
+              "line": 501
             },
             {
               "name": "deleteAtlassianTeam",
               "kind": "method",
-              "line": 497
+              "line": 520
             },
             {
               "name": "getAtlassianTeam",
               "kind": "method",
-              "line": 508
+              "line": 531
             },
             {
               "name": "updateAtlassianTeam",
               "kind": "method",
-              "line": 522
+              "line": 547
             },
             {
               "name": "createPlanOnlyTeam",
               "kind": "method",
-              "line": 539
+              "line": 564
             },
             {
               "name": "deletePlanOnlyTeam",
               "kind": "method",
-              "line": 560
+              "line": 585
             },
             {
               "name": "getPlanOnlyTeam",
               "kind": "method",
-              "line": 571
+              "line": 596
             },
             {
               "name": "updatePlanOnlyTeam",
               "kind": "method",
-              "line": 585
+              "line": 612
             },
             {
               "name": "trash",
               "kind": "method",
-              "line": 601
+              "line": 628
             }
           ]
         }
