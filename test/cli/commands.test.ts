@@ -16443,25 +16443,26 @@ describe('executeJiraCommand', () => {
       ).rejects.toThrow('--value must be valid JSON');
     });
 
-    it('app list-field-context-configurations passes both csv arrays', async () => {
-      jiraAppMock.listFieldContextConfigurations.mockResolvedValue({ configurations: [] });
+    it('app list-field-context-configurations passes field-ids-or-keys csv', async () => {
+      jiraAppMock.listFieldContextConfigurations.mockResolvedValue({ values: [] });
 
       await executeJiraCommand(
         cmd('app', 'list-field-context-configurations', [], {
           'field-ids-or-keys': 'customfield_10042, customfield_10043',
-          'context-ids': '10100,10101',
         }),
         GLOBALS,
       );
 
-      expect(jiraAppMock.listFieldContextConfigurations).toHaveBeenCalledWith({
-        fieldIdsOrKeys: ['customfield_10042', 'customfield_10043'],
-        contextIds: ['10100', '10101'],
-      });
+      // Spec ConfigurationsListParameters body only has fieldIdsOrKeys (required);
+      // context filtering uses the fieldContextId query param (2nd arg), empty here.
+      expect(jiraAppMock.listFieldContextConfigurations).toHaveBeenCalledWith(
+        { fieldIdsOrKeys: ['customfield_10042', 'customfield_10043'] },
+        {},
+      );
     });
 
     it('app list-field-context-configurations accepts just field-ids-or-keys', async () => {
-      jiraAppMock.listFieldContextConfigurations.mockResolvedValue({ configurations: [] });
+      jiraAppMock.listFieldContextConfigurations.mockResolvedValue({ values: [] });
 
       await executeJiraCommand(
         cmd('app', 'list-field-context-configurations', [], {
@@ -16470,30 +16471,33 @@ describe('executeJiraCommand', () => {
         GLOBALS,
       );
 
-      expect(jiraAppMock.listFieldContextConfigurations).toHaveBeenCalledWith({
-        fieldIdsOrKeys: ['customfield_10042'],
-      });
+      expect(jiraAppMock.listFieldContextConfigurations).toHaveBeenCalledWith(
+        { fieldIdsOrKeys: ['customfield_10042'] },
+        {},
+      );
     });
 
-    it('app list-field-context-configurations accepts just context-ids', async () => {
-      jiraAppMock.listFieldContextConfigurations.mockResolvedValue({ configurations: [] });
+    it('app list-field-context-configurations maps --context-ids to fieldContextId query param', async () => {
+      jiraAppMock.listFieldContextConfigurations.mockResolvedValue({ values: [] });
 
       await executeJiraCommand(
-        cmd('app', 'list-field-context-configurations', [], { 'context-ids': '10100' }),
+        cmd('app', 'list-field-context-configurations', [], {
+          'field-ids-or-keys': 'customfield_10042',
+          'context-ids': '10100,10101',
+        }),
         GLOBALS,
       );
 
-      expect(jiraAppMock.listFieldContextConfigurations).toHaveBeenCalledWith({
-        contextIds: ['10100'],
-      });
+      expect(jiraAppMock.listFieldContextConfigurations).toHaveBeenCalledWith(
+        { fieldIdsOrKeys: ['customfield_10042'] },
+        { fieldContextId: [10100, 10101] },
+      );
     });
 
-    it('app list-field-context-configurations rejects empty body', async () => {
+    it('app list-field-context-configurations rejects missing field-ids-or-keys', async () => {
       await expect(
         executeJiraCommand(cmd('app', 'list-field-context-configurations'), GLOBALS),
-      ).rejects.toThrow(
-        'list-field-context-configurations requires at least one of: --field-ids-or-keys, --context-ids',
-      );
+      ).rejects.toThrow('list-field-context-configurations requires --field-ids-or-keys');
     });
 
     it('app list-field-context-configurations treats blank csv as missing', async () => {
@@ -16504,9 +16508,7 @@ describe('executeJiraCommand', () => {
           }),
           GLOBALS,
         ),
-      ).rejects.toThrow(
-        'list-field-context-configurations requires at least one of: --field-ids-or-keys, --context-ids',
-      );
+      ).rejects.toThrow('list-field-context-configurations requires --field-ids-or-keys');
     });
 
     it('app bulk-update-field-value passes parsed updates', async () => {

@@ -19,12 +19,24 @@ describe('AppResource', () => {
   // ── Field context configuration ───────────────────────────────────────────
 
   describe('getFieldContextConfiguration()', () => {
-    it('calls GET /app/field/{fieldIdOrKey}/context/configuration', async () => {
-      transport.respondWith({ id: 'cfg-1', contextId: '10100', configuration: { foo: true } });
+    it('calls GET /app/field/{fieldIdOrKey}/context/configuration and returns paginated response (B1056)', async () => {
+      // Spec returns PageBeanContextualConfiguration, not a single item.
+      // Items use fieldContextId (not contextId).
+      const pageBean = {
+        isLast: true,
+        maxResults: 50,
+        startAt: 0,
+        total: 1,
+        values: [{ id: 'cfg-1', fieldContextId: '10100', configuration: { foo: true } }],
+      };
+      transport.respondWith(pageBean);
 
       const result = await app.getFieldContextConfiguration('customfield_10042');
 
-      expect(result).toEqual({ id: 'cfg-1', contextId: '10100', configuration: { foo: true } });
+      expect(result).toEqual(pageBean);
+      // Regression: old code returned a single FieldContextConfiguration, not PageBean.
+      expect(result).toHaveProperty('values');
+      expect(result).toHaveProperty('isLast');
       expect(transport.lastCall?.options).toMatchObject({
         method: 'GET',
         path: `${API_BASE}/app/field/customfield_10042/context/configuration`,
@@ -32,13 +44,55 @@ describe('AppResource', () => {
     });
 
     it('URL-encodes the fieldIdOrKey path segment', async () => {
-      transport.respondWith({ id: 'cfg-1', contextId: '10100' });
+      transport.respondWith({ isLast: true, values: [] });
 
       await app.getFieldContextConfiguration('weird/key with space');
 
-      expect(transport.lastCall?.options.path).toBe(
+      expect(transport.lastCall?.options.path).toContain(
         `${API_BASE}/app/field/weird%2Fkey%20with%20space/context/configuration`,
       );
+    });
+
+    it('passes id as repeated query params via path (type:array in spec)', async () => {
+      transport.respondWith({ isLast: true, values: [] });
+
+      await app.getFieldContextConfiguration('customfield_10042', { id: [10000, 10001] });
+
+      const path = transport.lastCall?.options.path as string;
+      expect(path).toContain('id=10000');
+      expect(path).toContain('id=10001');
+    });
+
+    it('passes fieldContextId as repeated query params via path (type:array in spec)', async () => {
+      transport.respondWith({ isLast: true, values: [] });
+
+      await app.getFieldContextConfiguration('customfield_10042', {
+        fieldContextId: [10010, 10011],
+      });
+
+      const path = transport.lastCall?.options.path as string;
+      expect(path).toContain('fieldContextId=10010');
+      expect(path).toContain('fieldContextId=10011');
+    });
+
+    it('passes scalar query params via query object', async () => {
+      transport.respondWith({ isLast: true, values: [] });
+
+      await app.getFieldContextConfiguration('customfield_10042', {
+        issueId: 9999,
+        projectKeyOrId: 'PROJ',
+        issueTypeId: 'it-1',
+        startAt: 0,
+        maxResults: 50,
+      });
+
+      expect(transport.lastCall?.options.query).toMatchObject({
+        issueId: 9999,
+        projectKeyOrId: 'PROJ',
+        issueTypeId: 'it-1',
+        startAt: 0,
+        maxResults: 50,
+      });
     });
 
     it('propagates transport errors', async () => {
@@ -87,20 +141,94 @@ describe('AppResource', () => {
   });
 
   describe('listFieldContextConfigurations()', () => {
-    it('POSTs the body and returns the list', async () => {
-      transport.respondWith({ configurations: [{ id: 'cfg-1', contextId: '10100' }] });
+    it('POSTs with required fieldIdsOrKeys body and returns paginated response with values (B1056)', async () => {
+      // Spec returns PageBeanBulkContextualConfiguration with `values` (not `configurations`).
+      // BulkContextualConfiguration includes customFieldId.
+      const pageBean = {
+        isLast: true,
+        maxResults: 100,
+        startAt: 0,
+        total: 1,
+        values: [{ id: 'cfg-1', customFieldId: 'customfield_10042', fieldContextId: '10100' }],
+      };
+      transport.respondWith(pageBean);
 
       const result = await app.listFieldContextConfigurations({
         fieldIdsOrKeys: ['customfield_10042'],
-        contextIds: ['10100'],
       });
 
-      expect(result).toEqual({ configurations: [{ id: 'cfg-1', contextId: '10100' }] });
+      expect(result).toEqual(pageBean);
+      // Regression: old envelope used `configurations` key instead of `values`.
+      expect(result).toHaveProperty('values');
+      expect(result).not.toHaveProperty('configurations');
       expect(transport.lastCall?.options).toMatchObject({
         method: 'POST',
         path: `${API_BASE}/app/field/context/configuration/list`,
-        body: { fieldIdsOrKeys: ['customfield_10042'], contextIds: ['10100'] },
+        // Regression: old body allowed `contextIds` which is not in spec.
+        body: { fieldIdsOrKeys: ['customfield_10042'] },
       });
+    });
+
+    it('body must NOT include contextIds (not in spec ConfigurationsListParameters)', async () => {
+      // The spec ConfigurationsListParameters only has `fieldIdsOrKeys` (required).
+      // Sending `contextIds` would be ignored or rejected by the server.
+      transport.respondWith({ isLast: true, values: [] });
+
+      await app.listFieldContextConfigurations({ fieldIdsOrKeys: ['customfield_10042'] });
+
+      const body = transport.lastCall?.options.body as Record<string, unknown>;
+      expect(body).not.toHaveProperty('contextIds');
+    });
+
+    it('passes id filter as repeated query params (type:array)', async () => {
+      transport.respondWith({ isLast: true, values: [] });
+
+      await app.listFieldContextConfigurations(
+        { fieldIdsOrKeys: ['customfield_10042'] },
+        { id: [10000, 10001] },
+      );
+
+      const path = transport.lastCall?.options.path as string;
+      expect(path).toContain('id=10000');
+      expect(path).toContain('id=10001');
+    });
+
+    it('passes fieldContextId filter as repeated query params (type:array)', async () => {
+      transport.respondWith({ isLast: true, values: [] });
+
+      await app.listFieldContextConfigurations(
+        { fieldIdsOrKeys: ['customfield_10042'] },
+        { fieldContextId: [10010] },
+      );
+
+      const path = transport.lastCall?.options.path as string;
+      expect(path).toContain('fieldContextId=10010');
+    });
+
+    it('passes scalar issue/project/issueType filters via query object', async () => {
+      transport.respondWith({ isLast: true, values: [] });
+
+      await app.listFieldContextConfigurations(
+        { fieldIdsOrKeys: ['customfield_10042'] },
+        { issueId: 9999, projectKeyOrId: 'PROJ', issueTypeId: 'it-1' },
+      );
+
+      expect(transport.lastCall?.options.query).toMatchObject({
+        issueId: 9999,
+        projectKeyOrId: 'PROJ',
+        issueTypeId: 'it-1',
+      });
+    });
+
+    it('passes pagination query params', async () => {
+      transport.respondWith({ isLast: false, values: [] });
+
+      await app.listFieldContextConfigurations(
+        { fieldIdsOrKeys: ['customfield_10042'] },
+        { startAt: 100, maxResults: 50 },
+      );
+
+      expect(transport.lastCall?.options.query).toMatchObject({ startAt: 100, maxResults: 50 });
     });
   });
 
@@ -118,6 +246,8 @@ describe('AppResource', () => {
       expect(transport.lastCall?.options).toMatchObject({
         method: 'PUT',
         path: `${API_BASE}/app/field/customfield_10042/value`,
+        // Regression: old FieldValueUpdate had fictional issueIdsOrKeys and issueKeys.
+        // Spec CustomFieldValueUpdate only has issueIds (required) and value.
         body: { updates: [{ issueIds: [10001, 10002], value: 'hello' }] },
       });
     });
@@ -125,22 +255,47 @@ describe('AppResource', () => {
     it('encodes fieldIdOrKey in the path', async () => {
       transport.respondWith(undefined, 204);
 
-      await app.updateFieldValue('weird key', { updates: [{ issueKeys: ['ABC-1'], value: 1 }] });
+      await app.updateFieldValue('weird key', { updates: [{ issueIds: [1], value: 1 }] });
 
-      expect(transport.lastCall?.options.path).toBe(`${API_BASE}/app/field/weird%20key/value`);
+      expect(transport.lastCall?.options.path).toContain(`${API_BASE}/app/field/weird%20key/value`);
+    });
+
+    it('sends generateChangelog and generateAppEvents query params (B1056)', async () => {
+      transport.respondWith(undefined, 204);
+
+      await app.updateFieldValue(
+        'customfield_10042',
+        { updates: [{ issueIds: [1], value: 'v' }] },
+        { generateChangelog: false, generateAppEvents: false },
+      );
+
+      expect(transport.lastCall?.options.query).toMatchObject({
+        generateChangelog: false,
+        generateAppEvents: false,
+      });
+    });
+
+    it('omits generateChangelog and generateAppEvents when not provided', async () => {
+      transport.respondWith(undefined, 204);
+
+      await app.updateFieldValue('customfield_10042', { updates: [{ issueIds: [1], value: 'v' }] });
+
+      const q = transport.lastCall?.options.query as Record<string, unknown> | undefined;
+      expect(q).not.toHaveProperty('generateChangelog');
+      expect(q).not.toHaveProperty('generateAppEvents');
     });
   });
 
   describe('bulkUpdateFieldValue()', () => {
-    it('POSTs the bulk updates and returns void', async () => {
+    it('POSTs the flat per-field updates and returns void (B1056 — spec is flat not nested)', async () => {
       transport.respondWith(undefined, 204);
 
+      // Spec MultipleCustomFieldValuesUpdate: { customField, issueIds, value }
+      // NOT nested { fieldIdOrKey, updates: [...] }.
       const result = await app.bulkUpdateFieldValue({
         updates: [
-          {
-            fieldIdOrKey: 'customfield_10042',
-            updates: [{ issueIds: [10001], value: { x: 1 } }],
-          },
+          { customField: 'customfield_10042', issueIds: [10001], value: { x: 1 } },
+          { customField: 'customfield_10043', issueIds: [10001, 10002], value: 'new' },
         ],
       });
 
@@ -150,13 +305,40 @@ describe('AppResource', () => {
         path: `${API_BASE}/app/field/value`,
         body: {
           updates: [
-            {
-              fieldIdOrKey: 'customfield_10042',
-              updates: [{ issueIds: [10001], value: { x: 1 } }],
-            },
+            { customField: 'customfield_10042', issueIds: [10001], value: { x: 1 } },
+            { customField: 'customfield_10043', issueIds: [10001, 10002], value: 'new' },
           ],
         },
       });
+    });
+
+    it('sends generateChangelog and generateAppEvents query params (B1056)', async () => {
+      transport.respondWith(undefined, 204);
+
+      await app.bulkUpdateFieldValue(
+        { updates: [{ customField: 'cf_1', issueIds: [1], value: 'v' }] },
+        { generateChangelog: true, generateAppEvents: false },
+      );
+
+      expect(transport.lastCall?.options.query).toMatchObject({
+        generateChangelog: true,
+        generateAppEvents: false,
+      });
+    });
+
+    it('body does NOT have fieldIdOrKey or nested updates (regression for old nested shape)', async () => {
+      transport.respondWith(undefined, 204);
+
+      await app.bulkUpdateFieldValue({
+        updates: [{ customField: 'cf_1', issueIds: [1], value: 'v' }],
+      });
+
+      const body = transport.lastCall?.options.body as Record<string, unknown>;
+      const firstUpdate = (body['updates'] as Record<string, unknown>[])[0];
+      // Spec is flat: customField at top level, not nested fieldIdOrKey+updates.
+      expect(firstUpdate).toHaveProperty('customField');
+      expect(firstUpdate).not.toHaveProperty('fieldIdOrKey');
+      expect(firstUpdate).not.toHaveProperty('updates');
     });
   });
 
