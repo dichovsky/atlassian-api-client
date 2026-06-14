@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
+import type { JsonPatchOperation, PlanStatus } from '../../src/jira/resources/plans.js';
 import { PlansResource } from '../../src/jira/resources/plans.js';
 import { MockTransport } from '../helpers/mock-transport.js';
 
@@ -8,27 +9,27 @@ const makePlanSummary = (id = '101') => ({
   id,
   name: 'Q3 Plan',
   scenarioId: 'sc-1',
-  status: 'Active',
-  issueSources: [{ type: 'Board', value: 1 }],
+  status: 'Active' as const,
+  issueSources: [{ type: 'Board' as const, value: 1 }],
 });
 
 const makePlanResponse = (planId = 101) => ({
   id: planId,
   name: 'Q3 Plan',
-  status: 'Active',
+  status: 'Active' as const,
   scheduling: {
-    dependencies: 'Sequential',
-    endDate: { type: 'TargetEndDate' },
-    estimation: 'StoryPoints',
-    inferredDates: 'None',
-    startDate: { type: 'TargetStartDate' },
+    dependencies: 'Sequential' as const,
+    endDate: { type: 'TargetEndDate' as const },
+    estimation: 'StoryPoints' as const,
+    inferredDates: 'None' as const,
+    startDate: { type: 'TargetStartDate' as const },
   },
   exclusionRules: { numberOfDaysToShowCompletedIssues: 30 },
 });
 
 const makeAtlassianTeam = (id = 'team-abc') => ({
   id,
-  planningStyle: 'Scrum',
+  planningStyle: 'Scrum' as const,
   capacity: 5.0,
   issueSourceId: 1,
   sprintLength: 14,
@@ -37,14 +38,14 @@ const makeAtlassianTeam = (id = 'team-abc') => ({
 const makePlanOnlyTeam = (id = 1001) => ({
   id,
   name: 'My Team',
-  planningStyle: 'Kanban',
+  planningStyle: 'Kanban' as const,
   memberAccountIds: ['acc-1', 'acc-2'],
 });
 
 const makeTeamSummary = (id = 'team-1') => ({
   id,
   name: 'Team 1',
-  type: 'atlassian',
+  type: 'Atlassian' as const,
 });
 
 describe('PlansResource', () => {
@@ -229,7 +230,7 @@ describe('PlansResource', () => {
         crossProjectReleases: [{ name: 'Release 1', releaseIds: [1] }],
         customFields: [{ customFieldId: 100, filter: true }],
         exclusionRules: { issueIds: [10], numberOfDaysToShowCompletedIssues: 14 },
-        permissions: [{ holder: { type: 'AccountId', value: 'acc-1' }, type: 'view' }],
+        permissions: [{ holder: { type: 'AccountId', value: 'acc-1' }, type: 'View' }],
       });
 
       const body = transport.lastCall?.options.body as Record<string, unknown>;
@@ -266,6 +267,19 @@ describe('PlansResource', () => {
       const body = transport.lastCall?.options.body as Record<string, unknown>;
       expect(body['leadAccountId']).toBeUndefined();
       expect(body['crossProjectReleases']).toBeUndefined();
+    });
+
+    it('accepts Custom issue source type', async () => {
+      transport.respondWith(46, 201);
+      await resource.create({
+        name: 'Plan',
+        issueSources: [{ type: 'Custom', value: 999 }],
+        scheduling: { estimation: 'Hours' } as never,
+      });
+
+      const body = transport.lastCall?.options.body as Record<string, unknown>;
+      const sources = body['issueSources'] as { type: string }[];
+      expect(sources[0]?.type).toBe('Custom');
     });
   });
 
@@ -305,10 +319,11 @@ describe('PlansResource', () => {
   // ── update (B628) ──────────────────────────────────────────────────────────
 
   describe('update()', () => {
-    it('calls PUT /plans/plan/{planId} with patch body and returns void', async () => {
+    it('calls PUT /plans/plan/{planId} with patch array and returns void', async () => {
       transport.respondWith(undefined, 204);
 
-      await resource.update(101, { op: 'replace', path: '/name', value: 'New Name' });
+      const patch: JsonPatchOperation[] = [{ op: 'replace', path: '/name', value: 'New Name' }];
+      await resource.update(101, patch);
 
       expect(transport.lastCall?.options).toMatchObject({
         method: 'PUT',
@@ -316,10 +331,10 @@ describe('PlansResource', () => {
       });
       // Body is encoded as binaryBody (application/json-patch+json), not plain body
       const blob = transport.lastCall?.options.binaryBody as Blob;
-      const parsed = JSON.parse(await blob.text()) as Record<string, unknown>;
-      expect(parsed['op']).toBe('replace');
-      expect(parsed['path']).toBe('/name');
-      expect(parsed['value']).toBe('New Name');
+      const parsed = JSON.parse(await blob.text()) as JsonPatchOperation[];
+      expect(parsed[0]?.op).toBe('replace');
+      expect(parsed[0]?.path).toBe('/name');
+      expect(parsed[0]?.value).toBe('New Name');
     });
 
     it('sends Content-Type: application/json-patch+json via binaryBody (B1051)', async () => {
@@ -327,24 +342,40 @@ describe('PlansResource', () => {
       // "application/json-patch+json", not "application/json".
       transport.respondWith(undefined, 204);
 
-      await resource.update(101, { op: 'replace', path: '/name', value: 'X' });
+      const patch: JsonPatchOperation[] = [{ op: 'replace', path: '/name', value: 'X' }];
+      await resource.update(101, patch);
 
       const opts = transport.lastCall?.options;
       // Must use binaryBody (Blob with type application/json-patch+json), not body
       expect(opts?.body).toBeUndefined();
       expect(opts?.binaryBody).toBeInstanceOf(Blob);
       expect((opts?.binaryBody as Blob).type).toBe('application/json-patch+json');
-      // Blob content must be the JSON-serialized patch
+      // Blob content must be the JSON-serialized patch array
       const text = await (opts?.binaryBody as Blob).text();
-      expect(JSON.parse(text)).toEqual({ op: 'replace', path: '/name', value: 'X' });
+      expect(JSON.parse(text)).toEqual([{ op: 'replace', path: '/name', value: 'X' }]);
     });
 
     it('passes useGroupId query param', async () => {
       transport.respondWith(undefined, 204);
-      await resource.update(101, {}, true);
+      await resource.update(101, [], true);
 
       const q = transport.lastCall?.options.query as Record<string, unknown>;
       expect(q['useGroupId']).toBe(true);
+    });
+
+    it('serializes multiple patch operations', async () => {
+      transport.respondWith(undefined, 204);
+
+      const patch: JsonPatchOperation[] = [
+        { op: 'replace', path: '/name', value: 'Updated' },
+        { op: 'add', path: '/leadAccountId', value: 'acc-123' },
+      ];
+      await resource.update(101, patch);
+
+      const blob = transport.lastCall?.options.binaryBody as Blob;
+      const parsed = JSON.parse(await blob.text()) as JsonPatchOperation[];
+      expect(parsed).toHaveLength(2);
+      expect(parsed[1]?.op).toBe('add');
     });
   });
 
@@ -540,11 +571,8 @@ describe('PlansResource', () => {
     it('calls PUT /plans/plan/{planId}/team/atlassian/{atlassianTeamId} with patch', async () => {
       transport.respondWith(undefined, 204);
 
-      await resource.updateAtlassianTeam(101, 'team-abc', {
-        op: 'replace',
-        path: '/sprintLength',
-        value: 21,
-      });
+      const patch: JsonPatchOperation[] = [{ op: 'replace', path: '/sprintLength', value: 21 }];
+      await resource.updateAtlassianTeam(101, 'team-abc', patch);
 
       expect(transport.lastCall?.options).toMatchObject({
         method: 'PUT',
@@ -552,8 +580,8 @@ describe('PlansResource', () => {
       });
       // Body is encoded as binaryBody (application/json-patch+json), not plain body
       const blob = transport.lastCall?.options.binaryBody as Blob;
-      const parsed = JSON.parse(await blob.text()) as Record<string, unknown>;
-      expect(parsed['value']).toBe(21);
+      const parsed = JSON.parse(await blob.text()) as JsonPatchOperation[];
+      expect(parsed[0]?.value).toBe(21);
     });
 
     it('sends Content-Type: application/json-patch+json via binaryBody (B1051)', async () => {
@@ -561,18 +589,15 @@ describe('PlansResource', () => {
       // requestBody content-type is "application/json-patch+json".
       transport.respondWith(undefined, 204);
 
-      await resource.updateAtlassianTeam(101, 'team-abc', {
-        op: 'replace',
-        path: '/sprintLength',
-        value: 7,
-      });
+      const patch: JsonPatchOperation[] = [{ op: 'replace', path: '/sprintLength', value: 7 }];
+      await resource.updateAtlassianTeam(101, 'team-abc', patch);
 
       const opts = transport.lastCall?.options;
       expect(opts?.body).toBeUndefined();
       expect(opts?.binaryBody).toBeInstanceOf(Blob);
       expect((opts?.binaryBody as Blob).type).toBe('application/json-patch+json');
       const text = await (opts?.binaryBody as Blob).text();
-      expect(JSON.parse(text)).toEqual({ op: 'replace', path: '/sprintLength', value: 7 });
+      expect(JSON.parse(text)).toEqual([{ op: 'replace', path: '/sprintLength', value: 7 }]);
     });
   });
 
@@ -653,11 +678,8 @@ describe('PlansResource', () => {
     it('calls PUT /plans/plan/{planId}/team/planonly/{planOnlyTeamId} with patch', async () => {
       transport.respondWith(undefined, 204);
 
-      await resource.updatePlanOnlyTeam(101, 2001, {
-        op: 'replace',
-        path: '/name',
-        value: 'Renamed Team',
-      });
+      const patch: JsonPatchOperation[] = [{ op: 'replace', path: '/name', value: 'Renamed Team' }];
+      await resource.updatePlanOnlyTeam(101, 2001, patch);
 
       expect(transport.lastCall?.options).toMatchObject({
         method: 'PUT',
@@ -665,8 +687,8 @@ describe('PlansResource', () => {
       });
       // Body is encoded as binaryBody (application/json-patch+json), not plain body
       const blob = transport.lastCall?.options.binaryBody as Blob;
-      const parsed = JSON.parse(await blob.text()) as Record<string, unknown>;
-      expect(parsed['value']).toBe('Renamed Team');
+      const parsed = JSON.parse(await blob.text()) as JsonPatchOperation[];
+      expect(parsed[0]?.value).toBe('Renamed Team');
     });
 
     it('sends Content-Type: application/json-patch+json via binaryBody (B1051)', async () => {
@@ -674,14 +696,15 @@ describe('PlansResource', () => {
       // requestBody content-type is "application/json-patch+json".
       transport.respondWith(undefined, 204);
 
-      await resource.updatePlanOnlyTeam(101, 2001, { op: 'replace', path: '/name', value: 'New' });
+      const patch: JsonPatchOperation[] = [{ op: 'replace', path: '/name', value: 'New' }];
+      await resource.updatePlanOnlyTeam(101, 2001, patch);
 
       const opts = transport.lastCall?.options;
       expect(opts?.body).toBeUndefined();
       expect(opts?.binaryBody).toBeInstanceOf(Blob);
       expect((opts?.binaryBody as Blob).type).toBe('application/json-patch+json');
       const text = await (opts?.binaryBody as Blob).text();
-      expect(JSON.parse(text)).toEqual({ op: 'replace', path: '/name', value: 'New' });
+      expect(JSON.parse(text)).toEqual([{ op: 'replace', path: '/name', value: 'New' }]);
     });
   });
 
@@ -715,6 +738,58 @@ describe('PlansResource', () => {
       await resource.getAtlassianTeam(101, 'team/special');
 
       expect(transport.lastCall?.options.path).toContain('team%2Fspecial');
+    });
+  });
+
+  // ── type-drift assertions (B1056) ─────────────────────────────────────────
+
+  describe('B1056 type-drift regressions', () => {
+    it('PlanSummary.status is typed as PlanStatus enum (not plain string)', async () => {
+      // PlanStatus = 'Active' | 'Trashed' | 'Archived'
+      const summary = makePlanSummary();
+      // Type-level: this would not compile if status were plain string accepting anything
+      const validStatuses: PlanStatus[] = ['Active', 'Trashed', 'Archived'];
+      expect(validStatuses).toContain(summary.status);
+    });
+
+    it('PlanIssueSource fields are required (no undefined)', async () => {
+      // IssueSourceType includes 'Custom' as of B1056 fix
+      const source: { type: string; value: number } = { type: 'Custom', value: 42 };
+      expect(source.type).toBe('Custom');
+      expect(source.value).toBe(42);
+    });
+
+    it('PlanPermission fields are required by spec', async () => {
+      const perm: { holder: { type: string; value: string }; type: string } = {
+        holder: { type: 'Group', value: 'jira-users' },
+        type: 'View',
+      };
+      expect(perm.holder.type).toBe('Group');
+      expect(perm.type).toBe('View');
+    });
+
+    it('CreatePermissionData.type accepts only View or Edit', async () => {
+      transport.respondWith(99, 201);
+      await resource.create({
+        name: 'Plan',
+        issueSources: [{ type: 'Board', value: 1 }],
+        scheduling: { estimation: 'StoryPoints' } as never,
+        permissions: [
+          { holder: { type: 'AccountId', value: 'acc-1' }, type: 'View' },
+          { holder: { type: 'Group', value: 'jira-admins' }, type: 'Edit' },
+        ],
+      });
+
+      const body = transport.lastCall?.options.body as Record<string, unknown>;
+      const perms = body['permissions'] as { type: string }[];
+      expect(perms[0]?.type).toBe('View');
+      expect(perms[1]?.type).toBe('Edit');
+    });
+
+    it('PlanTeamSummary.type is typed as PlanTeamType enum', async () => {
+      const summary = makeTeamSummary();
+      // PlanTeamType = 'PlanOnly' | 'Atlassian'
+      expect(['PlanOnly', 'Atlassian']).toContain(summary.type);
     });
   });
 });

@@ -1,14 +1,24 @@
 import { describe, it, expect, beforeEach } from 'vitest';
+import type { DevopsComponent } from '../../src/jira/resources/devopscomponents.js';
 import { DevopscomponentsResource } from '../../src/jira/resources/devopscomponents.js';
 import { MockTransport } from '../helpers/mock-transport.js';
 import { ValidationError } from '../../src/core/errors.js';
 
 const BASE_URL = 'https://test.atlassian.net/rest/devopscomponents/1.0';
 
-const makeComponent = (overrides?: Partial<{ id: string; name: string; url: string }>) => ({
+const makeComponent = (
+  overrides?: Partial<{ id: string; name: string; url: string }>,
+): DevopsComponent => ({
+  schemaVersion: '1.0',
   id: overrides?.id ?? 'COMP-1',
+  updateSequenceNumber: 1523494301448,
   name: overrides?.name ?? 'Deployment pipeline',
+  description: 'A DevOps component for deployment',
   url: overrides?.url ?? 'https://example.com/comp-1',
+  avatarUrl: 'https://example.com/comp-1/logo',
+  tier: 'Tier 1',
+  componentType: 'Service',
+  lastUpdated: '2024-01-15T10:00:00.000Z',
 });
 
 describe('DevopscomponentsResource', () => {
