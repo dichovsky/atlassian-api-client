@@ -52,7 +52,7 @@ describe('DashboardsResource', () => {
       });
     });
 
-    it('passes all supported params correctly', async () => {
+    it('passes supported params correctly', async () => {
       // Arrange
       transport.respondWith(makeRawListResponse([]));
 
@@ -61,8 +61,6 @@ describe('DashboardsResource', () => {
         startAt: 10,
         maxResults: 25,
         filter: 'my',
-        orderBy: 'name',
-        expand: 'owner',
       });
 
       // Assert
@@ -70,9 +68,17 @@ describe('DashboardsResource', () => {
         startAt: 10,
         maxResults: 25,
         filter: 'my',
-        orderBy: 'name',
-        expand: 'owner',
       });
+    });
+
+    it('does not send deprecated orderBy/expand to GET /dashboard (B1056)', async () => {
+      // orderBy and expand are NOT in the getAllDashboards spec — they should
+      // not be forwarded to the wire even if a caller passes them (backward compat).
+      transport.respondWith(makeRawListResponse([]));
+      await dashboards.list({ startAt: 0, maxResults: 10, orderBy: 'name', expand: 'owner' });
+      const query = transport.lastCall?.options.query as Record<string, unknown>;
+      expect(query?.['orderBy']).toBeUndefined();
+      expect(query?.['expand']).toBeUndefined();
     });
 
     it('passes filter: favourite correctly', async () => {
@@ -443,7 +449,7 @@ describe('DashboardsResource', () => {
       expect(warnings.some((m) => m.includes('nearing maxPages'))).toBe(true);
     });
 
-    it('passes params to the underlying list call', async () => {
+    it('passes filter param to the underlying list call', async () => {
       // Arrange
       transport.respondWith({
         dashboards: [],
@@ -453,14 +459,13 @@ describe('DashboardsResource', () => {
       });
 
       // Act
-      for await (const _ of dashboards.listAll({ filter: 'my', orderBy: 'name' })) {
+      for await (const _ of dashboards.listAll({ filter: 'my' })) {
         // consume
       }
 
       // Assert
       expect(transport.calls[0]?.options.query).toMatchObject({
         filter: 'my',
-        orderBy: 'name',
       });
     });
   });
@@ -468,14 +473,39 @@ describe('DashboardsResource', () => {
   // ── B391: listGadgets ────────────────────────────────────────────────────
 
   describe('listGadgets()', () => {
-    it('calls GET /dashboard/{dashboardId}/gadget', async () => {
-      transport.respondWith({ gadgets: [{ id: 1 }] });
+    it('calls GET /dashboard/{dashboardId}/gadget with no params', async () => {
+      // DashboardGadget: color, position, title are required per spec
+      const gadget = { id: 1, color: 'blue', position: { row: 0, column: 0 }, title: 'Test' };
+      transport.respondWith({ gadgets: [gadget] });
       const result = await dashboards.listGadgets('10001');
-      expect(result).toEqual({ gadgets: [{ id: 1 }] });
+      expect(result).toEqual({ gadgets: [gadget] });
       expect(transport.lastCall?.options).toMatchObject({
         method: 'GET',
         path: `${BASE_URL}/dashboard/10001/gadget`,
       });
+    });
+
+    it('appends moduleKey filter params (B1056)', async () => {
+      transport.respondWith({ gadgets: [] });
+      await dashboards.listGadgets('10001', { moduleKey: ['com.x:gadget-a', 'com.x:gadget-b'] });
+      const path = transport.lastCall?.options.path as string;
+      expect(path).toContain('moduleKey=com.x%3Agadget-a');
+      expect(path).toContain('moduleKey=com.x%3Agadget-b');
+    });
+
+    it('appends uri filter params (B1056)', async () => {
+      transport.respondWith({ gadgets: [] });
+      await dashboards.listGadgets('10001', { uri: ['/rest/gadgets/1.0/g/a.xml'] });
+      const path = transport.lastCall?.options.path as string;
+      expect(path).toContain('uri=');
+    });
+
+    it('appends gadgetId filter params (B1056)', async () => {
+      transport.respondWith({ gadgets: [] });
+      await dashboards.listGadgets('10001', { gadgetId: [10000, 10001] });
+      const path = transport.lastCall?.options.path as string;
+      expect(path).toContain('gadgetId=10000');
+      expect(path).toContain('gadgetId=10001');
     });
 
     it.each(['.', '..'])('rejects dot-segment dashboardId: %s', async (id) => {
@@ -560,15 +590,21 @@ describe('DashboardsResource', () => {
       expect(transport.lastCall?.options.body).toEqual({ position: { row: 1, column: 2 } });
     });
 
-    it.each([0, -1, 1.5, Number.NaN])(
-      'rejects non-positive-integer gadgetId: %s',
+    it.each([-1, 1.5, Number.NaN])(
+      'rejects negative or non-integer gadgetId: %s',
       async (gadgetId) => {
         await expect(dashboards.updateGadget('10001', gadgetId, {})).rejects.toThrow(
-          'gadgetId must be a positive integer',
+          'gadgetId must be a non-negative integer',
         );
         expect(transport.calls).toHaveLength(0);
       },
     );
+
+    it('accepts gadgetId=0 (no minimum in spec)', async () => {
+      transport.respondWith(undefined);
+      await dashboards.updateGadget('10001', 0, { title: 'test' });
+      expect(transport.lastCall?.options.path).toContain('/gadget/0');
+    });
   });
 
   // ── B393: removeGadget ───────────────────────────────────────────────────
@@ -583,10 +619,16 @@ describe('DashboardsResource', () => {
       });
     });
 
-    it.each([0, -1, 1.5])('rejects non-positive-integer gadgetId: %s', async (gadgetId) => {
+    it.each([-1, 1.5])('rejects negative or non-integer gadgetId: %s', async (gadgetId) => {
       await expect(dashboards.removeGadget('10001', gadgetId)).rejects.toThrow(
-        'gadgetId must be a positive integer',
+        'gadgetId must be a non-negative integer',
       );
+    });
+
+    it('accepts gadgetId=0 (no minimum in spec)', async () => {
+      transport.respondWith(undefined);
+      await dashboards.removeGadget('10001', 0);
+      expect(transport.lastCall?.options.path).toContain('/gadget/0');
     });
   });
 
@@ -735,43 +777,50 @@ describe('DashboardsResource', () => {
   // ── B403: bulkEdit ───────────────────────────────────────────────────────
 
   describe('bulkEdit()', () => {
-    it('calls PUT /dashboard/bulk/edit with integer entityIds (B1055/2a)', async () => {
+    it('calls PUT /dashboard/bulk/edit with integer entityIds (B1055/2a) and spec-correct response', async () => {
       // entityIds spec type: integer[] — not string[].
-      transport.respondWith({ taskId: 't1' });
+      // Response: BulkEditShareableEntityResponse — action (required) + entityErrors (optional).
+      transport.respondWith({ action: 'changePermission', entityErrors: {} });
       const result = await dashboards.bulkEdit({
         entityIds: [10001, 10002],
-        action: 'delete',
+        action: 'changePermission',
       });
-      expect(result).toEqual({ taskId: 't1' });
+      expect(result).toEqual({ action: 'changePermission', entityErrors: {} });
       expect(transport.lastCall?.options).toMatchObject({
         method: 'PUT',
         path: `${BASE_URL}/dashboard/bulk/edit`,
-        body: { entityIds: [10001, 10002], action: 'delete' },
+        body: { entityIds: [10001, 10002], action: 'changePermission' },
       });
     });
 
     it('includes optional changeOwnerDetails and permissionDetails', async () => {
-      transport.respondWith({});
+      transport.respondWith({ action: 'changeOwner' });
       await dashboards.bulkEdit({
         entityIds: [10001],
         action: 'changeOwner',
         changeOwnerDetails: { newOwner: 'acc-1', autofixName: true },
         extendAdminPermissions: true,
-        permissionDetails: { sharePermissions: [{ type: 'global' }] },
+        permissionDetails: {
+          sharePermissions: [{ type: 'global' }],
+          editPermissions: [],
+        },
       });
       expect(transport.lastCall?.options.body).toEqual({
         entityIds: [10001],
         action: 'changeOwner',
         changeOwnerDetails: { newOwner: 'acc-1', autofixName: true },
         extendAdminPermissions: true,
-        permissionDetails: { sharePermissions: [{ type: 'global' }] },
+        permissionDetails: {
+          sharePermissions: [{ type: 'global' }],
+          editPermissions: [],
+        },
       });
     });
 
     it('rejects empty entityIds', async () => {
-      await expect(dashboards.bulkEdit({ entityIds: [], action: 'delete' })).rejects.toThrow(
-        'entityIds must be a non-empty array',
-      );
+      await expect(
+        dashboards.bulkEdit({ entityIds: [], action: 'changePermission' }),
+      ).rejects.toThrow('entityIds must be a non-empty array');
       expect(transport.calls).toHaveLength(0);
     });
 
@@ -779,7 +828,7 @@ describe('DashboardsResource', () => {
       'rejects non-positive-integer entityIds entry: %s',
       async (entry) => {
         await expect(
-          dashboards.bulkEdit({ entityIds: [entry as number], action: 'delete' }),
+          dashboards.bulkEdit({ entityIds: [entry as number], action: 'changePermission' }),
         ).rejects.toThrow('entityIds entries must be positive integers');
       },
     );

@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "2.0.0"
   },
-  "sourceHash": "8fb087aa3511741caac166466310fe4d476674c7290792c96542e3e0e609306a",
+  "sourceHash": "aeb1a3c2f00c2d8e3ff981bdceb675bcb73f2e65d9974aa37cd314be07a63cd8",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -704,7 +704,7 @@
       "name": "CreateDashboardData",
       "kind": "interface",
       "file": "src/jira/resources/dashboards.ts",
-      "line": 40,
+      "line": 82,
       "signature": "export interface CreateDashboardData { readonly name: string; readonly description?: string; readonly sharePermissions: …",
       "jsdoc": "Request body for creating a new Jira dashboard.",
       "typeOnly": true
@@ -749,7 +749,7 @@
       "name": "CreateFilterData",
       "kind": "interface",
       "file": "src/jira/resources/filters.ts",
-      "line": 48,
+      "line": 101,
       "signature": "export interface CreateFilterData { readonly name: string; readonly description?: string; readonly jql?: string; readonl…",
       "jsdoc": "Request body for creating a new Jira saved filter.",
       "typeOnly": true
@@ -965,18 +965,18 @@
       "name": "Dashboard",
       "kind": "interface",
       "file": "src/jira/resources/dashboards.ts",
-      "line": 17,
+      "line": 35,
       "signature": "export interface Dashboard { readonly id: string; readonly self?: string; readonly name: string; readonly description?: …",
-      "jsdoc": "A Jira dashboard containing gadgets and share permissions.",
+      "jsdoc": "A Jira dashboard containing gadgets and share permissions (`Dashboard` schema).",
       "typeOnly": true
     },
     {
       "name": "DashboardSharePermission",
       "kind": "interface",
       "file": "src/jira/resources/dashboards.ts",
-      "line": 8,
-      "signature": "export interface DashboardSharePermission { readonly type: 'global' | 'loggedin' | 'project' | 'group' | 'user'; readonl…",
-      "jsdoc": "A share permission entry on a Jira dashboard.",
+      "line": 16,
+      "signature": "export interface DashboardSharePermission { readonly type: | 'global' | 'loggedin' | 'project' | 'group' | 'user' | 'pro…",
+      "jsdoc": "A share permission entry on a Jira dashboard (read shape — `SharePermission` schema).",
       "typeOnly": true
     },
     {
@@ -1190,18 +1190,18 @@
       "name": "Filter",
       "kind": "interface",
       "file": "src/jira/resources/filters.ts",
-      "line": 24,
+      "line": 43,
       "signature": "export interface Filter { readonly id: string; readonly self?: string; readonly name: string; readonly description?: str…",
-      "jsdoc": "A Jira saved filter containing a JQL query and share permissions.",
+      "jsdoc": "A Jira saved filter containing a JQL query and share permissions (`Filter` schema from `GET /filter/{id}` and `Filter` schema from spec).",
       "typeOnly": true
     },
     {
       "name": "FilterSharePermission",
       "kind": "interface",
       "file": "src/jira/resources/filters.ts",
-      "line": 15,
-      "signature": "export interface FilterSharePermission { readonly type: 'global' | 'loggedin' | 'project' | 'group' | 'user'; readonly p…",
-      "jsdoc": "Read shape returned by Jira for an existing share permission on a filter (e.g. `GET /rest/api/3/filter/{id}/permission`). This intentionally differs from the write shape {@link AddFilterSharePermissionData}: Jira normalises incoming permission payloads, so values like `projectRole` and `authenticated` (accepted on write) surface in responses as `project` / `loggedin` with the relevant nested object populated.",
+      "line": 19,
+      "signature": "export interface FilterSharePermission { readonly type: | 'global' | 'loggedin' | 'project' | 'group' | 'user' | 'projec…",
+      "jsdoc": "Read shape returned by Jira for an existing share permission on a filter (`SharePermission` schema — `GET /rest/api/3/filter/{id}/permission`).",
       "typeOnly": true
     },
     {
@@ -1637,18 +1637,18 @@
       "name": "JqlSuggestions",
       "kind": "interface",
       "file": "src/jira/resources/jql.ts",
-      "line": 194,
-      "signature": "export interface JqlSuggestions { readonly results: JqlSuggestion[]; }",
-      "jsdoc": "Field-value suggestions returned by the JQL field reference suggestions endpoint.",
+      "line": 235,
+      "signature": "export interface JqlSuggestions { readonly results?: JqlSuggestion[]; }",
+      "jsdoc": "Field-value suggestions returned by the JQL field reference suggestions endpoint (`AutoCompleteSuggestions` schema).",
       "typeOnly": true
     },
     {
       "name": "JqlSuggestionsParams",
       "kind": "interface",
       "file": "src/jira/resources/jql.ts",
-      "line": 181,
-      "signature": "export interface JqlSuggestionsParams { readonly fieldName: string; readonly fieldValue?: string; readonly predicateName…",
-      "jsdoc": "Query parameters for fetching field-value suggestions for JQL autocomplete.",
+      "line": 217,
+      "signature": "export interface JqlSuggestionsParams { readonly fieldName?: string; readonly fieldValue?: string; readonly predicateNam…",
+      "jsdoc": "Query parameters for fetching field-value suggestions for JQL autocomplete (`GET /jql/autocompletedata/suggestions`).",
       "typeOnly": true
     },
     {
@@ -1925,9 +1925,9 @@
       "name": "ListDashboardsParams",
       "kind": "interface",
       "file": "src/jira/resources/dashboards.ts",
-      "line": 31,
+      "line": 65,
       "signature": "export interface ListDashboardsParams { readonly startAt?: number; readonly maxResults?: number; readonly filter?: 'my' …",
-      "jsdoc": "Query parameters for listing Jira dashboards.",
+      "jsdoc": "Query parameters for listing Jira dashboards (`GET /dashboard`, `getAllDashboards`).",
       "typeOnly": true
     },
     {
@@ -2015,9 +2015,9 @@
       "name": "ListFiltersParams",
       "kind": "interface",
       "file": "src/jira/resources/filters.ts",
-      "line": 39,
+      "line": 75,
       "signature": "export interface ListFiltersParams { readonly startAt?: number; readonly maxResults?: number; readonly expand?: string; …",
-      "jsdoc": "Query parameters for listing Jira saved filters.",
+      "jsdoc": "Query parameters for listing Jira saved filters (`GET /filter/search`, `getFiltersPaginated`).",
       "typeOnly": true
     },
     {
@@ -2623,7 +2623,7 @@
       "name": "ParseJqlQueriesData",
       "kind": "interface",
       "file": "src/jira/resources/jql.ts",
-      "line": 139,
+      "line": 153,
       "signature": "export interface ParseJqlQueriesData { readonly queries: string[]; readonly validation?: 'strict' | 'warn' | 'none'; }",
       "jsdoc": "Request body for parsing one or more JQL query strings.",
       "typeOnly": true
@@ -2632,7 +2632,7 @@
       "name": "ParsedJqlQueries",
       "kind": "interface",
       "file": "src/jira/resources/jql.ts",
-      "line": 145,
+      "line": 159,
       "signature": "export interface ParsedJqlQueries { readonly queries: ParsedJqlQuery[]; }",
       "jsdoc": "Response from the JQL parse endpoint containing parsed query representations.",
       "typeOnly": true
@@ -2836,7 +2836,7 @@
       "name": "SanitizeJqlQueriesData",
       "kind": "interface",
       "file": "src/jira/resources/jql.ts",
-      "line": 171,
+      "line": 202,
       "signature": "export interface SanitizeJqlQueriesData { readonly queries: JqlQueryToSanitize[]; }",
       "jsdoc": "Request body for sanitizing one or more JQL queries (removes personal data).",
       "typeOnly": true
@@ -2845,7 +2845,7 @@
       "name": "SanitizedJqlQueries",
       "kind": "interface",
       "file": "src/jira/resources/jql.ts",
-      "line": 176,
+      "line": 207,
       "signature": "export interface SanitizedJqlQueries { readonly queries: SanitizedJqlQuery[]; }",
       "jsdoc": "Response from the JQL sanitize endpoint containing sanitized query strings.",
       "typeOnly": true
@@ -3141,7 +3141,7 @@
       "name": "UpdateDashboardData",
       "kind": "interface",
       "file": "src/jira/resources/dashboards.ts",
-      "line": 48,
+      "line": 90,
       "signature": "export interface UpdateDashboardData { readonly name: string; readonly description?: string; readonly sharePermissions: …",
       "jsdoc": "Request body for updating an existing Jira dashboard.",
       "typeOnly": true
@@ -3177,7 +3177,7 @@
       "name": "UpdateFilterData",
       "kind": "interface",
       "file": "src/jira/resources/filters.ts",
-      "line": 58,
+      "line": 111,
       "signature": "export interface UpdateFilterData { readonly name?: string; readonly description?: string; readonly jql?: string; readon…",
       "jsdoc": "Request body for updating an existing Jira saved filter.",
       "typeOnly": true
@@ -24118,31 +24118,31 @@
         {
           "name": "DashboardSharePermission",
           "kind": "interface",
-          "line": 8,
+          "line": 16,
           "exported": true,
-          "signature": "export interface DashboardSharePermission { readonly type: 'global' | 'loggedin' | 'project' | 'group' | 'user'; readonl…",
-          "jsdoc": "A share permission entry on a Jira dashboard."
+          "signature": "export interface DashboardSharePermission { readonly type: | 'global' | 'loggedin' | 'project' | 'group' | 'user' | 'pro…",
+          "jsdoc": "A share permission entry on a Jira dashboard (read shape — `SharePermission` schema)."
         },
         {
           "name": "Dashboard",
           "kind": "interface",
-          "line": 17,
+          "line": 35,
           "exported": true,
           "signature": "export interface Dashboard { readonly id: string; readonly self?: string; readonly name: string; readonly description?: …",
-          "jsdoc": "A Jira dashboard containing gadgets and share permissions."
+          "jsdoc": "A Jira dashboard containing gadgets and share permissions (`Dashboard` schema)."
         },
         {
           "name": "ListDashboardsParams",
           "kind": "interface",
-          "line": 31,
+          "line": 65,
           "exported": true,
           "signature": "export interface ListDashboardsParams { readonly startAt?: number; readonly maxResults?: number; readonly filter?: 'my' …",
-          "jsdoc": "Query parameters for listing Jira dashboards."
+          "jsdoc": "Query parameters for listing Jira dashboards (`GET /dashboard`, `getAllDashboards`)."
         },
         {
           "name": "CreateDashboardData",
           "kind": "interface",
-          "line": 40,
+          "line": 82,
           "exported": true,
           "signature": "export interface CreateDashboardData { readonly name: string; readonly description?: string; readonly sharePermissions: …",
           "jsdoc": "Request body for creating a new Jira dashboard."
@@ -24150,7 +24150,7 @@
         {
           "name": "UpdateDashboardData",
           "kind": "interface",
-          "line": 48,
+          "line": 90,
           "exported": true,
           "signature": "export interface UpdateDashboardData { readonly name: string; readonly description?: string; readonly sharePermissions: …",
           "jsdoc": "Request body for updating an existing Jira dashboard."
@@ -24158,7 +24158,7 @@
         {
           "name": "DashboardGadgetPosition",
           "kind": "interface",
-          "line": 56,
+          "line": 98,
           "exported": true,
           "signature": "export interface DashboardGadgetPosition { readonly row: number; readonly column: number; }",
           "jsdoc": "Position of a gadget on its dashboard."
@@ -24166,57 +24166,59 @@
         {
           "name": "DashboardGadget",
           "kind": "interface",
-          "line": 62,
+          "line": 109,
           "exported": true,
           "signature": "export interface DashboardGadget { readonly id: number; readonly moduleKey?: string; readonly uri?: string; readonly col…",
-          "jsdoc": "A gadget instance attached to a dashboard."
+          "jsdoc": "A gadget instance attached to a dashboard (`DashboardGadget` schema)."
         },
         {
           "name": "DashboardGadgetsResponse",
           "kind": "interface",
-          "line": 71,
+          "line": 121,
           "exported": true,
           "signature": "export interface DashboardGadgetsResponse { readonly gadgets: DashboardGadget[]; }"
         },
         {
           "name": "AddDashboardGadgetData",
           "kind": "interface",
-          "line": 75,
+          "line": 125,
           "exported": true,
           "signature": "export interface AddDashboardGadgetData { readonly moduleKey?: string; readonly uri?: string; readonly color?: string; r…"
         },
         {
           "name": "UpdateDashboardGadgetData",
           "kind": "interface",
-          "line": 84,
+          "line": 134,
           "exported": true,
           "signature": "export interface UpdateDashboardGadgetData { readonly title?: string; readonly color?: string; readonly position?: Dashb…"
         },
         {
           "name": "DashboardItemPropertyKey",
           "kind": "interface",
-          "line": 90,
+          "line": 144,
           "exported": true,
-          "signature": "export interface DashboardItemPropertyKey { readonly self: string; readonly key: string; }"
+          "signature": "export interface DashboardItemPropertyKey { readonly self?: string; readonly key?: string; }",
+          "jsdoc": "A single property key entry (`PropertyKey` schema). Both fields are readOnly and optional per spec."
         },
         {
           "name": "DashboardItemPropertyKeys",
           "kind": "interface",
-          "line": 95,
+          "line": 153,
           "exported": true,
-          "signature": "export interface DashboardItemPropertyKeys { readonly keys: readonly DashboardItemPropertyKey[]; }"
+          "signature": "export interface DashboardItemPropertyKeys { readonly keys?: readonly DashboardItemPropertyKey[]; }",
+          "jsdoc": "Response envelope for `GET /dashboard/{dashboardId}/items/{itemId}/properties` (`PropertyKeys` schema)."
         },
         {
           "name": "DashboardItemProperty",
           "kind": "interface",
-          "line": 99,
+          "line": 157,
           "exported": true,
           "signature": "export interface DashboardItemProperty { readonly key: string; readonly value: unknown; }"
         },
         {
           "name": "CopyDashboardData",
           "kind": "interface",
-          "line": 109,
+          "line": 167,
           "exported": true,
           "signature": "export interface CopyDashboardData { readonly name: string; readonly description?: string; readonly sharePermissions: Da…",
           "jsdoc": "Request body for POST /dashboard/{id}/copy (`copyDashboard`). `name`, `sharePermissions`, and `editPermissions` are required by the spec (`DashboardDetails` schema `required` array). `description` is optional."
@@ -24224,29 +24226,30 @@
         {
           "name": "BulkEditDashboardAction",
           "kind": "type",
-          "line": 117,
+          "line": 181,
           "exported": true,
-          "signature": "export type BulkEditDashboardAction = | 'changeOwner' | 'changePermission' | 'addPermission' | 'removePermission' | 'cha…",
-          "jsdoc": "Action verb accepted by `PUT /dashboard/bulk/edit`."
+          "signature": "export type BulkEditDashboardAction = | 'changeOwner' | 'changePermission' | 'addPermission' | 'removePermission';",
+          "jsdoc": "Action verb accepted by `PUT /dashboard/bulk/edit` (`BulkEditShareableEntityRequest.action` enum)."
         },
         {
           "name": "BulkEditDashboardsData",
           "kind": "interface",
-          "line": 125,
+          "line": 187,
           "exported": true,
           "signature": "export interface BulkEditDashboardsData { readonly entityIds: readonly number[]; readonly action: BulkEditDashboardActio…"
         },
         {
           "name": "BulkEditDashboardsResponse",
           "kind": "interface",
-          "line": 140,
+          "line": 217,
           "exported": true,
-          "signature": "export interface BulkEditDashboardsResponse { readonly taskId?: string; readonly status?: string; }"
+          "signature": "export interface BulkEditDashboardsResponse { readonly action: BulkEditDashboardAction; readonly entityErrors?: Record< …",
+          "jsdoc": "Response from `PUT /dashboard/bulk/edit` (`BulkEditShareableEntityResponse` schema)."
         },
         {
           "name": "AvailableDashboardGadget",
           "kind": "interface",
-          "line": 146,
+          "line": 226,
           "exported": true,
           "signature": "export interface AvailableDashboardGadget { readonly moduleKey?: string; readonly uri?: string; readonly title: string; …",
           "jsdoc": "A descriptor for an available (catalogue) gadget — `GET /dashboard/gadgets`."
@@ -24254,14 +24257,22 @@
         {
           "name": "AvailableDashboardGadgetsResponse",
           "kind": "interface",
-          "line": 152,
+          "line": 232,
           "exported": true,
           "signature": "export interface AvailableDashboardGadgetsResponse { readonly gadgets: AvailableDashboardGadget[]; }"
         },
         {
+          "name": "ListGadgetsParams",
+          "kind": "interface",
+          "line": 240,
+          "exported": true,
+          "signature": "export interface ListGadgetsParams { readonly moduleKey?: string[]; readonly uri?: string[]; readonly gadgetId?: number[…",
+          "jsdoc": "Optional filter parameters for `GET /dashboard/{dashboardId}/gadget`. All three are `type: array` query parameters (repeated, not CSV)."
+        },
+        {
           "name": "ListAvailableGadgetsParams",
           "kind": "interface",
-          "line": 164,
+          "line": 257,
           "exported": true,
           "signature": "export interface ListAvailableGadgetsParams { readonly moduleKey?: string[]; readonly uri?: string[]; readonly gadgetId?…",
           "jsdoc": "@deprecated `GET /dashboard/gadgets` (`getAllAvailableDashboardGadgets`) accepts NO query parameters — the server-side catalogue endpoint does not filter by moduleKey, uri, gadgetId, or dashboardId. These fields are retained only for backward compatibility with callers that passed them before this was discovered. Passing params has no effect on the response. For per-dashboard gadget filtering use {@link DashboardsResource.listGadgets} instead."
@@ -24269,7 +24280,7 @@
         {
           "name": "SearchDashboardsOrderBy",
           "kind": "type",
-          "line": 172,
+          "line": 265,
           "exported": true,
           "signature": "export type SearchDashboardsOrderBy = | 'description' | '-description' | '+description' | 'favorite_count' | '-favorite_…",
           "jsdoc": "Sort orders accepted by `GET /dashboard/search`."
@@ -24277,7 +24288,7 @@
         {
           "name": "SearchDashboardsStatus",
           "kind": "type",
-          "line": 193,
+          "line": 286,
           "exported": true,
           "signature": "export type SearchDashboardsStatus = 'active' | 'archived' | 'deleted';",
           "jsdoc": "Status filter for `GET /dashboard/search`."
@@ -24285,123 +24296,123 @@
         {
           "name": "SearchDashboardsParams",
           "kind": "interface",
-          "line": 195,
+          "line": 288,
           "exported": true,
           "signature": "export interface SearchDashboardsParams { readonly dashboardName?: string; readonly accountId?: string; readonly owner?:…"
         },
         {
           "name": "DashboardsResource",
           "kind": "class",
-          "line": 209,
+          "line": 302,
           "exported": true,
           "signature": "export class DashboardsResource",
           "members": [
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 210
+              "line": 303
             },
             {
               "name": "list",
               "kind": "method",
-              "line": 216
+              "line": 309
             },
             {
               "name": "get",
               "kind": "method",
-              "line": 247
+              "line": 340
             },
             {
               "name": "create",
               "kind": "method",
-              "line": 256
+              "line": 349
             },
             {
               "name": "update",
               "kind": "method",
-              "line": 266
+              "line": 359
             },
             {
               "name": "delete",
               "kind": "method",
-              "line": 276
+              "line": 369
             },
             {
               "name": "listGadgets",
               "kind": "method",
-              "line": 284
+              "line": 382
             },
             {
               "name": "addGadget",
               "kind": "method",
-              "line": 293
+              "line": 404
             },
             {
               "name": "updateGadget",
               "kind": "method",
-              "line": 312
+              "line": 423
             },
             {
               "name": "removeGadget",
               "kind": "method",
-              "line": 332
+              "line": 443
             },
             {
               "name": "listItemProperties",
               "kind": "method",
-              "line": 343
+              "line": 454
             },
             {
               "name": "getItemProperty",
               "kind": "method",
-              "line": 357
+              "line": 468
             },
             {
               "name": "setItemProperty",
               "kind": "method",
-              "line": 375
+              "line": 486
             },
             {
               "name": "deleteItemProperty",
               "kind": "method",
-              "line": 394
+              "line": 505
             },
             {
               "name": "copy",
               "kind": "method",
-              "line": 414
+              "line": 525
             },
             {
               "name": "bulkEdit",
               "kind": "method",
-              "line": 430
+              "line": 541
             },
             {
               "name": "listAvailableGadgets",
               "kind": "method",
-              "line": 464
+              "line": 575
             },
             {
               "name": "search",
               "kind": "method",
-              "line": 477
+              "line": 588
             },
             {
               "name": "searchAll",
               "kind": "method",
-              "line": 517
+              "line": 630
             },
             {
               "name": "listAll",
               "kind": "method",
-              "line": 560
+              "line": 673
             }
           ]
         },
         {
           "name": "DEFAULT_MAX_PAGES",
           "kind": "variable",
-          "line": 612,
+          "line": 725,
           "signature": "const DEFAULT_MAX_PAGES = 10_000;"
         }
       ],
@@ -24409,6 +24420,7 @@
         "../../core/errors.js",
         "../../core/pagination.js",
         "../../core/path.js",
+        "../../core/query.js",
         "../../core/types.js"
       ]
     },
@@ -24711,31 +24723,31 @@
         {
           "name": "AnalysedExpression",
           "kind": "interface",
-          "line": 11,
+          "line": 12,
           "exported": true,
-          "signature": "export interface AnalysedExpression { readonly expression?: string; readonly errors?: AnalysedExpressionError[]; readonl…",
-          "jsdoc": "Per-expression analysis result returned by POST /expression/analyse."
+          "signature": "export interface AnalysedExpression { readonly expression: string; readonly errors?: AnalysedExpressionError[]; readonly…",
+          "jsdoc": "Per-expression analysis result returned by POST /expression/analyse (`JiraExpressionAnalysis` schema)."
         },
         {
           "name": "AnalysedExpressionError",
           "kind": "interface",
-          "line": 20,
+          "line": 28,
           "exported": true,
           "signature": "export interface AnalysedExpressionError { readonly line?: number; readonly column?: number; readonly expression?: strin…",
-          "jsdoc": "Error entry attached to an invalid analysed expression."
+          "jsdoc": "Error entry attached to an invalid analysed expression (`JiraExpressionValidationError` schema)."
         },
         {
           "name": "AnalysedExpressionComplexity",
           "kind": "interface",
-          "line": 29,
+          "line": 47,
           "exported": true,
-          "signature": "export interface AnalysedExpressionComplexity { readonly expensiveOperations?: string; readonly variables?: Record<strin…",
-          "jsdoc": "Complexity profile attached to a valid analysed expression."
+          "signature": "export interface AnalysedExpressionComplexity { readonly expensiveOperations: string; readonly variables?: Record<string…",
+          "jsdoc": "Complexity profile attached to a valid analysed expression (`JiraExpressionComplexity` schema)."
         },
         {
           "name": "AnalyseExpressionsResponse",
           "kind": "interface",
-          "line": 35,
+          "line": 54,
           "exported": true,
           "signature": "export interface AnalyseExpressionsResponse { readonly results: AnalysedExpression[]; }",
           "jsdoc": "Response envelope for POST /expression/analyse."
@@ -24743,7 +24755,7 @@
         {
           "name": "AnalyseExpressionsData",
           "kind": "interface",
-          "line": 40,
+          "line": 59,
           "exported": true,
           "signature": "export interface AnalyseExpressionsData { readonly expressions: string[]; readonly contextVariables?: Record<string, str…",
           "jsdoc": "Request body for POST /expression/analyse."
@@ -24751,7 +24763,7 @@
         {
           "name": "AnalyseExpressionsParams",
           "kind": "interface",
-          "line": 48,
+          "line": 67,
           "exported": true,
           "signature": "export interface AnalyseExpressionsParams { readonly check?: 'syntax' | 'type' | 'complexity'; }",
           "jsdoc": "Query parameters for POST /expression/analyse."
@@ -24759,15 +24771,15 @@
         {
           "name": "ExpressionEvalJqlContext",
           "kind": "interface",
-          "line": 58,
+          "line": 82,
           "exported": true,
           "signature": "export interface ExpressionEvalJqlContext { readonly query?: string; readonly startAt?: number; readonly maxResults?: nu…",
-          "jsdoc": "Jql context bean for POST /expression/eval and /expression/evaluate."
+          "jsdoc": "JQL context bean for the `issues` context variable in POST /expression/eval and /expression/evaluate (`JexpJqlIssues` schema)."
         },
         {
           "name": "CustomContextVariable",
           "kind": "interface",
-          "line": 71,
+          "line": 95,
           "exported": true,
           "signature": "export interface CustomContextVariable { readonly type: 'user' | 'issue' | 'json'; readonly accountId?: string; readonly…",
           "jsdoc": "A discriminated custom context variable (`CustomContextVariable` schema). The spec defines `custom` as an array of these — not a `Record`. `type` is the discriminator; `accountId` (user), `id`/`key` (issue), and `value` (json) are type-specific fields."
@@ -24775,15 +24787,15 @@
         {
           "name": "ExpressionEvalContext",
           "kind": "interface",
-          "line": 84,
+          "line": 116,
           "exported": true,
           "signature": "export interface ExpressionEvalContext { readonly board?: number; readonly custom?: readonly CustomContextVariable[]; re…",
-          "jsdoc": "Evaluation context for POST /expression/eval and /expression/evaluate."
+          "jsdoc": "Evaluation context for POST /expression/eval and /expression/evaluate (`JiraExpressionEvalContextBean` schema)."
         },
         {
           "name": "EvaluateExpressionData",
           "kind": "interface",
-          "line": 100,
+          "line": 132,
           "exported": true,
           "signature": "export interface EvaluateExpressionData { readonly expression: string; readonly context?: ExpressionEvalContext; }",
           "jsdoc": "Request body for POST /expression/eval and /expression/evaluate."
@@ -24791,7 +24803,7 @@
         {
           "name": "EvaluateExpressionParams",
           "kind": "interface",
-          "line": 108,
+          "line": 140,
           "exported": true,
           "signature": "export interface EvaluateExpressionParams { readonly expand?: string; }",
           "jsdoc": "Query parameters for POST /expression/eval and /expression/evaluate."
@@ -24799,55 +24811,55 @@
         {
           "name": "ExpressionMetric",
           "kind": "interface",
-          "line": 114,
+          "line": 151,
           "exported": true,
-          "signature": "export interface ExpressionMetric { readonly value?: number; readonly limit?: number; }",
-          "jsdoc": "Complexity sub-metric (value + limit pair)."
+          "signature": "export interface ExpressionMetric { readonly value: number; readonly limit: number; }",
+          "jsdoc": "Complexity sub-metric (value + limit pair) (`JiraExpressionsComplexityValueBean` schema)."
         },
         {
           "name": "ExpressionComplexity",
           "kind": "interface",
-          "line": 120,
+          "line": 164,
           "exported": true,
-          "signature": "export interface ExpressionComplexity { readonly steps?: ExpressionMetric; readonly expensiveOperations?: ExpressionMetr…",
-          "jsdoc": "Complexity envelope attached to evaluation responses."
-        },
-        {
-          "name": "ExpressionEvaluateJqlMeta",
-          "kind": "interface",
-          "line": 128,
-          "exported": true,
-          "signature": "export interface ExpressionEvaluateJqlMeta { readonly startAt?: number; readonly maxResults?: number; readonly count?: n…",
-          "jsdoc": "JQL metadata block attached to /expression/evaluate (paginated)."
+          "signature": "export interface ExpressionComplexity { readonly steps: ExpressionMetric; readonly expensiveOperations: ExpressionMetric…",
+          "jsdoc": "Complexity envelope attached to evaluation responses (`JiraExpressionsComplexityBean` schema)."
         },
         {
           "name": "ExpressionEvalJqlMeta",
           "kind": "interface",
-          "line": 137,
+          "line": 182,
           "exported": true,
-          "signature": "export interface ExpressionEvalJqlMeta { readonly nextPageToken?: string; readonly maxResults?: number; readonly count?:…",
-          "jsdoc": "JQL metadata block attached to /expression/eval (scrolling)."
+          "signature": "export interface ExpressionEvalJqlMeta { readonly count: number; readonly maxResults: number; readonly startAt: number; …",
+          "jsdoc": "JQL metadata block attached to POST /expression/eval (scrolling, enhanced search API) response (`IssuesJqlMetaDataBean` schema)."
         },
         {
-          "name": "EvaluateExpressionResponse",
+          "name": "ExpressionEvaluateJqlMeta",
           "kind": "interface",
-          "line": 145,
+          "line": 201,
           "exported": true,
-          "signature": "export interface EvaluateExpressionResponse { readonly value?: unknown; readonly meta?: { readonly complexity?: Expressi…",
-          "jsdoc": "Response envelope for POST /expression/evaluate (paginated)."
+          "signature": "export interface ExpressionEvaluateJqlMeta { readonly nextPageToken: string; readonly isLast?: boolean; }",
+          "jsdoc": "JQL metadata block attached to POST /expression/evaluate (paginated, legacy) response (`JExpEvaluateIssuesJqlMetaDataBean` schema)."
         },
         {
           "name": "EvalExpressionResponse",
           "kind": "interface",
-          "line": 154,
+          "line": 213,
           "exported": true,
-          "signature": "export interface EvalExpressionResponse { readonly value?: unknown; readonly meta?: { readonly complexity?: ExpressionCo…",
-          "jsdoc": "Response envelope for POST /expression/eval (enhanced, scrolling JQL)."
+          "signature": "export interface EvalExpressionResponse { readonly value: unknown; readonly meta?: { readonly complexity?: ExpressionCom…",
+          "jsdoc": "Response envelope for POST /expression/eval (enhanced search API, scrolling JQL)."
+        },
+        {
+          "name": "EvaluateExpressionResponse",
+          "kind": "interface",
+          "line": 228,
+          "exported": true,
+          "signature": "export interface EvaluateExpressionResponse { readonly value: unknown; readonly meta?: { readonly complexity?: Expressio…",
+          "jsdoc": "Response envelope for POST /expression/evaluate (strongly-consistent legacy, paginated JQL)."
         },
         {
           "name": "ExpressionResource",
           "kind": "class",
-          "line": 172,
+          "line": 247,
           "exported": true,
           "signature": "export class ExpressionResource",
           "jsdoc": "Jira Expressions resource.",
@@ -24855,22 +24867,22 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 173
+              "line": 248
             },
             {
               "name": "analyse",
               "kind": "method",
-              "line": 179
+              "line": 254
             },
             {
               "name": "eval",
               "kind": "method",
-              "line": 200
+              "line": 279
             },
             {
               "name": "evaluate",
               "kind": "method",
-              "line": 221
+              "line": 304
             }
           ]
         }
@@ -25927,31 +25939,31 @@
         {
           "name": "FilterSharePermission",
           "kind": "interface",
-          "line": 15,
+          "line": 19,
           "exported": true,
-          "signature": "export interface FilterSharePermission { readonly type: 'global' | 'loggedin' | 'project' | 'group' | 'user'; readonly p…",
-          "jsdoc": "Read shape returned by Jira for an existing share permission on a filter (e.g. `GET /rest/api/3/filter/{id}/permission`). This intentionally differs from the write shape {@link AddFilterSharePermissionData}: Jira normalises incoming permission payloads, so values like `projectRole` and `authenticated` (accepted on write) surface in responses as `project` / `loggedin` with the relevant nested object populated."
+          "signature": "export interface FilterSharePermission { readonly type: | 'global' | 'loggedin' | 'project' | 'group' | 'user' | 'projec…",
+          "jsdoc": "Read shape returned by Jira for an existing share permission on a filter (`SharePermission` schema — `GET /rest/api/3/filter/{id}/permission`)."
         },
         {
           "name": "Filter",
           "kind": "interface",
-          "line": 24,
+          "line": 43,
           "exported": true,
           "signature": "export interface Filter { readonly id: string; readonly self?: string; readonly name: string; readonly description?: str…",
-          "jsdoc": "A Jira saved filter containing a JQL query and share permissions."
+          "jsdoc": "A Jira saved filter containing a JQL query and share permissions (`Filter` schema from `GET /filter/{id}` and `Filter` schema from spec)."
         },
         {
           "name": "ListFiltersParams",
           "kind": "interface",
-          "line": 39,
+          "line": 75,
           "exported": true,
           "signature": "export interface ListFiltersParams { readonly startAt?: number; readonly maxResults?: number; readonly expand?: string; …",
-          "jsdoc": "Query parameters for listing Jira saved filters."
+          "jsdoc": "Query parameters for listing Jira saved filters (`GET /filter/search`, `getFiltersPaginated`)."
         },
         {
           "name": "CreateFilterData",
           "kind": "interface",
-          "line": 48,
+          "line": 101,
           "exported": true,
           "signature": "export interface CreateFilterData { readonly name: string; readonly description?: string; readonly jql?: string; readonl…",
           "jsdoc": "Request body for creating a new Jira saved filter."
@@ -25959,7 +25971,7 @@
         {
           "name": "UpdateFilterData",
           "kind": "interface",
-          "line": 58,
+          "line": 111,
           "exported": true,
           "signature": "export interface UpdateFilterData { readonly name?: string; readonly description?: string; readonly jql?: string; readon…",
           "jsdoc": "Request body for updating an existing Jira saved filter."
@@ -25967,7 +25979,7 @@
         {
           "name": "FilterShareScope",
           "kind": "type",
-          "line": 74,
+          "line": 127,
           "exported": true,
           "signature": "export type FilterShareScope = 'GLOBAL' | 'AUTHENTICATED' | 'PRIVATE';",
           "jsdoc": "Default sharing scope for newly created filters."
@@ -25975,30 +25987,38 @@
         {
           "name": "DefaultShareScopeResponse",
           "kind": "interface",
-          "line": 76,
+          "line": 129,
           "exported": true,
           "signature": "export interface DefaultShareScopeResponse { readonly scope: FilterShareScope; }"
         },
         {
           "name": "AddFilterSharePermissionData",
           "kind": "interface",
-          "line": 97,
+          "line": 162,
           "exported": true,
           "signature": "export interface AddFilterSharePermissionData { readonly type: | 'user' | 'group' | 'project' | 'projectRole' | 'global'…",
-          "jsdoc": "Write shape for share permission entries on a filter. Used by:"
+          "jsdoc": "Write shape for share permission entries on a filter (`SharePermissionInputBean` schema)."
         },
         {
           "name": "FilterColumn",
           "kind": "interface",
-          "line": 115,
+          "line": 181,
           "exported": true,
           "signature": "export interface FilterColumn { readonly label: string; readonly value: string; }",
           "jsdoc": "A single column in the user's saved column configuration for a filter."
         },
         {
+          "name": "FilterQueryParams",
+          "kind": "interface",
+          "line": 191,
+          "exported": true,
+          "signature": "export interface FilterQueryParams { readonly expand?: string; readonly overrideSharePermissions?: boolean; }",
+          "jsdoc": "Query parameters shared by `GET /filter/{id}`, `POST /filter`, and `PUT /filter/{id}`. Both `expand` and `overrideSharePermissions` are in the spec for all three endpoints."
+        },
+        {
           "name": "ListFavouriteFiltersParams",
           "kind": "interface",
-          "line": 121,
+          "line": 197,
           "exported": true,
           "signature": "export interface ListFavouriteFiltersParams { readonly expand?: string; }",
           "jsdoc": "Params for `GET /rest/api/3/filter/favourite`."
@@ -26006,7 +26026,7 @@
         {
           "name": "ListMyFiltersParams",
           "kind": "interface",
-          "line": 126,
+          "line": 202,
           "exported": true,
           "signature": "export interface ListMyFiltersParams { readonly expand?: string; readonly includeFavourites?: boolean; }",
           "jsdoc": "Params for `GET /rest/api/3/filter/my`."
@@ -26014,114 +26034,114 @@
         {
           "name": "FiltersResource",
           "kind": "class",
-          "line": 131,
+          "line": 207,
           "exported": true,
           "signature": "export class FiltersResource",
           "members": [
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 132
+              "line": 208
             },
             {
               "name": "list",
               "kind": "method",
-              "line": 138
+              "line": 214
             },
             {
               "name": "get",
               "kind": "method",
-              "line": 159
+              "line": 246
             },
             {
               "name": "create",
               "kind": "method",
-              "line": 168
+              "line": 261
             },
             {
               "name": "update",
               "kind": "method",
-              "line": 178
+              "line": 277
             },
             {
               "name": "delete",
               "kind": "method",
-              "line": 188
+              "line": 293
             },
             {
               "name": "getColumns",
               "kind": "method",
-              "line": 198
+              "line": 303
             },
             {
               "name": "setColumns",
               "kind": "method",
-              "line": 215
+              "line": 320
             },
             {
               "name": "resetColumns",
               "kind": "method",
-              "line": 224
+              "line": 329
             },
             {
               "name": "addFavourite",
               "kind": "method",
-              "line": 234
+              "line": 339
             },
             {
               "name": "removeFavourite",
               "kind": "method",
-              "line": 246
+              "line": 351
             },
             {
               "name": "listFavourites",
               "kind": "method",
-              "line": 258
+              "line": 363
             },
             {
               "name": "listMy",
               "kind": "method",
-              "line": 272
+              "line": 377
             },
             {
               "name": "changeOwner",
               "kind": "method",
-              "line": 289
+              "line": 394
             },
             {
               "name": "listPermissions",
               "kind": "method",
-              "line": 300
+              "line": 405
             },
             {
               "name": "addPermission",
               "kind": "method",
-              "line": 309
+              "line": 414
             },
             {
               "name": "getPermission",
               "kind": "method",
-              "line": 322
+              "line": 427
             },
             {
               "name": "deletePermission",
               "kind": "method",
-              "line": 331
+              "line": 436
             },
             {
               "name": "getDefaultShareScope",
               "kind": "method",
-              "line": 341
+              "line": 446
             },
             {
               "name": "setDefaultShareScope",
               "kind": "method",
-              "line": 350
+              "line": 455
             },
             {
               "name": "listAll",
               "kind": "method",
-              "line": 360
+              "line": 465
             }
           ]
         }
@@ -29095,21 +29115,23 @@
         {
           "name": "JqlAutocompleteField",
           "kind": "interface",
-          "line": 117,
+          "line": 123,
           "exported": true,
-          "signature": "export interface JqlAutocompleteField { readonly value: string; readonly displayName?: string; readonly orderable?: stri…"
+          "signature": "export interface JqlAutocompleteField { readonly value: string; readonly displayName?: string; readonly orderable?: stri…",
+          "jsdoc": "Autocomplete field reference data (`FieldReferenceData` schema)."
         },
         {
           "name": "JqlAutocompleteSuggestion",
           "kind": "interface",
-          "line": 130,
+          "line": 143,
           "exported": true,
-          "signature": "export interface JqlAutocompleteSuggestion { readonly value: string; readonly displayName?: string; readonly isList?: st…"
+          "signature": "export interface JqlAutocompleteSuggestion { readonly value: string; readonly displayName?: string; readonly isList?: st…",
+          "jsdoc": "Autocomplete function suggestion (`FunctionReferenceData` schema)."
         },
         {
           "name": "ParseJqlQueriesData",
           "kind": "interface",
-          "line": 139,
+          "line": 153,
           "exported": true,
           "signature": "export interface ParseJqlQueriesData { readonly queries: string[]; readonly validation?: 'strict' | 'warn' | 'none'; }",
           "jsdoc": "Request body for parsing one or more JQL query strings."
@@ -29117,7 +29139,7 @@
         {
           "name": "ParsedJqlQueries",
           "kind": "interface",
-          "line": 145,
+          "line": 159,
           "exported": true,
           "signature": "export interface ParsedJqlQueries { readonly queries: ParsedJqlQuery[]; }",
           "jsdoc": "Response from the JQL parse endpoint containing parsed query representations."
@@ -29125,28 +29147,30 @@
         {
           "name": "ParsedJqlQuery",
           "kind": "interface",
-          "line": 149,
+          "line": 168,
           "exported": true,
-          "signature": "export interface ParsedJqlQuery { readonly query: string; readonly structure?: Record<string, unknown>; readonly errors?…"
+          "signature": "export interface ParsedJqlQuery { readonly query: string; readonly structure?: Record<string, unknown>; readonly errors?…",
+          "jsdoc": "A parsed JQL query result (`ParsedJqlQuery` schema)."
         },
         {
           "name": "JqlQueryToSanitize",
           "kind": "interface",
-          "line": 155,
+          "line": 176,
           "exported": true,
           "signature": "export interface JqlQueryToSanitize { readonly query: string; readonly accountId?: string; }"
         },
         {
           "name": "SanitizedJqlQuery",
           "kind": "interface",
-          "line": 160,
+          "line": 188,
           "exported": true,
-          "signature": "export interface SanitizedJqlQuery { readonly initialQuery: string; readonly sanitizedQuery?: string; readonly errors?: …"
+          "signature": "export interface SanitizedJqlQuery { readonly initialQuery: string; readonly sanitizedQuery?: string; readonly accountId…",
+          "jsdoc": "Details of a sanitized JQL query (`SanitizedJqlQuery` schema)."
         },
         {
           "name": "SanitizeJqlQueriesData",
           "kind": "interface",
-          "line": 171,
+          "line": 202,
           "exported": true,
           "signature": "export interface SanitizeJqlQueriesData { readonly queries: JqlQueryToSanitize[]; }",
           "jsdoc": "Request body for sanitizing one or more JQL queries (removes personal data)."
@@ -29154,7 +29178,7 @@
         {
           "name": "SanitizedJqlQueries",
           "kind": "interface",
-          "line": 176,
+          "line": 207,
           "exported": true,
           "signature": "export interface SanitizedJqlQueries { readonly queries: SanitizedJqlQuery[]; }",
           "jsdoc": "Response from the JQL sanitize endpoint containing sanitized query strings."
@@ -29162,87 +29186,87 @@
         {
           "name": "JqlSuggestionsParams",
           "kind": "interface",
-          "line": 181,
+          "line": 217,
           "exported": true,
-          "signature": "export interface JqlSuggestionsParams { readonly fieldName: string; readonly fieldValue?: string; readonly predicateName…",
-          "jsdoc": "Query parameters for fetching field-value suggestions for JQL autocomplete."
+          "signature": "export interface JqlSuggestionsParams { readonly fieldName?: string; readonly fieldValue?: string; readonly predicateNam…",
+          "jsdoc": "Query parameters for fetching field-value suggestions for JQL autocomplete (`GET /jql/autocompletedata/suggestions`)."
         },
         {
           "name": "JqlSuggestion",
           "kind": "interface",
-          "line": 188,
+          "line": 224,
           "exported": true,
           "signature": "export interface JqlSuggestion { readonly value: string; readonly displayName?: string; }"
         },
         {
           "name": "JqlSuggestions",
           "kind": "interface",
-          "line": 194,
+          "line": 235,
           "exported": true,
-          "signature": "export interface JqlSuggestions { readonly results: JqlSuggestion[]; }",
-          "jsdoc": "Field-value suggestions returned by the JQL field reference suggestions endpoint."
+          "signature": "export interface JqlSuggestions { readonly results?: JqlSuggestion[]; }",
+          "jsdoc": "Field-value suggestions returned by the JQL field reference suggestions endpoint (`AutoCompleteSuggestions` schema)."
         },
         {
           "name": "JqlResource",
           "kind": "class",
-          "line": 198,
+          "line": 239,
           "exported": true,
           "signature": "export class JqlResource",
           "members": [
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 199
+              "line": 240
             },
             {
               "name": "getAutocompleteData",
               "kind": "method",
-              "line": 205
+              "line": 246
             },
             {
               "name": "getFieldReferenceSuggestions",
               "kind": "method",
-              "line": 214
+              "line": 255
             },
             {
               "name": "parse",
               "kind": "method",
-              "line": 231
+              "line": 271
             },
             {
               "name": "sanitize",
               "kind": "method",
-              "line": 247
+              "line": 287
             },
             {
               "name": "getAutocompleteDataPost",
               "kind": "method",
-              "line": 257
+              "line": 297
             },
             {
               "name": "getPrecomputations",
               "kind": "method",
-              "line": 267
+              "line": 307
             },
             {
               "name": "updatePrecomputations",
               "kind": "method",
-              "line": 295
+              "line": 335
             },
             {
               "name": "getPrecomputationsById",
               "kind": "method",
-              "line": 313
+              "line": 353
             },
             {
               "name": "matchIssues",
               "kind": "method",
-              "line": 330
+              "line": 370
             },
             {
               "name": "migrateQueries",
               "kind": "method",
-              "line": 340
+              "line": 380
             }
           ]
         }

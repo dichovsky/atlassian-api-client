@@ -3,17 +3,35 @@ import { ValidationError } from '../../core/errors.js';
 import { encodePathSegment } from '../../core/path.js';
 import type { OffsetPaginatedResponse } from '../../core/pagination.js';
 import { paginateOffset, validatePageSize } from '../../core/pagination.js';
+import { appendRepeatedParams } from '../../core/query.js';
 
-/** A share permission entry on a Jira dashboard. */
+/**
+ * A share permission entry on a Jira dashboard (read shape — `SharePermission` schema).
+ *
+ * Spec enum includes `projectRole` (write-only, normalised to `project` on read),
+ * `authenticated` (write-only alias, surfaces as `loggedin`), and
+ * `project-unknown` (returned when the project is inaccessible).
+ * The `id` field is readOnly int64 — present in responses, absent in write requests.
+ */
 export interface DashboardSharePermission {
-  readonly type: 'global' | 'loggedin' | 'project' | 'group' | 'user';
+  readonly type:
+    | 'global'
+    | 'loggedin'
+    | 'project'
+    | 'group'
+    | 'user'
+    | 'projectRole'
+    | 'authenticated'
+    | 'project-unknown';
+  /** The unique identifier of the share permission (readOnly, int64). */
+  readonly id?: number;
   readonly project?: { readonly id: string };
   readonly role?: { readonly id: number };
   readonly group?: { readonly name?: string; readonly groupId?: string };
   readonly user?: { readonly accountId: string };
 }
 
-/** A Jira dashboard containing gadgets and share permissions. */
+/** A Jira dashboard containing gadgets and share permissions (`Dashboard` schema). */
 export interface Dashboard {
   readonly id: string;
   readonly self?: string;
@@ -23,16 +41,40 @@ export interface Dashboard {
   readonly popularity?: number;
   readonly rank?: number;
   readonly isFavourite?: boolean;
+  /** Whether the current user has permission to edit the dashboard (readOnly). */
+  readonly isWritable?: boolean;
+  /** Whether this dashboard is the system dashboard (readOnly). */
+  readonly systemDashboard?: boolean;
+  /** Automatic refresh interval in milliseconds (readOnly). */
+  readonly automaticRefreshMs?: number;
   readonly sharePermissions?: DashboardSharePermission[];
+  readonly editPermissions?: DashboardSharePermission[];
   readonly view?: string;
 }
 
-/** Query parameters for listing Jira dashboards. */
+/**
+ * Query parameters for listing Jira dashboards (`GET /dashboard`,
+ * `getAllDashboards`).
+ *
+ * The spec only accepts `filter`, `startAt`, and `maxResults`.
+ * `orderBy` and `expand` are NOT supported by this endpoint — they belong to
+ * {@link SearchDashboardsParams} for `GET /dashboard/search`.
+ * They are retained here for backward compatibility but have no effect on
+ * the server response.
+ */
 export interface ListDashboardsParams {
   readonly startAt?: number;
   readonly maxResults?: number;
   readonly filter?: 'my' | 'favourite';
+  /**
+   * @deprecated Not supported by `GET /dashboard`. Use
+   * {@link SearchDashboardsParams.orderBy} with `search()` instead.
+   */
   readonly orderBy?: string;
+  /**
+   * @deprecated Not supported by `GET /dashboard`. Use
+   * {@link SearchDashboardsParams.expand} with `search()` instead.
+   */
   readonly expand?: string;
 }
 
@@ -58,14 +100,22 @@ export interface DashboardGadgetPosition {
   readonly column: number;
 }
 
-/** A gadget instance attached to a dashboard. */
+/**
+ * A gadget instance attached to a dashboard (`DashboardGadget` schema).
+ *
+ * Spec marks `color`, `position`, and `title` as required; `moduleKey` and
+ * `uri` are optional.
+ */
 export interface DashboardGadget {
   readonly id: number;
   readonly moduleKey?: string;
   readonly uri?: string;
-  readonly color?: string;
-  readonly position?: DashboardGadgetPosition;
-  readonly title?: string;
+  /** Required by spec: one of the predefined color values. */
+  readonly color: string;
+  /** Required by spec: grid position of the gadget. */
+  readonly position: DashboardGadgetPosition;
+  /** Required by spec: display title of the gadget. */
+  readonly title: string;
 }
 
 export interface DashboardGadgetsResponse {
@@ -87,13 +137,21 @@ export interface UpdateDashboardGadgetData {
   readonly position?: DashboardGadgetPosition;
 }
 
+/**
+ * A single property key entry (`PropertyKey` schema).
+ * Both fields are readOnly and optional per spec.
+ */
 export interface DashboardItemPropertyKey {
-  readonly self: string;
-  readonly key: string;
+  readonly self?: string;
+  readonly key?: string;
 }
 
+/**
+ * Response envelope for `GET /dashboard/{dashboardId}/items/{itemId}/properties`
+ * (`PropertyKeys` schema).
+ */
 export interface DashboardItemPropertyKeys {
-  readonly keys: readonly DashboardItemPropertyKey[];
+  readonly keys?: readonly DashboardItemPropertyKey[];
 }
 
 export interface DashboardItemProperty {
@@ -113,33 +171,55 @@ export interface CopyDashboardData {
   readonly editPermissions: DashboardSharePermission[];
 }
 
-/** Action verb accepted by `PUT /dashboard/bulk/edit`. */
+/**
+ * Action verb accepted by `PUT /dashboard/bulk/edit`
+ * (`BulkEditShareableEntityRequest.action` enum).
+ *
+ * Spec enum: `changeOwner`, `changePermission`, `addPermission`, `removePermission`.
+ * `changePermissionAndAddPermission` and `delete` are NOT in the spec.
+ */
 export type BulkEditDashboardAction =
   | 'changeOwner'
   | 'changePermission'
   | 'addPermission'
-  | 'removePermission'
-  | 'changePermissionAndAddPermission'
-  | 'delete';
+  | 'removePermission';
 
 export interface BulkEditDashboardsData {
   /** Dashboard IDs to bulk-edit. Spec schema: `integer[]` (format: int64). */
   readonly entityIds: readonly number[];
   readonly action: BulkEditDashboardAction;
+  /**
+   * Required when action is `changeOwner` (`BulkChangeOwnerDetails` schema).
+   * Both `newOwner` and `autofixName` are required by the spec.
+   */
   readonly changeOwnerDetails?: {
     readonly newOwner: string;
-    readonly autofixName?: boolean;
+    /** Required by spec (`BulkChangeOwnerDetails.required: [autofixName, newOwner]`). */
+    readonly autofixName: boolean;
   };
   readonly extendAdminPermissions?: boolean;
+  /**
+   * Required when action modifies permissions (`PermissionDetails` schema).
+   * Both `sharePermissions` and `editPermissions` are required by the spec.
+   */
   readonly permissionDetails?: {
-    readonly sharePermissions?: DashboardSharePermission[];
-    readonly editPermissions?: DashboardSharePermission[];
+    readonly sharePermissions: DashboardSharePermission[];
+    readonly editPermissions: DashboardSharePermission[];
   };
 }
 
+/**
+ * Response from `PUT /dashboard/bulk/edit` (`BulkEditShareableEntityResponse` schema).
+ *
+ * `action` is required; `entityErrors` maps dashboard ID → error details.
+ * The previous `taskId`/`status` shape was fictional.
+ */
 export interface BulkEditDashboardsResponse {
-  readonly taskId?: string;
-  readonly status?: string;
+  readonly action: BulkEditDashboardAction;
+  readonly entityErrors?: Record<
+    string,
+    { readonly errorMessages?: string[]; readonly errors?: Record<string, string> }
+  >;
 }
 
 /** A descriptor for an available (catalogue) gadget — `GET /dashboard/gadgets`. */
@@ -151,6 +231,19 @@ export interface AvailableDashboardGadget {
 
 export interface AvailableDashboardGadgetsResponse {
   readonly gadgets: AvailableDashboardGadget[];
+}
+
+/**
+ * Optional filter parameters for `GET /dashboard/{dashboardId}/gadget`.
+ * All three are `type: array` query parameters (repeated, not CSV).
+ */
+export interface ListGadgetsParams {
+  /** Filter by module key(s). Repeated query param: `moduleKey=key:one&moduleKey=key:two`. */
+  readonly moduleKey?: string[];
+  /** Filter by URI(s). Repeated query param: `uri=/rest/...&uri=/rest/...`. */
+  readonly uri?: string[];
+  /** Filter by gadget ID(s) (int64). Repeated query param: `gadgetId=10000&gadgetId=10001`. */
+  readonly gadgetId?: number[];
 }
 
 /**
@@ -220,8 +313,8 @@ export class DashboardsResource {
       if (params.startAt !== undefined) query['startAt'] = params.startAt;
       if (params.maxResults !== undefined) query['maxResults'] = params.maxResults;
       if (params.filter !== undefined) query['filter'] = params.filter;
-      if (params.orderBy !== undefined) query['orderBy'] = params.orderBy;
-      if (params.expand !== undefined) query['expand'] = params.expand;
+      // Note: `orderBy` and `expand` are NOT supported by `GET /dashboard` (getAllDashboards).
+      // They belong to `GET /dashboard/search` (SearchDashboardsParams).
     }
 
     const response = await this.transport.request<{
@@ -280,11 +373,29 @@ export class DashboardsResource {
     });
   }
 
-  /** B391: List all gadgets on a dashboard. */
-  async listGadgets(dashboardId: string): Promise<DashboardGadgetsResponse> {
+  /**
+   * B391: List all gadgets on a dashboard.
+   *
+   * Supports optional filtering by `moduleKey`, `uri`, and `gadgetId` — all
+   * are `type: array` query parameters (repeated, not CSV). See {@link ListGadgetsParams}.
+   */
+  async listGadgets(
+    dashboardId: string,
+    params?: ListGadgetsParams,
+  ): Promise<DashboardGadgetsResponse> {
+    let path = `${this.baseUrl}/dashboard/${encodePathSegment(dashboardId)}/gadget`;
+    if (params?.moduleKey !== undefined && params.moduleKey.length > 0) {
+      path = appendRepeatedParams(path, 'moduleKey', params.moduleKey);
+    }
+    if (params?.uri !== undefined && params.uri.length > 0) {
+      path = appendRepeatedParams(path, 'uri', params.uri);
+    }
+    if (params?.gadgetId !== undefined && params.gadgetId.length > 0) {
+      path = appendRepeatedParams(path, 'gadgetId', params.gadgetId);
+    }
     const response = await this.transport.request<DashboardGadgetsResponse>({
       method: 'GET',
-      path: `${this.baseUrl}/dashboard/${encodePathSegment(dashboardId)}/gadget`,
+      path,
     });
     return response.data;
   }
@@ -314,8 +425,8 @@ export class DashboardsResource {
     gadgetId: number,
     data: UpdateDashboardGadgetData,
   ): Promise<void> {
-    if (!Number.isInteger(gadgetId) || gadgetId <= 0) {
-      throw new ValidationError('gadgetId must be a positive integer');
+    if (!Number.isInteger(gadgetId) || gadgetId < 0) {
+      throw new ValidationError('gadgetId must be a non-negative integer');
     }
     const body: Record<string, unknown> = {};
     if (data.title !== undefined) body['title'] = data.title;
@@ -330,8 +441,8 @@ export class DashboardsResource {
 
   /** B393: Remove a gadget from a dashboard. */
   async removeGadget(dashboardId: string, gadgetId: number): Promise<void> {
-    if (!Number.isInteger(gadgetId) || gadgetId <= 0) {
-      throw new ValidationError('gadgetId must be a positive integer');
+    if (!Number.isInteger(gadgetId) || gadgetId < 0) {
+      throw new ValidationError('gadgetId must be a non-negative integer');
     }
     await this.transport.request<undefined>({
       method: 'DELETE',
@@ -495,6 +606,7 @@ export class DashboardsResource {
       startAt: number;
       maxResults: number;
       total?: number;
+      isLast?: boolean;
     }>({
       method: 'GET',
       path: `${this.baseUrl}/dashboard/search`,
@@ -505,6 +617,7 @@ export class DashboardsResource {
       startAt: response.data.startAt,
       maxResults: response.data.maxResults,
       total: response.data.total,
+      isLast: response.data.isLast,
     };
   }
 

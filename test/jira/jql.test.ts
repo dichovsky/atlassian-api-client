@@ -120,6 +120,13 @@ describe('JqlResource', () => {
       expect(query['predicateName']).toBeUndefined();
       expect(query['predicateValue']).toBeUndefined();
     });
+
+    it('accepts no params — fieldName is optional per spec (B1056)', async () => {
+      // All params are optional per spec — calling with no args should not throw
+      transport.respondWith({ results: [] });
+      await jql.getFieldReferenceSuggestions();
+      expect(transport.lastCall?.options.query).toBeUndefined();
+    });
   });
 
   // ── parse ─────────────────────────────────────────────────────────────────
@@ -187,6 +194,16 @@ describe('JqlResource', () => {
       // Assert
       expect(result.queries[0]!.errors).toEqual(['Error in query']);
     });
+
+    it('returns warnings field when present (B1056)', async () => {
+      // ParsedJqlQuery.warnings is present in spec but was previously missing
+      const parsed: ParsedJqlQueries = {
+        queries: [{ query: 'project = TEST ORDER BY unknown', warnings: ['Unknown sort order'] }],
+      };
+      transport.respondWith(parsed);
+      const result = await jql.parse({ queries: ['project = TEST ORDER BY unknown'] });
+      expect(result.queries[0]!.warnings).toEqual(['Unknown sort order']);
+    });
   });
 
   // ── sanitize ──────────────────────────────────────────────────────────────
@@ -222,12 +239,12 @@ describe('JqlResource', () => {
     });
 
     it('returns sanitization errors in the result', async () => {
-      // Arrange
+      // Arrange — ErrorCollection schema: errorMessages, errors, status (no `count`)
       const sanitized: SanitizedJqlQueries = {
         queries: [
           {
             initialQuery: 'INVALID',
-            errors: { count: 1, errorMessages: ['Cannot parse query'] },
+            errors: { errorMessages: ['Cannot parse query'], status: 400 },
           },
         ],
       };
