@@ -40,15 +40,18 @@ describe('SpacesResource', () => {
       });
     });
 
-    it('joins keys array into a comma-separated string', async () => {
+    it('serializes keys array as repeated path params, not CSV (B1049)', async () => {
       // Arrange
       transport.respondWith({ results: [], _links: {} });
 
       // Act
       await spaces.list({ keys: ['KEY1', 'KEY2', 'KEY3'] });
 
-      // Assert
-      expect(transport.lastCall?.options.query).toMatchObject({ keys: 'KEY1,KEY2,KEY3' });
+      // Assert — `keys` is `type: array` on /spaces: repeated params in the path.
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/spaces?keys=KEY1&keys=KEY2&keys=KEY3`,
+      );
+      expect(transport.lastCall?.options.query).not.toHaveProperty('keys');
     });
 
     it('sends all supported params', async () => {
@@ -64,14 +67,16 @@ describe('SpacesResource', () => {
         cursor: 'cur',
       });
 
-      // Assert
+      // Assert — `keys` (type:array) is a repeated path param; `type`/`status`
+      // are `type: string` and stay in the query bag (B1049).
       expect(transport.lastCall?.options.query).toMatchObject({
-        keys: 'A',
         type: 'global',
         status: 'current',
         limit: 10,
         cursor: 'cur',
       });
+      expect(transport.lastCall?.options.query).not.toHaveProperty('keys');
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/spaces?keys=A`);
     });
 
     it('omits undefined optional fields', async () => {
@@ -140,7 +145,7 @@ describe('SpacesResource', () => {
       expect(transport.calls).toHaveLength(2);
     });
 
-    it('converts keys param to comma-separated string for pagination', async () => {
+    it('serializes keys as repeated path params for pagination (B1049)', async () => {
       // Arrange
       transport.respondWith({ results: [], _links: {} });
 
@@ -149,8 +154,9 @@ describe('SpacesResource', () => {
         /* consume */
       }
 
-      // Assert
-      expect(transport.calls[0]?.options.query).toMatchObject({ keys: 'X,Y' });
+      // Assert — `keys` is `type: array` → repeated params in the path.
+      expect(transport.calls[0]?.options.path).toBe(`${BASE_URL}/spaces?keys=X&keys=Y`);
+      expect(transport.calls[0]?.options.query).not.toHaveProperty('keys');
     });
 
     it('passes type, status, and limit params', async () => {
@@ -263,24 +269,28 @@ describe('SpacesResource', () => {
         limit: 25,
       });
 
-      expect(transport.lastCall?.options).toMatchObject({
-        method: 'GET',
-        path: `${BASE_URL}/spaces/SP-1/blogposts`,
-      });
+      // `status` is `type: array` → repeated params in the path (B1049).
+      expect(transport.lastCall?.options.method).toBe('GET');
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/spaces/SP-1/blogposts?status=current&status=trashed`,
+      );
       expect(transport.lastCall?.options.query).toMatchObject({
         sort: '-created-date',
-        status: 'current,trashed',
         title: 'Launch',
         'body-format': 'atlas_doc_format',
         cursor: 'tok',
         limit: 25,
       });
+      expect(transport.lastCall?.options.query).not.toHaveProperty('status');
     });
 
-    it('accepts a scalar status string and passes it through', async () => {
+    it('serializes a scalar status as a single path param', async () => {
       transport.respondWith({ results: [], _links: {} });
       await spaces.listBlogPosts('SP-1', { status: 'current' });
-      expect(transport.lastCall?.options.query).toMatchObject({ status: 'current' });
+      expect(transport.lastCall?.options.query).not.toHaveProperty('status');
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/spaces/SP-1/blogposts?status=current`,
+      );
     });
 
     it('drops an explicit empty status array from the query bag', async () => {
@@ -538,25 +548,27 @@ describe('SpacesResource', () => {
         limit: 25,
       });
 
-      expect(transport.lastCall?.options).toMatchObject({
-        method: 'GET',
-        path: `${BASE_URL}/spaces/SP-1/pages`,
-      });
+      // `status` is `type: array` → repeated params in the path (B1049).
+      expect(transport.lastCall?.options.method).toBe('GET');
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/spaces/SP-1/pages?status=current&status=archived`,
+      );
       expect(transport.lastCall?.options.query).toMatchObject({
         depth: 'root',
         sort: '-modified-date',
-        status: 'current,archived',
         title: 'Quarterly',
         'body-format': 'storage',
         cursor: 'tok',
         limit: 25,
       });
+      expect(transport.lastCall?.options.query).not.toHaveProperty('status');
     });
 
-    it('accepts scalar status string', async () => {
+    it('serializes a scalar status as a single path param', async () => {
       transport.respondWith({ results: [], _links: {} });
       await spaces.listPages('SP-1', { status: 'current' });
-      expect(transport.lastCall?.options.query).toMatchObject({ status: 'current' });
+      expect(transport.lastCall?.options.query).not.toHaveProperty('status');
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/spaces/SP-1/pages?status=current`);
     });
   });
 

@@ -45,8 +45,9 @@ export interface ListSoftwareIssuesParams {
   /** JQL fragment to further filter the issues. */
   readonly jql?: string;
   /**
-   * Field names to include on each returned issue. Serialized as a
-   * comma-separated `fields` query parameter.
+   * Field names to include on each returned issue. The `/rest/software/1.0`
+   * issue endpoints declare `fields` as `type: array`, so it is serialized as
+   * repeated `fields=a&fields=b` query parameters (not comma-joined) — B1049.
    */
   readonly fields?: readonly string[];
   /**

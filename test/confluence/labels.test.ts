@@ -212,7 +212,7 @@ describe('LabelsResource', () => {
       expect(transport.lastCall?.options.query).toEqual({});
     });
 
-    it('passes scalar string filters straight through', async () => {
+    it('emits a scalar string filter as a single (encoded) path param', async () => {
       transport.respondWith({ results: [], _links: {} });
 
       await labels.list({
@@ -223,24 +223,28 @@ describe('LabelsResource', () => {
         cursor: 'next-page',
       });
 
+      // A literal scalar string is emitted verbatim as one repeated-param value
+      // (URL-encoded) — `sort`/`limit`/`cursor` stay in the query bag (B1049).
       expect(transport.lastCall?.options.query).toEqual({
-        'label-id': '1,2,3',
-        prefix: 'global,team',
         sort: '-name',
         limit: 50,
         cursor: 'next-page',
       });
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/labels?label-id=1%2C2%2C3&prefix=global%2Cteam`,
+      );
     });
 
-    it('joins array filters with commas', async () => {
+    it('serializes array filters as repeated path params, not CSV (B1049)', async () => {
       transport.respondWith({ results: [], _links: {} });
 
       await labels.list({ 'label-id': [1, '2', 3], prefix: ['global', 'team'] });
 
-      expect(transport.lastCall?.options.query).toEqual({
-        'label-id': '1,2,3',
-        prefix: 'global,team',
-      });
+      // `label-id`/`prefix` are `type: array` → repeated params in the path.
+      expect(transport.lastCall?.options.query).toEqual({});
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/labels?label-id=1&label-id=2&label-id=3&prefix=global&prefix=team`,
+      );
     });
 
     it('treats empty array filters as unset', async () => {
@@ -248,6 +252,7 @@ describe('LabelsResource', () => {
 
       await labels.list({ 'label-id': [], prefix: [] });
 
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/labels`);
       expect(transport.lastCall?.options.query).toEqual({});
     });
   });
@@ -272,17 +277,15 @@ describe('LabelsResource', () => {
       expect(transport.calls).toHaveLength(2);
     });
 
-    it('flattens array filters into the first request', async () => {
+    it('serializes array filters as repeated path params on the first request (B1049)', async () => {
       transport.respondWith({ results: [], _links: {} });
 
       for await (const _ of labels.listAll({ prefix: ['my', 'global'], limit: 10 })) {
         /* consume */
       }
 
-      expect(transport.calls[0]?.options.query).toEqual({
-        prefix: 'my,global',
-        limit: 10,
-      });
+      expect(transport.calls[0]?.options.query).toEqual({ limit: 10 });
+      expect(transport.calls[0]?.options.path).toBe(`${BASE_URL}/labels?prefix=my&prefix=global`);
     });
   });
 
@@ -350,21 +353,27 @@ describe('LabelsResource', () => {
         cursor: 'c1',
       });
 
+      // `space-id` is `type: array` → repeated params in the path (B1049).
       expect(transport.lastCall?.options.query).toEqual({
-        'space-id': '100,200',
         'body-format': 'atlas_doc_format',
         sort: '-id',
         limit: 10,
         cursor: 'c1',
       });
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/labels/lbl-1/blogposts?space-id=100&space-id=200`,
+      );
     });
 
-    it('passes scalar space-id through unchanged', async () => {
+    it('emits a scalar space-id as a single (encoded) path param', async () => {
       transport.respondWith({ results: [], _links: {} });
 
       await labels.listBlogPosts('lbl-1', { 'space-id': '100,200' });
 
-      expect(transport.lastCall?.options.query).toEqual({ 'space-id': '100,200' });
+      expect(transport.lastCall?.options.query).toEqual({});
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/labels/lbl-1/blogposts?space-id=100%2C200`,
+      );
     });
   });
 
@@ -398,12 +407,13 @@ describe('LabelsResource', () => {
         limit: 25,
       });
 
+      // `space-id` is `type: array` → repeated param in the path (B1049).
       expect(transport.lastCall?.options.query).toEqual({
-        'space-id': '100',
         'body-format': 'storage',
         sort: '-title',
         limit: 25,
       });
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/labels/lbl-1/pages?space-id=100`);
     });
 
     it('treats empty space-id arrays as unset', async () => {
@@ -411,6 +421,7 @@ describe('LabelsResource', () => {
 
       await labels.listPages('lbl-1', { 'space-id': [] });
 
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/labels/lbl-1/pages`);
       expect(transport.lastCall?.options.query).toEqual({});
     });
   });
@@ -459,11 +470,14 @@ describe('LabelsResource', () => {
 
       expect(ids).toEqual(['b1', 'b2']);
       expect(transport.calls).toHaveLength(2);
+      // `space-id` is `type: array` → repeated params in the path (B1049).
       expect(transport.calls[0]?.options.query).toEqual({
-        'space-id': '10,20',
         'body-format': 'storage',
         sort: '-modified-date',
       });
+      expect(transport.calls[0]?.options.path).toBe(
+        `${BASE_URL}/labels/lbl-1/blogposts?space-id=10&space-id=20`,
+      );
     });
   });
 
@@ -488,10 +502,9 @@ describe('LabelsResource', () => {
 
       expect(ids).toEqual(['p1', 'p2']);
       expect(transport.calls).toHaveLength(2);
-      expect(transport.calls[0]?.options.query).toEqual({
-        'space-id': '100',
-        sort: '-title',
-      });
+      // `space-id` is `type: array` → repeated param in the path (B1049).
+      expect(transport.calls[0]?.options.query).toEqual({ sort: '-title' });
+      expect(transport.calls[0]?.options.path).toBe(`${BASE_URL}/labels/lbl-1/pages?space-id=100`);
     });
   });
 

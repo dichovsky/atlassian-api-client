@@ -2,7 +2,7 @@ import type { Transport } from '../../core/types.js';
 import { encodePathSegment } from '../../core/path.js';
 import type { CursorPaginatedResponse } from '../../core/pagination.js';
 import { paginateCursor, validatePageSize } from '../../core/pagination.js';
-import { csvOrScalar } from './query.js';
+import { appendScalarOrArrayParam } from '../../core/query.js';
 import type { BlogPost } from '../types/blog-posts.js';
 import type { ClassificationLevel } from '../types/classification-levels.js';
 import type {
@@ -35,6 +35,13 @@ import type {
 
 /** Query shape accepted by the underlying transport. Scalars only. */
 type Query = Record<string, string | number | boolean | undefined>;
+
+/** A request target split into its repeated-param-bearing path and its scalar
+ * query bag (the `type: array` filters are baked into `path` — B1049). */
+interface PathAndQuery {
+  readonly path: string;
+  readonly query: Query;
+}
 
 /**
  * Resource for Confluence v2 spaces.
@@ -72,12 +79,12 @@ export class SpacesResource {
    */
   async list(params?: ListSpacesParams): Promise<CursorPaginatedResponse<Space>> {
     if (params?.limit !== undefined) validatePageSize(params.limit, 'limit');
-    const query = this.buildSpacesQuery(params);
+    const { path, query } = this.buildSpaces(`${this.baseUrl}/spaces`, params);
     if (params?.cursor) query['cursor'] = params.cursor;
 
     const response = await this.transport.request<CursorPaginatedResponse<Space>>({
       method: 'GET',
-      path: `${this.baseUrl}/spaces`,
+      path,
       query,
     });
     return response.data;
@@ -99,8 +106,8 @@ export class SpacesResource {
   /** Iterate over all spaces across all result pages. */
   async *listAll(params?: Omit<ListSpacesParams, 'cursor'>): AsyncGenerator<Space> {
     if (params?.limit !== undefined) validatePageSize(params.limit, 'limit');
-    const query = this.buildSpacesQuery(params);
-    yield* paginateCursor<Space>(this.transport, `${this.baseUrl}/spaces`, query);
+    const { path, query } = this.buildSpaces(`${this.baseUrl}/spaces`, params);
+    yield* paginateCursor<Space>(this.transport, path, query);
   }
 
   /**
@@ -134,10 +141,13 @@ export class SpacesResource {
     params?: ListSpaceBlogPostsParams,
   ): Promise<CursorPaginatedResponse<BlogPost>> {
     if (params?.limit !== undefined) validatePageSize(params.limit, 'limit');
-    const query = this.buildBlogPostsQuery(params);
+    const { path, query } = this.buildBlogPosts(
+      `${this.baseUrl}/spaces/${encodePathSegment(spaceId)}/blogposts`,
+      params,
+    );
     const response = await this.transport.request<CursorPaginatedResponse<BlogPost>>({
       method: 'GET',
-      path: `${this.baseUrl}/spaces/${encodePathSegment(spaceId)}/blogposts`,
+      path,
       query,
     });
     return response.data;
@@ -153,12 +163,11 @@ export class SpacesResource {
     params?: Omit<ListSpaceBlogPostsParams, 'cursor'>,
   ): AsyncGenerator<BlogPost> {
     if (params?.limit !== undefined) validatePageSize(params.limit, 'limit');
-    const query = this.buildBlogPostsQuery(params);
-    yield* paginateCursor<BlogPost>(
-      this.transport,
+    const { path, query } = this.buildBlogPosts(
       `${this.baseUrl}/spaces/${encodePathSegment(spaceId)}/blogposts`,
-      query,
+      params,
     );
+    yield* paginateCursor<BlogPost>(this.transport, path, query);
   }
 
   // ── default classification level (B198-B200) ──────────────────────────────
@@ -364,10 +373,13 @@ export class SpacesResource {
     params?: ListSpacePagesParams,
   ): Promise<CursorPaginatedResponse<Page>> {
     if (params?.limit !== undefined) validatePageSize(params.limit, 'limit');
-    const query = this.buildPagesQuery(params);
+    const { path, query } = this.buildPages(
+      `${this.baseUrl}/spaces/${encodePathSegment(spaceId)}/pages`,
+      params,
+    );
     const response = await this.transport.request<CursorPaginatedResponse<Page>>({
       method: 'GET',
-      path: `${this.baseUrl}/spaces/${encodePathSegment(spaceId)}/pages`,
+      path,
       query,
     });
     return response.data;
@@ -383,12 +395,11 @@ export class SpacesResource {
     params?: Omit<ListSpacePagesParams, 'cursor'>,
   ): AsyncGenerator<Page> {
     if (params?.limit !== undefined) validatePageSize(params.limit, 'limit');
-    const query = this.buildPagesQuery(params);
-    yield* paginateCursor<Page>(
-      this.transport,
+    const { path, query } = this.buildPages(
       `${this.baseUrl}/spaces/${encodePathSegment(spaceId)}/pages`,
-      query,
+      params,
     );
+    yield* paginateCursor<Page>(this.transport, path, query);
   }
 
   // ── permission assignments (B206) ─────────────────────────────────────────
@@ -618,35 +629,44 @@ export class SpacesResource {
   // ── internals ─────────────────────────────────────────────────────────────
 
   /**
-   * Build the shared query bag for `GET /spaces` (B196). Reused by both
+   * Build the shared path + query bag for `GET /spaces` (B196). Reused by both
    * `list` and `listAll` so the param-omission rules stay in one place. The
    * `cursor` param is intentionally excluded — `listAll` threads cursors
    * itself, and `list` overlays its caller-supplied cursor after this helper
-   * returns.
+   * returns. `keys` is `type: array` → repeated params baked into the path,
+   * not CSV (B1049); `status`/`type` are `type: string` and stay scalar.
    */
-  private buildSpacesQuery(params: Omit<ListSpacesParams, 'cursor'> | undefined): Query {
+  private buildSpaces(
+    basePath: string,
+    params: Omit<ListSpacesParams, 'cursor'> | undefined,
+  ): PathAndQuery {
     const query: Query = {};
-    if (params === undefined) return query;
-    const keys = csvOrScalar(params.keys);
-    if (keys !== undefined) query['keys'] = keys;
+    if (params === undefined) return { path: basePath, query };
+    const path = appendScalarOrArrayParam(basePath, 'keys', params.keys);
     if (params.type !== undefined) query['type'] = params.type;
     if (params.status !== undefined) query['status'] = params.status;
     if (params.limit !== undefined) query['limit'] = params.limit;
-    return query;
+    return { path, query };
   }
 
-  /** Build the query bag for `GET /spaces/{id}/blogposts` (B197). */
-  private buildBlogPostsQuery(params: ListSpaceBlogPostsParams | undefined): Query {
+  /**
+   * Build the path + query bag for `GET /spaces/{id}/blogposts` (B197).
+   * `status` is `type: array` → repeated params baked into the path, not CSV
+   * (B1049).
+   */
+  private buildBlogPosts(
+    basePath: string,
+    params: ListSpaceBlogPostsParams | undefined,
+  ): PathAndQuery {
     const query: Query = {};
-    if (params === undefined) return query;
+    if (params === undefined) return { path: basePath, query };
     if (params.sort !== undefined) query['sort'] = params.sort;
-    const status = csvOrScalar(params.status);
-    if (status !== undefined) query['status'] = status;
+    const path = appendScalarOrArrayParam(basePath, 'status', params.status);
     if (params.title !== undefined) query['title'] = params.title;
     if (params['body-format'] !== undefined) query['body-format'] = params['body-format'];
     if (params.cursor !== undefined) query['cursor'] = params.cursor;
     if (params.limit !== undefined) query['limit'] = params.limit;
-    return query;
+    return { path, query };
   }
 
   /** Build the query bag for the label collections (B201, B203). */
@@ -672,19 +692,21 @@ export class SpacesResource {
     return query;
   }
 
-  /** Build the query bag for `GET /spaces/{id}/pages` (B205). */
-  private buildPagesQuery(params: ListSpacePagesParams | undefined): Query {
+  /**
+   * Build the path + query bag for `GET /spaces/{id}/pages` (B205). `status`
+   * is `type: array` → repeated params baked into the path, not CSV (B1049).
+   */
+  private buildPages(basePath: string, params: ListSpacePagesParams | undefined): PathAndQuery {
     const query: Query = {};
-    if (params === undefined) return query;
+    if (params === undefined) return { path: basePath, query };
     if (params.depth !== undefined) query['depth'] = params.depth;
     if (params.sort !== undefined) query['sort'] = params.sort;
-    const status = csvOrScalar(params.status);
-    if (status !== undefined) query['status'] = status;
+    const path = appendScalarOrArrayParam(basePath, 'status', params.status);
     if (params.title !== undefined) query['title'] = params.title;
     if (params['body-format'] !== undefined) query['body-format'] = params['body-format'];
     if (params.cursor !== undefined) query['cursor'] = params.cursor;
     if (params.limit !== undefined) query['limit'] = params.limit;
-    return query;
+    return { path, query };
   }
 
   /** Build the query bag for `GET /spaces/{id}/permissions` (B206). */

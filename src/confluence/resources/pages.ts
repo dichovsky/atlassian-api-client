@@ -2,7 +2,8 @@ import type { Transport } from '../../core/types.js';
 import { encodePathSegment } from '../../core/path.js';
 import type { CursorPaginatedResponse } from '../../core/pagination.js';
 import { paginateCursor, validatePageSize } from '../../core/pagination.js';
-import { csvOrScalar, withSpaceIdParam } from './query.js';
+import { appendScalarOrArrayParam } from '../../core/query.js';
+import { withSpaceIdParam } from './query.js';
 import type { ClassificationLevel } from '../types/classification-levels.js';
 import type {
   ContentProperty,
@@ -392,10 +393,13 @@ export class PagesResource {
     params?: ListPageFooterCommentsParams,
   ): Promise<CursorPaginatedResponse<FooterComment>> {
     if (params?.limit !== undefined) validatePageSize(params.limit, 'limit');
-    const query = this.buildFooterCommentsQuery(params);
+    const { path, query } = this.buildFooterComments(
+      `${this.baseUrl}/pages/${encodePathSegment(id)}/footer-comments`,
+      params,
+    );
     const response = await this.transport.request<CursorPaginatedResponse<FooterComment>>({
       method: 'GET',
-      path: `${this.baseUrl}/pages/${encodePathSegment(id)}/footer-comments`,
+      path,
       query,
     });
     return response.data;
@@ -407,12 +411,11 @@ export class PagesResource {
     params?: Omit<ListPageFooterCommentsParams, 'cursor'>,
   ): AsyncGenerator<FooterComment> {
     if (params?.limit !== undefined) validatePageSize(params.limit, 'limit');
-    const query = this.buildFooterCommentsQuery(params);
-    yield* paginateCursor<FooterComment>(
-      this.transport,
+    const { path, query } = this.buildFooterComments(
       `${this.baseUrl}/pages/${encodePathSegment(id)}/footer-comments`,
-      query,
+      params,
     );
+    yield* paginateCursor<FooterComment>(this.transport, path, query);
   }
 
   /**
@@ -425,10 +428,13 @@ export class PagesResource {
     params?: ListPageInlineCommentsParams,
   ): Promise<CursorPaginatedResponse<InlineComment>> {
     if (params?.limit !== undefined) validatePageSize(params.limit, 'limit');
-    const query = this.buildInlineCommentsQuery(params);
+    const { path, query } = this.buildInlineComments(
+      `${this.baseUrl}/pages/${encodePathSegment(id)}/inline-comments`,
+      params,
+    );
     const response = await this.transport.request<CursorPaginatedResponse<InlineComment>>({
       method: 'GET',
-      path: `${this.baseUrl}/pages/${encodePathSegment(id)}/inline-comments`,
+      path,
       query,
     });
     return response.data;
@@ -440,12 +446,11 @@ export class PagesResource {
     params?: Omit<ListPageInlineCommentsParams, 'cursor'>,
   ): AsyncGenerator<InlineComment> {
     if (params?.limit !== undefined) validatePageSize(params.limit, 'limit');
-    const query = this.buildInlineCommentsQuery(params);
-    yield* paginateCursor<InlineComment>(
-      this.transport,
+    const { path, query } = this.buildInlineComments(
       `${this.baseUrl}/pages/${encodePathSegment(id)}/inline-comments`,
-      query,
+      params,
     );
+    yield* paginateCursor<InlineComment>(this.transport, path, query);
   }
 
   // ── likes (B177-B178) ─────────────────────────────────────────────────────
@@ -694,35 +699,41 @@ export class PagesResource {
     return query;
   }
 
-  /** Build the query bag for `GET /pages/{id}/footer-comments`. */
-  private buildFooterCommentsQuery(
+  /**
+   * Build the path + query bag for `GET /pages/{id}/footer-comments`. `status`
+   * is `type: array` → repeated params baked into the path, not CSV (B1049).
+   */
+  private buildFooterComments(
+    basePath: string,
     params: ListPageFooterCommentsParams | undefined,
-  ): Record<string, string | number | boolean | undefined> {
+  ): { path: string; query: Record<string, string | number | boolean | undefined> } {
     const query: Record<string, string | number | boolean | undefined> = {};
-    if (params === undefined) return query;
+    if (params === undefined) return { path: basePath, query };
     if (params['body-format'] !== undefined) query['body-format'] = params['body-format'];
-    const status = csvOrScalar(params.status);
-    if (status !== undefined) query['status'] = status;
+    const path = appendScalarOrArrayParam(basePath, 'status', params.status);
     if (params.sort !== undefined) query['sort'] = params.sort;
     if (params.cursor !== undefined) query['cursor'] = params.cursor;
     if (params.limit !== undefined) query['limit'] = params.limit;
-    return query;
+    return { path, query };
   }
 
-  /** Build the query bag for `GET /pages/{id}/inline-comments`. */
-  private buildInlineCommentsQuery(
+  /**
+   * Build the path + query bag for `GET /pages/{id}/inline-comments`. `status`
+   * and `resolution-status` are `type: array` → repeated params baked into the
+   * path, not CSV (B1049).
+   */
+  private buildInlineComments(
+    basePath: string,
     params: ListPageInlineCommentsParams | undefined,
-  ): Record<string, string | number | boolean | undefined> {
+  ): { path: string; query: Record<string, string | number | boolean | undefined> } {
     const query: Record<string, string | number | boolean | undefined> = {};
-    if (params === undefined) return query;
+    if (params === undefined) return { path: basePath, query };
     if (params['body-format'] !== undefined) query['body-format'] = params['body-format'];
-    const status = csvOrScalar(params.status);
-    if (status !== undefined) query['status'] = status;
-    const resolution = csvOrScalar(params['resolution-status']);
-    if (resolution !== undefined) query['resolution-status'] = resolution;
+    let path = appendScalarOrArrayParam(basePath, 'status', params.status);
+    path = appendScalarOrArrayParam(path, 'resolution-status', params['resolution-status']);
     if (params.sort !== undefined) query['sort'] = params.sort;
     if (params.cursor !== undefined) query['cursor'] = params.cursor;
     if (params.limit !== undefined) query['limit'] = params.limit;
-    return query;
+    return { path, query };
   }
 }

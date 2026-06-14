@@ -2,7 +2,8 @@ import type { Transport } from '../../core/types.js';
 import { encodePathSegment } from '../../core/path.js';
 import type { CursorPaginatedResponse } from '../../core/pagination.js';
 import { paginateCursor, validatePageSize } from '../../core/pagination.js';
-import { csvOrScalar, withSpaceIdParam } from './query.js';
+import { appendScalarOrArrayParam } from '../../core/query.js';
+import { withSpaceIdParam } from './query.js';
 import type { Attachment } from '../types/attachments.js';
 import type {
   BlogPost,
@@ -88,8 +89,8 @@ export class BlogPostsResource {
     const query: Record<string, string | number | boolean | undefined> = {};
     if (params?.['body-format'] !== undefined) query['body-format'] = params['body-format'];
     if (params?.['get-draft'] !== undefined) query['get-draft'] = params['get-draft'];
-    const status = csvOrScalar(params?.status);
-    if (status !== undefined) query['status'] = status;
+    // `status` is `type: array` on /blogposts/{id} → repeated params baked into
+    // the path; a comma-joined value drops the filter server-side (B1049).
     if (params?.version !== undefined) query['version'] = params.version;
     if (params?.['include-labels'] !== undefined)
       query['include-labels'] = params['include-labels'];
@@ -119,7 +120,11 @@ export class BlogPostsResource {
 
     const response = await this.transport.request<BlogPost>({
       method: 'GET',
-      path: `${this.baseUrl}/blogposts/${encodePathSegment(id)}`,
+      path: appendScalarOrArrayParam(
+        `${this.baseUrl}/blogposts/${encodePathSegment(id)}`,
+        'status',
+        params?.status,
+      ),
       query,
     });
     return response.data;
@@ -294,10 +299,13 @@ export class BlogPostsResource {
     params?: ListBlogPostAttachmentsParams,
   ): Promise<CursorPaginatedResponse<Attachment>> {
     if (params?.limit !== undefined) validatePageSize(params.limit, 'limit');
-    const query = this.buildAttachmentsQuery(params);
+    const { path, query } = this.buildAttachments(
+      `${this.baseUrl}/blogposts/${encodePathSegment(blogPostId)}/attachments`,
+      params,
+    );
     const response = await this.transport.request<CursorPaginatedResponse<Attachment>>({
       method: 'GET',
-      path: `${this.baseUrl}/blogposts/${encodePathSegment(blogPostId)}/attachments`,
+      path,
       query,
     });
     return response.data;
@@ -313,12 +321,11 @@ export class BlogPostsResource {
     params?: Omit<ListBlogPostAttachmentsParams, 'cursor'>,
   ): AsyncGenerator<Attachment> {
     if (params?.limit !== undefined) validatePageSize(params.limit, 'limit');
-    const query = this.buildAttachmentsQuery(params);
-    yield* paginateCursor<Attachment>(
-      this.transport,
+    const { path, query } = this.buildAttachments(
       `${this.baseUrl}/blogposts/${encodePathSegment(blogPostId)}/attachments`,
-      query,
+      params,
     );
+    yield* paginateCursor<Attachment>(this.transport, path, query);
   }
 
   // ── classification level (B073-B075) ──────────────────────────────────────
@@ -430,10 +437,13 @@ export class BlogPostsResource {
     params?: ListBlogPostFooterCommentsParams,
   ): Promise<CursorPaginatedResponse<FooterComment>> {
     if (params?.limit !== undefined) validatePageSize(params.limit, 'limit');
-    const query = this.buildCommentsQuery(params);
+    const { path, query } = this.buildComments(
+      `${this.baseUrl}/blogposts/${encodePathSegment(blogPostId)}/footer-comments`,
+      params,
+    );
     const response = await this.transport.request<CursorPaginatedResponse<FooterComment>>({
       method: 'GET',
-      path: `${this.baseUrl}/blogposts/${encodePathSegment(blogPostId)}/footer-comments`,
+      path,
       query,
     });
     return response.data;
@@ -449,12 +459,11 @@ export class BlogPostsResource {
     params?: Omit<ListBlogPostFooterCommentsParams, 'cursor'>,
   ): AsyncGenerator<FooterComment> {
     if (params?.limit !== undefined) validatePageSize(params.limit, 'limit');
-    const query = this.buildCommentsQuery(params);
-    yield* paginateCursor<FooterComment>(
-      this.transport,
+    const { path, query } = this.buildComments(
       `${this.baseUrl}/blogposts/${encodePathSegment(blogPostId)}/footer-comments`,
-      query,
+      params,
     );
+    yield* paginateCursor<FooterComment>(this.transport, path, query);
   }
 
   // ── inline comments (B078) ────────────────────────────────────────────────
@@ -469,10 +478,13 @@ export class BlogPostsResource {
     params?: ListBlogPostInlineCommentsParams,
   ): Promise<CursorPaginatedResponse<InlineComment>> {
     if (params?.limit !== undefined) validatePageSize(params.limit, 'limit');
-    const query = this.buildInlineCommentsQuery(params);
+    const { path, query } = this.buildInlineComments(
+      `${this.baseUrl}/blogposts/${encodePathSegment(blogPostId)}/inline-comments`,
+      params,
+    );
     const response = await this.transport.request<CursorPaginatedResponse<InlineComment>>({
       method: 'GET',
-      path: `${this.baseUrl}/blogposts/${encodePathSegment(blogPostId)}/inline-comments`,
+      path,
       query,
     });
     return response.data;
@@ -488,12 +500,11 @@ export class BlogPostsResource {
     params?: Omit<ListBlogPostInlineCommentsParams, 'cursor'>,
   ): AsyncGenerator<InlineComment> {
     if (params?.limit !== undefined) validatePageSize(params.limit, 'limit');
-    const query = this.buildInlineCommentsQuery(params);
-    yield* paginateCursor<InlineComment>(
-      this.transport,
+    const { path, query } = this.buildInlineComments(
       `${this.baseUrl}/blogposts/${encodePathSegment(blogPostId)}/inline-comments`,
-      query,
+      params,
     );
+    yield* paginateCursor<InlineComment>(this.transport, path, query);
   }
 
   // ── likes (B080-B081) ─────────────────────────────────────────────────────
@@ -694,52 +705,61 @@ export class BlogPostsResource {
 
   // ── internals ─────────────────────────────────────────────────────────────
 
-  /** Build the query bag for `GET /blogposts/{id}/attachments`. */
-  private buildAttachmentsQuery(
+  /**
+   * Build the path + query bag for `GET /blogposts/{id}/attachments`. `status`
+   * is `type: array` → repeated params baked into the path, not CSV (B1049).
+   */
+  private buildAttachments(
+    basePath: string,
     params: ListBlogPostAttachmentsParams | undefined,
-  ): Record<string, string | number | boolean | undefined> {
+  ): { path: string; query: Record<string, string | number | boolean | undefined> } {
     const query: Record<string, string | number | boolean | undefined> = {};
-    if (params === undefined) return query;
+    if (params === undefined) return { path: basePath, query };
     if (params.sort !== undefined) query['sort'] = params.sort;
     if (params.cursor !== undefined) query['cursor'] = params.cursor;
-    const status = csvOrScalar(params.status);
-    if (status !== undefined) query['status'] = status;
+    const path = appendScalarOrArrayParam(basePath, 'status', params.status);
     if (params.mediaType !== undefined) query['mediaType'] = params.mediaType;
     if (params.filename !== undefined) query['filename'] = params.filename;
     if (params.limit !== undefined) query['limit'] = params.limit;
-    return query;
+    return { path, query };
   }
 
-  /** Build the query bag for `GET /blogposts/{id}/footer-comments`. */
-  private buildCommentsQuery(
+  /**
+   * Build the path + query bag for `GET /blogposts/{id}/footer-comments`.
+   * `status` is `type: array` → repeated params baked into the path (B1049).
+   */
+  private buildComments(
+    basePath: string,
     params: ListBlogPostFooterCommentsParams | undefined,
-  ): Record<string, string | number | boolean | undefined> {
+  ): { path: string; query: Record<string, string | number | boolean | undefined> } {
     const query: Record<string, string | number | boolean | undefined> = {};
-    if (params === undefined) return query;
+    if (params === undefined) return { path: basePath, query };
     if (params['body-format'] !== undefined) query['body-format'] = params['body-format'];
-    const status = csvOrScalar(params.status);
-    if (status !== undefined) query['status'] = status;
+    const path = appendScalarOrArrayParam(basePath, 'status', params.status);
     if (params.sort !== undefined) query['sort'] = params.sort;
     if (params.cursor !== undefined) query['cursor'] = params.cursor;
     if (params.limit !== undefined) query['limit'] = params.limit;
-    return query;
+    return { path, query };
   }
 
-  /** Build the query bag for `GET /blogposts/{id}/inline-comments`. */
-  private buildInlineCommentsQuery(
+  /**
+   * Build the path + query bag for `GET /blogposts/{id}/inline-comments`.
+   * `status` and `resolution-status` are `type: array` → repeated params baked
+   * into the path, not CSV (B1049).
+   */
+  private buildInlineComments(
+    basePath: string,
     params: ListBlogPostInlineCommentsParams | undefined,
-  ): Record<string, string | number | boolean | undefined> {
+  ): { path: string; query: Record<string, string | number | boolean | undefined> } {
     const query: Record<string, string | number | boolean | undefined> = {};
-    if (params === undefined) return query;
+    if (params === undefined) return { path: basePath, query };
     if (params['body-format'] !== undefined) query['body-format'] = params['body-format'];
-    const status = csvOrScalar(params.status);
-    if (status !== undefined) query['status'] = status;
-    const resolution = csvOrScalar(params['resolution-status']);
-    if (resolution !== undefined) query['resolution-status'] = resolution;
+    let path = appendScalarOrArrayParam(basePath, 'status', params.status);
+    path = appendScalarOrArrayParam(path, 'resolution-status', params['resolution-status']);
     if (params.sort !== undefined) query['sort'] = params.sort;
     if (params.cursor !== undefined) query['cursor'] = params.cursor;
     if (params.limit !== undefined) query['limit'] = params.limit;
-    return query;
+    return { path, query };
   }
 
   /** Build the query bag for `GET /blogposts/{id}/custom-content`. */

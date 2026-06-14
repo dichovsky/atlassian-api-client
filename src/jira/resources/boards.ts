@@ -255,12 +255,17 @@ export class BoardsResource {
       if (params.startAt !== undefined) query['startAt'] = params.startAt;
       if (params.maxResults !== undefined) query['maxResults'] = params.maxResults;
       if (params.jql !== undefined) query['jql'] = params.jql;
-      if (params.fields !== undefined) query['fields'] = params.fields.join(',');
     }
 
     const response = await this.transport.request<OffsetPaginatedResponse<BoardIssue>>({
       method: 'GET',
-      path: `${this.baseUrl}/board/${boardId}/backlog`,
+      // `fields` is `type: array` on the agile issue endpoints → repeated
+      // params baked into the path, not CSV (B1049).
+      path: appendRepeatedParams(
+        `${this.baseUrl}/board/${boardId}/backlog`,
+        'fields',
+        params?.fields,
+      ),
       query,
     });
     return response.data;
@@ -320,12 +325,16 @@ export class BoardsResource {
       if (params.startAt !== undefined) query['startAt'] = params.startAt;
       if (params.maxResults !== undefined) query['maxResults'] = params.maxResults;
       if (params.jql !== undefined) query['jql'] = params.jql;
-      if (params.fields !== undefined) query['fields'] = params.fields.join(',');
     }
 
     const response = await this.transport.request<OffsetPaginatedResponse<BoardIssue>>({
       method: 'GET',
-      path: `${this.baseUrl}/board/${boardId}/epic/${epicId}/issue`,
+      // `fields` is `type: array` → repeated params baked into the path (B1049).
+      path: appendRepeatedParams(
+        `${this.baseUrl}/board/${boardId}/epic/${epicId}/issue`,
+        'fields',
+        params?.fields,
+      ),
       query,
     });
     return response.data;
@@ -345,12 +354,16 @@ export class BoardsResource {
       if (params.startAt !== undefined) query['startAt'] = params.startAt;
       if (params.maxResults !== undefined) query['maxResults'] = params.maxResults;
       if (params.jql !== undefined) query['jql'] = params.jql;
-      if (params.fields !== undefined) query['fields'] = params.fields.join(',');
     }
 
     const response = await this.transport.request<OffsetPaginatedResponse<BoardIssue>>({
       method: 'GET',
-      path: `${this.baseUrl}/board/${boardId}/epic/none/issue`,
+      // `fields` is `type: array` → repeated params baked into the path (B1049).
+      path: appendRepeatedParams(
+        `${this.baseUrl}/board/${boardId}/epic/none/issue`,
+        'fields',
+        params?.fields,
+      ),
       query,
     });
     return response.data;
@@ -401,12 +414,16 @@ export class BoardsResource {
       if (params.startAt !== undefined) query['startAt'] = params.startAt;
       if (params.maxResults !== undefined) query['maxResults'] = params.maxResults;
       if (params.jql !== undefined) query['jql'] = params.jql;
-      if (params.fields !== undefined) query['fields'] = params.fields.join(',');
     }
 
     const response = await this.transport.request<OffsetPaginatedResponse<BoardIssue>>({
       method: 'GET',
-      path: `${this.baseUrl}/board/${boardId}/issue`,
+      // `fields` is `type: array` → repeated params baked into the path (B1049).
+      path: appendRepeatedParams(
+        `${this.baseUrl}/board/${boardId}/issue`,
+        'fields',
+        params?.fields,
+      ),
       query,
     });
     return response.data;
@@ -557,12 +574,16 @@ export class BoardsResource {
       if (params.startAt !== undefined) query['startAt'] = params.startAt;
       if (params.maxResults !== undefined) query['maxResults'] = params.maxResults;
       if (params.jql !== undefined) query['jql'] = params.jql;
-      if (params.fields !== undefined) query['fields'] = params.fields.join(',');
     }
 
     const response = await this.transport.request<OffsetPaginatedResponse<BoardIssue>>({
       method: 'GET',
-      path: `${this.baseUrl}/board/${boardId}/sprint/${sprintId}/issue`,
+      // `fields` is `type: array` → repeated params baked into the path (B1049).
+      path: appendRepeatedParams(
+        `${this.baseUrl}/board/${boardId}/sprint/${sprintId}/issue`,
+        'fields',
+        params?.fields,
+      ),
       query,
     });
     return response.data;
@@ -665,10 +686,11 @@ export class BoardsResource {
 
   /**
    * Shared request builder for the enhanced (JSIS) board issue endpoints.
-   * `reconcileIssues` is a `type: array` query param → emit repeated
-   * `reconcileIssues=a&reconcileIssues=b` pairs built into the path (the scalar
-   * `query` bag would collapse them to a single CSV value the server rejects),
-   * while `fields` stays the comma-joined `fields` value the boards endpoints use.
+   * Both `reconcileIssues` and `fields` are `type: array` query params on the
+   * `/rest/software/1.0` issue endpoints → emit repeated `name=a&name=b` pairs
+   * built into the path (the scalar `query` bag would collapse them to a single
+   * CSV value the server parses as one nonexistent token, dropping the filter —
+   * B1049). `expand` is `type: string` so it stays in the scalar `query` bag.
    */
   private async requestSoftwareIssues(
     path: string,
@@ -680,11 +702,11 @@ export class BoardsResource {
       if (params.nextPageToken !== undefined) query['nextPageToken'] = params.nextPageToken;
       if (params.maxResults !== undefined) query['maxResults'] = params.maxResults;
       if (params.jql !== undefined) query['jql'] = params.jql;
-      if (params.fields !== undefined) query['fields'] = params.fields.join(',');
       if (params.expand !== undefined) query['expand'] = params.expand;
       if (params.validateQuery !== undefined) query['validateQuery'] = params.validateQuery;
     }
-    const finalPath = appendRepeatedParams(path, 'reconcileIssues', params?.reconcileIssues);
+    let finalPath = appendRepeatedParams(path, 'reconcileIssues', params?.reconcileIssues);
+    finalPath = appendRepeatedParams(finalPath, 'fields', params?.fields);
     const response = await this.transport.request<SoftwareIssueResults>({
       method: 'GET',
       path: finalPath,

@@ -295,17 +295,19 @@ describe('SprintsResource', () => {
       });
     });
 
-    it('joins fields array with commas', async () => {
+    it('serializes fields array as repeated params, not CSV (B1049)', async () => {
       // Arrange
       transport.respondWith(makeListResponse([]));
 
       // Act
       await sprints.getIssues(42, { fields: ['summary', 'status'] });
 
-      // Assert
-      expect(transport.lastCall?.options.query).toMatchObject({
-        fields: 'summary,status',
-      });
+      // Assert — `fields` is `type: array` → repeated params in the path.
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/sprint/42/issue?fields=summary&fields=status`,
+      );
+      expect(transport.lastCall?.options.path).not.toContain('%2C');
+      expect(transport.lastCall?.options.query).not.toHaveProperty('fields');
     });
 
     it('throws RangeError for maxResults: 0', async () => {
@@ -702,16 +704,18 @@ describe('SprintsResource.getIssuesEnhanced()', () => {
       validateQuery: false,
     });
 
+    // `fields` and `reconcileIssues` are both `type: array` → repeated params
+    // in the path; `expand` is `type: string` and stays in the query (B1049).
     expect(transport.lastCall?.options.query).toMatchObject({
       nextPageToken: 'TOK',
       maxResults: 10,
       jql: 'project = X',
-      fields: 'id,summary',
       expand: 'schema',
       validateQuery: false,
     });
+    expect(transport.lastCall?.options.query).not.toHaveProperty('fields');
     expect(transport.lastCall?.options.path).toBe(
-      `${SOFTWARE_BASE_URL}/sprint/42/issue?reconcileIssues=10001&reconcileIssues=10002`,
+      `${SOFTWARE_BASE_URL}/sprint/42/issue?reconcileIssues=10001&reconcileIssues=10002&fields=id&fields=summary`,
     );
   });
 

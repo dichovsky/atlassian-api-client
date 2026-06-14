@@ -105,14 +105,18 @@ describe('SearchResource', () => {
         expand: ['changelog'],
       });
 
-      // Assert
+      // Assert — `/search` GET: `fields` is `type: array` → repeated params in
+      // the path; `expand` is `type: string` → stays comma-joined (B1049).
       expect(transport.lastCall?.options.query).toMatchObject({
         jql: 'project = PROJ',
         startAt: 5,
         maxResults: 20,
-        fields: 'id,key,summary',
         expand: 'changelog',
       });
+      expect(transport.lastCall?.options.query).not.toHaveProperty('fields');
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/search?fields=id&fields=key&fields=summary`,
+      );
     });
 
     it('does not include undefined optional params in query', async () => {
@@ -277,16 +281,20 @@ describe('SearchResource', () => {
         fieldsByKeys: true,
       });
 
-      // Assert
+      // Assert — `/search/jql` GET: `fields`/`properties` are `type: array` →
+      // repeated params in the path; `expand` is `type: string` → CSV (B1049).
       expect(transport.lastCall?.options.query).toMatchObject({
         jql: 'project = PROJ',
         nextPageToken: 'tok-1',
         maxResults: 25,
-        fields: 'id,key',
         expand: 'changelog',
-        properties: 'prop-1',
         fieldsByKeys: true,
       });
+      expect(transport.lastCall?.options.query).not.toHaveProperty('fields');
+      expect(transport.lastCall?.options.query).not.toHaveProperty('properties');
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/search/jql?fields=id&fields=key&properties=prop-1`,
+      );
     });
 
     it('omits undefined optional params from query', async () => {

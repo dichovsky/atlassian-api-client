@@ -2,6 +2,7 @@ import type { Transport } from '../../core/types.js';
 import { encodePathSegment } from '../../core/path.js';
 import type { CursorPaginatedResponse } from '../../core/pagination.js';
 import { paginateCursor } from '../../core/pagination.js';
+import { appendScalarOrArrayParam } from '../../core/query.js';
 import type { Attachment } from '../types/attachments.js';
 import type { BlogPost } from '../types/blog-posts.js';
 import type { Label } from '../types/common.js';
@@ -17,17 +18,12 @@ import type { Page } from '../types/pages.js';
 /** Query shape accepted by the underlying transport. Scalars only. */
 type Query = Record<string, string | number | boolean | undefined>;
 
-/**
- * Flatten a CSV-or-array filter into the comma-joined scalar the wire format
- * expects. Arrays of mixed `string | number` ids are coerced via `String()`;
- * an explicit empty array is treated as "unset" so callers can build the
- * params object unconditionally without sending `?key=`.
- */
-function csvParam(value: string | readonly (string | number)[] | undefined): string | undefined {
-  if (value === undefined) return undefined;
-  if (typeof value === 'string') return value;
-  if (value.length === 0) return undefined;
-  return value.map((v) => String(v)).join(',');
+/** A request target split into its (possibly repeated-param-bearing) path and
+ * its scalar query bag. The `type: array` filters are baked into `path` as
+ * repeated params; everything else stays in `query` (B1049). */
+interface PathAndQuery {
+  readonly path: string;
+  readonly query: Query;
 }
 
 export class LabelsResource {
@@ -78,25 +74,24 @@ export class LabelsResource {
   /**
    * List all labels in the tenant (`GET /labels`).
    *
-   * Supports `label-id` and `prefix` array filters (the wire expects a
-   * single comma-joined value for each), plus `sort`, `limit`, `cursor`.
+   * Supports `label-id` and `prefix` array filters (`type: array` on the
+   * wire → emitted as repeated params, e.g. `?label-id=1&label-id=2`), plus
+   * `sort`, `limit`, `cursor`.
    */
   async list(params?: ListAllLabelsParams): Promise<CursorPaginatedResponse<Label>> {
+    const { path, query } = this.buildList(params);
     const response = await this.transport.request<CursorPaginatedResponse<Label>>({
       method: 'GET',
-      path: `${this.baseUrl}/labels`,
-      query: this.buildListQuery(params),
+      path,
+      query,
     });
     return response.data;
   }
 
   /** Iterate over every label in the tenant, transparently following cursors. */
   async *listAll(params?: Omit<ListAllLabelsParams, 'cursor'>): AsyncGenerator<Label> {
-    yield* paginateCursor<Label>(
-      this.transport,
-      `${this.baseUrl}/labels`,
-      this.buildListQuery(params),
-    );
+    const { path, query } = this.buildList(params);
+    yield* paginateCursor<Label>(this.transport, path, query);
   }
 
   /** List attachments tagged with a label (`GET /labels/{id}/attachments`). */
@@ -129,10 +124,14 @@ export class LabelsResource {
     labelId: string,
     params?: ListBlogPostsByLabelParams,
   ): Promise<CursorPaginatedResponse<BlogPost>> {
+    const { path, query } = this.buildContentByLabel(
+      `${this.baseUrl}/labels/${encodePathSegment(labelId)}/blogposts`,
+      params,
+    );
     const response = await this.transport.request<CursorPaginatedResponse<BlogPost>>({
       method: 'GET',
-      path: `${this.baseUrl}/labels/${encodePathSegment(labelId)}/blogposts`,
-      query: this.buildContentByLabelQuery(params),
+      path,
+      query,
     });
     return response.data;
   }
@@ -142,11 +141,11 @@ export class LabelsResource {
     labelId: string,
     params?: Omit<ListBlogPostsByLabelParams, 'cursor'>,
   ): AsyncGenerator<BlogPost> {
-    yield* paginateCursor<BlogPost>(
-      this.transport,
+    const { path, query } = this.buildContentByLabel(
       `${this.baseUrl}/labels/${encodePathSegment(labelId)}/blogposts`,
-      this.buildContentByLabelQuery(params),
+      params,
     );
+    yield* paginateCursor<BlogPost>(this.transport, path, query);
   }
 
   /** List pages tagged with a label (`GET /labels/{id}/pages`). */
@@ -154,10 +153,14 @@ export class LabelsResource {
     labelId: string,
     params?: ListPagesByLabelParams,
   ): Promise<CursorPaginatedResponse<Page>> {
+    const { path, query } = this.buildContentByLabel(
+      `${this.baseUrl}/labels/${encodePathSegment(labelId)}/pages`,
+      params,
+    );
     const response = await this.transport.request<CursorPaginatedResponse<Page>>({
       method: 'GET',
-      path: `${this.baseUrl}/labels/${encodePathSegment(labelId)}/pages`,
-      query: this.buildContentByLabelQuery(params),
+      path,
+      query,
     });
     return response.data;
   }
@@ -167,11 +170,11 @@ export class LabelsResource {
     labelId: string,
     params?: Omit<ListPagesByLabelParams, 'cursor'>,
   ): AsyncGenerator<Page> {
-    yield* paginateCursor<Page>(
-      this.transport,
+    const { path, query } = this.buildContentByLabel(
       `${this.baseUrl}/labels/${encodePathSegment(labelId)}/pages`,
-      this.buildContentByLabelQuery(params),
+      params,
     );
+    yield* paginateCursor<Page>(this.transport, path, query);
   }
 
   /** Iterate over all labels for a page. */
@@ -188,36 +191,40 @@ export class LabelsResource {
 
   // ── internals ─────────────────────────────────────────────────────────────
 
-  /** Build the query bag for `GET /labels`, flattening CSV filters. */
-  private buildListQuery(params: ListAllLabelsParams | undefined): Query {
+  /**
+   * Build the path + scalar query bag for `GET /labels`. `label-id` and
+   * `prefix` are `type: array` → repeated params baked into the path; a CSV
+   * value would be parsed by the server as one nonexistent token (B1049).
+   */
+  private buildList(params: ListAllLabelsParams | undefined): PathAndQuery {
+    const basePath = `${this.baseUrl}/labels`;
     const query: Query = {};
-    if (params === undefined) return query;
-    const labelId = csvParam(params['label-id']);
-    if (labelId !== undefined) query['label-id'] = labelId;
-    const prefix = csvParam(params.prefix);
-    if (prefix !== undefined) query.prefix = prefix;
+    if (params === undefined) return { path: basePath, query };
+    let path = appendScalarOrArrayParam(basePath, 'label-id', params['label-id']);
+    path = appendScalarOrArrayParam(path, 'prefix', params.prefix);
     if (params.sort !== undefined) query.sort = params.sort;
     if (params.limit !== undefined) query.limit = params.limit;
     if (params.cursor !== undefined) query.cursor = params.cursor;
-    return query;
+    return { path, query };
   }
 
   /**
-   * Build the query bag for `GET /labels/{id}/{pages|blogposts}`. Both share
-   * the same parameter shape (only the `sort` enum differs, and we keep that
-   * in the public types).
+   * Build the path + scalar query bag for `GET /labels/{id}/{pages|blogposts}`.
+   * Both share the same parameter shape (only the `sort` enum differs). The
+   * `space-id` filter is `type: array` → repeated params baked into the path,
+   * not CSV (B1049).
    */
-  private buildContentByLabelQuery(
+  private buildContentByLabel(
+    basePath: string,
     params: ListBlogPostsByLabelParams | ListPagesByLabelParams | undefined,
-  ): Query {
+  ): PathAndQuery {
     const query: Query = {};
-    if (params === undefined) return query;
-    const spaceId = csvParam(params['space-id']);
-    if (spaceId !== undefined) query['space-id'] = spaceId;
+    if (params === undefined) return { path: basePath, query };
+    const path = appendScalarOrArrayParam(basePath, 'space-id', params['space-id']);
     if (params['body-format'] !== undefined) query['body-format'] = params['body-format'];
     if (params.sort !== undefined) query.sort = params.sort;
     if (params.limit !== undefined) query.limit = params.limit;
     if (params.cursor !== undefined) query.cursor = params.cursor;
-    return query;
+    return { path, query };
   }
 }

@@ -9,20 +9,6 @@
 
 import type { BodyFormat } from '../types/common.js';
 
-/**
- * Normalise an array-or-scalar filter into the comma-joined scalar the wire
- * format expects. Returns `undefined` for both omitted values and explicit
- * empty arrays so callers can drop the key from the query bag entirely
- * rather than emit `?keys=` with no payload (which the API treats as an
- * unfiltered query — masking caller bugs).
- */
-export function csvOrScalar(value: string | readonly string[] | undefined): string | undefined {
-  if (value === undefined) return undefined;
-  if (typeof value === 'string') return value;
-  if (value.length === 0) return undefined;
-  return value.join(',');
-}
-
 /** Query bag accepted by the underlying transport. Scalars only. */
 type Query = Record<string, string | number | boolean | undefined>;
 

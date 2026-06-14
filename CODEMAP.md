@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "2.0.0"
   },
-  "sourceHash": "f1846514961c3afe49a14be1b1943dc637380eab04a5c0cd624d9ce91c8884c6",
+  "sourceHash": "1936c2d873c88cdc9d1af2fb4d57f2e5d7e119af3fd68f782cfd6a935e5f43cf",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -7508,30 +7508,23 @@
           "jsdoc": "Query bag accepted by the underlying transport. Scalars only."
         },
         {
-          "name": "statusParam",
-          "kind": "function",
-          "line": 39,
-          "signature": "function statusParam( value: AttachmentStatus | readonly AttachmentStatus[] | undefined, ): string | undefined",
-          "jsdoc": "Flatten a single value or non-empty array of statuses into the comma-joined string the wire format expects. An empty array drops out as `undefined` so callers can build the params object unconditionally."
-        },
-        {
           "name": "wrapUploadContent",
           "kind": "function",
-          "line": 53,
+          "line": 39,
           "signature": "function wrapUploadContent(content: Blob, mimeType: string | undefined): Blob",
           "jsdoc": "Choose the upload body for `POST /pages/{id}/attachments`. If the caller passed an explicit `mimeType` that differs from the blob's own `type`, wrap the bytes in a new `Blob` so the multipart part carries the override."
         },
         {
           "name": "validateVersionNumber",
           "kind": "function",
-          "line": 64,
+          "line": 50,
           "signature": "function validateVersionNumber(versionNumber: number): void",
           "jsdoc": "Validate that `versionNumber` is a positive integer before dispatching. Mirrors the CLI's `--version-number` guard so SDK callers fail fast instead of round-tripping to the server."
         },
         {
           "name": "AttachmentsResource",
           "kind": "class",
-          "line": 71,
+          "line": 57,
           "exported": true,
           "signature": "export class AttachmentsResource",
           "jsdoc": "Confluence Attachments resource — list, get, delete, and upload attachments on pages.",
@@ -7539,162 +7532,167 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 72
+              "line": 58
             },
             {
               "name": "listForPage",
               "kind": "method",
-              "line": 82
+              "line": 68
             },
             {
               "name": "get",
               "kind": "method",
-              "line": 100
+              "line": 86
             },
             {
               "name": "delete",
               "kind": "method",
-              "line": 114
+              "line": 100
             },
             {
               "name": "upload",
               "kind": "method",
-              "line": 149
+              "line": 135
             },
             {
               "name": "listAllForPage",
               "kind": "method",
-              "line": 172
+              "line": 158
             },
             {
               "name": "list",
               "kind": "method",
-              "line": 192
+              "line": 178
             },
             {
               "name": "listAll",
               "kind": "method",
-              "line": 207
+              "line": 193
             },
             {
               "name": "listProperties",
               "kind": "method",
-              "line": 222
+              "line": 208
             },
             {
               "name": "listPropertiesAll",
               "kind": "method",
-              "line": 239
+              "line": 225
             },
             {
               "name": "createProperty",
               "kind": "method",
-              "line": 255
+              "line": 241
             },
             {
               "name": "getProperty",
               "kind": "method",
-              "line": 271
+              "line": 257
             },
             {
               "name": "updateProperty",
               "kind": "method",
-              "line": 287
+              "line": 273
             },
             {
               "name": "deleteProperty",
               "kind": "method",
-              "line": 304
+              "line": 290
             },
             {
               "name": "listVersions",
               "kind": "method",
-              "line": 317
+              "line": 303
             },
             {
               "name": "listAllVersions",
               "kind": "method",
-              "line": 334
+              "line": 320
             },
             {
               "name": "getVersion",
               "kind": "method",
-              "line": 351
+              "line": 337
             },
             {
               "name": "listFooterComments",
               "kind": "method",
-              "line": 369
+              "line": 355
             },
             {
               "name": "listAllFooterComments",
               "kind": "method",
-              "line": 388
+              "line": 374
             },
             {
               "name": "listLabels",
               "kind": "method",
-              "line": 406
+              "line": 392
             },
             {
               "name": "listAllLabels",
               "kind": "method",
-              "line": 423
+              "line": 409
             },
             {
               "name": "getOperations",
               "kind": "method",
-              "line": 441
+              "line": 427
             },
             {
               "name": "downloadThumbnail",
               "kind": "method",
-              "line": 471
+              "line": 457
             },
             {
               "name": "buildListQuery",
               "kind": "method",
-              "line": 487
+              "line": 474
+            },
+            {
+              "name": "buildListPath",
+              "kind": "method",
+              "line": 488
             },
             {
               "name": "buildPageAttachmentsQuery",
               "kind": "method",
-              "line": 501
+              "line": 493
             },
             {
               "name": "buildGetQuery",
               "kind": "method",
-              "line": 512
+              "line": 504
             },
             {
               "name": "buildDeleteQuery",
               "kind": "method",
-              "line": 536
+              "line": 528
             },
             {
               "name": "buildPropertiesQuery",
               "kind": "method",
-              "line": 542
+              "line": 534
             },
             {
               "name": "buildVersionsQuery",
               "kind": "method",
-              "line": 553
+              "line": 545
             },
             {
               "name": "buildFooterCommentsQuery",
               "kind": "method",
-              "line": 563
+              "line": 555
             },
             {
               "name": "buildLabelsQuery",
               "kind": "method",
-              "line": 575
+              "line": 567
             },
             {
               "name": "buildThumbnailQuery",
               "kind": "method",
-              "line": 586
+              "line": 578
             }
           ]
         }
@@ -7702,6 +7700,7 @@
       "imports": [
         "../../core/pagination.js",
         "../../core/path.js",
+        "../../core/query.js",
         "../../core/types.js",
         "../types/attachments.js",
         "../types/common.js",
@@ -7714,7 +7713,7 @@
         {
           "name": "BlogPostsResource",
           "kind": "class",
-          "line": 57,
+          "line": 58,
           "exported": true,
           "signature": "export class BlogPostsResource",
           "jsdoc": "Resource for Confluence v2 blog posts.",
@@ -7722,187 +7721,187 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 58
+              "line": 59
             },
             {
               "name": "list",
               "kind": "method",
-              "line": 66
+              "line": 67
             },
             {
               "name": "get",
               "kind": "method",
-              "line": 87
+              "line": 88
             },
             {
               "name": "create",
               "kind": "method",
-              "line": 129
+              "line": 134
             },
             {
               "name": "update",
               "kind": "method",
-              "line": 139
+              "line": 144
             },
             {
               "name": "delete",
               "kind": "method",
-              "line": 149
+              "line": 154
             },
             {
               "name": "listAll",
               "kind": "method",
-              "line": 157
+              "line": 162
             },
             {
               "name": "listProperties",
               "kind": "method",
-              "line": 181
+              "line": 186
             },
             {
               "name": "listPropertiesAll",
               "kind": "method",
-              "line": 205
+              "line": 210
             },
             {
               "name": "createProperty",
               "kind": "method",
-              "line": 226
+              "line": 231
             },
             {
               "name": "getProperty",
               "kind": "method",
-              "line": 243
+              "line": 248
             },
             {
               "name": "updateProperty",
               "kind": "method",
-              "line": 260
+              "line": 265
             },
             {
               "name": "deleteProperty",
               "kind": "method",
-              "line": 278
+              "line": 283
             },
             {
               "name": "listAttachments",
               "kind": "method",
-              "line": 292
+              "line": 297
             },
             {
               "name": "listAttachmentsAll",
               "kind": "method",
-              "line": 311
+              "line": 319
             },
             {
               "name": "getClassificationLevel",
               "kind": "method",
-              "line": 331
+              "line": 338
             },
             {
               "name": "updateClassificationLevel",
               "kind": "method",
-              "line": 353
+              "line": 360
             },
             {
               "name": "resetClassificationLevel",
               "kind": "method",
-              "line": 371
+              "line": 378
             },
             {
               "name": "listCustomContent",
               "kind": "method",
-              "line": 389
+              "line": 396
             },
             {
               "name": "listCustomContentAll",
               "kind": "method",
-              "line": 408
+              "line": 415
             },
             {
               "name": "listFooterComments",
               "kind": "method",
-              "line": 428
+              "line": 435
             },
             {
               "name": "listFooterCommentsAll",
               "kind": "method",
-              "line": 447
+              "line": 457
             },
             {
               "name": "listInlineComments",
               "kind": "method",
-              "line": 467
+              "line": 476
             },
             {
               "name": "listInlineCommentsAll",
               "kind": "method",
-              "line": 486
+              "line": 498
             },
             {
               "name": "getLikeCount",
               "kind": "method",
-              "line": 509
+              "line": 520
             },
             {
               "name": "listLikeUsers",
               "kind": "method",
-              "line": 522
+              "line": 533
             },
             {
               "name": "listLikeUsersAll",
               "kind": "method",
-              "line": 543
+              "line": 554
             },
             {
               "name": "getOperations",
               "kind": "method",
-              "line": 564
+              "line": 575
             },
             {
               "name": "redact",
               "kind": "method",
-              "line": 585
+              "line": 596
             },
             {
               "name": "listLabels",
               "kind": "method",
-              "line": 606
+              "line": 617
             },
             {
               "name": "listLabelsAll",
               "kind": "method",
-              "line": 629
+              "line": 640
             },
             {
               "name": "listVersions",
               "kind": "method",
-              "line": 656
+              "line": 667
             },
             {
               "name": "listVersionsAll",
               "kind": "method",
-              "line": 679
+              "line": 690
             },
             {
-              "name": "buildAttachmentsQuery",
+              "name": "buildAttachments",
               "kind": "method",
-              "line": 698
+              "line": 712
             },
             {
-              "name": "buildCommentsQuery",
+              "name": "buildComments",
               "kind": "method",
-              "line": 714
+              "line": 731
             },
             {
-              "name": "buildInlineCommentsQuery",
+              "name": "buildInlineComments",
               "kind": "method",
-              "line": 729
+              "line": 750
             },
             {
               "name": "buildCustomContentQuery",
               "kind": "method",
-              "line": 746
+              "line": 766
             }
           ]
         }
@@ -7910,6 +7909,7 @@
       "imports": [
         "../../core/pagination.js",
         "../../core/path.js",
+        "../../core/query.js",
         "../../core/types.js",
         "../types/attachments.js",
         "../types/blog-posts.js",
@@ -8143,14 +8143,14 @@
         {
           "name": "Query",
           "kind": "type",
-          "line": 33,
+          "line": 34,
           "signature": "type Query = Record<string, string | number | boolean | undefined>;",
           "jsdoc": "Query bag accepted by the underlying transport. Scalars only."
         },
         {
           "name": "CustomContentResource",
           "kind": "class",
-          "line": 51,
+          "line": 52,
           "exported": true,
           "signature": "export class CustomContentResource",
           "jsdoc": "Resource for Confluence v2 custom content.",
@@ -8158,152 +8158,152 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 52
+              "line": 53
             },
             {
               "name": "list",
               "kind": "method",
-              "line": 60
+              "line": 61
             },
             {
               "name": "get",
               "kind": "method",
-              "line": 74
+              "line": 75
             },
             {
               "name": "create",
               "kind": "method",
-              "line": 84
+              "line": 85
             },
             {
               "name": "update",
               "kind": "method",
-              "line": 94
+              "line": 95
             },
             {
               "name": "delete",
               "kind": "method",
-              "line": 107
+              "line": 108
             },
             {
               "name": "listAll",
               "kind": "method",
-              "line": 116
+              "line": 117
             },
             {
               "name": "listProperties",
               "kind": "method",
-              "line": 138
+              "line": 139
             },
             {
               "name": "listPropertiesAll",
               "kind": "method",
-              "line": 162
+              "line": 163
             },
             {
               "name": "createProperty",
               "kind": "method",
-              "line": 183
+              "line": 184
             },
             {
               "name": "getProperty",
               "kind": "method",
-              "line": 200
+              "line": 201
             },
             {
               "name": "updateProperty",
               "kind": "method",
-              "line": 217
+              "line": 218
             },
             {
               "name": "deleteProperty",
               "kind": "method",
-              "line": 235
+              "line": 236
             },
             {
               "name": "listVersions",
               "kind": "method",
-              "line": 249
+              "line": 250
             },
             {
               "name": "listVersionsAll",
               "kind": "method",
-              "line": 272
+              "line": 273
             },
             {
               "name": "getVersion",
               "kind": "method",
-              "line": 293
+              "line": 294
             },
             {
               "name": "listAttachments",
               "kind": "method",
-              "line": 308
+              "line": 309
             },
             {
               "name": "listAttachmentsAll",
               "kind": "method",
-              "line": 327
+              "line": 331
             },
             {
               "name": "listChildren",
               "kind": "method",
-              "line": 347
+              "line": 350
             },
             {
               "name": "listChildrenAll",
               "kind": "method",
-              "line": 369
+              "line": 372
             },
             {
               "name": "listFooterComments",
               "kind": "method",
-              "line": 391
+              "line": 394
             },
             {
               "name": "listFooterCommentsAll",
               "kind": "method",
-              "line": 410
+              "line": 413
             },
             {
               "name": "listLabels",
               "kind": "method",
-              "line": 430
+              "line": 433
             },
             {
               "name": "listLabelsAll",
               "kind": "method",
-              "line": 453
+              "line": 456
             },
             {
               "name": "getOperations",
               "kind": "method",
-              "line": 476
+              "line": 479
             },
             {
               "name": "buildListQuery",
               "kind": "method",
-              "line": 487
+              "line": 490
             },
             {
               "name": "buildGetQuery",
               "kind": "method",
-              "line": 503
+              "line": 506
             },
             {
               "name": "buildDeleteQuery",
               "kind": "method",
-              "line": 528
+              "line": 531
             },
             {
-              "name": "buildAttachmentsQuery",
+              "name": "buildAttachments",
               "kind": "method",
-              "line": 534
+              "line": 541
             },
             {
               "name": "buildFooterCommentsQuery",
               "kind": "method",
-              "line": 550
+              "line": 557
             }
           ]
         }
@@ -8311,6 +8311,7 @@
       "imports": [
         "../../core/pagination.js",
         "../../core/path.js",
+        "../../core/query.js",
         "../../core/types.js",
         "../types/attachments.js",
         "../types/comments.js",
@@ -8324,9 +8325,22 @@
       "path": "src/confluence/resources/data-policies.ts",
       "symbols": [
         {
+          "name": "Query",
+          "kind": "type",
+          "line": 11,
+          "signature": "type Query = Record<string, string | number | boolean | undefined>;"
+        },
+        {
+          "name": "PathAndQuery",
+          "kind": "interface",
+          "line": 15,
+          "signature": "interface PathAndQuery { readonly path: string; readonly query: Query; }",
+          "jsdoc": "A request target split into its repeated-param-bearing path and its scalar query bag (the `type: array` `ids`/`keys` filters live in `path`)."
+        },
+        {
           "name": "DataPoliciesResource",
           "kind": "class",
-          "line": 23,
+          "line": 33,
           "exported": true,
           "signature": "export class DataPoliciesResource",
           "jsdoc": "Resource for the Confluence v2 `data-policies` API.",
@@ -8334,42 +8348,43 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 24
+              "line": 34
             },
             {
               "name": "getMetadata",
               "kind": "method",
-              "line": 30
+              "line": 40
             },
             {
               "name": "listSpaces",
               "kind": "method",
-              "line": 39
+              "line": 49
             },
             {
               "name": "listAllSpaces",
               "kind": "method",
-              "line": 54
+              "line": 64
             }
           ]
         },
         {
-          "name": "buildSpacesQuery",
+          "name": "buildSpaces",
           "kind": "function",
-          "line": 75,
-          "signature": "function buildSpacesQuery( params?: ListDataPolicySpacesParams, ): Record<string, string | number | boolean | undefined>",
-          "jsdoc": "Serialise `ListDataPolicySpacesParams` to the wire format expected by the Confluence server. Array filters (`ids` / `keys`) become comma-separated strings; unset values are omitted so query equality assertions stay tight."
+          "line": 85,
+          "signature": "function buildSpaces(basePath: string, params?: ListDataPolicySpacesParams): PathAndQuery",
+          "jsdoc": "Serialise `ListDataPolicySpacesParams` to the wire format expected by the Confluence server. The `ids` / `keys` filters are `type: array` → emitted as repeated params baked into the path (`?ids=1&ids=2`), not comma-joined: a CSV value is parsed by the server as one nonexistent token, dropping the filter (B1049). Scalar params stay in the query bag; unset values are omitted so query equality assertions stay tight."
         },
         {
-          "name": "buildListAllQuery",
+          "name": "buildListAll",
           "kind": "function",
-          "line": 95,
-          "signature": "function buildListAllQuery( params?: Omit<ListDataPolicySpacesParams, 'cursor'>, ): Record<string, string | number | boo…",
-          "jsdoc": "Build the seed query for `listAllSpaces`. Strips any caller-supplied `cursor` immutably (no build-then-mutate) so the generator always starts at the head of the collection. The `Omit<…, 'cursor'>` signature blocks this at the TS layer; this guard catches JS callers that smuggle a `cursor` through `as any` / `as object` casts."
+          "line": 104,
+          "signature": "function buildListAll( basePath: string, params?: Omit<ListDataPolicySpacesParams, 'cursor'>, ): PathAndQuery",
+          "jsdoc": "Build the seed path + query for `listAllSpaces`. Strips any caller-supplied `cursor` immutably (no build-then-mutate) so the generator always starts at the head of the collection. The `Omit<…, 'cursor'>` signature blocks this at the TS layer; this guard catches JS callers that smuggle a `cursor` through `as any` / `as object` casts (`cursor` only ever lands in the scalar query bag, never the repeated-param path)."
         }
       ],
       "imports": [
         "../../core/pagination.js",
+        "../../core/query.js",
         "../../core/types.js",
         "../types/data-policies.js"
       ]
@@ -9008,98 +9023,98 @@
         {
           "name": "Query",
           "kind": "type",
-          "line": 18,
+          "line": 19,
           "signature": "type Query = Record<string, string | number | boolean | undefined>;",
           "jsdoc": "Query shape accepted by the underlying transport. Scalars only."
         },
         {
-          "name": "csvParam",
-          "kind": "function",
-          "line": 26,
-          "signature": "function csvParam(value: string | readonly (string | number)[] | undefined): string | undefined",
-          "jsdoc": "Flatten a CSV-or-array filter into the comma-joined scalar the wire format expects. Arrays of mixed `string | number` ids are coerced via `String()`; an explicit empty array is treated as \"unset\" so callers can build the params object unconditionally without sending `?key=`."
+          "name": "PathAndQuery",
+          "kind": "interface",
+          "line": 24,
+          "signature": "interface PathAndQuery { readonly path: string; readonly query: Query; }",
+          "jsdoc": "A request target split into its (possibly repeated-param-bearing) path and its scalar query bag. The `type: array` filters are baked into `path` as repeated params; everything else stays in `query` (B1049)."
         },
         {
           "name": "LabelsResource",
           "kind": "class",
-          "line": 33,
+          "line": 29,
           "exported": true,
           "signature": "export class LabelsResource",
           "members": [
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 34
+              "line": 30
             },
             {
               "name": "listForPage",
               "kind": "method",
-              "line": 40
+              "line": 36
             },
             {
               "name": "listForSpace",
               "kind": "method",
-              "line": 53
+              "line": 49
             },
             {
               "name": "listForBlogPost",
               "kind": "method",
-              "line": 66
+              "line": 62
             },
             {
               "name": "list",
               "kind": "method",
-              "line": 84
+              "line": 81
             },
             {
               "name": "listAll",
               "kind": "method",
-              "line": 94
+              "line": 92
             },
             {
               "name": "listAttachments",
               "kind": "method",
-              "line": 103
+              "line": 98
             },
             {
               "name": "listAllAttachments",
               "kind": "method",
-              "line": 116
+              "line": 111
             },
             {
               "name": "listBlogPosts",
               "kind": "method",
-              "line": 128
+              "line": 123
             },
             {
               "name": "listAllBlogPosts",
               "kind": "method",
-              "line": 141
+              "line": 140
             },
             {
               "name": "listPages",
               "kind": "method",
-              "line": 153
+              "line": 152
             },
             {
               "name": "listAllPages",
               "kind": "method",
-              "line": 166
+              "line": 169
             },
             {
               "name": "listAllForPage",
               "kind": "method",
-              "line": 178
+              "line": 181
             },
             {
-              "name": "buildListQuery",
+              "name": "buildList",
               "kind": "method",
-              "line": 192
+              "line": 199
             },
             {
-              "name": "buildContentByLabelQuery",
+              "name": "buildContentByLabel",
               "kind": "method",
-              "line": 210
+              "line": 217
             }
           ]
         }
@@ -9107,6 +9122,7 @@
       "imports": [
         "../../core/pagination.js",
         "../../core/path.js",
+        "../../core/query.js",
         "../../core/types.js",
         "../types/attachments.js",
         "../types/blog-posts.js",
@@ -9121,7 +9137,7 @@
         {
           "name": "PagesResource",
           "kind": "class",
-          "line": 64,
+          "line": 65,
           "exported": true,
           "signature": "export class PagesResource",
           "jsdoc": "Resource for Confluence v2 pages.",
@@ -9129,192 +9145,192 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 65
+              "line": 66
             },
             {
               "name": "list",
               "kind": "method",
-              "line": 73
+              "line": 74
             },
             {
               "name": "get",
               "kind": "method",
-              "line": 84
+              "line": 85
             },
             {
               "name": "create",
               "kind": "method",
-              "line": 94
+              "line": 95
             },
             {
               "name": "update",
               "kind": "method",
-              "line": 104
+              "line": 105
             },
             {
               "name": "delete",
               "kind": "method",
-              "line": 114
+              "line": 115
             },
             {
               "name": "listAll",
               "kind": "method",
-              "line": 123
+              "line": 124
             },
             {
               "name": "listAncestors",
               "kind": "method",
-              "line": 138
+              "line": 139
             },
             {
               "name": "listDescendants",
               "kind": "method",
-              "line": 159
+              "line": 160
             },
             {
               "name": "listDescendantsAll",
               "kind": "method",
-              "line": 178
+              "line": 179
             },
             {
               "name": "listDirectChildren",
               "kind": "method",
-              "line": 201
+              "line": 202
             },
             {
               "name": "listDirectChildrenAll",
               "kind": "method",
-              "line": 220
+              "line": 221
             },
             {
               "name": "listChildren",
               "kind": "method",
-              "line": 244
+              "line": 245
             },
             {
               "name": "listChildrenAll",
               "kind": "method",
-              "line": 263
+              "line": 264
             },
             {
               "name": "getClassificationLevel",
               "kind": "method",
-              "line": 285
+              "line": 286
             },
             {
               "name": "updateClassificationLevel",
               "kind": "method",
-              "line": 309
+              "line": 310
             },
             {
               "name": "resetClassificationLevel",
               "kind": "method",
-              "line": 328
+              "line": 329
             },
             {
               "name": "listCustomContent",
               "kind": "method",
-              "line": 346
+              "line": 347
             },
             {
               "name": "listCustomContentAll",
               "kind": "method",
-              "line": 365
+              "line": 366
             },
             {
               "name": "listFooterComments",
               "kind": "method",
-              "line": 390
+              "line": 391
             },
             {
               "name": "listFooterCommentsAll",
               "kind": "method",
-              "line": 405
+              "line": 409
             },
             {
               "name": "listInlineComments",
               "kind": "method",
-              "line": 423
+              "line": 426
             },
             {
               "name": "listInlineCommentsAll",
               "kind": "method",
-              "line": 438
+              "line": 444
             },
             {
               "name": "getLikeCount",
               "kind": "method",
-              "line": 461
+              "line": 466
             },
             {
               "name": "listLikeUsers",
               "kind": "method",
-              "line": 474
+              "line": 479
             },
             {
               "name": "listLikeUsersAll",
               "kind": "method",
-              "line": 495
+              "line": 500
             },
             {
               "name": "getOperations",
               "kind": "method",
-              "line": 516
+              "line": 521
             },
             {
               "name": "redact",
               "kind": "method",
-              "line": 537
+              "line": 542
             },
             {
               "name": "updateTitle",
               "kind": "method",
-              "line": 558
+              "line": 563
             },
             {
               "name": "listProperties",
               "kind": "method",
-              "line": 581
+              "line": 586
             },
             {
               "name": "listPropertiesAll",
               "kind": "method",
-              "line": 605
+              "line": 610
             },
             {
               "name": "createProperty",
               "kind": "method",
-              "line": 626
+              "line": 631
             },
             {
               "name": "getProperty",
               "kind": "method",
-              "line": 640
+              "line": 645
             },
             {
               "name": "updateProperty",
               "kind": "method",
-              "line": 657
+              "line": 662
             },
             {
               "name": "deleteProperty",
               "kind": "method",
-              "line": 675
+              "line": 680
             },
             {
               "name": "buildCustomContentQuery",
               "kind": "method",
-              "line": 685
+              "line": 690
             },
             {
-              "name": "buildFooterCommentsQuery",
+              "name": "buildFooterComments",
               "kind": "method",
-              "line": 698
+              "line": 706
             },
             {
-              "name": "buildInlineCommentsQuery",
+              "name": "buildInlineComments",
               "kind": "method",
-              "line": 713
+              "line": 725
             }
           ]
         }
@@ -9322,6 +9338,7 @@
       "imports": [
         "../../core/pagination.js",
         "../../core/path.js",
+        "../../core/query.js",
         "../../core/types.js",
         "../types/classification-levels.js",
         "../types/comments.js",
@@ -9335,24 +9352,16 @@
       "path": "src/confluence/resources/query.ts",
       "symbols": [
         {
-          "name": "csvOrScalar",
-          "kind": "function",
-          "line": 19,
-          "exported": true,
-          "signature": "export function csvOrScalar(value: string | readonly string[] | undefined): string | undefined",
-          "jsdoc": "Normalise an array-or-scalar filter into the comma-joined scalar the wire format expects. Returns `undefined` for both omitted values and explicit empty arrays so callers can drop the key from the query bag entirely rather than emit `?keys=` with no payload (which the API treats as an unfiltered query — masking caller bugs)."
-        },
-        {
           "name": "Query",
           "kind": "type",
-          "line": 27,
+          "line": 13,
           "signature": "type Query = Record<string, string | number | boolean | undefined>;",
           "jsdoc": "Query bag accepted by the underlying transport. Scalars only."
         },
         {
           "name": "nonEmptyQuery",
           "kind": "function",
-          "line": 33,
+          "line": 19,
           "exported": true,
           "signature": "export function nonEmptyQuery(query: Query): Query | undefined",
           "jsdoc": "Return `undefined` for an empty query bag so the transport does not append a stray `?` to the URL. Used by methods whose params are entirely optional."
@@ -9360,7 +9369,7 @@
         {
           "name": "SpaceScopedListParams",
           "kind": "interface",
-          "line": 43,
+          "line": 29,
           "exported": true,
           "signature": "export interface SpaceScopedListParams { readonly spaceId?: string; readonly title?: string; readonly status?: string; r…",
           "jsdoc": "Shape shared by the Confluence v2 list endpoints that filter by space (`GET /pages`, `GET /blogposts`). The public SDK input uses the camelCase `spaceId` — matching the response-body field and the documented API — but the wire query parameter is the kebab-case `space-id`."
@@ -9368,7 +9377,7 @@
         {
           "name": "withSpaceIdParam",
           "kind": "function",
-          "line": 59,
+          "line": 45,
           "exported": true,
           "signature": "export function withSpaceIdParam(params?: SpaceScopedListParams): Query | undefined",
           "jsdoc": "Build the query bag for a space-scoped list endpoint, remapping the ergonomic camelCase `spaceId` filter onto the kebab-case `space-id` query parameter the Confluence v2 API expects. Sending `spaceId` as a query parameter is silently ignored by the server, which then returns content from every space instead of the requested one."
@@ -9540,9 +9549,16 @@
           "jsdoc": "Query shape accepted by the underlying transport. Scalars only."
         },
         {
+          "name": "PathAndQuery",
+          "kind": "interface",
+          "line": 41,
+          "signature": "interface PathAndQuery { readonly path: string; readonly query: Query; }",
+          "jsdoc": "A request target split into its repeated-param-bearing path and its scalar query bag (the `type: array` filters are baked into `path` — B1049)."
+        },
+        {
           "name": "SpacesResource",
           "kind": "class",
-          "line": 60,
+          "line": 67,
           "exported": true,
           "signature": "export class SpacesResource",
           "jsdoc": "Resource for Confluence v2 spaces.",
@@ -9550,187 +9566,187 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 61
+              "line": 68
             },
             {
               "name": "list",
               "kind": "method",
-              "line": 73
+              "line": 80
             },
             {
               "name": "get",
               "kind": "method",
-              "line": 91
+              "line": 98
             },
             {
               "name": "listAll",
               "kind": "method",
-              "line": 100
+              "line": 107
             },
             {
               "name": "create",
               "kind": "method",
-              "line": 116
+              "line": 123
             },
             {
               "name": "listBlogPosts",
               "kind": "method",
-              "line": 132
+              "line": 139
             },
             {
               "name": "listBlogPostsAll",
               "kind": "method",
-              "line": 151
+              "line": 161
             },
             {
               "name": "getDefaultClassificationLevel",
               "kind": "method",
-              "line": 171
+              "line": 180
             },
             {
               "name": "updateDefaultClassificationLevel",
               "kind": "method",
-              "line": 187
+              "line": 196
             },
             {
               "name": "deleteDefaultClassificationLevel",
               "kind": "method",
-              "line": 206
+              "line": 215
             },
             {
               "name": "listContentLabels",
               "kind": "method",
-              "line": 225
+              "line": 234
             },
             {
               "name": "listContentLabelsAll",
               "kind": "method",
-              "line": 244
+              "line": 253
             },
             {
               "name": "listCustomContent",
               "kind": "method",
-              "line": 265
+              "line": 274
             },
             {
               "name": "listCustomContentAll",
               "kind": "method",
-              "line": 284
+              "line": 293
             },
             {
               "name": "listLabels",
               "kind": "method",
-              "line": 308
+              "line": 317
             },
             {
               "name": "listLabelsAll",
               "kind": "method",
-              "line": 327
+              "line": 336
             },
             {
               "name": "getOperations",
               "kind": "method",
-              "line": 347
+              "line": 356
             },
             {
               "name": "listPages",
               "kind": "method",
-              "line": 362
+              "line": 371
             },
             {
               "name": "listPagesAll",
               "kind": "method",
-              "line": 381
+              "line": 393
             },
             {
               "name": "listPermissions",
               "kind": "method",
-              "line": 405
+              "line": 416
             },
             {
               "name": "listPermissionsAll",
               "kind": "method",
-              "line": 426
+              "line": 437
             },
             {
               "name": "listRoleAssignments",
               "kind": "method",
-              "line": 446
+              "line": 457
             },
             {
               "name": "listRoleAssignmentsAll",
               "kind": "method",
-              "line": 465
+              "line": 476
             },
             {
               "name": "setRoleAssignments",
               "kind": "method",
-              "line": 491
+              "line": 502
             },
             {
               "name": "listProperties",
               "kind": "method",
-              "line": 517
+              "line": 528
             },
             {
               "name": "listPropertiesAll",
               "kind": "method",
-              "line": 541
+              "line": 552
             },
             {
               "name": "createProperty",
               "kind": "method",
-              "line": 562
+              "line": 573
             },
             {
               "name": "getProperty",
               "kind": "method",
-              "line": 576
+              "line": 587
             },
             {
               "name": "updateProperty",
               "kind": "method",
-              "line": 593
+              "line": 604
             },
             {
               "name": "deleteProperty",
               "kind": "method",
-              "line": 611
+              "line": 622
             },
             {
-              "name": "buildSpacesQuery",
-              "kind": "method",
-              "line": 627
-            },
-            {
-              "name": "buildBlogPostsQuery",
+              "name": "buildSpaces",
               "kind": "method",
               "line": 639
             },
             {
+              "name": "buildBlogPosts",
+              "kind": "method",
+              "line": 657
+            },
+            {
               "name": "buildLabelsQuery",
               "kind": "method",
-              "line": 653
+              "line": 673
             },
             {
               "name": "buildCustomContentQuery",
               "kind": "method",
-              "line": 666
+              "line": 686
             },
             {
-              "name": "buildPagesQuery",
+              "name": "buildPages",
               "kind": "method",
-              "line": 676
+              "line": 699
             },
             {
               "name": "buildPermissionsQuery",
               "kind": "method",
-              "line": 691
+              "line": 713
             },
             {
               "name": "buildRoleAssignmentsQuery",
               "kind": "method",
-              "line": 700
+              "line": 722
             }
           ]
         }
@@ -9738,14 +9754,14 @@
       "imports": [
         "../../core/pagination.js",
         "../../core/path.js",
+        "../../core/query.js",
         "../../core/types.js",
         "../types/blog-posts.js",
         "../types/classification-levels.js",
         "../types/common.js",
         "../types/custom-content.js",
         "../types/pages.js",
-        "../types/spaces.js",
-        "./query.js"
+        "../types/spaces.js"
       ]
     },
     {
@@ -14206,6 +14222,14 @@
           "exported": true,
           "signature": "export function appendRepeatedParams( path: string, name: string, values: readonly (string | number)[] | undefined, ): s…",
           "jsdoc": "Append a repeated (`type: array`, `style: form`, `explode: true`) query parameter to a path/query string."
+        },
+        {
+          "name": "appendScalarOrArrayParam",
+          "kind": "function",
+          "line": 65,
+          "exported": true,
+          "signature": "export function appendScalarOrArrayParam( path: string, name: string, value: string | number | readonly (string | number…",
+          "jsdoc": "Append a `type: array` query parameter whose SDK input accepts either a single scalar *or* an array (the shape used by several Confluence v2 filters, e.g. `status`/`resolution-status`/`keys`)."
         }
       ]
     },
@@ -22909,142 +22933,142 @@
             {
               "name": "getConfiguration",
               "kind": "method",
-              "line": 270
+              "line": 275
             },
             {
               "name": "listEpics",
               "kind": "method",
-              "line": 282
+              "line": 287
             },
             {
               "name": "getEpicIssues",
               "kind": "method",
-              "line": 306
+              "line": 311
             },
             {
               "name": "getIssuesWithoutEpic",
               "kind": "method",
-              "line": 335
+              "line": 344
             },
             {
               "name": "getFeatures",
               "kind": "method",
-              "line": 360
+              "line": 373
             },
             {
               "name": "toggleFeature",
               "kind": "method",
-              "line": 372
+              "line": 385
             },
             {
               "name": "getIssues",
               "kind": "method",
-              "line": 391
+              "line": 404
             },
             {
               "name": "moveIssues",
               "kind": "method",
-              "line": 416
+              "line": 433
             },
             {
               "name": "listProjects",
               "kind": "method",
-              "line": 449
+              "line": 466
             },
             {
               "name": "listProjectsFull",
               "kind": "method",
-              "line": 472
+              "line": 489
             },
             {
               "name": "listSprints",
               "kind": "method",
-              "line": 495
+              "line": 512
             },
             {
               "name": "listVersions",
               "kind": "method",
-              "line": 519
+              "line": 536
             },
             {
               "name": "getSprintIssues",
               "kind": "method",
-              "line": 543
+              "line": 560
             },
             {
               "name": "getBacklogEnhanced",
               "kind": "method",
-              "line": 580
+              "line": 601
             },
             {
               "name": "getIssuesEnhanced",
               "kind": "method",
-              "line": 594
+              "line": 615
             },
             {
               "name": "getIssuesWithoutEpicEnhanced",
               "kind": "method",
-              "line": 609
+              "line": 630
             },
             {
               "name": "getEpicIssuesEnhanced",
               "kind": "method",
-              "line": 627
+              "line": 648
             },
             {
               "name": "getSprintIssuesEnhanced",
               "kind": "method",
-              "line": 649
+              "line": 670
             },
             {
               "name": "requestSoftwareIssues",
               "kind": "method",
-              "line": 673
+              "line": 695
             },
             {
               "name": "listProperties",
               "kind": "method",
-              "line": 697
+              "line": 719
             },
             {
               "name": "deleteProperty",
               "kind": "method",
-              "line": 709
+              "line": 731
             },
             {
               "name": "getProperty",
               "kind": "method",
-              "line": 723
+              "line": 745
             },
             {
               "name": "setProperty",
               "kind": "method",
-              "line": 738
+              "line": 760
             },
             {
               "name": "listQuickFilters",
               "kind": "method",
-              "line": 753
+              "line": 775
             },
             {
               "name": "getQuickFilter",
               "kind": "method",
-              "line": 775
+              "line": 797
             },
             {
               "name": "getReports",
               "kind": "method",
-              "line": 790
+              "line": 812
             },
             {
               "name": "listByFilter",
               "kind": "method",
-              "line": 802
+              "line": 824
             },
             {
               "name": "listAll",
               "kind": "method",
-              "line": 825
+              "line": 847
             }
           ]
         }
@@ -24698,32 +24722,32 @@
             {
               "name": "moveIssues",
               "kind": "method",
-              "line": 113
+              "line": 117
             },
             {
               "name": "rank",
               "kind": "method",
-              "line": 133
+              "line": 137
             },
             {
               "name": "getIssuesWithoutEpic",
               "kind": "method",
-              "line": 151
+              "line": 155
             },
             {
               "name": "removeIssuesFromEpic",
               "kind": "method",
-              "line": 172
+              "line": 176
             },
             {
               "name": "getIssuesEnhanced",
               "kind": "method",
-              "line": 195
+              "line": 199
             },
             {
               "name": "getIssuesWithoutEpicEnhanced",
               "kind": "method",
-              "line": 227
+              "line": 233
             }
           ]
         }
@@ -27758,287 +27782,287 @@
             {
               "name": "create",
               "kind": "method",
-              "line": 404
+              "line": 410
             },
             {
               "name": "update",
               "kind": "method",
-              "line": 414
+              "line": 420
             },
             {
               "name": "delete",
               "kind": "method",
-              "line": 423
+              "line": 429
             },
             {
               "name": "getTransitions",
               "kind": "method",
-              "line": 431
+              "line": 437
             },
             {
               "name": "transition",
               "kind": "method",
-              "line": 440
+              "line": 446
             },
             {
               "name": "requireAgileBaseUrl",
               "kind": "method",
-              "line": 450
+              "line": 456
             },
             {
               "name": "buildBoardIdQuery",
               "kind": "method",
-              "line": 457
+              "line": 463
             },
             {
               "name": "getAgile",
               "kind": "method",
-              "line": 474
+              "line": 480
             },
             {
               "name": "getEstimation",
               "kind": "method",
-              "line": 487
+              "line": 493
             },
             {
               "name": "setEstimation",
               "kind": "method",
-              "line": 505
+              "line": 511
             },
             {
               "name": "rank",
               "kind": "method",
-              "line": 525
+              "line": 531
             },
             {
               "name": "assign",
               "kind": "method",
-              "line": 552
+              "line": 558
             },
             {
               "name": "getChangelog",
               "kind": "method",
-              "line": 564
+              "line": 570
             },
             {
               "name": "filterChangelog",
               "kind": "method",
-              "line": 580
+              "line": 586
             },
             {
               "name": "getEditMeta",
               "kind": "method",
-              "line": 593
+              "line": 599
             },
             {
               "name": "notify",
               "kind": "method",
-              "line": 605
+              "line": 611
             },
             {
               "name": "listProperties",
               "kind": "method",
-              "line": 617
+              "line": 623
             },
             {
               "name": "deleteProperty",
               "kind": "method",
-              "line": 629
+              "line": 635
             },
             {
               "name": "getProperty",
               "kind": "method",
-              "line": 643
+              "line": 649
             },
             {
               "name": "setProperty",
               "kind": "method",
-              "line": 658
+              "line": 664
             },
             {
               "name": "deleteAllRemoteLinks",
               "kind": "method",
-              "line": 673
+              "line": 679
             },
             {
               "name": "listRemoteLinks",
               "kind": "method",
-              "line": 687
+              "line": 693
             },
             {
               "name": "createRemoteLink",
               "kind": "method",
-              "line": 705
+              "line": 711
             },
             {
               "name": "deleteRemoteLink",
               "kind": "method",
-              "line": 721
+              "line": 727
             },
             {
               "name": "getRemoteLink",
               "kind": "method",
-              "line": 732
+              "line": 738
             },
             {
               "name": "updateRemoteLink",
               "kind": "method",
-              "line": 744
+              "line": 750
             },
             {
               "name": "removeVote",
               "kind": "method",
-              "line": 760
+              "line": 766
             },
             {
               "name": "getVotes",
               "kind": "method",
-              "line": 771
+              "line": 777
             },
             {
               "name": "addVote",
               "kind": "method",
-              "line": 783
+              "line": 789
             },
             {
               "name": "removeWatcher",
               "kind": "method",
-              "line": 795
+              "line": 801
             },
             {
               "name": "getWatchers",
               "kind": "method",
-              "line": 809
+              "line": 815
             },
             {
               "name": "addWatcher",
               "kind": "method",
-              "line": 822
+              "line": 828
             },
             {
               "name": "deleteAllWorklogs",
               "kind": "method",
-              "line": 841
+              "line": 847
             },
             {
               "name": "listWorklogs",
               "kind": "method",
-              "line": 853
+              "line": 859
             },
             {
               "name": "addWorklog",
               "kind": "method",
-              "line": 872
+              "line": 878
             },
             {
               "name": "deleteWorklog",
               "kind": "method",
-              "line": 898
+              "line": 904
             },
             {
               "name": "getWorklog",
               "kind": "method",
-              "line": 921
+              "line": 927
             },
             {
               "name": "updateWorklog",
               "kind": "method",
-              "line": 940
+              "line": 946
             },
             {
               "name": "listWorklogProperties",
               "kind": "method",
-              "line": 966
+              "line": 972
             },
             {
               "name": "deleteWorklogProperty",
               "kind": "method",
-              "line": 981
+              "line": 987
             },
             {
               "name": "getWorklogProperty",
               "kind": "method",
-              "line": 996
+              "line": 1002
             },
             {
               "name": "setWorklogProperty",
               "kind": "method",
-              "line": 1012
+              "line": 1018
             },
             {
               "name": "moveWorklog",
               "kind": "method",
-              "line": 1030
+              "line": 1036
             },
             {
               "name": "archiveIssues",
               "kind": "method",
-              "line": 1055
+              "line": 1061
             },
             {
               "name": "archiveIssuesByJql",
               "kind": "method",
-              "line": 1070
+              "line": 1076
             },
             {
               "name": "unarchiveIssues",
               "kind": "method",
-              "line": 1083
+              "line": 1089
             },
             {
               "name": "bulkFetch",
               "kind": "method",
-              "line": 1098
+              "line": 1104
             },
             {
               "name": "getCreateMeta",
               "kind": "method",
-              "line": 1113
+              "line": 1119
             },
             {
               "name": "getCreateMetaIssueTypes",
               "kind": "method",
-              "line": 1136
+              "line": 1142
             },
             {
               "name": "getCreateMetaIssueType",
               "kind": "method",
-              "line": 1155
+              "line": 1161
             },
             {
               "name": "getLimitReport",
               "kind": "method",
-              "line": 1177
+              "line": 1183
             },
             {
               "name": "picker",
               "kind": "method",
-              "line": 1191
+              "line": 1197
             },
             {
               "name": "setPropertiesByEntityIds",
               "kind": "method",
-              "line": 1214
+              "line": 1220
             },
             {
               "name": "setPropertiesMulti",
               "kind": "method",
-              "line": 1229
+              "line": 1235
             },
             {
               "name": "watchIssuesBulk",
               "kind": "method",
-              "line": 1245
+              "line": 1251
             },
             {
               "name": "isWatchingIssuesBulk",
               "kind": "method",
-              "line": 1262
+              "line": 1268
             },
             {
               "name": "exportArchivedIssues",
               "kind": "method",
-              "line": 1277
+              "line": 1283
             }
           ]
         }
@@ -31464,119 +31488,119 @@
         {
           "name": "ProjectEmail",
           "kind": "interface",
-          "line": 7,
+          "line": 8,
           "exported": true,
           "signature": "export interface ProjectEmail { readonly projectId?: number; readonly emailAddress?: string; readonly emailAddressStatus…"
         },
         {
           "name": "ProjectHierarchyLevel",
           "kind": "interface",
-          "line": 13,
+          "line": 14,
           "exported": true,
           "signature": "export interface ProjectHierarchyLevel { readonly id: number; readonly name: string; readonly entityId?: string; readonl…"
         },
         {
           "name": "ProjectHierarchy",
           "kind": "interface",
-          "line": 22,
+          "line": 23,
           "exported": true,
           "signature": "export interface ProjectHierarchy { readonly projectId?: number; readonly hierarchy?: ProjectHierarchyLevel[]; }"
         },
         {
           "name": "ProjectAvatar",
           "kind": "interface",
-          "line": 27,
+          "line": 28,
           "exported": true,
           "signature": "export interface ProjectAvatar { readonly id: string; readonly isSystemAvatar?: boolean; readonly isSelected?: boolean; …"
         },
         {
           "name": "ProjectAvatars",
           "kind": "interface",
-          "line": 35,
+          "line": 36,
           "exported": true,
           "signature": "export interface ProjectAvatars { readonly system: ProjectAvatar[]; readonly custom: ProjectAvatar[]; }"
         },
         {
           "name": "ProjectClassificationConfig",
           "kind": "interface",
-          "line": 40,
+          "line": 41,
           "exported": true,
           "signature": "export interface ProjectClassificationConfig { readonly id?: string; readonly name?: string; readonly description?: stri…"
         },
         {
           "name": "ProjectClassificationLevel",
           "kind": "interface",
-          "line": 51,
+          "line": 52,
           "exported": true,
           "signature": "export interface ProjectClassificationLevel { readonly id?: string; readonly name?: string; readonly description?: strin…"
         },
         {
           "name": "ProjectComponent",
           "kind": "interface",
-          "line": 61,
+          "line": 62,
           "exported": true,
           "signature": "export interface ProjectComponent { readonly id?: string; readonly self?: string; readonly name?: string; readonly descr…"
         },
         {
           "name": "ListComponentsParams",
           "kind": "interface",
-          "line": 78,
+          "line": 79,
           "exported": true,
           "signature": "export interface ListComponentsParams { readonly startAt?: number; readonly maxResults?: number; readonly orderBy?: stri…"
         },
         {
           "name": "ProjectFeature",
           "kind": "interface",
-          "line": 86,
+          "line": 87,
           "exported": true,
           "signature": "export interface ProjectFeature { readonly projectId?: number; readonly state?: 'ENABLED' | 'DISABLED' | 'COMING_SOON'; …"
         },
         {
           "name": "ProjectFeatures",
           "kind": "interface",
-          "line": 97,
+          "line": 98,
           "exported": true,
           "signature": "export interface ProjectFeatures { readonly features: ProjectFeature[]; }"
         },
         {
           "name": "TaskId",
           "kind": "interface",
-          "line": 101,
+          "line": 102,
           "exported": true,
           "signature": "export interface TaskId { readonly id: string; }"
         },
         {
           "name": "ProjectRoleActor",
           "kind": "interface",
-          "line": 107,
+          "line": 108,
           "exported": true,
           "signature": "export interface ProjectRoleActor { readonly id?: number; readonly displayName?: string; readonly type?: string; readonl…"
         },
         {
           "name": "ProjectRole",
           "kind": "interface",
-          "line": 121,
+          "line": 122,
           "exported": true,
           "signature": "export interface ProjectRole { readonly self?: string; readonly name?: string; readonly id?: number; readonly descriptio…"
         },
         {
           "name": "ProjectRoleDetails",
           "kind": "interface",
-          "line": 130,
+          "line": 131,
           "exported": true,
           "signature": "export interface ProjectRoleDetails extends ProjectRole { readonly roleConfigurable?: boolean; readonly translatedName?:…"
         },
         {
           "name": "UpdateProjectRoleData",
           "kind": "interface",
-          "line": 138,
+          "line": 139,
           "exported": true,
           "signature": "export interface UpdateProjectRoleData { readonly categorisedActors?: Record<string, string[]>; }"
         },
         {
           "name": "ActorsMap",
           "kind": "interface",
-          "line": 143,
+          "line": 144,
           "exported": true,
           "signature": "export interface ActorsMap { readonly user?: readonly string[]; readonly group?: readonly string[]; readonly groupId?: r…",
           "jsdoc": "Request body for `POST /rest/api/3/project/{projectIdOrKey}/role/{id}` (addActorUsers). Spec: ActorsMap, additionalProperties:false."
@@ -31584,63 +31608,63 @@
         {
           "name": "ProjectIssueTypeStatus",
           "kind": "interface",
-          "line": 154,
+          "line": 155,
           "exported": true,
           "signature": "export interface ProjectIssueTypeStatus { readonly id?: string; readonly name?: string; readonly self?: string; readonly…"
         },
         {
           "name": "ProjectIssueTypeWithStatuses",
           "kind": "interface",
-          "line": 162,
+          "line": 163,
           "exported": true,
           "signature": "export interface ProjectIssueTypeWithStatuses { readonly id?: string; readonly name?: string; readonly statuses?: Projec…"
         },
         {
           "name": "ProjectVersion",
           "kind": "interface",
-          "line": 170,
+          "line": 171,
           "exported": true,
           "signature": "export interface ProjectVersion { readonly id?: string; readonly name?: string; readonly description?: string; readonly …"
         },
         {
           "name": "ListProjectVersionsParams",
           "kind": "interface",
-          "line": 182,
+          "line": 183,
           "exported": true,
           "signature": "export interface ListProjectVersionsParams { readonly startAt?: number; readonly maxResults?: number; readonly orderBy?:…"
         },
         {
           "name": "ProjectSecurityLevel",
           "kind": "interface",
-          "line": 193,
+          "line": 194,
           "exported": true,
           "signature": "export interface ProjectSecurityLevel { readonly self?: string; readonly id?: string; readonly description?: string; rea…"
         },
         {
           "name": "ProjectCategory",
           "kind": "interface",
-          "line": 202,
+          "line": 203,
           "exported": true,
           "signature": "export interface ProjectCategory { readonly id?: string; readonly name?: string; readonly description?: string; readonly…"
         },
         {
           "name": "CreateProjectCategoryData",
           "kind": "interface",
-          "line": 209,
+          "line": 210,
           "exported": true,
           "signature": "export interface CreateProjectCategoryData { readonly name: string; readonly description?: string; }"
         },
         {
           "name": "UpdateProjectCategoryData",
           "kind": "interface",
-          "line": 214,
+          "line": 215,
           "exported": true,
           "signature": "export interface UpdateProjectCategoryData { readonly name?: string; readonly description?: string; }"
         },
         {
           "name": "ProjectKeyValidation",
           "kind": "interface",
-          "line": 228,
+          "line": 229,
           "exported": true,
           "signature": "export interface ProjectKeyValidation { readonly errorMessages?: string[]; readonly errors?: Record<string, string>; rea…",
           "jsdoc": "Result of `GET /rest/api/3/projectvalidate/key` (B707)."
@@ -31648,28 +31672,28 @@
         {
           "name": "ProjectType",
           "kind": "interface",
-          "line": 234,
+          "line": 235,
           "exported": true,
           "signature": "export interface ProjectType { readonly key: string; readonly color: string; readonly descriptionI18nKey: string; readon…"
         },
         {
           "name": "ListLegacyProjectsParams",
           "kind": "interface",
-          "line": 242,
+          "line": 243,
           "exported": true,
           "signature": "export interface ListLegacyProjectsParams { readonly maxResults?: number; readonly orderBy?: string; readonly startAt?: …"
         },
         {
           "name": "CreateProjectData",
           "kind": "interface",
-          "line": 253,
+          "line": 254,
           "exported": true,
           "signature": "export interface CreateProjectData { readonly key: string; readonly name: string; readonly projectTypeKey: string; reado…"
         },
         {
           "name": "ProjectIdentifiers",
           "kind": "interface",
-          "line": 280,
+          "line": 281,
           "exported": true,
           "signature": "export interface ProjectIdentifiers { readonly id: number; readonly key: string; readonly self: string; }",
           "jsdoc": "Identifiers for a newly created project, returned by `POST /rest/api/3/project` (B652). Spec: `ProjectIdentifiers` (201, additionalProperties:false)."
@@ -31677,320 +31701,320 @@
         {
           "name": "UpdateProjectData",
           "kind": "interface",
-          "line": 289,
+          "line": 290,
           "exported": true,
           "signature": "export interface UpdateProjectData { readonly key?: string; readonly name?: string; readonly description?: string; reado…"
         },
         {
           "name": "DeleteProjectParams",
           "kind": "interface",
-          "line": 303,
+          "line": 304,
           "exported": true,
           "signature": "export interface DeleteProjectParams { readonly enableUndo?: boolean; }"
         },
         {
           "name": "RecentProjectsParams",
           "kind": "interface",
-          "line": 307,
+          "line": 308,
           "exported": true,
           "signature": "export interface RecentProjectsParams { readonly maxResults?: number; readonly expand?: string[]; }"
         },
         {
           "name": "ProjectsResource",
           "kind": "class",
-          "line": 312,
+          "line": 313,
           "exported": true,
           "signature": "export class ProjectsResource",
           "members": [
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 313
+              "line": 314
             },
             {
               "name": "list",
               "kind": "method",
-              "line": 319
+              "line": 320
             },
             {
               "name": "get",
               "kind": "method",
-              "line": 340
+              "line": 342
             },
             {
               "name": "listAll",
               "kind": "method",
-              "line": 353
+              "line": 355
             },
             {
               "name": "listLegacy",
               "kind": "method",
-              "line": 372
+              "line": 375
             },
             {
               "name": "create",
               "kind": "method",
-              "line": 398
+              "line": 401
             },
             {
               "name": "delete",
               "kind": "method",
-              "line": 430
+              "line": 433
             },
             {
               "name": "update",
               "kind": "method",
-              "line": 442
+              "line": 445
             },
             {
               "name": "recent",
               "kind": "method",
-              "line": 466
+              "line": 469
             },
             {
               "name": "listTypes",
               "kind": "method",
-              "line": 480
+              "line": 483
             },
             {
               "name": "getType",
               "kind": "method",
-              "line": 489
+              "line": 492
             },
             {
               "name": "getAccessibleType",
               "kind": "method",
-              "line": 498
+              "line": 501
             },
             {
               "name": "listAccessibleTypes",
               "kind": "method",
-              "line": 507
+              "line": 510
             },
             {
               "name": "getEmail",
               "kind": "method",
-              "line": 516
+              "line": 519
             },
             {
               "name": "setEmail",
               "kind": "method",
-              "line": 525
+              "line": 528
             },
             {
               "name": "getHierarchy",
               "kind": "method",
-              "line": 536
+              "line": 539
             },
             {
               "name": "archive",
               "kind": "method",
-              "line": 545
+              "line": 548
             },
             {
               "name": "setAvatar",
               "kind": "method",
-              "line": 553
+              "line": 556
             },
             {
               "name": "deleteAvatar",
               "kind": "method",
-              "line": 562
+              "line": 565
             },
             {
               "name": "loadAvatar",
               "kind": "method",
-              "line": 570
+              "line": 573
             },
             {
               "name": "getAvatars",
               "kind": "method",
-              "line": 580
+              "line": 583
             },
             {
               "name": "restore",
               "kind": "method",
-              "line": 591
+              "line": 594
             },
             {
               "name": "listRoles",
               "kind": "method",
-              "line": 599
+              "line": 602
             },
             {
               "name": "getClassificationConfig",
               "kind": "method",
-              "line": 608
+              "line": 611
             },
             {
               "name": "deleteClassificationLevel",
               "kind": "method",
-              "line": 617
+              "line": 620
             },
             {
               "name": "getClassificationLevel",
               "kind": "method",
-              "line": 625
+              "line": 628
             },
             {
               "name": "setClassificationLevel",
               "kind": "method",
-              "line": 634
+              "line": 637
             },
             {
               "name": "listComponents",
               "kind": "method",
-              "line": 645
+              "line": 648
             },
             {
               "name": "deleteRoleActors",
               "kind": "method",
-              "line": 665
+              "line": 668
             },
             {
               "name": "getRole",
               "kind": "method",
-              "line": 683
+              "line": 686
             },
             {
               "name": "listAllComponents",
               "kind": "method",
-              "line": 701
+              "line": 704
             },
             {
               "name": "deleteAsync",
               "kind": "method",
-              "line": 710
+              "line": 713
             },
             {
               "name": "getFeatures",
               "kind": "method",
-              "line": 719
+              "line": 722
             },
             {
               "name": "setFeatureState",
               "kind": "method",
-              "line": 728
+              "line": 731
             },
             {
               "name": "addRoleActors",
               "kind": "method",
-              "line": 742
+              "line": 745
             },
             {
               "name": "setRoleActors",
               "kind": "method",
-              "line": 760
+              "line": 763
             },
             {
               "name": "listProperties",
               "kind": "method",
-              "line": 774
+              "line": 777
             },
             {
               "name": "getRoleDetails",
               "kind": "method",
-              "line": 783
+              "line": 786
             },
             {
               "name": "deleteProperty",
               "kind": "method",
-              "line": 801
+              "line": 804
             },
             {
               "name": "getProperty",
               "kind": "method",
-              "line": 809
+              "line": 812
             },
             {
               "name": "getStatuses",
               "kind": "method",
-              "line": 821
+              "line": 824
             },
             {
               "name": "listVersions",
               "kind": "method",
-              "line": 830
+              "line": 833
             },
             {
               "name": "listAllVersions",
               "kind": "method",
-              "line": 851
+              "line": 854
             },
             {
               "name": "getIssueSecurityScheme",
               "kind": "method",
-              "line": 871
+              "line": 874
             },
             {
               "name": "getNotificationScheme",
               "kind": "method",
-              "line": 880
+              "line": 883
             },
             {
               "name": "getPermissionScheme",
               "kind": "method",
-              "line": 896
+              "line": 899
             },
             {
               "name": "setPermissionScheme",
               "kind": "method",
-              "line": 912
+              "line": 915
             },
             {
               "name": "getSecurityLevels",
               "kind": "method",
-              "line": 925
+              "line": 928
             },
             {
               "name": "listCategories",
               "kind": "method",
-              "line": 936
+              "line": 939
             },
             {
               "name": "createCategory",
               "kind": "method",
-              "line": 945
+              "line": 948
             },
             {
               "name": "deleteCategory",
               "kind": "method",
-              "line": 958
+              "line": 961
             },
             {
               "name": "getCategory",
               "kind": "method",
-              "line": 966
+              "line": 969
             },
             {
               "name": "setProperty",
               "kind": "method",
-              "line": 975
+              "line": 978
             },
             {
               "name": "updateCategory",
               "kind": "method",
-              "line": 984
+              "line": 987
             },
             {
               "name": "getProjectsFields",
               "kind": "method",
-              "line": 1003
+              "line": 1006
             },
             {
               "name": "validateProjectKey",
               "kind": "method",
-              "line": 1020
+              "line": 1023
             },
             {
               "name": "getValidProjectKey",
               "kind": "method",
-              "line": 1034
+              "line": 1037
             },
             {
               "name": "getValidProjectName",
               "kind": "method",
-              "line": 1048
+              "line": 1051
             }
           ]
         }
@@ -31998,6 +32022,7 @@
       "imports": [
         "../../core/pagination.js",
         "../../core/path.js",
+        "../../core/query.js",
         "../../core/types.js",
         "../types.js"
       ]
@@ -32852,21 +32877,21 @@
         {
           "name": "ApproximateCountResult",
           "kind": "interface",
-          "line": 5,
+          "line": 6,
           "exported": true,
           "signature": "export interface ApproximateCountResult { readonly count: number; }"
         },
         {
           "name": "JqlSearchParams",
           "kind": "interface",
-          "line": 9,
+          "line": 10,
           "exported": true,
           "signature": "export interface JqlSearchParams { readonly jql?: string; readonly nextPageToken?: string; readonly maxResults?: number;…"
         },
         {
           "name": "JqlSearchResult",
           "kind": "interface",
-          "line": 23,
+          "line": 24,
           "exported": true,
           "signature": "export interface JqlSearchResult { readonly issues: Issue[]; readonly nextPageToken?: string; readonly isLast?: boolean;…",
           "jsdoc": "Response shape for GET/POST /rest/api/3/search/jql (`SearchAndReconcileResults`). `isLast` indicates whether this is the final page of results."
@@ -32874,50 +32899,51 @@
         {
           "name": "SearchResource",
           "kind": "class",
-          "line": 32,
+          "line": 33,
           "exported": true,
           "signature": "export class SearchResource",
           "members": [
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 33
+              "line": 34
             },
             {
               "name": "search",
               "kind": "method",
-              "line": 39
+              "line": 40
             },
             {
               "name": "searchGet",
               "kind": "method",
-              "line": 56
+              "line": 57
             },
             {
               "name": "searchAll",
               "kind": "method",
-              "line": 75
+              "line": 77
             },
             {
               "name": "approximateCount",
               "kind": "method",
-              "line": 89
+              "line": 91
             },
             {
               "name": "searchJqlGet",
               "kind": "method",
-              "line": 99
+              "line": 101
             },
             {
               "name": "searchJqlPost",
               "kind": "method",
-              "line": 118
+              "line": 122
             }
           ]
         }
       ],
       "imports": [
         "../../core/pagination.js",
+        "../../core/query.js",
         "../../core/types.js",
         "../types.js"
       ]
@@ -33250,7 +33276,7 @@
             {
               "name": "getIssuesEnhanced",
               "kind": "method",
-              "line": 286
+              "line": 290
             }
           ]
         }

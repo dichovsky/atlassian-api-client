@@ -2,7 +2,8 @@ import type { Transport } from '../../core/types.js';
 import { encodePathSegment } from '../../core/path.js';
 import type { CursorPaginatedResponse } from '../../core/pagination.js';
 import { paginateCursor, validatePageSize } from '../../core/pagination.js';
-import { csvOrScalar, nonEmptyQuery } from './query.js';
+import { appendScalarOrArrayParam } from '../../core/query.js';
+import { nonEmptyQuery } from './query.js';
 import type { Attachment } from '../types/attachments.js';
 import type {
   ContentProperty,
@@ -310,10 +311,13 @@ export class CustomContentResource {
     params?: ListCustomContentAttachmentsParams,
   ): Promise<CursorPaginatedResponse<Attachment>> {
     if (params?.limit !== undefined) validatePageSize(params.limit, 'limit');
-    const query = this.buildAttachmentsQuery(params);
+    const { path, query } = this.buildAttachments(
+      `${this.baseUrl}/custom-content/${encodePathSegment(customContentId)}/attachments`,
+      params,
+    );
     const response = await this.transport.request<CursorPaginatedResponse<Attachment>>({
       method: 'GET',
-      path: `${this.baseUrl}/custom-content/${encodePathSegment(customContentId)}/attachments`,
+      path,
       query,
     });
     return response.data;
@@ -329,12 +333,11 @@ export class CustomContentResource {
     params?: Omit<ListCustomContentAttachmentsParams, 'cursor'>,
   ): AsyncGenerator<Attachment> {
     if (params?.limit !== undefined) validatePageSize(params.limit, 'limit');
-    const query = this.buildAttachmentsQuery(params);
-    yield* paginateCursor<Attachment>(
-      this.transport,
+    const { path, query } = this.buildAttachments(
       `${this.baseUrl}/custom-content/${encodePathSegment(customContentId)}/attachments`,
-      query,
+      params,
     );
+    yield* paginateCursor<Attachment>(this.transport, path, query);
   }
 
   // ── children (B105) ───────────────────────────────────────────────────────
@@ -530,20 +533,24 @@ export class CustomContentResource {
     return { purge: params.purge };
   }
 
-  /** Build the query bag for `GET /custom-content/{id}/attachments`. */
-  private buildAttachmentsQuery(
+  /**
+   * Build the path + scalar query bag for `GET /custom-content/{id}/attachments`.
+   * `status` is `type: array` → repeated params baked into the path (not CSV,
+   * which the server parses as one nonexistent token — B1049).
+   */
+  private buildAttachments(
+    basePath: string,
     params: ListCustomContentAttachmentsParams | undefined,
-  ): Record<string, string | number | boolean | undefined> {
+  ): { path: string; query: Record<string, string | number | boolean | undefined> } {
     const query: Record<string, string | number | boolean | undefined> = {};
-    if (params === undefined) return query;
+    if (params === undefined) return { path: basePath, query };
     if (params.sort !== undefined) query['sort'] = params.sort;
     if (params.cursor !== undefined) query['cursor'] = params.cursor;
-    const status = csvOrScalar(params.status);
-    if (status !== undefined) query['status'] = status;
+    const path = appendScalarOrArrayParam(basePath, 'status', params.status);
     if (params.mediaType !== undefined) query['mediaType'] = params.mediaType;
     if (params.filename !== undefined) query['filename'] = params.filename;
     if (params.limit !== undefined) query['limit'] = params.limit;
-    return query;
+    return { path, query };
   }
 
   /** Build the query bag for `GET /custom-content/{id}/footer-comments`. */
