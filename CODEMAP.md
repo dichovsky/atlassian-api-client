@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "2.0.0"
   },
-  "sourceHash": "03898586f8de6e73c6b6348ed38534982a2a407fda7ae76cf347e0a2a5adea30",
+  "sourceHash": "71c3397ecb922459d8b9eaa3fb16b1a6b7ec677ca6ee15195665f71187ac7225",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -20688,6 +20688,10 @@
               "original": "ListLegacyProjectsParams"
             },
             {
+              "exported": "ListAllProjectVersionsParams",
+              "original": "ListAllProjectVersionsParams"
+            },
+            {
               "exported": "CreateProjectData",
               "original": "CreateProjectData"
             },
@@ -32080,119 +32084,115 @@
         {
           "name": "ProjectEmail",
           "kind": "interface",
-          "line": 8,
+          "line": 13,
           "exported": true,
-          "signature": "export interface ProjectEmail { readonly projectId?: number; readonly emailAddress?: string; readonly emailAddressStatus…"
+          "signature": "export interface ProjectEmail { readonly emailAddress?: string; readonly emailAddressStatus?: string[]; }",
+          "jsdoc": "Sender email address for a project, returned by `GET /rest/api/3/project/{id}/email`. Spec: `ProjectEmailAddress` (additionalProperties:false). No `projectId` field."
         },
         {
           "name": "ProjectHierarchyLevel",
           "kind": "interface",
-          "line": 14,
+          "line": 22,
           "exported": true,
-          "signature": "export interface ProjectHierarchyLevel { readonly id: number; readonly name: string; readonly entityId?: string; readonl…"
+          "signature": "export interface ProjectHierarchyLevel { readonly entityId?: string; readonly issueTypes?: unknown[]; readonly level?: n…",
+          "jsdoc": "One level of the issue type hierarchy for a project. Spec: `ProjectIssueTypesHierarchyLevel` (additionalProperties:false). No `id` or `avatarId` fields."
         },
         {
           "name": "ProjectHierarchy",
           "kind": "interface",
-          "line": 23,
+          "line": 30,
           "exported": true,
           "signature": "export interface ProjectHierarchy { readonly projectId?: number; readonly hierarchy?: ProjectHierarchyLevel[]; }"
         },
         {
           "name": "ProjectAvatar",
           "kind": "interface",
-          "line": 28,
+          "line": 38,
           "exported": true,
-          "signature": "export interface ProjectAvatar { readonly id: string; readonly isSystemAvatar?: boolean; readonly isSelected?: boolean; …"
+          "signature": "export interface ProjectAvatar { readonly id: string; readonly fileName?: string; readonly isDeletable?: boolean; readon…",
+          "jsdoc": "A project avatar. Spec: `Avatar` schema."
         },
         {
           "name": "ProjectAvatars",
           "kind": "interface",
-          "line": 36,
+          "line": 50,
           "exported": true,
           "signature": "export interface ProjectAvatars { readonly system: ProjectAvatar[]; readonly custom: ProjectAvatar[]; }"
         },
         {
           "name": "ProjectClassificationConfig",
           "kind": "interface",
-          "line": 41,
+          "line": 55,
           "exported": true,
           "signature": "export interface ProjectClassificationConfig { readonly id?: string; readonly name?: string; readonly description?: stri…"
         },
         {
           "name": "ProjectClassificationLevel",
           "kind": "interface",
-          "line": 52,
+          "line": 66,
           "exported": true,
           "signature": "export interface ProjectClassificationLevel { readonly id?: string; readonly name?: string; readonly description?: strin…"
         },
         {
           "name": "ProjectComponent",
           "kind": "interface",
-          "line": 62,
+          "line": 76,
           "exported": true,
           "signature": "export interface ProjectComponent { readonly id?: string; readonly self?: string; readonly name?: string; readonly descr…"
         },
         {
           "name": "ListComponentsParams",
           "kind": "interface",
-          "line": 79,
+          "line": 93,
           "exported": true,
           "signature": "export interface ListComponentsParams { readonly startAt?: number; readonly maxResults?: number; readonly orderBy?: stri…"
         },
         {
           "name": "ProjectFeature",
           "kind": "interface",
-          "line": 87,
+          "line": 101,
           "exported": true,
           "signature": "export interface ProjectFeature { readonly projectId?: number; readonly state?: 'ENABLED' | 'DISABLED' | 'COMING_SOON'; …"
         },
         {
           "name": "ProjectFeatures",
           "kind": "interface",
-          "line": 98,
+          "line": 112,
           "exported": true,
           "signature": "export interface ProjectFeatures { readonly features: ProjectFeature[]; }"
         },
         {
-          "name": "TaskId",
-          "kind": "interface",
-          "line": 102,
-          "exported": true,
-          "signature": "export interface TaskId { readonly id: string; }"
-        },
-        {
           "name": "ProjectRoleActor",
           "kind": "interface",
-          "line": 108,
+          "line": 118,
           "exported": true,
           "signature": "export interface ProjectRoleActor { readonly id?: number; readonly displayName?: string; readonly type?: string; readonl…"
         },
         {
           "name": "ProjectRole",
           "kind": "interface",
-          "line": 122,
+          "line": 132,
           "exported": true,
           "signature": "export interface ProjectRole { readonly self?: string; readonly name?: string; readonly id?: number; readonly descriptio…"
         },
         {
           "name": "ProjectRoleDetails",
           "kind": "interface",
-          "line": 131,
+          "line": 141,
           "exported": true,
           "signature": "export interface ProjectRoleDetails extends ProjectRole { readonly roleConfigurable?: boolean; readonly translatedName?:…"
         },
         {
           "name": "UpdateProjectRoleData",
           "kind": "interface",
-          "line": 139,
+          "line": 149,
           "exported": true,
           "signature": "export interface UpdateProjectRoleData { readonly categorisedActors?: Record<string, string[]>; }"
         },
         {
           "name": "ActorsMap",
           "kind": "interface",
-          "line": 144,
+          "line": 154,
           "exported": true,
           "signature": "export interface ActorsMap { readonly user?: readonly string[]; readonly group?: readonly string[]; readonly groupId?: r…",
           "jsdoc": "Request body for `POST /rest/api/3/project/{projectIdOrKey}/role/{id}` (addActorUsers). Spec: ActorsMap, additionalProperties:false."
@@ -32200,63 +32200,71 @@
         {
           "name": "ProjectIssueTypeStatus",
           "kind": "interface",
-          "line": 155,
+          "line": 165,
           "exported": true,
           "signature": "export interface ProjectIssueTypeStatus { readonly id?: string; readonly name?: string; readonly self?: string; readonly…"
         },
         {
           "name": "ProjectIssueTypeWithStatuses",
           "kind": "interface",
-          "line": 163,
+          "line": 173,
           "exported": true,
           "signature": "export interface ProjectIssueTypeWithStatuses { readonly id?: string; readonly name?: string; readonly statuses?: Projec…"
         },
         {
           "name": "ProjectVersion",
           "kind": "interface",
-          "line": 171,
+          "line": 181,
           "exported": true,
           "signature": "export interface ProjectVersion { readonly id?: string; readonly name?: string; readonly description?: string; readonly …"
         },
         {
           "name": "ListProjectVersionsParams",
           "kind": "interface",
-          "line": 183,
+          "line": 193,
           "exported": true,
           "signature": "export interface ListProjectVersionsParams { readonly startAt?: number; readonly maxResults?: number; readonly orderBy?:…"
         },
         {
+          "name": "ListAllProjectVersionsParams",
+          "kind": "interface",
+          "line": 209,
+          "exported": true,
+          "signature": "export interface ListAllProjectVersionsParams { readonly maxResults?: number; readonly orderBy?: string; readonly query?…",
+          "jsdoc": "Parameters for `GET /rest/api/3/project/{key}/versions` (flat list, no pagination)."
+        },
+        {
           "name": "ProjectSecurityLevel",
           "kind": "interface",
-          "line": 194,
+          "line": 223,
           "exported": true,
           "signature": "export interface ProjectSecurityLevel { readonly self?: string; readonly id?: string; readonly description?: string; rea…"
         },
         {
           "name": "ProjectCategory",
           "kind": "interface",
-          "line": 203,
+          "line": 232,
           "exported": true,
           "signature": "export interface ProjectCategory { readonly id?: string; readonly name?: string; readonly description?: string; readonly…"
         },
         {
           "name": "CreateProjectCategoryData",
           "kind": "interface",
-          "line": 210,
+          "line": 239,
           "exported": true,
           "signature": "export interface CreateProjectCategoryData { readonly name: string; readonly description?: string; }"
         },
         {
           "name": "UpdateProjectCategoryData",
           "kind": "interface",
-          "line": 215,
+          "line": 244,
           "exported": true,
           "signature": "export interface UpdateProjectCategoryData { readonly name?: string; readonly description?: string; }"
         },
         {
           "name": "ProjectKeyValidation",
           "kind": "interface",
-          "line": 229,
+          "line": 258,
           "exported": true,
           "signature": "export interface ProjectKeyValidation { readonly errorMessages?: string[]; readonly errors?: Record<string, string>; rea…",
           "jsdoc": "Result of `GET /rest/api/3/projectvalidate/key` (B707)."
@@ -32264,28 +32272,29 @@
         {
           "name": "ProjectType",
           "kind": "interface",
-          "line": 235,
+          "line": 264,
           "exported": true,
           "signature": "export interface ProjectType { readonly key: string; readonly color: string; readonly descriptionI18nKey: string; readon…"
         },
         {
           "name": "ListLegacyProjectsParams",
           "kind": "interface",
-          "line": 243,
+          "line": 279,
           "exported": true,
-          "signature": "export interface ListLegacyProjectsParams { readonly maxResults?: number; readonly orderBy?: string; readonly startAt?: …"
+          "signature": "export interface ListLegacyProjectsParams { readonly maxResults?: number; readonly orderBy?: string; readonly startAt?: …",
+          "jsdoc": "Parameters for `GET /rest/api/3/project` (deprecated legacy endpoint, B929)."
         },
         {
           "name": "CreateProjectData",
           "kind": "interface",
-          "line": 254,
+          "line": 290,
           "exported": true,
           "signature": "export interface CreateProjectData { readonly key: string; readonly name: string; readonly projectTypeKey: string; reado…"
         },
         {
           "name": "ProjectIdentifiers",
           "kind": "interface",
-          "line": 281,
+          "line": 324,
           "exported": true,
           "signature": "export interface ProjectIdentifiers { readonly id: number; readonly key: string; readonly self: string; }",
           "jsdoc": "Identifiers for a newly created project, returned by `POST /rest/api/3/project` (B652). Spec: `ProjectIdentifiers` (201, additionalProperties:false)."
@@ -32293,320 +32302,320 @@
         {
           "name": "UpdateProjectData",
           "kind": "interface",
-          "line": 290,
+          "line": 333,
           "exported": true,
           "signature": "export interface UpdateProjectData { readonly key?: string; readonly name?: string; readonly description?: string; reado…"
         },
         {
           "name": "DeleteProjectParams",
           "kind": "interface",
-          "line": 304,
+          "line": 349,
           "exported": true,
           "signature": "export interface DeleteProjectParams { readonly enableUndo?: boolean; }"
         },
         {
           "name": "RecentProjectsParams",
           "kind": "interface",
-          "line": 308,
+          "line": 353,
           "exported": true,
           "signature": "export interface RecentProjectsParams { readonly maxResults?: number; readonly expand?: string[]; }"
         },
         {
           "name": "ProjectsResource",
           "kind": "class",
-          "line": 313,
+          "line": 358,
           "exported": true,
           "signature": "export class ProjectsResource",
           "members": [
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 314
+              "line": 359
             },
             {
               "name": "list",
               "kind": "method",
-              "line": 320
+              "line": 365
             },
             {
               "name": "get",
               "kind": "method",
-              "line": 342
+              "line": 387
             },
             {
               "name": "listAll",
               "kind": "method",
-              "line": 355
+              "line": 400
             },
             {
               "name": "listLegacy",
               "kind": "method",
-              "line": 375
+              "line": 420
             },
             {
               "name": "create",
               "kind": "method",
-              "line": 401
+              "line": 446
             },
             {
               "name": "delete",
               "kind": "method",
-              "line": 433
+              "line": 480
             },
             {
               "name": "update",
               "kind": "method",
-              "line": 445
+              "line": 492
             },
             {
               "name": "recent",
               "kind": "method",
-              "line": 469
+              "line": 518
             },
             {
               "name": "listTypes",
               "kind": "method",
-              "line": 483
+              "line": 532
             },
             {
               "name": "getType",
               "kind": "method",
-              "line": 492
+              "line": 541
             },
             {
               "name": "getAccessibleType",
               "kind": "method",
-              "line": 501
+              "line": 550
             },
             {
               "name": "listAccessibleTypes",
               "kind": "method",
-              "line": 510
+              "line": 559
             },
             {
               "name": "getEmail",
               "kind": "method",
-              "line": 519
+              "line": 568
             },
             {
               "name": "setEmail",
               "kind": "method",
-              "line": 528
+              "line": 577
             },
             {
               "name": "getHierarchy",
               "kind": "method",
-              "line": 539
+              "line": 588
             },
             {
               "name": "archive",
               "kind": "method",
-              "line": 548
+              "line": 597
             },
             {
               "name": "setAvatar",
               "kind": "method",
-              "line": 556
+              "line": 605
             },
             {
               "name": "deleteAvatar",
               "kind": "method",
-              "line": 565
+              "line": 614
             },
             {
               "name": "loadAvatar",
               "kind": "method",
-              "line": 573
+              "line": 622
             },
             {
               "name": "getAvatars",
               "kind": "method",
-              "line": 583
+              "line": 648
             },
             {
               "name": "restore",
               "kind": "method",
-              "line": 594
+              "line": 659
             },
             {
               "name": "listRoles",
               "kind": "method",
-              "line": 602
+              "line": 668
             },
             {
               "name": "getClassificationConfig",
               "kind": "method",
-              "line": 611
+              "line": 677
             },
             {
               "name": "deleteClassificationLevel",
               "kind": "method",
-              "line": 620
+              "line": 686
             },
             {
               "name": "getClassificationLevel",
               "kind": "method",
-              "line": 628
+              "line": 694
             },
             {
               "name": "setClassificationLevel",
               "kind": "method",
-              "line": 637
+              "line": 703
             },
             {
               "name": "listComponents",
               "kind": "method",
-              "line": 648
+              "line": 714
             },
             {
               "name": "deleteRoleActors",
               "kind": "method",
-              "line": 668
+              "line": 734
             },
             {
               "name": "getRole",
               "kind": "method",
-              "line": 686
+              "line": 752
             },
             {
               "name": "listAllComponents",
               "kind": "method",
-              "line": 704
+              "line": 770
             },
             {
               "name": "deleteAsync",
               "kind": "method",
-              "line": 713
+              "line": 779
             },
             {
               "name": "getFeatures",
               "kind": "method",
-              "line": 722
+              "line": 788
             },
             {
               "name": "setFeatureState",
               "kind": "method",
-              "line": 731
+              "line": 797
             },
             {
               "name": "addRoleActors",
               "kind": "method",
-              "line": 745
+              "line": 811
             },
             {
               "name": "setRoleActors",
               "kind": "method",
-              "line": 763
+              "line": 829
             },
             {
               "name": "listProperties",
               "kind": "method",
-              "line": 777
+              "line": 843
             },
             {
               "name": "getRoleDetails",
               "kind": "method",
-              "line": 786
+              "line": 852
             },
             {
               "name": "deleteProperty",
               "kind": "method",
-              "line": 804
+              "line": 877
             },
             {
               "name": "getProperty",
               "kind": "method",
-              "line": 812
+              "line": 885
             },
             {
               "name": "getStatuses",
               "kind": "method",
-              "line": 824
+              "line": 897
             },
             {
               "name": "listVersions",
               "kind": "method",
-              "line": 833
+              "line": 906
             },
             {
               "name": "listAllVersions",
               "kind": "method",
-              "line": 854
+              "line": 927
             },
             {
               "name": "getIssueSecurityScheme",
               "kind": "method",
-              "line": 874
+              "line": 947
             },
             {
               "name": "getNotificationScheme",
               "kind": "method",
-              "line": 883
+              "line": 956
             },
             {
               "name": "getPermissionScheme",
               "kind": "method",
-              "line": 899
+              "line": 972
             },
             {
               "name": "setPermissionScheme",
               "kind": "method",
-              "line": 915
+              "line": 988
             },
             {
               "name": "getSecurityLevels",
               "kind": "method",
-              "line": 928
+              "line": 1001
             },
             {
               "name": "listCategories",
               "kind": "method",
-              "line": 939
+              "line": 1012
             },
             {
               "name": "createCategory",
               "kind": "method",
-              "line": 948
+              "line": 1021
             },
             {
               "name": "deleteCategory",
               "kind": "method",
-              "line": 961
+              "line": 1034
             },
             {
               "name": "getCategory",
               "kind": "method",
-              "line": 969
+              "line": 1042
             },
             {
               "name": "setProperty",
               "kind": "method",
-              "line": 978
+              "line": 1051
             },
             {
               "name": "updateCategory",
               "kind": "method",
-              "line": 987
+              "line": 1060
             },
             {
               "name": "getProjectsFields",
               "kind": "method",
-              "line": 1006
+              "line": 1079
             },
             {
               "name": "validateProjectKey",
               "kind": "method",
-              "line": 1023
+              "line": 1096
             },
             {
               "name": "getValidProjectKey",
               "kind": "method",
-              "line": 1037
+              "line": 1110
             },
             {
               "name": "getValidProjectName",
               "kind": "method",
-              "line": 1051
+              "line": 1124
             }
           ]
         }
@@ -32616,7 +32625,8 @@
         "../../core/path.js",
         "../../core/query.js",
         "../../core/types.js",
-        "../types.js"
+        "../types.js",
+        "./workflowscheme.js"
       ]
     },
     {
