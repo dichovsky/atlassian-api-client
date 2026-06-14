@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { DatabasesResource } from '../../src/confluence/resources/databases.js';
 import { MockTransport } from '../helpers/mock-transport.js';
+import { ValidationError } from '../../src/core/errors.js';
 
 const BASE_URL = 'https://test.atlassian.net/wiki/api/v2';
 
@@ -179,8 +180,8 @@ describe('DatabasesResource', () => {
       expect(transport.lastCall?.options.query).toEqual({ limit: 10 });
     });
 
-    it('throws RangeError when limit is non-positive', async () => {
-      await expect(resource.listAncestors('db-1', { limit: 0 })).rejects.toThrow(RangeError);
+    it('throws ValidationError when limit is non-positive', async () => {
+      await expect(resource.listAncestors('db-1', { limit: 0 })).rejects.toThrow(ValidationError);
       expect(transport.calls).toHaveLength(0);
     });
   });
@@ -256,9 +257,9 @@ describe('DatabasesResource', () => {
       expect(transport.calls[1]?.options.query).toMatchObject({ cursor: 'c2' });
     });
 
-    it('throws RangeError when limit is invalid before any request', async () => {
+    it('throws ValidationError when limit is invalid before any request', async () => {
       const iter = resource.listDescendantsAll('db-1', { limit: -1 });
-      await expect(iter.next()).rejects.toThrow(RangeError);
+      await expect(iter.next()).rejects.toThrow(ValidationError);
       expect(transport.calls).toHaveLength(0);
     });
 
@@ -317,8 +318,10 @@ describe('DatabasesResource', () => {
       expect(transport.lastCall?.options.query).toEqual({});
     });
 
-    it('throws RangeError when limit is invalid', async () => {
-      await expect(resource.listDirectChildren('db-1', { limit: 0 })).rejects.toThrow(RangeError);
+    it('throws ValidationError when limit is invalid', async () => {
+      await expect(resource.listDirectChildren('db-1', { limit: 0 })).rejects.toThrow(
+        ValidationError,
+      );
     });
   });
 
@@ -345,9 +348,9 @@ describe('DatabasesResource', () => {
       expect(transport.calls[0]?.options.query).toMatchObject({ sort: 'title' });
     });
 
-    it('throws RangeError when limit is invalid before any request', async () => {
+    it('throws ValidationError when limit is invalid before any request', async () => {
       const iter = resource.listDirectChildrenAll('db-1', { limit: 0 });
-      await expect(iter.next()).rejects.toThrow(RangeError);
+      await expect(iter.next()).rejects.toThrow(ValidationError);
       expect(transport.calls).toHaveLength(0);
     });
 
@@ -514,8 +517,8 @@ describe('DatabasesResource', () => {
       expect(transport.lastCall?.options.query).toEqual({});
     });
 
-    it('throws RangeError when limit is non-positive', async () => {
-      await expect(resource.listProperties('db-1', { limit: 0 })).rejects.toThrow(RangeError);
+    it('throws ValidationError when limit is non-positive', async () => {
+      await expect(resource.listProperties('db-1', { limit: 0 })).rejects.toThrow(ValidationError);
       expect(transport.calls).toHaveLength(0);
     });
   });
@@ -560,9 +563,9 @@ describe('DatabasesResource', () => {
       });
     });
 
-    it('throws RangeError when limit is invalid before any request', async () => {
+    it('throws ValidationError when limit is invalid before any request', async () => {
       const iter = resource.listPropertiesAll('db-1', { limit: -1 });
-      await expect(iter.next()).rejects.toThrow(RangeError);
+      await expect(iter.next()).rejects.toThrow(ValidationError);
       expect(transport.calls).toHaveLength(0);
     });
   });

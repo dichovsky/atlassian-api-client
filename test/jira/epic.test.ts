@@ -198,16 +198,16 @@ describe('EpicResource', () => {
       expect(transport.lastCall?.options.query).not.toHaveProperty('fields');
     });
 
-    it('throws RangeError for maxResults: 0', async () => {
-      await expect(epic.getIssues('42', { maxResults: 0 })).rejects.toThrow(RangeError);
+    it('throws ValidationError for maxResults: 0', async () => {
+      await expect(epic.getIssues('42', { maxResults: 0 })).rejects.toThrow(ValidationError);
     });
 
-    it('throws RangeError for maxResults: -1', async () => {
-      await expect(epic.getIssues('42', { maxResults: -1 })).rejects.toThrow(RangeError);
+    it('throws ValidationError for maxResults: -1', async () => {
+      await expect(epic.getIssues('42', { maxResults: -1 })).rejects.toThrow(ValidationError);
     });
 
-    it('throws RangeError for maxResults: 1.5', async () => {
-      await expect(epic.getIssues('42', { maxResults: 1.5 })).rejects.toThrow(RangeError);
+    it('throws ValidationError for maxResults: 1.5', async () => {
+      await expect(epic.getIssues('42', { maxResults: 1.5 })).rejects.toThrow(ValidationError);
     });
 
     it('throws ValidationError for empty epicIdOrKey', async () => {
@@ -382,12 +382,12 @@ describe('EpicResource', () => {
       expect(transport.lastCall?.options.query).not.toHaveProperty('fields');
     });
 
-    it('throws RangeError for maxResults: 0', async () => {
-      await expect(epic.getIssuesWithoutEpic({ maxResults: 0 })).rejects.toThrow(RangeError);
+    it('throws ValidationError for maxResults: 0', async () => {
+      await expect(epic.getIssuesWithoutEpic({ maxResults: 0 })).rejects.toThrow(ValidationError);
     });
 
-    it('throws RangeError for maxResults: -1', async () => {
-      await expect(epic.getIssuesWithoutEpic({ maxResults: -1 })).rejects.toThrow(RangeError);
+    it('throws ValidationError for maxResults: -1', async () => {
+      await expect(epic.getIssuesWithoutEpic({ maxResults: -1 })).rejects.toThrow(ValidationError);
     });
   });
 
@@ -512,8 +512,10 @@ describe('EpicResource', () => {
       );
     });
 
-    it('throws RangeError for maxResults: 0', async () => {
-      await expect(epic.getIssuesEnhanced('42', { maxResults: 0 })).rejects.toThrow(RangeError);
+    it('throws ValidationError for maxResults: 0', async () => {
+      await expect(epic.getIssuesEnhanced('42', { maxResults: 0 })).rejects.toThrow(
+        ValidationError,
+      );
     });
   });
 
@@ -587,9 +589,9 @@ describe('EpicResource', () => {
       );
     });
 
-    it('throws RangeError for maxResults: 0', async () => {
+    it('throws ValidationError for maxResults: 0', async () => {
       await expect(epic.getIssuesWithoutEpicEnhanced({ maxResults: 0 })).rejects.toThrow(
-        RangeError,
+        ValidationError,
       );
     });
   });

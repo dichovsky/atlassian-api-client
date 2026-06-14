@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { ContentPropertiesResource } from '../../src/confluence/resources/content-properties.js';
 import { MockTransport } from '../helpers/mock-transport.js';
+import { ValidationError } from '../../src/core/errors.js';
 
 const BASE_URL = 'https://test.atlassian.net/wiki/api/v2';
 
@@ -54,12 +55,12 @@ describe('ContentPropertiesResource', () => {
       });
     });
 
-    it('throws RangeError when limit is invalid', async () => {
+    it('throws ValidationError when limit is invalid', async () => {
       // Arrange
       transport.respondWith({ results: [], _links: {} });
 
       // Act + Assert
-      await expect(resource.listForPage('page-1', { limit: 0 })).rejects.toThrow(RangeError);
+      await expect(resource.listForPage('page-1', { limit: 0 })).rejects.toThrow(ValidationError);
       expect(transport.calls).toHaveLength(0);
     });
   });

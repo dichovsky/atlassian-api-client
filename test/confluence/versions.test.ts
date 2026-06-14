@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { VersionsResource } from '../../src/confluence/resources/versions.js';
 import { MockTransport } from '../helpers/mock-transport.js';
+import { ValidationError } from '../../src/core/errors.js';
 
 const BASE_URL = 'https://test.atlassian.net/wiki/api/v2';
 
@@ -47,8 +48,8 @@ describe('VersionsResource', () => {
       expect(transport.lastCall?.options.query).toMatchObject(params);
     });
 
-    it('throws RangeError for invalid limit', async () => {
-      await expect(resource.listForPage('page-1', { limit: 0 })).rejects.toThrow(RangeError);
+    it('throws ValidationError for invalid limit', async () => {
+      await expect(resource.listForPage('page-1', { limit: 0 })).rejects.toThrow(ValidationError);
       expect(transport.calls).toHaveLength(0);
     });
 
@@ -151,8 +152,10 @@ describe('VersionsResource', () => {
       expect(transport.lastCall?.options.query).toMatchObject(params);
     });
 
-    it('throws RangeError for invalid limit', async () => {
-      await expect(resource.listForBlogPost('blog-1', { limit: -1 })).rejects.toThrow(RangeError);
+    it('throws ValidationError for invalid limit', async () => {
+      await expect(resource.listForBlogPost('blog-1', { limit: -1 })).rejects.toThrow(
+        ValidationError,
+      );
       expect(transport.calls).toHaveLength(0);
     });
 

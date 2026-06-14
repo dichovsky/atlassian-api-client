@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { LabelsResource } from '../../src/jira/resources/labels.js';
 import { MockTransport } from '../helpers/mock-transport.js';
+import { ValidationError } from '../../src/core/errors.js';
 
 const BASE_URL = 'https://test.atlassian.net/rest/api/3';
 
@@ -64,14 +65,14 @@ describe('LabelsResource', () => {
       expect(query['maxResults']).toBeUndefined();
     });
 
-    it('throws RangeError when maxResults is zero', async () => {
+    it('throws ValidationError when maxResults is zero', async () => {
       // Act & Assert
-      await expect(resource.list({ maxResults: 0 })).rejects.toThrow(RangeError);
+      await expect(resource.list({ maxResults: 0 })).rejects.toThrow(ValidationError);
     });
 
-    it('throws RangeError when maxResults is negative', async () => {
+    it('throws ValidationError when maxResults is negative', async () => {
       // Act & Assert
-      await expect(resource.list({ maxResults: -1 })).rejects.toThrow(RangeError);
+      await expect(resource.list({ maxResults: -1 })).rejects.toThrow(ValidationError);
     });
   });
 });

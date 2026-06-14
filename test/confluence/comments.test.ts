@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { CommentsResource } from '../../src/confluence/resources/comments.js';
 import { MockTransport } from '../helpers/mock-transport.js';
+import { ValidationError } from '../../src/core/errors.js';
 
 const BASE_URL = 'https://test.atlassian.net/wiki/api/v2';
 
@@ -388,7 +389,7 @@ describe('CommentsResource', () => {
     });
 
     it('rejects invalid limit before issuing a request', async () => {
-      await expect(comments.listProperties('c-1', { limit: 0 })).rejects.toThrow(RangeError);
+      await expect(comments.listProperties('c-1', { limit: 0 })).rejects.toThrow(ValidationError);
       expect(transport.lastCall).toBeUndefined();
     });
   });
@@ -427,7 +428,7 @@ describe('CommentsResource', () => {
 
     it('rejects invalid limit before issuing a request', async () => {
       const iter = comments.listPropertiesAll('c-1', { limit: -1 });
-      await expect(iter.next()).rejects.toThrow(RangeError);
+      await expect(iter.next()).rejects.toThrow(ValidationError);
       expect(transport.lastCall).toBeUndefined();
     });
   });

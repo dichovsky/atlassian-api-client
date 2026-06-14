@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { DataPoliciesResource } from '../../src/confluence/resources/data-policies.js';
 import { MockTransport } from '../helpers/mock-transport.js';
+import { ValidationError } from '../../src/core/errors.js';
 
 const BASE_URL = 'https://test.atlassian.net/wiki/api/v2';
 
@@ -112,18 +113,18 @@ describe('DataPoliciesResource', () => {
       });
     });
 
-    it('throws RangeError when limit is zero', async () => {
-      await expect(resource.listSpaces({ limit: 0 })).rejects.toThrow(RangeError);
+    it('throws ValidationError when limit is zero', async () => {
+      await expect(resource.listSpaces({ limit: 0 })).rejects.toThrow(ValidationError);
       expect(transport.calls).toHaveLength(0);
     });
 
-    it('throws RangeError when limit is negative', async () => {
-      await expect(resource.listSpaces({ limit: -5 })).rejects.toThrow(RangeError);
+    it('throws ValidationError when limit is negative', async () => {
+      await expect(resource.listSpaces({ limit: -5 })).rejects.toThrow(ValidationError);
       expect(transport.calls).toHaveLength(0);
     });
 
-    it('throws RangeError when limit is not an integer', async () => {
-      await expect(resource.listSpaces({ limit: 1.5 })).rejects.toThrow(RangeError);
+    it('throws ValidationError when limit is not an integer', async () => {
+      await expect(resource.listSpaces({ limit: 1.5 })).rejects.toThrow(ValidationError);
       expect(transport.calls).toHaveLength(0);
     });
 
@@ -204,9 +205,9 @@ describe('DataPoliciesResource', () => {
       expect(transport.lastCall?.options.query).not.toHaveProperty('cursor');
     });
 
-    it('throws RangeError when limit is invalid before any request', async () => {
+    it('throws ValidationError when limit is invalid before any request', async () => {
       const iter = resource.listAllSpaces({ limit: 0 });
-      await expect(iter.next()).rejects.toThrow(RangeError);
+      await expect(iter.next()).rejects.toThrow(ValidationError);
       expect(transport.calls).toHaveLength(0);
     });
   });

@@ -4,6 +4,7 @@ import {
   paginateCursor,
   paginateOffset,
   paginateSearch,
+  validatePageSize,
 } from '../../src/core/pagination.js';
 import { PaginationError, ValidationError } from '../../src/core/errors.js';
 import { MockTransport } from '../helpers/mock-transport.js';
@@ -1034,6 +1035,29 @@ describe('pagination safety guards', () => {
         String(call[0]).includes('nearing maxPages'),
       );
       expect(nearLimitCalls).toHaveLength(1);
+    });
+  });
+
+  describe('validatePageSize', () => {
+    it('throws ValidationError (is AtlassianError) for zero pageSize', () => {
+      expect(() => validatePageSize(0)).toThrow(ValidationError);
+    });
+
+    it('throws ValidationError for negative pageSize', () => {
+      expect(() => validatePageSize(-1)).toThrow(ValidationError);
+    });
+
+    it('throws ValidationError for non-integer pageSize', () => {
+      expect(() => validatePageSize(1.5)).toThrow(ValidationError);
+    });
+
+    it('throws ValidationError for Infinity pageSize', () => {
+      expect(() => validatePageSize(Infinity)).toThrow(ValidationError);
+    });
+
+    it('does not throw for valid positive integer pageSize', () => {
+      expect(() => validatePageSize(1)).not.toThrow();
+      expect(() => validatePageSize(50)).not.toThrow();
     });
   });
 });

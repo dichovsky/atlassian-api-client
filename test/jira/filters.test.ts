@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { FiltersResource } from '../../src/jira/resources/filters.js';
 import { MockTransport } from '../helpers/mock-transport.js';
+import { ValidationError } from '../../src/core/errors.js';
 
 const BASE_URL = 'https://test.atlassian.net/rest/api/3';
 
@@ -93,20 +94,20 @@ describe('FiltersResource', () => {
       expect(query['id']).toBeUndefined();
     });
 
-    it('throws RangeError for maxResults: 0', async () => {
-      await expect(filters.list({ maxResults: 0 })).rejects.toThrow(RangeError);
+    it('throws ValidationError for maxResults: 0', async () => {
+      await expect(filters.list({ maxResults: 0 })).rejects.toThrow(ValidationError);
     });
 
-    it('throws RangeError for maxResults: -1', async () => {
-      await expect(filters.list({ maxResults: -1 })).rejects.toThrow(RangeError);
+    it('throws ValidationError for maxResults: -1', async () => {
+      await expect(filters.list({ maxResults: -1 })).rejects.toThrow(ValidationError);
     });
 
-    it('throws RangeError for maxResults: 1.5', async () => {
-      await expect(filters.list({ maxResults: 1.5 })).rejects.toThrow(RangeError);
+    it('throws ValidationError for maxResults: 1.5', async () => {
+      await expect(filters.list({ maxResults: 1.5 })).rejects.toThrow(ValidationError);
     });
 
-    it('throws RangeError for maxResults: Infinity', async () => {
-      await expect(filters.list({ maxResults: Infinity })).rejects.toThrow(RangeError);
+    it('throws ValidationError for maxResults: Infinity', async () => {
+      await expect(filters.list({ maxResults: Infinity })).rejects.toThrow(ValidationError);
     });
   });
 
