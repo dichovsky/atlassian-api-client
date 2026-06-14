@@ -7,35 +7,82 @@ import { appendRepeatedParams } from '../../core/query.js';
 import type { Sprint } from './sprints.js';
 import type { ListSoftwareIssuesParams, SoftwareIssueResults } from './software-issues.js';
 
-/** An agile board (Scrum, Kanban, or Simple) in Jira Software. */
+/** An agile board in Jira Software. The spec returns `type` as a plain string. */
 export interface Board {
   readonly id: number;
   readonly self: string;
   readonly name: string;
-  readonly type: 'scrum' | 'kanban' | 'simple';
+  /** Board type as returned by the API. Typical values: 'scrum', 'kanban', 'simple'. */
+  readonly type: string;
   readonly location?: {
     readonly projectId?: number;
     readonly projectKey?: string;
     readonly projectName?: string;
     readonly displayName?: string;
+    /** URI of the project avatar. */
+    readonly avatarURI?: string;
+    /** Name of the location (project or user). */
+    readonly name?: string;
+    /** Project type key (e.g. 'software'). */
+    readonly projectTypeKey?: string;
+    /** Account ID when location type is 'user'. */
+    readonly userAccountId?: string;
+    /** User ID when location type is 'user'. */
+    readonly userId?: number;
   };
+  /** Users and groups who own the board. Read-only. */
+  readonly admins?: {
+    readonly users?: readonly Record<string, unknown>[];
+    readonly groups?: readonly Record<string, unknown>[];
+  };
+  /** Whether the board can be edited. Read-only. */
+  readonly canEdit?: boolean;
+  /** Whether the board is selected as a favorite. Read-only. */
+  readonly favourite?: boolean;
+  /** Whether the board is private. Read-only. */
+  readonly isPrivate?: boolean;
 }
 
-/** Query parameters for listing agile boards. */
+/** A minimal board item returned by the listByFilter endpoint (`{id, name, self}`). */
+export interface BoardSummary {
+  readonly id: number;
+  readonly name: string;
+  readonly self: string;
+}
+
+/** Query parameters for listing agile boards (`GET /board`). */
 export interface ListBoardsParams {
   readonly startAt?: number;
   readonly maxResults?: number;
+  /** Board type filter. */
   readonly type?: 'scrum' | 'kanban' | 'simple';
   readonly name?: string;
   readonly projectKeyOrId?: string;
+  /** Filter by the account ID of the board location owner. */
+  readonly accountIdLocation?: string;
+  /** Filter by the project key or ID of the board location. */
+  readonly projectLocation?: string;
+  /** Whether to include private boards. */
+  readonly includePrivate?: boolean;
+  /** Whether to negate the location filter. */
+  readonly negateLocationFiltering?: boolean;
+  /** Field to order results by. */
+  readonly orderBy?: string;
+  /** A comma-separated list of fields to expand. */
+  readonly expand?: string;
+  /** Filter by project type key(s). Spec `type: array` → repeated params. */
+  readonly projectTypeLocation?: string[];
+  /** Filter boards by filter ID. */
+  readonly filterId?: number;
 }
 
 export interface CreateBoardData {
   readonly name: string;
-  readonly type: 'scrum' | 'kanban' | 'simple';
+  /** Board type. Spec-allowed values: 'kanban', 'scrum', 'agility'. */
+  readonly type: 'kanban' | 'scrum' | 'agility';
   readonly filterId: number;
   readonly location?: {
-    readonly type?: string;
+    readonly type?: 'project' | 'user';
     readonly projectKeyOrId?: string;
   };
 }
@@ -54,6 +101,10 @@ export interface ListBoardIssuesParams {
   readonly maxResults?: number;
   readonly jql?: string;
   readonly fields?: string[];
+  /** Whether to validate the JQL query (default: true). */
+  readonly validateQuery?: boolean;
+  /** A comma-separated list of fields to expand in the response. */
+  readonly expand?: string;
 }
 
 export interface ListBoardSprintsParams {
@@ -100,7 +151,12 @@ export interface BoardConfiguration {
   readonly estimation?: Record<string, unknown>;
   readonly ranking?: Record<string, unknown>;
   readonly columnConfig?: Record<string, unknown>;
-  readonly subquery?: Record<string, unknown>;
+  /** The sub-query used for Scrum boards. Note: the wire key is `subQuery` (camelCase Q). */
+  readonly subQuery?: { readonly query?: string };
+  /** The filter associated with this board. */
+  readonly filter?: { readonly id?: string; readonly self?: string };
+  /** The location this board is in. */
+  readonly location?: { readonly type?: 'project' | 'user'; readonly projectKeyOrId?: string };
 }
 
 export interface Epic {
@@ -117,13 +173,22 @@ export interface ListEpicIssuesParams {
   readonly maxResults?: number;
   readonly jql?: string;
   readonly fields?: string[];
+  /** Whether to validate the JQL query (default: true). */
+  readonly validateQuery?: boolean;
+  /** A comma-separated list of fields to expand in the response. */
+  readonly expand?: string;
 }
 
 export interface BoardFeature {
   readonly boardFeature: string;
   readonly boardId: number;
-  readonly state: 'ENABLED' | 'DISABLED';
+  /** Feature state. Possible values: ENABLED, DISABLED, COMING_SOON. */
+  readonly state: 'ENABLED' | 'DISABLED' | 'COMING_SOON';
   readonly togglable: boolean;
+  readonly featureId?: string;
+  readonly featureType?: 'BASIC' | 'ESTIMATION';
+  readonly imageUri?: string;
+  readonly learnMoreArticleId?: string;
 }
 
 export interface BoardFeaturesResponse {
@@ -142,6 +207,10 @@ export interface BoardProject {
   readonly name: string;
   readonly avatarUrls?: Record<string, string>;
   readonly projectCategory?: Record<string, unknown>;
+  /** Project type key (e.g. 'software'). Present in spec example. */
+  readonly projectTypeKey?: string;
+  /** Whether this is a simplified (next-gen) project. Present in spec example. */
+  readonly simplified?: boolean;
 }
 
 export interface BoardVersion {
@@ -158,7 +227,20 @@ export interface BoardVersion {
 export interface ListBoardVersionsParams {
   readonly startAt?: number;
   readonly maxResults?: number;
-  readonly released?: boolean;
+  /**
+   * Filters results to versions that are either released or unreleased.
+   * The spec declares this as `type: string` with valid values: 'true', 'false'.
+   */
+  readonly released?: string;
+}
+
+/** Internal wire shape for the agile SearchResults envelope. */
+interface SearchResults {
+  readonly issues: BoardIssue[];
+  readonly startAt: number;
+  readonly maxResults: number;
+  readonly total: number;
+  readonly expand?: string;
 }
 
 export class BoardsResource {
@@ -189,11 +271,25 @@ export class BoardsResource {
       if (params.type !== undefined) query['type'] = params.type;
       if (params.name !== undefined) query['name'] = params.name;
       if (params.projectKeyOrId !== undefined) query['projectKeyOrId'] = params.projectKeyOrId;
+      if (params.accountIdLocation !== undefined)
+        query['accountIdLocation'] = params.accountIdLocation;
+      if (params.projectLocation !== undefined) query['projectLocation'] = params.projectLocation;
+      if (params.includePrivate !== undefined) query['includePrivate'] = params.includePrivate;
+      if (params.negateLocationFiltering !== undefined)
+        query['negateLocationFiltering'] = params.negateLocationFiltering;
+      if (params.orderBy !== undefined) query['orderBy'] = params.orderBy;
+      if (params.expand !== undefined) query['expand'] = params.expand;
+      if (params.filterId !== undefined) query['filterId'] = params.filterId;
     }
 
+    // `projectTypeLocation` is spec `type: array` → repeated params baked into the path.
     const response = await this.transport.request<OffsetPaginatedResponse<Board>>({
       method: 'GET',
-      path: `${this.baseUrl}/board`,
+      path: appendRepeatedParams(
+        `${this.baseUrl}/board`,
+        'projectTypeLocation',
+        params?.projectTypeLocation,
+      ),
       query,
     });
     return response.data;
@@ -205,7 +301,7 @@ export class BoardsResource {
       throw new ValidationError('name must be a non-empty string');
     }
     if (!data.type) {
-      throw new ValidationError('type must be one of: scrum, kanban, simple');
+      throw new ValidationError('type must be one of: kanban, scrum, agility');
     }
     if (!Number.isInteger(data.filterId) || data.filterId <= 0) {
       throw new ValidationError('filterId must be a positive integer');
@@ -241,7 +337,12 @@ export class BoardsResource {
     });
   }
 
-  /** Get backlog issues for a board (B896). */
+  /**
+   * Get backlog issues for a board (B896).
+   *
+   * The agile endpoint returns `SearchResults` (`{ issues, startAt, maxResults, total }`).
+   * This method maps `.issues` → `.values` for a consistent `OffsetPaginatedResponse` shape.
+   */
   async getBacklog(
     boardId: number,
     params?: ListBoardIssuesParams,
@@ -255,12 +356,14 @@ export class BoardsResource {
       if (params.startAt !== undefined) query['startAt'] = params.startAt;
       if (params.maxResults !== undefined) query['maxResults'] = params.maxResults;
       if (params.jql !== undefined) query['jql'] = params.jql;
+      if (params.validateQuery !== undefined) query['validateQuery'] = params.validateQuery;
+      if (params.expand !== undefined) query['expand'] = params.expand;
     }
 
-    const response = await this.transport.request<OffsetPaginatedResponse<BoardIssue>>({
+    // `fields` is `type: array` on the agile issue endpoints → repeated
+    // params baked into the path, not CSV (B1049).
+    const response = await this.transport.request<SearchResults>({
       method: 'GET',
-      // `fields` is `type: array` on the agile issue endpoints → repeated
-      // params baked into the path, not CSV (B1049).
       path: appendRepeatedParams(
         `${this.baseUrl}/board/${boardId}/backlog`,
         'fields',
@@ -268,7 +371,12 @@ export class BoardsResource {
       ),
       query,
     });
-    return response.data;
+    return {
+      values: response.data.issues,
+      startAt: response.data.startAt,
+      maxResults: response.data.maxResults,
+      total: response.data.total,
+    };
   }
 
   /** Get configuration of a board (B242). */
@@ -286,7 +394,15 @@ export class BoardsResource {
   /** List epics on a board (B243). */
   async listEpics(
     boardId: number,
-    params?: { readonly startAt?: number; readonly maxResults?: number; readonly done?: boolean },
+    params?: {
+      readonly startAt?: number;
+      readonly maxResults?: number;
+      /**
+       * Filters results to epics that are either done or not done.
+       * The spec declares this as `type: string`; valid values: 'true', 'false'.
+       */
+      readonly done?: string;
+    },
   ): Promise<OffsetPaginatedResponse<Epic>> {
     if (!Number.isInteger(boardId) || boardId <= 0) {
       throw new ValidationError('boardId must be a positive integer');
@@ -307,7 +423,12 @@ export class BoardsResource {
     return response.data;
   }
 
-  /** List issues in a specific epic on a board (B897). */
+  /**
+   * List issues in a specific epic on a board (B897).
+   *
+   * The agile endpoint returns `SearchResults` (`{ issues, startAt, maxResults, total }`).
+   * This method maps `.issues` → `.values` for a consistent `OffsetPaginatedResponse` shape.
+   */
   async getEpicIssues(
     boardId: number,
     epicId: number,
@@ -325,11 +446,13 @@ export class BoardsResource {
       if (params.startAt !== undefined) query['startAt'] = params.startAt;
       if (params.maxResults !== undefined) query['maxResults'] = params.maxResults;
       if (params.jql !== undefined) query['jql'] = params.jql;
+      if (params.validateQuery !== undefined) query['validateQuery'] = params.validateQuery;
+      if (params.expand !== undefined) query['expand'] = params.expand;
     }
 
-    const response = await this.transport.request<OffsetPaginatedResponse<BoardIssue>>({
+    // `fields` is `type: array` → repeated params baked into the path (B1049).
+    const response = await this.transport.request<SearchResults>({
       method: 'GET',
-      // `fields` is `type: array` → repeated params baked into the path (B1049).
       path: appendRepeatedParams(
         `${this.baseUrl}/board/${boardId}/epic/${epicId}/issue`,
         'fields',
@@ -337,10 +460,20 @@ export class BoardsResource {
       ),
       query,
     });
-    return response.data;
+    return {
+      values: response.data.issues,
+      startAt: response.data.startAt,
+      maxResults: response.data.maxResults,
+      total: response.data.total,
+    };
   }
 
-  /** List issues not belonging to any epic on a board (B898). */
+  /**
+   * List issues not belonging to any epic on a board (B898).
+   *
+   * The agile endpoint returns `SearchResults` (`{ issues, startAt, maxResults, total }`).
+   * This method maps `.issues` → `.values` for a consistent `OffsetPaginatedResponse` shape.
+   */
   async getIssuesWithoutEpic(
     boardId: number,
     params?: ListEpicIssuesParams,
@@ -354,11 +487,13 @@ export class BoardsResource {
       if (params.startAt !== undefined) query['startAt'] = params.startAt;
       if (params.maxResults !== undefined) query['maxResults'] = params.maxResults;
       if (params.jql !== undefined) query['jql'] = params.jql;
+      if (params.validateQuery !== undefined) query['validateQuery'] = params.validateQuery;
+      if (params.expand !== undefined) query['expand'] = params.expand;
     }
 
-    const response = await this.transport.request<OffsetPaginatedResponse<BoardIssue>>({
+    // `fields` is `type: array` → repeated params baked into the path (B1049).
+    const response = await this.transport.request<SearchResults>({
       method: 'GET',
-      // `fields` is `type: array` → repeated params baked into the path (B1049).
       path: appendRepeatedParams(
         `${this.baseUrl}/board/${boardId}/epic/none/issue`,
         'fields',
@@ -366,7 +501,12 @@ export class BoardsResource {
       ),
       query,
     });
-    return response.data;
+    return {
+      values: response.data.issues,
+      startAt: response.data.startAt,
+      maxResults: response.data.maxResults,
+      total: response.data.total,
+    };
   }
 
   /** Get features enabled/disabled for a board (B244). */
@@ -400,7 +540,12 @@ export class BoardsResource {
     return response.data;
   }
 
-  /** Get issues for a board. */
+  /**
+   * Get issues for a board.
+   *
+   * The agile endpoint returns `SearchResults` (`{ issues, startAt, maxResults, total }`).
+   * This method maps `.issues` → `.values` for a consistent `OffsetPaginatedResponse` shape.
+   */
   async getIssues(
     boardId: number,
     params?: ListBoardIssuesParams,
@@ -414,11 +559,13 @@ export class BoardsResource {
       if (params.startAt !== undefined) query['startAt'] = params.startAt;
       if (params.maxResults !== undefined) query['maxResults'] = params.maxResults;
       if (params.jql !== undefined) query['jql'] = params.jql;
+      if (params.validateQuery !== undefined) query['validateQuery'] = params.validateQuery;
+      if (params.expand !== undefined) query['expand'] = params.expand;
     }
 
-    const response = await this.transport.request<OffsetPaginatedResponse<BoardIssue>>({
+    // `fields` is `type: array` → repeated params baked into the path (B1049).
+    const response = await this.transport.request<SearchResults>({
       method: 'GET',
-      // `fields` is `type: array` → repeated params baked into the path (B1049).
       path: appendRepeatedParams(
         `${this.baseUrl}/board/${boardId}/issue`,
         'fields',
@@ -426,7 +573,12 @@ export class BoardsResource {
       ),
       query,
     });
-    return response.data;
+    return {
+      values: response.data.issues,
+      startAt: response.data.startAt,
+      maxResults: response.data.maxResults,
+      total: response.data.total,
+    };
   }
 
   /** Move issues onto a board (B246). */
@@ -435,6 +587,7 @@ export class BoardsResource {
     issues: readonly string[],
     rankBeforeIssue?: string,
     rankAfterIssue?: string,
+    rankCustomFieldId?: number,
   ): Promise<void> {
     if (!Number.isInteger(boardId) || boardId <= 0) {
       throw new ValidationError('boardId must be a positive integer');
@@ -454,6 +607,7 @@ export class BoardsResource {
       issues,
       ...(rankBeforeIssue !== undefined && { rankBeforeIssue }),
       ...(rankAfterIssue !== undefined && { rankAfterIssue }),
+      ...(rankCustomFieldId !== undefined && { rankCustomFieldId }),
     };
     await this.transport.request<undefined>({
       method: 'POST',
@@ -556,7 +710,12 @@ export class BoardsResource {
     return response.data;
   }
 
-  /** List issues for a sprint within a board (B900). */
+  /**
+   * List issues for a sprint within a board (B900).
+   *
+   * The agile endpoint returns `SearchResults` (`{ issues, startAt, maxResults, total }`).
+   * This method maps `.issues` → `.values` for a consistent `OffsetPaginatedResponse` shape.
+   */
   async getSprintIssues(
     boardId: number,
     sprintId: number,
@@ -574,11 +733,13 @@ export class BoardsResource {
       if (params.startAt !== undefined) query['startAt'] = params.startAt;
       if (params.maxResults !== undefined) query['maxResults'] = params.maxResults;
       if (params.jql !== undefined) query['jql'] = params.jql;
+      if (params.validateQuery !== undefined) query['validateQuery'] = params.validateQuery;
+      if (params.expand !== undefined) query['expand'] = params.expand;
     }
 
-    const response = await this.transport.request<OffsetPaginatedResponse<BoardIssue>>({
+    // `fields` is `type: array` → repeated params baked into the path (B1049).
+    const response = await this.transport.request<SearchResults>({
       method: 'GET',
-      // `fields` is `type: array` → repeated params baked into the path (B1049).
       path: appendRepeatedParams(
         `${this.baseUrl}/board/${boardId}/sprint/${sprintId}/issue`,
         'fields',
@@ -586,7 +747,12 @@ export class BoardsResource {
       ),
       query,
     });
-    return response.data;
+    return {
+      values: response.data.issues,
+      startAt: response.data.startAt,
+      maxResults: response.data.maxResults,
+      total: response.data.total,
+    };
   }
 
   // ── Enhanced (JSIS) board issue endpoints (B1023-B1027) ─────────────────────
@@ -820,11 +986,15 @@ export class BoardsResource {
     return response.data;
   }
 
-  /** List boards for a filter (B259). */
+  /**
+   * List boards for a filter (B259).
+   *
+   * Note: the spec response items only have `{id, name, self}` — typed as `BoardSummary`.
+   */
   async listByFilter(
     filterId: number,
     params?: { readonly startAt?: number; readonly maxResults?: number },
-  ): Promise<OffsetPaginatedResponse<Board>> {
+  ): Promise<OffsetPaginatedResponse<BoardSummary>> {
     if (!Number.isInteger(filterId) || filterId <= 0) {
       throw new ValidationError('filterId must be a positive integer');
     }
@@ -835,7 +1005,7 @@ export class BoardsResource {
       if (params.maxResults !== undefined) query['maxResults'] = params.maxResults;
     }
 
-    const response = await this.transport.request<OffsetPaginatedResponse<Board>>({
+    const response = await this.transport.request<OffsetPaginatedResponse<BoardSummary>>({
       method: 'GET',
       path: `${this.baseUrl}/board/filter/${filterId}`,
       query,

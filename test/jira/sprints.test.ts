@@ -256,6 +256,37 @@ describe('SprintsResource', () => {
         'issues entries must be non-empty strings',
       );
     });
+
+    it('sends rankBeforeIssue, rankAfterIssue, rankCustomFieldId when provided (B1056)', async () => {
+      // Arrange
+      transport.respondWith(undefined, 204);
+
+      // Act — rank control fields added by B1056 spec alignment
+      await sprints.moveIssues(42, ['PROJ-1'], 'PROJ-2', 'PROJ-3', 10001);
+
+      // Assert
+      expect(transport.lastCall?.options.body).toMatchObject({
+        issues: ['PROJ-1'],
+        rankBeforeIssue: 'PROJ-2',
+        rankAfterIssue: 'PROJ-3',
+        rankCustomFieldId: 10001,
+      });
+    });
+
+    it('omits rank fields when not provided', async () => {
+      // Arrange
+      transport.respondWith(undefined, 204);
+
+      // Act
+      await sprints.moveIssues(42, ['PROJ-1']);
+
+      // Assert — body only contains issues
+      const body = transport.lastCall?.options.body as Record<string, unknown>;
+      expect(body).toHaveProperty('issues');
+      expect(body).not.toHaveProperty('rankBeforeIssue');
+      expect(body).not.toHaveProperty('rankAfterIssue');
+      expect(body).not.toHaveProperty('rankCustomFieldId');
+    });
   });
 
   // ── getIssues ─────────────────────────────────────────────────────────────
@@ -309,6 +340,20 @@ describe('SprintsResource', () => {
       );
       expect(transport.lastCall?.options.path).not.toContain('%2C');
       expect(transport.lastCall?.options.query).not.toHaveProperty('fields');
+    });
+
+    it('passes validateQuery and expand params (B1056)', async () => {
+      // Arrange
+      transport.respondWith(makeListResponse([]));
+
+      // Act — params added in B1056 spec alignment
+      await sprints.getIssues(42, { validateQuery: false, expand: 'changelog' });
+
+      // Assert
+      expect(transport.lastCall?.options.query).toMatchObject({
+        validateQuery: false,
+        expand: 'changelog',
+      });
     });
 
     it('throws ValidationError for maxResults: 0', async () => {

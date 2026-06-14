@@ -12407,7 +12407,8 @@ describe('executeJiraCommand', () => {
           cmd('boards', 'create', [], { name: 'Board', type: 'invalid', 'filter-id': '5' }),
           GLOBALS,
         ),
-      ).rejects.toThrow('--type must be one of: scrum, kanban, simple');
+        // Spec dropped 'simple' and added 'agility' (B1056 type fix)
+      ).rejects.toThrow('--type must be one of: scrum, kanban, agility');
     });
 
     it('boards create throws when --type is missing', async () => {
@@ -12715,16 +12716,16 @@ describe('executeJiraCommand', () => {
       expect(result).toEqual(payload);
     });
 
-    it('boards list-versions passes released flag', async () => {
+    it('boards list-versions passes released flag (coerced to string — spec is type:string)', async () => {
       jiraBoardsMock.listVersions.mockResolvedValue({ values: [] });
       await executeJiraCommand(cmd('boards', 'list-versions', ['42'], { released: true }), GLOBALS);
       expect(jiraBoardsMock.listVersions).toHaveBeenCalledWith(
         42,
-        expect.objectContaining({ released: true }),
+        expect.objectContaining({ released: 'true' }),
       );
     });
 
-    it('boards list-versions accepts released as string "true"', async () => {
+    it('boards list-versions accepts released as string "true" and passes it through', async () => {
       jiraBoardsMock.listVersions.mockResolvedValue({ values: [] });
       await executeJiraCommand(
         cmd('boards', 'list-versions', ['42'], { released: 'true' }),
@@ -12732,11 +12733,11 @@ describe('executeJiraCommand', () => {
       );
       expect(jiraBoardsMock.listVersions).toHaveBeenCalledWith(
         42,
-        expect.objectContaining({ released: true }),
+        expect.objectContaining({ released: 'true' }),
       );
     });
 
-    it('boards list-versions accepts released as string "false"', async () => {
+    it('boards list-versions accepts released as string "false" and passes it through', async () => {
       jiraBoardsMock.listVersions.mockResolvedValue({ values: [] });
       await executeJiraCommand(
         cmd('boards', 'list-versions', ['42'], { released: 'false' }),
@@ -12744,7 +12745,7 @@ describe('executeJiraCommand', () => {
       );
       expect(jiraBoardsMock.listVersions).toHaveBeenCalledWith(
         42,
-        expect.objectContaining({ released: false }),
+        expect.objectContaining({ released: 'false' }),
       );
     });
 
@@ -28844,7 +28845,7 @@ describe('executeJiraCommand', () => {
       );
     });
 
-    it('boards list-epics sends done=false for --done false', async () => {
+    it('boards list-epics sends done="false" for --done false (spec is type:string)', async () => {
       jiraBoardsMock.listEpics.mockResolvedValue({
         values: [],
         startAt: 0,
@@ -28854,7 +28855,7 @@ describe('executeJiraCommand', () => {
       await executeJiraCommand(cmd('boards', 'list-epics', ['42'], { done: 'false' }), GLOBALS);
       expect(jiraBoardsMock.listEpics).toHaveBeenCalledWith(
         42,
-        expect.objectContaining({ done: false }),
+        expect.objectContaining({ done: 'false' }),
       );
     });
 
