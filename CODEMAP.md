@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "2.0.0"
   },
-  "sourceHash": "1b1c6910d646bf9fa6ba66706b06c55ba83200ed525ea1b2b05ea732bbbe9959",
+  "sourceHash": "4a0eb71730b48a8d02b943f9d5a235f364e9a8437697c052cca2acb30247c235",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -17854,6 +17854,14 @@
               "original": "ChangelogItem"
             },
             {
+              "exported": "HistoryMetadataParticipant",
+              "original": "HistoryMetadataParticipant"
+            },
+            {
+              "exported": "HistoryMetadata",
+              "original": "HistoryMetadata"
+            },
+            {
               "exported": "IssueChangeLog",
               "original": "IssueChangeLog"
             },
@@ -17992,6 +18000,10 @@
               "original": "WorkTypeParameters"
             },
             {
+              "exported": "SearchResultWorkTypeParameters",
+              "original": "SearchResultWorkTypeParameters"
+            },
+            {
               "exported": "FieldAssociationSchemeItemParameters",
               "original": "FieldAssociationSchemeItemParameters"
             },
@@ -18006,6 +18018,38 @@
             {
               "exported": "ProjectFieldSchemeMapping",
               "original": "ProjectFieldSchemeMapping"
+            },
+            {
+              "exported": "MinimalFieldSchemeToFieldsPartialFailure",
+              "original": "MinimalFieldSchemeToFieldsPartialFailure"
+            },
+            {
+              "exported": "MinimalFieldSchemeToFieldsResponse",
+              "original": "MinimalFieldSchemeToFieldsResponse"
+            },
+            {
+              "exported": "FieldSchemeToFieldsPartialFailure",
+              "original": "FieldSchemeToFieldsPartialFailure"
+            },
+            {
+              "exported": "FieldSchemeToFieldsResponse",
+              "original": "FieldSchemeToFieldsResponse"
+            },
+            {
+              "exported": "UpdateFieldSchemeParametersPartialFailure",
+              "original": "UpdateFieldSchemeParametersPartialFailure"
+            },
+            {
+              "exported": "UpdateFieldSchemeParametersResponse",
+              "original": "UpdateFieldSchemeParametersResponse"
+            },
+            {
+              "exported": "FieldSchemeToProjectsPartialFailure",
+              "original": "FieldSchemeToProjectsPartialFailure"
+            },
+            {
+              "exported": "FieldSchemeToProjectsResponse",
+              "original": "FieldSchemeToProjectsResponse"
             },
             {
               "exported": "CreateFieldAssociationSchemeData",
@@ -20787,6 +20831,18 @@
             {
               "exported": "RemoteLink",
               "original": "RemoteLink"
+            },
+            {
+              "exported": "RemoteLinkType",
+              "original": "RemoteLinkType"
+            },
+            {
+              "exported": "RemoteLinkAppearance",
+              "original": "RemoteLinkAppearance"
+            },
+            {
+              "exported": "RemoteLinkStatus",
+              "original": "RemoteLinkStatus"
             }
           ]
         },
@@ -23962,17 +24018,33 @@
           "jsdoc": "A field change in a changelog entry."
         },
         {
+          "name": "HistoryMetadataParticipant",
+          "kind": "interface",
+          "line": 18,
+          "exported": true,
+          "signature": "export interface HistoryMetadataParticipant { readonly avatarUrl?: string; readonly displayName?: string; readonly displ…",
+          "jsdoc": "A participant in history metadata (actor, cause, generator). Spec: `HistoryMetadataParticipant` (additionalProperties:true)."
+        },
+        {
+          "name": "HistoryMetadata",
+          "kind": "interface",
+          "line": 31,
+          "exported": true,
+          "signature": "export interface HistoryMetadata { readonly activityDescription?: string; readonly activityDescriptionKey?: string; read…",
+          "jsdoc": "Metadata associated with a changelog entry. Spec: `HistoryMetadata` (additionalProperties:true)."
+        },
+        {
           "name": "ChangelogEntry",
           "kind": "interface",
-          "line": 15,
+          "line": 46,
           "exported": true,
-          "signature": "export interface ChangelogEntry { readonly id: string; readonly author: { readonly accountId: string; readonly displayNa…",
-          "jsdoc": "A single changelog entry for an issue."
+          "signature": "export interface ChangelogEntry { readonly id?: string; readonly author?: { readonly accountId?: string; readonly accoun…",
+          "jsdoc": "A single changelog entry for an issue. Spec: `Changelog`."
         },
         {
           "name": "BulkFetchChangelogData",
           "kind": "interface",
-          "line": 34,
+          "line": 73,
           "exported": true,
           "signature": "export interface BulkFetchChangelogData { readonly issueIdsOrKeys: string[]; readonly fieldIds?: string[]; readonly maxR…",
           "jsdoc": "Request body for bulk-fetching changelogs."
@@ -23980,7 +24052,7 @@
         {
           "name": "IssueChangeLog",
           "kind": "interface",
-          "line": 46,
+          "line": 85,
           "exported": true,
           "signature": "export interface IssueChangeLog { readonly issueId?: string; readonly changeHistories?: ChangelogEntry[]; }",
           "jsdoc": "The changelogs for a single issue within a bulk-fetch response."
@@ -23988,7 +24060,7 @@
         {
           "name": "BulkChangelogResponse",
           "kind": "interface",
-          "line": 58,
+          "line": 97,
           "exported": true,
           "signature": "export interface BulkChangelogResponse { readonly issueChangeLogs: IssueChangeLog[]; readonly nextPageToken?: string; }",
           "jsdoc": "Response for bulk-fetching changelogs."
@@ -23996,7 +24068,7 @@
         {
           "name": "ChangelogResource",
           "kind": "class",
-          "line": 64,
+          "line": 103,
           "exported": true,
           "signature": "export class ChangelogResource",
           "jsdoc": "Jira Changelog resource — POST /rest/api/3/changelog/bulkfetch.",
@@ -24004,12 +24076,12 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 65
+              "line": 104
             },
             {
               "name": "bulkFetch",
               "kind": "method",
-              "line": 76
+              "line": 115
             }
           ]
         }
@@ -24256,15 +24328,23 @@
         {
           "name": "WorkTypeParameters",
           "kind": "interface",
-          "line": 72,
+          "line": 75,
           "exported": true,
           "signature": "export interface WorkTypeParameters { readonly description?: string; readonly isRequired: boolean; readonly workTypeId: …",
-          "jsdoc": "Per-work-type parameter override."
+          "jsdoc": "Per-work-type parameter override. Spec: `WorkTypeParameters` — used in `getFieldParameters` response (`workTypeId` is integer/int64)."
+        },
+        {
+          "name": "SearchResultWorkTypeParameters",
+          "kind": "interface",
+          "line": 85,
+          "exported": true,
+          "signature": "export interface SearchResultWorkTypeParameters { readonly description?: string; readonly isRequired?: boolean; readonly…",
+          "jsdoc": "Per-work-type parameter in a field search result. Spec: `SearchResultWorkTypeParameters` — `workTypeId` is string (different from `WorkTypeParameters`)."
         },
         {
           "name": "FieldAssociationSchemeItemParameters",
           "kind": "interface",
-          "line": 79,
+          "line": 92,
           "exported": true,
           "signature": "export interface FieldAssociationSchemeItemParameters { readonly fieldId: string; readonly parameters?: FieldAssociation…",
           "jsdoc": "Response from GET /rest/api/3/config/fieldschemes/{id}/fields/{fieldId}/parameters."
@@ -24272,15 +24352,15 @@
         {
           "name": "FieldAssociationSchemeFieldResult",
           "kind": "interface",
-          "line": 86,
+          "line": 103,
           "exported": true,
           "signature": "export interface FieldAssociationSchemeFieldResult { readonly allowedOperations?: string[]; readonly fieldId?: string; r…",
-          "jsdoc": "A single field search result within a scheme."
+          "jsdoc": "A single field search result within a scheme. Spec: `FieldAssociationSchemeFieldSearchResult` — `workTypeParameters` uses `SearchResultWorkTypeParameters` (workTypeId is string, not number)."
         },
         {
           "name": "FieldAssociationSchemeProjectResult",
           "kind": "interface",
-          "line": 95,
+          "line": 112,
           "exported": true,
           "signature": "export interface FieldAssociationSchemeProjectResult { readonly avatarUrls?: Record<string, string>; readonly deleted?: …",
           "jsdoc": "A single project associated with a field association scheme."
@@ -24288,15 +24368,79 @@
         {
           "name": "ProjectFieldSchemeMapping",
           "kind": "interface",
-          "line": 104,
+          "line": 121,
           "exported": true,
           "signature": "export interface ProjectFieldSchemeMapping { readonly projectId?: number; readonly schemeId?: number; }",
           "jsdoc": "A project-to-scheme mapping returned by GET /rest/api/3/config/fieldschemes/projects."
         },
         {
+          "name": "MinimalFieldSchemeToFieldsPartialFailure",
+          "kind": "interface",
+          "line": 132,
+          "exported": true,
+          "signature": "export interface MinimalFieldSchemeToFieldsPartialFailure { readonly fieldId: string; readonly schemeId: number; readonl…",
+          "jsdoc": "A single result entry from DELETE /rest/api/3/config/fieldschemes/fields. Spec: `MinimalFieldSchemeToFieldsPartialFailure`."
+        },
+        {
+          "name": "MinimalFieldSchemeToFieldsResponse",
+          "kind": "interface",
+          "line": 144,
+          "exported": true,
+          "signature": "export interface MinimalFieldSchemeToFieldsResponse { readonly results: MinimalFieldSchemeToFieldsPartialFailure[]; }",
+          "jsdoc": "Response from DELETE /rest/api/3/config/fieldschemes/fields. Spec: `MinimalFieldSchemeToFieldsResponse`. Returned on 200 (full success) or 207 (partial failure)."
+        },
+        {
+          "name": "FieldSchemeToFieldsPartialFailure",
+          "kind": "interface",
+          "line": 152,
+          "exported": true,
+          "signature": "export interface FieldSchemeToFieldsPartialFailure { readonly fieldId: string; readonly schemeId: number; readonly succe…",
+          "jsdoc": "A single result entry from PUT /rest/api/3/config/fieldschemes/fields. Spec: `FieldSchemeToFieldsPartialFailure`."
+        },
+        {
+          "name": "FieldSchemeToFieldsResponse",
+          "kind": "interface",
+          "line": 165,
+          "exported": true,
+          "signature": "export interface FieldSchemeToFieldsResponse { readonly results: FieldSchemeToFieldsPartialFailure[]; }",
+          "jsdoc": "Response from PUT /rest/api/3/config/fieldschemes/fields. Spec: `FieldSchemeToFieldsResponse`. Returned on 200 (full success) or 207 (partial failure)."
+        },
+        {
+          "name": "UpdateFieldSchemeParametersPartialFailure",
+          "kind": "interface",
+          "line": 173,
+          "exported": true,
+          "signature": "export interface UpdateFieldSchemeParametersPartialFailure { readonly fieldId: string; readonly schemeId: number; readon…",
+          "jsdoc": "A single result entry from PUT /rest/api/3/config/fieldschemes/fields/parameters. Spec: `UpdateFieldSchemeParametersPartialFailure`."
+        },
+        {
+          "name": "UpdateFieldSchemeParametersResponse",
+          "kind": "interface",
+          "line": 186,
+          "exported": true,
+          "signature": "export interface UpdateFieldSchemeParametersResponse { readonly results: UpdateFieldSchemeParametersPartialFailure[]; }",
+          "jsdoc": "Response from PUT /rest/api/3/config/fieldschemes/fields/parameters. Spec: `UpdateFieldSchemeParametersResponse`. Returned on 200 (full success) or 207 (partial failure)."
+        },
+        {
+          "name": "FieldSchemeToProjectsPartialFailure",
+          "kind": "interface",
+          "line": 194,
+          "exported": true,
+          "signature": "export interface FieldSchemeToProjectsPartialFailure { readonly projectId: number; readonly schemeId: number; readonly s…",
+          "jsdoc": "A single result entry from PUT /rest/api/3/config/fieldschemes/projects. Spec: `FieldSchemeToProjectsPartialFailure`."
+        },
+        {
+          "name": "FieldSchemeToProjectsResponse",
+          "kind": "interface",
+          "line": 206,
+          "exported": true,
+          "signature": "export interface FieldSchemeToProjectsResponse { readonly results: FieldSchemeToProjectsPartialFailure[]; }",
+          "jsdoc": "Response from PUT /rest/api/3/config/fieldschemes/projects. Spec: `FieldSchemeToProjectsResponse`. Returned on 200 (full success) or 207 (partial failure)."
+        },
+        {
           "name": "CreateFieldAssociationSchemeData",
           "kind": "interface",
-          "line": 112,
+          "line": 213,
           "exported": true,
           "signature": "export interface CreateFieldAssociationSchemeData { readonly name: string; readonly description?: string; }",
           "jsdoc": "Request body for POST /rest/api/3/config/fieldschemes and clone."
@@ -24304,7 +24448,7 @@
         {
           "name": "UpdateFieldAssociationSchemeData",
           "kind": "interface",
-          "line": 119,
+          "line": 220,
           "exported": true,
           "signature": "export interface UpdateFieldAssociationSchemeData { readonly name?: string; readonly description?: string; }",
           "jsdoc": "Request body for PUT /rest/api/3/config/fieldschemes/{id}."
@@ -24312,7 +24456,7 @@
         {
           "name": "RemoveFieldAssociationsBody",
           "kind": "type",
-          "line": 128,
+          "line": 229,
           "exported": true,
           "signature": "export type RemoveFieldAssociationsBody = Record<string, { schemeIds: number[] }>;",
           "jsdoc": "Request body for DELETE /rest/api/3/config/fieldschemes/fields. Map of fieldId → { schemeIds: number[] }."
@@ -24320,7 +24464,7 @@
         {
           "name": "UpdateFieldAssociationsBody",
           "kind": "type",
-          "line": 134,
+          "line": 235,
           "exported": true,
           "signature": "export type UpdateFieldAssociationsBody = Record< string, { schemeIds: number[]; restrictedToWorkTypes?: number[] }[] >;",
           "jsdoc": "Request body for PUT /rest/api/3/config/fieldschemes/fields. Map of fieldId → [{ schemeIds: number[], restrictedToWorkTypes?: number[] }]."
@@ -24328,7 +24472,7 @@
         {
           "name": "ParameterRemovalDetails",
           "kind": "interface",
-          "line": 140,
+          "line": 241,
           "exported": true,
           "signature": "export interface ParameterRemovalDetails { readonly parameters?: string[]; readonly schemeId?: number; readonly workType…",
           "jsdoc": "A single parameter removal detail."
@@ -24336,7 +24480,7 @@
         {
           "name": "RemoveFieldParametersBody",
           "kind": "type",
-          "line": 150,
+          "line": 251,
           "exported": true,
           "signature": "export type RemoveFieldParametersBody = Record<string, ParameterRemovalDetails[]>;",
           "jsdoc": "Request body for DELETE /rest/api/3/config/fieldschemes/fields/parameters. Map of fieldId → [ParameterRemovalDetails]."
@@ -24344,7 +24488,7 @@
         {
           "name": "FieldSchemeParametersUpdate",
           "kind": "interface",
-          "line": 153,
+          "line": 254,
           "exported": true,
           "signature": "export interface FieldSchemeParametersUpdate { readonly parameters?: { description?: string; isRequired?: boolean }; rea…",
           "jsdoc": "Parameters update payload for a single scheme entry."
@@ -24352,7 +24496,7 @@
         {
           "name": "UpdateFieldParametersBody",
           "kind": "type",
-          "line": 167,
+          "line": 268,
           "exported": true,
           "signature": "export type UpdateFieldParametersBody = Record<string, FieldSchemeParametersUpdate[]>;",
           "jsdoc": "Request body for PUT /rest/api/3/config/fieldschemes/fields/parameters. Map of fieldId → [FieldSchemeParametersUpdate]."
@@ -24360,7 +24504,7 @@
         {
           "name": "AssociateProjectsBody",
           "kind": "type",
-          "line": 173,
+          "line": 274,
           "exported": true,
           "signature": "export type AssociateProjectsBody = Record<string, { projectIds: number[] }>;",
           "jsdoc": "Request body for PUT /rest/api/3/config/fieldschemes/projects. Map of schemeId → { projectIds: number[] }."
@@ -24368,7 +24512,7 @@
         {
           "name": "ListFieldAssociationSchemesParams",
           "kind": "interface",
-          "line": 178,
+          "line": 279,
           "exported": true,
           "signature": "export interface ListFieldAssociationSchemesParams { readonly startAt?: number; readonly maxResults?: number; readonly p…",
           "jsdoc": "Query parameters for GET /rest/api/3/config/fieldschemes."
@@ -24376,7 +24520,7 @@
         {
           "name": "ListSchemeFieldsParams",
           "kind": "interface",
-          "line": 188,
+          "line": 289,
           "exported": true,
           "signature": "export interface ListSchemeFieldsParams { readonly startAt?: number; readonly maxResults?: number; readonly fieldId?: st…",
           "jsdoc": "Query parameters for GET /rest/api/3/config/fieldschemes/{id}/fields."
@@ -24384,7 +24528,7 @@
         {
           "name": "ListSchemeProjectsParams",
           "kind": "interface",
-          "line": 196,
+          "line": 297,
           "exported": true,
           "signature": "export interface ListSchemeProjectsParams { readonly startAt?: number; readonly maxResults?: number; readonly projectId?…",
           "jsdoc": "Query parameters for GET /rest/api/3/config/fieldschemes/{id}/projects."
@@ -24392,7 +24536,7 @@
         {
           "name": "GetProjectsWithFieldSchemesParams",
           "kind": "interface",
-          "line": 204,
+          "line": 305,
           "exported": true,
           "signature": "export interface GetProjectsWithFieldSchemesParams { readonly startAt?: number; readonly maxResults?: number; readonly p…",
           "jsdoc": "Query parameters for GET /rest/api/3/config/fieldschemes/projects."
@@ -24400,7 +24544,7 @@
         {
           "name": "ConfigResource",
           "kind": "class",
-          "line": 220,
+          "line": 321,
           "exported": true,
           "signature": "export class ConfigResource",
           "jsdoc": "Jira Config Field Association Schemes resource — B367-B381.",
@@ -24408,154 +24552,161 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 221
+              "line": 322
             },
             {
               "name": "list",
               "kind": "method",
-              "line": 230
+              "line": 331
             },
             {
               "name": "listAll",
               "kind": "method",
-              "line": 250
+              "line": 351
             },
             {
               "name": "create",
               "kind": "method",
-              "line": 269
+              "line": 370
             },
             {
               "name": "delete",
               "kind": "method",
-              "line": 284
+              "line": 385
             },
             {
               "name": "get",
               "kind": "method",
-              "line": 296
+              "line": 397
             },
             {
               "name": "update",
               "kind": "method",
-              "line": 308
+              "line": 409
             },
             {
               "name": "clone",
               "kind": "method",
-              "line": 327
+              "line": 428
             },
             {
               "name": "listFields",
               "kind": "method",
-              "line": 345
+              "line": 446
             },
             {
               "name": "listFieldsAll",
               "kind": "method",
-              "line": 367
+              "line": 468
             },
             {
               "name": "getFieldParameters",
               "kind": "method",
-              "line": 388
+              "line": 489
             },
             {
               "name": "listProjects",
               "kind": "method",
-              "line": 403
+              "line": 504
             },
             {
               "name": "listProjectsAll",
               "kind": "method",
-              "line": 425
+              "line": 526
             },
             {
               "name": "removeFieldAssociations",
               "kind": "method",
-              "line": 451
+              "line": 555
             },
             {
               "name": "updateFieldAssociations",
               "kind": "method",
-              "line": 464
+              "line": 574
             },
             {
               "name": "removeFieldParameters",
               "kind": "method",
-              "line": 477
+              "line": 590
             },
             {
               "name": "updateFieldParameters",
               "kind": "method",
-              "line": 490
+              "line": 606
             },
             {
               "name": "getProjectsWithSchemes",
               "kind": "method",
-              "line": 503
+              "line": 622
             },
             {
               "name": "getProjectsWithSchemesAll",
               "kind": "method",
-              "line": 523
+              "line": 642
             },
             {
               "name": "associateProjects",
               "kind": "method",
-              "line": 543
+              "line": 665
             }
           ]
         },
         {
+          "name": "validateConfigPageSize",
+          "kind": "function",
+          "line": 681,
+          "signature": "function validateConfigPageSize(value: number, name: string): void",
+          "jsdoc": "Validate a page size for config/fieldschemes endpoints. Spec maximum is 100 for all four paginated endpoints."
+        },
+        {
           "name": "buildListQuery",
           "kind": "function",
-          "line": 554,
+          "line": 688,
           "signature": "function buildListQuery( params: ListFieldAssociationSchemesParams | undefined, ): Record<string, string | number | bool…"
         },
         {
           "name": "buildListPath",
           "kind": "function",
-          "line": 567,
+          "line": 701,
           "signature": "function buildListPath( basePath: string, params: ListFieldAssociationSchemesParams | undefined, ): string",
           "jsdoc": "Append the repeated `projectId` (`type: array`) params to the list path."
         },
         {
           "name": "buildSchemeFieldsQuery",
           "kind": "function",
-          "line": 574,
+          "line": 708,
           "signature": "function buildSchemeFieldsQuery( params: ListSchemeFieldsParams | undefined, ): Record<string, string | number | boolean…"
         },
         {
           "name": "buildSchemeFieldsPath",
           "kind": "function",
-          "line": 586,
+          "line": 720,
           "signature": "function buildSchemeFieldsPath( basePath: string, params: ListSchemeFieldsParams | undefined, ): string",
           "jsdoc": "Append the repeated `fieldId` (`type: array`) params to the scheme fields path."
         },
         {
           "name": "buildSchemeProjectsQuery",
           "kind": "function",
-          "line": 593,
+          "line": 727,
           "signature": "function buildSchemeProjectsQuery( params: ListSchemeProjectsParams | undefined, ): Record<string, string | number | boo…"
         },
         {
           "name": "buildSchemeProjectsPath",
           "kind": "function",
-          "line": 605,
+          "line": 739,
           "signature": "function buildSchemeProjectsPath( basePath: string, params: ListSchemeProjectsParams | undefined, ): string",
           "jsdoc": "Append the repeated `projectId` (`type: array`) params to the scheme projects path."
         },
         {
           "name": "buildProjectsQuery",
           "kind": "function",
-          "line": 612,
+          "line": 746,
           "signature": "function buildProjectsQuery( params: GetProjectsWithFieldSchemesParams, ): Record<string, string | number | boolean | un…"
         },
         {
           "name": "buildProjectsPath",
           "kind": "function",
-          "line": 627,
+          "line": 761,
           "signature": "function buildProjectsPath( basePath: string, params: Pick<GetProjectsWithFieldSchemesParams, 'projectId'>, ): string",
           "jsdoc": "Append the repeated `projectId` (`type: array`, required) params to the projects path."
         }
@@ -32821,17 +32972,41 @@
       "path": "src/jira/resources/remote-link.ts",
       "symbols": [
         {
+          "name": "RemoteLinkAppearance",
+          "kind": "type",
+          "line": 5,
+          "exported": true,
+          "signature": "export type RemoteLinkAppearance = | 'default' | 'inprogress' | 'moved' | 'new' | 'removed' | 'prototype' | 'success';",
+          "jsdoc": "Status appearance for a remote link lozenge."
+        },
+        {
+          "name": "RemoteLinkType",
+          "kind": "type",
+          "line": 15,
+          "exported": true,
+          "signature": "export type RemoteLinkType = | 'document' | 'alert' | 'test' | 'security' | 'logFile' | 'prototype' | 'coverage' | 'bugR…",
+          "jsdoc": "The type of a remote link."
+        },
+        {
+          "name": "RemoteLinkStatus",
+          "kind": "interface",
+          "line": 27,
+          "exported": true,
+          "signature": "export interface RemoteLinkStatus { readonly appearance: RemoteLinkAppearance; readonly label: string; }",
+          "jsdoc": "Status object for a remote link."
+        },
+        {
           "name": "RemoteLink",
           "kind": "interface",
-          "line": 10,
+          "line": 39,
           "exported": true,
-          "signature": "export interface RemoteLink { readonly id: string; readonly url?: string; readonly title?: string; readonly summary?: st…",
-          "jsdoc": "A Jira remote link via the Remote Links API (not issue remote links)."
+          "signature": "export interface RemoteLink { readonly schemaVersion?: '1.0'; readonly id: string; readonly updateSequenceNumber: number…",
+          "jsdoc": "A Jira remote link via the Remote Links API (not issue remote links). Spec: `RemoteLinkData` (jira-software.json /rest/remotelinks/1.0/remotelink/{remoteLinkId})."
         },
         {
           "name": "RemoteLinkResource",
           "kind": "class",
-          "line": 26,
+          "line": 76,
           "exported": true,
           "signature": "export class RemoteLinkResource",
           "jsdoc": "Jira Remote Link resource — DELETE and GET /rest/remotelinks/1.0/remotelink/{remoteLinkId}.",
@@ -32839,17 +33014,17 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 27
+              "line": 77
             },
             {
               "name": "get",
               "kind": "method",
-              "line": 36
+              "line": 86
             },
             {
               "name": "delete",
               "kind": "method",
-              "line": 48
+              "line": 102
             }
           ]
         }

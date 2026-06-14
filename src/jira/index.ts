@@ -501,6 +501,8 @@ export { EventsResource } from './resources/events.js';
 export type {
   ChangelogEntry,
   ChangelogItem,
+  HistoryMetadataParticipant,
+  HistoryMetadata,
   IssueChangeLog,
   BulkFetchChangelogData,
   BulkChangelogResponse,
@@ -598,7 +600,12 @@ export type {
   BulkWorklogResponse,
 } from './resources/latest.js';
 export { LatestResource } from './resources/latest.js';
-export type { RemoteLink } from './resources/remote-link.js';
+export type {
+  RemoteLink,
+  RemoteLinkType,
+  RemoteLinkAppearance,
+  RemoteLinkStatus,
+} from './resources/remote-link.js';
 export { RemoteLinkResource } from './resources/remote-link.js';
 export type { ServiceRegistryEntry, ServiceRegistryTier } from './resources/service-registry.js';
 export { ServiceRegistryResource } from './resources/service-registry.js';
@@ -889,10 +896,19 @@ export type {
   DeletedFieldAssociationScheme,
   FieldAssociationParameters,
   WorkTypeParameters,
+  SearchResultWorkTypeParameters,
   FieldAssociationSchemeItemParameters,
   FieldAssociationSchemeFieldResult,
   FieldAssociationSchemeProjectResult,
   ProjectFieldSchemeMapping,
+  MinimalFieldSchemeToFieldsPartialFailure,
+  MinimalFieldSchemeToFieldsResponse,
+  FieldSchemeToFieldsPartialFailure,
+  FieldSchemeToFieldsResponse,
+  UpdateFieldSchemeParametersPartialFailure,
+  UpdateFieldSchemeParametersResponse,
+  FieldSchemeToProjectsPartialFailure,
+  FieldSchemeToProjectsResponse,
   CreateFieldAssociationSchemeData,
   UpdateFieldAssociationSchemeData,
   RemoveFieldAssociationsBody,
