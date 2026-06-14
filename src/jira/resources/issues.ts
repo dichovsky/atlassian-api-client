@@ -71,6 +71,17 @@ export interface DeleteWorklogParams {
   readonly overrideEditableFlag?: boolean;
 }
 
+/**
+ * Optional query parameters for DELETE /rest/api/3/issue/{issueIdOrKey}/worklog (bulkDeleteWorklogs).
+ * Spec: adjustEstimate (enum: "leave" | "auto"), overrideEditableFlag (boolean).
+ */
+export interface DeleteAllWorklogsParams {
+  /** How to update the issue's time estimate. Enum: "leave" | "auto". Default: "auto". */
+  readonly adjustEstimate?: 'leave' | 'auto';
+  /** Whether worklogs are removed even if the issue is not editable. */
+  readonly overrideEditableFlag?: boolean;
+}
+
 export interface GetWorklogParams {
   readonly expand?: string;
 }
@@ -113,10 +124,15 @@ export interface WorklogProperty {
 
 // ── Issue archive ─────────────────────────────────────────────────────────────
 
+/**
+ * Result of a synchronous archive/unarchive operation.
+ * Spec: IssueArchivalSyncResponse — { errors?, numberOfIssuesUpdated? }.
+ * Note: the spec `errors` field is a named-error-category object (Errors schema),
+ * not an array; `numberOfIssuesUpdated` is the count of successfully processed issues.
+ */
 export interface IssueArchiveResult {
-  readonly archived?: number;
-  readonly errors?: Record<string, unknown>;
-  readonly failed?: number;
+  readonly errors?: Record<string, { count?: number; issueIdsOrKeys?: string[]; message?: string }>;
+  readonly numberOfIssuesUpdated?: number;
 }
 
 // ── Bulk fetch ────────────────────────────────────────────────────────────────
@@ -129,9 +145,23 @@ export interface BulkFetchData {
   readonly expand?: string[];
 }
 
+/**
+ * A single issue-level error from a bulk fetch.
+ * Spec: IssueError — { id (issue ID), errorMessage }.
+ */
+export interface BulkFetchIssueError {
+  readonly id?: string;
+  readonly errorMessage?: string;
+}
+
+/**
+ * Result of a bulk issue fetch.
+ * Spec: BulkIssueResults — { issues?, issueErrors? }.
+ * Note: the spec field is `issueErrors`, not `errors`.
+ */
 export interface BulkFetchResult {
   readonly issues?: Record<string, unknown>[];
-  readonly errors?: Record<string, unknown>[];
+  readonly issueErrors?: BulkFetchIssueError[];
 }
 
 // ── Create meta ───────────────────────────────────────────────────────────────
@@ -151,8 +181,18 @@ export interface CreateMetaIssueTypesParams {
 
 // ── Issue limit report ────────────────────────────────────────────────────────
 
+/**
+ * Issue limit report response.
+ * Spec: IssueLimitReportResponseBean — { issuesApproachingLimit?, issuesBreachingLimit?, limits? }.
+ * Each map key is an issue ID; each value is a sub-map of field-name → field-count.
+ */
 export interface IssueLimitReport {
-  readonly issueIds?: number[];
+  /** Issues approaching the field limit: { issueId: { fieldName: count } } */
+  readonly issuesApproachingLimit?: Record<string, Record<string, number>>;
+  /** Issues already breaching the field limit: { issueId: { fieldName: count } } */
+  readonly issuesBreachingLimit?: Record<string, Record<string, number>>;
+  /** Defined per-field limits: { fieldName: limit } */
+  readonly limits?: Record<string, number>;
 }
 
 // ── Issue picker ──────────────────────────────────────────────────────────────
@@ -210,9 +250,61 @@ export interface BulkIssueIsWatchingResult {
 
 // ── Archive export ────────────────────────────────────────────────────────────
 
+/**
+ * Date range filter for archived issue export.
+ * Spec: DateRangeFilterRequest — { dateAfter?, dateBefore? }.
+ */
+export interface DateRangeFilterRequest {
+  readonly dateAfter?: string;
+  readonly dateBefore?: string;
+}
+
+/**
+ * Request body for PUT /rest/api/3/issues/archive/export.
+ * Spec: ArchivedIssuesFilterRequest — { archivedBy?, archivedDateRange?, issueTypes?, projects?, reporters? }.
+ *
+ * NOTE: The CLI command currently passes `jql` and `exportType` which are not spec fields;
+ * the CLI action cannot be updated in this PR (fenced file). The old fictional fields are
+ * retained here to prevent a CLI compile error — tracked as DEFERRED-CLI for a follow-up
+ * PR that updates the CLI to use the correct filter fields.
+ *
+ * @deprecated jql — not a spec field; use the filter fields (archivedBy, archivedDateRange, etc.)
+ * @deprecated exportType — not a spec field; the API emails a download link, no format choice exposed
+ */
 export interface IssueArchiveExportData {
+  /**
+   * @deprecated Not a spec field. Will be removed in a future release once the CLI is updated.
+   * The spec's ArchivedIssuesFilterRequest does not include a `jql` parameter.
+   */
   readonly jql?: string;
+  /**
+   * @deprecated Not a spec field. Will be removed in a future release once the CLI is updated.
+   * The spec's ArchivedIssuesFilterRequest does not include an `exportType` parameter.
+   */
   readonly exportType?: 'CSV' | 'XLSX';
+  /** Filter by archiver account IDs. */
+  readonly archivedBy?: string[];
+  /** Filter by date range of archival. */
+  readonly archivedDateRange?: DateRangeFilterRequest;
+  /** Filter by issue type IDs. */
+  readonly issueTypes?: string[];
+  /** Filter by project keys. */
+  readonly projects?: string[];
+  /** Filter by reporter account IDs. */
+  readonly reporters?: string[];
+}
+
+/**
+ * Response from PUT /rest/api/3/issues/archive/export (202 Accepted).
+ * Spec: ExportArchivedIssuesTaskProgressResponse.
+ */
+export interface ExportArchivedIssuesResult {
+  readonly taskId?: string;
+  readonly status?: string;
+  readonly progress?: number;
+  readonly submittedTime?: string;
+  readonly payload?: string;
+  readonly fileUrl?: string;
 }
 
 /**
@@ -282,11 +374,32 @@ export interface IssueChangelogEntry {
   }[];
 }
 
+/**
+ * Page of changelogs from GET /issue/{key}/changelog.
+ * Spec: PageBeanChangelog — cursor-paginated page with `values[]` and optional `isLast`/`nextPage`.
+ */
 export interface IssueChangelog {
-  readonly startAt: number;
-  readonly maxResults: number;
-  readonly total: number;
+  readonly startAt?: number;
+  readonly maxResults?: number;
+  readonly total?: number;
   readonly values: IssueChangelogEntry[];
+  /** Whether this is the last page of results. */
+  readonly isLast?: boolean;
+  /** URL of the next page, if one exists. */
+  readonly nextPage?: string;
+  /** URL of this page. */
+  readonly self?: string;
+}
+
+/**
+ * Page of changelogs from POST /issue/{key}/changelog/list (filterChangelog).
+ * Spec: PageOfChangelogs — uses `histories[]`, not `values[]`.
+ */
+export interface PageOfChangelogs {
+  readonly startAt?: number;
+  readonly maxResults?: number;
+  readonly total?: number;
+  readonly histories: IssueChangelogEntry[];
 }
 
 export interface ListChangelogParams {
@@ -355,11 +468,25 @@ export interface IssueVotes {
 
 // ── Watchers ──────────────────────────────────────────────────────────────
 
+/**
+ * A Jira user as returned in watchers/voters lists.
+ * Spec: UserDetails — subset of the full user object returned in watcher/voter contexts.
+ */
+export interface IssueUserDetails {
+  readonly accountId?: string;
+  readonly accountType?: string;
+  readonly active?: boolean;
+  readonly displayName?: string;
+  readonly emailAddress?: string;
+  readonly self?: string;
+  readonly avatarUrls?: Record<string, string>;
+}
+
 export interface IssueWatchers {
   readonly self?: string;
   readonly isWatching?: boolean;
   readonly watchCount?: number;
-  readonly watchers?: { accountId?: string; displayName?: string }[];
+  readonly watchers?: IssueUserDetails[];
 }
 
 // ── Notify ────────────────────────────────────────────────────────────────
@@ -370,6 +497,70 @@ export interface IssueNotifyData {
   readonly textBody?: string;
   readonly restrict?: Record<string, unknown>;
   readonly to?: Record<string, unknown>;
+}
+
+// ── Update issue query params ─────────────────────────────────────────────
+
+/**
+ * Optional query parameters for PUT /rest/api/3/issue/{issueIdOrKey} (editIssue).
+ * Spec: 5 query params: notifyUsers, overrideScreenSecurity, overrideEditableFlag, returnIssue, expand.
+ */
+export interface UpdateIssueParams {
+  /** Whether a notification email about the issue update is sent to all watchers. Default: true. */
+  readonly notifyUsers?: boolean;
+  /** Whether screen security is overridden to enable hidden fields to be edited. */
+  readonly overrideScreenSecurity?: boolean;
+  /** Whether screen security is overridden to enable uneditable fields to be edited. */
+  readonly overrideEditableFlag?: boolean;
+  /** Whether the response should contain the issue with edited fields. */
+  readonly returnIssue?: boolean;
+  /** The Get issue API expand parameter to use when returnIssue is true. */
+  readonly expand?: string;
+}
+
+// ── Delete issue query params ─────────────────────────────────────────────
+
+/**
+ * Optional query parameters for DELETE /rest/api/3/issue/{issueIdOrKey} (deleteIssue).
+ * Spec: { deleteSubtasks: "true" | "false" } — string enum, not boolean.
+ */
+export interface DeleteIssueParams {
+  /** Whether the issue's subtasks are deleted when the issue is deleted. Default: "false". */
+  readonly deleteSubtasks?: 'true' | 'false';
+}
+
+// ── Get transitions query params ──────────────────────────────────────────
+
+/**
+ * Optional query parameters for GET /rest/api/3/issue/{issueIdOrKey}/transitions.
+ * Spec: expand, transitionId, skipRemoteOnlyCondition, includeUnavailableTransitions, sortByOpsBarAndStatus.
+ */
+export interface GetTransitionsParams {
+  /** Expand options for transitions (e.g., "transitions.fields"). */
+  readonly expand?: string;
+  /** The ID of a specific transition to return. */
+  readonly transitionId?: string;
+  /** Whether transitions with the condition Hide From User Condition are included. */
+  readonly skipRemoteOnlyCondition?: boolean;
+  /** Whether details of transitions that fail a condition are included. */
+  readonly includeUnavailableTransitions?: boolean;
+  /** Whether transitions are sorted by ops-bar sequence value then category order. */
+  readonly sortByOpsBarAndStatus?: boolean;
+}
+
+// ── Get agile issue query params ──────────────────────────────────────────
+
+/**
+ * Optional query parameters for GET /rest/agile/1.0/issue/{issueIdOrKey}.
+ * Spec: fields (array), expand (string), updateHistory (boolean).
+ */
+export interface GetAgileIssueParams {
+  /** The list of fields to return. By default all navigable and Agile fields are returned. */
+  readonly fields?: string[];
+  /** A comma-separated list of the parameters to expand. */
+  readonly expand?: string;
+  /** Whether the issue should be added to the current user's issue history. */
+  readonly updateHistory?: boolean;
 }
 
 // ── Assignee ──────────────────────────────────────────────────────────────
@@ -417,27 +608,53 @@ export class IssuesResource {
   }
 
   /** Update an issue. */
-  async update(issueIdOrKey: string, data: UpdateIssueData): Promise<void> {
+  async update(
+    issueIdOrKey: string,
+    data: UpdateIssueData,
+    params?: UpdateIssueParams,
+  ): Promise<void> {
+    const query: Record<string, string | boolean | undefined> = {};
+    if (params?.notifyUsers !== undefined) query['notifyUsers'] = params.notifyUsers;
+    if (params?.overrideScreenSecurity !== undefined)
+      query['overrideScreenSecurity'] = params.overrideScreenSecurity;
+    if (params?.overrideEditableFlag !== undefined)
+      query['overrideEditableFlag'] = params.overrideEditableFlag;
+    if (params?.returnIssue !== undefined) query['returnIssue'] = params.returnIssue;
+    if (params?.expand !== undefined) query['expand'] = params.expand;
     await this.transport.request<undefined>({
       method: 'PUT',
       path: `${this.baseUrl}/issue/${encodePathSegment(issueIdOrKey)}`,
+      query,
       body: data,
     });
   }
 
   /** Delete an issue. */
-  async delete(issueIdOrKey: string): Promise<void> {
+  async delete(issueIdOrKey: string, params?: DeleteIssueParams): Promise<void> {
+    const query: Record<string, string | undefined> = {};
+    if (params?.deleteSubtasks !== undefined) query['deleteSubtasks'] = params.deleteSubtasks;
     await this.transport.request<undefined>({
       method: 'DELETE',
       path: `${this.baseUrl}/issue/${encodePathSegment(issueIdOrKey)}`,
+      query,
     });
   }
 
   /** Get available transitions for an issue. */
-  async getTransitions(issueIdOrKey: string): Promise<Transition[]> {
+  async getTransitions(issueIdOrKey: string, params?: GetTransitionsParams): Promise<Transition[]> {
+    const query: Record<string, string | boolean | undefined> = {};
+    if (params?.expand !== undefined) query['expand'] = params.expand;
+    if (params?.transitionId !== undefined) query['transitionId'] = params.transitionId;
+    if (params?.skipRemoteOnlyCondition !== undefined)
+      query['skipRemoteOnlyCondition'] = params.skipRemoteOnlyCondition;
+    if (params?.includeUnavailableTransitions !== undefined)
+      query['includeUnavailableTransitions'] = params.includeUnavailableTransitions;
+    if (params?.sortByOpsBarAndStatus !== undefined)
+      query['sortByOpsBarAndStatus'] = params.sortByOpsBarAndStatus;
     const response = await this.transport.request<{ transitions: Transition[] }>({
       method: 'GET',
       path: `${this.baseUrl}/issue/${encodePathSegment(issueIdOrKey)}/transitions`,
+      query,
     });
     return response.data.transitions;
   }
@@ -477,11 +694,20 @@ export class IssuesResource {
    * Get an issue in its agile view (B265).
    * GET /rest/agile/1.0/issue/{issueIdOrKey}
    */
-  async getAgile(issueIdOrKey: string): Promise<AgileIssue> {
+  async getAgile(issueIdOrKey: string, params?: GetAgileIssueParams): Promise<AgileIssue> {
     const base = this.requireAgileBaseUrl();
+    const query: Record<string, string | boolean | undefined> = {};
+    if (params?.expand !== undefined) query['expand'] = params.expand;
+    if (params?.updateHistory !== undefined) query['updateHistory'] = params.updateHistory;
+    // `fields` is type:array in the agile spec — pass as repeated params baked into the path
+    let path = `${base}/issue/${encodePathSegment(issueIdOrKey)}`;
+    if (params?.fields !== undefined) {
+      path = appendRepeatedParams(path, 'fields', params.fields);
+    }
     const response = await this.transport.request<AgileIssue>({
       method: 'GET',
-      path: `${base}/issue/${encodePathSegment(issueIdOrKey)}`,
+      path,
+      query,
     });
     return response.data;
   }
@@ -582,9 +808,10 @@ export class IssuesResource {
   /**
    * Filter changelog entries by IDs (B481).
    * POST /rest/api/3/issue/{issueIdOrKey}/changelog/list
+   * Spec: responds with PageOfChangelogs — uses `histories[]`, not `values[]`.
    */
-  async filterChangelog(issueIdOrKey: string, ids: number[]): Promise<IssueChangelog> {
-    const response = await this.transport.request<IssueChangelog>({
+  async filterChangelog(issueIdOrKey: string, ids: number[]): Promise<PageOfChangelogs> {
+    const response = await this.transport.request<PageOfChangelogs>({
       method: 'POST',
       path: `${this.baseUrl}/issue/${encodePathSegment(issueIdOrKey)}/changelog/list`,
       body: { changelogIds: ids },
@@ -785,12 +1012,12 @@ export class IssuesResource {
   /**
    * Add the current user's vote to an issue (B501).
    * POST /rest/api/3/issue/{issueIdOrKey}/votes
+   * Spec: no requestBody — send without a body.
    */
   async addVote(issueIdOrKey: string): Promise<void> {
     await this.transport.request<undefined>({
       method: 'POST',
       path: `${this.baseUrl}/issue/${encodePathSegment(issueIdOrKey)}/votes`,
-      body: {},
     });
   }
 
@@ -844,10 +1071,19 @@ export class IssuesResource {
    * 200 partial-success payload — callers cannot distinguish partial from full success
    * (known limitation; surfacing the payload would require a breaking return-type change).
    */
-  async deleteAllWorklogs(issueIdOrKey: string, ids: number[]): Promise<void> {
+  async deleteAllWorklogs(
+    issueIdOrKey: string,
+    ids: number[],
+    params?: DeleteAllWorklogsParams,
+  ): Promise<void> {
+    const query: Record<string, string | boolean | undefined> = {};
+    if (params?.adjustEstimate !== undefined) query['adjustEstimate'] = params.adjustEstimate;
+    if (params?.overrideEditableFlag !== undefined)
+      query['overrideEditableFlag'] = params.overrideEditableFlag;
     await this.transport.request<undefined>({
       method: 'DELETE',
       path: `${this.baseUrl}/issue/${encodePathSegment(issueIdOrKey)}/worklog`,
+      query,
       body: { ids },
     });
   }
@@ -1279,12 +1515,14 @@ export class IssuesResource {
   /**
    * Export archived issues (B538).
    * PUT /rest/api/3/issues/archive/export   (note: plural "issues")
+   * Spec: responds 202 with ExportArchivedIssuesTaskProgressResponse { taskId, status, progress, submittedTime, payload, fileUrl }.
    */
-  async exportArchivedIssues(data: IssueArchiveExportData): Promise<void> {
-    await this.transport.request<undefined>({
+  async exportArchivedIssues(data: IssueArchiveExportData): Promise<ExportArchivedIssuesResult> {
+    const response = await this.transport.request<ExportArchivedIssuesResult>({
       method: 'PUT',
       path: `${this.baseUrl}/issues/archive/export`,
       body: data,
     });
+    return response.data;
   }
 }
