@@ -20,7 +20,7 @@ import type { OpenApiSpec } from '../src/core/openapi.ts';
 export const SPEC_URLS = {
   jiraPlatform: 'https://developer.atlassian.com/cloud/jira/platform/swagger-v3.v3.json',
   jiraSoftware: 'https://developer.atlassian.com/cloud/jira/software/swagger.v3.json',
-  confluence: 'https://developer.atlassian.com/cloud/confluence/swagger.v3.json',
+  confluence: 'https://developer.atlassian.com/cloud/confluence/openapi-v2.v3.json',
 } as const;
 
 /** Summary of a single spec check. */
