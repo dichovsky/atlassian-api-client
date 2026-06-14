@@ -2,17 +2,47 @@ import type { Transport } from '../../core/types.js';
 import { encodePathSegment } from '../../core/path.js';
 
 /**
+ * Tier values for a DevOps component.
+ * Verified against jira-software.json `DevOpsComponentData.tier` enum.
+ */
+export type DevopsComponentTier = 'Tier 1' | 'Tier 2' | 'Tier 3' | 'Tier 4';
+
+/**
+ * Component type values for a DevOps component.
+ * Verified against jira-software.json `DevOpsComponentData.componentType` enum.
+ */
+export type DevopsComponentType =
+  | 'Service'
+  | 'Application'
+  | 'Library'
+  | 'Capability'
+  | 'Cloud resource'
+  | 'Data pipeline'
+  | 'Machine learning model'
+  | 'UI element'
+  | 'Website'
+  | 'Other';
+
+/**
  * A Jira DevOps component record.
  *
  * NOTE: Base URL deviates from the standard `/rest/api/3/…` — this resource
  * uses `/rest/devopscomponents/1.0/…` (Jira DevOps Components API).
+ *
+ * Verified required fields against jira-software.json `DevOpsComponentData` schema.
  */
 export interface DevopsComponent {
+  readonly schemaVersion?: '1.0';
   readonly id: string;
-  readonly name?: string;
-  readonly description?: string;
-  readonly url?: string;
-  readonly lastUpdated?: string;
+  readonly updateSequenceNumber: number;
+  readonly name: string;
+  readonly description: string;
+  readonly url: string;
+  readonly avatarUrl: string;
+  readonly tier: DevopsComponentTier;
+  readonly componentType: DevopsComponentType;
+  readonly lastUpdated: string;
+  readonly providerName?: string;
 }
 
 /**
