@@ -4,20 +4,27 @@ import type { OffsetPaginatedResponse } from '../../core/pagination.js';
 import { paginateOffset, validatePageSize } from '../../core/pagination.js';
 import { appendRepeatedParams } from '../../core/query.js';
 import type { Project, ListProjectsParams } from '../types.js';
+import type { TaskProgressBeanObject } from './workflowscheme.js';
 
+/**
+ * Sender email address for a project, returned by `GET /rest/api/3/project/{id}/email`.
+ * Spec: `ProjectEmailAddress` (additionalProperties:false). No `projectId` field.
+ */
 export interface ProjectEmail {
-  readonly projectId?: number;
   readonly emailAddress?: string;
   readonly emailAddressStatus?: string[];
 }
 
+/**
+ * One level of the issue type hierarchy for a project.
+ * Spec: `ProjectIssueTypesHierarchyLevel` (additionalProperties:false). No `id` or `avatarId` fields.
+ */
 export interface ProjectHierarchyLevel {
-  readonly id: number;
-  readonly name: string;
+  /** @deprecated See Atlassian change notice for removing hierarchy level IDs from next-gen APIs. */
   readonly entityId?: string;
-  readonly level?: number;
-  readonly avatarId?: number;
   readonly issueTypes?: unknown[];
+  readonly level?: number;
+  readonly name?: string;
 }
 
 export interface ProjectHierarchy {
@@ -25,11 +32,18 @@ export interface ProjectHierarchy {
   readonly hierarchy?: ProjectHierarchyLevel[];
 }
 
+/**
+ * A project avatar. Spec: `Avatar` schema.
+ */
 export interface ProjectAvatar {
   readonly id: string;
-  readonly isSystemAvatar?: boolean;
-  readonly isSelected?: boolean;
+  /** File name of the avatar icon (system avatars only). */
+  readonly fileName?: string;
   readonly isDeletable?: boolean;
+  readonly isSelected?: boolean;
+  readonly isSystemAvatar?: boolean;
+  /** Owner of the avatar (null for system avatars; project ID or account ID for others). */
+  readonly owner?: string;
   readonly urls?: Record<string, string>;
 }
 
@@ -97,10 +111,6 @@ export interface ProjectFeature {
 
 export interface ProjectFeatures {
   readonly features: ProjectFeature[];
-}
-
-export interface TaskId {
-  readonly id: string;
 }
 
 // ── Roles ──────────────────────────────────────────────────────────────────
@@ -189,6 +199,25 @@ export interface ListProjectVersionsParams {
   readonly expand?: string;
 }
 
+/**
+ * Parameters for `GET /rest/api/3/project/{key}/versions` (flat list, no pagination).
+ *
+ * WIRE NOTE: Spec only accepts `expand` on this endpoint. The extra params below
+ * (`maxResults`, `orderBy`, `query`, `status`) are sent by the CLI but are not in
+ * the spec — kept for CLI compatibility pending a CLI update (DEFERRED, B1056-F4).
+ */
+export interface ListAllProjectVersionsParams {
+  readonly maxResults?: number;
+  readonly orderBy?: string;
+  readonly query?: string;
+  readonly status?: string;
+  /**
+   * Use expand to include additional information in the response.
+   * Accepts `operations` (actions performable on the version).
+   */
+  readonly expand?: string;
+}
+
 // ── Security levels ────────────────────────────────────────────────────────
 
 export interface ProjectSecurityLevel {
@@ -240,6 +269,13 @@ export interface ProjectType {
   readonly icon?: string;
 }
 
+/**
+ * Parameters for `GET /rest/api/3/project` (deprecated legacy endpoint, B929).
+ *
+ * WIRE NOTE: Spec only accepts `expand`, `recent`, and `properties` on this endpoint.
+ * The extra params below (`maxResults`, `orderBy`, etc.) are sent by the CLI but
+ * are not in the spec — kept here for CLI compatibility pending a CLI update (DEFERRED).
+ */
 export interface ListLegacyProjectsParams {
   readonly maxResults?: number;
   readonly orderBy?: string;
@@ -267,7 +303,14 @@ export interface CreateProjectData {
   readonly workflowScheme?: number;
   readonly issueTypeScheme?: number;
   readonly issueTypeScreenScheme?: number;
+  /** The ID of the field scheme (preferred over `fieldConfigurationScheme`). */
+  readonly fieldScheme?: number;
+  /**
+   * @deprecated Use `fieldScheme` instead per spec (still accepted for compatibility).
+   */
   readonly fieldConfigurationScheme?: number;
+  /** A predefined configuration for a project (must match `projectTypeKey`). */
+  readonly projectTemplateKey?: string;
 }
 
 /**
@@ -299,6 +342,8 @@ export interface UpdateProjectData {
   readonly permissionScheme?: number;
   readonly notificationScheme?: number;
   readonly categoryId?: number;
+  /** Previous project keys to release from the current project (unique items). */
+  readonly releasedProjectKeys?: readonly string[];
 }
 
 export interface DeleteProjectParams {
@@ -418,8 +463,10 @@ export class ProjectsResource {
     if (data.issueTypeScheme !== undefined) body['issueTypeScheme'] = data.issueTypeScheme;
     if (data.issueTypeScreenScheme !== undefined)
       body['issueTypeScreenScheme'] = data.issueTypeScreenScheme;
+    if (data.fieldScheme !== undefined) body['fieldScheme'] = data.fieldScheme;
     if (data.fieldConfigurationScheme !== undefined)
       body['fieldConfigurationScheme'] = data.fieldConfigurationScheme;
+    if (data.projectTemplateKey !== undefined) body['projectTemplateKey'] = data.projectTemplateKey;
 
     const response = await this.transport.request<ProjectIdentifiers>({
       method: 'POST',
@@ -456,6 +503,8 @@ export class ProjectsResource {
     if (data.permissionScheme !== undefined) body['permissionScheme'] = data.permissionScheme;
     if (data.notificationScheme !== undefined) body['notificationScheme'] = data.notificationScheme;
     if (data.categoryId !== undefined) body['categoryId'] = data.categoryId;
+    if (data.releasedProjectKeys !== undefined)
+      body['releasedProjectKeys'] = data.releasedProjectKeys;
 
     const response = await this.transport.request<Project>({
       method: 'PUT',
@@ -569,12 +618,28 @@ export class ProjectsResource {
     });
   }
 
-  /** Load a custom project avatar (B666). */
-  async loadAvatar(projectIdOrKey: string, body: unknown): Promise<ProjectAvatar> {
+  /** Load a custom project avatar (B666). Crop region is defined by `x`, `y`, `size` query params. */
+  async loadAvatar(
+    projectIdOrKey: string,
+    body: unknown,
+    params?: {
+      /** X coordinate of the top-left corner of the crop region. */
+      x?: number;
+      /** Y coordinate of the top-left corner of the crop region. */
+      y?: number;
+      /** Length of each side of the crop region. */
+      size?: number;
+    },
+  ): Promise<ProjectAvatar> {
+    const query: Record<string, number | undefined> = {};
+    if (params?.x !== undefined) query['x'] = params.x;
+    if (params?.y !== undefined) query['y'] = params.y;
+    if (params?.size !== undefined) query['size'] = params.size;
     const response = await this.transport.request<ProjectAvatar>({
       method: 'POST',
       path: `${this.baseUrl}/project/${encodePathSegment(projectIdOrKey)}/avatar2`,
       body: body as Record<string, unknown>,
+      query,
     });
     return response.data;
   }
@@ -590,12 +655,13 @@ export class ProjectsResource {
 
   // ── B681-B695: roles, statuses, versions, schemes ────────────────────────
 
-  /** Restore a deleted project (B681). */
-  async restore(projectIdOrKey: string): Promise<void> {
-    await this.transport.request<unknown>({
+  /** Restore a deleted project (B681). Returns the restored project (200 Project) per spec. */
+  async restore(projectIdOrKey: string): Promise<Project> {
+    const response = await this.transport.request<Project>({
       method: 'POST',
       path: `${this.baseUrl}/project/${encodePathSegment(projectIdOrKey)}/restore`,
     });
+    return response.data;
   }
 
   /** Get all project roles for a project as a name→URL map (B682). */
@@ -709,9 +775,9 @@ export class ProjectsResource {
     return response.data;
   }
 
-  /** Asynchronously delete a project (B674). */
-  async deleteAsync(projectIdOrKey: string): Promise<TaskId> {
-    const response = await this.transport.request<TaskId>({
+  /** Asynchronously delete a project (B674). Returns task progress per spec (303 TaskProgressBeanObject). */
+  async deleteAsync(projectIdOrKey: string): Promise<TaskProgressBeanObject> {
+    const response = await this.transport.request<TaskProgressBeanObject>({
       method: 'POST',
       path: `${this.baseUrl}/project/${encodePathSegment(projectIdOrKey)}/delete`,
     });
@@ -731,7 +797,7 @@ export class ProjectsResource {
   async setFeatureState(
     projectIdOrKey: string,
     featureKey: string,
-    state: 'ENABLED' | 'DISABLED',
+    state: 'ENABLED' | 'DISABLED' | 'COMING_SOON',
   ): Promise<ProjectFeatures> {
     const response = await this.transport.request<ProjectFeatures>({
       method: 'PUT',
@@ -785,12 +851,19 @@ export class ProjectsResource {
   /** Get project role details for a project (B687). */
   async getRoleDetails(
     projectIdOrKey: string,
-    params?: { currentMember?: boolean; excludeConnectAddons?: boolean },
+    params?: {
+      currentMember?: boolean;
+      excludeConnectAddons?: boolean;
+      /** Do not return the default JSM company-managed space from CSM spaces, or the default CSM roles from JSM spaces. */
+      excludeOtherServiceRoles?: boolean;
+    },
   ): Promise<ProjectRoleDetails[]> {
     const query: Record<string, boolean | undefined> = {};
     if (params?.currentMember !== undefined) query['currentMember'] = params.currentMember;
     if (params?.excludeConnectAddons !== undefined)
       query['excludeConnectAddons'] = params.excludeConnectAddons;
+    if (params?.excludeOtherServiceRoles !== undefined)
+      query['excludeOtherServiceRoles'] = params.excludeOtherServiceRoles;
 
     const response = await this.transport.request<ProjectRoleDetails[]>({
       method: 'GET',
@@ -853,7 +926,7 @@ export class ProjectsResource {
   /** Get all project versions as a flat array (B690). */
   async listAllVersions(
     projectIdOrKey: string,
-    params?: Omit<ListProjectVersionsParams, 'startAt'>,
+    params?: ListAllProjectVersionsParams,
   ): Promise<ProjectVersion[]> {
     const query: Record<string, string | number | undefined> = {};
     if (params?.maxResults !== undefined) query['maxResults'] = params.maxResults;
