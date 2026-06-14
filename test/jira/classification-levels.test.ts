@@ -5,9 +5,9 @@ import { MockTransport } from '../helpers/mock-transport.js';
 const BASE_URL = 'https://test.atlassian.net/rest/api/3';
 
 const makeLevels = () => [
-  { id: 'cl-1', name: 'Public', color: '#00FF00', rank: 1, status: 'published' },
-  { id: 'cl-2', name: 'Internal', color: '#FFFF00', rank: 2, status: 'published' },
-  { id: 'cl-3', name: 'Confidential', color: '#FF0000', rank: 3, status: 'published' },
+  { id: 'cl-1', name: 'Public', color: '#00FF00', rank: 1, status: 'PUBLISHED' },
+  { id: 'cl-2', name: 'Internal', color: '#FFFF00', rank: 2, status: 'PUBLISHED' },
+  { id: 'cl-3', name: 'Confidential', color: '#FF0000', rank: 3, status: 'PUBLISHED' },
 ];
 
 describe('ClassificationLevelsResource', () => {
@@ -59,6 +59,85 @@ describe('ClassificationLevelsResource', () => {
 
       // Assert
       expect(result).toEqual([]);
+    });
+
+    it('sends status as repeated params when specified', async () => {
+      // Arrange
+      transport.respondWith({ classifications: [] });
+
+      // Act
+      await classificationLevels.list({ status: ['PUBLISHED', 'DRAFT'] });
+
+      // Assert
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/classification-levels?status=PUBLISHED&status=DRAFT`,
+      });
+    });
+
+    it('sends a single status value', async () => {
+      // Arrange
+      transport.respondWith({ classifications: [] });
+
+      // Act
+      await classificationLevels.list({ status: ['ARCHIVED'] });
+
+      // Assert
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/classification-levels?status=ARCHIVED`,
+      );
+    });
+
+    it('sends orderBy when specified', async () => {
+      // Arrange
+      transport.respondWith({ classifications: [] });
+
+      // Act
+      await classificationLevels.list({ orderBy: '-rank' });
+
+      // Assert
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/classification-levels`);
+      expect(transport.lastCall?.options.query).toMatchObject({ orderBy: '-rank' });
+    });
+
+    it('sends both status and orderBy together', async () => {
+      // Arrange
+      transport.respondWith({ classifications: makeLevels() });
+
+      // Act
+      await classificationLevels.list({ status: ['PUBLISHED'], orderBy: 'rank' });
+
+      // Assert
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/classification-levels?status=PUBLISHED`,
+      );
+      expect(transport.lastCall?.options.query).toMatchObject({ orderBy: 'rank' });
+    });
+
+    it('omits status param when status array is empty', async () => {
+      // Arrange
+      transport.respondWith({ classifications: [] });
+
+      // Act
+      await classificationLevels.list({ status: [] });
+
+      // Assert
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/classification-levels`);
+    });
+
+    it('exposes guidelineADF on ClassificationLevel', async () => {
+      // Spec: DataClassificationTagBean has guidelineADF field.
+      const levelWithAdf = {
+        id: 'cl-1',
+        status: 'PUBLISHED',
+        name: 'Restricted',
+        guidelineADF: '{"type":"doc"}',
+      };
+      transport.respondWith({ classifications: [levelWithAdf] });
+
+      const result = await classificationLevels.list();
+
+      expect(result[0]).toMatchObject({ guidelineADF: '{"type":"doc"}' });
     });
 
     it('propagates transport errors', async () => {

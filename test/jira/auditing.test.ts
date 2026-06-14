@@ -156,6 +156,60 @@ describe('AuditingResource', () => {
     });
   });
 
+  // ── response type coverage ───────────────────────────────────────────────
+
+  describe('response types', () => {
+    it('surfaces description on AuditRecord', async () => {
+      // Regression: spec `AuditRecordBean` has `description`; it was missing.
+      const record = {
+        ...makeRecord(),
+        description: 'User logged in from new IP',
+      };
+      transport.respondWith(makeResponse([record]));
+
+      const result = await auditing.list();
+      expect(result.records[0]?.description).toBe('User logged in from new IP');
+    });
+
+    it('allows all AuditRecord fields to be optional (no required in spec)', async () => {
+      // Regression: spec `AuditRecordBean` has no `required` array; the type
+      // declared id/summary/created/category as required.
+      const minimalRecord = {};
+      transport.respondWith(makeResponse([minimalRecord as ReturnType<typeof makeRecord>]));
+
+      const result = await auditing.list();
+      expect(result.records[0]?.id).toBeUndefined();
+      expect(result.records[0]?.summary).toBeUndefined();
+    });
+
+    it('allows AuditRecordChangedValue fields to be optional', async () => {
+      // Regression: spec `ChangedValueBean` has no `required`; all three fields
+      // were declared required in the type.
+      const record = {
+        ...makeRecord(),
+        changedValues: [{}],
+      };
+      transport.respondWith(makeResponse([record as ReturnType<typeof makeRecord>]));
+
+      const result = await auditing.list();
+      expect(result.records[0]?.changedValues?.[0]?.fieldName).toBeUndefined();
+    });
+
+    it('allows AuditRecordAssociatedItem fields to be optional', async () => {
+      // Regression: spec `AssociatedItemBean` has no `required`; id/name/typeName
+      // were declared required.
+      const record = {
+        ...makeRecord(),
+        associatedItems: [{ parentId: '10100' }],
+      };
+      transport.respondWith(makeResponse([record as ReturnType<typeof makeRecord>]));
+
+      const result = await auditing.list();
+      expect(result.records[0]?.associatedItems?.[0]?.id).toBeUndefined();
+      expect(result.records[0]?.associatedItems?.[0]?.parentId).toBe('10100');
+    });
+  });
+
   // ── listAll ───────────────────────────────────────────────────────────────
 
   describe('listAll()', () => {
@@ -169,7 +223,7 @@ describe('AuditingResource', () => {
       });
 
       // Act
-      const results: { id: number }[] = [];
+      const results: { id?: number }[] = [];
       for await (const record of auditing.listAll()) {
         results.push(record);
       }
@@ -197,7 +251,7 @@ describe('AuditingResource', () => {
         });
 
       // Act
-      const results: { id: number }[] = [];
+      const results: { id?: number }[] = [];
       for await (const record of auditing.listAll({ limit: 1 })) {
         results.push(record);
       }

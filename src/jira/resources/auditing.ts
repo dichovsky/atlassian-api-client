@@ -1,30 +1,31 @@
 import type { Transport } from '../../core/types.js';
 import { validatePageSize } from '../../core/pagination.js';
 
-/** A single field change within an audit record. */
+/** A single field change within an audit record. Spec: `ChangedValueBean` (no required array). */
 export interface AuditRecordChangedValue {
-  readonly fieldName: string;
-  readonly changedFrom: string;
-  readonly changedTo: string;
+  readonly fieldName?: string;
+  readonly changedFrom?: string;
+  readonly changedTo?: string;
 }
 
-/** Object associated with an audit record (e.g. the affected issue or project). */
+/** Object associated with an audit record (e.g. the affected issue or project). Spec: `AssociatedItemBean` (no required array). */
 export interface AuditRecordAssociatedItem {
-  readonly id: string;
-  readonly name: string;
-  readonly typeName: string;
+  readonly id?: string;
+  readonly name?: string;
+  readonly typeName?: string;
   readonly parentId?: string;
   readonly parentName?: string;
 }
 
-/** A single Jira audit log record. */
+/** A single Jira audit log record. Spec: `AuditRecordBean` (no required array). */
 export interface AuditRecord {
-  readonly id: number;
-  readonly summary: string;
+  readonly id?: number;
+  readonly summary?: string;
+  readonly description?: string;
   readonly remoteAddress?: string;
   readonly authorKey?: string;
-  readonly created: string;
-  readonly category: string;
+  readonly created?: string;
+  readonly category?: string;
   readonly eventSource?: string;
   readonly objectItem?: AuditRecordAssociatedItem;
   readonly changedValues?: AuditRecordChangedValue[];
@@ -45,7 +46,7 @@ export interface ListAuditRecordsParams {
   readonly offset?: number;
   /** Maximum records to return per page (1–1000). */
   readonly limit?: number;
-  /** Filter by text (fuzzy match on summary and category). */
+  /** Filter by text (matched against summary, description, category, and other audit fields). */
   readonly filter?: string;
   /** ISO-8601 datetime — return records created from this date. */
   readonly from?: string;

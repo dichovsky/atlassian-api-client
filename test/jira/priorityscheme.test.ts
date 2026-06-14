@@ -626,4 +626,40 @@ describe('PrioritySchemeResource', () => {
       }).rejects.toThrow();
     });
   });
+
+  // ── response type coverage ────────────────────────────────────────────────
+
+  describe('response types', () => {
+    it('surfaces projectTypeKey as a union enum literal on PrioritySchemeProject', async () => {
+      // Regression: spec `Project.projectTypeKey` is enum `software|service_desk|business`;
+      // the type had plain `string`.
+      const project = {
+        ...makeProject(),
+        projectTypeKey: 'service_desk' as const,
+      };
+      transport.respondWith(makePageOf([project]));
+
+      const result = await resource.listProjects('10001');
+      expect(result.values[0]?.projectTypeKey).toBe('service_desk');
+    });
+
+    it('surfaces projectCategory.self on PrioritySchemeProject', async () => {
+      // Regression: spec `ProjectCategory.self` was missing from the nested type.
+      const project = {
+        ...makeProject(),
+        projectCategory: {
+          id: '10200',
+          name: 'Backends',
+          description: 'Backend projects',
+          self: 'https://jira.atlassian.net/rest/api/3/projectCategory/10200',
+        },
+      };
+      transport.respondWith(makePageOf([project]));
+
+      const result = await resource.listProjects('10001');
+      expect(result.values[0]?.projectCategory?.self).toBe(
+        'https://jira.atlassian.net/rest/api/3/projectCategory/10200',
+      );
+    });
+  });
 });

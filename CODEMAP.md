@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "2.0.0"
   },
-  "sourceHash": "592571a05e7e8405f311099a34cd1b6763707433f031b475fef1b0f6200e4d5b",
+  "sourceHash": "01409ae11b71e0d13a9809a82ef89b1dca1e6019873934bf3f9b719b6535fb2b",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -18027,6 +18027,10 @@
             {
               "exported": "ClassificationLevel",
               "original": "ClassificationLevel"
+            },
+            {
+              "exported": "ListClassificationLevelsParams",
+              "original": "ListClassificationLevelsParams"
             }
           ]
         },
@@ -19107,6 +19111,30 @@
             {
               "exported": "FeatureFlag",
               "original": "FeatureFlag"
+            },
+            {
+              "exported": "FeatureFlagSummary",
+              "original": "FeatureFlagSummary"
+            },
+            {
+              "exported": "FeatureFlagStatus",
+              "original": "FeatureFlagStatus"
+            },
+            {
+              "exported": "FeatureFlagRollout",
+              "original": "FeatureFlagRollout"
+            },
+            {
+              "exported": "FeatureFlagDetails",
+              "original": "FeatureFlagDetails"
+            },
+            {
+              "exported": "EnvironmentDetails",
+              "original": "EnvironmentDetails"
+            },
+            {
+              "exported": "IssueIdOrKeysAssociation",
+              "original": "IssueIdOrKeysAssociation"
             }
           ]
         },
@@ -20287,6 +20315,14 @@
             {
               "exported": "NotificationSchemeNotification",
               "original": "NotificationSchemeNotification"
+            },
+            {
+              "exported": "NotificationSchemeNotificationWrite",
+              "original": "NotificationSchemeNotificationWrite"
+            },
+            {
+              "exported": "NotificationSchemeEventWrite",
+              "original": "NotificationSchemeEventWrite"
             },
             {
               "exported": "NotificationEventRef",
@@ -23115,29 +23151,29 @@
           "kind": "interface",
           "line": 5,
           "exported": true,
-          "signature": "export interface AuditRecordChangedValue { readonly fieldName: string; readonly changedFrom: string; readonly changedTo:…",
-          "jsdoc": "A single field change within an audit record."
+          "signature": "export interface AuditRecordChangedValue { readonly fieldName?: string; readonly changedFrom?: string; readonly changedT…",
+          "jsdoc": "A single field change within an audit record. Spec: `ChangedValueBean` (no required array)."
         },
         {
           "name": "AuditRecordAssociatedItem",
           "kind": "interface",
           "line": 12,
           "exported": true,
-          "signature": "export interface AuditRecordAssociatedItem { readonly id: string; readonly name: string; readonly typeName: string; read…",
-          "jsdoc": "Object associated with an audit record (e.g. the affected issue or project)."
+          "signature": "export interface AuditRecordAssociatedItem { readonly id?: string; readonly name?: string; readonly typeName?: string; r…",
+          "jsdoc": "Object associated with an audit record (e.g. the affected issue or project). Spec: `AssociatedItemBean` (no required array)."
         },
         {
           "name": "AuditRecord",
           "kind": "interface",
           "line": 21,
           "exported": true,
-          "signature": "export interface AuditRecord { readonly id: number; readonly summary: string; readonly remoteAddress?: string; readonly …",
-          "jsdoc": "A single Jira audit log record."
+          "signature": "export interface AuditRecord { readonly id?: number; readonly summary?: string; readonly description?: string; readonly …",
+          "jsdoc": "A single Jira audit log record. Spec: `AuditRecordBean` (no required array)."
         },
         {
           "name": "AuditRecordsResponse",
           "kind": "interface",
-          "line": 35,
+          "line": 36,
           "exported": true,
           "signature": "export interface AuditRecordsResponse { readonly offset: number; readonly limit: number; readonly total: number; readonl…",
           "jsdoc": "Paginated response shape from GET /rest/api/3/auditing/record."
@@ -23145,7 +23181,7 @@
         {
           "name": "ListAuditRecordsParams",
           "kind": "interface",
-          "line": 43,
+          "line": 44,
           "exported": true,
           "signature": "export interface ListAuditRecordsParams { readonly offset?: number; readonly limit?: number; readonly filter?: string; r…",
           "jsdoc": "Parameters for listing audit records."
@@ -23153,7 +23189,7 @@
         {
           "name": "AuditingResource",
           "kind": "class",
-          "line": 57,
+          "line": 58,
           "exported": true,
           "signature": "export class AuditingResource",
           "jsdoc": "Jira Auditing resource — GET /rest/api/3/auditing/record.",
@@ -23161,17 +23197,17 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 58
+              "line": 59
             },
             {
               "name": "list",
               "kind": "method",
-              "line": 64
+              "line": 65
             },
             {
               "name": "listAll",
               "kind": "method",
-              "line": 83
+              "line": 84
             }
           ]
         }
@@ -24255,17 +24291,25 @@
       "path": "src/jira/resources/classification-levels.ts",
       "symbols": [
         {
+          "name": "ListClassificationLevelsParams",
+          "kind": "interface",
+          "line": 8,
+          "exported": true,
+          "signature": "export interface ListClassificationLevelsParams { readonly status?: readonly ('PUBLISHED' | 'ARCHIVED' | 'DRAFT')[]; rea…",
+          "jsdoc": "Query parameters for {@link ClassificationLevelsResource.list}. Spec: `GET /rest/api/3/classification-levels`."
+        },
+        {
           "name": "ClassificationLevel",
           "kind": "interface",
-          "line": 4,
+          "line": 25,
           "exported": true,
-          "signature": "export interface ClassificationLevel { readonly id: string; readonly name: string; readonly description?: string; readon…",
-          "jsdoc": "A Jira data classification level."
+          "signature": "export interface ClassificationLevel { readonly id: string; readonly status: string; readonly name?: string; readonly de…",
+          "jsdoc": "A Jira data classification level. Spec: `DataClassificationTagBean`."
         },
         {
           "name": "ClassificationLevelsResource",
           "kind": "class",
-          "line": 19,
+          "line": 44,
           "exported": true,
           "signature": "export class ClassificationLevelsResource",
           "jsdoc": "Jira Classification Levels resource — GET /rest/api/3/classification-levels.",
@@ -24273,17 +24317,18 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 20
+              "line": 45
             },
             {
               "name": "list",
               "kind": "method",
-              "line": 29
+              "line": 56
             }
           ]
         }
       ],
       "imports": [
+        "../../core/query.js",
         "../../core/types.js"
       ]
     },
@@ -27118,17 +27163,65 @@
       "path": "src/jira/resources/flag.ts",
       "symbols": [
         {
-          "name": "FeatureFlag",
+          "name": "FeatureFlagRollout",
           "kind": "interface",
           "line": 5,
           "exported": true,
-          "signature": "export interface FeatureFlag { readonly id: string; readonly updateSequenceId?: number; readonly displayName?: string; r…",
-          "jsdoc": "A Jira feature flag entity."
+          "signature": "export interface FeatureFlagRollout { readonly percentage?: number; readonly text?: string; readonly rules?: number; }",
+          "jsdoc": "Rollout configuration for a feature flag. Spec: `FeatureFlagRollout`."
+        },
+        {
+          "name": "FeatureFlagStatus",
+          "kind": "interface",
+          "line": 12,
+          "exported": true,
+          "signature": "export interface FeatureFlagStatus { readonly enabled: boolean; readonly defaultValue?: string; readonly rollout?: Featu…",
+          "jsdoc": "Status of a feature flag in one environment. Spec: `FeatureFlagStatus`."
+        },
+        {
+          "name": "FeatureFlagSummary",
+          "kind": "interface",
+          "line": 19,
+          "exported": true,
+          "signature": "export interface FeatureFlagSummary { readonly url?: string; readonly status: FeatureFlagStatus; readonly lastUpdated: s…",
+          "jsdoc": "Summary information for a feature flag. Spec: `FeatureFlagSummary`."
+        },
+        {
+          "name": "EnvironmentDetails",
+          "kind": "interface",
+          "line": 26,
+          "exported": true,
+          "signature": "export interface EnvironmentDetails { readonly name: string; readonly type?: 'development' | 'testing' | 'staging' | 'pr…",
+          "jsdoc": "Details of a single environment. Spec: `EnvironmentDetails`."
+        },
+        {
+          "name": "FeatureFlagDetails",
+          "kind": "interface",
+          "line": 32,
+          "exported": true,
+          "signature": "export interface FeatureFlagDetails { readonly url: string; readonly lastUpdated: string; readonly environment: Environm…",
+          "jsdoc": "Per-environment details for a feature flag. Spec: `FeatureFlagDetails`."
+        },
+        {
+          "name": "IssueIdOrKeysAssociation",
+          "kind": "interface",
+          "line": 40,
+          "exported": true,
+          "signature": "export interface IssueIdOrKeysAssociation { readonly associationType: 'issueKeys' | 'issueIdOrKeys'; readonly values: re…",
+          "jsdoc": "Issue ID or keys association. Spec: `IssueIdOrKeysAssociation`."
+        },
+        {
+          "name": "FeatureFlag",
+          "kind": "interface",
+          "line": 49,
+          "exported": true,
+          "signature": "export interface FeatureFlag { readonly id: string; readonly key: string; readonly updateSequenceId: number; readonly di…",
+          "jsdoc": "A Jira feature flag entity. Spec: `FeatureFlagData` (GET /rest/featureflags/0.1/flag/{featureFlagId})."
         },
         {
           "name": "FlagResource",
           "kind": "class",
-          "line": 18,
+          "line": 70,
           "exported": true,
           "signature": "export class FlagResource",
           "jsdoc": "Jira Feature Flags resource — GET and DELETE /rest/featureflags/0.1/flag/{featureFlagId}.",
@@ -27136,17 +27229,17 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 19
+              "line": 71
             },
             {
               "name": "get",
               "kind": "method",
-              "line": 28
+              "line": 80
             },
             {
               "name": "delete",
               "kind": "method",
-              "line": 40
+              "line": 92
             }
           ]
         }
@@ -27828,7 +27921,7 @@
         {
           "name": "IssueAttachmentsResponse",
           "kind": "interface",
-          "line": 6,
+          "line": 7,
           "exported": true,
           "signature": "export interface IssueAttachmentsResponse { readonly attachments: IssueAttachment[]; }",
           "jsdoc": "@deprecated Unused; kept for backward compatibility until next major."
@@ -27836,23 +27929,23 @@
         {
           "name": "AttachmentArchiveEntry",
           "kind": "interface",
-          "line": 11,
+          "line": 12,
           "exported": true,
-          "signature": "export interface AttachmentArchiveEntry { readonly entryIndex?: number; readonly mediaType?: string; readonly path?: str…",
+          "signature": "export interface AttachmentArchiveEntry { readonly entryIndex?: number; readonly mediaType?: string; readonly name?: str…",
           "jsdoc": "A single entry inside an archive-typed attachment (e.g. zip) — raw form."
         },
         {
           "name": "AttachmentArchiveItemReadable",
           "kind": "interface",
-          "line": 19,
+          "line": 23,
           "exported": true,
-          "signature": "export interface AttachmentArchiveItemReadable { readonly index?: number; readonly mediaType?: string; readonly path?: s…",
+          "signature": "export interface AttachmentArchiveItemReadable { readonly index?: number; readonly label?: string; readonly mediaType?: …",
           "jsdoc": "A single entry inside an archive-typed attachment — human-readable form."
         },
         {
           "name": "AttachmentArchiveMetadataReadable",
           "kind": "interface",
-          "line": 31,
+          "line": 36,
           "exported": true,
           "signature": "export interface AttachmentArchiveMetadataReadable { readonly id?: number; readonly name?: string; readonly entries?: re…",
           "jsdoc": "Human-readable archive expansion. Mirrors `AttachmentArchiveMetadataReadable` in the Jira REST v3 spec — preferred over the raw form for end-user display because each entry's `size` is humanised (e.g. `\"2.5 kB\"`)."
@@ -27860,7 +27953,7 @@
         {
           "name": "AttachmentArchive",
           "kind": "interface",
-          "line": 44,
+          "line": 49,
           "exported": true,
           "signature": "export interface AttachmentArchive { readonly entries?: readonly AttachmentArchiveEntry[]; readonly totalEntryCount?: nu…",
           "jsdoc": "Raw archive expansion. Mirrors `AttachmentArchive` in the Jira REST v3 spec — each entry's `size` is in bytes (number) instead of the humanised string returned by the `/expand/human` endpoint."
@@ -27868,7 +27961,7 @@
         {
           "name": "AttachmentSettings",
           "kind": "interface",
-          "line": 53,
+          "line": 58,
           "exported": true,
           "signature": "export interface AttachmentSettings { readonly enabled: boolean; readonly uploadLimit: number; }",
           "jsdoc": "Instance-level attachment settings (`GET /attachment/meta`). Reports whether the admin has enabled attachments and the per-file upload byte cap."
@@ -27876,7 +27969,7 @@
         {
           "name": "DownloadAttachmentContentParams",
           "kind": "interface",
-          "line": 59,
+          "line": 64,
           "exported": true,
           "signature": "export interface DownloadAttachmentContentParams { readonly redirect?: boolean; }",
           "jsdoc": "Query params for {@link IssueAttachmentsResource.downloadContent}."
@@ -27884,7 +27977,7 @@
         {
           "name": "DownloadAttachmentThumbnailParams",
           "kind": "interface",
-          "line": 71,
+          "line": 76,
           "exported": true,
           "signature": "export interface DownloadAttachmentThumbnailParams { readonly redirect?: boolean; readonly fallbackToDefault?: boolean; …",
           "jsdoc": "Query params for {@link IssueAttachmentsResource.downloadThumbnail}."
@@ -27892,7 +27985,7 @@
         {
           "name": "IssueAttachmentsResource",
           "kind": "class",
-          "line": 87,
+          "line": 92,
           "exported": true,
           "signature": "export class IssueAttachmentsResource",
           "jsdoc": "Jira Issue Attachments resource — list, get, upload, and manage attachments on issues.",
@@ -27900,58 +27993,59 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 88
+              "line": 93
             },
             {
               "name": "list",
               "kind": "method",
-              "line": 94
+              "line": 99
             },
             {
               "name": "get",
               "kind": "method",
-              "line": 106
+              "line": 117
             },
             {
               "name": "delete",
               "kind": "method",
-              "line": 119
+              "line": 130
             },
             {
               "name": "expandHuman",
               "kind": "method",
-              "line": 132
+              "line": 143
             },
             {
               "name": "expandRaw",
               "kind": "method",
-              "line": 146
+              "line": 157
             },
             {
               "name": "downloadContent",
               "kind": "method",
-              "line": 169
+              "line": 180
             },
             {
               "name": "getMeta",
               "kind": "method",
-              "line": 190
+              "line": 201
             },
             {
               "name": "downloadThumbnail",
               "kind": "method",
-              "line": 212
+              "line": 223
             },
             {
               "name": "upload",
               "kind": "method",
-              "line": 240
+              "line": 251
             }
           ]
         }
       ],
       "imports": [
         "../../core/path.js",
+        "../../core/query.js",
         "../../core/types.js",
         "../types.js"
       ]
@@ -30830,23 +30924,23 @@
         {
           "name": "NotificationEventRef",
           "kind": "interface",
-          "line": 8,
+          "line": 11,
           "exported": true,
-          "signature": "export interface NotificationEventRef { readonly id: string; }",
-          "jsdoc": "A reference to a Jira issue event triggering a notification."
+          "signature": "export interface NotificationEventRef { readonly id?: number; readonly name?: string; readonly description?: string; rea…",
+          "jsdoc": "A Jira notification event — returned inside notification scheme events. Contains the full event details as returned by the read endpoints."
         },
         {
           "name": "NotificationSchemeNotification",
           "kind": "interface",
-          "line": 18,
+          "line": 27,
           "exported": true,
-          "signature": "export interface NotificationSchemeNotification { readonly id?: string; readonly notificationType: string; readonly para…",
-          "jsdoc": "A single notification target within a notification scheme event. `notificationType` is the recipient kind (e.g. `CurrentAssignee`, `Group`, `User`, `ProjectLead`, `EmailAddress`); `parameter` is the type-specific value (group name, accountId, email, etc.)."
+          "signature": "export interface NotificationSchemeNotification { readonly id?: number; readonly notificationType?: string; readonly par…",
+          "jsdoc": "A single notification target within a notification scheme event — as returned by the read endpoints (`EventNotification` in the spec)."
         },
         {
           "name": "NotificationSchemeEvent",
           "kind": "interface",
-          "line": 32,
+          "line": 74,
           "exported": true,
           "signature": "export interface NotificationSchemeEvent { readonly event: NotificationEventRef; readonly notifications: NotificationSch…",
           "jsdoc": "A `(event, notifications[])` mapping inside a notification scheme. `event.id` identifies the Jira event that triggers this notification list (e.g. issue created, issue updated); the notification scheme itself is identified by `NotificationScheme.id`."
@@ -30854,7 +30948,7 @@
         {
           "name": "NotificationScheme",
           "kind": "interface",
-          "line": 38,
+          "line": 80,
           "exported": true,
           "signature": "export interface NotificationScheme { readonly id?: string; readonly self?: string; readonly name: string; readonly desc…",
           "jsdoc": "A Jira notification scheme."
@@ -30862,7 +30956,7 @@
         {
           "name": "ListNotificationSchemesParams",
           "kind": "interface",
-          "line": 57,
+          "line": 100,
           "exported": true,
           "signature": "export interface ListNotificationSchemesParams { readonly startAt?: number; readonly maxResults?: number; readonly id?: …",
           "jsdoc": "Query parameters for GET /rest/api/3/notificationscheme."
@@ -30870,15 +30964,31 @@
         {
           "name": "GetNotificationSchemeParams",
           "kind": "interface",
-          "line": 73,
+          "line": 116,
           "exported": true,
           "signature": "export interface GetNotificationSchemeParams { readonly expand?: string; }",
           "jsdoc": "Query parameters for GET /rest/api/3/notificationscheme/{id}."
         },
         {
+          "name": "NotificationSchemeNotificationWrite",
+          "kind": "interface",
+          "line": 126,
+          "exported": true,
+          "signature": "export interface NotificationSchemeNotificationWrite { readonly notificationType: string; readonly parameter?: string; }",
+          "jsdoc": "A single notification entry for write bodies (create/addNotifications). Spec: `NotificationSchemeNotificationDetails` — only `notificationType` and `parameter` are accepted on write; all other `EventNotification` fields are read-only."
+        },
+        {
+          "name": "NotificationSchemeEventWrite",
+          "kind": "interface",
+          "line": 138,
+          "exported": true,
+          "signature": "export interface NotificationSchemeEventWrite { readonly event: { readonly id: string }; readonly notifications: Notific…",
+          "jsdoc": "A `(event, notifications[])` write entry for create/addNotifications bodies. Spec: `NotificationSchemeEventDetails` — `event` is `{id: string}` and `notifications` is `NotificationSchemeNotificationDetails[]`."
+        },
+        {
           "name": "CreateNotificationSchemeData",
           "kind": "interface",
-          "line": 78,
+          "line": 145,
           "exported": true,
           "signature": "export interface CreateNotificationSchemeData { readonly name: string; readonly description?: string; readonly notificat…",
           "jsdoc": "Request body for POST /rest/api/3/notificationscheme."
@@ -30886,7 +30996,7 @@
         {
           "name": "UpdateNotificationSchemeData",
           "kind": "interface",
-          "line": 85,
+          "line": 152,
           "exported": true,
           "signature": "export interface UpdateNotificationSchemeData { readonly name?: string; readonly description?: string; }",
           "jsdoc": "Request body for PUT /rest/api/3/notificationscheme/{id}."
@@ -30894,15 +31004,15 @@
         {
           "name": "AddNotificationsData",
           "kind": "interface",
-          "line": 91,
+          "line": 158,
           "exported": true,
-          "signature": "export interface AddNotificationsData { readonly notificationSchemeEvents: NotificationSchemeEvent[]; }",
+          "signature": "export interface AddNotificationsData { readonly notificationSchemeEvents: NotificationSchemeEventWrite[]; }",
           "jsdoc": "Request body for PUT /rest/api/3/notificationscheme/{id}/notification."
         },
         {
           "name": "CreatedNotificationScheme",
           "kind": "interface",
-          "line": 96,
+          "line": 163,
           "exported": true,
           "signature": "export interface CreatedNotificationScheme { readonly id: string; }",
           "jsdoc": "Response envelope for POST /rest/api/3/notificationscheme."
@@ -30910,7 +31020,7 @@
         {
           "name": "NotificationSchemeProjectAssociation",
           "kind": "interface",
-          "line": 101,
+          "line": 168,
           "exported": true,
           "signature": "export interface NotificationSchemeProjectAssociation { readonly notificationSchemeId: string; readonly projectId: strin…",
           "jsdoc": "An association entry returned by GET /rest/api/3/notificationscheme/project."
@@ -30918,7 +31028,7 @@
         {
           "name": "ListNotificationSchemeProjectsParams",
           "kind": "interface",
-          "line": 107,
+          "line": 174,
           "exported": true,
           "signature": "export interface ListNotificationSchemeProjectsParams { readonly startAt?: number; readonly maxResults?: number; readonl…",
           "jsdoc": "Query parameters for GET /rest/api/3/notificationscheme/project."
@@ -30926,7 +31036,7 @@
         {
           "name": "NotificationSchemeResource",
           "kind": "class",
-          "line": 122,
+          "line": 191,
           "exported": true,
           "signature": "export class NotificationSchemeResource",
           "jsdoc": "Jira Notification Schemes resource — B605-B612.",
@@ -30934,78 +31044,85 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 123
+              "line": 192
             },
             {
               "name": "list",
               "kind": "method",
-              "line": 132
+              "line": 201
             },
             {
               "name": "listAll",
               "kind": "method",
-              "line": 148
+              "line": 217
             },
             {
               "name": "create",
               "kind": "method",
-              "line": 165
+              "line": 234
             },
             {
               "name": "get",
               "kind": "method",
-              "line": 183
+              "line": 252
             },
             {
               "name": "update",
               "kind": "method",
-              "line": 198
+              "line": 267
             },
             {
               "name": "addNotifications",
               "kind": "method",
-              "line": 213
+              "line": 282
             },
             {
               "name": "delete",
               "kind": "method",
-              "line": 225
+              "line": 294
             },
             {
               "name": "removeNotification",
               "kind": "method",
-              "line": 236
+              "line": 305
             },
             {
               "name": "listProjects",
               "kind": "method",
-              "line": 247
+              "line": 316
             },
             {
               "name": "listProjectsAll",
               "kind": "method",
-              "line": 269
+              "line": 334
             }
           ]
         },
         {
           "name": "buildListQuery",
           "kind": "function",
-          "line": 289,
+          "line": 350,
           "signature": "function buildListQuery( params: ListNotificationSchemesParams | undefined, ): Record<string, string | number | boolean …"
         },
         {
           "name": "buildListPath",
           "kind": "function",
-          "line": 303,
+          "line": 364,
           "signature": "function buildListPath( basePath: string, params: ListNotificationSchemesParams | undefined, ): string",
           "jsdoc": "Append the repeated `id` and `projectId` (`type: array`) params to a scheme-list path."
         },
         {
           "name": "buildProjectQuery",
           "kind": "function",
-          "line": 312,
+          "line": 373,
           "signature": "function buildProjectQuery( params: ListNotificationSchemeProjectsParams | undefined, ): Record<string, string | number …"
+        },
+        {
+          "name": "buildProjectPath",
+          "kind": "function",
+          "line": 388,
+          "signature": "function buildProjectPath( basePath: string, params: ListNotificationSchemeProjectsParams | undefined, ): string",
+          "jsdoc": "Append the repeated `notificationSchemeId` and `projectId` (`type: array`) params to the project-list path."
         }
       ],
       "imports": [
@@ -32107,7 +32224,7 @@
         {
           "name": "IdListUpdate",
           "kind": "interface",
-          "line": 77,
+          "line": 80,
           "exported": true,
           "signature": "export interface IdListUpdate { readonly add?: { readonly ids: number[] }; readonly remove?: { readonly ids: number[] };…",
           "jsdoc": "`add` / `remove` lists used in the update body for `priorities` and `projects`."
@@ -32115,7 +32232,7 @@
         {
           "name": "PriorityMapping",
           "kind": "interface",
-          "line": 90,
+          "line": 93,
           "exported": true,
           "signature": "export interface PriorityMapping { readonly in?: Readonly<Record<string, number>>; readonly out?: Readonly<Record<string…",
           "jsdoc": "Mapping of issue priorities for changes in priority schemes. Keys are the old priority IDs and values are the new priority IDs."
@@ -32123,7 +32240,7 @@
         {
           "name": "ListPrioritySchemesParams",
           "kind": "interface",
-          "line": 96,
+          "line": 99,
           "exported": true,
           "signature": "export interface ListPrioritySchemesParams { readonly startAt?: number; readonly maxResults?: number; readonly priorityI…",
           "jsdoc": "Query parameters for `GET /rest/api/3/priorityscheme`."
@@ -32131,7 +32248,7 @@
         {
           "name": "CreatePrioritySchemeData",
           "kind": "interface",
-          "line": 113,
+          "line": 116,
           "exported": true,
           "signature": "export interface CreatePrioritySchemeData { readonly name: string; readonly defaultPriorityId: number; readonly priority…",
           "jsdoc": "Request body for `POST /rest/api/3/priorityscheme`."
@@ -32139,7 +32256,7 @@
         {
           "name": "UpdatePrioritySchemeData",
           "kind": "interface",
-          "line": 123,
+          "line": 126,
           "exported": true,
           "signature": "export interface UpdatePrioritySchemeData { readonly name?: string; readonly description?: string; readonly defaultPrior…",
           "jsdoc": "Request body for `PUT /rest/api/3/priorityscheme/{schemeId}`."
@@ -32147,7 +32264,7 @@
         {
           "name": "PrioritySchemeId",
           "kind": "interface",
-          "line": 133,
+          "line": 136,
           "exported": true,
           "signature": "export interface PrioritySchemeId { readonly id?: string; readonly task?: Task; }",
           "jsdoc": "Response envelope for `POST /rest/api/3/priorityscheme` (and the task field is also returned on `PUT`)."
@@ -32155,7 +32272,7 @@
         {
           "name": "UpdatePrioritySchemeResponse",
           "kind": "interface",
-          "line": 139,
+          "line": 142,
           "exported": true,
           "signature": "export interface UpdatePrioritySchemeResponse { readonly task?: Task; readonly priorityScheme?: PriorityScheme; }",
           "jsdoc": "Response envelope for `PUT /rest/api/3/priorityscheme/{schemeId}`."
@@ -32163,7 +32280,7 @@
         {
           "name": "ListPrioritySchemePrioritiesParams",
           "kind": "interface",
-          "line": 145,
+          "line": 148,
           "exported": true,
           "signature": "export interface ListPrioritySchemePrioritiesParams { readonly startAt?: number; readonly maxResults?: number; }",
           "jsdoc": "Query parameters for `GET /rest/api/3/priorityscheme/{schemeId}/priorities`."
@@ -32171,7 +32288,7 @@
         {
           "name": "ListPrioritySchemeProjectsParams",
           "kind": "interface",
-          "line": 151,
+          "line": 154,
           "exported": true,
           "signature": "export interface ListPrioritySchemeProjectsParams { readonly startAt?: number; readonly maxResults?: number; readonly pr…",
           "jsdoc": "Query parameters for `GET /rest/api/3/priorityscheme/{schemeId}/projects`."
@@ -32179,7 +32296,7 @@
         {
           "name": "SuggestedPriorityChanges",
           "kind": "interface",
-          "line": 159,
+          "line": 162,
           "exported": true,
           "signature": "export interface SuggestedPriorityChanges { readonly add?: number[]; readonly remove?: number[]; }",
           "jsdoc": "Add/remove lists for the suggested-mappings request."
@@ -32187,7 +32304,7 @@
         {
           "name": "SuggestedProjectChanges",
           "kind": "interface",
-          "line": 165,
+          "line": 168,
           "exported": true,
           "signature": "export interface SuggestedProjectChanges { readonly add?: number[]; }",
           "jsdoc": "Add-only list used inside the suggested-mappings request."
@@ -32195,7 +32312,7 @@
         {
           "name": "SuggestedMappingsData",
           "kind": "interface",
-          "line": 170,
+          "line": 173,
           "exported": true,
           "signature": "export interface SuggestedMappingsData { readonly schemeId?: number; readonly priorities?: SuggestedPriorityChanges; rea…",
           "jsdoc": "Request body for `POST /rest/api/3/priorityscheme/mappings`."
@@ -32203,7 +32320,7 @@
         {
           "name": "ListAvailablePrioritiesParams",
           "kind": "interface",
-          "line": 179,
+          "line": 182,
           "exported": true,
           "signature": "export interface ListAvailablePrioritiesParams { readonly schemeId: string; readonly query?: string; readonly exclude?: …",
           "jsdoc": "Query parameters for `GET /rest/api/3/priorityscheme/priorities/available`."
@@ -32211,7 +32328,7 @@
         {
           "name": "PrioritySchemeResource",
           "kind": "class",
-          "line": 201,
+          "line": 204,
           "exported": true,
           "signature": "export class PrioritySchemeResource",
           "jsdoc": "Jira Priority Schemes resource — B644-B651.",
@@ -32219,112 +32336,112 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 202
+              "line": 205
             },
             {
               "name": "list",
               "kind": "method",
-              "line": 211
+              "line": 214
             },
             {
               "name": "listAll",
               "kind": "method",
-              "line": 225
+              "line": 228
             },
             {
               "name": "create",
               "kind": "method",
-              "line": 242
+              "line": 245
             },
             {
               "name": "delete",
               "kind": "method",
-              "line": 265
+              "line": 268
             },
             {
               "name": "update",
               "kind": "method",
-              "line": 276
+              "line": 279
             },
             {
               "name": "listPriorities",
               "kind": "method",
-              "line": 299
+              "line": 302
             },
             {
               "name": "listPrioritiesAll",
               "kind": "method",
-              "line": 316
+              "line": 319
             },
             {
               "name": "listProjects",
               "kind": "method",
-              "line": 334
+              "line": 337
             },
             {
               "name": "listProjectsAll",
               "kind": "method",
-              "line": 354
+              "line": 357
             },
             {
               "name": "suggestedMappings",
               "kind": "method",
-              "line": 379
+              "line": 382
             },
             {
               "name": "listAvailablePriorities",
               "kind": "method",
-              "line": 401
+              "line": 404
             },
             {
               "name": "listAvailablePrioritiesAll",
               "kind": "method",
-              "line": 421
+              "line": 424
             }
           ]
         },
         {
           "name": "buildListQuery",
           "kind": "function",
-          "line": 441,
+          "line": 444,
           "signature": "function buildListQuery( params: ListPrioritySchemesParams | undefined, ): Record<string, string | number | boolean | un…"
         },
         {
           "name": "buildListPath",
           "kind": "function",
-          "line": 457,
+          "line": 460,
           "signature": "function buildListPath(basePath: string, params: ListPrioritySchemesParams | undefined): string",
           "jsdoc": "Append the repeated `priorityId` and `schemeId` (`type: array`) params to a scheme-list path."
         },
         {
           "name": "buildPaginationQuery",
           "kind": "function",
-          "line": 463,
+          "line": 466,
           "signature": "function buildPaginationQuery( params: ListPrioritySchemePrioritiesParams | undefined, ): Record<string, string | number…"
         },
         {
           "name": "buildProjectsQuery",
           "kind": "function",
-          "line": 472,
+          "line": 475,
           "signature": "function buildProjectsQuery( params: ListPrioritySchemeProjectsParams | undefined, ): Record<string, string | number | b…"
         },
         {
           "name": "buildProjectsPath",
           "kind": "function",
-          "line": 485,
+          "line": 488,
           "signature": "function buildProjectsPath( basePath: string, params: ListPrioritySchemeProjectsParams | undefined, ): string",
           "jsdoc": "Append the repeated `projectId` (`type: array`) param to a scheme-projects path."
         },
         {
           "name": "buildAvailablePrioritiesQuery",
           "kind": "function",
-          "line": 492,
+          "line": 495,
           "signature": "function buildAvailablePrioritiesQuery( params: ListAvailablePrioritiesParams, ): Record<string, string | number | boole…"
         },
         {
           "name": "buildAvailablePrioritiesPath",
           "kind": "function",
-          "line": 508,
+          "line": 511,
           "signature": "function buildAvailablePrioritiesPath( basePath: string, params: ListAvailablePrioritiesParams, ): string",
           "jsdoc": "Append the repeated `exclude` (`type: array`) param to an available-priorities path."
         }

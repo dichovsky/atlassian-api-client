@@ -218,6 +218,95 @@ describe('NotificationSchemeResource', () => {
     });
   });
 
+  // ── response type coverage ────────────────────────────────────────────────
+
+  describe('response types', () => {
+    it('surfaces group, user, projectRole, field, recipient on NotificationSchemeNotification', async () => {
+      // Regression: spec `EventNotification` has group/user/projectRole/field/recipient
+      // and id as integer; they were missing from the response type.
+      const scheme = {
+        ...makeScheme(),
+        notificationSchemeEvents: [
+          {
+            event: { id: 1, name: 'Issue Created', description: 'Fired when an issue is created' },
+            notifications: [
+              {
+                id: 100,
+                notificationType: 'Group',
+                group: { name: 'jira-users', groupId: 'abc-123', self: 'https://jira/group/abc' },
+                recipient: 'abc-123',
+              },
+              {
+                id: 101,
+                notificationType: 'User',
+                user: {
+                  accountId: '5b10ac8d',
+                  displayName: 'Alice',
+                  active: true,
+                  self: 'https://jira/user/5b10ac8d',
+                },
+              },
+              {
+                id: 102,
+                notificationType: 'ProjectRole',
+                projectRole: { id: 10002, name: 'Developers', self: 'https://jira/role/10002' },
+              },
+            ],
+          },
+        ],
+      };
+      transport.respondWith(scheme);
+
+      const result = await resource.get('10001', { expand: 'notificationSchemeEvents' });
+
+      const notifications = result.notificationSchemeEvents?.[0]?.notifications;
+      expect(notifications?.[0]?.id).toBe(100);
+      expect(notifications?.[0]?.group?.name).toBe('jira-users');
+      expect(notifications?.[0]?.recipient).toBe('abc-123');
+      expect(notifications?.[1]?.user?.displayName).toBe('Alice');
+      expect(notifications?.[2]?.projectRole?.id).toBe(10002);
+    });
+
+    it('surfaces name, description, templateEvent on NotificationEventRef', async () => {
+      // Regression: spec `NotificationEvent` has name/description/templateEvent;
+      // they were missing from the type.
+      const scheme = {
+        ...makeScheme(),
+        notificationSchemeEvents: [
+          {
+            event: {
+              id: 5,
+              name: 'Custom Event',
+              description: 'A custom notification event',
+              templateEvent: { id: 1, name: 'Issue Created' },
+            },
+            notifications: [],
+          },
+        ],
+      };
+      transport.respondWith(scheme);
+
+      const result = await resource.get('10001', { expand: 'notificationSchemeEvents' });
+
+      const event = result.notificationSchemeEvents?.[0]?.event;
+      expect(event?.name).toBe('Custom Event');
+      expect(event?.description).toBe('A custom notification event');
+      expect(event?.templateEvent?.name).toBe('Issue Created');
+    });
+
+    it('accepts scope.type as PROJECT | TEMPLATE enum', async () => {
+      const scheme = {
+        ...makeScheme(),
+        scope: { type: 'PROJECT' as const, project: { id: '10100', key: 'EX', name: 'Example' } },
+      };
+      transport.respondWith(scheme);
+
+      const result = await resource.get('10001');
+
+      expect(result.scope?.type).toBe('PROJECT');
+    });
+  });
+
   // ── get ───────────────────────────────────────────────────────────────────
 
   describe('get()', () => {
@@ -381,6 +470,31 @@ describe('NotificationSchemeResource', () => {
       );
     });
 
+    it('forwards notificationSchemeId filter as repeated query params', async () => {
+      // Regression: spec `GET /notificationscheme/project` includes
+      // `notificationSchemeId` as a `type: array` filter param; it was missing.
+      transport.respondWith(makePageOf([]));
+
+      await resource.listProjects({ notificationSchemeId: ['10000', '10001'] });
+
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/notificationscheme/project?notificationSchemeId=10000&notificationSchemeId=10001`,
+      );
+    });
+
+    it('combines notificationSchemeId and projectId filters', async () => {
+      transport.respondWith(makePageOf([]));
+
+      await resource.listProjects({
+        notificationSchemeId: ['10000'],
+        projectId: ['10100'],
+      });
+
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/notificationscheme/project?notificationSchemeId=10000&projectId=10100`,
+      );
+    });
+
     it('forwards startAt and maxResults', async () => {
       transport.respondWith(makePageOf([]));
 
@@ -399,6 +513,14 @@ describe('NotificationSchemeResource', () => {
       await resource.listProjects({ projectId: [] });
 
       expect(transport.lastCall?.options.query?.['projectId']).toBeUndefined();
+    });
+
+    it('omits empty notificationSchemeId array from path', async () => {
+      transport.respondWith(makePageOf([]));
+
+      await resource.listProjects({ notificationSchemeId: [] });
+
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/notificationscheme/project`);
     });
   });
 
