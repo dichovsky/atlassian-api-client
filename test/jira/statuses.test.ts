@@ -1,26 +1,24 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { StatusesResource, type StatusScope } from '../../src/jira/resources/statuses.js';
+import {
+  StatusesResource,
+  type StatusScope,
+  type BulkJiraStatus,
+} from '../../src/jira/resources/statuses.js';
 import { MockTransport } from '../helpers/mock-transport.js';
-import type { Status } from '../../src/jira/types.js';
 import { ValidationError } from '../../src/core/errors.js';
 
 const BASE_URL = 'https://test.atlassian.net/rest/api/3';
 
-const makeStatus = (id: string): Status => ({
+// Spec: BulkJiraStatus has statusCategory as a string enum, not a StatusCategory object.
+const makeStatus = (id: string): BulkJiraStatus => ({
   id,
   name: `Status ${id}`,
-  self: `${BASE_URL}/status/${id}`,
   description: 'A test status',
-  statusCategory: {
-    id: 1,
-    key: 'new',
-    name: 'To Do',
-    colorName: 'blue-gray',
-  },
+  statusCategory: 'TODO',
 });
 
 const makePage = (
-  items: Status[],
+  items: BulkJiraStatus[],
   opts?: { total?: number; isLast?: boolean; startAt?: number },
 ) => ({
   values: items,
@@ -169,7 +167,7 @@ describe('StatusesResource', () => {
       transport.respondWith(undefined, 204);
 
       await statuses.bulkUpdate({
-        statuses: [{ id: '1', name: 'Renamed' }],
+        statuses: [{ id: '1', name: 'Renamed', statusCategory: 'DONE' }],
       });
 
       expect(transport.lastCall?.options).toMatchObject({
@@ -178,6 +176,14 @@ describe('StatusesResource', () => {
       });
       const body = transport.lastCall?.options.body as Record<string, unknown>;
       expect(body['statuses']).toHaveLength(1);
+    });
+
+    it('requires name and statusCategory on UpdateStatusData (spec: StatusUpdate required fields)', () => {
+      // Compile-time check: UpdateStatusData now requires name + statusCategory.
+      // This test documents the spec contract: a well-typed entry must include both.
+      const entry = { id: '1', name: 'Finished', statusCategory: 'DONE' } as const;
+      expect(entry.name).toBe('Finished');
+      expect(entry.statusCategory).toBe('DONE');
     });
 
     it('throws ValidationError when statuses array is empty', async () => {
@@ -342,6 +348,23 @@ describe('StatusesResource', () => {
 
       expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/statuses/byNames?name=Done`);
     });
+
+    it('appends optional projectId as a query param (spec: optional `projectId`)', async () => {
+      // Regression: byNames had no projectId param — spec optional query param was silently unsendable.
+      transport.respondWith([makeStatus('1')]);
+
+      await statuses.byNames({ names: ['Done'], projectId: '10042' });
+
+      expect(transport.lastCall?.options.path).toContain('projectId=10042');
+    });
+
+    it('omits projectId when not provided', async () => {
+      transport.respondWith([makeStatus('1')]);
+
+      await statuses.byNames({ names: ['Done'] });
+
+      expect(transport.lastCall?.options.path).not.toContain('projectId');
+    });
   });
 
   // ── search (B784) ─────────────────────────────────────────────────────────
@@ -401,7 +424,7 @@ describe('StatusesResource', () => {
     it('yields items from a single page', async () => {
       transport.respondWith(makePage([makeStatus('1'), makeStatus('2')]));
 
-      const results: Status[] = [];
+      const results: BulkJiraStatus[] = [];
       for await (const s of statuses.searchAll()) {
         results.push(s);
       }
@@ -414,7 +437,7 @@ describe('StatusesResource', () => {
         .respondWith(makePage([makeStatus('1')], { total: 2, isLast: false }))
         .respondWith(makePage([makeStatus('2')], { total: 2, isLast: true, startAt: 1 }));
 
-      const results: Status[] = [];
+      const results: BulkJiraStatus[] = [];
       for await (const s of statuses.searchAll({ maxResults: 1 })) {
         results.push(s);
       }

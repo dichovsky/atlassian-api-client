@@ -6,6 +6,7 @@ import type {
   Webhook,
   FailedWebhook,
   WebhooksExpirationDate,
+  WebhookEvent,
 } from '../../src/jira/resources/webhooks.js';
 
 const BASE_URL = 'https://test.atlassian.net/rest/api/3';
@@ -13,7 +14,7 @@ const BASE_URL = 'https://test.atlassian.net/rest/api/3';
 const makeWebhook = (id: number): Webhook => ({
   id,
   jqlFilter: 'project = TEST',
-  events: ['jira:issue_created', 'jira:issue_updated'],
+  events: ['jira:issue_created', 'jira:issue_updated'] as WebhookEvent[],
   // url is required per spec (B1054)
   url: 'https://example.com/webhook',
 });
@@ -99,7 +100,7 @@ describe('WebhooksResource', () => {
         webhooks: [
           {
             jqlFilter: 'project = TEST',
-            events: ['jira:issue_created'],
+            events: ['jira:issue_created'] as WebhookEvent[],
           },
         ],
       };
@@ -126,7 +127,7 @@ describe('WebhooksResource', () => {
       // Act
       const result = await webhooks.register({
         url: 'https://example.com/webhook',
-        webhooks: [{ jqlFilter: 'INVALID', events: ['jira:issue_created'] }],
+        webhooks: [{ jqlFilter: 'INVALID', events: ['jira:issue_created'] as WebhookEvent[] }],
       });
 
       // Assert
@@ -207,10 +208,11 @@ describe('WebhooksResource', () => {
       // Spec: Webhook required = [events, id, jqlFilter, url]
       // self is a PHANTOM field not in the spec; must be removed.
       // expirationDate must be number (int64), not string.
+      const events: WebhookEvent[] = ['jira:issue_created'];
       const webhook: Webhook = {
         id: 42,
         jqlFilter: 'project = MYPROJ',
-        events: ['jira:issue_created'],
+        events,
         url: 'https://example.com/webhook',
         expirationDate: 1751000000000, // integer (int64) per spec
       };
@@ -238,6 +240,49 @@ describe('WebhooksResource', () => {
       // Assert url is present and accessible on the returned Webhook
       const wh = result.values[0]!;
       expect(wh.url).toBe('https://example.com/webhook');
+    });
+  });
+
+  // ── WebhookEvent enum (B1056 type-drift fix) ──────────────────────────────
+
+  describe('WebhookEvent enum type', () => {
+    it('Webhook.events and WebhookRegistration.events accept spec enum values', async () => {
+      // Regression: Webhook.events and WebhookRegistration.events were typed as string[].
+      // Spec: both schemas enumerate a finite set of event names via WebhookEvent.
+      const allEvents: WebhookEvent[] = [
+        'jira:issue_created',
+        'jira:issue_updated',
+        'jira:issue_deleted',
+        'comment_created',
+        'comment_updated',
+        'comment_deleted',
+        'issue_property_set',
+        'issue_property_deleted',
+        'sprint_created',
+        'sprint_updated',
+        'sprint_closed',
+        'sprint_deleted',
+        'sprint_started',
+        'jira:version_released',
+        'jira:version_unreleased',
+        'jira:version_created',
+        'jira:version_moved',
+        'jira:version_updated',
+        'jira:version_merged',
+        'jira:version_deleted',
+      ];
+
+      const registered = { webhookRegistrationResult: [{ createdWebhookId: 1 }] };
+      transport.respondWith(registered);
+
+      const result = await webhooks.register({
+        url: 'https://example.com/hook',
+        webhooks: [{ jqlFilter: 'project = TEST', events: allEvents }],
+      });
+
+      expect(result.webhookRegistrationResult[0]!.createdWebhookId).toBe(1);
+      // The cast verifies all values are valid WebhookEvent literals at compile time.
+      expect(allEvents).toHaveLength(20);
     });
   });
 

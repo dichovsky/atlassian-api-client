@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "2.0.0"
   },
-  "sourceHash": "c7bad2e10b7cfc48b16707869e2b447d2a8093fdc6cd0c9dd1d0bbaa8b9868d9",
+  "sourceHash": "53615d85abbf98eef53fd37a45d4f4103839bf6fd3bcd5f71f07c640c3b953e8",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -2393,7 +2393,7 @@
       "name": "ListWebhooksParams",
       "kind": "interface",
       "file": "src/jira/resources/webhooks.ts",
-      "line": 66,
+      "line": 95,
       "signature": "export interface ListWebhooksParams { readonly startAt?: number; readonly maxResults?: number; }",
       "jsdoc": "Query parameters for listing registered Jira webhooks.",
       "typeOnly": true
@@ -2747,7 +2747,7 @@
       "name": "RegisterWebhookData",
       "kind": "interface",
       "file": "src/jira/resources/webhooks.ts",
-      "line": 55,
+      "line": 84,
       "signature": "export interface RegisterWebhookData { readonly url: string; readonly webhooks: WebhookRegistration[]; }",
       "jsdoc": "Request body for registering one or more Jira webhooks at a URL.",
       "typeOnly": true
@@ -2756,7 +2756,7 @@
       "name": "RegisteredWebhooks",
       "kind": "interface",
       "file": "src/jira/resources/webhooks.ts",
-      "line": 61,
+      "line": 90,
       "signature": "export interface RegisteredWebhooks { readonly webhookRegistrationResult: WebhookRegistrationResult[]; }",
       "jsdoc": "Response returned after registering webhooks, listing per-registration results.",
       "typeOnly": true
@@ -3329,7 +3329,7 @@
       "name": "Webhook",
       "kind": "interface",
       "file": "src/jira/resources/webhooks.ts",
-      "line": 19,
+      "line": 46,
       "signature": "export interface Webhook { readonly id: number; readonly jqlFilter: string; readonly url: string; readonly fieldIdsFilte…",
       "jsdoc": "A registered Jira webhook that fires on matching events. Spec: `Webhook`.",
       "typeOnly": true
@@ -3338,7 +3338,7 @@
       "name": "WebhooksExpirationDate",
       "kind": "interface",
       "file": "src/jira/resources/webhooks.ts",
-      "line": 37,
+      "line": 65,
       "signature": "export interface WebhooksExpirationDate { readonly expirationDate: number; }",
       "jsdoc": "Response returned by `PUT /rest/api/3/webhook/refresh`. Contains the new expiration timestamp for the refreshed webhooks.",
       "typeOnly": true
@@ -21295,6 +21295,10 @@
           "typeOnly": true,
           "names": [
             {
+              "exported": "BulkJiraStatus",
+              "original": "BulkJiraStatus"
+            },
+            {
               "exported": "CreateStatusData",
               "original": "CreateStatusData"
             },
@@ -21425,6 +21429,22 @@
           "typeOnly": true,
           "names": [
             {
+              "exported": "SimpleLink",
+              "original": "SimpleLink"
+            },
+            {
+              "exported": "VersionApprover",
+              "original": "VersionApprover"
+            },
+            {
+              "exported": "VersionIssuesStatus",
+              "original": "VersionIssuesStatus"
+            },
+            {
+              "exported": "VersionUsageInCustomField",
+              "original": "VersionUsageInCustomField"
+            },
+            {
               "exported": "Version",
               "original": "Version"
             },
@@ -21520,8 +21540,16 @@
           "typeOnly": true,
           "names": [
             {
+              "exported": "WebhookEvent",
+              "original": "WebhookEvent"
+            },
+            {
               "exported": "Webhook",
               "original": "Webhook"
+            },
+            {
+              "exported": "WebhookRegistration",
+              "original": "WebhookRegistration"
             },
             {
               "exported": "RegisterWebhookData",
@@ -34074,9 +34102,17 @@
       "path": "src/jira/resources/statuses.ts",
       "symbols": [
         {
+          "name": "BulkJiraStatus",
+          "kind": "interface",
+          "line": 16,
+          "exported": true,
+          "signature": "export interface BulkJiraStatus { readonly id?: string; readonly name?: string; readonly description?: string; readonly …",
+          "jsdoc": "A status as returned by the bulk-get/create/search endpoints."
+        },
+        {
           "name": "CreateStatusData",
           "kind": "interface",
-          "line": 12,
+          "line": 31,
           "exported": true,
           "signature": "export interface CreateStatusData { readonly name: string; readonly description?: string; readonly statusCategory: 'TODO…",
           "jsdoc": "Request body entry for bulk-creating a status."
@@ -34084,7 +34120,7 @@
         {
           "name": "StatusScope",
           "kind": "interface",
-          "line": 25,
+          "line": 44,
           "exported": true,
           "signature": "export interface StatusScope { readonly type: 'GLOBAL' | 'PROJECT'; readonly project?: { readonly id: string }; }",
           "jsdoc": "Scope of statuses being created (B778)."
@@ -34092,15 +34128,15 @@
         {
           "name": "UpdateStatusData",
           "kind": "interface",
-          "line": 31,
+          "line": 50,
           "exported": true,
-          "signature": "export interface UpdateStatusData { readonly id: string; readonly name?: string; readonly description?: string; readonly…",
-          "jsdoc": "Request body entry for bulk-updating a status."
+          "signature": "export interface UpdateStatusData { readonly id: string; readonly name: string; readonly description?: string; readonly …",
+          "jsdoc": "Request body entry for bulk-updating a status. Spec: `StatusUpdate` — `name` and `statusCategory` are required."
         },
         {
           "name": "StatusUsagesPage",
           "kind": "interface",
-          "line": 47,
+          "line": 66,
           "exported": true,
           "signature": "export interface StatusUsagesPage<T> { readonly values: T[]; readonly nextPageToken?: string; }",
           "jsdoc": "A nested page of usage entries inside the usage-listing DTOs (B780 issueTypeUsages, B781 projectUsages, B782 workflowUsages)."
@@ -34108,7 +34144,7 @@
         {
           "name": "StatusProjectUsage",
           "kind": "interface",
-          "line": 54,
+          "line": 73,
           "exported": true,
           "signature": "export interface StatusProjectUsage { readonly id: string; }",
           "jsdoc": "A single project-usage entry returned by B781. Spec: `StatusProjectUsage`."
@@ -34116,7 +34152,7 @@
         {
           "name": "StatusWorkflowUsage",
           "kind": "interface",
-          "line": 59,
+          "line": 78,
           "exported": true,
           "signature": "export interface StatusWorkflowUsage { readonly id: string; }",
           "jsdoc": "A single workflow-usage entry returned by B782. Spec: `StatusWorkflowUsageWorkflow`."
@@ -34124,7 +34160,7 @@
         {
           "name": "StatusIssueTypeUsage",
           "kind": "interface",
-          "line": 64,
+          "line": 83,
           "exported": true,
           "signature": "export interface StatusIssueTypeUsage { readonly id: string; }",
           "jsdoc": "A single issue-type usage entry returned by B780. Spec: `StatusProjectIssueTypeUsage`."
@@ -34132,7 +34168,7 @@
         {
           "name": "StatusProjectUsageDTO",
           "kind": "interface",
-          "line": 72,
+          "line": 91,
           "exported": true,
           "signature": "export interface StatusProjectUsageDTO { readonly statusId?: string; readonly projects?: StatusUsagesPage<StatusProjectU…",
           "jsdoc": "Response DTO for B781 (`GET /statuses/{statusId}/projectUsages`). Spec: `StatusProjectUsageDTO` — the page is nested under `projects`."
@@ -34140,7 +34176,7 @@
         {
           "name": "StatusWorkflowUsageDTO",
           "kind": "interface",
-          "line": 81,
+          "line": 100,
           "exported": true,
           "signature": "export interface StatusWorkflowUsageDTO { readonly statusId?: string; readonly workflows?: StatusUsagesPage<StatusWorkfl…",
           "jsdoc": "Response DTO for B782 (`GET /statuses/{statusId}/workflowUsages`). Spec: `StatusWorkflowUsageDTO` — the page is nested under `workflows`."
@@ -34148,7 +34184,7 @@
         {
           "name": "StatusProjectIssueTypeUsageDTO",
           "kind": "interface",
-          "line": 91,
+          "line": 110,
           "exported": true,
           "signature": "export interface StatusProjectIssueTypeUsageDTO { readonly statusId?: string; readonly projectId?: string; readonly issu…",
           "jsdoc": "Response DTO for B780 (`GET /statuses/{statusId}/project/{projectId}/issueTypeUsages`). Spec: `StatusProjectIssueTypeUsageDTO` — the page is nested under `issueTypes`."
@@ -34156,7 +34192,7 @@
         {
           "name": "SearchStatusesParams",
           "kind": "interface",
-          "line": 102,
+          "line": 121,
           "exported": true,
           "signature": "export interface SearchStatusesParams { readonly projectId?: string; readonly startAt?: number; readonly maxResults?: nu…",
           "jsdoc": "Query parameters for GET /rest/api/3/statuses/search (B784)."
@@ -34164,7 +34200,7 @@
         {
           "name": "StatusUsagesParams",
           "kind": "interface",
-          "line": 116,
+          "line": 135,
           "exported": true,
           "signature": "export interface StatusUsagesParams { readonly nextPageToken?: string; readonly maxResults?: number; }",
           "jsdoc": "Query parameters for the usages endpoints (B780-B782)."
@@ -34172,71 +34208,71 @@
         {
           "name": "StatusesResource",
           "kind": "class",
-          "line": 123,
+          "line": 142,
           "exported": true,
           "signature": "export class StatusesResource",
           "members": [
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 124
+              "line": 143
             },
             {
               "name": "list",
               "kind": "method",
-              "line": 137
+              "line": 156
             },
             {
               "name": "bulkDelete",
               "kind": "method",
-              "line": 161
+              "line": 180
             },
             {
               "name": "bulkCreate",
               "kind": "method",
-              "line": 183
+              "line": 202
             },
             {
               "name": "bulkUpdate",
               "kind": "method",
-              "line": 204
+              "line": 226
             },
             {
               "name": "getIssueTypeUsages",
               "kind": "method",
-              "line": 222
+              "line": 244
             },
             {
               "name": "getProjectUsages",
               "kind": "method",
-              "line": 246
+              "line": 268
             },
             {
               "name": "getWorkflowUsages",
               "kind": "method",
-              "line": 269
+              "line": 291
             },
             {
               "name": "byNames",
               "kind": "method",
-              "line": 289
+              "line": 314
             },
             {
               "name": "search",
               "kind": "method",
-              "line": 307
+              "line": 336
             },
             {
               "name": "searchAll",
               "kind": "method",
-              "line": 322
+              "line": 351
             }
           ]
         },
         {
           "name": "buildSearchQuery",
           "kind": "function",
-          "line": 338,
+          "line": 367,
           "signature": "function buildSearchQuery( params: SearchStatusesParams | undefined, ): Record<string, string | number | boolean | undef…"
         }
       ],
@@ -34245,8 +34281,7 @@
         "../../core/pagination.js",
         "../../core/path.js",
         "../../core/query.js",
-        "../../core/types.js",
-        "../types.js"
+        "../../core/types.js"
       ]
     },
     {
@@ -34676,9 +34711,41 @@
       "path": "src/jira/resources/version.ts",
       "symbols": [
         {
+          "name": "SimpleLink",
+          "kind": "interface",
+          "line": 5,
+          "exported": true,
+          "signature": "export interface SimpleLink { readonly id?: string; readonly styleClass?: string; readonly iconClass?: string; readonly …",
+          "jsdoc": "An operation link available on a version. Spec: `SimpleLink`."
+        },
+        {
+          "name": "VersionApprover",
+          "kind": "interface",
+          "line": 16,
+          "exported": true,
+          "signature": "export interface VersionApprover { readonly accountId?: string; readonly declineReason?: string; readonly description?: …",
+          "jsdoc": "A version approver. Spec: `VersionApprover`."
+        },
+        {
+          "name": "VersionIssuesStatus",
+          "kind": "interface",
+          "line": 24,
+          "exported": true,
+          "signature": "export interface VersionIssuesStatus { readonly toDo?: number; readonly inProgress?: number; readonly done?: number; rea…",
+          "jsdoc": "Count of issues in each workflow status bucket. Spec: `VersionIssuesStatus`."
+        },
+        {
+          "name": "VersionUsageInCustomField",
+          "kind": "interface",
+          "line": 32,
+          "exported": true,
+          "signature": "export interface VersionUsageInCustomField { readonly customFieldId?: number; readonly fieldName?: string; readonly issu…",
+          "jsdoc": "One custom field's usage of this version. Spec: `VersionUsageInCustomField`."
+        },
+        {
           "name": "Version",
           "kind": "interface",
-          "line": 9,
+          "line": 43,
           "exported": true,
           "signature": "export interface Version { readonly id?: string; readonly name?: string; readonly self?: string; readonly description?: …",
           "jsdoc": "A Jira project version (fix version / release)."
@@ -34686,7 +34753,7 @@
         {
           "name": "VersionRelatedWork",
           "kind": "interface",
-          "line": 32,
+          "line": 69,
           "exported": true,
           "signature": "export interface VersionRelatedWork { readonly relatedWorkId?: string; readonly category: string; readonly issueId?: num…",
           "jsdoc": "Related-work entry returned by GET/POST/PUT `/rest/api/3/version/{id}/relatedwork`."
@@ -34694,7 +34761,7 @@
         {
           "name": "VersionRelatedIssueCounts",
           "kind": "interface",
-          "line": 41,
+          "line": 78,
           "exported": true,
           "signature": "export interface VersionRelatedIssueCounts { readonly self?: string; readonly issuesFixedCount?: number; readonly issues…",
           "jsdoc": "Response for GET `/rest/api/3/version/{id}/relatedIssueCounts`."
@@ -34702,7 +34769,7 @@
         {
           "name": "VersionUnresolvedIssueCount",
           "kind": "interface",
-          "line": 50,
+          "line": 88,
           "exported": true,
           "signature": "export interface VersionUnresolvedIssueCount { readonly self?: string; readonly issuesUnresolvedCount?: number; readonly…",
           "jsdoc": "Response for GET `/rest/api/3/version/{id}/unresolvedIssueCount`."
@@ -34710,7 +34777,7 @@
         {
           "name": "VersionData",
           "kind": "interface",
-          "line": 57,
+          "line": 95,
           "exported": true,
           "signature": "export interface VersionData { readonly name?: string; readonly description?: string; readonly archived?: boolean; reado…",
           "jsdoc": "Request body for POST `/rest/api/3/version` and PUT `/rest/api/3/version/{id}`."
@@ -34718,7 +34785,7 @@
         {
           "name": "MoveVersionData",
           "kind": "interface",
-          "line": 74,
+          "line": 112,
           "exported": true,
           "signature": "export interface MoveVersionData { readonly after?: string; readonly position?: 'Earlier' | 'Later' | 'First' | 'Last'; …",
           "jsdoc": "Request body for POST `/rest/api/3/version/{id}/move`."
@@ -34726,7 +34793,7 @@
         {
           "name": "CreateVersionRelatedWorkData",
           "kind": "interface",
-          "line": 82,
+          "line": 120,
           "exported": true,
           "signature": "export interface CreateVersionRelatedWorkData { readonly category: string; readonly title?: string; readonly url?: strin…",
           "jsdoc": "Request body for POST `/rest/api/3/version/{id}/relatedwork`."
@@ -34734,7 +34801,7 @@
         {
           "name": "UpdateVersionRelatedWorkData",
           "kind": "interface",
-          "line": 90,
+          "line": 128,
           "exported": true,
           "signature": "export interface UpdateVersionRelatedWorkData { readonly category: string; readonly title?: string; readonly url?: strin…",
           "jsdoc": "Request body for PUT `/rest/api/3/version/{id}/relatedwork`."
@@ -34742,7 +34809,7 @@
         {
           "name": "DeleteAndReplaceVersionData",
           "kind": "interface",
-          "line": 98,
+          "line": 136,
           "exported": true,
           "signature": "export interface DeleteAndReplaceVersionData { readonly moveFixIssuesTo?: number; readonly moveAffectedIssuesTo?: number…",
           "jsdoc": "Request body for POST `/rest/api/3/version/{id}/removeAndSwap`."
@@ -34750,7 +34817,7 @@
         {
           "name": "GetVersionParams",
           "kind": "interface",
-          "line": 105,
+          "line": 143,
           "exported": true,
           "signature": "export interface GetVersionParams { readonly expand?: string; }",
           "jsdoc": "Query parameters for GET `/rest/api/3/version/{id}`."
@@ -34758,7 +34825,7 @@
         {
           "name": "DeleteVersionParams",
           "kind": "interface",
-          "line": 110,
+          "line": 148,
           "exported": true,
           "signature": "export interface DeleteVersionParams { readonly moveFixIssuesTo?: string; readonly moveAffectedIssuesTo?: string; }",
           "jsdoc": "Query parameters for DELETE `/rest/api/3/version/{id}`."
@@ -34766,7 +34833,7 @@
         {
           "name": "VersionResource",
           "kind": "class",
-          "line": 122,
+          "line": 160,
           "exported": true,
           "signature": "export class VersionResource",
           "jsdoc": "Jira Version resource — B820-B831, B933.",
@@ -34774,72 +34841,72 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 123
+              "line": 161
             },
             {
               "name": "create",
               "kind": "method",
-              "line": 132
+              "line": 170
             },
             {
               "name": "get",
               "kind": "method",
-              "line": 158
+              "line": 196
             },
             {
               "name": "update",
               "kind": "method",
-              "line": 173
+              "line": 211
             },
             {
               "name": "delete",
               "kind": "method",
-              "line": 199
+              "line": 237
             },
             {
               "name": "merge",
               "kind": "method",
-              "line": 215
+              "line": 253
             },
             {
               "name": "move",
               "kind": "method",
-              "line": 226
+              "line": 264
             },
             {
               "name": "relatedIssueCounts",
               "kind": "method",
-              "line": 242
+              "line": 280
             },
             {
               "name": "listRelatedWork",
               "kind": "method",
-              "line": 254
+              "line": 292
             },
             {
               "name": "createRelatedWork",
               "kind": "method",
-              "line": 266
+              "line": 304
             },
             {
               "name": "updateRelatedWork",
               "kind": "method",
-              "line": 287
+              "line": 325
             },
             {
               "name": "deleteAndReplace",
               "kind": "method",
-              "line": 308
+              "line": 346
             },
             {
               "name": "unresolvedIssueCount",
               "kind": "method",
-              "line": 326
+              "line": 364
             },
             {
               "name": "deleteRelatedWork",
               "kind": "method",
-              "line": 338
+              "line": 376
             }
           ]
         }
@@ -34895,9 +34962,17 @@
       "path": "src/jira/resources/webhooks.ts",
       "symbols": [
         {
+          "name": "WebhookEvent",
+          "kind": "type",
+          "line": 10,
+          "exported": true,
+          "signature": "export type WebhookEvent = | 'jira:issue_created' | 'jira:issue_updated' | 'jira:issue_deleted' | 'comment_created' | 'c…",
+          "jsdoc": "A Jira webhook event name as defined in the spec (`Webhook.events` and `WebhookDetails.events`)."
+        },
+        {
           "name": "FailedWebhooks",
           "kind": "interface",
-          "line": 11,
+          "line": 38,
           "exported": true,
           "signature": "export interface FailedWebhooks { readonly maxResults: number; readonly next?: string; readonly values: FailedWebhook[];…",
           "jsdoc": "A page of failed webhook deliveries returned by `GET /rest/api/3/webhook/failed`."
@@ -34905,7 +34980,7 @@
         {
           "name": "Webhook",
           "kind": "interface",
-          "line": 19,
+          "line": 46,
           "exported": true,
           "signature": "export interface Webhook { readonly id: number; readonly jqlFilter: string; readonly url: string; readonly fieldIdsFilte…",
           "jsdoc": "A registered Jira webhook that fires on matching events. Spec: `Webhook`."
@@ -34913,7 +34988,7 @@
         {
           "name": "WebhooksExpirationDate",
           "kind": "interface",
-          "line": 37,
+          "line": 65,
           "exported": true,
           "signature": "export interface WebhooksExpirationDate { readonly expirationDate: number; }",
           "jsdoc": "Response returned by `PUT /rest/api/3/webhook/refresh`. Contains the new expiration timestamp for the refreshed webhooks."
@@ -34921,21 +34996,21 @@
         {
           "name": "WebhookRegistration",
           "kind": "interface",
-          "line": 42,
+          "line": 70,
           "exported": true,
           "signature": "export interface WebhookRegistration { readonly jqlFilter: string; readonly fieldIdsFilter?: string[]; readonly issuePro…"
         },
         {
           "name": "WebhookRegistrationResult",
           "kind": "interface",
-          "line": 49,
+          "line": 78,
           "exported": true,
           "signature": "export interface WebhookRegistrationResult { readonly createdWebhookId?: number; readonly errors?: string[]; }"
         },
         {
           "name": "RegisterWebhookData",
           "kind": "interface",
-          "line": 55,
+          "line": 84,
           "exported": true,
           "signature": "export interface RegisterWebhookData { readonly url: string; readonly webhooks: WebhookRegistration[]; }",
           "jsdoc": "Request body for registering one or more Jira webhooks at a URL."
@@ -34943,7 +35018,7 @@
         {
           "name": "RegisteredWebhooks",
           "kind": "interface",
-          "line": 61,
+          "line": 90,
           "exported": true,
           "signature": "export interface RegisteredWebhooks { readonly webhookRegistrationResult: WebhookRegistrationResult[]; }",
           "jsdoc": "Response returned after registering webhooks, listing per-registration results."
@@ -34951,7 +35026,7 @@
         {
           "name": "ListWebhooksParams",
           "kind": "interface",
-          "line": 66,
+          "line": 95,
           "exported": true,
           "signature": "export interface ListWebhooksParams { readonly startAt?: number; readonly maxResults?: number; }",
           "jsdoc": "Query parameters for listing registered Jira webhooks."
@@ -34959,7 +35034,7 @@
         {
           "name": "FailedWebhook",
           "kind": "interface",
-          "line": 72,
+          "line": 101,
           "exported": true,
           "signature": "export interface FailedWebhook { readonly id: string; readonly body?: string; readonly url: string; readonly failureTime…",
           "jsdoc": "A single failed webhook delivery as returned by GET /rest/api/3/webhook/failed."
@@ -34967,51 +35042,51 @@
         {
           "name": "ListFailedWebhooksParams",
           "kind": "interface",
-          "line": 83,
+          "line": 112,
           "exported": true,
           "signature": "export interface ListFailedWebhooksParams { readonly maxResults?: number; readonly after?: number; }"
         },
         {
           "name": "WebhooksResource",
           "kind": "class",
-          "line": 89,
+          "line": 118,
           "exported": true,
           "signature": "export class WebhooksResource",
           "members": [
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 90
+              "line": 119
             },
             {
               "name": "list",
               "kind": "method",
-              "line": 96
+              "line": 125
             },
             {
               "name": "register",
               "kind": "method",
-              "line": 113
+              "line": 142
             },
             {
               "name": "delete",
               "kind": "method",
-              "line": 123
+              "line": 152
             },
             {
               "name": "refresh",
               "kind": "method",
-              "line": 132
+              "line": 161
             },
             {
               "name": "listFailed",
               "kind": "method",
-              "line": 142
+              "line": 171
             },
             {
               "name": "listAllFailed",
               "kind": "method",
-              "line": 163
+              "line": 192
             }
           ]
         }

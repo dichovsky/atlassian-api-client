@@ -1,6 +1,40 @@
 import type { Transport } from '../../core/types.js';
 import { encodePathSegment } from '../../core/path.js';
 
+/** An operation link available on a version. Spec: `SimpleLink`. */
+export interface SimpleLink {
+  readonly id?: string;
+  readonly styleClass?: string;
+  readonly iconClass?: string;
+  readonly label?: string;
+  readonly title?: string;
+  readonly href?: string;
+  readonly weight?: number;
+}
+
+/** A version approver. Spec: `VersionApprover`. */
+export interface VersionApprover {
+  readonly accountId?: string;
+  readonly declineReason?: string;
+  readonly description?: string;
+  readonly status?: string;
+}
+
+/** Count of issues in each workflow status bucket. Spec: `VersionIssuesStatus`. */
+export interface VersionIssuesStatus {
+  readonly toDo?: number;
+  readonly inProgress?: number;
+  readonly done?: number;
+  readonly unmapped?: number;
+}
+
+/** One custom field's usage of this version. Spec: `VersionUsageInCustomField`. */
+export interface VersionUsageInCustomField {
+  readonly customFieldId?: number;
+  readonly fieldName?: string;
+  readonly issueCountWithVersionInCustomField?: number;
+}
+
 /**
  * A Jira project version (fix version / release).
  *
@@ -23,9 +57,12 @@ export interface Version {
   readonly moveUnfixedIssuesTo?: string;
   readonly expand?: string;
   readonly driver?: string;
-  readonly approvers?: readonly unknown[];
-  readonly operations?: readonly unknown[];
-  readonly issuesStatusForFixVersion?: Readonly<Record<string, unknown>>;
+  /** Expand-only: list of approvers for this version. Spec: `VersionApprover[]` (readOnly). */
+  readonly approvers?: readonly VersionApprover[];
+  /** Expand-only: operations available for this version. Spec: `SimpleLink[]` (readOnly). */
+  readonly operations?: readonly SimpleLink[];
+  /** Expand-only: issue counts by status category. Spec: `VersionIssuesStatus` (readOnly). */
+  readonly issuesStatusForFixVersion?: VersionIssuesStatus;
 }
 
 /** Related-work entry returned by GET/POST/PUT `/rest/api/3/version/{id}/relatedwork`. */
@@ -43,7 +80,8 @@ export interface VersionRelatedIssueCounts {
   readonly issuesFixedCount?: number;
   readonly issuesAffectedCount?: number;
   readonly issueCountWithCustomFieldsShowingVersion?: number;
-  readonly customFieldUsage?: readonly unknown[];
+  /** List of custom fields using this version. Spec: `VersionUsageInCustomField[]` (readOnly). */
+  readonly customFieldUsage?: readonly VersionUsageInCustomField[];
 }
 
 /** Response for GET `/rest/api/3/version/{id}/unresolvedIssueCount`. */
