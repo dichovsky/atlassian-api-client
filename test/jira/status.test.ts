@@ -1,5 +1,9 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { StatusResource, type JiraStatus } from '../../src/jira/resources/status.js';
+import {
+  StatusResource,
+  type JiraStatus,
+  type JiraStatusScope,
+} from '../../src/jira/resources/status.js';
 import { MockTransport } from '../helpers/mock-transport.js';
 import { ValidationError } from '../../src/core/errors.js';
 
@@ -113,6 +117,37 @@ describe('StatusResource', () => {
 
     it('rejects a path-traversal idOrName (B1052)', async () => {
       await expect(status.get('..')).rejects.toThrow(ValidationError);
+    });
+
+    it('returns a status with a scope field (JiraStatusScope)', async () => {
+      // Arrange
+      const scopedStatus: JiraStatus = {
+        ...makeStatus(),
+        scope: {
+          type: 'PROJECT',
+          project: { id: '10001', key: 'MYPROJ' },
+        } satisfies JiraStatusScope,
+      };
+      transport.respondWith(scopedStatus);
+
+      // Act
+      const result = await status.get('10001');
+
+      // Assert
+      expect(result.scope?.type).toBe('PROJECT');
+    });
+
+    it('handles status with all optional fields absent', async () => {
+      // Arrange
+      transport.respondWith({});
+
+      // Act
+      const result = await status.get('10001');
+
+      // Assert
+      expect(result.id).toBeUndefined();
+      expect(result.name).toBeUndefined();
+      expect(result.scope).toBeUndefined();
     });
   });
 });

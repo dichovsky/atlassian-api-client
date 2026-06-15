@@ -2,15 +2,20 @@ import type { Transport } from '../../core/types.js';
 
 /** Jira server information. */
 export interface ServerInfo {
-  readonly baseUrl: string;
-  readonly version: string;
-  readonly versionNumbers: readonly number[];
-  readonly deploymentType: string;
-  readonly buildNumber: number;
-  readonly buildDate: string;
-  readonly serverTime: string;
-  readonly scmInfo: string;
-  readonly serverTitle: string;
+  readonly baseUrl?: string;
+  readonly version?: string;
+  readonly versionNumbers?: readonly number[];
+  readonly deploymentType?: string;
+  readonly buildNumber?: number;
+  readonly buildDate?: string;
+  readonly displayUrl?: string;
+  readonly displayUrlConfluence?: string;
+  readonly displayUrlServicedeskHelpCenter?: string;
+  readonly serverTime?: string;
+  readonly serverTimeZone?: string;
+  readonly scmInfo?: string;
+  readonly serverTitle?: string;
+  /** @deprecated Deprecated and no longer returned. */
   readonly healthChecks?: readonly ServerHealthCheck[];
 }
 

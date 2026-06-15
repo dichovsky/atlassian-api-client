@@ -7,12 +7,12 @@ export interface MyPermissions {
 
 /** A single permission entry. */
 export interface Permission {
-  readonly id: string;
-  readonly key: string;
-  readonly name: string;
-  readonly type: string;
-  readonly description: string;
-  readonly havePermission: boolean;
+  readonly id?: string;
+  readonly key?: string;
+  readonly name?: string;
+  readonly type?: 'GLOBAL' | 'PROJECT';
+  readonly description?: string;
+  readonly havePermission?: boolean;
   readonly deprecatedKey?: boolean;
 }
 

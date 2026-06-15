@@ -1,7 +1,7 @@
 import type { Transport } from '../../core/types.js';
 import { encodePathSegment } from '../../core/path.js';
 
-/** A Jira long-running task. */
+/** A Jira long-running task (TaskProgressBeanObject schema). */
 export interface Task {
   readonly id: string;
   readonly self: string;
@@ -14,8 +14,9 @@ export interface Task {
     | 'CANCEL_REQUESTED'
     | 'CANCELLED'
     | 'DEAD';
-  readonly result?: string;
-  readonly submittedBy?: number;
+  readonly message?: string;
+  readonly result?: unknown;
+  readonly submittedBy: number;
   readonly progress: number;
   readonly elapsedRuntime: number;
   readonly submitted: number;
