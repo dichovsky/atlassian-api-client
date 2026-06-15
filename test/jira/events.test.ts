@@ -60,6 +60,23 @@ describe('EventsResource', () => {
       expect(result[0]!.name).toBe('Worklog Updated');
     });
 
+    it('handles events with missing id or name (spec: neither is required)', async () => {
+      // Arrange — spec IssueEvent has no required array; both fields are optional
+      const eventList = [{ id: 5 }, { name: 'Status Changed' }, {}];
+      transport.respondWith(eventList);
+
+      // Act
+      const result = await events.list();
+
+      // Assert
+      expect(result[0]!.id).toBe(5);
+      expect(result[0]!.name).toBeUndefined();
+      expect(result[1]!.name).toBe('Status Changed');
+      expect(result[1]!.id).toBeUndefined();
+      expect(result[2]!.id).toBeUndefined();
+      expect(result[2]!.name).toBeUndefined();
+    });
+
     it('propagates transport errors', async () => {
       // Arrange
       transport.respondWithError(new Error('network error'));

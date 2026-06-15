@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "2.0.0"
   },
-  "sourceHash": "a29846905781ea9ade0ff20c13dfc8345782a8f6a4ae856b6903ada7fa47fa01",
+  "sourceHash": "3a00bdb86dde4d04164a1401140ac44e8068070deae41ebb1297182cf4456f89",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -17900,6 +17900,14 @@
             {
               "exported": "BulkByPropertiesBaseUrls",
               "original": "BulkByPropertiesBaseUrls"
+            },
+            {
+              "exported": "DeleteDevInfoByPropertiesParams",
+              "original": "DeleteDevInfoByPropertiesParams"
+            },
+            {
+              "exported": "DeleteFeatureFlagsByPropertiesParams",
+              "original": "DeleteFeatureFlagsByPropertiesParams"
             }
           ]
         },
@@ -23265,17 +23273,17 @@
             {
               "name": "list",
               "kind": "method",
-              "line": 75
+              "line": 77
             },
             {
               "name": "update",
               "kind": "method",
-              "line": 95
+              "line": 97
             },
             {
               "name": "listAdvancedSettings",
               "kind": "method",
-              "line": 109
+              "line": 111
             }
           ]
         }
@@ -23877,9 +23885,25 @@
           "jsdoc": "Parameters for bulkByProperties DELETE operations."
         },
         {
+          "name": "DeleteDevInfoByPropertiesParams",
+          "kind": "interface",
+          "line": 24,
+          "exported": true,
+          "signature": "export interface DeleteDevInfoByPropertiesParams extends BulkByPropertiesParams { readonly _updateSequenceId?: number; }",
+          "jsdoc": "Parameters for DELETE /rest/devinfo/0.10/bulkByProperties (B962)."
+        },
+        {
+          "name": "DeleteFeatureFlagsByPropertiesParams",
+          "kind": "interface",
+          "line": 35,
+          "exported": true,
+          "signature": "export interface DeleteFeatureFlagsByPropertiesParams extends BulkByPropertiesParams { readonly _updateSequenceId?: numb…",
+          "jsdoc": "Parameters for DELETE /rest/featureflags/0.1/bulkByProperties (B972). @deprecated The `_updateSequenceId` parameter usage is no longer supported by the server per the spec; it is included here for completeness only."
+        },
+        {
           "name": "BulkByPropertiesBaseUrls",
           "kind": "interface",
-          "line": 20,
+          "line": 47,
           "exported": true,
           "signature": "export interface BulkByPropertiesBaseUrls { readonly builds: string; readonly deployments: string; readonly devinfo: str…",
           "jsdoc": "Injected base URLs for each of the eight DevOps integration APIs that expose a `DELETE /bulkByProperties` endpoint."
@@ -23887,7 +23911,7 @@
         {
           "name": "BulkByPropertiesResource",
           "kind": "class",
-          "line": 44,
+          "line": 71,
           "exported": true,
           "signature": "export class BulkByPropertiesResource",
           "jsdoc": "Jira Bulk-By-Properties resource — DELETE /bulkByProperties across eight DevOps integration APIs (B953, B957, B962, B968, B972, B981, B990, B994).",
@@ -23895,55 +23919,55 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 45
+              "line": 72
             },
             {
               "name": "deleteBuildsByProperties",
               "kind": "method",
-              "line": 54
+              "line": 81
             },
             {
               "name": "deleteDeploymentsByProperties",
               "kind": "method",
-              "line": 66
+              "line": 93
             },
             {
               "name": "deleteDevInfoByProperties",
               "kind": "method",
-              "line": 78
+              "line": 105
             },
             {
               "name": "deleteDevOpsComponentsByProperties",
               "kind": "method",
-              "line": 90
+              "line": 117
             },
             {
               "name": "deleteFeatureFlagsByProperties",
               "kind": "method",
-              "line": 102
+              "line": 129
             },
             {
               "name": "deleteOperationsByProperties",
               "kind": "method",
-              "line": 114
+              "line": 143
             },
             {
               "name": "deleteRemoteLinksByProperties",
               "kind": "method",
-              "line": 126
+              "line": 155
             },
             {
               "name": "deleteSecurityByProperties",
               "kind": "method",
-              "line": 138
+              "line": 167
             }
           ]
         },
         {
           "name": "buildQuery",
           "kind": "function",
-          "line": 148,
-          "signature": "function buildQuery(params: BulkByPropertiesParams): Record<string, string>",
+          "line": 177,
+          "signature": "function buildQuery( params: BulkByPropertiesParams & { readonly _updateSequenceId?: number }, ): Record<string, string>",
           "jsdoc": "Build the query object from params, mapping property key/value pairs to query params."
         }
       ],
@@ -25827,13 +25851,13 @@
           "kind": "interface",
           "line": 4,
           "exported": true,
-          "signature": "export interface JiraEvent { readonly id: number; readonly name: string; }",
+          "signature": "export interface JiraEvent { readonly id?: number; readonly name?: string; }",
           "jsdoc": "A Jira event (issue link type or workflow event)."
         },
         {
           "name": "EventsResource",
           "kind": "class",
-          "line": 10,
+          "line": 12,
           "exported": true,
           "signature": "export class EventsResource",
           "jsdoc": "Jira Events resource — GET /rest/api/3/events.",
@@ -25841,12 +25865,12 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 11
+              "line": 13
             },
             {
               "name": "list",
               "kind": "method",
-              "line": 17
+              "line": 19
             }
           ]
         }
@@ -28135,13 +28159,13 @@
           "kind": "interface",
           "line": 9,
           "exported": true,
-          "signature": "export interface LicensedApplication { readonly id: string; readonly plan: 'FREE' | 'STANDARD' | 'PREMIUM' | 'ENTERPRISE…",
+          "signature": "export interface LicensedApplication { readonly id: string; readonly plan: 'UNLICENSED' | 'FREE' | 'PAID'; }",
           "jsdoc": "A licensed Jira application."
         },
         {
           "name": "InstanceResource",
           "kind": "class",
-          "line": 15,
+          "line": 16,
           "exported": true,
           "signature": "export class InstanceResource",
           "jsdoc": "Jira Instance Information resource — GET /rest/api/3/instance/license.",
@@ -28149,12 +28173,12 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 16
+              "line": 17
             },
             {
               "name": "getLicense",
               "kind": "method",
-              "line": 22
+              "line": 23
             }
           ]
         }

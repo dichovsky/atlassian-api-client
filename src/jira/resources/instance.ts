@@ -8,7 +8,8 @@ export interface InstanceLicense {
 /** A licensed Jira application. */
 export interface LicensedApplication {
   readonly id: string;
-  readonly plan: 'FREE' | 'STANDARD' | 'PREMIUM' | 'ENTERPRISE';
+  /** The licensing plan. Spec enum: `UNLICENSED`, `FREE`, `PAID`. */
+  readonly plan: 'UNLICENSED' | 'FREE' | 'PAID';
 }
 
 /** Jira Instance Information resource — GET /rest/api/3/instance/license. */
