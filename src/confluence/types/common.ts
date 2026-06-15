@@ -1,6 +1,7 @@
 /** Version information for Confluence content. Mirrors the OpenAPI `Version` schema. */
 export interface ConfluenceVersion {
-  readonly number: number;
+  /** The version number. Optional in spec — server may omit it on draft/partial responses. */
+  readonly number?: number;
   readonly message?: string;
   readonly createdAt?: string;
   /** Whether this version is a minor version (no email / activity-stream notifications). */
@@ -12,13 +13,17 @@ export interface ConfluenceVersion {
 /** Body representation format. */
 export type BodyFormat = 'storage' | 'atlas_doc_format' | 'view' | 'raw';
 
-/** Confluence content body. */
+/** Confluence content body. Mirrors the OpenAPI `BodySingle` schema (with `raw` extended for custom content). */
 export interface ContentBody {
   readonly storage?: { readonly value: string; readonly representation: 'storage' };
   readonly atlas_doc_format?: {
     readonly value: string;
     readonly representation: 'atlas_doc_format';
   };
+  /** Rendered view representation — returned by `GET /footer-comments/{id}` and `GET /inline-comments/{id}` when requested. */
+  readonly view?: { readonly value: string; readonly representation: 'view' };
+  /** Raw custom-content body — returned by `GET /custom-content/{id}` when `body-format=raw` is requested. */
+  readonly raw?: { readonly value: string; readonly representation: 'raw' };
 }
 
 /** Confluence Label. */
@@ -28,12 +33,37 @@ export interface Label {
   readonly prefix?: string;
 }
 
-/** Confluence Content Property. */
+/** Confluence Content Property. Mirrors the OpenAPI `ContentProperty` schema (no required fields in spec). */
 export interface ContentProperty {
-  readonly id: string;
-  readonly key: string;
-  readonly value: unknown;
+  readonly id?: string;
+  readonly key?: string;
+  readonly value?: unknown;
   readonly version?: ConfluenceVersion;
+}
+
+/**
+ * Space property — mirrors the OpenAPI `SpaceProperty` schema, which adds
+ * `createdAt`, `createdBy`, and a richer `version` (including `createdAt`
+ * and `createdBy`) compared to the generic `ContentProperty`.
+ *
+ * Returned by `GET /spaces/{id}/properties` and `GET /spaces/{id}/properties/{id}`.
+ */
+export interface SpaceProperty {
+  readonly id?: string;
+  readonly key?: string;
+  readonly value?: unknown;
+  /** RFC 3339 timestamp when the property was created. */
+  readonly createdAt?: string;
+  /** Account ID of the user who created the property. */
+  readonly createdBy?: string;
+  readonly version?: {
+    readonly number?: number;
+    readonly message?: string;
+    /** RFC 3339 timestamp when this version of the property was created. */
+    readonly createdAt?: string;
+    /** Account ID of the user who created this version. */
+    readonly createdBy?: string;
+  };
 }
 
 /**
@@ -124,11 +154,12 @@ export type CommentStatus = 'current' | 'archived' | 'deleted' | 'trashed' | 'hi
  */
 export type InlineCommentResolutionStatus = 'resolved' | 'open' | 'dangling' | 'reopened';
 
-/** Request body for updating an existing comment. */
+/** Request body for updating an existing comment. Mirrors the OpenAPI `UpdateFooterCommentModel` / `CommentBodyWrite` schemas. */
 export interface UpdateCommentData {
   readonly version: { readonly number: number; readonly message?: string };
   readonly body: {
-    readonly representation: 'storage' | 'atlas_doc_format';
+    /** Representation format. `wiki` is accepted by both footer and inline comment update endpoints. */
+    readonly representation: 'storage' | 'atlas_doc_format' | 'wiki';
     readonly value: string;
   };
 }
@@ -146,21 +177,22 @@ export interface ListSharedContentPropertiesParams {
 
 /**
  * Request body for updating a content property on comments, attachments, or databases.
+ * Mirrors the OpenAPI `ContentPropertyUpdateRequest` schema (no required fields in spec).
  *
  * Callers must echo the existing `key`, set the new `value`, and bump
  * `version.number` by one for optimistic concurrency (Confluence returns
  * 409 on mismatched versions).
  */
 export interface UpdateSharedContentPropertyData {
-  readonly key: string;
-  readonly value: unknown;
-  readonly version: { readonly number: number; readonly message?: string };
+  readonly key?: string;
+  readonly value?: unknown;
+  readonly version?: { readonly number?: number; readonly message?: string };
 }
 
-/** Request body for creating a content property on a page. */
+/** Request body for creating a content property. Mirrors the OpenAPI `ContentPropertyCreateRequest` schema (no required fields in spec). */
 export interface CreateContentPropertyData {
-  readonly key: string;
-  readonly value: unknown;
+  readonly key?: string;
+  readonly value?: unknown;
 }
 
 /**

@@ -989,4 +989,56 @@ describe('SpacesResource', () => {
       expect(query['role-type']).toBeUndefined();
     });
   });
+
+  // ── B1059: SpaceProperty response shape ───────────────────────────────────
+
+  describe('B1059 — SpaceProperty response has createdAt, createdBy, version.createdAt/createdBy', () => {
+    it('getProperty returns SpaceProperty with full audit fields', async () => {
+      // Arrange — spec SpaceProperty adds createdAt/createdBy + richer version
+      const spaceProperty = {
+        id: 'sp-1',
+        key: 'my-key',
+        value: { enabled: true },
+        createdAt: '2026-01-01T00:00:00.000Z',
+        createdBy: 'acc-abc123',
+        version: {
+          number: 2,
+          message: 'second edit',
+          createdAt: '2026-01-02T00:00:00.000Z',
+          createdBy: 'acc-xyz456',
+        },
+      };
+      transport.respondWith(spaceProperty);
+
+      // Act
+      const result = await spaces.getProperty('SP-1', 'sp-1');
+
+      // Assert — full SpaceProperty shape passes through
+      expect(result).toEqual(spaceProperty);
+      expect(result.createdAt).toBe('2026-01-01T00:00:00.000Z');
+      expect(result.createdBy).toBe('acc-abc123');
+      expect(result.version?.createdAt).toBe('2026-01-02T00:00:00.000Z');
+      expect(result.version?.createdBy).toBe('acc-xyz456');
+    });
+
+    it('createProperty returns SpaceProperty shape', async () => {
+      // Arrange
+      const created = {
+        id: 'sp-new',
+        key: 'feat-flag',
+        value: 'on',
+        createdAt: '2026-06-15T10:00:00.000Z',
+        createdBy: 'acc-creator',
+        version: { number: 1, createdAt: '2026-06-15T10:00:00.000Z', createdBy: 'acc-creator' },
+      };
+      transport.respondWith(created);
+
+      // Act — CreateContentPropertyData: spec marks key/value optional
+      const result = await spaces.createProperty('SP-1', { key: 'feat-flag', value: 'on' });
+
+      // Assert
+      expect(result.createdBy).toBe('acc-creator');
+      expect(result.version?.createdBy).toBe('acc-creator');
+    });
+  });
 });

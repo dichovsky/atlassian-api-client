@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "2.0.0"
   },
-  "sourceHash": "14575eaf6373ef62fb13b4655c83ee95b873c8b212da0c9c2fab9864f062210a",
+  "sourceHash": "0f499ba35e21577ebffdc89851639298e552b49bf18beed19fc514e2747d3526",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -108,7 +108,7 @@
       "name": "AttachmentStatus",
       "kind": "type",
       "file": "src/confluence/types/common.ts",
-      "line": 70,
+      "line": 100,
       "signature": "export type AttachmentStatus = 'current' | 'archived' | 'trashed';",
       "jsdoc": "Status filter accepted by `GET /attachments`. Mirrors the OpenAPI `ContentStatus` enum subset (`current`, `archived`, `trashed`).",
       "typeOnly": true
@@ -484,7 +484,7 @@
       "name": "CommentSortOrder",
       "kind": "type",
       "file": "src/confluence/types/common.ts",
-      "line": 44,
+      "line": 74,
       "signature": "export type CommentSortOrder = | 'created-date' | '-created-date' | 'modified-date' | '-modified-date';",
       "jsdoc": "Sort tokens accepted by the footer/inline comment list endpoints. Default direction is ascending; prefix with `-` for descending. Mirrors the OpenAPI `CommentSortOrder` enum.",
       "typeOnly": true
@@ -493,7 +493,7 @@
       "name": "CommentStatus",
       "kind": "type",
       "file": "src/confluence/types/common.ts",
-      "line": 119,
+      "line": 149,
       "signature": "export type CommentStatus = 'current' | 'archived' | 'deleted' | 'trashed' | 'historical' | 'draft';",
       "jsdoc": "Status filter accepted by comment list endpoints on pages / blog posts. Mirrors the OpenAPI `ContentStatus` enum subset used by the comment collections (`current`, `deleted`, `trashed`, `historical`, `draft`).",
       "typeOnly": true
@@ -520,7 +520,7 @@
       "name": "ConfluenceAttachmentSortOrder",
       "kind": "type",
       "file": "src/confluence/types/common.ts",
-      "line": 60,
+      "line": 90,
       "signature": "export type AttachmentSortOrder = | 'modified-date' | '-modified-date' | 'created-date' | '-created-date';",
       "jsdoc": "Sort tokens accepted by attachment list endpoints. Mirrors the OpenAPI `AttachmentSortOrder` enum.",
       "typeOnly": true,
@@ -530,7 +530,7 @@
       "name": "ConfluenceBlogPostSortOrder",
       "kind": "type",
       "file": "src/confluence/types/common.ts",
-      "line": 171,
+      "line": 203,
       "signature": "export type BlogPostSortOrder = | 'id' | '-id' | 'created-date' | '-created-date' | 'modified-date' | '-modified-date';",
       "jsdoc": "Sort tokens accepted by `GET /labels/{id}/blogposts`. The default direction is ascending; prefix with `-` for descending. Matches the OpenAPI `BlogPostSortOrder` enum.",
       "typeOnly": true,
@@ -577,7 +577,7 @@
       "name": "ConfluencePageSortOrder",
       "kind": "type",
       "file": "src/confluence/types/common.ts",
-      "line": 184,
+      "line": 216,
       "signature": "export type PageSortOrder = | 'id' | '-id' | 'created-date' | '-created-date' | 'modified-date' | '-modified-date' | 'ti…",
       "jsdoc": "Sort tokens accepted by `GET /labels/{id}/pages`. The default direction is ascending; prefix with `-` for descending. Matches the OpenAPI `PageSortOrder` enum.",
       "typeOnly": true,
@@ -615,7 +615,7 @@
       "kind": "interface",
       "file": "src/confluence/types/common.ts",
       "line": 2,
-      "signature": "export interface ConfluenceVersion { readonly number: number; readonly message?: string; readonly createdAt?: string; re…",
+      "signature": "export interface ConfluenceVersion { readonly number?: number; readonly message?: string; readonly createdAt?: string; r…",
       "jsdoc": "Version information for Confluence content. Mirrors the OpenAPI `Version` schema.",
       "typeOnly": true
     },
@@ -632,16 +632,16 @@
       "name": "ContentProperty",
       "kind": "interface",
       "file": "src/confluence/types/common.ts",
-      "line": 32,
-      "signature": "export interface ContentProperty { readonly id: string; readonly key: string; readonly value: unknown; readonly version?…",
-      "jsdoc": "Confluence Content Property.",
+      "line": 37,
+      "signature": "export interface ContentProperty { readonly id?: string; readonly key?: string; readonly value?: unknown; readonly versi…",
+      "jsdoc": "Confluence Content Property. Mirrors the OpenAPI `ContentProperty` schema (no required fields in spec).",
       "typeOnly": true
     },
     {
       "name": "ContentSortOrder",
       "kind": "type",
       "file": "src/confluence/types/common.ts",
-      "line": 102,
+      "line": 132,
       "signature": "export type ContentSortOrder = | 'created-date' | '-created-date' | 'id' | '-id' | 'modified-date' | '-modified-date' | …",
       "jsdoc": "Sort order tokens accepted by `/databases/{id}/direct-children`. The same vocabulary is documented under the OpenAPI `ContentSortOrder` schema.",
       "typeOnly": true
@@ -686,9 +686,9 @@
       "name": "CreateContentPropertyData",
       "kind": "interface",
       "file": "src/confluence/types/common.ts",
-      "line": 161,
-      "signature": "export interface CreateContentPropertyData { readonly key: string; readonly value: unknown; }",
-      "jsdoc": "Request body for creating a content property on a page.",
+      "line": 193,
+      "signature": "export interface CreateContentPropertyData { readonly key?: string; readonly value?: unknown; }",
+      "jsdoc": "Request body for creating a content property. Mirrors the OpenAPI `ContentPropertyCreateRequest` schema (no required fields in spec).",
       "typeOnly": true
     },
     {
@@ -956,7 +956,7 @@
       "name": "CustomContentSortOrder",
       "kind": "type",
       "file": "src/confluence/types/common.ts",
-      "line": 88,
+      "line": 118,
       "signature": "export type CustomContentSortOrder = | 'id' | '-id' | 'created-date' | '-created-date' | 'modified-date' | '-modified-da…",
       "jsdoc": "Sort tokens accepted by `GET /blogposts/{id}/custom-content`. Mirrors the OpenAPI `CustomContentSortOrder` enum.",
       "typeOnly": true
@@ -1547,7 +1547,7 @@
       "name": "InlineCommentResolutionStatus",
       "kind": "type",
       "file": "src/confluence/types/common.ts",
-      "line": 125,
+      "line": 155,
       "signature": "export type InlineCommentResolutionStatus = 'resolved' | 'open' | 'dangling' | 'reopened';",
       "jsdoc": "Resolution-status filter accepted by `GET /blogposts/{id}/inline-comments` (and the page counterpart). Spec: enum {resolved, open, dangling, reopened}.",
       "typeOnly": true
@@ -1655,7 +1655,7 @@
       "name": "Label",
       "kind": "interface",
       "file": "src/confluence/types/common.ts",
-      "line": 25,
+      "line": 30,
       "signature": "export interface Label { readonly id: string; readonly name: string; readonly prefix?: string; }",
       "jsdoc": "Confluence Label.",
       "typeOnly": true
@@ -1664,7 +1664,7 @@
       "name": "LabelPrefix",
       "kind": "type",
       "file": "src/confluence/types/common.ts",
-      "line": 76,
+      "line": 106,
       "signature": "export type LabelPrefix = 'my' | 'team' | 'global' | 'system';",
       "jsdoc": "Prefix filter accepted by `GET /attachments/{id}/labels` (and several other label-listing endpoints). Mirrors the OpenAPI `LabelPrefix` enum.",
       "typeOnly": true
@@ -1673,7 +1673,7 @@
       "name": "LabelSortOrder",
       "kind": "type",
       "file": "src/confluence/types/common.ts",
-      "line": 82,
+      "line": 112,
       "signature": "export type LabelSortOrder = 'created-date' | '-created-date' | 'id' | '-id' | 'name' | '-name';",
       "jsdoc": "Sort tokens accepted by `GET /labels`. The default direction is ascending; prefix with `-` for descending. Matches the OpenAPI `LabelSortOrder` enum.",
       "typeOnly": true
@@ -2249,7 +2249,7 @@
       "name": "ListSharedContentPropertiesParams",
       "kind": "interface",
       "file": "src/confluence/types/common.ts",
-      "line": 140,
+      "line": 171,
       "signature": "export interface ListSharedContentPropertiesParams { readonly key?: string; readonly sort?: 'key' | '-key'; readonly cur…",
       "jsdoc": "Parameters for listing content properties on comments, attachments, or databases. Supports optional `sort` and pagination via `cursor` and `limit`.",
       "typeOnly": true
@@ -2693,7 +2693,7 @@
       "name": "RedactBlogPostData",
       "kind": "interface",
       "file": "src/confluence/types/common.ts",
-      "line": 252,
+      "line": 284,
       "signature": "export interface RedactBlogPostData { readonly createdAt: string; readonly cleanHistory?: boolean; readonly versionNumbe…",
       "jsdoc": "Request body for `POST /blogposts/{id}/redact` (shared with page variant). Mirrors the OpenAPI `RedactionRequest` schema; `createdAt` is required so the server can detect stale clients submitting redactions against an outdated version of the content.",
       "typeOnly": true
@@ -2702,7 +2702,7 @@
       "name": "RedactBlogPostResponse",
       "kind": "interface",
       "file": "src/confluence/types/common.ts",
-      "line": 266,
+      "line": 298,
       "signature": "export interface RedactBlogPostResponse { readonly body?: { readonly redactions?: readonly RedactionPointerResponse[] };…",
       "jsdoc": "Response from `POST /blogposts/{id}/redact` — mirrors `RedactionResponse`.",
       "typeOnly": true
@@ -2729,7 +2729,7 @@
       "name": "RedactionPointer",
       "kind": "interface",
       "file": "src/confluence/types/common.ts",
-      "line": 223,
+      "line": 255,
       "signature": "export interface RedactionPointer { readonly pointer: string; readonly from?: number; readonly to?: number; readonly rea…",
       "jsdoc": "A single redaction target — mirrors the OpenAPI `RedactionPointer` schema.",
       "typeOnly": true
@@ -2738,7 +2738,7 @@
       "name": "RedactionPointerResponse",
       "kind": "interface",
       "file": "src/confluence/types/common.ts",
-      "line": 239,
+      "line": 271,
       "signature": "export interface RedactionPointerResponse extends RedactionPointer { readonly id?: string; }",
       "jsdoc": "Echo of an applied redaction — server returns the original pointer plus a UUID the caller can use to restore the redaction later (except for code blocks, which the spec calls out as non-restorable).",
       "typeOnly": true
@@ -2998,7 +2998,7 @@
       "name": "SpaceRoleAssignment",
       "kind": "interface",
       "file": "src/confluence/types/common.ts",
-      "line": 214,
+      "line": 246,
       "signature": "export interface SpaceRoleAssignment { readonly principal: { readonly principalType?: SpaceRolePrincipalType; readonly p…",
       "jsdoc": "A `(principal, roleId)` grant — used both in the `POST /spaces` create payload and as the entry shape inside `POST /spaces/{id}/role-assignments` arrays. Mirrors the spec's `SpaceRoleAssignment` schema and `Principal` subobject.",
       "typeOnly": true
@@ -3025,7 +3025,7 @@
       "name": "SpaceRolePrincipalType",
       "kind": "type",
       "file": "src/confluence/types/common.ts",
-      "line": 204,
+      "line": 236,
       "signature": "export type SpaceRolePrincipalType = 'USER' | 'GROUP' | 'ACCESS_CLASS';",
       "jsdoc": "The principal-type filter accepted by `GET /space-roles`. Restricts the available-roles listing to those compatible with the named principal class.",
       "typeOnly": true
@@ -3034,7 +3034,7 @@
       "name": "SpaceRoleType",
       "kind": "type",
       "file": "src/confluence/types/common.ts",
-      "line": 198,
+      "line": 230,
       "signature": "export type SpaceRoleType = 'SYSTEM' | 'CUSTOM';",
       "jsdoc": "The role type of a {@link SpaceRole}. `SYSTEM` roles are platform-defined and not user-editable; `CUSTOM` roles are created and managed by the tenant.",
       "typeOnly": true
@@ -3114,9 +3114,9 @@
       "name": "UpdateCommentData",
       "kind": "interface",
       "file": "src/confluence/types/common.ts",
-      "line": 128,
+      "line": 158,
       "signature": "export interface UpdateCommentData { readonly version: { readonly number: number; readonly message?: string }; readonly …",
-      "jsdoc": "Request body for updating an existing comment.",
+      "jsdoc": "Request body for updating an existing comment. Mirrors the OpenAPI `UpdateFooterCommentModel` / `CommentBodyWrite` schemas.",
       "typeOnly": true
     },
     {
@@ -3240,9 +3240,9 @@
       "name": "UpdateSharedContentPropertyData",
       "kind": "interface",
       "file": "src/confluence/types/common.ts",
-      "line": 154,
-      "signature": "export interface UpdateSharedContentPropertyData { readonly key: string; readonly value: unknown; readonly version: { re…",
-      "jsdoc": "Request body for updating a content property on comments, attachments, or databases.",
+      "line": 186,
+      "signature": "export interface UpdateSharedContentPropertyData { readonly key?: string; readonly value?: unknown; readonly version?: {…",
+      "jsdoc": "Request body for updating a content property on comments, attachments, or databases. Mirrors the OpenAPI `ContentPropertyUpdateRequest` schema (no required fields in spec).",
       "typeOnly": true
     },
     {
@@ -3320,7 +3320,7 @@
       "name": "VersionSortOrder",
       "kind": "type",
       "file": "src/confluence/types/common.ts",
-      "line": 54,
+      "line": 84,
       "signature": "export type VersionSortOrder = 'modified-date' | '-modified-date';",
       "jsdoc": "Sort tokens accepted by version list endpoints. Mirrors the OpenAPI `VersionSortOrder` enum — only `modified-date` is sortable.",
       "typeOnly": true
@@ -6615,6 +6615,10 @@
             {
               "exported": "RedactionPointerResponse",
               "original": "RedactionPointerResponse"
+            },
+            {
+              "exported": "SpaceProperty",
+              "original": "SpaceProperty"
             },
             {
               "exported": "SpaceRoleAssignment",
@@ -10780,13 +10784,13 @@
           "kind": "interface",
           "line": 2,
           "exported": true,
-          "signature": "export interface ConfluenceVersion { readonly number: number; readonly message?: string; readonly createdAt?: string; re…",
+          "signature": "export interface ConfluenceVersion { readonly number?: number; readonly message?: string; readonly createdAt?: string; r…",
           "jsdoc": "Version information for Confluence content. Mirrors the OpenAPI `Version` schema."
         },
         {
           "name": "BodyFormat",
           "kind": "type",
-          "line": 13,
+          "line": 14,
           "exported": true,
           "signature": "export type BodyFormat = 'storage' | 'atlas_doc_format' | 'view' | 'raw';",
           "jsdoc": "Body representation format."
@@ -10794,15 +10798,15 @@
         {
           "name": "ContentBody",
           "kind": "interface",
-          "line": 16,
+          "line": 17,
           "exported": true,
           "signature": "export interface ContentBody { readonly storage?: { readonly value: string; readonly representation: 'storage' }; readon…",
-          "jsdoc": "Confluence content body."
+          "jsdoc": "Confluence content body. Mirrors the OpenAPI `BodySingle` schema (with `raw` extended for custom content)."
         },
         {
           "name": "Label",
           "kind": "interface",
-          "line": 25,
+          "line": 30,
           "exported": true,
           "signature": "export interface Label { readonly id: string; readonly name: string; readonly prefix?: string; }",
           "jsdoc": "Confluence Label."
@@ -10810,15 +10814,23 @@
         {
           "name": "ContentProperty",
           "kind": "interface",
-          "line": 32,
+          "line": 37,
           "exported": true,
-          "signature": "export interface ContentProperty { readonly id: string; readonly key: string; readonly value: unknown; readonly version?…",
-          "jsdoc": "Confluence Content Property."
+          "signature": "export interface ContentProperty { readonly id?: string; readonly key?: string; readonly value?: unknown; readonly versi…",
+          "jsdoc": "Confluence Content Property. Mirrors the OpenAPI `ContentProperty` schema (no required fields in spec)."
+        },
+        {
+          "name": "SpaceProperty",
+          "kind": "interface",
+          "line": 51,
+          "exported": true,
+          "signature": "export interface SpaceProperty { readonly id?: string; readonly key?: string; readonly value?: unknown; readonly created…",
+          "jsdoc": "Space property — mirrors the OpenAPI `SpaceProperty` schema, which adds `createdAt`, `createdBy`, and a richer `version` (including `createdAt` and `createdBy`) compared to the generic `ContentProperty`."
         },
         {
           "name": "CommentSortOrder",
           "kind": "type",
-          "line": 44,
+          "line": 74,
           "exported": true,
           "signature": "export type CommentSortOrder = | 'created-date' | '-created-date' | 'modified-date' | '-modified-date';",
           "jsdoc": "Sort tokens accepted by the footer/inline comment list endpoints. Default direction is ascending; prefix with `-` for descending. Mirrors the OpenAPI `CommentSortOrder` enum."
@@ -10826,7 +10838,7 @@
         {
           "name": "VersionSortOrder",
           "kind": "type",
-          "line": 54,
+          "line": 84,
           "exported": true,
           "signature": "export type VersionSortOrder = 'modified-date' | '-modified-date';",
           "jsdoc": "Sort tokens accepted by version list endpoints. Mirrors the OpenAPI `VersionSortOrder` enum — only `modified-date` is sortable."
@@ -10834,7 +10846,7 @@
         {
           "name": "AttachmentSortOrder",
           "kind": "type",
-          "line": 60,
+          "line": 90,
           "exported": true,
           "signature": "export type AttachmentSortOrder = | 'modified-date' | '-modified-date' | 'created-date' | '-created-date';",
           "jsdoc": "Sort tokens accepted by attachment list endpoints. Mirrors the OpenAPI `AttachmentSortOrder` enum."
@@ -10842,7 +10854,7 @@
         {
           "name": "AttachmentStatus",
           "kind": "type",
-          "line": 70,
+          "line": 100,
           "exported": true,
           "signature": "export type AttachmentStatus = 'current' | 'archived' | 'trashed';",
           "jsdoc": "Status filter accepted by `GET /attachments`. Mirrors the OpenAPI `ContentStatus` enum subset (`current`, `archived`, `trashed`)."
@@ -10850,7 +10862,7 @@
         {
           "name": "LabelPrefix",
           "kind": "type",
-          "line": 76,
+          "line": 106,
           "exported": true,
           "signature": "export type LabelPrefix = 'my' | 'team' | 'global' | 'system';",
           "jsdoc": "Prefix filter accepted by `GET /attachments/{id}/labels` (and several other label-listing endpoints). Mirrors the OpenAPI `LabelPrefix` enum."
@@ -10858,7 +10870,7 @@
         {
           "name": "LabelSortOrder",
           "kind": "type",
-          "line": 82,
+          "line": 112,
           "exported": true,
           "signature": "export type LabelSortOrder = 'created-date' | '-created-date' | 'id' | '-id' | 'name' | '-name';",
           "jsdoc": "Sort tokens accepted by `GET /labels`. The default direction is ascending; prefix with `-` for descending. Matches the OpenAPI `LabelSortOrder` enum."
@@ -10866,7 +10878,7 @@
         {
           "name": "CustomContentSortOrder",
           "kind": "type",
-          "line": 88,
+          "line": 118,
           "exported": true,
           "signature": "export type CustomContentSortOrder = | 'id' | '-id' | 'created-date' | '-created-date' | 'modified-date' | '-modified-da…",
           "jsdoc": "Sort tokens accepted by `GET /blogposts/{id}/custom-content`. Mirrors the OpenAPI `CustomContentSortOrder` enum."
@@ -10874,7 +10886,7 @@
         {
           "name": "ContentSortOrder",
           "kind": "type",
-          "line": 102,
+          "line": 132,
           "exported": true,
           "signature": "export type ContentSortOrder = | 'created-date' | '-created-date' | 'id' | '-id' | 'modified-date' | '-modified-date' | …",
           "jsdoc": "Sort order tokens accepted by `/databases/{id}/direct-children`. The same vocabulary is documented under the OpenAPI `ContentSortOrder` schema."
@@ -10882,7 +10894,7 @@
         {
           "name": "CommentStatus",
           "kind": "type",
-          "line": 119,
+          "line": 149,
           "exported": true,
           "signature": "export type CommentStatus = 'current' | 'archived' | 'deleted' | 'trashed' | 'historical' | 'draft';",
           "jsdoc": "Status filter accepted by comment list endpoints on pages / blog posts. Mirrors the OpenAPI `ContentStatus` enum subset used by the comment collections (`current`, `deleted`, `trashed`, `historical`, `draft`)."
@@ -10890,7 +10902,7 @@
         {
           "name": "InlineCommentResolutionStatus",
           "kind": "type",
-          "line": 125,
+          "line": 155,
           "exported": true,
           "signature": "export type InlineCommentResolutionStatus = 'resolved' | 'open' | 'dangling' | 'reopened';",
           "jsdoc": "Resolution-status filter accepted by `GET /blogposts/{id}/inline-comments` (and the page counterpart). Spec: enum {resolved, open, dangling, reopened}."
@@ -10898,15 +10910,15 @@
         {
           "name": "UpdateCommentData",
           "kind": "interface",
-          "line": 128,
+          "line": 158,
           "exported": true,
           "signature": "export interface UpdateCommentData { readonly version: { readonly number: number; readonly message?: string }; readonly …",
-          "jsdoc": "Request body for updating an existing comment."
+          "jsdoc": "Request body for updating an existing comment. Mirrors the OpenAPI `UpdateFooterCommentModel` / `CommentBodyWrite` schemas."
         },
         {
           "name": "ListSharedContentPropertiesParams",
           "kind": "interface",
-          "line": 140,
+          "line": 171,
           "exported": true,
           "signature": "export interface ListSharedContentPropertiesParams { readonly key?: string; readonly sort?: 'key' | '-key'; readonly cur…",
           "jsdoc": "Parameters for listing content properties on comments, attachments, or databases. Supports optional `sort` and pagination via `cursor` and `limit`."
@@ -10914,23 +10926,23 @@
         {
           "name": "UpdateSharedContentPropertyData",
           "kind": "interface",
-          "line": 154,
+          "line": 186,
           "exported": true,
-          "signature": "export interface UpdateSharedContentPropertyData { readonly key: string; readonly value: unknown; readonly version: { re…",
-          "jsdoc": "Request body for updating a content property on comments, attachments, or databases."
+          "signature": "export interface UpdateSharedContentPropertyData { readonly key?: string; readonly value?: unknown; readonly version?: {…",
+          "jsdoc": "Request body for updating a content property on comments, attachments, or databases. Mirrors the OpenAPI `ContentPropertyUpdateRequest` schema (no required fields in spec)."
         },
         {
           "name": "CreateContentPropertyData",
           "kind": "interface",
-          "line": 161,
+          "line": 193,
           "exported": true,
-          "signature": "export interface CreateContentPropertyData { readonly key: string; readonly value: unknown; }",
-          "jsdoc": "Request body for creating a content property on a page."
+          "signature": "export interface CreateContentPropertyData { readonly key?: string; readonly value?: unknown; }",
+          "jsdoc": "Request body for creating a content property. Mirrors the OpenAPI `ContentPropertyCreateRequest` schema (no required fields in spec)."
         },
         {
           "name": "BlogPostSortOrder",
           "kind": "type",
-          "line": 171,
+          "line": 203,
           "exported": true,
           "signature": "export type BlogPostSortOrder = | 'id' | '-id' | 'created-date' | '-created-date' | 'modified-date' | '-modified-date';",
           "jsdoc": "Sort tokens accepted by `GET /labels/{id}/blogposts`. The default direction is ascending; prefix with `-` for descending. Matches the OpenAPI `BlogPostSortOrder` enum."
@@ -10938,7 +10950,7 @@
         {
           "name": "PageSortOrder",
           "kind": "type",
-          "line": 184,
+          "line": 216,
           "exported": true,
           "signature": "export type PageSortOrder = | 'id' | '-id' | 'created-date' | '-created-date' | 'modified-date' | '-modified-date' | 'ti…",
           "jsdoc": "Sort tokens accepted by `GET /labels/{id}/pages`. The default direction is ascending; prefix with `-` for descending. Matches the OpenAPI `PageSortOrder` enum."
@@ -10946,7 +10958,7 @@
         {
           "name": "SpaceRoleType",
           "kind": "type",
-          "line": 198,
+          "line": 230,
           "exported": true,
           "signature": "export type SpaceRoleType = 'SYSTEM' | 'CUSTOM';",
           "jsdoc": "The role type of a {@link SpaceRole}. `SYSTEM` roles are platform-defined and not user-editable; `CUSTOM` roles are created and managed by the tenant."
@@ -10954,7 +10966,7 @@
         {
           "name": "SpaceRolePrincipalType",
           "kind": "type",
-          "line": 204,
+          "line": 236,
           "exported": true,
           "signature": "export type SpaceRolePrincipalType = 'USER' | 'GROUP' | 'ACCESS_CLASS';",
           "jsdoc": "The principal-type filter accepted by `GET /space-roles`. Restricts the available-roles listing to those compatible with the named principal class."
@@ -10962,7 +10974,7 @@
         {
           "name": "SpaceRoleAssignment",
           "kind": "interface",
-          "line": 214,
+          "line": 246,
           "exported": true,
           "signature": "export interface SpaceRoleAssignment { readonly principal: { readonly principalType?: SpaceRolePrincipalType; readonly p…",
           "jsdoc": "A `(principal, roleId)` grant — used both in the `POST /spaces` create payload and as the entry shape inside `POST /spaces/{id}/role-assignments` arrays. Mirrors the spec's `SpaceRoleAssignment` schema and `Principal` subobject."
@@ -10970,7 +10982,7 @@
         {
           "name": "RedactionPointer",
           "kind": "interface",
-          "line": 223,
+          "line": 255,
           "exported": true,
           "signature": "export interface RedactionPointer { readonly pointer: string; readonly from?: number; readonly to?: number; readonly rea…",
           "jsdoc": "A single redaction target — mirrors the OpenAPI `RedactionPointer` schema."
@@ -10978,7 +10990,7 @@
         {
           "name": "RedactionPointerResponse",
           "kind": "interface",
-          "line": 239,
+          "line": 271,
           "exported": true,
           "signature": "export interface RedactionPointerResponse extends RedactionPointer { readonly id?: string; }",
           "jsdoc": "Echo of an applied redaction — server returns the original pointer plus a UUID the caller can use to restore the redaction later (except for code blocks, which the spec calls out as non-restorable)."
@@ -10986,7 +10998,7 @@
         {
           "name": "RedactBlogPostData",
           "kind": "interface",
-          "line": 252,
+          "line": 284,
           "exported": true,
           "signature": "export interface RedactBlogPostData { readonly createdAt: string; readonly cleanHistory?: boolean; readonly versionNumbe…",
           "jsdoc": "Request body for `POST /blogposts/{id}/redact` (shared with page variant). Mirrors the OpenAPI `RedactionRequest` schema; `createdAt` is required so the server can detect stale clients submitting redactions against an outdated version of the content."
@@ -10994,7 +11006,7 @@
         {
           "name": "RedactBlogPostResponse",
           "kind": "interface",
-          "line": 266,
+          "line": 298,
           "exported": true,
           "signature": "export interface RedactBlogPostResponse { readonly body?: { readonly redactions?: readonly RedactionPointerResponse[] };…",
           "jsdoc": "Response from `POST /blogposts/{id}/redact` — mirrors `RedactionResponse`."
