@@ -2,6 +2,7 @@ import type { Transport } from '../../core/types.js';
 import { encodePathSegment } from '../../core/path.js';
 import type { CursorPaginatedResponse } from '../../core/pagination.js';
 import { paginateCursor, validatePageSize } from '../../core/pagination.js';
+import { ValidationError } from '../../core/errors.js';
 import type {
   FooterComment,
   FooterCommentChild,
@@ -246,7 +247,7 @@ export class FooterCommentsResource {
   /** Get detailed information about a specific footer-comment version. */
   async getVersion(commentId: string, versionNumber: number): Promise<FooterCommentVersionDetail> {
     if (!Number.isInteger(versionNumber) || versionNumber <= 0) {
-      throw new RangeError(`versionNumber must be a positive integer, got: ${versionNumber}`);
+      throw new ValidationError(`versionNumber must be a positive integer, got: ${versionNumber}`);
     }
     const response = await this.transport.request<FooterCommentVersionDetail>({
       method: 'GET',

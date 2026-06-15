@@ -105,7 +105,7 @@ function resolvePaginateOptions(
 function normalizeMaxPages(value: number | undefined): number {
   if (value === undefined) return DEFAULT_MAX_PAGES;
   if (!Number.isFinite(value) || !Number.isInteger(value) || value <= 0) {
-    throw new RangeError(`maxPages must be a positive integer, got: ${value}`);
+    throw new ValidationError(`maxPages must be a positive integer, got: ${value}`);
   }
   return value;
 }
