@@ -4135,7 +4135,7 @@ async function executePermissionSchemes(client: JiraClient, cmd: ParsedCommand):
         requireArg(cmd.positionalArgs[0], 'schemeId'),
         'schemeId',
       );
-      const name = asString(opts['name']);
+      const name = requireOpt(opts['name'], '--name');
       const description = asString(opts['description']);
       const permissionsRaw = asString(opts['permissions']);
       const permissions =
@@ -4145,14 +4145,11 @@ async function executePermissionSchemes(client: JiraClient, cmd: ParsedCommand):
               permission?: string;
             }[])
           : undefined;
-      if (name === undefined && description === undefined && permissions === undefined) {
-        throw new Error('update requires at least one of: --name, --description, --permissions');
-      }
       const expand = asString(opts['expand']);
       return client.permissionSchemes.update(
         schemeId,
         {
-          ...(name !== undefined && { name }),
+          name,
           ...(description !== undefined && { description }),
           ...(permissions !== undefined && { permissions }),
         },
@@ -4874,6 +4871,20 @@ function asOrderBy(value: string | boolean | undefined): 'name' | '+name' | '-na
   if (s === undefined) return undefined;
   if (s === 'name' || s === '+name' || s === '-name') return s;
   throw new Error(`--order-by must be one of: name, +name, -name. Got: ${s}`);
+}
+
+type ScreenScopeValue = 'GLOBAL' | 'TEMPLATE' | 'PROJECT';
+
+function asScreensScope(value: string | boolean | undefined): ScreenScopeValue[] | undefined {
+  const arr = parseCsv(value);
+  if (arr === undefined) return undefined;
+  return arr.map((s) => {
+    const upper = s.toUpperCase();
+    if (upper === 'GLOBAL' || upper === 'TEMPLATE' || upper === 'PROJECT') {
+      return upper as ScreenScopeValue;
+    }
+    throw new Error(`--scope must be one of: GLOBAL, TEMPLATE, PROJECT. Got: ${s}`);
+  });
 }
 
 function asScreensOrderBy(
@@ -5657,7 +5668,7 @@ async function executeScreens(client: JiraClient, cmd: ParsedCommand): Promise<u
   switch (cmd.action) {
     case 'list': {
       const ids = asIntArray(opts['ids'], '--ids');
-      const scope = parseCsv(opts['scope']);
+      const scope = asScreensScope(opts['scope']);
       const orderBy = asScreensOrderBy(opts['order-by']);
       return client.screens.list({
         startAt: asNonNegativeInt(opts['start-at'], '--start-at'),

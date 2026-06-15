@@ -1,14 +1,21 @@
 import type { Transport } from '../../core/types.js';
 import type { JiraLabel, ListLabelsParams } from '../types.js';
-import { validatePageSize } from '../../core/pagination.js';
+import { paginateOffset } from '../../core/pagination.js';
 
-/** Paginated response for Jira labels. */
+/**
+ * Paginated response for Jira labels.
+ * Spec: `PageBeanString` — includes `nextPage` and `self` URL fields.
+ */
 export interface LabelsResponse {
   readonly values: JiraLabel[];
   readonly startAt: number;
   readonly maxResults: number;
   readonly total: number;
   readonly isLast?: boolean;
+  /** URL of the next page of results, if any. */
+  readonly nextPage?: string;
+  /** URL of this page. */
+  readonly self?: string;
 }
 
 /** Jira Labels resource — list all labels defined in the Jira instance. */
@@ -18,10 +25,11 @@ export class LabelsResource {
     private readonly baseUrl: string,
   ) {}
 
-  /** List all labels with optional pagination. */
+  /**
+   * GET /rest/api/3/label — list all labels with optional pagination.
+   * Spec: `getAllLabels`. Returns a `PageBeanString` envelope.
+   */
   async list(params?: ListLabelsParams): Promise<LabelsResponse> {
-    if (params?.maxResults !== undefined) validatePageSize(params.maxResults, 'maxResults');
-
     const query: Record<string, string | number | undefined> = {};
     if (params?.startAt !== undefined) query['startAt'] = params.startAt;
     if (params?.maxResults !== undefined) query['maxResults'] = params.maxResults;
@@ -32,5 +40,20 @@ export class LabelsResource {
       query,
     });
     return response.data;
+  }
+
+  /**
+   * Iterate every label in the Jira instance using offset pagination.
+   * Delegates to {@link paginateOffset}.
+   *
+   * @param params.maxResults Page size hint (passed as `maxResults`).
+   */
+  async *listAll(params?: Omit<ListLabelsParams, 'startAt'>): AsyncGenerator<JiraLabel> {
+    yield* paginateOffset<JiraLabel>(
+      this.transport,
+      `${this.baseUrl}/label`,
+      undefined,
+      params?.maxResults,
+    );
   }
 }

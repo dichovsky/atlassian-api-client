@@ -18769,22 +18769,25 @@ describe('executeJiraCommand', () => {
     });
 
     it('permission-schemes update forwards description', async () => {
+      // Regression: --name is now required per spec (PermissionScheme.name is required on PUT).
       jiraPermissionSchemesMock.update.mockResolvedValue({ id: 1, name: 'X' });
       await executeJiraCommand(
-        cmd('permission-schemes', 'update', ['1'], { description: 'new desc' }),
+        cmd('permission-schemes', 'update', ['1'], { name: 'X', description: 'new desc' }),
         GLOBALS,
       );
       expect(jiraPermissionSchemesMock.update).toHaveBeenCalledWith(
         1,
-        { description: 'new desc' },
+        { name: 'X', description: 'new desc' },
         undefined,
       );
     });
 
     it('permission-schemes update forwards permissions JSON', async () => {
+      // Regression: --name is now required per spec (PermissionScheme.name is required on PUT).
       jiraPermissionSchemesMock.update.mockResolvedValue({ id: 1, name: 'X' });
       await executeJiraCommand(
         cmd('permission-schemes', 'update', ['1'], {
+          name: 'X',
           permissions: '[{"holder":{"type":"anyone"},"permission":"BROWSE_PROJECTS"}]',
           expand: 'permissions',
         }),
@@ -18792,15 +18795,16 @@ describe('executeJiraCommand', () => {
       );
       expect(jiraPermissionSchemesMock.update).toHaveBeenCalledWith(
         1,
-        { permissions: [{ holder: { type: 'anyone' }, permission: 'BROWSE_PROJECTS' }] },
+        { name: 'X', permissions: [{ holder: { type: 'anyone' }, permission: 'BROWSE_PROJECTS' }] },
         { expand: 'permissions' },
       );
     });
 
-    it('permission-schemes update throws when no fields provided', async () => {
+    it('permission-schemes update throws when --name is missing', async () => {
+      // Regression: --name is now required per spec.
       await expect(
         executeJiraCommand(cmd('permission-schemes', 'update', ['10000']), GLOBALS),
-      ).rejects.toThrow('update requires at least one of: --name, --description, --permissions');
+      ).rejects.toThrow('Missing required option: --name');
     });
 
     it('permission-schemes delete calls delete(schemeId)', async () => {
@@ -22284,6 +22288,13 @@ describe('executeJiraCommand', () => {
       await expect(
         executeJiraCommand(cmd('screens', 'list', [], { 'order-by': 'bogus' }), GLOBALS),
       ).rejects.toThrow('--order-by must be one of: name, -name, +name, id, -id, +id');
+    });
+
+    it('list rejects an invalid --scope value', async () => {
+      // Regression: scope was string[] so any value was accepted. Now validated as enum.
+      await expect(
+        executeJiraCommand(cmd('screens', 'list', [], { scope: 'BOGUS' }), GLOBALS),
+      ).rejects.toThrow('--scope must be one of: GLOBAL, TEMPLATE, PROJECT. Got: BOGUS');
     });
 
     it('B1042: list rejects non-integer --ids (NaN guard)', async () => {

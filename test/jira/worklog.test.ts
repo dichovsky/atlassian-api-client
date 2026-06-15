@@ -1,6 +1,11 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { WorklogResource } from '../../src/jira/resources/worklog.js';
-import type { ChangedWorklogs, Worklog } from '../../src/jira/resources/worklog.js';
+import type {
+  ChangedWorklogs,
+  Worklog,
+  WorklogUserDetails,
+  WorklogVisibility,
+} from '../../src/jira/resources/worklog.js';
 import { MockTransport } from '../helpers/mock-transport.js';
 import { ValidationError } from '../../src/core/errors.js';
 
@@ -226,6 +231,63 @@ describe('WorklogResource', () => {
       transport.respondWithError(new Error('network error'));
 
       await expect(resource.getUpdated()).rejects.toThrow('network error');
+    });
+  });
+
+  // ── spec alignment regressions ────────────────────────────────────────────
+
+  describe('spec alignment', () => {
+    it('Worklog includes visibility field from spec', async () => {
+      // Regression: Worklog was missing the `visibility` field.
+      const visibility: WorklogVisibility = {
+        type: 'group',
+        value: 'jira-users',
+        identifier: null,
+      };
+      const worklog: Worklog = {
+        ...makeWorklog('1'),
+        visibility,
+      };
+      transport.respondWith([worklog]);
+
+      const result = await resource.getList([1]);
+
+      expect(result[0]?.visibility).toEqual(visibility);
+    });
+
+    it('Worklog includes properties field from spec', async () => {
+      // Regression: Worklog was missing the `properties` field.
+      const properties = [{ key: 'custom-key', value: { foo: 'bar' } }];
+      const worklog: Worklog = {
+        ...makeWorklog('2'),
+        properties,
+      };
+      transport.respondWith([worklog]);
+
+      const result = await resource.getList([2]);
+
+      expect(result[0]?.properties).toEqual(properties);
+    });
+
+    it('Worklog.author includes full UserDetails fields', async () => {
+      // Regression: author was a sparse subset missing accountType, emailAddress, timeZone, etc.
+      const author: WorklogUserDetails = {
+        accountId: 'abc123',
+        accountType: 'atlassian',
+        active: true,
+        displayName: 'Test User',
+        emailAddress: 'test@example.com',
+        self: `${BASE_URL}/user?accountId=abc123`,
+        timeZone: 'UTC',
+      };
+      const worklog: Worklog = { ...makeWorklog('3'), author };
+      transport.respondWith([worklog]);
+
+      const result = await resource.getList([3]);
+
+      expect(result[0]?.author?.accountType).toBe('atlassian');
+      expect(result[0]?.author?.emailAddress).toBe('test@example.com');
+      expect(result[0]?.author?.timeZone).toBe('UTC');
     });
   });
 });

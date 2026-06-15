@@ -566,7 +566,10 @@ describe('ScreensResource', () => {
       await expect(resource.listAllScreenTabs({ maxResult: 0 }).next()).rejects.toThrow();
     });
 
-    it('strips the page-size key from the base query (paginateOffset owns it)', async () => {
+    it('sends maxResult (not maxResults) in the wire query — spec uses maxResult for /screens/tabs', async () => {
+      // Regression: the old implementation delegated to paginateOffset which
+      // always injects `maxResults` (with trailing 's'). The /screens/tabs
+      // endpoint uses `maxResult` (no trailing 's') per the Jira v3 spec.
       transport.respondWith({
         values: [{ screenId: 1, tabId: 1, tabName: 'A' }],
         startAt: 0,
@@ -579,7 +582,97 @@ describe('ScreensResource', () => {
         /* consume */
       }
 
-      expect(transport.calls[0]?.options.query).not.toHaveProperty('maxResult');
+      // Correct param is present; wrong param must be absent.
+      expect(transport.calls[0]?.options.query).toMatchObject({ maxResult: 5 });
+      expect(transport.calls[0]?.options.query).not.toHaveProperty('maxResults');
+    });
+
+    it('uses default page size of 100 when maxResult not provided', async () => {
+      transport.respondWith({
+        values: [{ screenId: 1, tabId: 1, tabName: 'A' }],
+        startAt: 0,
+        maxResults: 100,
+        total: 1,
+        isLast: true,
+      });
+
+      for await (const _tab of resource.listAllScreenTabs()) {
+        /* consume */
+      }
+
+      expect(transport.calls[0]?.options.query).toMatchObject({ maxResult: 100 });
+    });
+
+    it('stops on empty page when isLast and total are absent from response', async () => {
+      // Coverage: the fallback branch `page.total !== undefined && ...` when total is undefined.
+      transport
+        .respondWith({
+          values: [{ screenId: 1, tabId: 1, tabName: 'A' }],
+          startAt: 0,
+          maxResults: 100,
+          // isLast and total deliberately omitted — loop falls back to empty-page sentinel.
+        })
+        .respondWith({
+          values: [],
+          startAt: 1,
+          maxResults: 100,
+        });
+
+      const results: unknown[] = [];
+      for await (const tab of resource.listAllScreenTabs()) {
+        results.push(tab);
+      }
+
+      expect(results).toHaveLength(1);
+    });
+
+    it('stops via total when isLast is absent but total indicates last page', async () => {
+      // Coverage: the `page.total !== undefined && startAt + page.values.length >= page.total` branch.
+      transport.respondWith({
+        values: [{ screenId: 1, tabId: 1, tabName: 'A' }],
+        startAt: 0,
+        maxResults: 100,
+        total: 1,
+        // isLast deliberately omitted.
+      });
+
+      const results: unknown[] = [];
+      for await (const tab of resource.listAllScreenTabs()) {
+        results.push(tab);
+      }
+
+      expect(results).toHaveLength(1);
+    });
+  });
+
+  // ── spec alignment regressions ────────────────────────────────────────────
+
+  describe('spec alignment', () => {
+    it('Screen.scope is typed as ScreenScope (not Record<string, unknown>)', async () => {
+      // Regression: Screen.scope was typed as Record<string, unknown>.
+      const screenWithScope = {
+        id: 10001,
+        name: 'Default Screen',
+        scope: { type: 'PROJECT' as const, project: { id: '10000', key: 'PROJ' } },
+      };
+      transport.respondWith(makePageOf([screenWithScope]));
+
+      const result = await resource.list();
+
+      expect(result.values[0]?.scope?.type).toBe('PROJECT');
+      expect(result.values[0]?.scope?.project?.key).toBe('PROJ');
+    });
+
+    it('ListScreensParams.scope accepts only valid enum values', async () => {
+      // Regression: scope was string[] — should be restricted to GLOBAL | TEMPLATE | PROJECT.
+      transport.respondWith(makePageOf([]));
+
+      // These are the only valid enum values per spec.
+      await resource.list({ scope: ['GLOBAL', 'TEMPLATE', 'PROJECT'] });
+
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/screens?scope=GLOBAL&scope=TEMPLATE&scope=PROJECT`,
+      );
     });
   });
 });

@@ -158,10 +158,11 @@ describe('PermissionSchemeResource', () => {
       expect(transport.lastCall?.options.query).toEqual({ expand: 'permissions' });
     });
 
-    it('strips undefined keys from body', async () => {
+    it('always sends name in body (spec requires it) and includes optional fields', async () => {
+      // Regression: UpdatePermissionSchemeData.name is now required per spec.
       transport.respondWith(makeScheme(1, 'X'));
-      await resource.update(1, { description: 'd' });
-      expect(transport.lastCall?.options.body).toEqual({ description: 'd' });
+      await resource.update(1, { name: 'X', description: 'd' });
+      expect(transport.lastCall?.options.body).toEqual({ name: 'X', description: 'd' });
     });
   });
 
@@ -275,6 +276,63 @@ describe('PermissionSchemeResource', () => {
         method: 'DELETE',
         path: `${BASE_URL}/permissionscheme/100/permission/10`,
       });
+    });
+  });
+
+  // ── spec alignment regressions ────────────────────────────────────────────
+
+  describe('spec alignment', () => {
+    it('PermissionHolder includes expand field from spec', async () => {
+      // Regression: PermissionHolder was missing the `expand` field.
+      const grant = {
+        id: 1,
+        holder: { type: 'anyone', expand: 'field', parameter: 'param', value: 'val' },
+        permission: 'BROWSE_PROJECTS',
+      };
+      transport.respondWith(grant);
+      const result = await resource.getPermission(100, 1);
+      expect(result.holder?.expand).toBe('field');
+    });
+
+    it('update() always sends name in body — spec requires it', async () => {
+      // Regression: UpdatePermissionSchemeData.name was optional but spec requires it.
+      transport.respondWith(makeScheme(1, 'Required'));
+      await resource.update(1, { name: 'Required' });
+      expect(transport.lastCall?.options.body).toMatchObject({ name: 'Required' });
+    });
+
+    it('PermissionScheme.scope.type accepts spec enum values', async () => {
+      // Regression: scope.type was typed as `string` instead of the enum.
+      const schemeWithScope = {
+        ...makeScheme(1, 'Scoped'),
+        scope: { type: 'PROJECT' as const, project: { id: '10000', key: 'PROJ', name: 'Project' } },
+      };
+      transport.respondWith(schemeWithScope);
+      const result = await resource.get(1);
+      expect(result.scope?.type).toBe('PROJECT');
+    });
+
+    it('PermissionScheme.scope.project includes full ProjectDetails fields', async () => {
+      // Regression: scope.project was missing self, simplified, projectTypeKey fields.
+      const schemeWithFullProject = {
+        ...makeScheme(1, 'Scoped'),
+        scope: {
+          type: 'PROJECT' as const,
+          project: {
+            id: '10000',
+            key: 'PROJ',
+            name: 'Project',
+            self: `${BASE_URL}/project/PROJ`,
+            simplified: false,
+            projectTypeKey: 'software' as const,
+          },
+        },
+      };
+      transport.respondWith(schemeWithFullProject);
+      const result = await resource.get(1);
+      expect(result.scope?.project?.self).toBe(`${BASE_URL}/project/PROJ`);
+      expect(result.scope?.project?.projectTypeKey).toBe('software');
+      expect(result.scope?.project?.simplified).toBe(false);
     });
   });
 });

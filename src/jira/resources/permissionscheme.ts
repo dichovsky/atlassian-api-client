@@ -6,6 +6,8 @@ export interface PermissionHolder {
   readonly type: string;
   readonly parameter?: string;
   readonly value?: string;
+  /** Expand options that include additional permission holder details in the response. */
+  readonly expand?: string;
 }
 
 /**
@@ -37,11 +39,16 @@ export interface PermissionScheme {
   readonly expand?: string;
   readonly permissions?: PermissionGrant[];
   readonly scope?: {
-    readonly type?: string;
+    /** The type of scope. Spec: `Scope.type` enum. */
+    readonly type?: 'PROJECT' | 'TEMPLATE';
+    /** The project the item has scope in. Spec: `ProjectDetails`. */
     readonly project?: {
       readonly id?: string;
       readonly key?: string;
       readonly name?: string;
+      readonly self?: string;
+      readonly simplified?: boolean;
+      readonly projectTypeKey?: 'software' | 'service_desk' | 'business';
     };
   };
 }
@@ -63,9 +70,12 @@ export interface CreatePermissionSchemeData {
   readonly permissions?: PermissionGrant[];
 }
 
-/** Request body for PUT /rest/api/3/permissionscheme/{schemeId}. */
+/**
+ * Request body for PUT /rest/api/3/permissionscheme/{schemeId}.
+ * Spec: `PermissionScheme` — `name` is required.
+ */
 export interface UpdatePermissionSchemeData {
-  readonly name?: string;
+  readonly name: string;
   readonly description?: string;
   readonly permissions?: PermissionGrant[];
 }
@@ -143,8 +153,7 @@ export class PermissionSchemeResource {
   ): Promise<PermissionScheme> {
     const query: Record<string, string | undefined> = {};
     if (params?.expand !== undefined) query['expand'] = params.expand;
-    const body: Record<string, unknown> = {};
-    if (data.name !== undefined) body['name'] = data.name;
+    const body: Record<string, unknown> = { name: data.name };
     if (data.description !== undefined) body['description'] = data.description;
     if (data.permissions !== undefined) body['permissions'] = data.permissions;
     const response = await this.transport.request<PermissionScheme>({

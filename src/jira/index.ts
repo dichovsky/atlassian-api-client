@@ -148,6 +148,10 @@ export type {
   DownloadAttachmentContentParams,
   DownloadAttachmentThumbnailParams,
 } from './resources/issue-attachments.js';
+export type {
+  /** Paginated response for GET /rest/api/3/label. */
+  LabelsResponse,
+} from './resources/labels.js';
 export { LabelsResource } from './resources/labels.js';
 export { BoardsResource } from './resources/boards.js';
 export type {
@@ -893,6 +897,7 @@ export type {
 export { IssueSecuritySchemesResource } from './resources/issuesecurityschemes.js';
 
 export type {
+  ScreenScope,
   Screen,
   ScreenableTab,
   ScreenableField,
@@ -1153,3 +1158,18 @@ export type {
   AddonPropertyOperationMessage,
 } from './resources/addons.js';
 export { AddonsResource } from './resources/addons.js';
+export type {
+  /** Avatar URL set for a Jira user on a worklog. */
+  WorklogAvatarUrls,
+  /** Full user details on a worklog. Spec: `UserDetails`. */
+  WorklogUserDetails,
+  /** Visibility restriction on a worklog. Spec: `Visibility`. */
+  WorklogVisibility,
+  /** A full Jira worklog record as returned by POST /worklog/list. */
+  Worklog,
+  /** A single changed worklog entry in a ChangedWorklogs page. */
+  ChangedWorklog,
+  /** Response for GET /worklog/deleted and GET /worklog/updated. */
+  ChangedWorklogs,
+} from './resources/worklog.js';
+export { WorklogResource } from './resources/worklog.js';
