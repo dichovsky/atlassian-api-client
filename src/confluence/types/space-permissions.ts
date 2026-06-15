@@ -5,7 +5,7 @@
  */
 export interface SpacePermission {
   /** The identifier for the space permission. */
-  readonly id: string;
+  readonly id?: string;
   /** The display name for the space permission. */
   readonly displayName?: string;
   /** Describes the space permission's usage. */

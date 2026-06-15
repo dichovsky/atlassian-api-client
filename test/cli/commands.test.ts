@@ -4996,9 +4996,8 @@ describe('executeConfluenceCommand', () => {
     });
 
     it('app upsert-property parses JSON value and forwards it', async () => {
-      // Arrange
-      const property = { key: 'flag', value: { beta: true } };
-      confluenceAppMock.upsertProperty.mockResolvedValue(property);
+      // Arrange — spec: PUT /app/properties/{key} returns no body; CLI returns { upserted: true }.
+      confluenceAppMock.upsertProperty.mockResolvedValue(undefined);
       const parsed = cmd('app', 'upsert-property', ['flag'], { value: '{"beta":true}' });
 
       // Act
@@ -5008,19 +5007,20 @@ describe('executeConfluenceCommand', () => {
       expect(confluenceAppMock.upsertProperty).toHaveBeenCalledWith('flag', {
         value: { beta: true },
       });
-      expect(result).toEqual(property);
+      expect(result).toEqual({ upserted: true });
     });
 
     it('app upsert-property falls back to raw string when --value is not JSON', async () => {
       // Arrange
-      confluenceAppMock.upsertProperty.mockResolvedValue({ key: 'flag', value: 'hello' });
+      confluenceAppMock.upsertProperty.mockResolvedValue(undefined);
       const parsed = cmd('app', 'upsert-property', ['flag'], { value: 'hello' });
 
       // Act
-      await executeConfluenceCommand(parsed, GLOBALS);
+      const result = await executeConfluenceCommand(parsed, GLOBALS);
 
       // Assert
       expect(confluenceAppMock.upsertProperty).toHaveBeenCalledWith('flag', { value: 'hello' });
+      expect(result).toEqual({ upserted: true });
     });
 
     it('app upsert-property throws when property key is missing', async () => {

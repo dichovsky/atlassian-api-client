@@ -44,7 +44,7 @@ export interface BulkUsersRequest {
  * is single-shot — `next` is omitted.
  */
 export interface BulkUsersResponse {
-  readonly results: readonly ConfluenceUser[];
+  readonly results?: readonly ConfluenceUser[];
   readonly _links?: {
     readonly next?: string;
     readonly base?: string;

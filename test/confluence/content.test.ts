@@ -17,20 +17,19 @@ describe('ContentResource', () => {
 
   describe('convertIdsToTypes()', () => {
     it('issues POST /content/convert-ids-to-types with the contentIds body', async () => {
-      // Arrange
+      // Arrange — spec: results maps ids to built-in or custom content type strings.
       const payload = {
         results: {
           '12345': 'page' as const,
           '67890': 'inline-comment' as const,
           '11111': 'footer-comment' as const,
-          '22222': null,
         },
       };
       transport.respondWith(payload);
 
       // Act
       const result = await resource.convertIdsToTypes({
-        contentIds: ['12345', '67890', '11111', '22222'],
+        contentIds: ['12345', '67890', '11111'],
       });
 
       // Assert
@@ -38,7 +37,7 @@ describe('ContentResource', () => {
       expect(transport.lastCall?.options).toMatchObject({
         method: 'POST',
         path: `${BASE_URL}/content/convert-ids-to-types`,
-        body: { contentIds: ['12345', '67890', '11111', '22222'] },
+        body: { contentIds: ['12345', '67890', '11111'] },
       });
       // No query string on this endpoint.
       expect(transport.lastCall?.options.query).toBeUndefined();

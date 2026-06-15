@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { UsersBulkResource } from '../../src/confluence/resources/users-bulk.js';
 import { MockTransport } from '../helpers/mock-transport.js';
+import { ValidationError } from '../../src/core/errors.js';
 
 const BASE_URL = 'https://test.atlassian.net/wiki/api/v2';
 
@@ -75,17 +76,17 @@ describe('UsersBulkResource', () => {
       expect(transport.lastCall?.options.body).toEqual({ accountIds: ['acc-1'] });
     });
 
-    it('throws RangeError when accountIds is an empty array (no HTTP call)', async () => {
+    it('throws ValidationError when accountIds is an empty array (no HTTP call)', async () => {
       // Act + Assert
-      await expect(resource.lookup({ accountIds: [] })).rejects.toThrow(RangeError);
+      await expect(resource.lookup({ accountIds: [] })).rejects.toThrow(ValidationError);
       expect(transport.calls).toHaveLength(0);
     });
 
-    it('throws RangeError when accountIds is missing entirely', async () => {
+    it('throws ValidationError when accountIds is missing entirely', async () => {
       // Act + Assert — exercise the !Array.isArray guard branch.
       await expect(
         resource.lookup({ accountIds: undefined as unknown as readonly string[] }),
-      ).rejects.toThrow(RangeError);
+      ).rejects.toThrow(ValidationError);
       expect(transport.calls).toHaveLength(0);
     });
 

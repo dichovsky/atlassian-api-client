@@ -1,3 +1,4 @@
+import { ValidationError } from '../../core/errors.js';
 import type { Transport } from '../../core/types.js';
 import type { BulkUsersRequest, BulkUsersResponse } from '../types/users.js';
 
@@ -31,7 +32,7 @@ export class UsersBulkResource {
    */
   async lookup(data: BulkUsersRequest): Promise<BulkUsersResponse> {
     if (!Array.isArray(data.accountIds) || data.accountIds.length === 0) {
-      throw new RangeError('accountIds must contain at least one entry');
+      throw new ValidationError('accountIds must contain at least one entry');
     }
     const response = await this.transport.request<BulkUsersResponse>({
       method: 'POST',
