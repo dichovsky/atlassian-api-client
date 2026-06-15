@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "2.0.0"
   },
-  "sourceHash": "d661fac178e30a0dbc0c5713ad380ad5415cd827e2eb2deee3acc53de1a96eb7",
+  "sourceHash": "14575eaf6373ef62fb13b4655c83ee95b873c8b212da0c9c2fab9864f062210a",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -785,7 +785,7 @@
       "name": "CreateIssueCommentData",
       "kind": "interface",
       "file": "src/jira/types.ts",
-      "line": 324,
+      "line": 327,
       "signature": "export interface CreateIssueCommentData { readonly body: Record<string, unknown>; readonly visibility?: Visibility; read…",
       "jsdoc": "Request body for creating a comment on an issue.",
       "typeOnly": true
@@ -1574,7 +1574,7 @@
       "name": "IssueAttachment",
       "kind": "interface",
       "file": "src/jira/types.ts",
-      "line": 298,
+      "line": 301,
       "signature": "export interface IssueAttachment { readonly id: string; readonly self: string; readonly filename: string; readonly autho…",
       "jsdoc": "Jira Issue Attachment.",
       "typeOnly": true
@@ -1583,7 +1583,7 @@
       "name": "IssueComment",
       "kind": "interface",
       "file": "src/jira/types.ts",
-      "line": 280,
+      "line": 283,
       "signature": "export interface IssueComment { readonly id: string; readonly self: string; readonly author?: UserRef; readonly updateAu…",
       "jsdoc": "Jira Issue Comment.",
       "typeOnly": true
@@ -1609,7 +1609,7 @@
       "name": "JiraLabel",
       "kind": "type",
       "file": "src/jira/types.ts",
-      "line": 311,
+      "line": 314,
       "signature": "export type JiraLabel = string;",
       "jsdoc": "Jira Label (string).",
       "typeOnly": true
@@ -1618,7 +1618,7 @@
       "name": "JiraListLabelsParams",
       "kind": "interface",
       "file": "src/jira/types.ts",
-      "line": 340,
+      "line": 343,
       "signature": "export interface ListLabelsParams { readonly startAt?: number; readonly maxResults?: number; }",
       "jsdoc": "Parameters for listing Jira labels.",
       "typeOnly": true,
@@ -2141,7 +2141,7 @@
       "name": "ListIssueCommentsParams",
       "kind": "interface",
       "file": "src/jira/types.ts",
-      "line": 316,
+      "line": 319,
       "signature": "export interface ListIssueCommentsParams { readonly startAt?: number; readonly maxResults?: number; readonly orderBy?: '…",
       "jsdoc": "Parameters for listing comments on an issue.",
       "typeOnly": true
@@ -2606,7 +2606,7 @@
       "name": "PaginateOptions",
       "kind": "interface",
       "file": "src/core/pagination.ts",
-      "line": 48,
+      "line": 52,
       "signature": "export interface PaginateOptions { readonly maxPages?: number; readonly logger?: Logger; }",
       "jsdoc": "Options for the `paginate*` async generators.",
       "typeOnly": true
@@ -2854,7 +2854,7 @@
       "name": "SearchPaginatedResponse",
       "kind": "interface",
       "file": "src/core/pagination.ts",
-      "line": 33,
+      "line": 37,
       "signature": "export interface SearchPaginatedResponse<T> { readonly issues: T[]; readonly startAt: number; readonly maxResults: numbe…",
       "jsdoc": "Jira search uses 'issues' instead of 'values'.",
       "typeOnly": true
@@ -2881,7 +2881,7 @@
       "name": "SearchUsersParams",
       "kind": "interface",
       "file": "src/jira/types.ts",
-      "line": 255,
+      "line": 258,
       "signature": "export interface SearchUsersParams { readonly query?: string; readonly startAt?: number; readonly maxResults?: number; r…",
       "jsdoc": "Parameters for searching Jira users.",
       "typeOnly": true
@@ -3195,7 +3195,7 @@
       "name": "UpdateIssueCommentData",
       "kind": "interface",
       "file": "src/jira/types.ts",
-      "line": 331,
+      "line": 334,
       "signature": "export interface UpdateIssueCommentData { readonly body: Record<string, unknown>; readonly visibility?: Visibility; read…",
       "jsdoc": "Request body for updating an existing issue comment.",
       "typeOnly": true
@@ -3544,7 +3544,7 @@
       "name": "extractCursor",
       "kind": "function",
       "file": "src/core/pagination.ts",
-      "line": 110,
+      "line": 114,
       "signature": "export function extractCursor(nextUrl: string | undefined): string | undefined",
       "jsdoc": "Extract the cursor value from a Confluence _links.next URL."
     },
@@ -3576,7 +3576,7 @@
       "name": "paginateCursor",
       "kind": "function",
       "file": "src/core/pagination.ts",
-      "line": 162,
+      "line": 166,
       "signature": "export async function* paginateCursor<T>( transport: Transport, basePath: string, query?: Readonly<Record<string, string…",
       "jsdoc": "Async generator for Confluence cursor-based pagination. Yields individual items across all pages."
     },
@@ -3584,7 +3584,7 @@
       "name": "paginateOffset",
       "kind": "function",
       "file": "src/core/pagination.ts",
-      "line": 251,
+      "line": 255,
       "signature": "export async function* paginateOffset<T>( transport: Transport, basePath: string, query?: Readonly<Record<string, string…",
       "jsdoc": "Async generator for Jira offset-based pagination. Yields individual items across all pages."
     },
@@ -3592,7 +3592,7 @@
       "name": "paginateSearch",
       "kind": "function",
       "file": "src/core/pagination.ts",
-      "line": 359,
+      "line": 363,
       "signature": "export async function* paginateSearch<T>( transport: Transport, basePath: string, body: Record<string, unknown>, pageSiz…",
       "jsdoc": "Async generator for Jira search pagination (uses 'issues' key). Yields individual items across all pages."
     },
@@ -14277,7 +14277,7 @@
         {
           "name": "SearchPaginatedResponse",
           "kind": "interface",
-          "line": 33,
+          "line": 37,
           "exported": true,
           "signature": "export interface SearchPaginatedResponse<T> { readonly issues: T[]; readonly startAt: number; readonly maxResults: numbe…",
           "jsdoc": "Jira search uses 'issues' instead of 'values'."
@@ -14285,7 +14285,7 @@
         {
           "name": "PaginateOptions",
           "kind": "interface",
-          "line": 48,
+          "line": 52,
           "exported": true,
           "signature": "export interface PaginateOptions { readonly maxPages?: number; readonly logger?: Logger; }",
           "jsdoc": "Options for the `paginate*` async generators."
@@ -14293,32 +14293,32 @@
         {
           "name": "DEFAULT_MAX_PAGES",
           "kind": "variable",
-          "line": 58,
+          "line": 62,
           "signature": "const DEFAULT_MAX_PAGES = 10_000;"
         },
         {
           "name": "ResolvedPaginateOptions",
           "kind": "interface",
-          "line": 60,
+          "line": 64,
           "signature": "interface ResolvedPaginateOptions { readonly maxPages: number; readonly logger?: Logger; }"
         },
         {
           "name": "resolvePaginateOptions",
           "kind": "function",
-          "line": 76,
+          "line": 80,
           "signature": "function resolvePaginateOptions( arg: Logger | PaginateOptions | undefined, ): ResolvedPaginateOptions",
           "jsdoc": "Normalize the 4th argument of `paginateCursor`, which historically accepted a bare `Logger`. New callers may pass `PaginateOptions` instead. The legacy form is detected by duck-typing: a value whose `warn` is a function and that lacks both `maxPages` and `logger` keys is treated as a `Logger`."
         },
         {
           "name": "normalizeMaxPages",
           "kind": "function",
-          "line": 101,
+          "line": 105,
           "signature": "function normalizeMaxPages(value: number | undefined): number"
         },
         {
           "name": "extractCursor",
           "kind": "function",
-          "line": 110,
+          "line": 114,
           "exported": true,
           "signature": "export function extractCursor(nextUrl: string | undefined): string | undefined",
           "jsdoc": "Extract the cursor value from a Confluence _links.next URL."
@@ -14326,14 +14326,14 @@
         {
           "name": "maybeWarnNearLimit",
           "kind": "function",
-          "line": 126,
+          "line": 130,
           "signature": "function maybeWarnNearLimit( pageCount: number, threshold: number, maxPages: number, basePath: string, warned: boolean, …",
           "jsdoc": "Emit a single \"nearing maxPages\" warning the first time the page count crosses 80% of the cap. Subsequent pages do not re-warn."
         },
         {
           "name": "paginateCursor",
           "kind": "function",
-          "line": 162,
+          "line": 166,
           "exported": true,
           "signature": "export async function* paginateCursor<T>( transport: Transport, basePath: string, query?: Readonly<Record<string, string…",
           "jsdoc": "Async generator for Confluence cursor-based pagination. Yields individual items across all pages."
@@ -14341,7 +14341,7 @@
         {
           "name": "paginateOffset",
           "kind": "function",
-          "line": 251,
+          "line": 255,
           "exported": true,
           "signature": "export async function* paginateOffset<T>( transport: Transport, basePath: string, query?: Readonly<Record<string, string…",
           "jsdoc": "Async generator for Jira offset-based pagination. Yields individual items across all pages."
@@ -14349,7 +14349,7 @@
         {
           "name": "paginateSearch",
           "kind": "function",
-          "line": 359,
+          "line": 363,
           "exported": true,
           "signature": "export async function* paginateSearch<T>( transport: Transport, basePath: string, body: Record<string, unknown>, pageSiz…",
           "jsdoc": "Async generator for Jira search pagination (uses 'issues' key). Yields individual items across all pages."
@@ -37448,7 +37448,7 @@
         {
           "name": "SearchUsersParams",
           "kind": "interface",
-          "line": 255,
+          "line": 258,
           "exported": true,
           "signature": "export interface SearchUsersParams { readonly query?: string; readonly startAt?: number; readonly maxResults?: number; r…",
           "jsdoc": "Parameters for searching Jira users."
@@ -37456,7 +37456,7 @@
         {
           "name": "EntityProperty",
           "kind": "interface",
-          "line": 266,
+          "line": 269,
           "exported": true,
           "signature": "export interface EntityProperty { readonly key?: string; readonly value?: unknown; }",
           "jsdoc": "An entity property key-value pair (spec: EntityProperty)."
@@ -37464,7 +37464,7 @@
         {
           "name": "Visibility",
           "kind": "interface",
-          "line": 272,
+          "line": 275,
           "exported": true,
           "signature": "export interface Visibility { readonly type?: 'group' | 'role'; readonly value?: string; readonly identifier?: string | …",
           "jsdoc": "The group or role visibility restriction for a comment or issue (spec: Visibility)."
@@ -37472,7 +37472,7 @@
         {
           "name": "IssueComment",
           "kind": "interface",
-          "line": 280,
+          "line": 283,
           "exported": true,
           "signature": "export interface IssueComment { readonly id: string; readonly self: string; readonly author?: UserRef; readonly updateAu…",
           "jsdoc": "Jira Issue Comment."
@@ -37480,7 +37480,7 @@
         {
           "name": "IssueAttachment",
           "kind": "interface",
-          "line": 298,
+          "line": 301,
           "exported": true,
           "signature": "export interface IssueAttachment { readonly id: string; readonly self: string; readonly filename: string; readonly autho…",
           "jsdoc": "Jira Issue Attachment."
@@ -37488,7 +37488,7 @@
         {
           "name": "JiraLabel",
           "kind": "type",
-          "line": 311,
+          "line": 314,
           "exported": true,
           "signature": "export type JiraLabel = string;",
           "jsdoc": "Jira Label (string)."
@@ -37496,7 +37496,7 @@
         {
           "name": "ListIssueCommentsParams",
           "kind": "interface",
-          "line": 316,
+          "line": 319,
           "exported": true,
           "signature": "export interface ListIssueCommentsParams { readonly startAt?: number; readonly maxResults?: number; readonly orderBy?: '…",
           "jsdoc": "Parameters for listing comments on an issue."
@@ -37504,7 +37504,7 @@
         {
           "name": "CreateIssueCommentData",
           "kind": "interface",
-          "line": 324,
+          "line": 327,
           "exported": true,
           "signature": "export interface CreateIssueCommentData { readonly body: Record<string, unknown>; readonly visibility?: Visibility; read…",
           "jsdoc": "Request body for creating a comment on an issue."
@@ -37512,7 +37512,7 @@
         {
           "name": "UpdateIssueCommentData",
           "kind": "interface",
-          "line": 331,
+          "line": 334,
           "exported": true,
           "signature": "export interface UpdateIssueCommentData { readonly body: Record<string, unknown>; readonly visibility?: Visibility; read…",
           "jsdoc": "Request body for updating an existing issue comment."
@@ -37520,7 +37520,7 @@
         {
           "name": "ListLabelsParams",
           "kind": "interface",
-          "line": 340,
+          "line": 343,
           "exported": true,
           "signature": "export interface ListLabelsParams { readonly startAt?: number; readonly maxResults?: number; }",
           "jsdoc": "Parameters for listing Jira labels."
@@ -37528,7 +37528,7 @@
         {
           "name": "CreateUserData",
           "kind": "interface",
-          "line": 348,
+          "line": 351,
           "exported": true,
           "signature": "export interface CreateUserData { readonly emailAddress: string; readonly displayName?: string; readonly name?: string; …",
           "jsdoc": "Request body for creating a Jira user (B798)."
@@ -37536,7 +37536,7 @@
         {
           "name": "AssignableMultiProjectSearchParams",
           "kind": "interface",
-          "line": 357,
+          "line": 360,
           "exported": true,
           "signature": "export interface AssignableMultiProjectSearchParams { readonly query?: string; readonly username?: string; readonly acco…",
           "jsdoc": "Parameters for searching assignable users across multiple projects (B799)."
@@ -37544,7 +37544,7 @@
         {
           "name": "AssignableSearchParams",
           "kind": "interface",
-          "line": 367,
+          "line": 370,
           "exported": true,
           "signature": "export interface AssignableSearchParams { readonly project: string; readonly query?: string; readonly sessionId?: string…",
           "jsdoc": "Parameters for searching assignable users for a project (B800)."
@@ -37552,7 +37552,7 @@
         {
           "name": "BulkUsersParams",
           "kind": "interface",
-          "line": 388,
+          "line": 391,
           "exported": true,
           "signature": "export interface BulkUsersParams { readonly accountId: string[]; readonly startAt?: number; readonly maxResults?: number…",
           "jsdoc": "Parameters for bulk fetching users (B801)."
@@ -37560,7 +37560,7 @@
         {
           "name": "BulkUsersResponse",
           "kind": "interface",
-          "line": 395,
+          "line": 398,
           "exported": true,
           "signature": "export interface BulkUsersResponse { readonly maxResults: number; readonly startAt: number; readonly total: number; read…",
           "jsdoc": "Paginated response wrapper for bulk user fetch (B801)."
@@ -37568,7 +37568,7 @@
         {
           "name": "BulkMigrationParams",
           "kind": "interface",
-          "line": 404,
+          "line": 407,
           "exported": true,
           "signature": "export interface BulkMigrationParams { readonly username?: string[]; readonly key?: string[]; readonly startAt?: number;…",
           "jsdoc": "Parameters for bulk account ID migration (B802)."
@@ -37576,7 +37576,7 @@
         {
           "name": "UserMigrationRecord",
           "kind": "interface",
-          "line": 412,
+          "line": 415,
           "exported": true,
           "signature": "export interface UserMigrationRecord { readonly key?: string; readonly accountId?: string; readonly username?: string; }",
           "jsdoc": "Migration mapping from legacy key to accountId (B802)."
@@ -37584,7 +37584,7 @@
         {
           "name": "UserColumnItem",
           "kind": "interface",
-          "line": 419,
+          "line": 422,
           "exported": true,
           "signature": "export interface UserColumnItem { readonly label: string; readonly value: string; }",
           "jsdoc": "A user column setting (B804/B805)."
@@ -37592,7 +37592,7 @@
         {
           "name": "UserEmailRecord",
           "kind": "interface",
-          "line": 425,
+          "line": 428,
           "exported": true,
           "signature": "export interface UserEmailRecord { readonly accountId: string; readonly email: string; }",
           "jsdoc": "Response for the user email endpoint (B806)."
@@ -37600,7 +37600,7 @@
         {
           "name": "BulkUserEmailsResponse",
           "kind": "interface",
-          "line": 437,
+          "line": 440,
           "exported": true,
           "signature": "export interface BulkUserEmailsResponse { readonly accountId?: string; readonly email?: string; }",
           "jsdoc": "Response for the bulk email endpoint (B807)."
@@ -37608,7 +37608,7 @@
         {
           "name": "UserGroupEntry",
           "kind": "interface",
-          "line": 443,
+          "line": 446,
           "exported": true,
           "signature": "export interface UserGroupEntry { readonly name?: string; readonly self?: string; readonly groupId?: string | null; }",
           "jsdoc": "A group entry returned by the user groups endpoint (B808). Spec: GroupName."
@@ -37616,7 +37616,7 @@
         {
           "name": "GetUserGroupsParams",
           "kind": "interface",
-          "line": 451,
+          "line": 454,
           "exported": true,
           "signature": "export interface GetUserGroupsParams { readonly accountId: string; readonly username?: string; readonly key?: string; }",
           "jsdoc": "Parameters for getting groups for a user (B808)."
@@ -37624,7 +37624,7 @@
         {
           "name": "GetPermissionUsersParams",
           "kind": "interface",
-          "line": 460,
+          "line": 463,
           "exported": true,
           "signature": "export interface GetPermissionUsersParams { readonly projectKey?: string; readonly issueKey?: string; readonly query?: s…",
           "jsdoc": "Parameters for searching users by permission."
@@ -37632,7 +37632,7 @@
         {
           "name": "UserPickerEntry",
           "kind": "interface",
-          "line": 472,
+          "line": 475,
           "exported": true,
           "signature": "export interface UserPickerEntry { readonly accountId: string; readonly displayName: string; readonly avatarUrl?: string…",
           "jsdoc": "A compact user entry returned by the user picker endpoint."
@@ -37640,7 +37640,7 @@
         {
           "name": "UserPickerResponse",
           "kind": "interface",
-          "line": 480,
+          "line": 483,
           "exported": true,
           "signature": "export interface UserPickerResponse { readonly users: readonly UserPickerEntry[]; readonly header?: string; readonly tot…",
           "jsdoc": "Response from the user picker endpoint (B810)."
@@ -37648,7 +37648,7 @@
         {
           "name": "UserPickerParams",
           "kind": "interface",
-          "line": 487,
+          "line": 490,
           "exported": true,
           "signature": "export interface UserPickerParams { readonly query: string; readonly maxResults?: number; readonly showAvatar?: boolean;…",
           "jsdoc": "Parameters for the user picker endpoint."
@@ -37656,7 +37656,7 @@
         {
           "name": "UserPropertyKey",
           "kind": "interface",
-          "line": 498,
+          "line": 501,
           "exported": true,
           "signature": "export interface UserPropertyKey { readonly key: string; readonly self: string; }",
           "jsdoc": "A single property key entry returned by the list-properties endpoint."
@@ -37664,7 +37664,7 @@
         {
           "name": "UserPropertyKeys",
           "kind": "interface",
-          "line": 504,
+          "line": 507,
           "exported": true,
           "signature": "export interface UserPropertyKeys { readonly keys: readonly UserPropertyKey[]; }",
           "jsdoc": "Response from the list user properties endpoint (B811)."
@@ -37672,7 +37672,7 @@
         {
           "name": "UserProperty",
           "kind": "interface",
-          "line": 509,
+          "line": 512,
           "exported": true,
           "signature": "export interface UserProperty { readonly key: string; readonly value: unknown; }",
           "jsdoc": "Response from the get user property endpoint (B813)."
@@ -37680,7 +37680,7 @@
         {
           "name": "UserIdentifierParams",
           "kind": "interface",
-          "line": 515,
+          "line": 518,
           "exported": true,
           "signature": "export interface UserIdentifierParams { readonly userKey?: string; readonly accountId?: string; }",
           "jsdoc": "Parameters identifying a user by key or account ID (used across property endpoints)."
@@ -37688,7 +37688,7 @@
         {
           "name": "UserSearchQueryResult",
           "kind": "interface",
-          "line": 521,
+          "line": 524,
           "exported": true,
           "signature": "export interface UserSearchQueryResult { readonly values?: readonly User[]; readonly startAt?: number; readonly maxResul…",
           "jsdoc": "Paginated response wrapping User values (B815). Spec: PageBeanUser."
@@ -37696,7 +37696,7 @@
         {
           "name": "UserKeyEntry",
           "kind": "interface",
-          "line": 532,
+          "line": 535,
           "exported": true,
           "signature": "export interface UserKeyEntry { readonly key?: string; readonly accountId?: string; }",
           "jsdoc": "A user key entry as returned by the user search/query/key endpoint. Spec: UserKey."
@@ -37704,7 +37704,7 @@
         {
           "name": "UserKeySearchQueryResult",
           "kind": "interface",
-          "line": 538,
+          "line": 541,
           "exported": true,
           "signature": "export interface UserKeySearchQueryResult { readonly values?: readonly UserKeyEntry[]; readonly startAt?: number; readon…",
           "jsdoc": "Paginated response wrapping user keys (B816). Spec: PageBeanUserKey."
@@ -37712,7 +37712,7 @@
         {
           "name": "SearchUsersQueryParams",
           "kind": "interface",
-          "line": 549,
+          "line": 552,
           "exported": true,
           "signature": "export interface SearchUsersQueryParams { readonly query?: string; readonly startAt?: number; readonly maxResults?: numb…",
           "jsdoc": "Parameters for GET /rest/api/3/user/search/query (B815) and key variant (B816)."
@@ -37720,7 +37720,7 @@
         {
           "name": "ViewIssueSearchUsersParams",
           "kind": "interface",
-          "line": 556,
+          "line": 559,
           "exported": true,
           "signature": "export interface ViewIssueSearchUsersParams { readonly issueKey?: string; readonly projectKey?: string; readonly query?:…",
           "jsdoc": "Parameters for GET /rest/api/3/user/viewissue/search (B817)."
@@ -37728,7 +37728,7 @@
         {
           "name": "ListAllUsersParams",
           "kind": "interface",
-          "line": 567,
+          "line": 570,
           "exported": true,
           "signature": "export interface ListAllUsersParams { readonly startAt?: number; readonly maxResults?: number; readonly expand?: string;…",
           "jsdoc": "Parameters for GET /rest/api/3/users (B818)."
@@ -37736,7 +37736,7 @@
         {
           "name": "SearchAllUsersParams",
           "kind": "interface",
-          "line": 575,
+          "line": 578,
           "exported": true,
           "signature": "export interface SearchAllUsersParams { readonly query?: string; readonly username?: string; readonly startAt?: number; …",
           "jsdoc": "Parameters for GET /rest/api/3/users/search (B819)."

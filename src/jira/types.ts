@@ -241,8 +241,11 @@ export interface SearchParams {
   readonly startAt?: number;
   readonly maxResults?: number;
   readonly fields?: string[];
-  /** Comma-separated expand options (type: string in spec GET; body string in POST). */
-  readonly expand?: string;
+  /**
+   * Expand options. GET `/search` serializes these as a comma-separated `type:string`
+   * query param; POST `/search` body (`SearchRequestBean.expand`) is `type:array`.
+   */
+  readonly expand?: string[];
   /** Validate the JQL query. Enum: "strict" | "warn" | "none" | "true" | "false". */
   readonly validateQuery?: 'strict' | 'warn' | 'none' | 'true' | 'false';
   /** List of issue properties to return (type: array → repeated params on GET). */

@@ -55,7 +55,7 @@ export class SearchResource {
     if (params.startAt !== undefined) body['startAt'] = params.startAt;
     if (params.maxResults !== undefined) body['maxResults'] = params.maxResults;
     if (params.fields !== undefined) body['fields'] = params.fields;
-    // POST body: `expand` is a string in the spec (comma-separated), not an array.
+    // POST `/search` body (`SearchRequestBean.expand`) is `type: array` — send as-is.
     if (params.expand !== undefined) body['expand'] = params.expand;
     if (params.validateQuery !== undefined) body['validateQuery'] = params.validateQuery;
     if (params.properties !== undefined) body['properties'] = params.properties;
@@ -77,8 +77,8 @@ export class SearchResource {
     if (params.startAt !== undefined) query['startAt'] = params.startAt;
     if (params.maxResults !== undefined) query['maxResults'] = params.maxResults;
     // `/search` GET: `fields`/`properties` are `type: array` → repeated params baked into the
-    // path; `expand` is `type: string` → stays as-is (B1049).
-    if (params.expand !== undefined) query['expand'] = params.expand;
+    // path; `expand` is `type: string` → comma-joined (B1049).
+    if (params.expand !== undefined) query['expand'] = params.expand.join(',');
     if (params.validateQuery !== undefined) query['validateQuery'] = params.validateQuery;
     if (params.fieldsByKeys !== undefined) query['fieldsByKeys'] = params.fieldsByKeys;
 

@@ -59,7 +59,7 @@ describe('SearchResource', () => {
         startAt: 10,
         maxResults: 25,
         fields: ['summary', 'status'],
-        expand: 'renderedFields',
+        expand: ['renderedFields'],
       });
 
       // Assert
@@ -68,7 +68,7 @@ describe('SearchResource', () => {
         startAt: 10,
         maxResults: 25,
         fields: ['summary', 'status'],
-        expand: 'renderedFields',
+        expand: ['renderedFields'],
       });
     });
 
@@ -123,11 +123,11 @@ describe('SearchResource', () => {
         startAt: 5,
         maxResults: 20,
         fields: ['id', 'key', 'summary'],
-        expand: 'changelog',
+        expand: ['changelog'],
       });
 
       // Assert — `/search` GET: `fields` is `type: array` → repeated params in
-      // the path; `expand` is `type: string` → sent as-is (B1049).
+      // the path; `expand` is `type: string` → comma-joined (B1049).
       expect(transport.lastCall?.options.query).toMatchObject({
         jql: 'project = PROJ',
         startAt: 5,
@@ -240,7 +240,7 @@ describe('SearchResource', () => {
       for await (const _ of search.searchAll({
         jql: 'project = PROJ',
         fields: ['summary', 'status'],
-        expand: 'changelog',
+        expand: ['changelog'],
       })) {
         // consume
       }
@@ -248,7 +248,7 @@ describe('SearchResource', () => {
       // Assert
       expect(transport.calls[0]?.options.body).toMatchObject({
         fields: ['summary', 'status'],
-        expand: 'changelog',
+        expand: ['changelog'],
       });
     });
   });
