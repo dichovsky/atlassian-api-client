@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "2.0.0"
   },
-  "sourceHash": "3a00bdb86dde4d04164a1401140ac44e8068070deae41ebb1297182cf4456f89",
+  "sourceHash": "899240c3ef51294f8b93cb28d951c78df628e89545aeed587158b180aba916c8",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -19551,6 +19551,21 @@
         },
         {
           "kind": "named",
+          "from": "./resources/issuelink.js",
+          "typeOnly": true,
+          "names": [
+            {
+              "exported": "LinkedIssueFields",
+              "original": "LinkedIssueFields"
+            },
+            {
+              "exported": "IssueLinkComment",
+              "original": "IssueLinkComment"
+            }
+          ]
+        },
+        {
+          "kind": "named",
           "from": "./resources/issuelinktype.js",
           "typeOnly": true,
           "names": [
@@ -26105,13 +26120,13 @@
           "kind": "interface",
           "line": 8,
           "exported": true,
-          "signature": "export interface FieldConfiguration { readonly id: number; readonly name: string; readonly description?: string; readonl…",
+          "signature": "export interface FieldConfiguration { readonly id: number; readonly name: string; readonly description: string; readonly…",
           "jsdoc": "Details of a Jira field configuration."
         },
         {
           "name": "FieldConfigurationItem",
           "kind": "interface",
-          "line": 16,
+          "line": 17,
           "exported": true,
           "signature": "export interface FieldConfigurationItem { readonly id: string; readonly description?: string; readonly isHidden?: boolea…",
           "jsdoc": "A single field entry within a field configuration."
@@ -26119,7 +26134,7 @@
         {
           "name": "ListFieldConfigurationsParams",
           "kind": "interface",
-          "line": 25,
+          "line": 26,
           "exported": true,
           "signature": "export interface ListFieldConfigurationsParams { readonly startAt?: number; readonly maxResults?: number; readonly id?: …",
           "jsdoc": "Query parameters for GET /rest/api/3/fieldconfiguration."
@@ -26127,7 +26142,7 @@
         {
           "name": "ListFieldConfigurationItemsParams",
           "kind": "interface",
-          "line": 39,
+          "line": 40,
           "exported": true,
           "signature": "export interface ListFieldConfigurationItemsParams { readonly startAt?: number; readonly maxResults?: number; }",
           "jsdoc": "Query parameters for GET /rest/api/3/fieldconfiguration/{id}/fields."
@@ -26135,7 +26150,7 @@
         {
           "name": "CreateFieldConfigurationData",
           "kind": "interface",
-          "line": 47,
+          "line": 48,
           "exported": true,
           "signature": "export interface CreateFieldConfigurationData { readonly name: string; readonly description?: string; }",
           "jsdoc": "Request body for POST /rest/api/3/fieldconfiguration."
@@ -26143,7 +26158,7 @@
         {
           "name": "UpdateFieldConfigurationData",
           "kind": "interface",
-          "line": 53,
+          "line": 54,
           "exported": true,
           "signature": "export interface UpdateFieldConfigurationData { readonly name: string; readonly description?: string; }",
           "jsdoc": "Request body for PUT /rest/api/3/fieldconfiguration/{id}."
@@ -26151,7 +26166,7 @@
         {
           "name": "UpdateFieldConfigurationItemsData",
           "kind": "interface",
-          "line": 59,
+          "line": 60,
           "exported": true,
           "signature": "export interface UpdateFieldConfigurationItemsData { readonly fieldConfigurationItems: FieldConfigurationItem[]; }",
           "jsdoc": "Request body for PUT /rest/api/3/fieldconfiguration/{id}/fields."
@@ -26159,7 +26174,7 @@
         {
           "name": "FieldConfigurationResource",
           "kind": "class",
-          "line": 71,
+          "line": 72,
           "exported": true,
           "signature": "export class FieldConfigurationResource",
           "jsdoc": "Jira Issue Field Configurations resource — B908-B913.",
@@ -26167,60 +26182,60 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 72
+              "line": 73
             },
             {
               "name": "list",
               "kind": "method",
-              "line": 81
+              "line": 82
             },
             {
               "name": "listAll",
               "kind": "method",
-              "line": 97
+              "line": 98
             },
             {
               "name": "create",
               "kind": "method",
-              "line": 114
+              "line": 115
             },
             {
               "name": "delete",
               "kind": "method",
-              "line": 129
+              "line": 130
             },
             {
               "name": "update",
               "kind": "method",
-              "line": 140
+              "line": 141
             },
             {
               "name": "listFields",
               "kind": "method",
-              "line": 154
+              "line": 155
             },
             {
               "name": "listAllFields",
               "kind": "method",
-              "line": 171
+              "line": 172
             },
             {
               "name": "updateFields",
               "kind": "method",
-              "line": 189
+              "line": 190
             }
           ]
         },
         {
           "name": "buildListQuery",
           "kind": "function",
-          "line": 200,
+          "line": 201,
           "signature": "function buildListQuery( params: ListFieldConfigurationsParams | undefined, ): Record<string, string | number | boolean …"
         },
         {
           "name": "buildFieldsQuery",
           "kind": "function",
-          "line": 213,
+          "line": 214,
           "signature": "function buildFieldsQuery( params: ListFieldConfigurationItemsParams | undefined, ): Record<string, string | number | bo…"
         }
       ],
@@ -28508,17 +28523,33 @@
           "jsdoc": "A Jira issue link type reference used in link requests. Spec: `IssueLinkType` schema (id, inward, name, outward, self)."
         },
         {
+          "name": "LinkedIssueFields",
+          "kind": "interface",
+          "line": 25,
+          "exported": true,
+          "signature": "export interface LinkedIssueFields { readonly summary?: string; readonly assignee?: unknown; readonly issueType?: unknow…",
+          "jsdoc": "Key fields from a linked issue (response-only). Spec: `Fields` schema — present on `LinkedIssue.fields` in GET responses."
+        },
+        {
           "name": "LinkedIssue",
           "kind": "interface",
-          "line": 20,
+          "line": 46,
           "exported": true,
-          "signature": "export interface LinkedIssue { readonly id?: string; readonly key?: string; readonly self?: string; readonly fields?: Re…",
+          "signature": "export interface LinkedIssue { readonly id?: string; readonly key?: string; readonly self?: string; readonly fields?: Li…",
           "jsdoc": "A linked issue reference (inward or outward side of a link). Spec: `LinkedIssue` schema (fields, id, key, self)."
+        },
+        {
+          "name": "IssueLinkComment",
+          "kind": "interface",
+          "line": 61,
+          "exported": true,
+          "signature": "export interface IssueLinkComment { readonly body?: unknown; readonly visibility?: { readonly type?: string; readonly va…",
+          "jsdoc": "Comment to optionally attach to the outward issue of a new link. Spec: `Comment` schema (additionalProperties: true, so extra fields are allowed)."
         },
         {
           "name": "IssueLink",
           "kind": "interface",
-          "line": 31,
+          "line": 83,
           "exported": true,
           "signature": "export interface IssueLink { readonly id?: string; readonly self?: string; readonly type: IssueLinkTypeRef; readonly inw…",
           "jsdoc": "An issue link instance returned by GET /rest/api/3/issueLink/{linkId}. Spec: `IssueLink` schema."
@@ -28526,7 +28557,7 @@
         {
           "name": "CreateIssueLinkData",
           "kind": "interface",
-          "line": 43,
+          "line": 95,
           "exported": true,
           "signature": "export interface CreateIssueLinkData { readonly type: IssueLinkTypeRef; readonly inwardIssue: LinkedIssue; readonly outw…",
           "jsdoc": "Request body for POST /rest/api/3/issueLink (B530). Spec: `LinkIssueRequestJsonBean` schema."
@@ -28534,7 +28565,7 @@
         {
           "name": "IssueLinkResource",
           "kind": "class",
-          "line": 62,
+          "line": 114,
           "exported": true,
           "signature": "export class IssueLinkResource",
           "jsdoc": "Jira Issue Link resource — create/get/delete endpoints under `/rest/api/3/issueLink` (B530-B532).",
@@ -28542,22 +28573,22 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 63
+              "line": 115
             },
             {
               "name": "create",
               "kind": "method",
-              "line": 75
+              "line": 127
             },
             {
               "name": "get",
               "kind": "method",
-              "line": 95
+              "line": 147
             },
             {
               "name": "delete",
               "kind": "method",
-              "line": 109
+              "line": 161
             }
           ]
         }
@@ -28573,7 +28604,7 @@
         {
           "name": "IssueLinkType",
           "kind": "interface",
-          "line": 13,
+          "line": 12,
           "exported": true,
           "signature": "export interface IssueLinkType { readonly id?: string; readonly inward?: string; readonly name?: string; readonly outwar…",
           "jsdoc": "A Jira issue link type (e.g. \"Blocks\", \"Clones\", \"Duplicate\")."
@@ -28581,7 +28612,7 @@
         {
           "name": "IssueLinkTypes",
           "kind": "interface",
-          "line": 22,
+          "line": 21,
           "exported": true,
           "signature": "export interface IssueLinkTypes { readonly issueLinkTypes: IssueLinkType[]; }",
           "jsdoc": "Response envelope for GET /rest/api/3/issueLinkType."
@@ -28589,7 +28620,7 @@
         {
           "name": "CreateIssueLinkTypeData",
           "kind": "interface",
-          "line": 27,
+          "line": 26,
           "exported": true,
           "signature": "export interface CreateIssueLinkTypeData { readonly name: string; readonly inward: string; readonly outward: string; }",
           "jsdoc": "Request body for POST /rest/api/3/issueLinkType (B534)."
@@ -28597,7 +28628,7 @@
         {
           "name": "UpdateIssueLinkTypeData",
           "kind": "interface",
-          "line": 34,
+          "line": 33,
           "exported": true,
           "signature": "export interface UpdateIssueLinkTypeData { readonly name?: string; readonly inward?: string; readonly outward?: string; …",
           "jsdoc": "Request body for PUT /rest/api/3/issueLinkType/{issueLinkTypeId} (B537)."
@@ -28605,7 +28636,7 @@
         {
           "name": "IssueLinkTypeResource",
           "kind": "class",
-          "line": 47,
+          "line": 46,
           "exported": true,
           "signature": "export class IssueLinkTypeResource",
           "jsdoc": "Jira Issue Link Type resource — CRUD endpoints under `/rest/api/3/issueLinkType` (B533-B537).",
@@ -28613,12 +28644,12 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 48
+              "line": 47
             },
             {
               "name": "list",
               "kind": "method",
-              "line": 61
+              "line": 60
             },
             {
               "name": "create",
@@ -28638,13 +28669,12 @@
             {
               "name": "delete",
               "kind": "method",
-              "line": 127
+              "line": 124
             }
           ]
         }
       ],
       "imports": [
-        "../../core/errors.js",
         "../../core/path.js",
         "../../core/types.js"
       ]
@@ -32909,27 +32939,27 @@
             {
               "name": "createWithCustomTemplate",
               "kind": "method",
-              "line": 167
+              "line": 170
             },
             {
               "name": "editTemplate",
               "kind": "method",
-              "line": 179
+              "line": 185
             },
             {
               "name": "getLiveTemplate",
               "kind": "method",
-              "line": 191
+              "line": 197
             },
             {
               "name": "removeTemplate",
               "kind": "method",
-              "line": 207
+              "line": 213
             },
             {
               "name": "saveTemplate",
               "kind": "method",
-              "line": 219
+              "line": 225
             }
           ]
         }

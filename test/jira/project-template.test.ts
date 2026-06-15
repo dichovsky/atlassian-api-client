@@ -21,7 +21,9 @@ describe('ProjectTemplateResource', () => {
 
   describe('createWithCustomTemplate()', () => {
     it('POST /project-template with full data', async () => {
-      transport.respondWith(undefined);
+      transport.respondWithHeaders(undefined, 303, {
+        location: `${BASE_URL}/task/10001`,
+      });
 
       await resource.createWithCustomTemplate({
         details: {
@@ -71,7 +73,9 @@ describe('ProjectTemplateResource', () => {
     });
 
     it('POST /project-template with minimal data (empty objects)', async () => {
-      transport.respondWith(undefined);
+      transport.respondWithHeaders(undefined, 303, {
+        location: `${BASE_URL}/task/10002`,
+      });
 
       await resource.createWithCustomTemplate({});
 
@@ -82,9 +86,20 @@ describe('ProjectTemplateResource', () => {
       });
     });
 
-    it('returns void on success', async () => {
-      transport.respondWith(undefined);
+    it('returns Location header URL as string when present', async () => {
+      const taskUrl = `${BASE_URL}/task/10001`;
+      transport.respondWithHeaders(undefined, 303, { location: taskUrl });
+
       const result = await resource.createWithCustomTemplate({ details: { name: 'Test' } });
+
+      expect(result).toBe(taskUrl);
+    });
+
+    it('returns undefined when Location header is absent', async () => {
+      transport.respondWith(undefined, 303);
+
+      const result = await resource.createWithCustomTemplate({ details: { name: 'Test' } });
+
       expect(result).toBeUndefined();
     });
   });

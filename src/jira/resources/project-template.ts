@@ -161,15 +161,21 @@ export class ProjectTemplateResource {
 
   /**
    * B653 POST /rest/api/3/project-template
-   * Creates a project based on a custom template (async — returns 303 redirect;
-   * no JSON body in 303 response per spec).
+   * Creates a project based on a custom template (async — returns 303 redirect).
+   *
+   * The server responds with 303 and a `Location` header pointing to the task
+   * URL. Use the returned URL with `GET /rest/api/3/task/{taskId}` to poll for
+   * completion. Returns `undefined` when the server omits the `Location` header.
    */
-  async createWithCustomTemplate(data: ProjectCustomTemplateCreateRequestDTO): Promise<void> {
-    await this.transport.request<undefined>({
+  async createWithCustomTemplate(
+    data: ProjectCustomTemplateCreateRequestDTO,
+  ): Promise<string | undefined> {
+    const response = await this.transport.request<undefined>({
       method: 'POST',
       path: `${this.baseUrl}/project-template`,
       body: data,
     });
+    return response.headers.get('location') ?? undefined;
   }
 
   /**
