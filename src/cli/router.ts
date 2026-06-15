@@ -240,7 +240,6 @@ const GLOBAL_OPTIONS = {
   'lead-account-id': { type: 'string' as const },
   'lead-user-name': { type: 'string' as const },
   'assignee-type': { type: 'string' as const },
-  'is-assignee-type-valid': { type: 'boolean' as const },
   'move-issues-to': { type: 'string' as const },
   // application-properties options (B331-B333)
   'permission-level': { type: 'string' as const },

@@ -34,15 +34,15 @@ describe('LinkedWorkspacesResource', () => {
       });
     });
 
-    it('returns an empty object when no workspaceIds present', async () => {
+    it('returns the workspaceIds array from the response', async () => {
       // Arrange
-      transport.respondWith({});
+      transport.respondWith({ workspaceIds: [] });
 
       // Act
       const result = await resource.listOperations();
 
       // Assert
-      expect(result).toEqual({});
+      expect(result.workspaceIds).toEqual([]);
     });
 
     it('propagates transport errors', async () => {
@@ -160,15 +160,15 @@ describe('LinkedWorkspacesResource', () => {
       });
     });
 
-    it('returns an empty object when no workspaceIds present', async () => {
+    it('returns the workspaceIds array from the response', async () => {
       // Arrange
-      transport.respondWith({});
+      transport.respondWith({ workspaceIds: [] });
 
       // Act
       const result = await resource.listSecurity();
 
       // Assert
-      expect(result).toEqual({});
+      expect(result.workspaceIds).toEqual([]);
     });
 
     it('propagates transport errors', async () => {
@@ -212,16 +212,16 @@ describe('LinkedWorkspacesResource', () => {
       );
     });
 
-    it('returns a workspace with only workspaceId when updatedAt is absent', async () => {
+    it('returns the full workspace object with workspaceId and updatedAt', async () => {
       // Arrange
-      transport.respondWith({ workspaceId: 'ws-2' });
+      transport.respondWith({ workspaceId: 'ws-2', updatedAt: '2024-06-01T00:00:00Z' });
 
       // Act
       const result = await resource.getSecurity('ws-2');
 
       // Assert
       expect(result.workspaceId).toBe('ws-2');
-      expect(result.updatedAt).toBeUndefined();
+      expect(result.updatedAt).toBe('2024-06-01T00:00:00Z');
     });
 
     it('propagates transport errors', async () => {

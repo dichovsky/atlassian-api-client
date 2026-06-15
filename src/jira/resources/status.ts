@@ -1,25 +1,30 @@
 import type { Transport } from '../../core/types.js';
 import { encodePathSegment } from '../../core/path.js';
 
-/** A Jira status category reference embedded in a workflow status. */
+/** A Jira status category reference embedded in a workflow status (StatusCategory schema). */
 export interface JiraStatusCategoryRef {
-  readonly id: number;
-  readonly key: string;
-  readonly name: string;
+  readonly id?: number;
+  readonly key?: string;
+  readonly name?: string;
   readonly colorName?: string;
   readonly self?: string;
 }
 
-/** A Jira workflow status returned by GET /rest/api/3/status. */
+/** Scope of a status — associated project and scope type (Scope schema). */
+export interface JiraStatusScope {
+  readonly type?: 'PROJECT' | 'TEMPLATE';
+  readonly project?: Record<string, unknown>;
+}
+
+/** A Jira workflow status returned by GET /rest/api/3/status (StatusDetails schema). */
 export interface JiraStatus {
-  readonly id: string;
-  readonly name: string;
+  readonly id?: string;
+  readonly name?: string;
   readonly self?: string;
   readonly description?: string;
   readonly iconUrl?: string;
   readonly statusCategory?: JiraStatusCategoryRef;
-  readonly scope?: Record<string, unknown>;
-  readonly untranslatedName?: string;
+  readonly scope?: JiraStatusScope;
 }
 
 /** Jira Status resource — GET /rest/api/3/status. */

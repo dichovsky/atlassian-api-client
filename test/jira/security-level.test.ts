@@ -9,6 +9,7 @@ const makeSecurityLevel = (overrides?: Partial<{ id: string; name: string }>) =>
   id: overrides?.id ?? '10001',
   name: overrides?.name ?? 'Confidential',
   description: 'Visible to reporters and above',
+  isDefault: false,
   issueSecuritySchemeId: '10000',
   self: `${BASE_URL}/securitylevel/${overrides?.id ?? '10001'}`,
 });
@@ -50,6 +51,31 @@ describe('SecurityLevelResource', () => {
 
       // Assert
       expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/securitylevel/level%2Fspecial`);
+    });
+
+    it('returns a security level with isDefault=true for the default level', async () => {
+      // Arrange
+      const level = { ...makeSecurityLevel(), isDefault: true };
+      transport.respondWith(level);
+
+      // Act
+      const result = await securityLevel.get('10001');
+
+      // Assert
+      expect(result.isDefault).toBe(true);
+    });
+
+    it('handles security level with all optional fields absent', async () => {
+      // Arrange
+      transport.respondWith({});
+
+      // Act
+      const result = await securityLevel.get('10001');
+
+      // Assert
+      expect(result.id).toBeUndefined();
+      expect(result.name).toBeUndefined();
+      expect(result.isDefault).toBeUndefined();
     });
 
     it('propagates transport errors', async () => {

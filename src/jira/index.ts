@@ -471,7 +471,7 @@ export type {
 export { AnnouncementBannerResource } from './resources/announcement-banner.js';
 export type { MoveIssuesToBoardOptions } from './resources/backlog.js';
 export { BacklogResource } from './resources/backlog.js';
-export type { ApplicationRole } from './resources/application-role.js';
+export type { ApplicationRole, ApplicationRoleGroupName } from './resources/application-role.js';
 export { ApplicationRoleResource } from './resources/application-role.js';
 export type {
   WorkspaceDataPolicy,
@@ -480,7 +480,7 @@ export type {
   ListProjectDataPoliciesParams,
 } from './resources/data-policy.js';
 export { DataPolicyResource } from './resources/data-policy.js';
-export type { JiraStatus, JiraStatusCategoryRef } from './resources/status.js';
+export type { JiraStatus, JiraStatusCategoryRef, JiraStatusScope } from './resources/status.js';
 export { StatusResource } from './resources/status.js';
 export type { JiraStatusCategory } from './resources/status-category.js';
 export { StatusCategoryResource } from './resources/status-category.js';
@@ -664,6 +664,7 @@ export { AppResource } from './resources/app.js';
 export type {
   Component,
   ComponentAssigneeType,
+  ComponentOrderBy,
   ComponentUserRef,
   ComponentRelatedIssueCounts,
   ListComponentsParams,
@@ -1140,6 +1141,8 @@ export type {
   MigrationEntityType,
   EntityPropertyDetails,
   WorkflowRulesSearch,
+  RuleConfiguration,
+  MigrationWorkflowTransition,
   AppWorkflowTransitionRule,
   WorkflowTransitionRules,
   WorkflowRulesSearchDetails,

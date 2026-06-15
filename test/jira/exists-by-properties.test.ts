@@ -17,65 +17,66 @@ describe('ExistsByPropertiesResource', () => {
 
   describe('get()', () => {
     it('calls GET /existsByProperties with no params and returns the response', async () => {
-      // Arrange
-      transport.respondWith({ exists: true });
+      // Arrange — spec field name is hasDataMatchingProperties
+      transport.respondWith({ hasDataMatchingProperties: true });
 
       // Act
       const result = await existsByProperties.get();
 
       // Assert
-      expect(result).toEqual({ exists: true });
+      expect(result).toEqual({ hasDataMatchingProperties: true });
       expect(transport.lastCall?.options).toMatchObject({
         method: 'GET',
         path: `${BASE_URL}/existsByProperties`,
       });
+      expect(transport.lastCall?.options.query).toBeUndefined();
     });
 
-    it('passes entityType query param when provided', async () => {
+    it('passes _updateSequenceId query param when provided', async () => {
       // Arrange
-      transport.respondWith({ exists: false });
+      transport.respondWith({ hasDataMatchingProperties: false });
 
       // Act
-      await existsByProperties.get({ entityType: 'repository' });
+      await existsByProperties.get({ _updateSequenceId: 42 });
 
       // Assert
-      expect(transport.lastCall?.options.query).toMatchObject({ entityType: 'repository' });
+      expect(transport.lastCall?.options.query).toMatchObject({ _updateSequenceId: 42 });
     });
 
-    it('passes entityId query param when provided', async () => {
-      // Arrange
-      transport.respondWith({ exists: true });
+    it('passes arbitrary property key=value pairs as query params', async () => {
+      // Arrange — the spec allows arbitrary properties (e.g. accountId=123&projectId=ABC)
+      transport.respondWith({ hasDataMatchingProperties: true });
 
       // Act
-      await existsByProperties.get({ entityId: 'repo-1' });
-
-      // Assert
-      expect(transport.lastCall?.options.query).toMatchObject({ entityId: 'repo-1' });
-    });
-
-    it('passes both entityType and entityId when both are provided', async () => {
-      // Arrange
-      transport.respondWith({ exists: true });
-
-      // Act
-      await existsByProperties.get({ entityType: 'pullRequest', entityId: 'pr-42' });
+      await existsByProperties.get({ accountId: '123', projectId: 'ABC' });
 
       // Assert
       expect(transport.lastCall?.options.query).toMatchObject({
-        entityType: 'pullRequest',
-        entityId: 'pr-42',
+        accountId: '123',
+        projectId: 'ABC',
       });
     });
 
-    it('returns exists: false when nothing is found', async () => {
+    it('omits undefined values from query', async () => {
       // Arrange
-      transport.respondWith({ exists: false });
+      transport.respondWith({ hasDataMatchingProperties: false });
 
       // Act
-      const result = await existsByProperties.get({ entityType: 'commit' });
+      await existsByProperties.get({ _updateSequenceId: undefined });
 
       // Assert
-      expect(result.exists).toBe(false);
+      expect(transport.lastCall?.options.query).toBeUndefined();
+    });
+
+    it('returns hasDataMatchingProperties: false when nothing is found', async () => {
+      // Arrange
+      transport.respondWith({ hasDataMatchingProperties: false });
+
+      // Act
+      const result = await existsByProperties.get({ repoId: 'commit-42' });
+
+      // Assert
+      expect(result.hasDataMatchingProperties).toBe(false);
     });
 
     it('propagates transport errors', async () => {

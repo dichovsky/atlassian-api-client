@@ -10,8 +10,10 @@ const makeRole = (
 ): {
   key: string;
   groups: string[];
+  groupDetails: { name: string; self: string; groupId: string }[];
   name: string;
   defaultGroups: string[];
+  defaultGroupsDetails: { name: string; groupId: string }[];
   selectedByDefault: boolean;
   defined: boolean;
   numberOfSeats: number;
@@ -23,8 +25,12 @@ const makeRole = (
 } => ({
   key: overrides?.key ?? 'jira-software',
   groups: ['jira-software-users'],
+  groupDetails: [
+    { name: 'jira-software-users', self: `${BASE_URL}/group?groupId=abc`, groupId: 'abc-123' },
+  ],
   name: overrides?.name ?? 'Jira Software',
   defaultGroups: ['jira-software-users'],
+  defaultGroupsDetails: [{ name: 'jira-software-users', groupId: 'abc-123' }],
   selectedByDefault: false,
   defined: false,
   numberOfSeats: 10,
@@ -75,6 +81,21 @@ describe('ApplicationRoleResource', () => {
 
       // Assert
       expect(result).toEqual([]);
+    });
+
+    it('returns groupDetails and defaultGroupsDetails when present', async () => {
+      // Arrange — spec adds groupDetails and defaultGroupsDetails (GroupName objects)
+      const role = makeRole();
+      transport.respondWith([role]);
+
+      // Act
+      const result = await applicationRole.list();
+
+      // Assert
+      expect(result[0]?.groupDetails).toBeDefined();
+      expect(result[0]?.groupDetails?.[0]?.name).toBe('jira-software-users');
+      expect(result[0]?.defaultGroupsDetails).toBeDefined();
+      expect(result[0]?.defaultGroupsDetails?.[0]?.groupId).toBe('abc-123');
     });
 
     it('propagates transport errors', async () => {

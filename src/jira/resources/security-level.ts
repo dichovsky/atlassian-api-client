@@ -8,9 +8,10 @@ import { encodePathSegment } from '../../core/path.js';
  * `security-level.ts` per the kebab-case filename rule in project-jira-pattern.md.
  */
 export interface SecurityLevel {
-  readonly id: string;
-  readonly name: string;
+  readonly id?: string;
+  readonly name?: string;
   readonly description?: string;
+  readonly isDefault?: boolean;
   readonly issueSecuritySchemeId?: string;
   readonly self?: string;
 }
