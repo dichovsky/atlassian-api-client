@@ -119,7 +119,7 @@ describe('SpacePermissionsResource', () => {
         });
 
       // Act
-      const items: { id: string }[] = [];
+      const items: { id?: string }[] = [];
       for await (const item of resource.listAll()) {
         items.push(item);
       }

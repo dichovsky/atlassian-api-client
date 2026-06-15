@@ -26,10 +26,9 @@ export interface ConvertContentIdsToTypesData {
  * Response shape for `POST /content/convert-ids-to-types`.
  *
  * `results` maps each requested content id (as a string key) to either a
- * known {@link ConfluenceContentType}, a custom content type identifier
- * (server-defined string), or `null` when the caller cannot view the id or
- * the id does not exist.
+ * known {@link ConfluenceContentType} or a custom content type identifier
+ * (server-defined string).
  */
 export interface ConvertContentIdsToTypesResponse {
-  readonly results?: Readonly<Record<string, ConfluenceContentType | string | null>>;
+  readonly results?: Readonly<Record<string, ConfluenceContentType | string>>;
 }

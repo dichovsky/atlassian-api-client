@@ -1,5 +1,3 @@
-import type { ConfluenceVersion } from './common.js';
-
 /**
  * Confluence app property. Returned by the v2 `/app/properties` endpoints.
  * `value` is whatever JSON the app stored — could be a string, number, boolean,
@@ -8,10 +6,6 @@ import type { ConfluenceVersion } from './common.js';
 export interface AppProperty {
   readonly key: string;
   readonly value: unknown;
-  /** Some Confluence Cloud responses include a numeric `id`. */
-  readonly id?: string;
-  /** Optional version metadata when the server includes it. */
-  readonly version?: ConfluenceVersion;
 }
 
 /** Parameters for listing app properties (cursor-paginated). */

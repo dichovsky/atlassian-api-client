@@ -53,15 +53,15 @@ export class AppResource {
    * is the raw JSON value to store (Confluence wraps it server-side). Callers
    * pass the value directly via `data.value`; there is no wrapper object and
    * no version field (Confluence does not enforce optimistic concurrency on
-   * app properties).
+   * app properties). The endpoint returns no response body (200 on update, 201
+   * on create).
    */
-  async upsertProperty(propertyKey: string, data: UpsertAppPropertyData): Promise<AppProperty> {
-    const response = await this.transport.request<AppProperty>({
+  async upsertProperty(propertyKey: string, data: UpsertAppPropertyData): Promise<void> {
+    await this.transport.request<undefined>({
       method: 'PUT',
       path: `${this.baseUrl}/app/properties/${encodePathSegment(propertyKey)}`,
       body: data.value,
     });
-    return response.data;
   }
 
   /** Delete an app property by key. */

@@ -8,7 +8,8 @@ import { appendRepeatedParams } from '../../core/query.js';
 export interface FieldConfiguration {
   readonly id: number;
   readonly name: string;
-  readonly description?: string;
+  /** Always present in API responses — `required` in the spec schema. */
+  readonly description: string;
   readonly isDefault?: boolean;
 }
 

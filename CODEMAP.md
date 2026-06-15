@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "2.0.0"
   },
-  "sourceHash": "a404c23bed53c2c845922c5ffef5af86c33e50f6964c71e428b032480babb124",
+  "sourceHash": "f06bbdc3a33c060d83d70afb749178ad0bdc6e58c0b9fa0895c907180be359f4",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -387,7 +387,7 @@
       "kind": "interface",
       "file": "src/confluence/types/users.ts",
       "line": 46,
-      "signature": "export interface BulkUsersResponse { readonly results: readonly ConfluenceUser[]; readonly _links?: { readonly next?: st…",
+      "signature": "export interface BulkUsersResponse { readonly results?: readonly ConfluenceUser[]; readonly _links?: { readonly next?: s…",
       "jsdoc": "Response shape for `POST /users-bulk`. The endpoint returns the `MultiEntityResult<User>` wrapper; `results` may be empty when none of the provided IDs resolve. Although the wrapper carries `_links`, the endpoint is single-shot — `next` is omitted.",
       "typeOnly": true
     },
@@ -467,7 +467,7 @@
       "kind": "interface",
       "file": "src/confluence/types/classification-levels.ts",
       "line": 6,
-      "signature": "export interface ClassificationLevel { readonly id: string; readonly status?: 'DRAFT' | 'PUBLISHED' | 'ARCHIVED'; readon…",
+      "signature": "export interface ClassificationLevel { readonly id?: string; readonly status?: 'DRAFT' | 'PUBLISHED' | 'ARCHIVED'; reado…",
       "jsdoc": "A unit of data classification defined by an organization. A classification level may be associated with specific storage and handling requirements or expectations.",
       "typeOnly": true
     },
@@ -668,7 +668,7 @@
       "name": "ConvertContentIdsToTypesResponse",
       "kind": "interface",
       "file": "src/confluence/types/content.ts",
-      "line": 33,
+      "line": 32,
       "signature": "export interface ConvertContentIdsToTypesResponse { readonly results?: Readonly<Record<string, ConfluenceContentType | s…",
       "jsdoc": "Response shape for `POST /content/convert-ids-to-types`.",
       "typeOnly": true
@@ -2963,7 +2963,7 @@
       "kind": "interface",
       "file": "src/confluence/types/space-permissions.ts",
       "line": 6,
-      "signature": "export interface SpacePermission { readonly id: string; readonly displayName?: string; readonly description?: string; re…",
+      "signature": "export interface SpacePermission { readonly id?: string; readonly displayName?: string; readonly description?: string; r…",
       "jsdoc": "A definition of an available space permission, as returned by `GET /space-permissions`. These describe the permissions the platform supports; per-space assignments live under `/spaces/{id}/permissions`.",
       "typeOnly": true
     },
@@ -3706,426 +3706,426 @@
         {
           "name": "parseJsonValue",
           "kind": "function",
-          "line": 1263,
+          "line": 1264,
           "signature": "function parseJsonValue(raw: string): unknown",
           "jsdoc": "Parse `--value` from the CLI as JSON when possible, falling back to the raw string. Confluence app properties accept arbitrary JSON values, so callers should typically pass JSON (e.g. `--value '{\"enabled\":true}'`); a bare unquoted string like `--value hello` is preserved as the string `\"hello\"`."
         },
         {
           "name": "executeClassificationLevels",
           "kind": "function",
-          "line": 1271,
+          "line": 1272,
           "signature": "async function executeClassificationLevels( client: ConfluenceClient, cmd: ParsedCommand, ): Promise<unknown>"
         },
         {
           "name": "executeContent",
           "kind": "function",
-          "line": 1283,
+          "line": 1284,
           "signature": "async function executeContent(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "parseContentIds",
           "kind": "function",
-          "line": 1302,
+          "line": 1303,
           "signature": "function parseContentIds(raw: string): readonly (string | number)[]",
           "jsdoc": "Parse the `--ids` flag into a non-empty array of content ids. Accepts either a JSON array (`'[\"1\",\"2\",3]'`) or a comma-separated string (`\"1,2,3\"`). JSON wins when the raw value parses successfully; otherwise we fall back to splitting on commas. Numeric strings stay strings — the server accepts both forms and we don't want to silently coerce ids that happen to be all-digit."
         },
         {
           "name": "executeCustomContent",
           "kind": "function",
-          "line": 1331,
+          "line": 1332,
           "signature": "async function executeCustomContent( client: ConfluenceClient, cmd: ParsedCommand, ): Promise<unknown>"
         },
         {
           "name": "makeCustomContentBody",
           "kind": "function",
-          "line": 1547,
+          "line": 1548,
           "signature": "function makeCustomContentBody(value: string)",
           "jsdoc": "Build a custom-content body envelope from a raw storage-format string."
         },
         {
           "name": "executeDataPolicies",
           "kind": "function",
-          "line": 1551,
+          "line": 1552,
           "signature": "async function executeDataPolicies(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "parseCsvList",
           "kind": "function",
-          "line": 1579,
+          "line": 1580,
           "signature": "function parseCsvList(raw: string | undefined): readonly string[] | undefined",
           "jsdoc": "Split a comma-separated CLI flag into a trimmed, non-empty array. Returns `undefined` when the input is unset so optional query params drop out cleanly via spread-omit on the call site."
         },
         {
           "name": "parseCsvIntList",
           "kind": "function",
-          "line": 1593,
+          "line": 1594,
           "signature": "function parseCsvIntList(raw: string | undefined): readonly number[] | undefined",
           "jsdoc": "Split a comma-separated CLI flag of integers into a `readonly number[]`. Returns `undefined` when the input is unset. Each item is coerced via `parseInt` with base-10 and non-finite values are filtered out."
         },
         {
           "name": "executeSpacePermissions",
           "kind": "function",
-          "line": 1600,
+          "line": 1601,
           "signature": "async function executeSpacePermissions( client: ConfluenceClient, cmd: ParsedCommand, ): Promise<unknown>"
         },
         {
           "name": "executeSpaceRoleMode",
           "kind": "function",
-          "line": 1658,
+          "line": 1659,
           "signature": "async function executeSpaceRoleMode( client: ConfluenceClient, cmd: ParsedCommand, ): Promise<unknown>"
         },
         {
           "name": "executeSpaceRoles",
           "kind": "function",
-          "line": 1670,
+          "line": 1671,
           "signature": "async function executeSpaceRoles(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "SPACE_ROLE_TYPES",
           "kind": "variable",
-          "line": 1722,
+          "line": 1723,
           "signature": "const SPACE_ROLE_TYPES: readonly SpaceRoleType[] = ['SYSTEM', 'CUSTOM'];"
         },
         {
           "name": "SPACE_ROLE_PRINCIPAL_TYPES",
           "kind": "variable",
-          "line": 1724,
+          "line": 1725,
           "signature": "const SPACE_ROLE_PRINCIPAL_TYPES: readonly SpaceRolePrincipalType[] = [ 'USER', 'GROUP', 'ACCESS_CLASS', ];"
         },
         {
           "name": "SPACE_BLOG_POST_STATUSES",
           "kind": "variable",
-          "line": 1739,
+          "line": 1740,
           "signature": "const SPACE_BLOG_POST_STATUSES = ['current', 'deleted', 'trashed'] as const;"
         },
         {
           "name": "SPACE_CONTENT_LABEL_PREFIXES",
           "kind": "variable",
-          "line": 1741,
+          "line": 1742,
           "signature": "const SPACE_CONTENT_LABEL_PREFIXES = ['my', 'team'] as const;"
         },
         {
           "name": "SPACE_PAGE_DEPTHS",
           "kind": "variable",
-          "line": 1743,
+          "line": 1744,
           "signature": "const SPACE_PAGE_DEPTHS = ['all', 'root'] as const;"
         },
         {
           "name": "SPACE_PAGE_STATUSES",
           "kind": "variable",
-          "line": 1745,
+          "line": 1746,
           "signature": "const SPACE_PAGE_STATUSES = ['current', 'archived', 'deleted', 'trashed'] as const;"
         },
         {
           "name": "parseSpacePermissions",
           "kind": "function",
-          "line": 1754,
+          "line": 1755,
           "signature": "function parseSpacePermissions(raw: string): readonly string[]",
           "jsdoc": "Split `--space-permissions` from the CLI into a non-empty array. Accepts a comma-separated list of permission ids (e.g. `read/space,write/space`); surrounding whitespace per entry is trimmed and empty entries are dropped. Rejects an all-empty payload with a clear error so callers fail fast before the HTTP round trip."
         },
         {
           "name": "executeTasks",
           "kind": "function",
-          "line": 1765,
+          "line": 1766,
           "signature": "async function executeTasks(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "TASK_STATUSES",
           "kind": "variable",
-          "line": 1801,
+          "line": 1802,
           "signature": "const TASK_STATUSES = ['incomplete', 'complete'] as const;"
         },
         {
           "name": "executeUsers",
           "kind": "function",
-          "line": 1803,
+          "line": 1804,
           "signature": "async function executeUsers(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "parseRequiredCsvList",
           "kind": "function",
-          "line": 1828,
+          "line": 1829,
           "signature": "function parseRequiredCsvList(raw: string, emptyError: string): readonly string[]",
           "jsdoc": "Split a required comma-separated CLI flag into a non-empty, trimmed list. Surrounding whitespace per entry is trimmed and empty entries are dropped; an all-empty payload throws `emptyError` so callers fail fast before the HTTP round trip. Shared by `--emails` (users) and `--account-ids` (users-bulk) so both get identical comma-separated batch semantics."
         },
         {
           "name": "parseEmailList",
           "kind": "function",
-          "line": 1845,
+          "line": 1846,
           "signature": "function parseEmailList(raw: string): readonly string[]",
           "jsdoc": "Parse `--emails` from the CLI into a non-empty list. Mirrors the `--account-ids` parsing used by `users-bulk` so callers get consistent comma-separated batch semantics across both user resources: surrounding whitespace per entry is trimmed and empty entries are dropped."
         },
         {
           "name": "executeUsersBulk",
           "kind": "function",
-          "line": 1849,
+          "line": 1850,
           "signature": "async function executeUsersBulk(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeDatabases",
           "kind": "function",
-          "line": 1864,
+          "line": 1865,
           "signature": "async function executeDatabases(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeEmbeds",
           "kind": "function",
-          "line": 1966,
+          "line": 1967,
           "signature": "async function executeEmbeds(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeFolders",
           "kind": "function",
-          "line": 2049,
+          "line": 2050,
           "signature": "async function executeFolders(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeFooterComments",
           "kind": "function",
-          "line": 2131,
+          "line": 2132,
           "signature": "async function executeFooterComments( client: ConfluenceClient, cmd: ParsedCommand, ): Promise<unknown>"
         },
         {
           "name": "executeInlineComments",
           "kind": "function",
-          "line": 2214,
+          "line": 2215,
           "signature": "async function executeInlineComments( client: ConfluenceClient, cmd: ParsedCommand, ): Promise<unknown>"
         },
         {
           "name": "executeWhiteboards",
           "kind": "function",
-          "line": 2272,
+          "line": 2273,
           "signature": "async function executeWhiteboards(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "requireArg",
           "kind": "function",
-          "line": 2384,
+          "line": 2385,
           "signature": "function requireArg(value: string | undefined, name: string): string"
         },
         {
           "name": "requireOpt",
           "kind": "function",
-          "line": 2389,
+          "line": 2390,
           "signature": "function requireOpt(value: string | boolean | undefined, name: string): string"
         },
         {
           "name": "asString",
           "kind": "function",
-          "line": 2394,
+          "line": 2395,
           "signature": "function asString(value: string | boolean | undefined): string | undefined"
         },
         {
           "name": "asPositiveInt",
           "kind": "function",
-          "line": 2398,
+          "line": 2399,
           "signature": "function asPositiveInt(value: string | boolean | undefined, name: string): number | undefined"
         },
         {
           "name": "requirePositiveInt",
           "kind": "function",
-          "line": 2413,
+          "line": 2414,
           "signature": "function requirePositiveInt(value: string | boolean | undefined, name: string): number",
           "jsdoc": "Like {@link asPositiveInt} but rejects missing values: requires the flag, then validates it is a positive integer. Returns the parsed number. The thrown message matches the hand-rolled sites it replaces (`<name> must be a positive integer, got: <value>`)."
         },
         {
           "name": "asDepth",
           "kind": "function",
-          "line": 2426,
+          "line": 2427,
           "signature": "function asDepth(value: string | boolean | undefined): number | undefined",
           "jsdoc": "Validate depth parameter for descendant/child queries (must be 1–10 per spec). Returns `undefined` when unset, otherwise validates and returns the integer."
         },
         {
           "name": "asEnum",
           "kind": "function",
-          "line": 2440,
+          "line": 2441,
           "signature": "function asEnum<T extends string>( value: string | boolean | undefined, allowed: readonly T[], flagName: string, ): T | …",
           "jsdoc": "Narrow a free-form CLI string to a typed enum, rejecting anything outside the allowlist with a user-facing error. Returns `undefined` when the flag is unset so callers can use spread-omit on optional query keys."
         },
         {
           "name": "asEnumArray",
           "kind": "function",
-          "line": 2458,
+          "line": 2459,
           "signature": "function asEnumArray<T extends string>( value: string | boolean | undefined, allowed: readonly T[], flagName: string, ):…",
           "jsdoc": "Parse a comma-separated CLI value into a typed enum array. Each comma-split token is validated against the allowlist; an empty or missing input returns `undefined` so callers can spread-omit the key. Use for query params that the spec models as `array<enum>` (e.g. attachment `status`)."
         },
         {
           "name": "requireEnum",
           "kind": "function",
-          "line": 2482,
+          "line": 2483,
           "signature": "function requireEnum<T extends string>( value: string | boolean | undefined, allowed: readonly T[], flagName: string, ):…",
           "jsdoc": "Like `asEnum` but rejects missing values. Use when the flag is required and must come from a fixed allowlist (e.g. `tasks update --status`)."
         },
         {
           "name": "CONTENT_SORT_ORDERS",
           "kind": "variable",
-          "line": 2496,
+          "line": 2497,
           "signature": "const CONTENT_SORT_ORDERS: readonly ContentSortOrder[] = [ 'created-date', '-created-date', 'id', '-id', 'modified-date'…"
         },
         {
           "name": "PROPERTY_SORT_ORDERS",
           "kind": "variable",
-          "line": 2509,
+          "line": 2510,
           "signature": "const PROPERTY_SORT_ORDERS = ['key', '-key'] as const;"
         },
         {
           "name": "COMMENT_SORT_ORDERS",
           "kind": "variable",
-          "line": 2511,
+          "line": 2512,
           "signature": "const COMMENT_SORT_ORDERS: readonly CommentSortOrder[] = [ 'created-date', '-created-date', 'modified-date', '-modified-…"
         },
         {
           "name": "VERSION_SORT_ORDERS",
           "kind": "variable",
-          "line": 2518,
+          "line": 2519,
           "signature": "const VERSION_SORT_ORDERS: readonly VersionSortOrder[] = ['modified-date', '-modified-date'];"
         },
         {
           "name": "DATA_POLICY_SPACE_SORT_ORDERS",
           "kind": "variable",
-          "line": 2520,
+          "line": 2521,
           "signature": "const DATA_POLICY_SPACE_SORT_ORDERS: readonly DataPolicySpaceSortOrder[] = [ 'id', '-id', 'key', '-key', 'name', '-name'…"
         },
         {
           "name": "LABEL_SORT_ORDERS",
           "kind": "variable",
-          "line": 2529,
+          "line": 2530,
           "signature": "const LABEL_SORT_ORDERS: readonly LabelSortOrder[] = [ 'created-date', '-created-date', 'id', '-id', 'name', '-name', ];"
         },
         {
           "name": "ATTACHMENT_SORT_ORDERS",
           "kind": "variable",
-          "line": 2538,
+          "line": 2539,
           "signature": "const ATTACHMENT_SORT_ORDERS: readonly AttachmentSortOrder[] = [ 'created-date', '-created-date', 'modified-date', '-mod…"
         },
         {
           "name": "ATTACHMENT_STATUSES",
           "kind": "variable",
-          "line": 2545,
+          "line": 2546,
           "signature": "const ATTACHMENT_STATUSES: readonly AttachmentStatus[] = ['current', 'archived', 'trashed'];"
         },
         {
           "name": "LABEL_PREFIXES",
           "kind": "variable",
-          "line": 2547,
+          "line": 2548,
           "signature": "const LABEL_PREFIXES: readonly LabelPrefix[] = ['my', 'team', 'global', 'system'];"
         },
         {
           "name": "BLOG_POST_SORT_ORDERS",
           "kind": "variable",
-          "line": 2549,
+          "line": 2550,
           "signature": "const BLOG_POST_SORT_ORDERS: readonly BlogPostSortOrder[] = [ 'id', '-id', 'created-date', '-created-date', 'modified-da…"
         },
         {
           "name": "PAGE_SORT_ORDERS",
           "kind": "variable",
-          "line": 2558,
+          "line": 2559,
           "signature": "const PAGE_SORT_ORDERS: readonly PageSortOrder[] = [ 'id', '-id', 'created-date', '-created-date', 'modified-date', '-mo…"
         },
         {
           "name": "CONTENT_BODY_FORMATS",
           "kind": "variable",
-          "line": 2569,
+          "line": 2570,
           "signature": "const CONTENT_BODY_FORMATS = ['storage', 'atlas_doc_format'] as const;"
         },
         {
           "name": "WHITEBOARD_TEMPLATE_KEYS",
           "kind": "variable",
-          "line": 2571,
+          "line": 2572,
           "signature": "const WHITEBOARD_TEMPLATE_KEYS: readonly WhiteboardTemplateKey[] = [ '2x2-prioritization', '4ls-retro', 'annual-calendar…"
         },
         {
           "name": "WHITEBOARD_LOCALES",
           "kind": "variable",
-          "line": 2627,
+          "line": 2628,
           "signature": "const WHITEBOARD_LOCALES: readonly WhiteboardLocale[] = [ 'de-DE', 'cs-CZ', 'ko-KR', 'fr-FR', 'it-IT', 'ja-JP', 'nl-NL',…"
         },
         {
           "name": "CUSTOM_CONTENT_BODY_FORMATS",
           "kind": "variable",
-          "line": 2651,
+          "line": 2652,
           "signature": "const CUSTOM_CONTENT_BODY_FORMATS = ['raw', 'storage', 'atlas_doc_format'] as const;"
         },
         {
           "name": "CUSTOM_CONTENT_BODY_FORMATS_SINGLE",
           "kind": "variable",
-          "line": 2658,
+          "line": 2659,
           "signature": "const CUSTOM_CONTENT_BODY_FORMATS_SINGLE = [ 'raw', 'storage', 'atlas_doc_format', 'view', 'export_view', 'anonymous_exp…",
           "jsdoc": "Extended body-format vocabulary accepted only by `GET /custom-content/{id}` — adds the read-only `view`, `export_view`, and `anonymous_export_view` projections from the spec's `CustomContentBodyRepresentationSingle` enum."
         },
         {
           "name": "CUSTOM_CONTENT_SORT_ORDERS",
           "kind": "variable",
-          "line": 2667,
+          "line": 2668,
           "signature": "const CUSTOM_CONTENT_SORT_ORDERS: readonly CustomContentSortOrder[] = [ 'id', '-id', 'created-date', '-created-date', 'm…"
         },
         {
           "name": "CHILD_CUSTOM_CONTENT_SORT_ORDERS",
           "kind": "variable",
-          "line": 2678,
+          "line": 2679,
           "signature": "const CHILD_CUSTOM_CONTENT_SORT_ORDERS: readonly ChildCustomContentSortOrder[] = [ 'id', '-id', 'created-date', '-create…"
         },
         {
           "name": "COMMENT_STATUSES",
           "kind": "variable",
-          "line": 2687,
+          "line": 2688,
           "signature": "const COMMENT_STATUSES: readonly CommentStatus[] = [ 'current', 'deleted', 'trashed', 'historical', 'draft', ];"
         },
         {
           "name": "INLINE_COMMENT_RESOLUTION_STATUSES",
           "kind": "variable",
-          "line": 2695,
+          "line": 2696,
           "signature": "const INLINE_COMMENT_RESOLUTION_STATUSES: readonly InlineCommentResolutionStatus[] = [ 'resolved', 'open', 'dangling', '…"
         },
         {
           "name": "CLASSIFICATION_STATUS",
           "kind": "variable",
-          "line": 2702,
+          "line": 2703,
           "signature": "const CLASSIFICATION_STATUS = ['current', 'draft', 'archived'] as const;"
         },
         {
           "name": "PAGE_CLASSIFICATION_STATUSES",
           "kind": "variable",
-          "line": 2709,
+          "line": 2710,
           "signature": "const PAGE_CLASSIFICATION_STATUSES = ['current', 'draft'] as const;",
           "jsdoc": "Status enum accepted by `PUT /pages/{id}/classification-level` and the matching reset endpoint — page allows both `current` and `draft` (unlike the blog-post variant which is locked to `current`)."
         },
         {
           "name": "PAGE_TITLE_STATUSES",
           "kind": "variable",
-          "line": 2715,
+          "line": 2716,
           "signature": "const PAGE_TITLE_STATUSES = ['current', 'draft'] as const;",
           "jsdoc": "Status enum accepted by `PUT /pages/{id}/title`. The endpoint targets either the published (`current`) revision or the in-flight `draft`."
         },
         {
           "name": "CHILD_PAGE_SORT_ORDERS",
           "kind": "variable",
-          "line": 2722,
+          "line": 2723,
           "signature": "const CHILD_PAGE_SORT_ORDERS: readonly ChildPageSortOrder[] = [ 'created-date', '-created-date', 'id', '-id', 'child-pos…",
           "jsdoc": "Sort tokens accepted by `GET /pages/{id}/children`. Mirrors the OpenAPI `ChildPageSortOrder` enum — narrower than `ContentSortOrder` (no `title` sort because child-page rows don't reliably carry a title field)."
         },
         {
           "name": "BLOG_POST_LOOKUP_STATUSES",
           "kind": "variable",
-          "line": 2733,
+          "line": 2734,
           "signature": "const BLOG_POST_LOOKUP_STATUSES: readonly BlogPostLookupStatus[] = [ 'current', 'trashed', 'deleted', 'historical', 'dra…"
         },
         {
           "name": "BLOG_POST_BODY_REPRESENTATIONS",
           "kind": "variable",
-          "line": 2741,
+          "line": 2742,
           "signature": "const BLOG_POST_BODY_REPRESENTATIONS: readonly BlogPostBodyRepresentation[] = [ 'storage', 'atlas_doc_format', 'view', '…"
         },
         {
           "name": "makeBody",
           "kind": "function",
-          "line": 2751,
+          "line": 2752,
           "signature": "function makeBody(value: string | undefined)"
         },
         {
           "name": "buildGetBlogPostParams",
           "kind": "function",
-          "line": 2767,
+          "line": 2768,
           "signature": "function buildGetBlogPostParams( opts: Record<string, string | boolean | undefined>, ): GetBlogPostParams | undefined",
           "jsdoc": "Project the CLI flag bag onto a `GetBlogPostParams` query bag. Returns `undefined` when no spec-mapped flag is present so the caller can short-circuit to the no-arg `blogPosts.get(id)` overload (avoids sending an empty `query={}` object to the transport)."
         }
@@ -7614,7 +7614,7 @@
             {
               "name": "upsertProperty",
               "kind": "method",
-              "line": 58
+              "line": 59
             },
             {
               "name": "deleteProperty",
@@ -9831,7 +9831,7 @@
         {
           "name": "UsersBulkResource",
           "kind": "class",
-          "line": 16,
+          "line": 17,
           "exported": true,
           "signature": "export class UsersBulkResource",
           "jsdoc": "Resource for the Confluence v2 users-bulk lookup API.",
@@ -9839,17 +9839,18 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 17
+              "line": 18
             },
             {
               "name": "lookup",
               "kind": "method",
-              "line": 32
+              "line": 33
             }
           ]
         }
       ],
       "imports": [
+        "../../core/errors.js",
         "../../core/types.js",
         "../types/users.js"
       ]
@@ -9860,7 +9861,7 @@
         {
           "name": "UsersResource",
           "kind": "class",
-          "line": 26,
+          "line": 27,
           "exported": true,
           "signature": "export class UsersResource",
           "jsdoc": "Resource for the Confluence v2 single-user access APIs.",
@@ -9868,29 +9869,30 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 27
+              "line": 28
             },
             {
               "name": "checkAccessByEmail",
               "kind": "method",
-              "line": 42
+              "line": 43
             },
             {
               "name": "inviteByEmail",
               "kind": "method",
-              "line": 65
+              "line": 66
             }
           ]
         },
         {
           "name": "assertNonEmptyEmails",
           "kind": "function",
-          "line": 81,
+          "line": 82,
           "signature": "function assertNonEmptyEmails(data: CheckAccessOrInviteByEmailRequest): void",
           "jsdoc": "Pre-flight validation shared by both endpoints. We mirror the server's minItems=1 constraint client-side to avoid burning an HTTP round trip on the obvious empty case; the upper 100-item cap is left to the server as a single source of truth."
         }
       ],
       "imports": [
+        "../../core/errors.js",
         "../../core/types.js",
         "../types/users.js"
       ]
@@ -10098,15 +10100,15 @@
         {
           "name": "AppProperty",
           "kind": "interface",
-          "line": 8,
+          "line": 6,
           "exported": true,
-          "signature": "export interface AppProperty { readonly key: string; readonly value: unknown; readonly id?: string; readonly version?: C…",
+          "signature": "export interface AppProperty { readonly key: string; readonly value: unknown; }",
           "jsdoc": "Confluence app property. Returned by the v2 `/app/properties` endpoints. `value` is whatever JSON the app stored — could be a string, number, boolean, array, or arbitrary object."
         },
         {
           "name": "ListAppPropertiesParams",
           "kind": "interface",
-          "line": 18,
+          "line": 12,
           "exported": true,
           "signature": "export interface ListAppPropertiesParams { readonly limit?: number; readonly cursor?: string; }",
           "jsdoc": "Parameters for listing app properties (cursor-paginated)."
@@ -10114,14 +10116,11 @@
         {
           "name": "UpsertAppPropertyData",
           "kind": "interface",
-          "line": 30,
+          "line": 24,
           "exported": true,
           "signature": "export interface UpsertAppPropertyData { readonly value: unknown; }",
           "jsdoc": "Body for creating or updating an app property."
         }
-      ],
-      "imports": [
-        "./common.js"
       ]
     },
     {
@@ -10492,7 +10491,7 @@
           "kind": "interface",
           "line": 6,
           "exported": true,
-          "signature": "export interface ClassificationLevel { readonly id: string; readonly status?: 'DRAFT' | 'PUBLISHED' | 'ARCHIVED'; readon…",
+          "signature": "export interface ClassificationLevel { readonly id?: string; readonly status?: 'DRAFT' | 'PUBLISHED' | 'ARCHIVED'; reado…",
           "jsdoc": "A unit of data classification defined by an organization. A classification level may be associated with specific storage and handling requirements or expectations."
         },
         {
@@ -11081,7 +11080,7 @@
         {
           "name": "ConvertContentIdsToTypesResponse",
           "kind": "interface",
-          "line": 33,
+          "line": 32,
           "exported": true,
           "signature": "export interface ConvertContentIdsToTypesResponse { readonly results?: Readonly<Record<string, ConfluenceContentType | s…",
           "jsdoc": "Response shape for `POST /content/convert-ids-to-types`."
@@ -12013,7 +12012,7 @@
           "kind": "interface",
           "line": 6,
           "exported": true,
-          "signature": "export interface SpacePermission { readonly id: string; readonly displayName?: string; readonly description?: string; re…",
+          "signature": "export interface SpacePermission { readonly id?: string; readonly displayName?: string; readonly description?: string; r…",
           "jsdoc": "A definition of an available space permission, as returned by `GET /space-permissions`. These describe the permissions the platform supports; per-space assignments live under `/spaces/{id}/permissions`."
         },
         {
@@ -12450,7 +12449,7 @@
           "kind": "interface",
           "line": 46,
           "exported": true,
-          "signature": "export interface BulkUsersResponse { readonly results: readonly ConfluenceUser[]; readonly _links?: { readonly next?: st…",
+          "signature": "export interface BulkUsersResponse { readonly results?: readonly ConfluenceUser[]; readonly _links?: { readonly next?: s…",
           "jsdoc": "Response shape for `POST /users-bulk`. The endpoint returns the `MultiEntityResult<User>` wrapper; `results` may be empty when none of the provided IDs resolve. Although the wrapper carries `_links`, the endpoint is single-shot — `next` is omitted."
         },
         {
@@ -19551,6 +19550,21 @@
         },
         {
           "kind": "named",
+          "from": "./resources/issuelink.js",
+          "typeOnly": true,
+          "names": [
+            {
+              "exported": "LinkedIssueFields",
+              "original": "LinkedIssueFields"
+            },
+            {
+              "exported": "IssueLinkComment",
+              "original": "IssueLinkComment"
+            }
+          ]
+        },
+        {
+          "kind": "named",
           "from": "./resources/issuelinktype.js",
           "typeOnly": true,
           "names": [
@@ -26155,13 +26169,13 @@
           "kind": "interface",
           "line": 8,
           "exported": true,
-          "signature": "export interface FieldConfiguration { readonly id: number; readonly name: string; readonly description?: string; readonl…",
+          "signature": "export interface FieldConfiguration { readonly id: number; readonly name: string; readonly description: string; readonly…",
           "jsdoc": "Details of a Jira field configuration."
         },
         {
           "name": "FieldConfigurationItem",
           "kind": "interface",
-          "line": 16,
+          "line": 17,
           "exported": true,
           "signature": "export interface FieldConfigurationItem { readonly id: string; readonly description?: string; readonly isHidden?: boolea…",
           "jsdoc": "A single field entry within a field configuration."
@@ -26169,7 +26183,7 @@
         {
           "name": "ListFieldConfigurationsParams",
           "kind": "interface",
-          "line": 25,
+          "line": 26,
           "exported": true,
           "signature": "export interface ListFieldConfigurationsParams { readonly startAt?: number; readonly maxResults?: number; readonly id?: …",
           "jsdoc": "Query parameters for GET /rest/api/3/fieldconfiguration."
@@ -26177,7 +26191,7 @@
         {
           "name": "ListFieldConfigurationItemsParams",
           "kind": "interface",
-          "line": 39,
+          "line": 40,
           "exported": true,
           "signature": "export interface ListFieldConfigurationItemsParams { readonly startAt?: number; readonly maxResults?: number; }",
           "jsdoc": "Query parameters for GET /rest/api/3/fieldconfiguration/{id}/fields."
@@ -26185,7 +26199,7 @@
         {
           "name": "CreateFieldConfigurationData",
           "kind": "interface",
-          "line": 47,
+          "line": 48,
           "exported": true,
           "signature": "export interface CreateFieldConfigurationData { readonly name: string; readonly description?: string; }",
           "jsdoc": "Request body for POST /rest/api/3/fieldconfiguration."
@@ -26193,7 +26207,7 @@
         {
           "name": "UpdateFieldConfigurationData",
           "kind": "interface",
-          "line": 53,
+          "line": 54,
           "exported": true,
           "signature": "export interface UpdateFieldConfigurationData { readonly name: string; readonly description?: string; }",
           "jsdoc": "Request body for PUT /rest/api/3/fieldconfiguration/{id}."
@@ -26201,7 +26215,7 @@
         {
           "name": "UpdateFieldConfigurationItemsData",
           "kind": "interface",
-          "line": 59,
+          "line": 60,
           "exported": true,
           "signature": "export interface UpdateFieldConfigurationItemsData { readonly fieldConfigurationItems: FieldConfigurationItem[]; }",
           "jsdoc": "Request body for PUT /rest/api/3/fieldconfiguration/{id}/fields."
@@ -26209,7 +26223,7 @@
         {
           "name": "FieldConfigurationResource",
           "kind": "class",
-          "line": 71,
+          "line": 72,
           "exported": true,
           "signature": "export class FieldConfigurationResource",
           "jsdoc": "Jira Issue Field Configurations resource — B908-B913.",
@@ -26217,60 +26231,60 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 72
+              "line": 73
             },
             {
               "name": "list",
               "kind": "method",
-              "line": 81
+              "line": 82
             },
             {
               "name": "listAll",
               "kind": "method",
-              "line": 97
+              "line": 98
             },
             {
               "name": "create",
               "kind": "method",
-              "line": 114
+              "line": 115
             },
             {
               "name": "delete",
               "kind": "method",
-              "line": 129
+              "line": 130
             },
             {
               "name": "update",
               "kind": "method",
-              "line": 140
+              "line": 141
             },
             {
               "name": "listFields",
               "kind": "method",
-              "line": 154
+              "line": 155
             },
             {
               "name": "listAllFields",
               "kind": "method",
-              "line": 171
+              "line": 172
             },
             {
               "name": "updateFields",
               "kind": "method",
-              "line": 189
+              "line": 190
             }
           ]
         },
         {
           "name": "buildListQuery",
           "kind": "function",
-          "line": 200,
+          "line": 201,
           "signature": "function buildListQuery( params: ListFieldConfigurationsParams | undefined, ): Record<string, string | number | boolean …"
         },
         {
           "name": "buildFieldsQuery",
           "kind": "function",
-          "line": 213,
+          "line": 214,
           "signature": "function buildFieldsQuery( params: ListFieldConfigurationItemsParams | undefined, ): Record<string, string | number | bo…"
         }
       ],
@@ -28558,17 +28572,33 @@
           "jsdoc": "A Jira issue link type reference used in link requests. Spec: `IssueLinkType` schema (id, inward, name, outward, self)."
         },
         {
+          "name": "LinkedIssueFields",
+          "kind": "interface",
+          "line": 25,
+          "exported": true,
+          "signature": "export interface LinkedIssueFields { readonly summary?: string; readonly assignee?: unknown; readonly issueType?: unknow…",
+          "jsdoc": "Key fields from a linked issue (response-only). Spec: `Fields` schema — present on `LinkedIssue.fields` in GET responses."
+        },
+        {
           "name": "LinkedIssue",
           "kind": "interface",
-          "line": 20,
+          "line": 46,
           "exported": true,
-          "signature": "export interface LinkedIssue { readonly id?: string; readonly key?: string; readonly self?: string; readonly fields?: Re…",
+          "signature": "export interface LinkedIssue { readonly id?: string; readonly key?: string; readonly self?: string; readonly fields?: Li…",
           "jsdoc": "A linked issue reference (inward or outward side of a link). Spec: `LinkedIssue` schema (fields, id, key, self)."
+        },
+        {
+          "name": "IssueLinkComment",
+          "kind": "interface",
+          "line": 61,
+          "exported": true,
+          "signature": "export interface IssueLinkComment { readonly body?: unknown; readonly visibility?: { readonly type?: string; readonly va…",
+          "jsdoc": "Comment to optionally attach to the outward issue of a new link. Spec: `Comment` schema (additionalProperties: true, so extra fields are allowed)."
         },
         {
           "name": "IssueLink",
           "kind": "interface",
-          "line": 31,
+          "line": 83,
           "exported": true,
           "signature": "export interface IssueLink { readonly id?: string; readonly self?: string; readonly type: IssueLinkTypeRef; readonly inw…",
           "jsdoc": "An issue link instance returned by GET /rest/api/3/issueLink/{linkId}. Spec: `IssueLink` schema."
@@ -28576,7 +28606,7 @@
         {
           "name": "CreateIssueLinkData",
           "kind": "interface",
-          "line": 43,
+          "line": 95,
           "exported": true,
           "signature": "export interface CreateIssueLinkData { readonly type: IssueLinkTypeRef; readonly inwardIssue: LinkedIssue; readonly outw…",
           "jsdoc": "Request body for POST /rest/api/3/issueLink (B530). Spec: `LinkIssueRequestJsonBean` schema."
@@ -28584,7 +28614,7 @@
         {
           "name": "IssueLinkResource",
           "kind": "class",
-          "line": 62,
+          "line": 114,
           "exported": true,
           "signature": "export class IssueLinkResource",
           "jsdoc": "Jira Issue Link resource — create/get/delete endpoints under `/rest/api/3/issueLink` (B530-B532).",
@@ -28592,22 +28622,22 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 63
+              "line": 115
             },
             {
               "name": "create",
               "kind": "method",
-              "line": 75
+              "line": 127
             },
             {
               "name": "get",
               "kind": "method",
-              "line": 95
+              "line": 147
             },
             {
               "name": "delete",
               "kind": "method",
-              "line": 109
+              "line": 161
             }
           ]
         }
@@ -28623,7 +28653,7 @@
         {
           "name": "IssueLinkType",
           "kind": "interface",
-          "line": 13,
+          "line": 12,
           "exported": true,
           "signature": "export interface IssueLinkType { readonly id?: string; readonly inward?: string; readonly name?: string; readonly outwar…",
           "jsdoc": "A Jira issue link type (e.g. \"Blocks\", \"Clones\", \"Duplicate\")."
@@ -28631,7 +28661,7 @@
         {
           "name": "IssueLinkTypes",
           "kind": "interface",
-          "line": 22,
+          "line": 21,
           "exported": true,
           "signature": "export interface IssueLinkTypes { readonly issueLinkTypes: IssueLinkType[]; }",
           "jsdoc": "Response envelope for GET /rest/api/3/issueLinkType."
@@ -28639,7 +28669,7 @@
         {
           "name": "CreateIssueLinkTypeData",
           "kind": "interface",
-          "line": 27,
+          "line": 26,
           "exported": true,
           "signature": "export interface CreateIssueLinkTypeData { readonly name: string; readonly inward: string; readonly outward: string; }",
           "jsdoc": "Request body for POST /rest/api/3/issueLinkType (B534)."
@@ -28647,7 +28677,7 @@
         {
           "name": "UpdateIssueLinkTypeData",
           "kind": "interface",
-          "line": 34,
+          "line": 33,
           "exported": true,
           "signature": "export interface UpdateIssueLinkTypeData { readonly name?: string; readonly inward?: string; readonly outward?: string; …",
           "jsdoc": "Request body for PUT /rest/api/3/issueLinkType/{issueLinkTypeId} (B537)."
@@ -28655,7 +28685,7 @@
         {
           "name": "IssueLinkTypeResource",
           "kind": "class",
-          "line": 47,
+          "line": 46,
           "exported": true,
           "signature": "export class IssueLinkTypeResource",
           "jsdoc": "Jira Issue Link Type resource — CRUD endpoints under `/rest/api/3/issueLinkType` (B533-B537).",
@@ -28663,12 +28693,12 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 48
+              "line": 47
             },
             {
               "name": "list",
               "kind": "method",
-              "line": 61
+              "line": 60
             },
             {
               "name": "create",
@@ -28688,13 +28718,12 @@
             {
               "name": "delete",
               "kind": "method",
-              "line": 127
+              "line": 124
             }
           ]
         }
       ],
       "imports": [
-        "../../core/errors.js",
         "../../core/path.js",
         "../../core/types.js"
       ]
@@ -32959,27 +32988,27 @@
             {
               "name": "createWithCustomTemplate",
               "kind": "method",
-              "line": 167
+              "line": 170
             },
             {
               "name": "editTemplate",
               "kind": "method",
-              "line": 179
+              "line": 185
             },
             {
               "name": "getLiveTemplate",
               "kind": "method",
-              "line": 191
+              "line": 197
             },
             {
               "name": "removeTemplate",
               "kind": "method",
-              "line": 207
+              "line": 213
             },
             {
               "name": "saveTemplate",
               "kind": "method",
-              "line": 219
+              "line": 225
             }
           ]
         }
