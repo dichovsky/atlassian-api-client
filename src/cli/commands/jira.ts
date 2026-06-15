@@ -54,6 +54,7 @@ import type {
   MultiIssueProperties,
 } from '../../jira/resources/issues.js';
 import type { WebhookRegistration } from '../../jira/resources/webhooks.js';
+import type { ApplicationKey } from '../../jira/resources/license.js';
 import type {
   ProjectAccessLevel,
   ProjectAssigneeType,
@@ -2509,7 +2510,7 @@ async function executeLicense(client: JiraClient, cmd: ParsedCommand): Promise<u
       return client.license.getApproximateCount();
     case 'get-approximate-count-for-product':
       return client.license.getApproximateCountForProduct(
-        requireArg(cmd.positionalArgs[0], 'applicationKey'),
+        requireArg(cmd.positionalArgs[0], 'applicationKey') as ApplicationKey,
       );
     default:
       throw new Error(

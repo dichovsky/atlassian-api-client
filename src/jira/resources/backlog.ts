@@ -1,6 +1,19 @@
 import type { Transport } from '../../core/types.js';
 import { ValidationError } from '../../core/errors.js';
 
+/**
+ * Optional rank options for moving issues to the backlog of a board.
+ * Allows ranking the moved issues relative to an existing issue.
+ */
+export interface MoveIssuesToBoardOptions {
+  /** Rank moved issues after this issue key. */
+  readonly rankAfterIssue?: string;
+  /** Rank moved issues before this issue key. */
+  readonly rankBeforeIssue?: string;
+  /** The ID of the custom field used for ranking. */
+  readonly rankCustomFieldId?: number;
+}
+
 export class BacklogResource {
   constructor(
     private readonly transport: Transport,
@@ -10,9 +23,13 @@ export class BacklogResource {
   /**
    * Move issues to the backlog scoped to a specific board (B235).
    * POST /rest/agile/1.0/backlog/{boardId}/issue
-   * Response is 204 No Content.
+   * Response is 204 No Content (or 207 for partial success).
    */
-  async moveIssuesToBoard(boardId: number, issues: readonly string[]): Promise<void> {
+  async moveIssuesToBoard(
+    boardId: number,
+    issues: readonly string[],
+    options?: MoveIssuesToBoardOptions,
+  ): Promise<void> {
     if (!Number.isInteger(boardId) || boardId <= 0) {
       throw new ValidationError('boardId must be a positive integer');
     }
@@ -20,7 +37,7 @@ export class BacklogResource {
     await this.transport.request<undefined>({
       method: 'POST',
       path: `${this.baseUrl}/backlog/${boardId}/issue`,
-      body: { issues },
+      body: { issues, ...options },
     });
   }
 

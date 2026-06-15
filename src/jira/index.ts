@@ -469,6 +469,8 @@ export type {
   BulkErrorCollection,
 } from './resources/bulk.js';
 export { AnnouncementBannerResource } from './resources/announcement-banner.js';
+export type { MoveIssuesToBoardOptions } from './resources/backlog.js';
+export { BacklogResource } from './resources/backlog.js';
 export type { ApplicationRole } from './resources/application-role.js';
 export { ApplicationRoleResource } from './resources/application-role.js';
 export type {
@@ -581,10 +583,7 @@ export type {
 export { GroupUserPickerResource } from './resources/group-user-picker.js';
 export type { SecurityLevel } from './resources/security-level.js';
 export { SecurityLevelResource } from './resources/security-level.js';
-export type {
-  ApproximateLicenseCount,
-  ApproximateProductLicenseCount,
-} from './resources/license.js';
+export type { LicenseMetric, ApplicationKey } from './resources/license.js';
 export { LicenseResource } from './resources/license.js';
 export type { Column } from './resources/settings.js';
 export { SettingsResource } from './resources/settings.js';
