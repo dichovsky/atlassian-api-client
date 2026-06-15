@@ -5,12 +5,39 @@ import { paginateOffset, validatePageSize } from '../../core/pagination.js';
 
 // ─── Response types ────────────────────────────────────────────────────────
 
-/** Context in which a UI modification is applied. */
+/** Context in which a UI modification is applied (response shape). */
 export interface UiModificationContextDetails {
-  /** The ID of the UI modification context. */
+  /**
+   * The ID of the UI modification context.
+   * Spec: `readOnly` — present in responses; omit from request bodies.
+   */
   readonly id?: string;
-  /** Whether a context is available. */
+  /**
+   * Whether a context is available.
+   * Spec: `readOnly` — present in responses; omit from request bodies.
+   */
   readonly isAvailable?: boolean;
+  /** The issue type ID of the context. Null is treated as a wildcard. */
+  readonly issueTypeId?: string | null;
+  /** The portal ID of the context (JSM only). */
+  readonly portalId?: string;
+  /** The project ID of the context. Null is treated as a wildcard. */
+  readonly projectId?: string | null;
+  /** The request type ID of the context (JSM only). */
+  readonly requestTypeId?: string;
+  /** The view type of the context. */
+  readonly viewType?: 'GIC' | 'IssueView' | 'IssueTransition' | 'JSMRequestCreate' | null;
+}
+
+/**
+ * Request body shape for a UI modification context.
+ *
+ * Mirrors `UiModificationContextDetails` but omits `readOnly` fields
+ * (`id`, `isAvailable`) that must not be sent to the server.
+ * Spec: `UiModificationContextDetails` schema is `writeOnly: true`;
+ * `id` and `isAvailable` inside it are `readOnly: true`.
+ */
+export interface UiModificationContextInput {
   /** The issue type ID of the context. Null is treated as a wildcard. */
   readonly issueTypeId?: string | null;
   /** The portal ID of the context (JSM only). */
@@ -63,8 +90,8 @@ export interface CreateUiModificationDetails {
   readonly data?: string;
   /** Optional description (max 255 chars). */
   readonly description?: string;
-  /** Optional list of contexts (max 1000). */
-  readonly contexts?: readonly UiModificationContextDetails[];
+  /** Optional list of contexts (max 1000). Omits readOnly fields. */
+  readonly contexts?: readonly UiModificationContextInput[];
 }
 
 /**
@@ -83,9 +110,9 @@ export interface UpdateUiModificationDetails {
   readonly description?: string;
   /**
    * Optional list of contexts (max 1000).
-   * When provided, replaces all existing contexts.
+   * When provided, replaces all existing contexts. Omits readOnly fields.
    */
-  readonly contexts?: readonly UiModificationContextDetails[];
+  readonly contexts?: readonly UiModificationContextInput[];
 }
 
 // ─── Query param interfaces ───────────────────────────────────────────────

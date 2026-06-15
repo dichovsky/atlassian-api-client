@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { ScreenSchemeResource } from '../../src/jira/resources/screenscheme.js';
+import type { ScreenScheme } from '../../src/jira/resources/screenscheme.js';
 import { MockTransport } from '../helpers/mock-transport.js';
 
 const BASE_URL = 'https://test.atlassian.net/rest/api/3';
@@ -297,6 +298,51 @@ describe('ScreenSchemeResource', () => {
       const screens = body['screens'] as Record<string, unknown>;
       expect(screens).toEqual({ create: '10019' });
       expect(screens).not.toHaveProperty('default');
+    });
+
+    it('sends null to remove a non-default screen association', async () => {
+      transport.respondWith(undefined);
+
+      await resource.update('1', { screens: { default: '10001', view: null } });
+
+      const body = transport.lastCall?.options.body as Record<string, unknown>;
+      const screens = body['screens'] as Record<string, unknown>;
+      expect(screens['view']).toBeNull();
+      expect(screens['default']).toBe('10001');
+    });
+
+    it('sends null for all removable screen associations', async () => {
+      transport.respondWith(undefined);
+
+      await resource.update('1', { screens: { create: null, edit: null, view: null } });
+
+      const body = transport.lastCall?.options.body as Record<string, unknown>;
+      const screens = body['screens'] as Record<string, unknown>;
+      expect(screens['create']).toBeNull();
+      expect(screens['edit']).toBeNull();
+      expect(screens['view']).toBeNull();
+    });
+  });
+
+  // ── ScreenScheme.issueTypeScreenSchemes type ───────────────────────────────
+
+  describe('ScreenScheme.issueTypeScreenSchemes', () => {
+    it('accepts a paginated issueTypeScreenSchemes shape (spec: PageBeanIssueTypeScreenScheme)', () => {
+      const scheme: ScreenScheme = {
+        id: 1,
+        name: 'Test',
+        issueTypeScreenSchemes: {
+          values: [{ id: 'iss-1', name: 'ITSS 1' }],
+          startAt: 0,
+          maxResults: 50,
+          total: 1,
+          isLast: true,
+        },
+      };
+      expect(scheme.issueTypeScreenSchemes?.values[0]).toMatchObject({
+        id: 'iss-1',
+        name: 'ITSS 1',
+      });
     });
   });
 

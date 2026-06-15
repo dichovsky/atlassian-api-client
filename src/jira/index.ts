@@ -919,6 +919,7 @@ export type {
   ScreenScheme,
   ScreenSchemeId,
   ScreenSchemeDetails,
+  UpdateScreenTypes,
   UpdateScreenSchemeDetails,
   ScreenSchemeOrderBy,
   ListScreenSchemesParams,
@@ -1177,3 +1178,20 @@ export type {
   ChangedWorklogs,
 } from './resources/worklog.js';
 export { WorklogResource } from './resources/worklog.js';
+export type {
+  /** Context in which a UI modification is applied (response shape; readOnly fields present). */
+  UiModificationContextDetails,
+  /** Context input for create/update requests (readOnly fields omitted). */
+  UiModificationContextInput,
+  /** A Jira UI modification as returned by GET /rest/api/3/uiModifications. */
+  UiModificationDetails,
+  /** Response from POST /rest/api/3/uiModifications — only {id, self}. */
+  UiModificationIdentifiers,
+  /** Body for POST /rest/api/3/uiModifications. */
+  CreateUiModificationDetails,
+  /** Body for PUT /rest/api/3/uiModifications/{uiModificationId}. */
+  UpdateUiModificationDetails,
+  /** Query parameters for GET /rest/api/3/uiModifications. */
+  ListUiModificationsParams,
+} from './resources/uimodifications.js';
+export { UiModificationsResource } from './resources/uimodifications.js';
