@@ -475,4 +475,46 @@ describe('FooterCommentsResource', () => {
       await expect(resource.getVersion('77777', 1)).rejects.toThrow('boom');
     });
   });
+
+  // ── B1059: ContentBody.view + ContentBody.raw ─────────────────────────────
+
+  describe('B1059 — ContentBody supports view and raw representations', () => {
+    it('get() returns a comment whose body includes the view representation', async () => {
+      // Arrange — server returns BodySingle with view when body-format=view requested
+      const commentWithView = {
+        ...sampleComment,
+        body: {
+          view: { value: '<p>rendered</p>', representation: 'view' },
+        },
+      };
+      transport.respondWith(commentWithView);
+
+      // Act
+      const result = await resource.get('77777', { 'body-format': 'view' });
+
+      // Assert — ContentBody.view is now in the type (B1059 fix)
+      expect(result.body?.view?.value).toBe('<p>rendered</p>');
+      expect(result.body?.view?.representation).toBe('view');
+    });
+  });
+
+  // ── B1059: ConfluenceVersion.number is optional ───────────────────────────
+
+  describe('B1059 — ConfluenceVersion.number is optional', () => {
+    it('list() accepts a version object without number (spec has no required fields)', async () => {
+      // Arrange — server may return a version without number on some responses
+      const commentNoVersionNumber = {
+        ...sampleComment,
+        version: { message: 'draft', createdAt: '2026-01-01T00:00:00.000Z' },
+      };
+      transport.respondWith({ results: [commentNoVersionNumber], _links: {} });
+
+      // Act
+      const result = await resource.list();
+
+      // Assert — TypeScript must not error on absent version.number
+      expect(result.results[0]?.version?.number).toBeUndefined();
+      expect(result.results[0]?.version?.message).toBe('draft');
+    });
+  });
 });

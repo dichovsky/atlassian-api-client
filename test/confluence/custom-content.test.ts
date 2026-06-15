@@ -919,4 +919,26 @@ describe('CustomContentResource', () => {
       });
     });
   });
+
+  // ── B1059: ContentBody.raw for custom content ─────────────────────────────
+
+  describe('B1059 — ContentBody.raw supports raw custom-content body', () => {
+    it('get() returns custom content whose body includes the raw representation', async () => {
+      // Arrange — server returns CustomContentBodySingle with raw when body-format=raw
+      const ccWithRaw = {
+        ...makeCustomContent('cc-raw'),
+        body: {
+          raw: { value: '{"type":"doc"}', representation: 'raw' },
+        },
+      };
+      transport.respondWith(ccWithRaw);
+
+      // Act
+      const result = await resource.get('cc-raw', { 'body-format': 'raw' });
+
+      // Assert — ContentBody.raw is now in the type (B1059 fix)
+      expect(result.body?.raw?.value).toBe('{"type":"doc"}');
+      expect(result.body?.raw?.representation).toBe('raw');
+    });
+  });
 });

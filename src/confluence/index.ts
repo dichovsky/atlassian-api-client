@@ -75,6 +75,7 @@ export type {
   RedactBlogPostResponse,
   RedactionPointer,
   RedactionPointerResponse,
+  SpaceProperty,
   SpaceRoleAssignment,
   SpaceRolePrincipalType,
   SpaceRoleType,
