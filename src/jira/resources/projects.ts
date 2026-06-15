@@ -370,14 +370,21 @@ export class ProjectsResource {
       if (params.maxResults !== undefined) query['maxResults'] = params.maxResults;
       if (params.orderBy) query['orderBy'] = params.orderBy;
       // `expand`/`typeKey` are `type: string` on /project/search (CSV stays);
-      // `status` is `type: array` → repeated params baked into the path (B1049).
+      // `status`/`id`/`keys`/`properties` are `type: array` → repeated params baked into path.
       if (params.expand) query['expand'] = params.expand.join(',');
       if (params.typeKey) query['typeKey'] = params.typeKey;
+      if (params.query) query['query'] = params.query;
+      if (params.categoryId !== undefined) query['categoryId'] = params.categoryId;
+      if (params.propertyQuery) query['propertyQuery'] = params.propertyQuery;
     }
 
+    let path = appendRepeatedParams(`${this.baseUrl}/project/search`, 'status', params?.status);
+    path = appendRepeatedParams(path, 'id', params?.id?.map(String));
+    path = appendRepeatedParams(path, 'keys', params?.keys);
+    path = appendRepeatedParams(path, 'properties', params?.properties);
     const response = await this.transport.request<OffsetPaginatedResponse<Project>>({
       method: 'GET',
-      path: appendRepeatedParams(`${this.baseUrl}/project/search`, 'status', params?.status),
+      path,
       query,
     });
     return response.data;
@@ -402,18 +409,20 @@ export class ProjectsResource {
     if (params) {
       if (params.maxResults !== undefined) query['maxResults'] = params.maxResults;
       if (params.orderBy) query['orderBy'] = params.orderBy;
-      // `expand`/`typeKey` are `type: string` (CSV stays); `status` is
-      // `type: array` → repeated params baked into the path (B1049).
+      // `expand`/`typeKey` are `type: string` (CSV stays); `status`/`id`/`keys`/`properties`
+      // are `type: array` → repeated params baked into the path (B1049).
       if (params.expand) query['expand'] = params.expand.join(',');
       if (params.typeKey) query['typeKey'] = params.typeKey;
+      if (params.query) query['query'] = params.query;
+      if (params.categoryId !== undefined) query['categoryId'] = params.categoryId;
+      if (params.propertyQuery) query['propertyQuery'] = params.propertyQuery;
     }
 
-    yield* paginateOffset<Project>(
-      this.transport,
-      appendRepeatedParams(`${this.baseUrl}/project/search`, 'status', params?.status),
-      query,
-      params?.maxResults,
-    );
+    let path = appendRepeatedParams(`${this.baseUrl}/project/search`, 'status', params?.status);
+    path = appendRepeatedParams(path, 'id', params?.id?.map(String));
+    path = appendRepeatedParams(path, 'keys', params?.keys);
+    path = appendRepeatedParams(path, 'properties', params?.properties);
+    yield* paginateOffset<Project>(this.transport, path, query, params?.maxResults);
   }
 
   /** List projects using the legacy endpoint (B929). */

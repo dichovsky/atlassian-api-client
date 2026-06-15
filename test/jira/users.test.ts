@@ -109,6 +109,15 @@ describe('UsersResource', () => {
         maxResults: 20,
       });
     });
+
+    it('sends accountId and property when provided (B1056)', async () => {
+      transport.respondWith([]);
+      await users.search({ accountId: 'acc-1', property: 'cf[10000]=value' });
+      expect(transport.lastCall?.options.query).toMatchObject({
+        accountId: 'acc-1',
+        property: 'cf[10000]=value',
+      });
+    });
   });
 
   // ── deleteUser (B797) ─────────────────────────────────────────────────────
@@ -221,6 +230,31 @@ describe('UsersResource', () => {
         startAt: 0,
         maxResults: 20,
       });
+    });
+
+    it('sends new B1056 params: sessionId, issueKey, issueId, actionDescriptorId, recommend, and accountType/appType as repeated params', async () => {
+      transport.respondWith([]);
+      await users.assignableSearch({
+        project: 'PROJ',
+        sessionId: 'sess-123',
+        issueKey: 'PROJ-1',
+        issueId: '10001',
+        actionDescriptorId: 5,
+        recommend: true,
+        accountType: ['atlassian', 'app'],
+        appType: ['connect'],
+      });
+      expect(transport.lastCall?.options.query).toMatchObject({
+        project: 'PROJ',
+        sessionId: 'sess-123',
+        issueKey: 'PROJ-1',
+        issueId: '10001',
+        actionDescriptorId: 5,
+        recommend: true,
+      });
+      const path = transport.lastCall?.options.path ?? '';
+      expect(path).toContain('accountType=atlassian&accountType=app');
+      expect(path).toContain('appType=connect');
     });
   });
 
@@ -784,6 +818,15 @@ describe('UsersResource', () => {
       await users.viewIssueSearch();
       expect(transport.lastCall?.options.query).toEqual({});
     });
+
+    it('sends projectKey when provided (B1056)', async () => {
+      transport.respondWith([]);
+      await users.viewIssueSearch({ projectKey: 'PROJ', issueKey: 'PROJ-1' });
+      expect(transport.lastCall?.options.query).toMatchObject({
+        projectKey: 'PROJ',
+        issueKey: 'PROJ-1',
+      });
+    });
   });
 
   // ── list (B818) ───────────────────────────────────────────────────────────
@@ -818,6 +861,14 @@ describe('UsersResource', () => {
       await users.list({});
       expect(transport.lastCall?.options.query).toEqual({});
     });
+
+    it('sends expand when provided (B1056)', async () => {
+      transport.respondWith([]);
+      await users.list({ expand: 'groups,applicationRoles' });
+      expect(transport.lastCall?.options.query).toMatchObject({
+        expand: 'groups,applicationRoles',
+      });
+    });
   });
 
   // ── listSearch (B819) ─────────────────────────────────────────────────────
@@ -851,6 +902,15 @@ describe('UsersResource', () => {
       transport.respondWith([]);
       await users.listSearch();
       expect(transport.lastCall?.options.query).toEqual({});
+    });
+
+    it('sends expand when provided (B1056)', async () => {
+      transport.respondWith([]);
+      await users.listSearch({ query: 'alice', expand: 'groups' });
+      expect(transport.lastCall?.options.query).toMatchObject({
+        query: 'alice',
+        expand: 'groups',
+      });
     });
   });
 });

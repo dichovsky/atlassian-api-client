@@ -59,7 +59,7 @@ describe('SearchResource', () => {
         startAt: 10,
         maxResults: 25,
         fields: ['summary', 'status'],
-        expand: ['renderedFields'],
+        expand: 'renderedFields',
       });
 
       // Assert
@@ -68,7 +68,27 @@ describe('SearchResource', () => {
         startAt: 10,
         maxResults: 25,
         fields: ['summary', 'status'],
-        expand: ['renderedFields'],
+        expand: 'renderedFields',
+      });
+    });
+
+    it('sends validateQuery, properties, and fieldsByKeys in POST body (B1056)', async () => {
+      // Arrange
+      transport.respondWith(makeSearchResult([]));
+
+      // Act
+      await search.search({
+        jql: 'project = PROJ',
+        validateQuery: 'strict',
+        properties: ['prop1', 'prop2'],
+        fieldsByKeys: true,
+      });
+
+      // Assert
+      expect(transport.lastCall?.options.body).toMatchObject({
+        validateQuery: 'strict',
+        properties: ['prop1', 'prop2'],
+        fieldsByKeys: true,
       });
     });
   });
@@ -103,11 +123,11 @@ describe('SearchResource', () => {
         startAt: 5,
         maxResults: 20,
         fields: ['id', 'key', 'summary'],
-        expand: ['changelog'],
+        expand: 'changelog',
       });
 
       // Assert — `/search` GET: `fields` is `type: array` → repeated params in
-      // the path; `expand` is `type: string` → stays comma-joined (B1049).
+      // the path; `expand` is `type: string` → sent as-is (B1049).
       expect(transport.lastCall?.options.query).toMatchObject({
         jql: 'project = PROJ',
         startAt: 5,
@@ -133,6 +153,27 @@ describe('SearchResource', () => {
       expect(query['maxResults']).toBeUndefined();
       expect(query['fields']).toBeUndefined();
       expect(query['expand']).toBeUndefined();
+    });
+
+    it('sends validateQuery, properties as repeated params, and fieldsByKeys for GET (B1056)', async () => {
+      // Arrange
+      transport.respondWith(makeSearchResult([]));
+
+      // Act
+      await search.searchGet({
+        jql: 'project = PROJ',
+        validateQuery: 'warn',
+        properties: ['prop1'],
+        fieldsByKeys: false,
+      });
+
+      // Assert — `properties` is type:array → repeated params in path
+      expect(transport.lastCall?.options.query).toMatchObject({
+        validateQuery: 'warn',
+        fieldsByKeys: false,
+      });
+      expect(transport.lastCall?.options.path).toContain('properties=prop1');
+      expect(transport.lastCall?.options.query).not.toHaveProperty('properties');
     });
   });
 
@@ -199,7 +240,7 @@ describe('SearchResource', () => {
       for await (const _ of search.searchAll({
         jql: 'project = PROJ',
         fields: ['summary', 'status'],
-        expand: ['changelog'],
+        expand: 'changelog',
       })) {
         // consume
       }
@@ -207,7 +248,7 @@ describe('SearchResource', () => {
       // Assert
       expect(transport.calls[0]?.options.body).toMatchObject({
         fields: ['summary', 'status'],
-        expand: ['changelog'],
+        expand: 'changelog',
       });
     });
   });

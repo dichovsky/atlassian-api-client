@@ -6,6 +6,7 @@ export type {
   User,
   UserRef,
   IssueType,
+  IssueTypeScope,
   Priority,
   Status,
   StatusCategory,
@@ -28,6 +29,7 @@ export type {
   UserIdentifierParams,
   UserSearchQueryResult,
   UserKeySearchQueryResult,
+  UserKeyEntry,
   SearchUsersQueryParams,
   ViewIssueSearchUsersParams,
   ListAllUsersParams,
@@ -51,6 +53,8 @@ export type {
   BulkUserEmailsResponse,
   UserGroupEntry,
   GetUserGroupsParams,
+  EntityProperty,
+  Visibility,
 } from './types.js';
 export type {
   AnnouncementBanner,

@@ -57,14 +57,16 @@ export class UsersResource {
 
   /** Search for users by query string. */
   async search(params: SearchUsersParams): Promise<User[]> {
+    const query: Record<string, string | number | undefined> = {};
+    if (params.query !== undefined) query['query'] = params.query;
+    if (params.startAt !== undefined) query['startAt'] = params.startAt;
+    if (params.maxResults !== undefined) query['maxResults'] = params.maxResults;
+    if (params.accountId !== undefined) query['accountId'] = params.accountId;
+    if (params.property !== undefined) query['property'] = params.property;
     const response = await this.transport.request<User[]>({
       method: 'GET',
       path: `${this.baseUrl}/user/search`,
-      query: {
-        query: params.query,
-        startAt: params.startAt,
-        maxResults: params.maxResults,
-      },
+      query,
     });
     return response.data;
   }
@@ -107,17 +109,26 @@ export class UsersResource {
 
   /** Search for users assignable to issues in a project (B800). */
   async assignableSearch(params: AssignableSearchParams): Promise<User[]> {
-    const query: Record<string, string | number | undefined> = {
+    const query: Record<string, string | number | boolean | undefined> = {
       project: params.project,
     };
     if (params.query !== undefined) query['query'] = params.query;
+    if (params.sessionId !== undefined) query['sessionId'] = params.sessionId;
     if (params.username !== undefined) query['username'] = params.username;
     if (params.accountId !== undefined) query['accountId'] = params.accountId;
+    if (params.issueKey !== undefined) query['issueKey'] = params.issueKey;
+    if (params.issueId !== undefined) query['issueId'] = params.issueId;
     if (params.startAt !== undefined) query['startAt'] = params.startAt;
     if (params.maxResults !== undefined) query['maxResults'] = params.maxResults;
+    if (params.actionDescriptorId !== undefined)
+      query['actionDescriptorId'] = params.actionDescriptorId;
+    if (params.recommend !== undefined) query['recommend'] = params.recommend;
+    let path = `${this.baseUrl}/user/assignable/search`;
+    path = appendRepeatedParams(path, 'accountType', params.accountType);
+    path = appendRepeatedParams(path, 'appType', params.appType);
     const response = await this.transport.request<User[]>({
       method: 'GET',
-      path: `${this.baseUrl}/user/assignable/search`,
+      path,
       query,
     });
     return response.data;
@@ -364,6 +375,7 @@ export class UsersResource {
   async viewIssueSearch(params: ViewIssueSearchUsersParams = {}): Promise<User[]> {
     const query: Record<string, string | number | boolean | undefined> = {};
     if (params.issueKey !== undefined) query['issueKey'] = params.issueKey;
+    if (params.projectKey !== undefined) query['projectKey'] = params.projectKey;
     if (params.query !== undefined) query['query'] = params.query;
     if (params.maxResults !== undefined) query['maxResults'] = params.maxResults;
     if (params.username !== undefined) query['username'] = params.username;
@@ -382,6 +394,7 @@ export class UsersResource {
     const query: Record<string, string | number | boolean | undefined> = {};
     if (params.startAt !== undefined) query['startAt'] = params.startAt;
     if (params.maxResults !== undefined) query['maxResults'] = params.maxResults;
+    if (params.expand !== undefined) query['expand'] = params.expand;
     const response = await this.transport.request<User[]>({
       method: 'GET',
       path: `${this.baseUrl}/users`,
@@ -397,6 +410,7 @@ export class UsersResource {
     if (params.username !== undefined) query['username'] = params.username;
     if (params.startAt !== undefined) query['startAt'] = params.startAt;
     if (params.maxResults !== undefined) query['maxResults'] = params.maxResults;
+    if (params.expand !== undefined) query['expand'] = params.expand;
     const response = await this.transport.request<User[]>({
       method: 'GET',
       path: `${this.baseUrl}/users/search`,

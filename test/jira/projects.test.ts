@@ -102,6 +102,35 @@ describe('ProjectsResource', () => {
       });
       expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/project/search?status=live`);
     });
+
+    it('sends id/keys/properties as repeated params, query/categoryId/propertyQuery in query (B1056)', async () => {
+      // Arrange
+      transport.respondWith(makeListResponse([]));
+
+      // Act
+      await projects.list({
+        id: [10001, 10002],
+        keys: ['PROJ', 'DEMO'],
+        query: 'my project',
+        categoryId: 5,
+        propertyQuery: 'cf[10000]=value',
+        properties: ['prop1'],
+      });
+
+      // Assert — `id`/`keys`/`properties` are type:array → repeated params in path
+      expect(transport.lastCall?.options.query).toMatchObject({
+        query: 'my project',
+        categoryId: 5,
+        propertyQuery: 'cf[10000]=value',
+      });
+      const path = transport.lastCall?.options.path ?? '';
+      expect(path).toContain('id=10001&id=10002');
+      expect(path).toContain('keys=PROJ&keys=DEMO');
+      expect(path).toContain('properties=prop1');
+      expect(transport.lastCall?.options.query).not.toHaveProperty('id');
+      expect(transport.lastCall?.options.query).not.toHaveProperty('keys');
+      expect(transport.lastCall?.options.query).not.toHaveProperty('properties');
+    });
   });
 
   // ── get ───────────────────────────────────────────────────────────────────
@@ -223,6 +252,41 @@ describe('ProjectsResource', () => {
       });
       expect(transport.calls[0]?.options.path).toBe(`${BASE_URL}/project/search?status=live`);
       expect(transport.calls[0]?.options.query).not.toHaveProperty('status');
+    });
+
+    it('sends query/categoryId/propertyQuery in query for listAll (B1056)', async () => {
+      // Arrange
+      transport.respondWith({
+        values: [{ id: '1', key: 'P' }],
+        startAt: 0,
+        maxResults: 50,
+        isLast: true,
+      });
+
+      // Act
+      const items: unknown[] = [];
+      for await (const item of projects.listAll({
+        query: 'my project',
+        categoryId: 5,
+        propertyQuery: 'cf[10000]=value',
+        id: [10001],
+        keys: ['PROJ'],
+        properties: ['prop1'],
+      })) {
+        items.push(item);
+      }
+
+      // Assert
+      expect(items).toHaveLength(1);
+      expect(transport.calls[0]?.options.query).toMatchObject({
+        query: 'my project',
+        categoryId: 5,
+        propertyQuery: 'cf[10000]=value',
+      });
+      const path = transport.calls[0]?.options.path ?? '';
+      expect(path).toContain('id=10001');
+      expect(path).toContain('keys=PROJ');
+      expect(path).toContain('properties=prop1');
     });
 
     it('works with no params', async () => {

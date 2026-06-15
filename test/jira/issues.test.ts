@@ -43,19 +43,19 @@ describe('IssuesResource', () => {
       });
     });
 
-    it('serializes fields/properties as repeated path params, expand as CSV (B1049)', async () => {
+    it('serializes fields/properties as repeated path params, expand as string (B1049)', async () => {
       // Arrange
       transport.respondWith(makeIssue('10001', 'PROJ-1'));
 
       // Act
       await issues.get('PROJ-1', {
         fields: ['summary', 'status', 'assignee'],
-        expand: ['renderedFields', 'names'],
+        expand: 'renderedFields,names',
         properties: ['prop1', 'prop2'],
       });
 
       // Assert — `/issue/{id}` GET: `fields`/`properties` are `type: array` →
-      // repeated params in the path; `expand` is `type: string` → CSV.
+      // repeated params in the path; `expand` is `type: string` → sent as-is.
       expect(transport.lastCall?.options.query).toMatchObject({
         expand: 'renderedFields,names',
       });
@@ -78,6 +78,25 @@ describe('IssuesResource', () => {
       expect(query['fields']).toBeUndefined();
       expect(query['expand']).toBeUndefined();
       expect(query['properties']).toBeUndefined();
+    });
+
+    it('sends fieldsByKeys, updateHistory, and failFast as query params (B1056)', async () => {
+      // Arrange
+      transport.respondWith(makeIssue('10001', 'PROJ-1'));
+
+      // Act
+      await issues.get('PROJ-1', {
+        fieldsByKeys: true,
+        updateHistory: false,
+        failFast: true,
+      });
+
+      // Assert
+      expect(transport.lastCall?.options.query).toMatchObject({
+        fieldsByKeys: true,
+        updateHistory: false,
+        failFast: true,
+      });
     });
   });
 
