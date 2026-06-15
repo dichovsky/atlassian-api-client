@@ -2,13 +2,16 @@ import type { Transport } from '../../core/types.js';
 
 /**
  * A single Jira permission entry returned in the GET /permissions response.
- * Fields: description, key, name, type.
+ * Maps to the UserPermission spec schema.
  */
 export interface Permission {
-  readonly description?: string;
+  readonly id?: string;
   readonly key?: string;
   readonly name?: string;
-  readonly type?: string;
+  readonly type?: 'GLOBAL' | 'PROJECT';
+  readonly description?: string;
+  readonly havePermission?: boolean;
+  readonly deprecatedKey?: boolean;
 }
 
 /** Response envelope for GET /rest/api/3/permissions (B613). */

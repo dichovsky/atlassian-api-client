@@ -12,6 +12,7 @@ const makeTask = (overrides?: Partial<{ status: 'RUNNING' | 'COMPLETE' | 'FAILED
   progress: 50,
   elapsedRuntime: 1000,
   submitted: 1700000000000,
+  submittedBy: 5,
   lastUpdate: 1700000001000,
 });
 
@@ -65,6 +66,26 @@ describe('TaskResource', () => {
 
       // Assert
       expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/task/task%2F1`);
+    });
+
+    it('returns a task with message and result fields', async () => {
+      // Arrange
+      const payload = {
+        ...makeTask({ status: 'COMPLETE' }),
+        message: '100 issues updated',
+        result: { updatedCount: 100 },
+        progress: 100,
+        finished: 1700000002000,
+      };
+      transport.respondWith(payload);
+
+      // Act
+      const result = await task.get('task-123');
+
+      // Assert
+      expect(result.message).toBe('100 issues updated');
+      expect(result.result).toEqual({ updatedCount: 100 });
+      expect(result.submittedBy).toBe(5);
     });
 
     it('propagates transport errors', async () => {

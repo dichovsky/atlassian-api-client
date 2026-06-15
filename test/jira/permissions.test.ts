@@ -24,10 +24,13 @@ describe('PermissionsResource', () => {
       const responseData = {
         permissions: {
           BULK_CHANGE: {
+            id: '10',
             description: 'Ability to modify a collection of issues at once.',
             key: 'BULK_CHANGE',
             name: 'Bulk Change',
-            type: 'GLOBAL',
+            type: 'GLOBAL' as const,
+            havePermission: true,
+            deprecatedKey: false,
           },
         },
       };
@@ -48,6 +51,28 @@ describe('PermissionsResource', () => {
       const result = await resource.getAll();
 
       expect(result).toEqual({ permissions: {} });
+    });
+
+    it('handles PROJECT type permission with havePermission and deprecatedKey fields', async () => {
+      const responseData = {
+        permissions: {
+          EDIT_ISSUES: {
+            id: '12',
+            key: 'EDIT_ISSUES',
+            name: 'Edit Issues',
+            type: 'PROJECT' as const,
+            havePermission: true,
+            deprecatedKey: false,
+          },
+        },
+      };
+      transport.respondWith(responseData);
+
+      const result = await resource.getAll();
+
+      expect(result.permissions?.['EDIT_ISSUES']?.type).toBe('PROJECT');
+      expect(result.permissions?.['EDIT_ISSUES']?.havePermission).toBe(true);
+      expect(result.permissions?.['EDIT_ISSUES']?.id).toBe('12');
     });
 
     it('propagates transport errors', async () => {
