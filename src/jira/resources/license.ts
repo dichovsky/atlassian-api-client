@@ -1,15 +1,24 @@
 import type { Transport } from '../../core/types.js';
 import { encodePathSegment } from '../../core/path.js';
 
-/** Approximate license count across all products. */
-export interface ApproximateLicenseCount {
-  readonly count: number;
+/** A license metric returned by the approximateLicenseCount endpoints. */
+export interface LicenseMetric {
+  /** The key identifying this license metric (e.g. `license.totalApproximateUserCount`). */
+  readonly key: string;
+  /** The calculated value of the metric as a string (e.g. `"1000"`). */
+  readonly value: string;
 }
 
-/** Approximate license count for a specific product. */
-export interface ApproximateProductLicenseCount {
-  readonly count: number;
-}
+/**
+ * The set of Jira application keys for which per-product license counts are available.
+ * Corresponds to the `applicationKey` path parameter of
+ * `/rest/api/3/license/approximateLicenseCount/product/{applicationKey}`.
+ */
+export type ApplicationKey =
+  | 'jira-core'
+  | 'jira-product-discovery'
+  | 'jira-software'
+  | 'jira-servicedesk';
 
 /** Jira License resource — GET /rest/api/3/license/approximateLicenseCount endpoints. */
 export class LicenseResource {
@@ -19,8 +28,8 @@ export class LicenseResource {
   ) {}
 
   /** Get approximate user count for all licensed Jira products. */
-  async getApproximateCount(): Promise<ApproximateLicenseCount> {
-    const response = await this.transport.request<ApproximateLicenseCount>({
+  async getApproximateCount(): Promise<LicenseMetric> {
+    const response = await this.transport.request<LicenseMetric>({
       method: 'GET',
       path: `${this.baseUrl}/license/approximateLicenseCount`,
     });
@@ -28,10 +37,8 @@ export class LicenseResource {
   }
 
   /** Get approximate user count for a specific Jira product by application key. */
-  async getApproximateCountForProduct(
-    applicationKey: string,
-  ): Promise<ApproximateProductLicenseCount> {
-    const response = await this.transport.request<ApproximateProductLicenseCount>({
+  async getApproximateCountForProduct(applicationKey: ApplicationKey): Promise<LicenseMetric> {
+    const response = await this.transport.request<LicenseMetric>({
       method: 'GET',
       path: `${this.baseUrl}/license/approximateLicenseCount/product/${encodePathSegment(applicationKey)}`,
     });

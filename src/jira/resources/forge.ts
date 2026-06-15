@@ -38,8 +38,8 @@ export interface BulkForgeActionResponse {
  *
  * @remarks
  * **Auth note:** This endpoint requires OAuth 2.0 (3LO) with the
- * `manage:jira-configuration` scope. It does NOT work with basic auth
- * (API token). Use `--auth-type bearer --token <OAUTH_TOKEN>` with a token
+ * `manage:jira-project` scope, or basic auth (admin API token).
+ * Use `--auth-type bearer --token <OAUTH_TOKEN>` with a token
  * obtained via the Atlassian OAuth 2.0 flow.
  *
  * **URL base:** Uses the standard `/rest/api/3` base, not a separate Forge

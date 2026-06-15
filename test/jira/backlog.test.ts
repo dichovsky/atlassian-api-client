@@ -99,6 +99,38 @@ describe('BacklogResource', () => {
         'issues entries must be non-empty strings',
       );
     });
+
+    it('sends optional rank fields when provided', async () => {
+      // Arrange
+      transport.respondWith(undefined, 204);
+
+      // Act
+      await backlog.moveIssuesToBoard(1, ['PROJ-1'], {
+        rankBeforeIssue: 'PROJ-2',
+        rankCustomFieldId: 10521,
+      });
+
+      // Assert
+      expect(transport.lastCall?.options.body).toEqual({
+        issues: ['PROJ-1'],
+        rankBeforeIssue: 'PROJ-2',
+        rankCustomFieldId: 10521,
+      });
+    });
+
+    it('sends rankAfterIssue when provided', async () => {
+      // Arrange
+      transport.respondWith(undefined, 204);
+
+      // Act
+      await backlog.moveIssuesToBoard(1, ['PROJ-3'], { rankAfterIssue: 'PROJ-4' });
+
+      // Assert
+      expect(transport.lastCall?.options.body).toEqual({
+        issues: ['PROJ-3'],
+        rankAfterIssue: 'PROJ-4',
+      });
+    });
   });
 
   // ── moveIssues (B236) ─────────────────────────────────────────────────────

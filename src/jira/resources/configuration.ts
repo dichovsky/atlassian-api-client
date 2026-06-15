@@ -51,7 +51,6 @@ export interface TimeTrackingProvider {
 export interface SelectTimeTrackingProviderData {
   readonly key: string;
   readonly name?: string;
-  readonly url?: string;
 }
 
 /**
@@ -88,14 +87,15 @@ export class ConfigurationResource {
 
   /**
    * GET /rest/api/3/configuration/timetracking — the currently selected
-   * time-tracking provider.
+   * time-tracking provider. Returns `null` when time tracking is disabled
+   * (204 No Content).
    */
-  async getTimeTracking(): Promise<TimeTrackingProvider> {
-    const response = await this.transport.request<TimeTrackingProvider>({
+  async getTimeTracking(): Promise<TimeTrackingProvider | null> {
+    const response = await this.transport.request<TimeTrackingProvider | null>({
       method: 'GET',
       path: `${this.baseUrl}/configuration/timetracking`,
     });
-    return response.data;
+    return response.data ?? null;
   }
 
   /**

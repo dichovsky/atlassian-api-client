@@ -16,9 +16,9 @@ describe('LicenseResource', () => {
   // ── getApproximateCount ───────────────────────────────────────────────────
 
   describe('getApproximateCount()', () => {
-    it('calls GET /license/approximateLicenseCount and returns count', async () => {
-      // Arrange
-      const payload = { count: 42 };
+    it('calls GET /license/approximateLicenseCount and returns a LicenseMetric', async () => {
+      // Arrange — spec returns { key, value } (LicenseMetric)
+      const payload = { key: 'license.totalApproximateUserCount', value: '1000' };
       transport.respondWith(payload);
 
       // Act
@@ -32,15 +32,16 @@ describe('LicenseResource', () => {
       });
     });
 
-    it('returns count of 0 for unlicensed instance', async () => {
+    it('returns the key and value strings from the metric', async () => {
       // Arrange
-      transport.respondWith({ count: 0 });
+      transport.respondWith({ key: 'license.totalApproximateUserCount', value: '0' });
 
       // Act
       const result = await license.getApproximateCount();
 
       // Assert
-      expect(result.count).toBe(0);
+      expect(result.key).toBe('license.totalApproximateUserCount');
+      expect(result.value).toBe('0');
     });
 
     it('propagates transport errors', async () => {
@@ -56,8 +57,8 @@ describe('LicenseResource', () => {
 
   describe('getApproximateCountForProduct()', () => {
     it('calls GET /license/approximateLicenseCount/product/{key} with the given key', async () => {
-      // Arrange
-      const payload = { count: 25 };
+      // Arrange — spec returns { key, value } (LicenseMetric)
+      const payload = { key: 'license.approximateUserCount', value: '25' };
       transport.respondWith(payload);
 
       // Act
@@ -71,17 +72,20 @@ describe('LicenseResource', () => {
       });
     });
 
-    it('URL-encodes special characters in applicationKey', async () => {
-      // Arrange
-      transport.respondWith({ count: 10 });
-
-      // Act
-      await license.getApproximateCountForProduct('jira service desk');
-
-      // Assert
-      expect(transport.lastCall?.options.path).toBe(
-        `${BASE_URL}/license/approximateLicenseCount/product/jira%20service%20desk`,
-      );
+    it('accepts all four enum application keys', async () => {
+      const keys = [
+        'jira-core',
+        'jira-product-discovery',
+        'jira-software',
+        'jira-servicedesk',
+      ] as const;
+      for (const key of keys) {
+        transport.respondWith({ key: 'license.approximateUserCount', value: '10' });
+        await license.getApproximateCountForProduct(key);
+        expect(transport.lastCall?.options.path).toBe(
+          `${BASE_URL}/license/approximateLicenseCount/product/${key}`,
+        );
+      }
     });
 
     it('propagates transport errors', async () => {

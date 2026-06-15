@@ -5,11 +5,9 @@ import { ValidationError } from '../../src/core/errors.js';
 
 const BASE_URL = 'https://test.atlassian.net/rest/api/3';
 
-const makeOption = (overrides?: Partial<{ id: string; value: string }>) => ({
+const makeOption = (overrides?: Partial<{ value: string }>) => ({
   self: 'https://test.atlassian.net/rest/api/3/customFieldOption/10001',
   value: overrides?.value ?? 'In Progress',
-  id: overrides?.id ?? '10001',
-  disabled: false,
 });
 
 describe('CustomFieldOptionResource', () => {
@@ -42,7 +40,7 @@ describe('CustomFieldOptionResource', () => {
 
     it('URL-encodes the id', async () => {
       // Arrange
-      transport.respondWith(makeOption({ id: 'opt/special' }));
+      transport.respondWith(makeOption());
 
       // Act
       await customFieldOption.get('opt/special');
