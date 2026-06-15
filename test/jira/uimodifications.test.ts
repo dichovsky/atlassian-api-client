@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { UiModificationsResource } from '../../src/jira/resources/uimodifications.js';
+import type { UiModificationContextInput } from '../../src/jira/resources/uimodifications.js';
 import { MockTransport } from '../helpers/mock-transport.js';
 
 const BASE_URL = 'https://test.atlassian.net/rest/api/3';
@@ -495,6 +496,48 @@ describe('UiModificationsResource', () => {
       transport.respondWithError(new Error('Not Found'));
 
       await expect(resource.delete('nonexistent')).rejects.toThrow('Not Found');
+    });
+  });
+
+  // ── UiModificationContextInput (request) vs UiModificationContextDetails (response) ──
+
+  describe('UiModificationContextInput (request body type)', () => {
+    it('create() accepts context input without readOnly fields (id, isAvailable)', async () => {
+      transport.respondWith({ id: 'mod-new', self: 'https://example.com/mod-new' });
+
+      // UiModificationContextInput omits readOnly id and isAvailable
+      const input: UiModificationContextInput = {
+        issueTypeId: '10000',
+        projectId: '10000',
+        viewType: 'GIC',
+      };
+      await resource.create({ name: 'Test', contexts: [input] });
+
+      const body = transport.lastCall?.options.body as Record<string, unknown>;
+      const contexts = body['contexts'] as Record<string, unknown>[];
+      expect(contexts[0]).not.toHaveProperty('id');
+      expect(contexts[0]).not.toHaveProperty('isAvailable');
+      expect(contexts[0]).toMatchObject({
+        issueTypeId: '10000',
+        projectId: '10000',
+        viewType: 'GIC',
+      });
+    });
+
+    it('update() accepts context input without readOnly fields (id, isAvailable)', async () => {
+      transport.respondWith(undefined);
+
+      const input: UiModificationContextInput = {
+        issueTypeId: '10001',
+        viewType: 'IssueView',
+      };
+      await resource.update('mod-1', { contexts: [input] });
+
+      const body = transport.lastCall?.options.body as Record<string, unknown>;
+      const contexts = body['contexts'] as Record<string, unknown>[];
+      expect(contexts[0]).not.toHaveProperty('id');
+      expect(contexts[0]).not.toHaveProperty('isAvailable');
+      expect(contexts[0]).toMatchObject({ issueTypeId: '10001', viewType: 'IssueView' });
     });
   });
 });

@@ -1,11 +1,16 @@
 import type { Transport } from '../../core/types.js';
 import { encodePathSegment } from '../../core/path.js';
 
-/** A Jira status category returned by GET /rest/api/3/statuscategory. */
+/**
+ * A Jira status category returned by GET /rest/api/3/statuscategory.
+ *
+ * Spec: `StatusCategory` schema has no `required` fields — all properties
+ * are optional. The spec sets all fields as `readOnly`.
+ */
 export interface JiraStatusCategory {
-  readonly id: number;
-  readonly key: string;
-  readonly name: string;
+  readonly id?: number;
+  readonly key?: string;
+  readonly name?: string;
   readonly colorName?: string;
   readonly self?: string;
 }

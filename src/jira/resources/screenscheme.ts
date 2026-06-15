@@ -3,6 +3,7 @@ import { encodePathSegment } from '../../core/path.js';
 import type { OffsetPaginatedResponse } from '../../core/pagination.js';
 import { paginateOffset, validatePageSize } from '../../core/pagination.js';
 import { appendRepeatedParams } from '../../core/query.js';
+import type { IssueTypeScreenScheme } from './issuetypescreenscheme.js';
 
 // ─── Response types ────────────────────────────────────────────────────────
 
@@ -27,7 +28,11 @@ export interface ScreenScheme {
   readonly name?: string;
   readonly description?: string;
   readonly screens?: ScreenTypes;
-  readonly issueTypeScreenSchemes?: Record<string, unknown>;
+  /**
+   * Details of the issue type screen schemes associated with the screen scheme.
+   * Spec: `PageBeanIssueTypeScreenScheme` (a paginated list of issue type screen schemes).
+   */
+  readonly issueTypeScreenSchemes?: OffsetPaginatedResponse<IssueTypeScreenScheme>;
 }
 
 /** Response from POST /rest/api/3/screenscheme. */
@@ -49,18 +54,17 @@ export interface ScreenSchemeDetails {
 /**
  * Update-specific screen types mapping for PUT /rest/api/3/screenscheme/{id}.
  * All properties are optional strings (quoted screen IDs per the v3 spec's
- * `UpdateScreenTypes` schema). Pass `null` to remove an association (not yet
- * supported by this client — leave as a follow-up).
+ * `UpdateScreenTypes` schema). Pass `null` to remove a non-default screen association.
  */
 export interface UpdateScreenTypes {
   /** Default screen ID as a string. When specified, must include a valid screen ID. */
   readonly default?: string;
-  /** Screen ID string for creating an issue. To remove the association, pass null (unsupported here). */
-  readonly create?: string;
-  /** Screen ID string for editing an issue. To remove the association, pass null (unsupported here). */
-  readonly edit?: string;
-  /** Screen ID string for viewing an issue. To remove the association, pass null (unsupported here). */
-  readonly view?: string;
+  /** Screen ID string for creating an issue. Pass `null` to remove the association. */
+  readonly create?: string | null;
+  /** Screen ID string for editing an issue. Pass `null` to remove the association. */
+  readonly edit?: string | null;
+  /** Screen ID string for viewing an issue. Pass `null` to remove the association. */
+  readonly view?: string | null;
 }
 
 /** Body for PUT /rest/api/3/screenscheme/{screenSchemeId} (update screen scheme). */
@@ -164,8 +168,10 @@ export class ScreenSchemeResource {
     if (data.name !== undefined) body['name'] = data.name;
     if (data.description !== undefined) body['description'] = data.description;
     if (data.screens !== undefined) {
-      const screens: Record<string, string> = {};
+      const screens: Record<string, string | null> = {};
+      // default cannot be null (spec: "must include a screen ID as a default screen is required")
       if (data.screens.default !== undefined) screens['default'] = data.screens.default;
+      // view/edit/create can be null to remove the association
       if (data.screens.view !== undefined) screens['view'] = data.screens.view;
       if (data.screens.edit !== undefined) screens['edit'] = data.screens.edit;
       if (data.screens.create !== undefined) screens['create'] = data.screens.create;

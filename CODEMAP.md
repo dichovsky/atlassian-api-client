@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "2.0.0"
   },
-  "sourceHash": "8e320101e80323153b11e9f2831ca16289a74e25aec9afbae0b54b4658a997cf",
+  "sourceHash": "f06bbdc3a33c060d83d70afb749178ad0bdc6e58c0b9fa0895c907180be359f4",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -21408,6 +21408,10 @@
               "original": "ScreenSchemeDetails"
             },
             {
+              "exported": "UpdateScreenTypes",
+              "original": "UpdateScreenTypes"
+            },
+            {
               "exported": "UpdateScreenSchemeDetails",
               "original": "UpdateScreenSchemeDetails"
             },
@@ -21748,6 +21752,52 @@
             {
               "exported": "TaskResource",
               "original": "TaskResource"
+            }
+          ]
+        },
+        {
+          "kind": "named",
+          "from": "./resources/uimodifications.js",
+          "typeOnly": true,
+          "names": [
+            {
+              "exported": "UiModificationContextDetails",
+              "original": "UiModificationContextDetails"
+            },
+            {
+              "exported": "UiModificationContextInput",
+              "original": "UiModificationContextInput"
+            },
+            {
+              "exported": "UiModificationDetails",
+              "original": "UiModificationDetails"
+            },
+            {
+              "exported": "UiModificationIdentifiers",
+              "original": "UiModificationIdentifiers"
+            },
+            {
+              "exported": "CreateUiModificationDetails",
+              "original": "CreateUiModificationDetails"
+            },
+            {
+              "exported": "UpdateUiModificationDetails",
+              "original": "UpdateUiModificationDetails"
+            },
+            {
+              "exported": "ListUiModificationsParams",
+              "original": "ListUiModificationsParams"
+            }
+          ]
+        },
+        {
+          "kind": "named",
+          "from": "./resources/uimodifications.js",
+          "typeOnly": false,
+          "names": [
+            {
+              "exported": "UiModificationsResource",
+              "original": "UiModificationsResource"
             }
           ]
         },
@@ -34303,7 +34353,7 @@
         {
           "name": "ScreenTypes",
           "kind": "interface",
-          "line": 13,
+          "line": 14,
           "exported": true,
           "signature": "export interface ScreenTypes { readonly view?: number; readonly edit?: number; readonly create?: number; readonly defaul…",
           "jsdoc": "Screen types mapping for a screen scheme. Each value is the ID of the screen to use for that operation."
@@ -34311,7 +34361,7 @@
         {
           "name": "ScreenScheme",
           "kind": "interface",
-          "line": 25,
+          "line": 26,
           "exported": true,
           "signature": "export interface ScreenScheme { readonly id?: number; readonly name?: string; readonly description?: string; readonly sc…",
           "jsdoc": "A Jira screen scheme."
@@ -34319,7 +34369,7 @@
         {
           "name": "ScreenSchemeId",
           "kind": "interface",
-          "line": 34,
+          "line": 39,
           "exported": true,
           "signature": "export interface ScreenSchemeId { readonly id: number; }",
           "jsdoc": "Response from POST /rest/api/3/screenscheme."
@@ -34327,7 +34377,7 @@
         {
           "name": "ScreenSchemeDetails",
           "kind": "interface",
-          "line": 41,
+          "line": 46,
           "exported": true,
           "signature": "export interface ScreenSchemeDetails { readonly name: string; readonly description?: string; readonly screens: ScreenTyp…",
           "jsdoc": "Body for POST /rest/api/3/screenscheme (create screen scheme)."
@@ -34335,15 +34385,15 @@
         {
           "name": "UpdateScreenTypes",
           "kind": "interface",
-          "line": 55,
+          "line": 59,
           "exported": true,
-          "signature": "export interface UpdateScreenTypes { readonly default?: string; readonly create?: string; readonly edit?: string; readon…",
-          "jsdoc": "Update-specific screen types mapping for PUT /rest/api/3/screenscheme/{id}. All properties are optional strings (quoted screen IDs per the v3 spec's `UpdateScreenTypes` schema). Pass `null` to remove an association (not yet supported by this client — leave as a follow-up)."
+          "signature": "export interface UpdateScreenTypes { readonly default?: string; readonly create?: string | null; readonly edit?: string …",
+          "jsdoc": "Update-specific screen types mapping for PUT /rest/api/3/screenscheme/{id}. All properties are optional strings (quoted screen IDs per the v3 spec's `UpdateScreenTypes` schema). Pass `null` to remove a non-default screen association."
         },
         {
           "name": "UpdateScreenSchemeDetails",
           "kind": "interface",
-          "line": 67,
+          "line": 71,
           "exported": true,
           "signature": "export interface UpdateScreenSchemeDetails { readonly name?: string; readonly description?: string; readonly screens?: U…",
           "jsdoc": "Body for PUT /rest/api/3/screenscheme/{screenSchemeId} (update screen scheme)."
@@ -34351,7 +34401,7 @@
         {
           "name": "ScreenSchemeOrderBy",
           "kind": "type",
-          "line": 76,
+          "line": 80,
           "exported": true,
           "signature": "export type ScreenSchemeOrderBy = 'name' | '-name' | '+name' | 'id' | '-id' | '+id';",
           "jsdoc": "Ordering for GET /rest/api/3/screenscheme (closed enum per the v3 spec)."
@@ -34359,7 +34409,7 @@
         {
           "name": "ListScreenSchemesParams",
           "kind": "interface",
-          "line": 79,
+          "line": 83,
           "exported": true,
           "signature": "export interface ListScreenSchemesParams { readonly startAt?: number; readonly maxResults?: number; readonly id?: number…",
           "jsdoc": "Query parameters for GET /rest/api/3/screenscheme."
@@ -34367,7 +34417,7 @@
         {
           "name": "ScreenSchemeResource",
           "kind": "class",
-          "line": 97,
+          "line": 101,
           "exported": true,
           "signature": "export class ScreenSchemeResource",
           "jsdoc": "Jira Screen Schemes resource — B762-B765.",
@@ -34375,39 +34425,39 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 98
+              "line": 102
             },
             {
               "name": "list",
               "kind": "method",
-              "line": 107
+              "line": 111
             },
             {
               "name": "listAll",
               "kind": "method",
-              "line": 121
+              "line": 125
             },
             {
               "name": "create",
               "kind": "method",
-              "line": 136
+              "line": 140
             },
             {
               "name": "update",
               "kind": "method",
-              "line": 162
+              "line": 166
             },
             {
               "name": "delete",
               "kind": "method",
-              "line": 185
+              "line": 191
             }
           ]
         },
         {
           "name": "buildListQuery",
           "kind": "function",
-          "line": 195,
+          "line": 201,
           "signature": "function buildListQuery( params: ListScreenSchemesParams | undefined, ): Record<string, string | number | boolean | unde…"
         }
       ],
@@ -34415,7 +34465,8 @@
         "../../core/pagination.js",
         "../../core/path.js",
         "../../core/query.js",
-        "../../core/types.js"
+        "../../core/types.js",
+        "./issuetypescreenscheme.js"
       ]
     },
     {
@@ -34844,15 +34895,15 @@
         {
           "name": "JiraStatusCategory",
           "kind": "interface",
-          "line": 5,
+          "line": 10,
           "exported": true,
-          "signature": "export interface JiraStatusCategory { readonly id: number; readonly key: string; readonly name: string; readonly colorNa…",
+          "signature": "export interface JiraStatusCategory { readonly id?: number; readonly key?: string; readonly name?: string; readonly colo…",
           "jsdoc": "A Jira status category returned by GET /rest/api/3/statuscategory."
         },
         {
           "name": "StatusCategoryResource",
           "kind": "class",
-          "line": 14,
+          "line": 19,
           "exported": true,
           "signature": "export class StatusCategoryResource",
           "jsdoc": "Jira Status Category resource — GET /rest/api/3/statuscategory.",
@@ -34860,17 +34911,17 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 15
+              "line": 20
             },
             {
               "name": "list",
               "kind": "method",
-              "line": 21
+              "line": 26
             },
             {
               "name": "get",
               "kind": "method",
-              "line": 30
+              "line": 35
             }
           ]
         }
@@ -35175,12 +35226,20 @@
           "line": 9,
           "exported": true,
           "signature": "export interface UiModificationContextDetails { readonly id?: string; readonly isAvailable?: boolean; readonly issueType…",
-          "jsdoc": "Context in which a UI modification is applied."
+          "jsdoc": "Context in which a UI modification is applied (response shape)."
+        },
+        {
+          "name": "UiModificationContextInput",
+          "kind": "interface",
+          "line": 40,
+          "exported": true,
+          "signature": "export interface UiModificationContextInput { readonly issueTypeId?: string | null; readonly portalId?: string; readonly…",
+          "jsdoc": "Request body shape for a UI modification context."
         },
         {
           "name": "UiModificationDetails",
           "kind": "interface",
-          "line": 27,
+          "line": 54,
           "exported": true,
           "signature": "export interface UiModificationDetails { readonly id: string; readonly name: string; readonly self: string; readonly des…",
           "jsdoc": "A Jira UI modification."
@@ -35188,7 +35247,7 @@
         {
           "name": "UiModificationIdentifiers",
           "kind": "interface",
-          "line": 43,
+          "line": 70,
           "exported": true,
           "signature": "export interface UiModificationIdentifiers { readonly id: string; readonly self: string; }",
           "jsdoc": "Response from POST /rest/api/3/uiModifications — only {id, self}."
@@ -35196,7 +35255,7 @@
         {
           "name": "CreateUiModificationDetails",
           "kind": "interface",
-          "line": 59,
+          "line": 86,
           "exported": true,
           "signature": "export interface CreateUiModificationDetails { readonly name: string; readonly data?: string; readonly description?: str…",
           "jsdoc": "Body for POST /rest/api/3/uiModifications (create UI modification). `name` is required; all other fields are optional."
@@ -35204,7 +35263,7 @@
         {
           "name": "UpdateUiModificationDetails",
           "kind": "interface",
-          "line": 77,
+          "line": 104,
           "exported": true,
           "signature": "export interface UpdateUiModificationDetails { readonly name?: string; readonly data?: string; readonly description?: st…",
           "jsdoc": "Body for PUT /rest/api/3/uiModifications/{uiModificationId} (update UI modification). All fields are optional; only provided fields are updated."
@@ -35212,7 +35271,7 @@
         {
           "name": "ListUiModificationsParams",
           "kind": "interface",
-          "line": 94,
+          "line": 121,
           "exported": true,
           "signature": "export interface ListUiModificationsParams { readonly startAt?: number; readonly maxResults?: number; readonly expand?: …",
           "jsdoc": "Query parameters for GET /rest/api/3/uiModifications."
@@ -35220,7 +35279,7 @@
         {
           "name": "UiModificationsResource",
           "kind": "class",
-          "line": 115,
+          "line": 142,
           "exported": true,
           "signature": "export class UiModificationsResource",
           "jsdoc": "Jira UI Modifications resource — B787-B790.",
@@ -35228,39 +35287,39 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 116
+              "line": 143
             },
             {
               "name": "list",
               "kind": "method",
-              "line": 125
+              "line": 152
             },
             {
               "name": "listAll",
               "kind": "method",
-              "line": 141
+              "line": 168
             },
             {
               "name": "create",
               "kind": "method",
-              "line": 159
+              "line": 186
             },
             {
               "name": "update",
               "kind": "method",
-              "line": 179
+              "line": 206
             },
             {
               "name": "delete",
               "kind": "method",
-              "line": 197
+              "line": 224
             }
           ]
         },
         {
           "name": "buildListQuery",
           "kind": "function",
-          "line": 207,
+          "line": 234,
           "signature": "function buildListQuery( params: ListUiModificationsParams | undefined, ): Record<string, string | number | boolean | un…"
         }
       ],

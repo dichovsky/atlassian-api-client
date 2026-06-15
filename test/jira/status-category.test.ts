@@ -125,5 +125,18 @@ describe('StatusCategoryResource', () => {
     it('rejects a path-traversal idOrKey (B1052)', async () => {
       await expect(statusCategory.get('..')).rejects.toThrow(ValidationError);
     });
+
+    it('accepts a response with no required fields (spec has no required array)', async () => {
+      // Spec: StatusCategory schema has no `required` array — all fields optional.
+      const sparse: JiraStatusCategory = { colorName: 'yellow' };
+      transport.respondWith(sparse);
+
+      const result = await statusCategory.get('1');
+
+      expect(result).toEqual(sparse);
+      expect(result.id).toBeUndefined();
+      expect(result.key).toBeUndefined();
+      expect(result.name).toBeUndefined();
+    });
   });
 });
