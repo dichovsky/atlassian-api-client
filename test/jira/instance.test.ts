@@ -6,8 +6,8 @@ const BASE_URL = 'https://test.atlassian.net/rest/api/3';
 
 const makeLicense = () => ({
   applications: [
-    { id: 'jira-software', plan: 'STANDARD' as const },
-    { id: 'jira-servicedesk', plan: 'PREMIUM' as const },
+    { id: 'jira-software', plan: 'FREE' as const },
+    { id: 'jira-servicedesk', plan: 'PAID' as const },
   ],
 });
 
@@ -49,6 +49,30 @@ describe('InstanceResource', () => {
 
       // Assert
       expect(result.applications[0]?.plan).toBe('FREE');
+    });
+
+    it('returns license with paid plan', async () => {
+      // Arrange
+      const license = { applications: [{ id: 'jira-software', plan: 'PAID' as const }] };
+      transport.respondWith(license);
+
+      // Act
+      const result = await instance.getLicense();
+
+      // Assert
+      expect(result.applications[0]?.plan).toBe('PAID');
+    });
+
+    it('returns license with unlicensed plan', async () => {
+      // Arrange
+      const license = { applications: [{ id: 'jira-software', plan: 'UNLICENSED' as const }] };
+      transport.respondWith(license);
+
+      // Act
+      const result = await instance.getLicense();
+
+      // Assert
+      expect(result.applications[0]?.plan).toBe('UNLICENSED');
     });
 
     it('returns license with empty applications array', async () => {
