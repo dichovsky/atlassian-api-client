@@ -1,6 +1,5 @@
 import type { Transport } from '../../core/types.js';
 import { encodePathSegment } from '../../core/path.js';
-import { ValidationError } from '../../core/errors.js';
 
 /**
  * A Jira issue link type (e.g. "Blocks", "Clones", "Duplicate").
@@ -63,7 +62,8 @@ export class IssueLinkTypeResource {
       method: 'GET',
       path: `${this.baseUrl}/issueLinkType`,
     });
-    return response.data.issueLinkTypes;
+    // `issueLinkTypes` is not in the spec `required` array — guard against absent field.
+    return response.data.issueLinkTypes ?? [];
   }
 
   /**
@@ -101,12 +101,9 @@ export class IssueLinkTypeResource {
    * B537: Update an issue link type.
    * PUT /rest/api/3/issueLinkType/{issueLinkTypeId}
    *
-   * At least one of `name`, `inward`, or `outward` must be provided.
+   * All fields are optional per the spec `IssueLinkType` schema (no `required` array).
    */
   async update(issueLinkTypeId: string, data: UpdateIssueLinkTypeData): Promise<IssueLinkType> {
-    if (data.name === undefined && data.inward === undefined && data.outward === undefined) {
-      throw new ValidationError('update requires at least one of: --name, --inward, --outward');
-    }
     const body: Record<string, unknown> = {};
     if (data.name !== undefined) body['name'] = data.name;
     if (data.inward !== undefined) body['inward'] = data.inward;

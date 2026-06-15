@@ -14,6 +14,32 @@ export interface IssueLinkTypeRef {
 }
 
 /**
+ * Key fields from a linked issue (response-only).
+ * Spec: `Fields` schema — present on `LinkedIssue.fields` in GET responses.
+ *
+ * All sub-object fields (assignee, issueType, priority, status, timetracking)
+ * are typed as `unknown` because the referenced sub-schemas (UserDetails,
+ * IssueTypeDetails, Priority, StatusDetails, TimeTrackingDetails) live in
+ * shared jira types outside this resource's scope.
+ */
+export interface LinkedIssueFields {
+  /** The summary description of the linked issue. */
+  readonly summary?: string;
+  /** The assignee of the linked issue. */
+  readonly assignee?: unknown;
+  /** The type of the linked issue. */
+  readonly issueType?: unknown;
+  /** @deprecated Use `issueType`. */
+  readonly issuetype?: unknown;
+  /** The priority of the linked issue. */
+  readonly priority?: unknown;
+  /** The status of the linked issue. */
+  readonly status?: unknown;
+  /** Time tracking information for the linked issue. */
+  readonly timetracking?: unknown;
+}
+
+/**
  * A linked issue reference (inward or outward side of a link).
  * Spec: `LinkedIssue` schema (fields, id, key, self).
  */
@@ -21,7 +47,33 @@ export interface LinkedIssue {
   readonly id?: string;
   readonly key?: string;
   readonly self?: string;
-  readonly fields?: Record<string, unknown>;
+  /** Key fields from the linked issue (response-only, not sent in requests). */
+  readonly fields?: LinkedIssueFields;
+}
+
+/**
+ * Comment to optionally attach to the outward issue of a new link.
+ * Spec: `Comment` schema (additionalProperties: true, so extra fields are allowed).
+ *
+ * Only writable fields are listed here; read-only response fields (author,
+ * created, id, etc.) are omitted.
+ */
+export interface IssueLinkComment {
+  /**
+   * The comment body in Atlassian Document Format.
+   * @see https://developer.atlassian.com/cloud/jira/platform/apis/document/structure/
+   */
+  readonly body?: unknown;
+  /** Visibility restriction for the comment. */
+  readonly visibility?: {
+    readonly type?: string;
+    readonly value?: string;
+    readonly identifier?: string;
+  };
+  /** Optional comment properties. */
+  readonly properties?: readonly { readonly key: string; readonly value: unknown }[];
+  /** Allow any additional fields the server accepts. */
+  readonly [key: string]: unknown;
 }
 
 /**
@@ -48,7 +100,7 @@ export interface CreateIssueLinkData {
   /** The outward issue of the link. Required. */
   readonly outwardIssue: LinkedIssue;
   /** An optional comment to add to the outward issue. */
-  readonly comment?: Record<string, unknown>;
+  readonly comment?: IssueLinkComment;
 }
 
 /**

@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "2.0.0"
   },
-  "sourceHash": "c383dcf7313a3d0ec4e9e2ae162ddae2cebd5bf9082478009d86bf8ac068a5d8",
+  "sourceHash": "8e320101e80323153b11e9f2831ca16289a74e25aec9afbae0b54b4658a997cf",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -17899,6 +17899,14 @@
             {
               "exported": "BulkByPropertiesBaseUrls",
               "original": "BulkByPropertiesBaseUrls"
+            },
+            {
+              "exported": "DeleteDevInfoByPropertiesParams",
+              "original": "DeleteDevInfoByPropertiesParams"
+            },
+            {
+              "exported": "DeleteFeatureFlagsByPropertiesParams",
+              "original": "DeleteFeatureFlagsByPropertiesParams"
             }
           ]
         },
@@ -19537,6 +19545,21 @@
             {
               "exported": "IssueTypesResource",
               "original": "IssueTypesResource"
+            }
+          ]
+        },
+        {
+          "kind": "named",
+          "from": "./resources/issuelink.js",
+          "typeOnly": true,
+          "names": [
+            {
+              "exported": "LinkedIssueFields",
+              "original": "LinkedIssueFields"
+            },
+            {
+              "exported": "IssueLinkComment",
+              "original": "IssueLinkComment"
             }
           ]
         },
@@ -23264,17 +23287,17 @@
             {
               "name": "list",
               "kind": "method",
-              "line": 75
+              "line": 77
             },
             {
               "name": "update",
               "kind": "method",
-              "line": 95
+              "line": 97
             },
             {
               "name": "listAdvancedSettings",
               "kind": "method",
-              "line": 109
+              "line": 111
             }
           ]
         }
@@ -23876,9 +23899,25 @@
           "jsdoc": "Parameters for bulkByProperties DELETE operations."
         },
         {
+          "name": "DeleteDevInfoByPropertiesParams",
+          "kind": "interface",
+          "line": 24,
+          "exported": true,
+          "signature": "export interface DeleteDevInfoByPropertiesParams extends BulkByPropertiesParams { readonly _updateSequenceId?: number; }",
+          "jsdoc": "Parameters for DELETE /rest/devinfo/0.10/bulkByProperties (B962)."
+        },
+        {
+          "name": "DeleteFeatureFlagsByPropertiesParams",
+          "kind": "interface",
+          "line": 35,
+          "exported": true,
+          "signature": "export interface DeleteFeatureFlagsByPropertiesParams extends BulkByPropertiesParams { readonly _updateSequenceId?: numb…",
+          "jsdoc": "Parameters for DELETE /rest/featureflags/0.1/bulkByProperties (B972). @deprecated The `_updateSequenceId` parameter usage is no longer supported by the server per the spec; it is included here for completeness only."
+        },
+        {
           "name": "BulkByPropertiesBaseUrls",
           "kind": "interface",
-          "line": 20,
+          "line": 47,
           "exported": true,
           "signature": "export interface BulkByPropertiesBaseUrls { readonly builds: string; readonly deployments: string; readonly devinfo: str…",
           "jsdoc": "Injected base URLs for each of the eight DevOps integration APIs that expose a `DELETE /bulkByProperties` endpoint."
@@ -23886,7 +23925,7 @@
         {
           "name": "BulkByPropertiesResource",
           "kind": "class",
-          "line": 44,
+          "line": 71,
           "exported": true,
           "signature": "export class BulkByPropertiesResource",
           "jsdoc": "Jira Bulk-By-Properties resource — DELETE /bulkByProperties across eight DevOps integration APIs (B953, B957, B962, B968, B972, B981, B990, B994).",
@@ -23894,55 +23933,55 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 45
+              "line": 72
             },
             {
               "name": "deleteBuildsByProperties",
               "kind": "method",
-              "line": 54
+              "line": 81
             },
             {
               "name": "deleteDeploymentsByProperties",
               "kind": "method",
-              "line": 66
+              "line": 93
             },
             {
               "name": "deleteDevInfoByProperties",
               "kind": "method",
-              "line": 78
+              "line": 105
             },
             {
               "name": "deleteDevOpsComponentsByProperties",
               "kind": "method",
-              "line": 90
+              "line": 117
             },
             {
               "name": "deleteFeatureFlagsByProperties",
               "kind": "method",
-              "line": 102
+              "line": 129
             },
             {
               "name": "deleteOperationsByProperties",
               "kind": "method",
-              "line": 114
+              "line": 143
             },
             {
               "name": "deleteRemoteLinksByProperties",
               "kind": "method",
-              "line": 126
+              "line": 155
             },
             {
               "name": "deleteSecurityByProperties",
               "kind": "method",
-              "line": 138
+              "line": 167
             }
           ]
         },
         {
           "name": "buildQuery",
           "kind": "function",
-          "line": 148,
-          "signature": "function buildQuery(params: BulkByPropertiesParams): Record<string, string>",
+          "line": 177,
+          "signature": "function buildQuery( params: BulkByPropertiesParams & { readonly _updateSequenceId?: number }, ): Record<string, string>",
           "jsdoc": "Build the query object from params, mapping property key/value pairs to query params."
         }
       ],
@@ -25826,13 +25865,13 @@
           "kind": "interface",
           "line": 4,
           "exported": true,
-          "signature": "export interface JiraEvent { readonly id: number; readonly name: string; }",
+          "signature": "export interface JiraEvent { readonly id?: number; readonly name?: string; }",
           "jsdoc": "A Jira event (issue link type or workflow event)."
         },
         {
           "name": "EventsResource",
           "kind": "class",
-          "line": 10,
+          "line": 12,
           "exported": true,
           "signature": "export class EventsResource",
           "jsdoc": "Jira Events resource — GET /rest/api/3/events.",
@@ -25840,12 +25879,12 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 11
+              "line": 13
             },
             {
               "name": "list",
               "kind": "method",
-              "line": 17
+              "line": 19
             }
           ]
         }
@@ -26080,13 +26119,13 @@
           "kind": "interface",
           "line": 8,
           "exported": true,
-          "signature": "export interface FieldConfiguration { readonly id: number; readonly name: string; readonly description?: string; readonl…",
+          "signature": "export interface FieldConfiguration { readonly id: number; readonly name: string; readonly description: string; readonly…",
           "jsdoc": "Details of a Jira field configuration."
         },
         {
           "name": "FieldConfigurationItem",
           "kind": "interface",
-          "line": 16,
+          "line": 17,
           "exported": true,
           "signature": "export interface FieldConfigurationItem { readonly id: string; readonly description?: string; readonly isHidden?: boolea…",
           "jsdoc": "A single field entry within a field configuration."
@@ -26094,7 +26133,7 @@
         {
           "name": "ListFieldConfigurationsParams",
           "kind": "interface",
-          "line": 25,
+          "line": 26,
           "exported": true,
           "signature": "export interface ListFieldConfigurationsParams { readonly startAt?: number; readonly maxResults?: number; readonly id?: …",
           "jsdoc": "Query parameters for GET /rest/api/3/fieldconfiguration."
@@ -26102,7 +26141,7 @@
         {
           "name": "ListFieldConfigurationItemsParams",
           "kind": "interface",
-          "line": 39,
+          "line": 40,
           "exported": true,
           "signature": "export interface ListFieldConfigurationItemsParams { readonly startAt?: number; readonly maxResults?: number; }",
           "jsdoc": "Query parameters for GET /rest/api/3/fieldconfiguration/{id}/fields."
@@ -26110,7 +26149,7 @@
         {
           "name": "CreateFieldConfigurationData",
           "kind": "interface",
-          "line": 47,
+          "line": 48,
           "exported": true,
           "signature": "export interface CreateFieldConfigurationData { readonly name: string; readonly description?: string; }",
           "jsdoc": "Request body for POST /rest/api/3/fieldconfiguration."
@@ -26118,7 +26157,7 @@
         {
           "name": "UpdateFieldConfigurationData",
           "kind": "interface",
-          "line": 53,
+          "line": 54,
           "exported": true,
           "signature": "export interface UpdateFieldConfigurationData { readonly name: string; readonly description?: string; }",
           "jsdoc": "Request body for PUT /rest/api/3/fieldconfiguration/{id}."
@@ -26126,7 +26165,7 @@
         {
           "name": "UpdateFieldConfigurationItemsData",
           "kind": "interface",
-          "line": 59,
+          "line": 60,
           "exported": true,
           "signature": "export interface UpdateFieldConfigurationItemsData { readonly fieldConfigurationItems: FieldConfigurationItem[]; }",
           "jsdoc": "Request body for PUT /rest/api/3/fieldconfiguration/{id}/fields."
@@ -26134,7 +26173,7 @@
         {
           "name": "FieldConfigurationResource",
           "kind": "class",
-          "line": 71,
+          "line": 72,
           "exported": true,
           "signature": "export class FieldConfigurationResource",
           "jsdoc": "Jira Issue Field Configurations resource — B908-B913.",
@@ -26142,60 +26181,60 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 72
+              "line": 73
             },
             {
               "name": "list",
               "kind": "method",
-              "line": 81
+              "line": 82
             },
             {
               "name": "listAll",
               "kind": "method",
-              "line": 97
+              "line": 98
             },
             {
               "name": "create",
               "kind": "method",
-              "line": 114
+              "line": 115
             },
             {
               "name": "delete",
               "kind": "method",
-              "line": 129
+              "line": 130
             },
             {
               "name": "update",
               "kind": "method",
-              "line": 140
+              "line": 141
             },
             {
               "name": "listFields",
               "kind": "method",
-              "line": 154
+              "line": 155
             },
             {
               "name": "listAllFields",
               "kind": "method",
-              "line": 171
+              "line": 172
             },
             {
               "name": "updateFields",
               "kind": "method",
-              "line": 189
+              "line": 190
             }
           ]
         },
         {
           "name": "buildListQuery",
           "kind": "function",
-          "line": 200,
+          "line": 201,
           "signature": "function buildListQuery( params: ListFieldConfigurationsParams | undefined, ): Record<string, string | number | boolean …"
         },
         {
           "name": "buildFieldsQuery",
           "kind": "function",
-          "line": 213,
+          "line": 214,
           "signature": "function buildFieldsQuery( params: ListFieldConfigurationItemsParams | undefined, ): Record<string, string | number | bo…"
         }
       ],
@@ -28134,13 +28173,13 @@
           "kind": "interface",
           "line": 9,
           "exported": true,
-          "signature": "export interface LicensedApplication { readonly id: string; readonly plan: 'FREE' | 'STANDARD' | 'PREMIUM' | 'ENTERPRISE…",
+          "signature": "export interface LicensedApplication { readonly id: string; readonly plan: 'UNLICENSED' | 'FREE' | 'PAID'; }",
           "jsdoc": "A licensed Jira application."
         },
         {
           "name": "InstanceResource",
           "kind": "class",
-          "line": 15,
+          "line": 16,
           "exported": true,
           "signature": "export class InstanceResource",
           "jsdoc": "Jira Instance Information resource — GET /rest/api/3/instance/license.",
@@ -28148,12 +28187,12 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 16
+              "line": 17
             },
             {
               "name": "getLicense",
               "kind": "method",
-              "line": 22
+              "line": 23
             }
           ]
         }
@@ -28483,17 +28522,33 @@
           "jsdoc": "A Jira issue link type reference used in link requests. Spec: `IssueLinkType` schema (id, inward, name, outward, self)."
         },
         {
+          "name": "LinkedIssueFields",
+          "kind": "interface",
+          "line": 25,
+          "exported": true,
+          "signature": "export interface LinkedIssueFields { readonly summary?: string; readonly assignee?: unknown; readonly issueType?: unknow…",
+          "jsdoc": "Key fields from a linked issue (response-only). Spec: `Fields` schema — present on `LinkedIssue.fields` in GET responses."
+        },
+        {
           "name": "LinkedIssue",
           "kind": "interface",
-          "line": 20,
+          "line": 46,
           "exported": true,
-          "signature": "export interface LinkedIssue { readonly id?: string; readonly key?: string; readonly self?: string; readonly fields?: Re…",
+          "signature": "export interface LinkedIssue { readonly id?: string; readonly key?: string; readonly self?: string; readonly fields?: Li…",
           "jsdoc": "A linked issue reference (inward or outward side of a link). Spec: `LinkedIssue` schema (fields, id, key, self)."
+        },
+        {
+          "name": "IssueLinkComment",
+          "kind": "interface",
+          "line": 61,
+          "exported": true,
+          "signature": "export interface IssueLinkComment { readonly body?: unknown; readonly visibility?: { readonly type?: string; readonly va…",
+          "jsdoc": "Comment to optionally attach to the outward issue of a new link. Spec: `Comment` schema (additionalProperties: true, so extra fields are allowed)."
         },
         {
           "name": "IssueLink",
           "kind": "interface",
-          "line": 31,
+          "line": 83,
           "exported": true,
           "signature": "export interface IssueLink { readonly id?: string; readonly self?: string; readonly type: IssueLinkTypeRef; readonly inw…",
           "jsdoc": "An issue link instance returned by GET /rest/api/3/issueLink/{linkId}. Spec: `IssueLink` schema."
@@ -28501,7 +28556,7 @@
         {
           "name": "CreateIssueLinkData",
           "kind": "interface",
-          "line": 43,
+          "line": 95,
           "exported": true,
           "signature": "export interface CreateIssueLinkData { readonly type: IssueLinkTypeRef; readonly inwardIssue: LinkedIssue; readonly outw…",
           "jsdoc": "Request body for POST /rest/api/3/issueLink (B530). Spec: `LinkIssueRequestJsonBean` schema."
@@ -28509,7 +28564,7 @@
         {
           "name": "IssueLinkResource",
           "kind": "class",
-          "line": 62,
+          "line": 114,
           "exported": true,
           "signature": "export class IssueLinkResource",
           "jsdoc": "Jira Issue Link resource — create/get/delete endpoints under `/rest/api/3/issueLink` (B530-B532).",
@@ -28517,22 +28572,22 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 63
+              "line": 115
             },
             {
               "name": "create",
               "kind": "method",
-              "line": 75
+              "line": 127
             },
             {
               "name": "get",
               "kind": "method",
-              "line": 95
+              "line": 147
             },
             {
               "name": "delete",
               "kind": "method",
-              "line": 109
+              "line": 161
             }
           ]
         }
@@ -28548,7 +28603,7 @@
         {
           "name": "IssueLinkType",
           "kind": "interface",
-          "line": 13,
+          "line": 12,
           "exported": true,
           "signature": "export interface IssueLinkType { readonly id?: string; readonly inward?: string; readonly name?: string; readonly outwar…",
           "jsdoc": "A Jira issue link type (e.g. \"Blocks\", \"Clones\", \"Duplicate\")."
@@ -28556,7 +28611,7 @@
         {
           "name": "IssueLinkTypes",
           "kind": "interface",
-          "line": 22,
+          "line": 21,
           "exported": true,
           "signature": "export interface IssueLinkTypes { readonly issueLinkTypes: IssueLinkType[]; }",
           "jsdoc": "Response envelope for GET /rest/api/3/issueLinkType."
@@ -28564,7 +28619,7 @@
         {
           "name": "CreateIssueLinkTypeData",
           "kind": "interface",
-          "line": 27,
+          "line": 26,
           "exported": true,
           "signature": "export interface CreateIssueLinkTypeData { readonly name: string; readonly inward: string; readonly outward: string; }",
           "jsdoc": "Request body for POST /rest/api/3/issueLinkType (B534)."
@@ -28572,7 +28627,7 @@
         {
           "name": "UpdateIssueLinkTypeData",
           "kind": "interface",
-          "line": 34,
+          "line": 33,
           "exported": true,
           "signature": "export interface UpdateIssueLinkTypeData { readonly name?: string; readonly inward?: string; readonly outward?: string; …",
           "jsdoc": "Request body for PUT /rest/api/3/issueLinkType/{issueLinkTypeId} (B537)."
@@ -28580,7 +28635,7 @@
         {
           "name": "IssueLinkTypeResource",
           "kind": "class",
-          "line": 47,
+          "line": 46,
           "exported": true,
           "signature": "export class IssueLinkTypeResource",
           "jsdoc": "Jira Issue Link Type resource — CRUD endpoints under `/rest/api/3/issueLinkType` (B533-B537).",
@@ -28588,12 +28643,12 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 48
+              "line": 47
             },
             {
               "name": "list",
               "kind": "method",
-              "line": 61
+              "line": 60
             },
             {
               "name": "create",
@@ -28613,13 +28668,12 @@
             {
               "name": "delete",
               "kind": "method",
-              "line": 127
+              "line": 124
             }
           ]
         }
       ],
       "imports": [
-        "../../core/errors.js",
         "../../core/path.js",
         "../../core/types.js"
       ]
@@ -32884,27 +32938,27 @@
             {
               "name": "createWithCustomTemplate",
               "kind": "method",
-              "line": 167
+              "line": 170
             },
             {
               "name": "editTemplate",
               "kind": "method",
-              "line": 179
+              "line": 185
             },
             {
               "name": "getLiveTemplate",
               "kind": "method",
-              "line": 191
+              "line": 197
             },
             {
               "name": "removeTemplate",
               "kind": "method",
-              "line": 207
+              "line": 213
             },
             {
               "name": "saveTemplate",
               "kind": "method",
-              "line": 219
+              "line": 225
             }
           ]
         }

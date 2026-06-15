@@ -2,7 +2,6 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { IssueLinkTypeResource } from '../../src/jira/resources/issuelinktype.js';
 import type { IssueLinkType } from '../../src/jira/resources/issuelinktype.js';
 import { MockTransport } from '../helpers/mock-transport.js';
-import { ValidationError } from '../../src/core/errors.js';
 
 const BASE_URL = 'https://test.atlassian.net/rest/api/3';
 
@@ -41,6 +40,15 @@ describe('IssueLinkTypeResource', () => {
 
     it('returns an empty array when issueLinkTypes is empty', async () => {
       transport.respondWith({ issueLinkTypes: [] });
+
+      const result = await resource.list();
+
+      expect(result).toEqual([]);
+    });
+
+    it('returns an empty array when issueLinkTypes is absent (null-guard per spec)', async () => {
+      // Spec `IssueLinkTypes.issueLinkTypes` has no `required` keyword — field may be absent.
+      transport.respondWith({});
 
       const result = await resource.list();
 
@@ -164,11 +172,15 @@ describe('IssueLinkTypeResource', () => {
       expect(transport.lastCall?.options.body).toEqual({ outward: 'new outward' });
     });
 
-    it('throws ValidationError when no fields are provided', async () => {
-      await expect(resource.update('1', {})).rejects.toThrow(ValidationError);
-      await expect(resource.update('1', {})).rejects.toThrow(
-        'update requires at least one of: --name, --inward, --outward',
-      );
+    it('sends an empty body when no fields are provided (spec allows — no required fields)', async () => {
+      // Spec `IssueLinkType` schema has no `required` array — the SDK must not
+      // reject an empty update body that the server is permitted to accept.
+      transport.respondWith(makeIssueLinkType('1'));
+
+      const result = await resource.update('1', {});
+
+      expect(result).toEqual(makeIssueLinkType('1'));
+      expect(transport.lastCall?.options.body).toEqual({});
     });
 
     it('URL-encodes the issueLinkTypeId', async () => {

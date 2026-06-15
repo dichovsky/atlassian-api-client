@@ -14,6 +14,33 @@ export interface BulkByPropertiesParams {
 }
 
 /**
+ * Parameters for DELETE /rest/devinfo/0.10/bulkByProperties (B962).
+ *
+ * Extends the base params with an optional `_updateSequenceId` filter: only
+ * stored data with an `updateSequenceId` ≤ the provided value will be deleted.
+ * This guard helps ensure submit/delete requests are applied correctly when
+ * issued close together.
+ */
+export interface DeleteDevInfoByPropertiesParams extends BulkByPropertiesParams {
+  /** Only delete entities whose updateSequenceId is ≤ this value (optional). */
+  readonly _updateSequenceId?: number;
+}
+
+/**
+ * Parameters for DELETE /rest/featureflags/0.1/bulkByProperties (B972).
+ *
+ * @deprecated The `_updateSequenceId` parameter usage is no longer supported
+ * by the server per the spec; it is included here for completeness only.
+ */
+export interface DeleteFeatureFlagsByPropertiesParams extends BulkByPropertiesParams {
+  /**
+   * @deprecated No longer supported by the server.
+   * Only stored data with an `updateSequenceId` ≤ this value would have been deleted.
+   */
+  readonly _updateSequenceId?: number;
+}
+
+/**
  * Injected base URLs for each of the eight DevOps integration APIs that expose
  * a `DELETE /bulkByProperties` endpoint.
  */
@@ -75,7 +102,7 @@ export class BulkByPropertiesResource {
    * Delete development information entities matching the given property criteria.
    * DELETE /rest/devinfo/0.10/bulkByProperties (B962)
    */
-  async deleteDevInfoByProperties(params: BulkByPropertiesParams): Promise<void> {
+  async deleteDevInfoByProperties(params: DeleteDevInfoByPropertiesParams): Promise<void> {
     await this.transport.request<undefined>({
       method: 'DELETE',
       path: `${this.bases.devinfo}/bulkByProperties`,
@@ -99,7 +126,9 @@ export class BulkByPropertiesResource {
    * Delete feature flag entities matching the given property criteria.
    * DELETE /rest/featureflags/0.1/bulkByProperties (B972)
    */
-  async deleteFeatureFlagsByProperties(params: BulkByPropertiesParams): Promise<void> {
+  async deleteFeatureFlagsByProperties(
+    params: DeleteFeatureFlagsByPropertiesParams,
+  ): Promise<void> {
     await this.transport.request<undefined>({
       method: 'DELETE',
       path: `${this.bases.featureflags}/bulkByProperties`,
@@ -145,7 +174,9 @@ export class BulkByPropertiesResource {
 }
 
 /** Build the query object from params, mapping property key/value pairs to query params. */
-function buildQuery(params: BulkByPropertiesParams): Record<string, string> {
+function buildQuery(
+  params: BulkByPropertiesParams & { readonly _updateSequenceId?: number },
+): Record<string, string> {
   const entries = Object.entries(params.properties);
   if (entries.length === 0) {
     throw new ValidationError(
@@ -155,6 +186,9 @@ function buildQuery(params: BulkByPropertiesParams): Record<string, string> {
   const query: Record<string, string> = {};
   for (const [k, v] of entries) {
     query[k] = String(v);
+  }
+  if (params._updateSequenceId !== undefined) {
+    query['_updateSequenceId'] = String(params._updateSequenceId);
   }
   return query;
 }
