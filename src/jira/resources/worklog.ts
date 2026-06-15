@@ -29,24 +29,53 @@ export interface ChangedWorklogs {
 }
 
 /**
+ * Avatar URL set for a Jira user. Spec: `AvatarUrlsBean`.
+ * Keys use numeric-size prefixes.
+ */
+export interface WorklogAvatarUrls {
+  readonly '16x16'?: string;
+  readonly '24x24'?: string;
+  readonly '32x32'?: string;
+  readonly '48x48'?: string;
+}
+
+/**
+ * Full user details on a worklog. Spec: `UserDetails`.
+ * Superset of the previous sparse inline type.
+ */
+export interface WorklogUserDetails {
+  readonly accountId?: string;
+  readonly accountType?: string;
+  readonly active?: boolean;
+  readonly avatarUrls?: WorklogAvatarUrls;
+  readonly displayName?: string;
+  readonly emailAddress?: string;
+  /** @deprecated — removed from Jira v3 user model; kept for legacy compatibility. */
+  readonly key?: string;
+  /** @deprecated — removed from Jira v3 user model; kept for legacy compatibility. */
+  readonly name?: string;
+  readonly self?: string;
+  readonly timeZone?: string;
+}
+
+/**
+ * Visibility restriction on a worklog. Spec: `Visibility`.
+ */
+export interface WorklogVisibility {
+  readonly type?: 'group' | 'role';
+  readonly value?: string;
+  readonly identifier?: string | null;
+}
+
+/**
  * A full Jira worklog record as returned by POST /worklog/list.
- * Spec `additionalProperties: true` — extra fields may be present.
+ * Spec: `Worklog` — `additionalProperties: true` so extra fields may be present.
  */
 export interface Worklog {
   readonly id?: string;
   readonly issueId?: string;
-  readonly author?: {
-    readonly accountId?: string;
-    readonly displayName?: string;
-    readonly active?: boolean;
-    readonly self?: string;
-  };
-  readonly updateAuthor?: {
-    readonly accountId?: string;
-    readonly displayName?: string;
-    readonly active?: boolean;
-    readonly self?: string;
-  };
+  readonly author?: WorklogUserDetails;
+  readonly updateAuthor?: WorklogUserDetails;
   readonly comment?: unknown;
   readonly created?: string;
   readonly updated?: string;
@@ -54,6 +83,10 @@ export interface Worklog {
   readonly timeSpent?: string;
   readonly timeSpentSeconds?: number;
   readonly self?: string;
+  /** Visibility restriction on the worklog. Spec: `Visibility`. */
+  readonly visibility?: WorklogVisibility;
+  /** Entity properties attached to the worklog. Spec: `EntityProperty[]`. */
+  readonly properties?: { readonly key?: string; readonly value?: unknown }[];
   [key: string]: unknown;
 }
 

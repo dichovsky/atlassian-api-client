@@ -6,12 +6,29 @@ import { appendRepeatedParams } from '../../core/query.js';
 
 // ─── Response types ────────────────────────────────────────────────────────
 
+/**
+ * The scope of a screen or permission scheme.
+ * Spec: `Scope` schema — `type` is a closed enum; `project` follows `ProjectDetails`.
+ */
+export interface ScreenScope {
+  readonly type?: 'PROJECT' | 'TEMPLATE';
+  readonly project?: {
+    readonly id?: string;
+    readonly key?: string;
+    readonly name?: string;
+    readonly self?: string;
+    readonly simplified?: boolean;
+    readonly projectTypeKey?: 'software' | 'service_desk' | 'business';
+  };
+}
+
 /** A Jira screen. */
 export interface Screen {
   readonly description?: string;
   readonly id?: number;
   readonly name?: string;
-  readonly scope?: Record<string, unknown>;
+  /** The scope of the screen. Spec: `Scope` object. */
+  readonly scope?: ScreenScope;
 }
 
 /** A screen tab. */
@@ -84,7 +101,8 @@ export interface ListScreensParams {
   /** Filter by screen IDs. */
   readonly id?: number[];
   readonly queryString?: string;
-  readonly scope?: string[];
+  /** Filter by scope. Spec: closed enum — `GLOBAL`, `TEMPLATE`, `PROJECT`. */
+  readonly scope?: ('GLOBAL' | 'TEMPLATE' | 'PROJECT')[];
   readonly orderBy?: ScreensOrderBy;
 }
 
@@ -359,19 +377,41 @@ export class ScreensResource {
   }
 
   /**
-   * B761: Iterate every screen tab across screens. Delegates to {@link paginateOffset}.
+   * B761: Iterate every screen tab across screens.
+   *
+   * NOTE: The `/rest/api/3/screens/tabs` endpoint uses `maxResult` (no trailing
+   * 's') as its page-size query parameter. This differs from the standard Jira
+   * offset-pagination convention (`maxResults`). Because {@link paginateOffset}
+   * always injects `maxResults`, this generator drives the loop manually to
+   * emit the correct wire parameter.
    */
   async *listAllScreenTabs(
     params?: Omit<ListAllTabsParams, 'startAt'>,
   ): AsyncGenerator<ScreenTabRef> {
     if (params?.maxResult !== undefined) validatePageSize(params.maxResult, 'maxResult');
-    const query = buildListAllTabsQuery({ ...params, startAt: undefined, maxResult: undefined });
-    yield* paginateOffset<ScreenTabRef>(
-      this.transport,
-      buildScreenTabsPath(`${this.baseUrl}/screens/tabs`, params),
-      query,
-      params?.maxResult,
-    );
+    const pageSize = params?.maxResult ?? 100;
+    const basePath = buildScreenTabsPath(`${this.baseUrl}/screens/tabs`, params);
+    let startAt = 0;
+
+    while (true) {
+      const query: Record<string, string | number | boolean | undefined> = {
+        startAt,
+        maxResult: pageSize,
+      };
+      const response = await this.transport.request<OffsetPaginatedResponse<ScreenTabRef>>({
+        method: 'GET',
+        path: basePath,
+        query,
+      });
+      const page = response.data;
+      for (const item of page.values) {
+        yield item;
+      }
+      const isLast =
+        page.isLast ?? (page.total !== undefined && startAt + page.values.length >= page.total);
+      if (isLast || page.values.length === 0) break;
+      startAt += page.values.length;
+    }
   }
 }
 
