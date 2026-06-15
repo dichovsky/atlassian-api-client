@@ -6,10 +6,10 @@ import { appendScalarOrArrayParam } from '../../core/query.js';
 import type { BlogPost } from '../types/blog-posts.js';
 import type { ClassificationLevel } from '../types/classification-levels.js';
 import type {
-  ContentProperty,
   CreateContentPropertyData,
   Label,
   ListSharedContentPropertiesParams,
+  SpaceProperty,
   SpaceRoleAssignment,
   UpdateSharedContentPropertyData,
 } from '../types/common.js';
@@ -528,7 +528,7 @@ export class SpacesResource {
   async listProperties(
     spaceId: string,
     params?: ListSharedContentPropertiesParams,
-  ): Promise<CursorPaginatedResponse<ContentProperty>> {
+  ): Promise<CursorPaginatedResponse<SpaceProperty>> {
     if (params?.limit !== undefined) validatePageSize(params.limit, 'limit');
     const query: Query = {};
     if (params?.key !== undefined) query['key'] = params.key;
@@ -536,7 +536,7 @@ export class SpacesResource {
     if (params?.cursor !== undefined) query['cursor'] = params.cursor;
     if (params?.limit !== undefined) query['limit'] = params.limit;
 
-    const response = await this.transport.request<CursorPaginatedResponse<ContentProperty>>({
+    const response = await this.transport.request<CursorPaginatedResponse<SpaceProperty>>({
       method: 'GET',
       path: `${this.baseUrl}/spaces/${encodePathSegment(spaceId)}/properties`,
       query,
@@ -552,13 +552,13 @@ export class SpacesResource {
   async *listPropertiesAll(
     spaceId: string,
     params?: Omit<ListSharedContentPropertiesParams, 'cursor'>,
-  ): AsyncGenerator<ContentProperty> {
+  ): AsyncGenerator<SpaceProperty> {
     if (params?.limit !== undefined) validatePageSize(params.limit, 'limit');
     const query: Query = {};
     if (params?.key !== undefined) query['key'] = params.key;
     if (params?.sort !== undefined) query['sort'] = params.sort;
     if (params?.limit !== undefined) query['limit'] = params.limit;
-    yield* paginateCursor<ContentProperty>(
+    yield* paginateCursor<SpaceProperty>(
       this.transport,
       `${this.baseUrl}/spaces/${encodePathSegment(spaceId)}/properties`,
       query,
@@ -570,8 +570,8 @@ export class SpacesResource {
    *
    * @see https://developer.atlassian.com/cloud/confluence/rest/v2/api-group-space-properties/#api-spaces-space-id-properties-post
    */
-  async createProperty(spaceId: string, data: CreateContentPropertyData): Promise<ContentProperty> {
-    const response = await this.transport.request<ContentProperty>({
+  async createProperty(spaceId: string, data: CreateContentPropertyData): Promise<SpaceProperty> {
+    const response = await this.transport.request<SpaceProperty>({
       method: 'POST',
       path: `${this.baseUrl}/spaces/${encodePathSegment(spaceId)}/properties`,
       body: data,
@@ -584,8 +584,8 @@ export class SpacesResource {
    *
    * @see https://developer.atlassian.com/cloud/confluence/rest/v2/api-group-space-properties/#api-spaces-space-id-properties-property-id-get
    */
-  async getProperty(spaceId: string, propertyId: string): Promise<ContentProperty> {
-    const response = await this.transport.request<ContentProperty>({
+  async getProperty(spaceId: string, propertyId: string): Promise<SpaceProperty> {
+    const response = await this.transport.request<SpaceProperty>({
       method: 'GET',
       path: `${this.baseUrl}/spaces/${encodePathSegment(spaceId)}/properties/${encodePathSegment(propertyId)}`,
     });
@@ -605,8 +605,8 @@ export class SpacesResource {
     spaceId: string,
     propertyId: string,
     data: UpdateSharedContentPropertyData,
-  ): Promise<ContentProperty> {
-    const response = await this.transport.request<ContentProperty>({
+  ): Promise<SpaceProperty> {
+    const response = await this.transport.request<SpaceProperty>({
       method: 'PUT',
       path: `${this.baseUrl}/spaces/${encodePathSegment(spaceId)}/properties/${encodePathSegment(propertyId)}`,
       body: data,

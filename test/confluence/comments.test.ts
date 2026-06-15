@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { CommentsResource } from '../../src/confluence/resources/comments.js';
 import { MockTransport } from '../helpers/mock-transport.js';
 import { ValidationError } from '../../src/core/errors.js';
+import type { ContentProperty } from '../../src/confluence/types/common.js';
 
 const BASE_URL = 'https://test.atlassian.net/wiki/api/v2';
 
@@ -514,7 +515,7 @@ describe('CommentsResource', () => {
       transport.respondWith({ results: [makeProperty('p2')], _links: {} });
 
       // Act
-      const collected: { id: string }[] = [];
+      const collected: ContentProperty[] = [];
       for await (const p of comments.listPropertiesAll('c-1')) {
         collected.push(p);
       }
@@ -664,6 +665,84 @@ describe('CommentsResource', () => {
       expect(transport.lastCall?.options.path).toBe(
         `${BASE_URL}/comments/..%2Fadmin/properties/..%2Fother`,
       );
+    });
+  });
+
+  // ── B1059: common.ts type-drift fixes ────────────────────────────────────
+
+  describe('B1059 — UpdateCommentData accepts wiki representation', () => {
+    it('sends wiki representation for updateFooter', async () => {
+      // Arrange
+      transport.respondWith({ id: 'c-wiki', status: 'current' });
+      const data = {
+        version: { number: 2 },
+        body: { representation: 'wiki' as const, value: 'h1. Updated' },
+      };
+
+      // Act
+      await comments.updateFooter('c-wiki', data);
+
+      // Assert — wiki is a valid CommentBodyWrite representation (spec enum)
+      expect(transport.lastCall?.options.body).toEqual(data);
+    });
+
+    it('sends wiki representation for updateInline', async () => {
+      // Arrange
+      transport.respondWith({ id: 'i-wiki', status: 'current' });
+      const data = {
+        version: { number: 3 },
+        body: { representation: 'wiki' as const, value: '* bullet' },
+      };
+
+      // Act
+      await comments.updateInline('i-wiki', data);
+
+      // Assert
+      expect(transport.lastCall?.options.body).toMatchObject({ body: { representation: 'wiki' } });
+    });
+  });
+
+  describe('B1059 — ContentProperty id/key are optional', () => {
+    it('listProperties accepts a response with no id or key', async () => {
+      // Arrange — server may return partial shape (spec has no required fields)
+      const partialProp = { value: { flag: true }, version: { number: 1 } };
+      transport.respondWith({ results: [partialProp], _links: {} });
+
+      // Act
+      const result = await comments.listProperties('c-1');
+
+      // Assert — no TypeScript error, result shape preserved
+      expect(result.results[0]).toEqual(partialProp);
+    });
+  });
+
+  describe('B1059 — CreateContentPropertyData key/value are optional', () => {
+    it('createProperty sends minimal body without key or value', async () => {
+      // Arrange
+      const created = { id: 'p-new', value: null };
+      transport.respondWith(created);
+
+      // Act — spec marks key/value optional in ContentPropertyCreateRequest
+      const result = await comments.createProperty('c-1', {});
+
+      // Assert
+      expect(result).toEqual(created);
+      expect(transport.lastCall?.options.body).toEqual({});
+    });
+  });
+
+  describe('B1059 — UpdateSharedContentPropertyData all fields are optional', () => {
+    it('updateProperty sends minimal body', async () => {
+      // Arrange
+      const updated = { id: 'p-1', key: 'k', value: 2, version: { number: 2 } };
+      transport.respondWith(updated);
+
+      // Act — spec marks all fields optional in ContentPropertyUpdateRequest
+      const result = await comments.updateProperty('c-1', 'p-1', { value: 2 });
+
+      // Assert
+      expect(result).toEqual(updated);
+      expect(transport.lastCall?.options.body).toEqual({ value: 2 });
     });
   });
 });
