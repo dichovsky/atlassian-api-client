@@ -17374,6 +17374,12 @@ describe('executeJiraCommand', () => {
       });
     });
 
+    it('component list rejects invalid --order-by value', async () => {
+      await expect(
+        executeJiraCommand(cmd('component', 'list', [], { 'order-by': 'invalid' }), GLOBALS),
+      ).rejects.toThrow('--order-by must be one of');
+    });
+
     it('component list rejects negative --start-at', async () => {
       await expect(
         executeJiraCommand(cmd('component', 'list', [], { 'start-at': '-1' }), GLOBALS),
@@ -17397,13 +17403,13 @@ describe('executeJiraCommand', () => {
       expect(result).toEqual(created);
     });
 
-    it('component create throws when neither --project nor --project-id is provided', async () => {
+    it('component create throws when --project is not provided', async () => {
       await expect(
         executeJiraCommand(cmd('component', 'create', [], { name: 'C1' }), GLOBALS),
-      ).rejects.toThrow('component create requires --project or --project-id');
+      ).rejects.toThrow('Missing required option: --project');
     });
 
-    it('component create with all flags forwards full body', async () => {
+    it('component create with all supported flags forwards full body', async () => {
       jiraComponentMock.create.mockResolvedValue({ id: '1', name: 'Full' });
       await executeJiraCommand(
         cmd('component', 'create', [], {
@@ -17412,9 +17418,7 @@ describe('executeJiraCommand', () => {
           'lead-account-id': 'acc-1',
           'lead-user-name': 'legacy',
           'assignee-type': 'PROJECT_LEAD',
-          'is-assignee-type-valid': true,
           project: 'HSP',
-          'project-id': '10000',
         }),
         GLOBALS,
       );
@@ -17424,26 +17428,7 @@ describe('executeJiraCommand', () => {
         leadAccountId: 'acc-1',
         leadUserName: 'legacy',
         assigneeType: 'PROJECT_LEAD',
-        isAssigneeTypeValid: true,
         project: 'HSP',
-        projectId: 10000,
-      });
-    });
-
-    it('component create with --is-assignee-type-valid false forwards false', async () => {
-      jiraComponentMock.create.mockResolvedValue({ id: '1', name: 'N' });
-      await executeJiraCommand(
-        cmd('component', 'create', [], {
-          name: 'N',
-          project: 'HSP',
-          'is-assignee-type-valid': false,
-        }),
-        GLOBALS,
-      );
-      expect(jiraComponentMock.create).toHaveBeenCalledWith({
-        name: 'N',
-        project: 'HSP',
-        isAssigneeTypeValid: false,
       });
     });
 
@@ -17460,15 +17445,6 @@ describe('executeJiraCommand', () => {
           GLOBALS,
         ),
       ).rejects.toThrow('--assignee-type must be one of');
-    });
-
-    it('component create rejects non-positive --project-id', async () => {
-      await expect(
-        executeJiraCommand(
-          cmd('component', 'create', [], { name: 'X', 'project-id': '0' }),
-          GLOBALS,
-        ),
-      ).rejects.toThrow('--project-id must be a positive integer');
     });
 
     it('component get returns client.component.get result', async () => {

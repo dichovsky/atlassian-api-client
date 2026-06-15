@@ -287,11 +287,22 @@ describe('MigrationResource', () => {
 
   describe('searchWorkflowRules()', () => {
     it('calls POST /migration/workflow/rule/search with Atlassian-Transfer-Id header and body', async () => {
-      // Arrange
+      // Arrange — validRules use the updated required shape (id, key, configuration.value)
       const responseData = {
         workflowEntityId: 'a498d711-685d-428d-8c3e-bc03bb450ea7',
         invalidRules: [],
-        validRules: [],
+        validRules: [
+          {
+            workflowId: { name: 'My Workflow' },
+            conditions: [
+              {
+                id: 'rule-id-1',
+                key: 'com.example.condition',
+                configuration: { value: '{}' },
+              },
+            ],
+          },
+        ],
       };
       transport.respondWith(responseData);
 

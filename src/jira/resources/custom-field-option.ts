@@ -5,8 +5,6 @@ import { encodePathSegment } from '../../core/path.js';
 export interface CustomFieldOption {
   readonly self: string;
   readonly value: string;
-  readonly id: string;
-  readonly disabled?: boolean;
 }
 
 /**

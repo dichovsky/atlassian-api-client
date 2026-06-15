@@ -5,12 +5,13 @@ import { MockTransport } from '../helpers/mock-transport.js';
 const BASE_URL = 'https://test.atlassian.net/rest/api/3';
 
 const makeBanner = (
-  overrides?: Partial<{ message: string; visibility: 'PUBLIC' | 'PRIVATE' }>,
+  overrides?: Partial<{ message: string; visibility: 'public' | 'private'; hashId: string }>,
 ) => ({
+  hashId: overrides?.hashId ?? '9HN2FJK9DM8BHRWERVW3RRTGDJ4G4D5C',
   isDismissible: false,
   isEnabled: true,
   message: overrides?.message ?? 'Hello Jira users',
-  visibility: overrides?.visibility ?? ('PUBLIC' as const),
+  visibility: overrides?.visibility ?? ('public' as const),
 });
 
 describe('AnnouncementBannerResource', () => {
@@ -41,16 +42,28 @@ describe('AnnouncementBannerResource', () => {
       });
     });
 
-    it('returns a banner with PRIVATE visibility', async () => {
+    it('returns a banner with private visibility', async () => {
       // Arrange
-      const banner = makeBanner({ visibility: 'PRIVATE' });
+      const banner = makeBanner({ visibility: 'private' });
       transport.respondWith(banner);
 
       // Act
       const result = await announcementBanner.get();
 
       // Assert
-      expect(result.visibility).toBe('PRIVATE');
+      expect(result.visibility).toBe('private');
+    });
+
+    it('returns a banner with hashId when present', async () => {
+      // Arrange
+      const banner = makeBanner({ hashId: 'TESTHASHID123' });
+      transport.respondWith(banner);
+
+      // Act
+      const result = await announcementBanner.get();
+
+      // Assert
+      expect(result.hashId).toBe('TESTHASHID123');
     });
 
     it('propagates transport errors', async () => {
@@ -68,7 +81,7 @@ describe('AnnouncementBannerResource', () => {
     it('calls PUT /announcementBanner with the provided data and returns void', async () => {
       // Arrange
       transport.respondWith(undefined);
-      const data = { message: 'Scheduled maintenance tonight', visibility: 'PUBLIC' as const };
+      const data = { message: 'Scheduled maintenance tonight', visibility: 'public' };
 
       // Act
       const result = await announcementBanner.update(data);
@@ -98,10 +111,10 @@ describe('AnnouncementBannerResource', () => {
       transport.respondWith(undefined);
 
       // Act
-      await announcementBanner.update({ visibility: 'PRIVATE' });
+      await announcementBanner.update({ visibility: 'private' });
 
       // Assert
-      expect(transport.lastCall?.options.body).toEqual({ visibility: 'PRIVATE' });
+      expect(transport.lastCall?.options.body).toEqual({ visibility: 'private' });
     });
 
     it('propagates transport errors', async () => {

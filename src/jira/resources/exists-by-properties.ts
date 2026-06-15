@@ -3,18 +3,28 @@ import type { Transport } from '../../core/types.js';
 /**
  * Parameters for the existsByProperties check.
  *
- * Provide at least one of the query parameters to filter results.
+ * Spec: GET /rest/devinfo/0.10/existsByProperties
+ * The only declared query parameter is `_updateSequenceId`. Additional
+ * arbitrary key=value properties may be supplied to scope the search
+ * (e.g. accountId=123&projectId=ABC). At least one property is required
+ * by the server (returns 400 otherwise).
  */
 export interface ExistsByPropertiesParams {
-  /** Comma-separated list of entity types to check (e.g. "repository,pullRequest"). */
-  readonly entityType?: string;
-  /** Optional entity ID to scope the existence check. */
-  readonly entityId?: string;
+  /**
+   * Filters out entities and repositories which have updateSequenceId
+   * greater than the specified value. Optional.
+   */
+  readonly _updateSequenceId?: number;
+  /** Additional arbitrary key=value properties to filter by. */
+  readonly [key: string]: string | number | undefined;
 }
 
-/** Response from the existsByProperties check. */
+/**
+ * Response from the existsByProperties check.
+ * Spec: ExistsForPropertiesResponse — field is `hasDataMatchingProperties`.
+ */
 export interface ExistsByPropertiesResponse {
-  readonly exists: boolean;
+  readonly hasDataMatchingProperties: boolean;
 }
 
 /**
@@ -35,14 +45,19 @@ export class ExistsByPropertiesResource {
    * GET /rest/devinfo/0.10/existsByProperties
    */
   async get(params?: ExistsByPropertiesParams): Promise<ExistsByPropertiesResponse> {
-    const query: Record<string, string> = {};
-    if (params?.entityType) query['entityType'] = params.entityType;
-    if (params?.entityId) query['entityId'] = params.entityId;
+    const query: Record<string, string | number> = {};
+    if (params) {
+      for (const [key, value] of Object.entries(params)) {
+        if (value !== undefined) {
+          query[key] = value;
+        }
+      }
+    }
 
     const response = await this.transport.request<ExistsByPropertiesResponse>({
       method: 'GET',
       path: `${this.baseUrl}/existsByProperties`,
-      query,
+      ...(Object.keys(query).length > 0 && { query }),
     });
     return response.data;
   }

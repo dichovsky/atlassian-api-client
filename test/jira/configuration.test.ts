@@ -106,6 +106,17 @@ describe('ConfigurationResource', () => {
       });
     });
 
+    it('returns null when time tracking is disabled (204 No Content)', async () => {
+      // Arrange — 204 yields null/undefined data
+      transport.respondWith(null, 204);
+
+      // Act
+      const result = await resource.getTimeTracking();
+
+      // Assert
+      expect(result).toBeNull();
+    });
+
     it('propagates transport errors', async () => {
       // Arrange
       transport.respondWithError(new Error('server error'));
@@ -134,7 +145,7 @@ describe('ConfigurationResource', () => {
       });
     });
 
-    it('passes optional name and url fields', async () => {
+    it('passes optional name field', async () => {
       // Arrange
       transport.respondWith(undefined);
 
@@ -142,14 +153,12 @@ describe('ConfigurationResource', () => {
       await resource.selectTimeTracking({
         key: 'com.acme.tracker',
         name: 'Acme Tracker',
-        url: 'https://acme.example/timetracker',
       });
 
       // Assert
       expect(transport.lastCall?.options.body).toEqual({
         key: 'com.acme.tracker',
         name: 'Acme Tracker',
-        url: 'https://acme.example/timetracker',
       });
     });
 
