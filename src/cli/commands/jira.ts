@@ -2481,7 +2481,8 @@ async function executeGroupUserPicker(client: JiraClient, cmd: ParsedCommand): P
             .filter((s) => s.length > 0)
         : undefined;
       return client.groupUserPicker.pick({
-        query: asString(opts['query']),
+        // `query` is required by the spec — without it the API returns 400.
+        query: requireOpt(opts['query'], '--query'),
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
         showAvatar: asBoolFlag(opts['show-avatar']),
         fieldId: asString(opts['field-id']),
@@ -3623,10 +3624,9 @@ async function executeResolutions(client: JiraClient, cmd: ParsedCommand): Promi
     }
     case 'delete': {
       const id = requireArg(cmd.positionalArgs[0], 'id');
-      const replaceWith = asString(opts['replace-with']);
-      await client.resolutions.delete(id, {
-        ...(replaceWith !== undefined && { replaceWith }),
-      });
+      // `replaceWith` is required by the spec — deleting without it returns 400.
+      const replaceWith = requireOpt(opts['replace-with'], '--replace-with');
+      await client.resolutions.delete(id, { replaceWith });
       return { deleted: true };
     }
     case 'set-default': {

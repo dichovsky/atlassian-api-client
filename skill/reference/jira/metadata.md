@@ -126,7 +126,7 @@ Issue resolution management (B931, B712-B718). `list` is deprecated by Atlassian
 | `get`         | `<id>`     | —                                         | —                                                        |
 | `create`      | —          | `--name`                                  | `--description`                                          |
 | `update`      | `<id>`     | at least one of `--name`, `--description` | —                                                        |
-| `delete`      | `<id>`     | —                                         | `--replace-with`                                         |
+| `delete`      | `<id>`     | `--replace-with`                          | —                                                        |
 | `set-default` | `<id>`     | —                                         | —                                                        |
 | `move`        | —          | `--ids`                                   | `--after` or `--position`                                |
 | `search`      | —          | —                                         | `--only-default`, `--start-at`, `--max-results`, `--ids` |

@@ -15513,20 +15513,10 @@ describe('executeJiraCommand', () => {
   // ── group-user-picker ─────────────────────────────────────────────────────
 
   describe('group-user-picker resource', () => {
-    it('group-user-picker pick calls client.groupUserPicker.pick() with no params', async () => {
-      // Arrange
-      const response = {
-        groups: { label: '', sub: '', id: '', msg: '', groups: [] },
-        users: { label: '', sub: '', id: '', msg: '', users: [] },
-      };
-      jiraGroupUserPickerMock.pick.mockResolvedValue(response);
-
-      // Act
-      const result = await executeJiraCommand(cmd('group-user-picker', 'pick', [], {}), GLOBALS);
-
-      // Assert
-      expect(jiraGroupUserPickerMock.pick).toHaveBeenCalled();
-      expect(result).toEqual(response);
+    it('group-user-picker pick requires --query (spec-required → 400 without it)', async () => {
+      await expect(
+        executeJiraCommand(cmd('group-user-picker', 'pick', [], {}), GLOBALS),
+      ).rejects.toThrow('--query');
     });
 
     it('group-user-picker pick forwards query and max-results', async () => {
@@ -15551,7 +15541,7 @@ describe('executeJiraCommand', () => {
 
       // Act
       await executeJiraCommand(
-        cmd('group-user-picker', 'pick', [], { 'project-id': '10001,10002' }),
+        cmd('group-user-picker', 'pick', [], { query: 'a', 'project-id': '10001,10002' }),
         GLOBALS,
       );
 
@@ -15567,7 +15557,7 @@ describe('executeJiraCommand', () => {
 
       // Act
       await executeJiraCommand(
-        cmd('group-user-picker', 'pick', [], { 'field-id': 'customfield_10050' }),
+        cmd('group-user-picker', 'pick', [], { query: 'a', 'field-id': 'customfield_10050' }),
         GLOBALS,
       );
 
@@ -15605,7 +15595,7 @@ describe('executeJiraCommand', () => {
 
       // Act
       await executeJiraCommand(
-        cmd('group-user-picker', 'pick', [], { 'exclude-connect-users': true }),
+        cmd('group-user-picker', 'pick', [], { query: 'a', 'exclude-connect-users': true }),
         GLOBALS,
       );
 
@@ -19721,10 +19711,10 @@ describe('executeJiraCommand', () => {
       expect(result).toEqual({ deleted: true });
     });
 
-    it('resolutions delete without replace-with', async () => {
-      jiraResolutionsMock.delete.mockResolvedValue(undefined);
-      await executeJiraCommand(cmd('resolutions', 'delete', ['1']), GLOBALS);
-      expect(jiraResolutionsMock.delete).toHaveBeenCalledWith('1', {});
+    it('resolutions delete requires --replace-with (spec-required → 400 without it)', async () => {
+      await expect(
+        executeJiraCommand(cmd('resolutions', 'delete', ['1']), GLOBALS),
+      ).rejects.toThrow('--replace-with');
     });
 
     it('resolutions set-default calls client.resolutions.setDefault', async () => {
