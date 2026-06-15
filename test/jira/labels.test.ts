@@ -84,11 +84,10 @@ describe('LabelsResource', () => {
       expect(result.self).toBe(`${BASE_URL}/label?startAt=0&maxResults=50`);
     });
 
-    it('does NOT throw when maxResults is 0 — spec imposes no minimum', async () => {
-      // Regression: the old code called validatePageSize which rejects 0.
-      // The spec for GET /rest/api/3/label has no minimum on maxResults.
-      transport.respondWith(makeLabelsResponse([]));
-      await expect(resource.list({ maxResults: 0 })).resolves.toBeDefined();
+    it('throws when maxResults is 0 (generic page-size sanity guard)', async () => {
+      // validatePageSize rejects 0/negative/non-integer — kept for consistency with
+      // every other paginated Jira resource (this is a sanity guard, not a spec-minimum).
+      await expect(resource.list({ maxResults: 0 })).rejects.toThrow();
     });
 
     it('propagates transport errors', async () => {

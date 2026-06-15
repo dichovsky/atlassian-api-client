@@ -241,17 +241,17 @@ atlas jira issue-type-screen-schemes assign-to-project --scheme-id 10001 --proje
 
 Jira permission schemes and per-scheme permission grants under `/rest/api/3/permissionscheme` (B616–B624).
 
-| Action              | Positional                  | Required flags                                           | Optional flags                                                                      |
-| ------------------- | --------------------------- | -------------------------------------------------------- | ----------------------------------------------------------------------------------- |
-| `list`              | —                           | —                                                        | `--expand`                                                                          |
-| `get`               | `<schemeId>`                | —                                                        | `--expand`                                                                          |
-| `create`            | —                           | `--name`                                                 | `--description`, `--permissions`, `--expand`                                        |
-| `update`            | `<schemeId>`                | at least one of `--name`/`--description`/`--permissions` | `--expand`                                                                          |
-| `delete`            | `<schemeId>`                | —                                                        | —                                                                                   |
-| `list-permissions`  | `<schemeId>`                | —                                                        | `--expand`                                                                          |
-| `create-permission` | `<schemeId>`                | —                                                        | `--permission`, `--holder-type`, `--holder-parameter`, `--holder-value`, `--expand` |
-| `get-permission`    | `<schemeId> <permissionId>` | —                                                        | `--expand`                                                                          |
-| `delete-permission` | `<schemeId> <permissionId>` | —                                                        | —                                                                                   |
+| Action              | Positional                  | Required flags | Optional flags                                                                      |
+| ------------------- | --------------------------- | -------------- | ----------------------------------------------------------------------------------- |
+| `list`              | —                           | —              | `--expand`                                                                          |
+| `get`               | `<schemeId>`                | —              | `--expand`                                                                          |
+| `create`            | —                           | `--name`       | `--description`, `--permissions`, `--expand`                                        |
+| `update`            | `<schemeId>`                | `--name`       | `--description`, `--permissions`, `--expand`                                        |
+| `delete`            | `<schemeId>`                | —              | —                                                                                   |
+| `list-permissions`  | `<schemeId>`                | —              | `--expand`                                                                          |
+| `create-permission` | `<schemeId>`                | —              | `--permission`, `--holder-type`, `--holder-parameter`, `--holder-value`, `--expand` |
+| `get-permission`    | `<schemeId> <permissionId>` | —              | `--expand`                                                                          |
+| `delete-permission` | `<schemeId> <permissionId>` | —              | —                                                                                   |
 
 - `--expand` on `list`/`get`/`create`/`update` accepts `permissions` to inline the grant list; on grant endpoints (`list-permissions`, `create-permission`, `get-permission`) accepts `all` or `field`.
 - `--permissions` (on `create`/`update`) is a **JSON array** of `PermissionGrant` objects, e.g. `'[{"holder":{"type":"anyone"},"permission":"BROWSE_PROJECTS"}]'`.
@@ -459,24 +459,24 @@ atlas jira issuesecurityschemes search --id 10001,10002 --project-ids 10100
 
 Screen management (B746–B761). Covers the `/rest/api/3/screens` surface: CRUD, tab and field management, field reordering.
 
-| Action                  | Positional                     | Required flags                            | Optional flags                                                                    |
-| ----------------------- | ------------------------------ | ----------------------------------------- | --------------------------------------------------------------------------------- |
-| `list`                  | —                              | —                                         | `--ids`, `--query-string`, `--scope`, `--order-by`, `--start-at`, `--max-results` |
-| `create`                | —                              | `--name`                                  | `--description`                                                                   |
-| `delete`                | `<screenId>`                   | —                                         | —                                                                                 |
-| `update`                | `<screenId>`                   | at least one of `--name`, `--description` | —                                                                                 |
-| `list-available-fields` | `<screenId>`                   | —                                         | —                                                                                 |
-| `list-tabs`             | `<screenId>`                   | —                                         | `--project-key`                                                                   |
-| `create-tab`            | `<screenId>`                   | `--name`                                  | —                                                                                 |
-| `delete-tab`            | `<screenId>` `<tabId>`         | —                                         | —                                                                                 |
-| `update-tab`            | `<screenId>` `<tabId>`         | `--name`                                  | —                                                                                 |
-| `list-tab-fields`       | `<screenId>` `<tabId>`         | —                                         | `--project-key`                                                                   |
-| `add-field-to-tab`      | `<screenId>` `<tabId>`         | `--field-id`                              | `--skip-field-association`                                                        |
-| `remove-field-from-tab` | `<screenId>` `<tabId>` `<id>`  | —                                         | —                                                                                 |
-| `move-field`            | `<screenId>` `<tabId>` `<id>`  | —                                         | `--position` (Earlier\|Later\|First\|Last), `--after`                             |
-| `move-tab`              | `<screenId>` `<tabId>` `<pos>` | —                                         | —                                                                                 |
-| `add-to-default`        | `<fieldId>`                    | —                                         | —                                                                                 |
-| `list-all-tabs`         | —                              | —                                         | `--ids`, `--tab-ids`, `--start-at`, `--max-results`                               |
+| Action                  | Positional                     | Required flags                            | Optional flags                                                                                              |
+| ----------------------- | ------------------------------ | ----------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `list`                  | —                              | —                                         | `--ids`, `--query-string`, `--scope` (GLOBAL/TEMPLATE/PROJECT), `--order-by`, `--start-at`, `--max-results` |
+| `create`                | —                              | `--name`                                  | `--description`                                                                                             |
+| `delete`                | `<screenId>`                   | —                                         | —                                                                                                           |
+| `update`                | `<screenId>`                   | at least one of `--name`, `--description` | —                                                                                                           |
+| `list-available-fields` | `<screenId>`                   | —                                         | —                                                                                                           |
+| `list-tabs`             | `<screenId>`                   | —                                         | `--project-key`                                                                                             |
+| `create-tab`            | `<screenId>`                   | `--name`                                  | —                                                                                                           |
+| `delete-tab`            | `<screenId>` `<tabId>`         | —                                         | —                                                                                                           |
+| `update-tab`            | `<screenId>` `<tabId>`         | `--name`                                  | —                                                                                                           |
+| `list-tab-fields`       | `<screenId>` `<tabId>`         | —                                         | `--project-key`                                                                                             |
+| `add-field-to-tab`      | `<screenId>` `<tabId>`         | `--field-id`                              | `--skip-field-association`                                                                                  |
+| `remove-field-from-tab` | `<screenId>` `<tabId>` `<id>`  | —                                         | —                                                                                                           |
+| `move-field`            | `<screenId>` `<tabId>` `<id>`  | —                                         | `--position` (Earlier\|Later\|First\|Last), `--after`                                                       |
+| `move-tab`              | `<screenId>` `<tabId>` `<pos>` | —                                         | —                                                                                                           |
+| `add-to-default`        | `<fieldId>`                    | —                                         | —                                                                                                           |
+| `list-all-tabs`         | —                              | —                                         | `--ids`, `--tab-ids`, `--start-at`, `--max-results`                                                         |
 
 ```sh
 # Paginate screens

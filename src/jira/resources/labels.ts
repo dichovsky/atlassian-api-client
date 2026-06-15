@@ -1,6 +1,6 @@
 import type { Transport } from '../../core/types.js';
 import type { JiraLabel, ListLabelsParams } from '../types.js';
-import { paginateOffset } from '../../core/pagination.js';
+import { paginateOffset, validatePageSize } from '../../core/pagination.js';
 
 /**
  * Paginated response for Jira labels.
@@ -30,6 +30,7 @@ export class LabelsResource {
    * Spec: `getAllLabels`. Returns a `PageBeanString` envelope.
    */
   async list(params?: ListLabelsParams): Promise<LabelsResponse> {
+    if (params?.maxResults !== undefined) validatePageSize(params.maxResults, 'maxResults');
     const query: Record<string, string | number | undefined> = {};
     if (params?.startAt !== undefined) query['startAt'] = params.startAt;
     if (params?.maxResults !== undefined) query['maxResults'] = params.maxResults;
