@@ -462,12 +462,12 @@ describe('FooterCommentsResource', () => {
     });
 
     it('rejects non-integer versionNumber', async () => {
-      await expect(resource.getVersion('77777', 1.5)).rejects.toThrow(RangeError);
+      await expect(resource.getVersion('77777', 1.5)).rejects.toThrow(ValidationError);
     });
 
     it('rejects zero or negative versionNumber', async () => {
-      await expect(resource.getVersion('77777', 0)).rejects.toThrow(RangeError);
-      await expect(resource.getVersion('77777', -1)).rejects.toThrow(RangeError);
+      await expect(resource.getVersion('77777', 0)).rejects.toThrow(ValidationError);
+      await expect(resource.getVersion('77777', -1)).rejects.toThrow(ValidationError);
     });
 
     it('propagates transport errors', async () => {

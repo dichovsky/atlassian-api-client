@@ -922,11 +922,11 @@ describe('pagination safety guards', () => {
       expect(warn.mock.calls[0]![0]).toContain('parseable cursor');
     });
 
-    it('rejects non-positive maxPages with RangeError', async () => {
+    it('rejects non-positive maxPages with ValidationError', async () => {
       const transport = new MockTransport();
       // Generators throw on first `next()`, not at construction time.
       const gen = paginateCursor<string>(transport, '/pages', undefined, { maxPages: 0 });
-      await expect(gen.next()).rejects.toThrow(RangeError);
+      await expect(gen.next()).rejects.toThrow(ValidationError);
     });
 
     it('rejects non-object 4th argument with ValidationError', async () => {

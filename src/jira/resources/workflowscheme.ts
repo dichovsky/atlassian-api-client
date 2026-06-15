@@ -2,6 +2,7 @@ import type { Transport } from '../../core/types.js';
 import { encodePathSegment } from '../../core/path.js';
 import type { OffsetPaginatedResponse } from '../../core/pagination.js';
 import { paginateOffset, validatePageSize } from '../../core/pagination.js';
+import { ValidationError } from '../../core/errors.js';
 
 // ─── Response types ────────────────────────────────────────────────────────
 
@@ -723,7 +724,7 @@ export class WorkflowSchemeResource {
     params: GetSchemeProjectAssociationsParams,
   ): Promise<ContainerOfWorkflowSchemeAssociations> {
     if (params.projectId.length === 0) {
-      throw new RangeError('projectId must contain at least one value');
+      throw new ValidationError('projectId must contain at least one value');
     }
     // `projectId` is a repeatable query parameter (`projectId=10000&projectId=10001`,
     // per the spec) — Jira parses a comma-joined value as a single (nonexistent)

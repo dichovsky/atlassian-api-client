@@ -382,16 +382,16 @@ describe('DashboardsResource', () => {
       expect(transport.calls).toHaveLength(5);
     });
 
-    it('B033: throws RangeError when maxPages is not a positive integer', async () => {
+    it('B033: throws ValidationError when maxPages is not a positive integer', async () => {
       transport.respondWith(makeRawListResponse([]));
       const iterator = dashboards.listAll(undefined, { maxPages: 0 });
-      await expect(iterator.next()).rejects.toBeInstanceOf(RangeError);
+      await expect(iterator.next()).rejects.toBeInstanceOf(ValidationError);
     });
 
-    it('B033: throws RangeError when maxPages is fractional', async () => {
+    it('B033: throws ValidationError when maxPages is fractional', async () => {
       transport.respondWith(makeRawListResponse([]));
       const iterator = dashboards.listAll(undefined, { maxPages: 1.5 });
-      await expect(iterator.next()).rejects.toBeInstanceOf(RangeError);
+      await expect(iterator.next()).rejects.toBeInstanceOf(ValidationError);
     });
 
     it('B033 (PR review): does NOT emit a warn() when maxPages is intentionally small (1 or 2)', async () => {
@@ -1026,10 +1026,10 @@ describe('DashboardsResource', () => {
       expect(transport.calls).toHaveLength(5);
     });
 
-    it('throws RangeError when maxPages is not a positive integer', async () => {
+    it('throws ValidationError when maxPages is not a positive integer', async () => {
       transport.respondWith({ values: [], startAt: 0, maxResults: 50, total: 0 });
       const iterator = dashboards.searchAll(undefined, { maxPages: 0 });
-      await expect(iterator.next()).rejects.toBeInstanceOf(RangeError);
+      await expect(iterator.next()).rejects.toBeInstanceOf(ValidationError);
     });
 
     it('passes the full filter set as query params', async () => {

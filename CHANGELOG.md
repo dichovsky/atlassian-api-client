@@ -1,5 +1,33 @@
 # Changelog
 
+## [3.0.0](https://github.com/dichovsky/atlassian-api-client/compare/v2.0.0...v3.0.0) (2026-06-15)
+
+This major release is a **spec-conformance and correctness pass** over the entire library. Following a deep audit against the pinned Atlassian OpenAPI specs (Jira Cloud platform v3, Jira Software / agile 1.0, Confluence Cloud v2), every Jira and Confluence resource's declared request/response TypeScript interfaces were aligned to the authoritative schemas, a class of on-the-wire bugs in 100%-broken methods were fixed, the error taxonomy and OAuth scope catalog were modernized, and two CLI commands had spec-required flags enforced.
+
+Most changes are **type-level**: fields corrected to the right optionality, fictional fields removed, enums narrowed to the spec's literal sets, and return types fixed. Runtime behavior is unchanged except where a method was previously broken on the wire (those are now correct). The breaking surface is large by count but almost entirely mechanical to adopt — stricter, more accurate types mostly just flag code that relied on shapes the API never returned. Relative to the last published release (**2.0.0**), see **BREAKING CHANGES** below.
+
+### Highlights
+
+- **Full spec-conformance type alignment** across all ~107 Jira + Confluence resource modules (B1056 / B1059): every request body, query parameter, and response interface now matches the pinned OpenAPI schema.
+- **Wire-correctness fixes** for methods that were non-functional in 2.0.0 — e.g. `app.updateFieldContextConfiguration` body shape (B1045), `latest` bulk-worklog as a lookup not a create (B1046), `service-registry` required `serviceIds` (B1047), `statuses.list` required `id` (B1048), Confluence attachment upload via the real v1 endpoint (B1057), admin-key real contract (B1058), `computeQsh` repeated query params (B1037).
+- **DevOps ingestion types** (vulnerabilities, post-incident-reviews, feature flags, remote links, incidents, builds/deployments) modelled against `jira-software.json`, including the shared `{ associationType, values }` association shape.
+- **Error taxonomy unified**: page-size / max-pages / version-number guards now throw `ValidationError` (an `AtlassianError`), not native `RangeError` (B1064 / B1066).
+- **Granular OAuth scopes** (B1038): the `AtlassianScope` catalog moved from classic to granular scopes.
+- **Query serialization** (B1049): `type:array` query parameters are sent as repeated params (`?id=1&id=2`) instead of comma-joined strings.
+
+### BREAKING CHANGES
+
+Grouped by area; see individual PRs (#246–#322) for per-method detail.
+
+- **Error type — validation guards (B1064, B1066):** all native `RangeError` throws moved into the error taxonomy — `validatePageSize`, `normalizeMaxPages`, the `dashboards`/`workflowscheme` inline `maxPages`/`projectId` guards, and the Confluence page-size / `versionNumber` guards now throw `ValidationError` (an `AtlassianError`) instead of `RangeError`. _Migration:_ catch `ValidationError` (exported from the package root) instead of `RangeError`.
+- **OAuth scope catalog (B1038):** classic scopes (e.g. `read:jira-work`) were removed from the recognized `AtlassianScope` set in favour of granular scopes (e.g. `read:issue:jira`); `validateScopes([...classic])` now reports them as unknown. _Migration:_ switch scope configuration to granular scopes.
+- **Query-array serialization (B1049):** Jira `type:array` query parameters (`id`, `fields`, `properties`, `accountId`, …) are now emitted as repeated params rather than one comma-joined value. The wire request changes; no SDK signature change.
+- **Jira type alignment (B1056, #291–#321):** request/response interfaces across all Jira resources corrected to the v3 spec. Notable shapes: `void` returns replaced with real responses (`resolution.create`→`ResolutionId`, `resolution.delete`→`TaskProgressBeanObject`, `projects.restore`→`Project`, `app.getFieldContextConfiguration`→paginated, `issues.filterChangelog`→`PageOfChangelogs`, the `config.*` field-association mutations, `project-template.createWithCustomTemplate`→`string | undefined`); fictional fields removed (`JiraStatus.untranslatedName`, `CustomFieldOption.id`/`disabled`, `ProjectComponent` readOnly fields, `AppProperty` extras); enums narrowed to spec literals (priorities, feature-flag/vulnerability/incident status, `LicensedApplication.plan`, announcement-banner visibility, scope types, …); `Webhook`/`events` and many required↔optional corrections. _Migration:_ most call sites are unaffected; type-checking may flag access to removed/renamed fields or reliance on previously-loose types.
+- **Confluence type alignment (B1059, #297–#320):** shared `ConfluenceVersion`, `ContentBody`, `ContentProperty` corrected; `SpaceProperty` split from `ContentProperty`; `app.upsertProperty` now returns `void` (bodyless PUT); task filter params kebab-cased with `int64` date params; various required→optional corrections.
+- **Wire-correctness method changes (#246–#282):** auth middleware request-boundary stripping of `RequestOptions.authorizationOverride` (#246); pagination trusts `total` over the short-page heuristic (#247); forge/redact/classification/issue-security shapes (#249); broad return/response/body conformance across Jira resources (#250); version request bodies drop readOnly fields (B1050); content-type/body encoding incl. `screens.setColumns` form-data (B1051); webhooks refresh return type + `Webhook` fields (B1054). Each fixes a method malformed on the wire in 2.0.0.
+- **CLI required flags (#322):** `atlas jira group-user-picker pick` now requires `--query`, and `atlas jira resolutions delete` now requires `--replace-with` (both `required` in the spec; omitting them previously produced a 400).
+- **Core (B1039 / B1040 / B1041 / B1065):** request de-duplication only coalesces idempotent (GET/HEAD) requests and keys on body + `responseType`; the circuit breaker counts `ResponseTooLargeError`; the cache key includes `responseType`; error-taxonomy and refresh/credentials guards hardened.
+
 ## [2.0.0](https://github.com/dichovsky/atlassian-api-client/compare/v1.0.1...v2.0.0) (2026-06-07)
 
 This major release builds the library out from the 1.0.x core into near-complete

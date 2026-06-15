@@ -680,7 +680,7 @@ export class DashboardsResource {
 
     const maxPages = options?.maxPages ?? DEFAULT_MAX_PAGES;
     if (!Number.isFinite(maxPages) || !Number.isInteger(maxPages) || maxPages <= 0) {
-      throw new RangeError(`maxPages must be a positive integer, got: ${maxPages}`);
+      throw new ValidationError(`maxPages must be a positive integer, got: ${maxPages}`);
     }
     // PR review: when `maxPages` is intentionally tiny (1 or 2), the 80%
     // threshold collapses to "first page", which produces a noisy warning on
