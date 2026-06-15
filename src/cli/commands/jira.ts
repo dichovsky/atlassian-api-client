@@ -3340,7 +3340,7 @@ async function executeComponent(client: JiraClient, cmd: ParsedCommand): Promise
   switch (cmd.action) {
     case 'list': {
       const projectIdsOrKeys = parseCsv(opts['project-ids-or-keys']);
-      const orderBy = asString(opts['order-by']);
+      const orderBy = asComponentOrderBy(opts['order-by']);
       const query = asString(opts['query']);
       return client.component.list({
         ...(projectIdsOrKeys !== undefined && { projectIdsOrKeys }),
@@ -3356,26 +3356,14 @@ async function executeComponent(client: JiraClient, cmd: ParsedCommand): Promise
       const leadAccountId = asString(opts['lead-account-id']);
       const leadUserName = asString(opts['lead-user-name']);
       const assigneeType = asComponentAssigneeType(opts['assignee-type']);
-      const isAssigneeTypeValid =
-        opts['is-assignee-type-valid'] !== undefined
-          ? asBoolFlag(opts['is-assignee-type-valid'])
-          : undefined;
-      const project = asString(opts['project']);
-      const projectIdStr = asString(opts['project-id']);
-      const projectId =
-        projectIdStr !== undefined ? parsePositiveIntArg(projectIdStr, '--project-id') : undefined;
-      if (project === undefined && projectId === undefined) {
-        throw new Error('component create requires --project or --project-id');
-      }
+      const project = requireOpt(opts['project'], '--project');
       return client.component.create({
         name,
+        project,
         ...(description !== undefined && { description }),
         ...(leadAccountId !== undefined && { leadAccountId }),
         ...(leadUserName !== undefined && { leadUserName }),
         ...(assigneeType !== undefined && { assigneeType }),
-        ...(isAssigneeTypeValid !== undefined && { isAssigneeTypeValid }),
-        ...(project !== undefined && { project }),
-        ...(projectId !== undefined && { projectId }),
       });
     }
     case 'get':
@@ -3429,6 +3417,26 @@ const COMPONENT_ASSIGNEE_TYPES = [
   'PROJECT_LEAD',
   'UNASSIGNED',
 ] as const;
+
+const COMPONENT_ORDER_BY_VALUES = [
+  'description',
+  '-description',
+  '+description',
+  'name',
+  '-name',
+  '+name',
+] as const;
+
+function asComponentOrderBy(
+  value: string | boolean | undefined,
+): (typeof COMPONENT_ORDER_BY_VALUES)[number] | undefined {
+  const s = asString(value);
+  if (s === undefined) return undefined;
+  if ((COMPONENT_ORDER_BY_VALUES as readonly string[]).includes(s)) {
+    return s as (typeof COMPONENT_ORDER_BY_VALUES)[number];
+  }
+  throw new Error(`--order-by must be one of: ${COMPONENT_ORDER_BY_VALUES.join(', ')}. Got: ${s}`);
+}
 
 function asComponentAssigneeType(
   value: string | boolean | undefined,

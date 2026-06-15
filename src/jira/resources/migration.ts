@@ -86,17 +86,46 @@ export interface WorkflowRulesSearch {
   readonly expand?: string;
 }
 
-/** A single app workflow transition rule detail (B950). */
+/**
+ * Configuration of a workflow transition rule (B950).
+ * Spec: RuleConfiguration — value is required.
+ */
+export interface RuleConfiguration {
+  /** Configuration value stored by the Connect or Forge app. */
+  readonly value: string;
+  /** Whether the rule is disabled. Defaults to false. */
+  readonly disabled?: boolean;
+  /** Tag used to filter rules in workflow transition rule configurations. */
+  readonly tag?: string;
+}
+
+/**
+ * A workflow transition detail returned with rules (B950).
+ * Spec: WorkflowTransition — id (int32) and name are required.
+ * Named MigrationWorkflowTransition to avoid collision with WorkflowTransition in workflows.ts.
+ */
+export interface MigrationWorkflowTransition {
+  /** The transition ID (int32). */
+  readonly id: number;
+  /** The transition name. */
+  readonly name: string;
+}
+
+/**
+ * A single app workflow transition rule detail (B950).
+ * Spec: AppWorkflowTransitionRule — configuration, id, key are required.
+ */
 export interface AppWorkflowTransitionRule {
-  readonly id?: string;
-  readonly key?: string;
-  readonly configuration?: { readonly value?: string };
-  readonly transition?: { readonly name?: string; readonly id?: number };
+  readonly id: string;
+  readonly key: string;
+  readonly configuration: RuleConfiguration;
+  readonly transition?: MigrationWorkflowTransition;
 }
 
 /** A workflow with transition rules (B950). */
 export interface WorkflowTransitionRules {
-  readonly workflowId: { readonly name?: string; readonly draft?: boolean };
+  /** Spec: WorkflowId — name is required. */
+  readonly workflowId: { readonly name: string; readonly draft?: boolean };
   readonly conditions?: AppWorkflowTransitionRule[];
   readonly postFunctions?: AppWorkflowTransitionRule[];
   readonly validators?: AppWorkflowTransitionRule[];

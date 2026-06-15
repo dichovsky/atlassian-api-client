@@ -5,9 +5,10 @@ import { encodePathSegment } from '../../core/path.js';
 /**
  * Response for GET /rest/operations/1.0/linkedWorkspaces.
  * Returns the list of linked workspace IDs.
+ * Spec: OperationsWorkspaceIds — workspaceIds is required.
  */
 export interface OperationsLinkedWorkspacesResponse {
-  readonly workspaceIds?: string[];
+  readonly workspaceIds: string[];
 }
 
 /**
@@ -27,17 +28,19 @@ export interface BulkCreateOperationsLinkedWorkspacesResponse {
 /**
  * Response for GET /rest/security/1.0/linkedWorkspaces.
  * Returns the list of linked workspace IDs.
+ * Spec: SecurityWorkspaceIds — workspaceIds is required.
  */
 export interface SecurityLinkedWorkspacesResponse {
-  readonly workspaceIds?: string[];
+  readonly workspaceIds: string[];
 }
 
 /**
  * Response for GET /rest/security/1.0/linkedWorkspaces/{workspaceId}.
+ * Spec: SecurityWorkspaceResponse — workspaceId and updatedAt are required.
  */
 export interface SecurityLinkedWorkspace {
-  readonly workspaceId?: string;
-  readonly updatedAt?: string;
+  readonly workspaceId: string;
+  readonly updatedAt: string;
 }
 
 /**

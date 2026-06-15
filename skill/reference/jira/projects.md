@@ -6,14 +6,14 @@
 
 Jira project components — flat `/rest/api/3/component` surface (B361–B366).
 
-| Action                 | Positional      | Required flags                                                                                        | Optional flags                                                                                                                       |
-| ---------------------- | --------------- | ----------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| `list`                 | —               | —                                                                                                     | `--project-ids-or-keys`, `--start-at`, `--max-results`, `--order-by`, `--query`                                                      |
-| `create`               | —               | `--name`                                                                                              | `--description`, `--lead-account-id`, `--lead-user-name`, `--assignee-type`, `--is-assignee-type-valid`, `--project`, `--project-id` |
-| `get`                  | `<componentId>` | —                                                                                                     | —                                                                                                                                    |
-| `update`               | `<componentId>` | at least one of `--name`, `--description`, `--lead-account-id`, `--lead-user-name`, `--assignee-type` | —                                                                                                                                    |
-| `delete`               | `<componentId>` | —                                                                                                     | `--move-issues-to`                                                                                                                   |
-| `related-issue-counts` | `<componentId>` | —                                                                                                     | —                                                                                                                                    |
+| Action                 | Positional      | Required flags                                                                                        | Optional flags                                                                  |
+| ---------------------- | --------------- | ----------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| `list`                 | —               | —                                                                                                     | `--project-ids-or-keys`, `--start-at`, `--max-results`, `--order-by`, `--query` |
+| `create`               | —               | `--name`, `--project`                                                                                 | `--description`, `--lead-account-id`, `--lead-user-name`, `--assignee-type`     |
+| `get`                  | `<componentId>` | —                                                                                                     | —                                                                               |
+| `update`               | `<componentId>` | at least one of `--name`, `--description`, `--lead-account-id`, `--lead-user-name`, `--assignee-type` | —                                                                               |
+| `delete`               | `<componentId>` | —                                                                                                     | `--move-issues-to`                                                              |
+| `related-issue-counts` | `<componentId>` | —                                                                                                     | —                                                                               |
 
 - `--project-ids-or-keys` is comma-separated (e.g. `--project-ids-or-keys HSP,PROJ`).
 - `--assignee-type` must be one of: `PROJECT_DEFAULT`, `COMPONENT_LEAD`, `PROJECT_LEAD`, `UNASSIGNED`.
