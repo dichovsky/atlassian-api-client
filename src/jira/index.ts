@@ -469,7 +469,7 @@ export type {
   BulkErrorCollection,
 } from './resources/bulk.js';
 export { AnnouncementBannerResource } from './resources/announcement-banner.js';
-export type { ApplicationRole } from './resources/application-role.js';
+export type { ApplicationRole, ApplicationRoleGroupName } from './resources/application-role.js';
 export { ApplicationRoleResource } from './resources/application-role.js';
 export type {
   WorkspaceDataPolicy,
@@ -665,6 +665,7 @@ export { AppResource } from './resources/app.js';
 export type {
   Component,
   ComponentAssigneeType,
+  ComponentOrderBy,
   ComponentUserRef,
   ComponentRelatedIssueCounts,
   ListComponentsParams,
@@ -1141,6 +1142,8 @@ export type {
   MigrationEntityType,
   EntityPropertyDetails,
   WorkflowRulesSearch,
+  RuleConfiguration,
+  MigrationWorkflowTransition,
   AppWorkflowTransitionRule,
   WorkflowTransitionRules,
   WorkflowRulesSearchDetails,

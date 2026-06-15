@@ -40,12 +40,24 @@ export interface Component {
   readonly metadata?: Readonly<Record<string, string>>;
 }
 
+/**
+ * Sort order for `GET /rest/api/3/component`.
+ * Spec: enum description | -description | +description | name | -name | +name
+ */
+export type ComponentOrderBy =
+  | 'description'
+  | '-description'
+  | '+description'
+  | 'name'
+  | '-name'
+  | '+name';
+
 /** Query parameters for `GET /rest/api/3/component`. */
 export interface ListComponentsParams {
   readonly projectIdsOrKeys?: readonly string[];
   readonly startAt?: number;
   readonly maxResults?: number;
-  readonly orderBy?: string;
+  readonly orderBy?: ComponentOrderBy;
   readonly query?: string;
 }
 
@@ -56,9 +68,7 @@ export interface CreateComponentData {
   readonly leadAccountId?: string;
   readonly leadUserName?: string;
   readonly assigneeType?: ComponentAssigneeType;
-  readonly isAssigneeTypeValid?: boolean;
   readonly project?: string;
-  readonly projectId?: number;
 }
 
 /** Request body for `PUT /rest/api/3/component/{id}`. */
@@ -148,18 +158,15 @@ export class ComponentResource {
 
   /** B362: Create a component. */
   async create(data: CreateComponentData): Promise<Component> {
-    if ((data.project === undefined || data.project === '') && data.projectId === undefined) {
-      throw new ValidationError('component create requires "project" or "projectId"');
+    if (data.project === undefined || data.project === '') {
+      throw new ValidationError('component create requires "project"');
     }
     const body: Record<string, unknown> = { name: data.name };
     if (data.description !== undefined) body['description'] = data.description;
     if (data.leadAccountId !== undefined) body['leadAccountId'] = data.leadAccountId;
     if (data.leadUserName !== undefined) body['leadUserName'] = data.leadUserName;
     if (data.assigneeType !== undefined) body['assigneeType'] = data.assigneeType;
-    if (data.isAssigneeTypeValid !== undefined)
-      body['isAssigneeTypeValid'] = data.isAssigneeTypeValid;
-    if (data.project !== undefined) body['project'] = data.project;
-    if (data.projectId !== undefined) body['projectId'] = data.projectId;
+    body['project'] = data.project;
     const response = await this.transport.request<Component>({
       method: 'POST',
       path: `${this.baseUrl}/component`,

@@ -215,21 +215,14 @@ describe('ComponentResource', () => {
       });
     });
 
-    it('accepts projectId as the owning project', async () => {
-      const created = makeComponent('2', 'C2');
-      transport.respondWith(created);
-      await component.create({ name: 'C2', projectId: 10000 });
-      expect(transport.lastCall?.options.body).toEqual({ name: 'C2', projectId: 10000 });
-    });
-
-    it('throws ValidationError when neither project nor projectId is provided', async () => {
+    it('throws ValidationError when project is not provided', async () => {
       await expect(component.create({ name: 'X' })).rejects.toThrow(ValidationError);
       await expect(component.create({ name: 'X' })).rejects.toThrow(
-        'component create requires "project" or "projectId"',
+        'component create requires "project"',
       );
     });
 
-    it('throws ValidationError when project is an empty string and no projectId', async () => {
+    it('throws ValidationError when project is an empty string', async () => {
       await expect(component.create({ name: 'X', project: '' })).rejects.toThrow(ValidationError);
     });
 
@@ -241,9 +234,7 @@ describe('ComponentResource', () => {
         leadAccountId: 'acc-1',
         leadUserName: 'legacy',
         assigneeType: 'PROJECT_LEAD',
-        isAssigneeTypeValid: false,
         project: 'HSP',
-        projectId: 10000,
       });
       expect(transport.lastCall?.options.body).toEqual({
         name: 'Full',
@@ -251,9 +242,7 @@ describe('ComponentResource', () => {
         leadAccountId: 'acc-1',
         leadUserName: 'legacy',
         assigneeType: 'PROJECT_LEAD',
-        isAssigneeTypeValid: false,
         project: 'HSP',
-        projectId: 10000,
       });
     });
   });
