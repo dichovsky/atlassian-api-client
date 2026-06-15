@@ -158,9 +158,9 @@ atlas jira groups remove-user --group-id grp-1 --account-id 5b10ac8d82e05b22cc7d
 
 ## `group-user-picker`
 
-| Action | Positional | Required flags | Optional flags                                                                                                         |
-| ------ | ---------- | -------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| `pick` | —          | —              | `--query`, `--max-results`, `--show-avatar`, `--field-id`, `--project-id`, `--project-role`, `--exclude-connect-users` |
+| Action | Positional | Required flags | Optional flags                                                                                              |
+| ------ | ---------- | -------------- | ----------------------------------------------------------------------------------------------------------- |
+| `pick` | —          | `--query`      | `--max-results`, `--show-avatar`, `--field-id`, `--project-id`, `--project-role`, `--exclude-connect-users` |
 
 - `--query` — string to match against both group names and user display names.
 - `--max-results` — maximum results per section (default 50).
