@@ -651,7 +651,6 @@ const jiraMyPreferencesMock = {
   setPreference: vi.fn(),
   removePreference: vi.fn(),
   getLocale: vi.fn(),
-  setLocale: vi.fn(),
 };
 const jiraAuditingMock = {
   list: vi.fn(),
@@ -14717,26 +14716,6 @@ describe('executeJiraCommand', () => {
       // Assert
       expect(jiraMyPreferencesMock.getLocale).toHaveBeenCalled();
       expect(result).toEqual(locale);
-    });
-
-    it('mypreferences set-locale calls client.myPreferences.setLocale() with --locale', async () => {
-      // Arrange
-      jiraMyPreferencesMock.setLocale.mockResolvedValue(undefined);
-
-      // Act
-      await executeJiraCommand(
-        cmd('mypreferences', 'set-locale', [], { locale: 'fr_FR' }),
-        GLOBALS,
-      );
-
-      // Assert
-      expect(jiraMyPreferencesMock.setLocale).toHaveBeenCalledWith('fr_FR');
-    });
-
-    it('mypreferences set-locale throws when --locale is missing', async () => {
-      await expect(executeJiraCommand(cmd('mypreferences', 'set-locale'), GLOBALS)).rejects.toThrow(
-        '--locale',
-      );
     });
 
     it('throws on unknown mypreferences action', async () => {

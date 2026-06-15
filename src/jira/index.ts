@@ -1070,6 +1070,19 @@ export type {
   UpdateIssueLinkTypeData,
 } from './resources/issuelinktype.js';
 export { IssueLinkTypeResource } from './resources/issuelinktype.js';
+
+export type {
+  /**
+   * Key fields from a linked issue returned in `LinkedIssue.fields` (response-only).
+   * Spec: `Fields` schema.
+   */
+  LinkedIssueFields,
+  /**
+   * Comment optionally attached to the outward issue when creating an issue link.
+   * Spec: `Comment` schema (only writable fields listed; additionalProperties allowed).
+   */
+  IssueLinkComment,
+} from './resources/issuelink.js';
 export type {
   ProjectTemplateKey,
   ProjectArchetype,

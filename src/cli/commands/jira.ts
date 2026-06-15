@@ -2234,14 +2234,9 @@ async function executeMyPreferences(client: JiraClient, cmd: ParsedCommand): Pro
       return;
     case 'get-locale':
       return client.myPreferences.getLocale();
-    case 'set-locale': {
-      const locale = requireOpt(opts['locale'], '--locale');
-      await client.myPreferences.setLocale(locale);
-      return;
-    }
     default:
       throw new Error(
-        `Unknown mypreferences action: ${cmd.action}. Actions: get, set, delete, get-locale, set-locale`,
+        `Unknown mypreferences action: ${cmd.action}. Actions: get, set, delete, get-locale`,
       );
   }
 }

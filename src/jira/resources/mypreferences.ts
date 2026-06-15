@@ -2,7 +2,8 @@ import type { Transport } from '../../core/types.js';
 
 /** Locale object returned by GET /rest/api/3/mypreferences/locale. */
 export interface Locale {
-  readonly locale: string;
+  /** The locale code (e.g. `en_US`). Optional — spec schema has no `required` array. */
+  readonly locale?: string;
 }
 
 /** Jira My Preferences resource — B601-B604, B925. */
@@ -64,19 +65,5 @@ export class MyPreferencesResource {
       path: `${this.baseUrl}/mypreferences/locale`,
     });
     return response.data;
-  }
-
-  /**
-   * Set the locale for the current user.
-   * B925: PUT /rest/api/3/mypreferences/locale
-   *
-   * @deprecated This endpoint is deprecated per the Jira platform v3 spec.
-   */
-  async setLocale(locale: string): Promise<void> {
-    await this.transport.request<undefined>({
-      method: 'PUT',
-      path: `${this.baseUrl}/mypreferences/locale`,
-      body: { locale },
-    });
   }
 }
