@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { UsersResource } from '../../src/confluence/resources/users.js';
 import { MockTransport } from '../helpers/mock-transport.js';
+import { ValidationError } from '../../src/core/errors.js';
 
 const BASE_URL = 'https://test.atlassian.net/wiki/api/v2';
 
@@ -62,17 +63,17 @@ describe('UsersResource', () => {
       expect(transport.lastCall?.options.body).toEqual({ emails: ['x@example.com'] });
     });
 
-    it('throws RangeError when emails is an empty array (no HTTP call)', async () => {
+    it('throws ValidationError when emails is an empty array (no HTTP call)', async () => {
       // Act + Assert
-      await expect(resource.checkAccessByEmail({ emails: [] })).rejects.toThrow(RangeError);
+      await expect(resource.checkAccessByEmail({ emails: [] })).rejects.toThrow(ValidationError);
       expect(transport.calls).toHaveLength(0);
     });
 
-    it('throws RangeError when emails is missing entirely', async () => {
+    it('throws ValidationError when emails is missing entirely', async () => {
       // Act + Assert — exercise the !Array.isArray guard branch.
       await expect(
         resource.checkAccessByEmail({ emails: undefined as unknown as readonly string[] }),
-      ).rejects.toThrow(RangeError);
+      ).rejects.toThrow(ValidationError);
       expect(transport.calls).toHaveLength(0);
     });
 
@@ -119,17 +120,17 @@ describe('UsersResource', () => {
       expect(transport.lastCall?.options.body).toEqual({ emails: ['solo@example.com'] });
     });
 
-    it('throws RangeError when emails is an empty array (no HTTP call)', async () => {
+    it('throws ValidationError when emails is an empty array (no HTTP call)', async () => {
       // Act + Assert
-      await expect(resource.inviteByEmail({ emails: [] })).rejects.toThrow(RangeError);
+      await expect(resource.inviteByEmail({ emails: [] })).rejects.toThrow(ValidationError);
       expect(transport.calls).toHaveLength(0);
     });
 
-    it('throws RangeError when emails is missing entirely', async () => {
+    it('throws ValidationError when emails is missing entirely', async () => {
       // Act + Assert — exercise the !Array.isArray guard branch.
       await expect(
         resource.inviteByEmail({ emails: undefined as unknown as readonly string[] }),
-      ).rejects.toThrow(RangeError);
+      ).rejects.toThrow(ValidationError);
       expect(transport.calls).toHaveLength(0);
     });
 

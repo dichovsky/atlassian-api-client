@@ -6,10 +6,8 @@ import { ValidationError } from '../../src/core/errors.js';
 const BASE_URL = 'https://test.atlassian.net/wiki/api/v2';
 
 const makeProperty = (key: string, value: unknown) => ({
-  id: 'prop-1',
   key,
   value,
-  version: { number: 1 },
 });
 
 describe('AppResource', () => {
@@ -108,17 +106,16 @@ describe('AppResource', () => {
   // ── upsertProperty ────────────────────────────────────────────────────────
 
   describe('upsertProperty()', () => {
-    it('calls PUT /app/properties/{key} with the raw value as body', async () => {
-      // Arrange
-      const property = makeProperty('feature-flags', { beta: true });
-      transport.respondWith(property);
+    it('calls PUT /app/properties/{key} with the raw value as body and returns void', async () => {
+      // Arrange — spec: PUT returns 200 (update) / 201 (create) with no body.
+      transport.respondWith(undefined);
       const value = { beta: true, version: 7 };
 
       // Act
       const result = await resource.upsertProperty('feature-flags', { value });
 
-      // Assert
-      expect(result).toEqual(property);
+      // Assert — return value is void
+      expect(result).toBeUndefined();
       expect(transport.lastCall?.options).toMatchObject({
         method: 'PUT',
         path: `${BASE_URL}/app/properties/feature-flags`,
@@ -128,7 +125,7 @@ describe('AppResource', () => {
 
     it('passes through primitive values verbatim', async () => {
       // Arrange
-      transport.respondWith(makeProperty('counter', 42));
+      transport.respondWith(undefined);
 
       // Act
       await resource.upsertProperty('counter', { value: 42 });

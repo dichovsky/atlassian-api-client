@@ -4,7 +4,7 @@
  * expectations.
  */
 export interface ClassificationLevel {
-  readonly id: string;
+  readonly id?: string;
   readonly status?: 'DRAFT' | 'PUBLISHED' | 'ARCHIVED';
   readonly order?: number;
   readonly name?: string;

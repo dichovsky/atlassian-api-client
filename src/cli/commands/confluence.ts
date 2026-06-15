@@ -1242,7 +1242,8 @@ async function executeApp(client: ConfluenceClient, cmd: ParsedCommand): Promise
     case 'upsert-property': {
       const propertyKey = requireArg(cmd.positionalArgs[0], 'property key');
       const rawValue = requireOpt(opts['value'], '--value');
-      return client.app.upsertProperty(propertyKey, { value: parseJsonValue(rawValue) });
+      await client.app.upsertProperty(propertyKey, { value: parseJsonValue(rawValue) });
+      return { upserted: true };
     }
     case 'delete-property':
       await client.app.deleteProperty(requireArg(cmd.positionalArgs[0], 'property key'));

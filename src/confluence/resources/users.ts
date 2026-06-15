@@ -1,3 +1,4 @@
+import { ValidationError } from '../../core/errors.js';
 import type { Transport } from '../../core/types.js';
 import type {
   CheckAccessByEmailResponse,
@@ -80,6 +81,6 @@ export class UsersResource {
  */
 function assertNonEmptyEmails(data: CheckAccessOrInviteByEmailRequest): void {
   if (!Array.isArray(data.emails) || data.emails.length === 0) {
-    throw new RangeError('emails must contain at least one entry');
+    throw new ValidationError('emails must contain at least one entry');
   }
 }
