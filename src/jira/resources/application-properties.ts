@@ -70,7 +70,9 @@ export class ApplicationPropertiesResource {
   /**
    * GET /rest/api/3/application-properties — list application properties,
    * optionally filtered by `key`, `permissionLevel`, or a `keyFilter` regex.
-   * Returns an array even when `key` selects a single property.
+   * When `key` is supplied the server returns a single matching property (as
+   * an object, not in an array per the spec description); when omitted all
+   * editable properties are returned as an array.
    */
   async list(
     params: ListApplicationPropertiesParams = {},

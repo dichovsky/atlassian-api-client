@@ -2,8 +2,10 @@ import type { Transport } from '../../core/types.js';
 
 /** A Jira event (issue link type or workflow event). */
 export interface JiraEvent {
-  readonly id: number;
-  readonly name: string;
+  /** The ID of the event. */
+  readonly id?: number;
+  /** The name of the event. */
+  readonly name?: string;
 }
 
 /** Jira Events resource — GET /rest/api/3/events. */

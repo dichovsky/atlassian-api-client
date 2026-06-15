@@ -149,7 +149,42 @@ describe('MyPreferencesResource', () => {
       await expect(myPreferences.getLocale()).rejects.toThrow('network error');
     });
   });
+
+  // ── setLocale (B925 PUT /rest/api/3/mypreferences/locale — deprecated) ───
+
+  describe('setLocale()', () => {
+    it('calls PUT /mypreferences/locale with locale object body', async () => {
+      // Arrange
+      transport.respondWith(undefined);
+
+      // Act
+      await myPreferences.setLocale('fr_FR');
+
+      // Assert
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'PUT',
+        path: `${BASE_URL}/mypreferences/locale`,
+        body: { locale: 'fr_FR' },
+      });
+    });
+
+    it('returns void on success', async () => {
+      // Arrange
+      transport.respondWith(undefined);
+
+      // Act
+      const result = await myPreferences.setLocale('en_US');
+
+      // Assert
+      expect(result).toBeUndefined();
+    });
+
+    it('propagates transport errors', async () => {
+      // Arrange
+      transport.respondWithError(new Error('server error'));
+
+      // Act / Assert
+      await expect(myPreferences.setLocale('en_US')).rejects.toThrow('server error');
+    });
+  });
 });
-// Note: setLocale (B925 PUT /rest/api/3/mypreferences/locale) was removed — the
-// endpoint was marked `x-changes: [{type: "removed", effective: "2026-02-16"}]`
-// in the Jira platform v3 spec and is no longer available in production.

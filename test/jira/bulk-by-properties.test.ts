@@ -2,6 +2,8 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import {
   BulkByPropertiesResource,
   type BulkByPropertiesBaseUrls,
+  type DeleteDevInfoByPropertiesParams,
+  type DeleteFeatureFlagsByPropertiesParams,
 } from '../../src/jira/resources/bulk-by-properties.js';
 import { MockTransport } from '../helpers/mock-transport.js';
 
@@ -129,6 +131,27 @@ describe('BulkByPropertiesResource', () => {
       });
     });
 
+    it('includes _updateSequenceId in query when provided', async () => {
+      transport.respondWith(undefined, 202);
+      const params: DeleteDevInfoByPropertiesParams = {
+        properties: { accountId: 'acc-1' },
+        _updateSequenceId: 42,
+      };
+      await resource.deleteDevInfoByProperties(params);
+
+      expect(transport.lastCall?.options.query).toMatchObject({
+        accountId: 'acc-1',
+        _updateSequenceId: '42',
+      });
+    });
+
+    it('omits _updateSequenceId from query when not provided', async () => {
+      transport.respondWith(undefined, 202);
+      await resource.deleteDevInfoByProperties({ properties: { accountId: 'acc-1' } });
+
+      expect(transport.lastCall?.options.query).not.toHaveProperty('_updateSequenceId');
+    });
+
     it('propagates transport errors', async () => {
       transport.respondWithError(new Error('rate limited'));
       await expect(
@@ -173,6 +196,27 @@ describe('BulkByPropertiesResource', () => {
         path: `${BASES.featureflags}/bulkByProperties`,
         query: { accountId: 'acc-1' },
       });
+    });
+
+    it('includes _updateSequenceId in query when provided (deprecated param)', async () => {
+      transport.respondWith(undefined, 202);
+      const params: DeleteFeatureFlagsByPropertiesParams = {
+        properties: { accountId: 'acc-1' },
+        _updateSequenceId: 99,
+      };
+      await resource.deleteFeatureFlagsByProperties(params);
+
+      expect(transport.lastCall?.options.query).toMatchObject({
+        accountId: 'acc-1',
+        _updateSequenceId: '99',
+      });
+    });
+
+    it('omits _updateSequenceId from query when not provided', async () => {
+      transport.respondWith(undefined, 202);
+      await resource.deleteFeatureFlagsByProperties({ properties: { accountId: 'acc-1' } });
+
+      expect(transport.lastCall?.options.query).not.toHaveProperty('_updateSequenceId');
     });
 
     it('propagates transport errors', async () => {

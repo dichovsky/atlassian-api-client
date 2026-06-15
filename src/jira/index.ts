@@ -1149,6 +1149,8 @@ export { LinkedWorkspacesResource } from './resources/linked-workspaces.js';
 export type {
   BulkByPropertiesParams,
   BulkByPropertiesBaseUrls,
+  DeleteDevInfoByPropertiesParams,
+  DeleteFeatureFlagsByPropertiesParams,
 } from './resources/bulk-by-properties.js';
 export { BulkByPropertiesResource } from './resources/bulk-by-properties.js';
 export type {
