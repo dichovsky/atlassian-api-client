@@ -8,9 +8,10 @@ const makePermission = (key: string, havePermission = true) => ({
   id: '10',
   key,
   name: key.replace(/_/g, ' '),
-  type: 'PROJECT',
+  type: 'PROJECT' as const,
   description: `Permission: ${key}`,
   havePermission,
+  deprecatedKey: false,
 });
 
 const makeMyPermissions = () => ({
@@ -153,6 +154,44 @@ describe('MyPermissionsResource', () => {
       expect(query).not.toHaveProperty('projectKey');
       expect(query).not.toHaveProperty('issueId');
       expect(query).not.toHaveProperty('issueKey');
+    });
+
+    it('accepts GLOBAL type in permission', async () => {
+      // Arrange
+      const perms = {
+        permissions: {
+          ADMINISTER: {
+            id: '0',
+            key: 'ADMINISTER',
+            name: 'Administer Jira',
+            type: 'GLOBAL' as const,
+            havePermission: true,
+          },
+        },
+      };
+      transport.respondWith(perms);
+
+      // Act
+      const result = await myPermissions.get();
+
+      // Assert
+      expect(result.permissions['ADMINISTER']?.type).toBe('GLOBAL');
+    });
+
+    it('handles permissions with deprecatedKey field', async () => {
+      // Arrange
+      const perms = {
+        permissions: {
+          OLD_PERM: { key: 'OLD_PERM', deprecatedKey: true, havePermission: false },
+        },
+      };
+      transport.respondWith(perms);
+
+      // Act
+      const result = await myPermissions.get();
+
+      // Assert
+      expect(result.permissions['OLD_PERM']?.deprecatedKey).toBe(true);
     });
 
     it('propagates transport errors', async () => {

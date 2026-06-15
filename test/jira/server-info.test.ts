@@ -60,6 +60,42 @@ describe('ServerInfoResource', () => {
       expect(result.healthChecks?.[0]?.passed).toBe(true);
     });
 
+    it('returns server info with new display URL fields', async () => {
+      // Arrange
+      const info = {
+        ...makeServerInfo(),
+        displayUrl: 'https://mycompany.atlassian.net',
+        displayUrlConfluence: 'https://mycompany.atlassian.net/wiki',
+        displayUrlServicedeskHelpCenter: 'https://mycompany.atlassian.net/servicedesk',
+        serverTimeZone: 'America/New_York',
+      };
+      transport.respondWith(info);
+
+      // Act
+      const result = await serverInfo.get();
+
+      // Assert
+      expect(result.displayUrl).toBe('https://mycompany.atlassian.net');
+      expect(result.displayUrlConfluence).toBe('https://mycompany.atlassian.net/wiki');
+      expect(result.displayUrlServicedeskHelpCenter).toBe(
+        'https://mycompany.atlassian.net/servicedesk',
+      );
+      expect(result.serverTimeZone).toBe('America/New_York');
+    });
+
+    it('handles response with all fields absent (spec has no required array)', async () => {
+      // Arrange
+      transport.respondWith({});
+
+      // Act
+      const result = await serverInfo.get();
+
+      // Assert
+      expect(result.baseUrl).toBeUndefined();
+      expect(result.version).toBeUndefined();
+      expect(result.serverTimeZone).toBeUndefined();
+    });
+
     it('propagates transport errors', async () => {
       // Arrange
       transport.respondWithError(new Error('network error'));

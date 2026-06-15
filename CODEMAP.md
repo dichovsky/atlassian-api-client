@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "2.0.0"
   },
-  "sourceHash": "0f499ba35e21577ebffdc89851639298e552b49bf18beed19fc514e2747d3526",
+  "sourceHash": "b954ef7fc1bb748d53e047bbad0e04253b9e0cdb6226b1fa73c8db50b92a86c8",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -21541,6 +21541,10 @@
             {
               "exported": "JiraStatusCategoryRef",
               "original": "JiraStatusCategoryRef"
+            },
+            {
+              "exported": "JiraStatusScope",
+              "original": "JiraStatusScope"
             }
           ]
         },
@@ -30950,7 +30954,7 @@
           "kind": "interface",
           "line": 9,
           "exported": true,
-          "signature": "export interface Permission { readonly id: string; readonly key: string; readonly name: string; readonly type: string; r…",
+          "signature": "export interface Permission { readonly id?: string; readonly key?: string; readonly name?: string; readonly type?: 'GLOB…",
           "jsdoc": "A single permission entry."
         },
         {
@@ -31264,13 +31268,13 @@
           "kind": "interface",
           "line": 7,
           "exported": true,
-          "signature": "export interface Permission { readonly description?: string; readonly key?: string; readonly name?: string; readonly typ…",
-          "jsdoc": "A single Jira permission entry returned in the GET /permissions response. Fields: description, key, name, type."
+          "signature": "export interface Permission { readonly id?: string; readonly key?: string; readonly name?: string; readonly type?: 'GLOB…",
+          "jsdoc": "A single Jira permission entry returned in the GET /permissions response. Maps to the UserPermission spec schema."
         },
         {
           "name": "Permissions",
           "kind": "interface",
-          "line": 15,
+          "line": 18,
           "exported": true,
           "signature": "export interface Permissions { readonly permissions?: Record<string, Permission>; }",
           "jsdoc": "Response envelope for GET /rest/api/3/permissions (B613)."
@@ -31278,7 +31282,7 @@
         {
           "name": "BulkProjectPermissions",
           "kind": "interface",
-          "line": 20,
+          "line": 23,
           "exported": true,
           "signature": "export interface BulkProjectPermissions { readonly issues?: number[]; readonly permissions: string[]; readonly projects?…",
           "jsdoc": "Sub-item for BulkPermissionsRequestBean.projectPermissions."
@@ -31286,7 +31290,7 @@
         {
           "name": "BulkPermissionsRequestBean",
           "kind": "interface",
-          "line": 30,
+          "line": 33,
           "exported": true,
           "signature": "export interface BulkPermissionsRequestBean { readonly accountId?: string; readonly globalPermissions?: string[]; readon…",
           "jsdoc": "Request body for POST /rest/api/3/permissions/check (B614)."
@@ -31294,7 +31298,7 @@
         {
           "name": "BulkProjectPermissionGrants",
           "kind": "interface",
-          "line": 37,
+          "line": 40,
           "exported": true,
           "signature": "export interface BulkProjectPermissionGrants { readonly issues: number[]; readonly permission: string; readonly projects…",
           "jsdoc": "Sub-item for BulkPermissionGrants.projectPermissions."
@@ -31302,7 +31306,7 @@
         {
           "name": "BulkPermissionGrants",
           "kind": "interface",
-          "line": 44,
+          "line": 47,
           "exported": true,
           "signature": "export interface BulkPermissionGrants { readonly globalPermissions: string[]; readonly projectPermissions: BulkProjectPe…",
           "jsdoc": "Response for POST /rest/api/3/permissions/check (B614)."
@@ -31310,7 +31314,7 @@
         {
           "name": "PermissionsKeysBean",
           "kind": "interface",
-          "line": 50,
+          "line": 53,
           "exported": true,
           "signature": "export interface PermissionsKeysBean { readonly permissions: string[]; }",
           "jsdoc": "Request body for POST /rest/api/3/permissions/project (B615)."
@@ -31318,7 +31322,7 @@
         {
           "name": "ProjectIdentifierBean",
           "kind": "interface",
-          "line": 55,
+          "line": 58,
           "exported": true,
           "signature": "export interface ProjectIdentifierBean { readonly id?: number; readonly key?: string; }",
           "jsdoc": "A project identifier returned in PermittedProjects."
@@ -31326,7 +31330,7 @@
         {
           "name": "PermittedProjects",
           "kind": "interface",
-          "line": 61,
+          "line": 64,
           "exported": true,
           "signature": "export interface PermittedProjects { readonly projects?: ProjectIdentifierBean[]; }",
           "jsdoc": "Response for POST /rest/api/3/permissions/project (B615)."
@@ -31334,7 +31338,7 @@
         {
           "name": "PermissionsResource",
           "kind": "class",
-          "line": 72,
+          "line": 75,
           "exported": true,
           "signature": "export class PermissionsResource",
           "jsdoc": "Jira Permissions resource — global `/rest/api/3/permissions` surface (B613-B615).",
@@ -31342,22 +31346,22 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 73
+              "line": 76
             },
             {
               "name": "getAll",
               "kind": "method",
-              "line": 84
+              "line": 87
             },
             {
               "name": "check",
               "kind": "method",
-              "line": 99
+              "line": 102
             },
             {
               "name": "getPermittedProjects",
               "kind": "method",
-              "line": 121
+              "line": 124
             }
           ]
         }
@@ -34273,13 +34277,13 @@
           "kind": "interface",
           "line": 10,
           "exported": true,
-          "signature": "export interface SecurityLevel { readonly id: string; readonly name: string; readonly description?: string; readonly iss…",
+          "signature": "export interface SecurityLevel { readonly id?: string; readonly name?: string; readonly description?: string; readonly i…",
           "jsdoc": "A Jira issue security level."
         },
         {
           "name": "SecurityLevelResource",
           "kind": "class",
-          "line": 23,
+          "line": 24,
           "exported": true,
           "signature": "export class SecurityLevelResource",
           "jsdoc": "Jira Security Level resource — GET /rest/api/3/securitylevel/{id}.",
@@ -34287,12 +34291,12 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 24
+              "line": 25
             },
             {
               "name": "get",
               "kind": "method",
-              "line": 33
+              "line": 34
             }
           ]
         }
@@ -34310,13 +34314,13 @@
           "kind": "interface",
           "line": 4,
           "exported": true,
-          "signature": "export interface ServerInfo { readonly baseUrl: string; readonly version: string; readonly versionNumbers: readonly numb…",
+          "signature": "export interface ServerInfo { readonly baseUrl?: string; readonly version?: string; readonly versionNumbers?: readonly n…",
           "jsdoc": "Jira server information."
         },
         {
           "name": "ServerHealthCheck",
           "kind": "interface",
-          "line": 18,
+          "line": 23,
           "exported": true,
           "signature": "export interface ServerHealthCheck { readonly name: string; readonly description: string; readonly passed: boolean; }",
           "jsdoc": "A single server health check result."
@@ -34324,7 +34328,7 @@
         {
           "name": "ServerInfoResource",
           "kind": "class",
-          "line": 25,
+          "line": 30,
           "exported": true,
           "signature": "export class ServerInfoResource",
           "jsdoc": "Jira Server Info resource — GET /rest/api/3/serverInfo.",
@@ -34332,12 +34336,12 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 26
+              "line": 31
             },
             {
               "name": "get",
               "kind": "method",
-              "line": 32
+              "line": 37
             }
           ]
         }
@@ -34658,21 +34662,29 @@
           "kind": "interface",
           "line": 5,
           "exported": true,
-          "signature": "export interface JiraStatusCategoryRef { readonly id: number; readonly key: string; readonly name: string; readonly colo…",
-          "jsdoc": "A Jira status category reference embedded in a workflow status."
+          "signature": "export interface JiraStatusCategoryRef { readonly id?: number; readonly key?: string; readonly name?: string; readonly c…",
+          "jsdoc": "A Jira status category reference embedded in a workflow status (StatusCategory schema)."
+        },
+        {
+          "name": "JiraStatusScope",
+          "kind": "interface",
+          "line": 14,
+          "exported": true,
+          "signature": "export interface JiraStatusScope { readonly type?: 'PROJECT' | 'TEMPLATE'; readonly project?: Record<string, unknown>; }",
+          "jsdoc": "Scope of a status — associated project and scope type (Scope schema)."
         },
         {
           "name": "JiraStatus",
           "kind": "interface",
-          "line": 14,
+          "line": 20,
           "exported": true,
-          "signature": "export interface JiraStatus { readonly id: string; readonly name: string; readonly self?: string; readonly description?:…",
-          "jsdoc": "A Jira workflow status returned by GET /rest/api/3/status."
+          "signature": "export interface JiraStatus { readonly id?: string; readonly name?: string; readonly self?: string; readonly description…",
+          "jsdoc": "A Jira workflow status returned by GET /rest/api/3/status (StatusDetails schema)."
         },
         {
           "name": "StatusResource",
           "kind": "class",
-          "line": 26,
+          "line": 31,
           "exported": true,
           "signature": "export class StatusResource",
           "jsdoc": "Jira Status resource — GET /rest/api/3/status.",
@@ -34680,17 +34692,17 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 27
+              "line": 32
             },
             {
               "name": "list",
               "kind": "method",
-              "line": 33
+              "line": 38
             },
             {
               "name": "get",
               "kind": "method",
-              "line": 42
+              "line": 47
             }
           ]
         }
@@ -34895,12 +34907,12 @@
           "line": 5,
           "exported": true,
           "signature": "export interface Task { readonly id: string; readonly self: string; readonly description?: string; readonly status: | 'E…",
-          "jsdoc": "A Jira long-running task."
+          "jsdoc": "A Jira long-running task (TaskProgressBeanObject schema)."
         },
         {
           "name": "TaskResource",
           "kind": "class",
-          "line": 28,
+          "line": 29,
           "exported": true,
           "signature": "export class TaskResource",
           "jsdoc": "Jira Task resource — GET and POST /rest/api/3/task endpoints.",
@@ -34908,17 +34920,17 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 29
+              "line": 30
             },
             {
               "name": "get",
               "kind": "method",
-              "line": 38
+              "line": 39
             },
             {
               "name": "cancel",
               "kind": "method",
-              "line": 50
+              "line": 51
             }
           ]
         }
