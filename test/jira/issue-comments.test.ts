@@ -142,7 +142,7 @@ describe('IssueCommentsResource', () => {
       transport.respondWith(makeComment('1003'));
       const data = {
         body: { type: 'doc', version: 1, content: [] },
-        visibility: { type: 'role', value: 'Administrators' },
+        visibility: { type: 'role' as const, value: 'Administrators' },
       };
 
       // Act

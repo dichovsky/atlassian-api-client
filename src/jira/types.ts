@@ -72,6 +72,12 @@ export interface UserRef {
   readonly self?: string;
 }
 
+/** Scope of a next-gen project item (spec: Scope). */
+export interface IssueTypeScope {
+  readonly type?: 'PROJECT' | 'TEMPLATE';
+  readonly project?: Record<string, unknown>;
+}
+
 /**
  * Jira Issue Type (e.g. Bug, Task, Story).
  *
@@ -81,10 +87,16 @@ export interface IssueType {
   readonly id: string;
   readonly name: string;
   readonly self: string;
-  readonly description: string;
-  readonly subtask: boolean;
+  readonly description?: string;
+  readonly subtask?: boolean;
   readonly hierarchyLevel?: number;
   readonly iconUrl?: string;
+  /** The ID of the issue type's avatar. */
+  readonly avatarId?: number;
+  /** Unique ID for next-gen projects. */
+  readonly entityId?: string;
+  /** Details of the next-gen projects the issue type is available in. */
+  readonly scope?: IssueTypeScope;
 }
 
 /**
@@ -99,6 +111,10 @@ export interface Priority {
   readonly description?: string;
   readonly iconUrl?: string;
   readonly statusColor?: string;
+  /** Whether this priority is the default. */
+  readonly isDefault?: boolean;
+  /** The avatarId of the avatar for the issue priority. */
+  readonly avatarId?: number;
 }
 
 /**
@@ -166,8 +182,15 @@ export interface SearchResult {
 /** Parameters for retrieving a single Jira issue. */
 export interface GetIssueParams {
   readonly fields?: string[];
-  readonly expand?: string[];
+  /** Comma-separated list of expand options (type: string in spec). */
+  readonly expand?: string;
   readonly properties?: string[];
+  /** Whether fields in `fields` are referenced by keys rather than IDs. */
+  readonly fieldsByKeys?: boolean;
+  /** Whether the project is added to the user's Recently viewed project list. */
+  readonly updateHistory?: boolean;
+  /** Whether to fail the request quickly in case of an error while loading fields. */
+  readonly failFast?: boolean;
 }
 
 /** Request body for creating a Jira issue. */
@@ -198,6 +221,18 @@ export interface ListProjectsParams {
   readonly expand?: string[];
   readonly status?: string[];
   readonly typeKey?: string;
+  /** Filter by project IDs (type: array → repeated params). */
+  readonly id?: number[];
+  /** Filter by project keys (type: array → repeated params). */
+  readonly keys?: string[];
+  /** Filter by text matching the project name, description, or key. */
+  readonly query?: string;
+  /** Filter by the project category ID. */
+  readonly categoryId?: number;
+  /** A JQL query used to filter projects by entity properties. */
+  readonly propertyQuery?: string;
+  /** Filter by properties (type: array → repeated params). */
+  readonly properties?: string[];
 }
 
 /** Parameters for Jira JQL search queries. */
@@ -206,14 +241,42 @@ export interface SearchParams {
   readonly startAt?: number;
   readonly maxResults?: number;
   readonly fields?: string[];
+  /**
+   * Expand options. GET `/search` serializes these as a comma-separated `type:string`
+   * query param; POST `/search` body (`SearchRequestBean.expand`) is `type:array`.
+   */
   readonly expand?: string[];
+  /** Validate the JQL query. Enum: "strict" | "warn" | "none" | "true" | "false". */
+  readonly validateQuery?: 'strict' | 'warn' | 'none' | 'true' | 'false';
+  /** List of issue properties to return (type: array → repeated params on GET). */
+  readonly properties?: string[];
+  /** Whether fields in `fields` are referenced by keys rather than IDs. */
+  readonly fieldsByKeys?: boolean;
 }
 
 /** Parameters for searching Jira users. */
 export interface SearchUsersParams {
-  readonly query: string;
+  readonly query?: string;
   readonly startAt?: number;
   readonly maxResults?: number;
+  /** Filter by account ID. */
+  readonly accountId?: string;
+  /** A query string used to search user properties. */
+  readonly property?: string;
+}
+
+/** An entity property key-value pair (spec: EntityProperty). */
+export interface EntityProperty {
+  readonly key?: string;
+  readonly value?: unknown;
+}
+
+/** The group or role visibility restriction for a comment or issue (spec: Visibility). */
+export interface Visibility {
+  readonly type?: 'group' | 'role';
+  readonly value?: string;
+  /** The ID of the group or name of the role that visibility is restricted to. */
+  readonly identifier?: string | null;
 }
 
 /** Jira Issue Comment. */
@@ -221,10 +284,17 @@ export interface IssueComment {
   readonly id: string;
   readonly self: string;
   readonly author?: UserRef;
+  readonly updateAuthor?: UserRef;
   readonly body: Record<string, unknown>;
   readonly renderedBody?: string;
   readonly created: string;
   readonly updated: string;
+  readonly visibility?: Visibility;
+  /** Whether the comment is visible in Jira Service Desk. */
+  readonly jsdPublic?: boolean;
+  /** Whether the comment was added from an external email. */
+  readonly jsdAuthorCanSeeRequest?: boolean;
+  readonly properties?: EntityProperty[];
 }
 
 /** Jira Issue Attachment. */
@@ -249,26 +319,22 @@ export type JiraLabel = string;
 export interface ListIssueCommentsParams {
   readonly startAt?: number;
   readonly maxResults?: number;
-  readonly orderBy?: string;
+  readonly orderBy?: 'created' | '-created' | '+created';
   readonly expand?: string;
 }
 
 /** Request body for creating a comment on an issue. */
 export interface CreateIssueCommentData {
   readonly body: Record<string, unknown>;
-  readonly visibility?: {
-    readonly type: string;
-    readonly value: string;
-  };
+  readonly visibility?: Visibility;
+  readonly properties?: EntityProperty[];
 }
 
 /** Request body for updating an existing issue comment. */
 export interface UpdateIssueCommentData {
   readonly body: Record<string, unknown>;
-  readonly visibility?: {
-    readonly type: string;
-    readonly value: string;
-  };
+  readonly visibility?: Visibility;
+  readonly properties?: EntityProperty[];
 }
 
 // --- Label Params ---
@@ -304,10 +370,21 @@ export interface AssignableMultiProjectSearchParams {
 export interface AssignableSearchParams {
   readonly project: string;
   readonly query?: string;
+  readonly sessionId?: string;
   readonly username?: string;
   readonly accountId?: string;
+  /** Key of the issue to find assignable users for. */
+  readonly issueKey?: string;
+  /** ID of the issue to find assignable users for. */
+  readonly issueId?: string;
   readonly startAt?: number;
   readonly maxResults?: number;
+  readonly actionDescriptorId?: number;
+  readonly recommend?: boolean;
+  /** Filter by account type (type: array → repeated params). */
+  readonly accountType?: string[];
+  /** Filter by app type (type: array → repeated params). */
+  readonly appType?: string[];
 }
 
 /** Parameters for bulk fetching users (B801). */
@@ -336,8 +413,9 @@ export interface BulkMigrationParams {
 
 /** Migration mapping from legacy key to accountId (B802). */
 export interface UserMigrationRecord {
-  readonly key: string;
-  readonly accountId: string;
+  readonly key?: string;
+  readonly accountId?: string;
+  readonly username?: string;
 }
 
 /** A user column setting (B804/B805). */
@@ -364,10 +442,12 @@ export interface BulkUserEmailsResponse {
   readonly email?: string;
 }
 
-/** A group entry returned by the user groups endpoint (B808). */
+/** A group entry returned by the user groups endpoint (B808). Spec: GroupName. */
 export interface UserGroupEntry {
-  readonly name: string;
-  readonly self: string;
+  readonly name?: string;
+  readonly self?: string;
+  /** The ID of the group. Nullable. */
+  readonly groupId?: string | null;
 }
 
 /** Parameters for getting groups for a user (B808). */
@@ -440,20 +520,32 @@ export interface UserIdentifierParams {
   readonly accountId?: string;
 }
 
-/** Paginated response wrapping User values (B815/B816). */
+/** Paginated response wrapping User values (B815). Spec: PageBeanUser. */
 export interface UserSearchQueryResult {
-  readonly values: readonly User[];
-  readonly startAt: number;
-  readonly maxResults: number;
-  readonly total: number;
+  readonly values?: readonly User[];
+  readonly startAt?: number;
+  readonly maxResults?: number;
+  readonly total?: number;
+  readonly isLast?: boolean;
+  readonly nextPage?: string;
+  readonly self?: string;
 }
 
-/** Paginated response wrapping user keys (B816). */
+/** A user key entry as returned by the user search/query/key endpoint. Spec: UserKey. */
+export interface UserKeyEntry {
+  readonly key?: string;
+  readonly accountId?: string;
+}
+
+/** Paginated response wrapping user keys (B816). Spec: PageBeanUserKey. */
 export interface UserKeySearchQueryResult {
-  readonly values: readonly { readonly key: string }[];
-  readonly startAt: number;
-  readonly maxResults: number;
-  readonly total: number;
+  readonly values?: readonly UserKeyEntry[];
+  readonly startAt?: number;
+  readonly maxResults?: number;
+  readonly total?: number;
+  readonly isLast?: boolean;
+  readonly nextPage?: string;
+  readonly self?: string;
 }
 
 /** Parameters for GET /rest/api/3/user/search/query (B815) and key variant (B816). */
@@ -466,6 +558,7 @@ export interface SearchUsersQueryParams {
 /** Parameters for GET /rest/api/3/user/viewissue/search (B817). */
 export interface ViewIssueSearchUsersParams {
   readonly issueKey?: string;
+  readonly projectKey?: string;
   readonly query?: string;
   readonly maxResults?: number;
   readonly username?: string;
@@ -477,6 +570,8 @@ export interface ViewIssueSearchUsersParams {
 export interface ListAllUsersParams {
   readonly startAt?: number;
   readonly maxResults?: number;
+  /** Comma-separated list of expand options. */
+  readonly expand?: string;
 }
 
 /** Parameters for GET /rest/api/3/users/search (B819). */
@@ -485,4 +580,6 @@ export interface SearchAllUsersParams {
   readonly username?: string;
   readonly startAt?: number;
   readonly maxResults?: number;
+  /** Comma-separated list of expand options. */
+  readonly expand?: string;
 }

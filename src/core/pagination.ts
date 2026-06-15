@@ -27,6 +27,10 @@ export interface OffsetPaginatedResponse<T> {
   readonly maxResults: number;
   readonly total?: number;
   readonly isLast?: boolean;
+  /** Cursor URL of the next page, present on some `PageBean*` responses. */
+  readonly nextPage?: string;
+  /** Self URL of this page, present on some `PageBean*` responses. */
+  readonly self?: string;
 }
 
 /** Jira search uses 'issues' instead of 'values'. */

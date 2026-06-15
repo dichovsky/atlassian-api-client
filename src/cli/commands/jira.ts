@@ -265,7 +265,7 @@ async function executeIssues(client: JiraClient, cmd: ParsedCommand): Promise<un
     case 'get':
       return client.issues.get(requireArg(cmd.positionalArgs[0], 'issue key'), {
         fields: csvFlag(opts['fields']),
-        expand: csvFlag(opts['expand']),
+        expand: asString(opts['expand']),
       });
     case 'create':
       return client.issues.create({
@@ -4580,7 +4580,7 @@ async function executeIssueComments(client: JiraClient, cmd: ParsedCommand): Pro
       return client.issueComments.list(issueIdOrKey, {
         startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
-        orderBy: asString(opts['order-by']),
+        orderBy: asString(opts['order-by']) as 'created' | '-created' | '+created' | undefined,
         expand: asString(opts['expand']),
       });
     }

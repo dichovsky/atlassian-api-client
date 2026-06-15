@@ -49,16 +49,21 @@ export class SearchResource {
   /** Search for issues using JQL (POST). */
   async search(params: SearchParams): Promise<SearchResult> {
     if (params.maxResults !== undefined) validatePageSize(params.maxResults, 'maxResults');
+    const body: Record<string, unknown> = {
+      jql: params.jql,
+    };
+    if (params.startAt !== undefined) body['startAt'] = params.startAt;
+    if (params.maxResults !== undefined) body['maxResults'] = params.maxResults;
+    if (params.fields !== undefined) body['fields'] = params.fields;
+    // POST `/search` body (`SearchRequestBean.expand`) is `type: array` — send as-is.
+    if (params.expand !== undefined) body['expand'] = params.expand;
+    if (params.validateQuery !== undefined) body['validateQuery'] = params.validateQuery;
+    if (params.properties !== undefined) body['properties'] = params.properties;
+    if (params.fieldsByKeys !== undefined) body['fieldsByKeys'] = params.fieldsByKeys;
     const response = await this.transport.request<SearchResult>({
       method: 'POST',
       path: `${this.baseUrl}/search`,
-      body: {
-        jql: params.jql,
-        startAt: params.startAt,
-        maxResults: params.maxResults,
-        fields: params.fields,
-        expand: params.expand,
-      },
+      body,
     });
     return response.data;
   }
@@ -66,18 +71,22 @@ export class SearchResource {
   /** Search for issues using JQL (GET). */
   async searchGet(params: SearchParams): Promise<SearchResult> {
     if (params.maxResults !== undefined) validatePageSize(params.maxResults, 'maxResults');
-    const query: Record<string, string | number | undefined> = {
+    const query: Record<string, string | number | boolean | undefined> = {
       jql: params.jql,
     };
     if (params.startAt !== undefined) query['startAt'] = params.startAt;
     if (params.maxResults !== undefined) query['maxResults'] = params.maxResults;
-    // `/search` GET: `fields` is `type: array` → repeated params baked into the
-    // path; `expand` is `type: string` → stays comma-joined (B1049).
-    if (params.expand) query['expand'] = params.expand.join(',');
+    // `/search` GET: `fields`/`properties` are `type: array` → repeated params baked into the
+    // path; `expand` is `type: string` → comma-joined (B1049).
+    if (params.expand !== undefined) query['expand'] = params.expand.join(',');
+    if (params.validateQuery !== undefined) query['validateQuery'] = params.validateQuery;
+    if (params.fieldsByKeys !== undefined) query['fieldsByKeys'] = params.fieldsByKeys;
 
+    let path = appendRepeatedParams(`${this.baseUrl}/search`, 'fields', params.fields);
+    path = appendRepeatedParams(path, 'properties', params.properties);
     const response = await this.transport.request<SearchResult>({
       method: 'GET',
-      path: appendRepeatedParams(`${this.baseUrl}/search`, 'fields', params.fields),
+      path,
       query,
     });
     return response.data;
@@ -85,16 +94,10 @@ export class SearchResource {
 
   /** Iterate over all search results across all pages. */
   async *searchAll(params: Omit<SearchParams, 'startAt'>): AsyncGenerator<Issue> {
-    yield* paginateSearch<Issue>(
-      this.transport,
-      `${this.baseUrl}/search`,
-      {
-        jql: params.jql,
-        fields: params.fields,
-        expand: params.expand,
-      },
-      params.maxResults,
-    );
+    const body: Record<string, unknown> = { jql: params.jql };
+    if (params.fields !== undefined) body['fields'] = params.fields;
+    if (params.expand !== undefined) body['expand'] = params.expand;
+    yield* paginateSearch<Issue>(this.transport, `${this.baseUrl}/search`, body, params.maxResults);
   }
 
   /** Get approximate count of issues matching a JQL query (POST). B766 */
