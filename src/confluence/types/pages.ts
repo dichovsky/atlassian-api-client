@@ -15,13 +15,7 @@ import type {
  * Used for both the `status` field on `Page` and the `status` filter on list/get endpoints.
  */
 export type PageContentStatus =
-  | 'current'
-  | 'draft'
-  | 'archived'
-  | 'historical'
-  | 'trashed'
-  | 'deleted'
-  | 'any';
+  'current' | 'draft' | 'archived' | 'historical' | 'trashed' | 'deleted' | 'any';
 
 /**
  * Sort tokens accepted by `GET /pages`. Mirrors the OpenAPI `PageSortOrder` enum.
@@ -368,8 +362,7 @@ export interface ListPageInlineCommentsParams {
   readonly 'body-format'?: 'storage' | 'atlas_doc_format';
   readonly status?: CommentStatus | readonly CommentStatus[];
   readonly 'resolution-status'?:
-    | InlineCommentResolutionStatus
-    | readonly InlineCommentResolutionStatus[];
+    InlineCommentResolutionStatus | readonly InlineCommentResolutionStatus[];
   readonly sort?: CommentSortOrder;
   readonly cursor?: string;
   readonly limit?: number;

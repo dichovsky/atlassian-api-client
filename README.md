@@ -808,9 +808,7 @@ const client = new JiraClient({
   baseUrl: 'https://yourcompany.atlassian.net',
   auth: { type: 'bearer', token: accessToken },
   middleware: [
-    createOAuthRefreshMiddleware({
-      /* … */
-    }),
+    createOAuthRefreshMiddleware({/* … */}),
     createCacheMiddleware({ ttl: 30_000, maxSize: 500 }),
     createBatchMiddleware(),
   ],

@@ -7,13 +7,7 @@ export interface Task {
   readonly self: string;
   readonly description?: string;
   readonly status:
-    | 'ENQUEUED'
-    | 'RUNNING'
-    | 'COMPLETE'
-    | 'FAILED'
-    | 'CANCEL_REQUESTED'
-    | 'CANCELLED'
-    | 'DEAD';
+    'ENQUEUED' | 'RUNNING' | 'COMPLETE' | 'FAILED' | 'CANCEL_REQUESTED' | 'CANCELLED' | 'DEAD';
   readonly message?: string;
   readonly result?: unknown;
   readonly submittedBy: number;

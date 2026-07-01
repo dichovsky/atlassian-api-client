@@ -68,9 +68,8 @@ describe('createCacheMiddleware', () => {
 
   it('evicts the oldest entry when maxSize is reached', async () => {
     let counter = 0;
-    const next = vi.fn(
-      async (opts: RequestOptions): Promise<ApiResponse<unknown>> =>
-        makeResponse({ path: opts.path, n: ++counter }),
+    const next = vi.fn(async (opts: RequestOptions): Promise<ApiResponse<unknown>> =>
+      makeResponse({ path: opts.path, n: ++counter }),
     );
 
     const mw = createCacheMiddleware({ maxSize: 2 });
@@ -132,9 +131,8 @@ describe('createCacheMiddleware', () => {
   it('reclaims expired entries via TTL sweep before LRU eviction', async () => {
     vi.useFakeTimers();
     let counter = 0;
-    const next = vi.fn(
-      async (opts: RequestOptions): Promise<ApiResponse<unknown>> =>
-        makeResponse({ path: opts.path, n: ++counter }),
+    const next = vi.fn(async (opts: RequestOptions): Promise<ApiResponse<unknown>> =>
+      makeResponse({ path: opts.path, n: ++counter }),
     );
 
     const mw = createCacheMiddleware({ maxSize: 2, ttl: 1000 });
@@ -163,9 +161,8 @@ describe('createCacheMiddleware', () => {
 
   it('falls back to LRU eviction when no entries are expired', async () => {
     let counter = 0;
-    const next = vi.fn(
-      async (opts: RequestOptions): Promise<ApiResponse<unknown>> =>
-        makeResponse({ path: opts.path, n: ++counter }),
+    const next = vi.fn(async (opts: RequestOptions): Promise<ApiResponse<unknown>> =>
+      makeResponse({ path: opts.path, n: ++counter }),
     );
 
     const mw = createCacheMiddleware({ maxSize: 2, ttl: 10_000 });
@@ -186,9 +183,8 @@ describe('createCacheMiddleware', () => {
 
   it('protects recently-accessed entries from LRU eviction', async () => {
     let counter = 0;
-    const next = vi.fn(
-      async (opts: RequestOptions): Promise<ApiResponse<unknown>> =>
-        makeResponse({ path: opts.path, n: ++counter }),
+    const next = vi.fn(async (opts: RequestOptions): Promise<ApiResponse<unknown>> =>
+      makeResponse({ path: opts.path, n: ++counter }),
     );
 
     const mw = createCacheMiddleware({ maxSize: 2, ttl: 10_000 });
@@ -230,9 +226,8 @@ describe('createCacheMiddleware', () => {
 describe('createCacheMiddleware — B022 auth-scoped cache key', () => {
   it('does NOT serve a cached entry to a different Authorization header', async () => {
     let counter = 0;
-    const next = vi.fn(
-      async (_opts: RequestOptions): Promise<ApiResponse<unknown>> =>
-        makeResponse({ n: ++counter }),
+    const next = vi.fn(async (_opts: RequestOptions): Promise<ApiResponse<unknown>> =>
+      makeResponse({ n: ++counter }),
     );
     const mw = createCacheMiddleware();
 
@@ -299,9 +294,8 @@ describe('createCacheMiddleware — B022 auth-scoped cache key', () => {
     // that field so a user-installed middleware never has to observe the
     // credential to get correct tenancy.
     let counter = 0;
-    const next = vi.fn(
-      async (_opts: RequestOptions): Promise<ApiResponse<unknown>> =>
-        makeResponse({ n: ++counter }),
+    const next = vi.fn(async (_opts: RequestOptions): Promise<ApiResponse<unknown>> =>
+      makeResponse({ n: ++counter }),
     );
     const mw = createCacheMiddleware();
 
@@ -322,9 +316,8 @@ describe('createCacheMiddleware — B022 auth-scoped cache key', () => {
     // is absent. Two requests with the SAME authIdentity but DIFFERENT
     // Authorization headers MUST coalesce in the cache.
     let counter = 0;
-    const next = vi.fn(
-      async (_opts: RequestOptions): Promise<ApiResponse<unknown>> =>
-        makeResponse({ n: ++counter }),
+    const next = vi.fn(async (_opts: RequestOptions): Promise<ApiResponse<unknown>> =>
+      makeResponse({ n: ++counter }),
     );
     const mw = createCacheMiddleware();
 
@@ -355,9 +348,8 @@ describe('createCacheMiddleware — B022 auth-scoped cache key', () => {
     // identities collide in the cache. We now take the LAST occurrence so
     // the trusted injected token partitions correctly.
     let counter = 0;
-    const next = vi.fn(
-      async (_opts: RequestOptions): Promise<ApiResponse<unknown>> =>
-        makeResponse({ n: ++counter }),
+    const next = vi.fn(async (_opts: RequestOptions): Promise<ApiResponse<unknown>> =>
+      makeResponse({ n: ++counter }),
     );
     const mw = createCacheMiddleware();
 

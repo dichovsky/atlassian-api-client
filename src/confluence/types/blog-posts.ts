@@ -17,12 +17,7 @@ import type {
  * `BlogPostContentStatus` schema.
  */
 export type BlogPostContentStatus =
-  | 'current'
-  | 'draft'
-  | 'historical'
-  | 'trashed'
-  | 'deleted'
-  | 'any';
+  'current' | 'draft' | 'historical' | 'trashed' | 'deleted' | 'any';
 
 /**
  * Body-write representation accepted by `POST /blogposts` and `PUT /blogposts/{id}`.
@@ -59,10 +54,7 @@ export interface ListBlogPostsParams {
    * Accepts `'current'`, `'deleted'`, or `'trashed'`.
    */
   readonly status?:
-    | 'current'
-    | 'deleted'
-    | 'trashed'
-    | readonly ('current' | 'deleted' | 'trashed')[];
+    'current' | 'deleted' | 'trashed' | readonly ('current' | 'deleted' | 'trashed')[];
   /** Primary body representation to include in the response. */
   readonly 'body-format'?: 'storage' | 'atlas_doc_format';
   readonly sort?: BlogPostSortOrder;
@@ -189,8 +181,7 @@ export interface ListBlogPostInlineCommentsParams {
   readonly 'body-format'?: 'storage' | 'atlas_doc_format';
   readonly status?: CommentStatus | readonly CommentStatus[];
   readonly 'resolution-status'?:
-    | InlineCommentResolutionStatus
-    | readonly InlineCommentResolutionStatus[];
+    InlineCommentResolutionStatus | readonly InlineCommentResolutionStatus[];
   readonly sort?: CommentSortOrder;
   readonly cursor?: string;
   readonly limit?: number;

@@ -6,36 +6,21 @@ import { encodePathSegment } from '../../core/path.js';
  * Verified against jira-software.json `BuildState` enum.
  */
 export type BuildState =
-  | 'pending'
-  | 'in_progress'
-  | 'successful'
-  | 'failed'
-  | 'cancelled'
-  | 'unknown';
+  'pending' | 'in_progress' | 'successful' | 'failed' | 'cancelled' | 'unknown';
 
 /**
  * Deployment state values as specified in the Jira Software Deployments API schema.
  * Verified against jira-software.json `DeploymentData.state` enum.
  */
 export type DeploymentState =
-  | 'unknown'
-  | 'pending'
-  | 'in_progress'
-  | 'cancelled'
-  | 'failed'
-  | 'rolled_back'
-  | 'successful';
+  'unknown' | 'pending' | 'in_progress' | 'cancelled' | 'failed' | 'rolled_back' | 'successful';
 
 /**
  * Environment type values as specified in the Jira Software Deployments API schema.
  * Verified against jira-software.json `Environment.type` enum.
  */
 export type DeploymentEnvironmentType =
-  | 'unmapped'
-  | 'development'
-  | 'testing'
-  | 'staging'
-  | 'production';
+  'unmapped' | 'development' | 'testing' | 'staging' | 'production';
 
 /**
  * Commit reference for a build entity.
