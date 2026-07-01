@@ -628,19 +628,18 @@ The clients expose a broad Atlassian API surface. The tables below highlight com
 
 ### ConfluenceClient
 
-| Resource            | Methods                                                                                                                                              |
-| ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `pages`             | `list`, `get`, `create`, `update`, `delete`, `listAll`                                                                                               |
-| `spaces`            | `list`, `get`, `listAll`                                                                                                                             |
-| `blogPosts`         | `list`, `get`, `create`, `update`, `delete`, `listAll`                                                                                               |
-| `comments`          | `listFooter`, `getFooter`, `createFooter`, `updateFooter`, `deleteFooter`, `listInline`, `getInline`, `createInline`, `updateInline`, `deleteInline` |
-| `attachments`       | `listForPage`, `get`, `upload`, `delete`, `listAllForPage`                                                                                           |
-| `labels`            | `listForPage`, `listForSpace`, `listForBlogPost`, `listAllForPage`                                                                                   |
-| `contentProperties` | `listForPage`, `getForPage`, `createForPage`, `updateForPage`, `deleteForPage`                                                                       |
-| `customContent`     | `list`, `get`, `create`, `update`, `delete`                                                                                                          |
-| `whiteboards`       | `get`, `create`, `delete`                                                                                                                            |
-| `tasks`             | `list`, `get`, `update`                                                                                                                              |
-| `versions`          | `listForPage`, `getForPage`, `listForBlogPost`, `getForBlogPost`                                                                                     |
+| Resource        | Methods                                                                                                                                              |
+| --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pages`         | `list`, `get`, `create`, `update`, `delete`, `listAll`                                                                                               |
+| `spaces`        | `list`, `get`, `listAll`                                                                                                                             |
+| `blogPosts`     | `list`, `get`, `create`, `update`, `delete`, `listAll`                                                                                               |
+| `comments`      | `listFooter`, `getFooter`, `createFooter`, `updateFooter`, `deleteFooter`, `listInline`, `getInline`, `createInline`, `updateInline`, `deleteInline` |
+| `attachments`   | `listForPage`, `get`, `upload`, `delete`, `listAllForPage`                                                                                           |
+| `labels`        | `listForPage`, `listForSpace`, `listForBlogPost`, `listAllForPage`                                                                                   |
+| `customContent` | `list`, `get`, `create`, `update`, `delete`                                                                                                          |
+| `whiteboards`   | `get`, `create`, `delete`                                                                                                                            |
+| `tasks`         | `list`, `get`, `update`                                                                                                                              |
+| `versions`      | `listForPage`, `getForPage`, `listForBlogPost`, `getForBlogPost`                                                                                     |
 
 ### JiraClient
 

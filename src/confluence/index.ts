@@ -122,10 +122,6 @@ export type {
   GetInlineCommentParams,
 } from './types/comments.js';
 export type {
-  ListContentPropertiesParams,
-  UpdateContentPropertyData,
-} from './types/content-properties.js';
-export type {
   ConfluenceContentType,
   ConvertContentIdsToTypesData,
   ConvertContentIdsToTypesResponse,
@@ -350,7 +346,6 @@ export { BlogPostsResource } from './resources/blog-posts.js';
 export { CommentsResource } from './resources/comments.js';
 export { AttachmentsResource } from './resources/attachments.js';
 export { LabelsResource } from './resources/labels.js';
-export { ContentPropertiesResource } from './resources/content-properties.js';
 export { CustomContentResource } from './resources/custom-content.js';
 export { WhiteboardsResource } from './resources/whiteboards.js';
 export { TasksResource } from './resources/tasks.js';
