@@ -60,11 +60,6 @@ describe('ConfluenceClient', () => {
     expect(typeof client.attachments.listForPage).toBe('function');
     expect(typeof client.attachments.upload).toBe('function');
     expect(typeof client.labels.listForPage).toBe('function');
-    expect(typeof client.contentProperties.listForPage).toBe('function');
-    expect(typeof client.contentProperties.getForPage).toBe('function');
-    expect(typeof client.contentProperties.createForPage).toBe('function');
-    expect(typeof client.contentProperties.updateForPage).toBe('function');
-    expect(typeof client.contentProperties.deleteForPage).toBe('function');
     expect(typeof client.customContent.list).toBe('function');
     expect(typeof client.customContent.get).toBe('function');
     expect(typeof client.customContent.create).toBe('function');

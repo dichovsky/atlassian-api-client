@@ -179,10 +179,7 @@ export interface CopyDashboardData {
  * `changePermissionAndAddPermission` and `delete` are NOT in the spec.
  */
 export type BulkEditDashboardAction =
-  | 'changeOwner'
-  | 'changePermission'
-  | 'addPermission'
-  | 'removePermission';
+  'changeOwner' | 'changePermission' | 'addPermission' | 'removePermission';
 
 export interface BulkEditDashboardsData {
   /** Dashboard IDs to bulk-edit. Spec schema: `integer[]` (format: int64). */

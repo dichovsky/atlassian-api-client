@@ -5,11 +5,7 @@
  * strings that fall outside this union — see {@link ConvertContentIdsToTypesResponse}.
  */
 export type ConfluenceContentType =
-  | 'page'
-  | 'blogpost'
-  | 'attachment'
-  | 'footer-comment'
-  | 'inline-comment';
+  'page' | 'blogpost' | 'attachment' | 'footer-comment' | 'inline-comment';
 
 /**
  * Request body for `POST /content/convert-ids-to-types`.

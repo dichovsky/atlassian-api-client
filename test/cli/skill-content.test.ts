@@ -134,6 +134,10 @@ describe('Reference content sanity checks', () => {
     expect(AUTH_SAFETY_REF).toContain('429');
   });
 
+  it('forbids bypassing a failing atlas command with a raw HTTP/curl request', () => {
+    expect(AUTH_SAFETY_REF).toContain('Never construct a raw HTTP/curl request to bypass');
+  });
+
   it('includes payload minimization guidance', () => {
     expect(PAYLOAD_RULES_REF).toContain('--format minimal');
     expect(PAYLOAD_RULES_REF).toContain('Use strict filters');

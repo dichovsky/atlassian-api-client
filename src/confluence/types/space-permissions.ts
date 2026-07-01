@@ -38,11 +38,7 @@ export interface BulkTransitionSpaceSelection {
    * - `SPECIFIC` — only the spaces listed in `selectedSpaces`.
    */
   readonly spaceType:
-    | 'ALL'
-    | 'ALL_EXCEPT_PERSONAL'
-    | 'ALL_EXCEPT_SPECIFIC'
-    | 'PERSONAL'
-    | 'SPECIFIC';
+    'ALL' | 'ALL_EXCEPT_PERSONAL' | 'ALL_EXCEPT_SPECIFIC' | 'PERSONAL' | 'SPECIFIC';
   /** Required when `spaceType` is `SPECIFIC` or `ALL_EXCEPT_SPECIFIC`. */
   readonly selectedSpaces?: readonly BulkTransitionSpaceTarget[];
 }

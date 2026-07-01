@@ -7,10 +7,7 @@ import { appendRepeatedParams } from '../../core/query.js';
 
 /** Assignment policy for the component. */
 export type ComponentAssigneeType =
-  | 'PROJECT_DEFAULT'
-  | 'COMPONENT_LEAD'
-  | 'PROJECT_LEAD'
-  | 'UNASSIGNED';
+  'PROJECT_DEFAULT' | 'COMPONENT_LEAD' | 'PROJECT_LEAD' | 'UNASSIGNED';
 
 /** Minimal user reference returned in component payloads. */
 export interface ComponentUserRef {
@@ -45,12 +42,7 @@ export interface Component {
  * Spec: enum description | -description | +description | name | -name | +name
  */
 export type ComponentOrderBy =
-  | 'description'
-  | '-description'
-  | '+description'
-  | 'name'
-  | '-name'
-  | '+name';
+  'description' | '-description' | '+description' | 'name' | '-name' | '+name';
 
 /** Query parameters for `GET /rest/api/3/component`. */
 export interface ListComponentsParams {

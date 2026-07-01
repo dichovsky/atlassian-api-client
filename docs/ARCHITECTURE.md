@@ -15,7 +15,7 @@
 │               Resource Modules (selected)                    │
 │  pages, spaces, blogPosts,    issues, projects, search,      │
 │  comments, attachments,       users, issueTypes, priorities, │
-│  labels, contentProperties,   statuses, issueComments,       │
+│  labels,                      statuses, issueComments,       │
 │  customContent, whiteboards,  issueAttachments, labels,      │
 │  tasks, versions              boards, sprints, workflows,    │
 │                               dashboards, filters, fields,   │
@@ -87,7 +87,6 @@ src/
 │   │   ├── inline-comments.ts   # /wiki/api/v2/inline-comments extended reads (children, likes, versions)
 │   │   ├── attachments.ts       # /wiki/api/v2/attachments (incl. multipart upload)
 │   │   ├── labels.ts            # /wiki/api/v2/labels
-│   │   ├── content-properties.ts # /wiki/api/v2/*/properties
 │   │   ├── custom-content.ts    # /wiki/api/v2/custom-content
 │   │   ├── whiteboards.ts       # /wiki/api/v2/whiteboards
 │   │   ├── tasks.ts             # /wiki/api/v2/tasks
@@ -436,7 +435,6 @@ class ConfluenceClient {
   readonly comments: CommentsResource;
   readonly attachments: AttachmentsResource;
   readonly labels: LabelsResource;
-  readonly contentProperties: ContentPropertiesResource;
   readonly customContent: CustomContentResource;
   readonly whiteboards: WhiteboardsResource;
   readonly tasks: TasksResource;

@@ -122,15 +122,6 @@ describe('detectRequiredScopes', () => {
     expect(deleteScopes).toEqual(['delete:field:jira']);
   });
 
-  it('handles content properties operations (multi-scope for mutations)', () => {
-    const readScopes = detectRequiredScopes(['confluence.contentProperties.list']);
-    expect(readScopes).toEqual(['read:page:confluence']);
-
-    const createScopes = detectRequiredScopes(['confluence.contentProperties.create']);
-    expect(createScopes).toContain('read:page:confluence');
-    expect(createScopes).toContain('write:page:confluence');
-  });
-
   it('handles granular board scopes (B1038)', () => {
     const listScopes = detectRequiredScopes(['jira.boards.list']);
     expect(listScopes).toContain('read:board-scope:jira-software');

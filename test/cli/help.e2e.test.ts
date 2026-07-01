@@ -1,14 +1,10 @@
 import { describe, it, expect, beforeAll } from 'vitest';
-import { execFile, execFileSync } from 'node:child_process';
-import { promisify } from 'node:util';
+import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync, statSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
-import { dirname, resolve } from 'node:path';
+import { resolve } from 'node:path';
+import { PROJECT_ROOT, CLI_BIN, runCliSubprocess as runCli } from '../helpers/cli-subprocess.js';
+import { parseCases, actionsForResource } from '../helpers/dispatcher-map.js';
 
-const execFileAsync = promisify(execFile);
-
-const PROJECT_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
-const CLI_BIN = resolve(PROJECT_ROOT, 'dist', 'cli', 'index.js');
 const CLI_ENTRY_SRC = resolve(PROJECT_ROOT, 'src', 'cli', 'index.ts');
 const ROUTER_SRC = resolve(PROJECT_ROOT, 'src', 'cli', 'router.ts');
 const CONFLUENCE_SRC = resolve(PROJECT_ROOT, 'src', 'cli', 'commands', 'confluence.ts');
@@ -16,153 +12,12 @@ const JIRA_SRC = resolve(PROJECT_ROOT, 'src', 'cli', 'commands', 'jira.ts');
 const INSTALL_SKILL_SRC = resolve(PROJECT_ROOT, 'src', 'cli', 'commands', 'install-skill.ts');
 const HELP_SRC = resolve(PROJECT_ROOT, 'src', 'cli', 'help.ts');
 
-async function runCli(args: string[]): Promise<{ stdout: string; stderr: string; code: number }> {
-  try {
-    const { stdout, stderr } = await execFileAsync('node', [CLI_BIN, ...args]);
-    return { stdout, stderr, code: 0 };
-  } catch (err) {
-    const e = err as { stdout?: string; stderr?: string; code?: number };
-    return { stdout: e.stdout ?? '', stderr: e.stderr ?? '', code: e.code ?? 1 };
-  }
-}
-
-/**
- * Parse top-level `case 'xxx':` entries from a dispatcher function body.
- * Returns the resource / action names in source order.
- */
-function parseCases(source: string, functionName: string): string[] {
-  const startRegex = new RegExp(
-    String.raw`(?:export\s+)?(?:async\s+)?function\s+${functionName}\s*\(`,
-  );
-  const startMatch = startRegex.exec(source);
-  if (!startMatch) throw new Error(`function ${functionName} not found`);
-  const start = startMatch.index;
-
-  const nextRegex = /\n(?:export\s+)?(?:async\s+)?function\s+\w+\s*\(/g;
-  nextRegex.lastIndex = start + startMatch[0].length;
-  const nextMatch = nextRegex.exec(source);
-  const end = nextMatch ? nextMatch.index : source.length;
-
-  const body = source.slice(start, end);
-  return [...body.matchAll(/case '([^']+)':/g)].map((m) => m[1] as string);
-}
-
 const confluenceSource = readFileSync(CONFLUENCE_SRC, 'utf8');
 const jiraSource = readFileSync(JIRA_SRC, 'utf8');
 const helpSource = readFileSync(HELP_SRC, 'utf8');
 
 const confluenceResources = parseCases(confluenceSource, 'executeConfluenceCommand');
 const jiraResources = parseCases(jiraSource, 'executeJiraCommand');
-
-const DISPATCHER_FN_BY_RESOURCE: Record<string, string> = {
-  pages: 'executePages',
-  spaces: 'executeSpaces',
-  'blog-posts': 'executeBlogPosts',
-  comments: 'executeComments',
-  attachments: 'executeAttachments',
-  labels: 'executeLabels',
-  'admin-key': 'executeAdminKey',
-  app: 'executeApp',
-  'classification-levels': 'executeClassificationLevels',
-  content: 'executeContent',
-  'custom-content': 'executeCustomContent',
-  'data-policies': 'executeDataPolicies',
-  databases: 'executeDatabases',
-  embeds: 'executeEmbeds',
-  folders: 'executeFolders',
-  'footer-comments': 'executeFooterComments',
-  'inline-comments': 'executeInlineComments',
-  'space-permissions': 'executeSpacePermissions',
-  'space-role-mode': 'executeSpaceRoleMode',
-  'space-roles': 'executeSpaceRoles',
-  tasks: 'executeTasks',
-  'users-bulk': 'executeUsersBulk',
-  whiteboards: 'executeWhiteboards',
-  issues: 'executeIssues',
-  projects: 'executeProjects',
-  search: 'executeSearch',
-  users: 'executeUsers',
-  'issue-types': 'executeIssueTypes',
-  issuetype: 'executeIssueType',
-  priorities: 'executePriorities',
-  statuses: 'executeStatuses',
-  boards: 'executeBoards',
-  sprints: 'executeSprints',
-  epic: 'executeEpic',
-  backlog: 'executeBacklog',
-  'announcement-banner': 'executeAnnouncementBanner',
-  'application-role': 'executeApplicationRole',
-  'data-policy': 'executeDataPolicy',
-  webhooks: 'executeWebhooks',
-  status: 'executeStatus',
-  'status-category': 'executeStatusCategory',
-  'server-info': 'executeServerInfo',
-  instance: 'executeInstance',
-  mypermissions: 'executeMyPermissions',
-  mypreferences: 'executeMyPreferences',
-  auditing: 'executeAuditing',
-  events: 'executeEvents',
-  changelog: 'executeChangelog',
-  forge: 'executeForge',
-  incidents: 'executeIncidents',
-  'post-incident-reviews': 'executePostIncidentReviews',
-  vulnerability: 'executeVulnerability',
-  devopscomponents: 'executeDevopscomponents',
-  groups: 'executeGroups',
-  'group-user-picker': 'executeGroupUserPicker',
-  'security-level': 'executeSecurityLevel',
-  license: 'executeLicense',
-  settings: 'executeSettings',
-  redact: 'executeRedact',
-  flag: 'executeFlag',
-  task: 'executeTask',
-  avatar: 'executeAvatar',
-  'custom-field-option': 'executeCustomFieldOption',
-  latest: 'executeLatest',
-  'remote-link': 'executeRemoteLink',
-  'service-registry': 'executeServiceRegistry',
-  addons: 'executeAddons',
-  'exists-by-properties': 'executeExistsByProperties',
-  repository: 'executeRepository',
-  dashboards: 'executeDashboards',
-  'application-properties': 'executeApplicationProperties',
-  configuration: 'executeConfiguration',
-  bulk: 'executeBulk',
-  'issue-attachments': 'executeIssueAttachments',
-  component: 'executeComponent',
-  filters: 'executeFilters',
-  'issue-type-screen-schemes': 'executeIssueTypeScreenSchemes',
-  'permission-schemes': 'executePermissionSchemes',
-  'issue-type-schemes': 'executeIssueTypeSchemes',
-  'notification-schemes': 'executeNotificationSchemes',
-  roles: 'executeRoles',
-  resolutions: 'executeResolutions',
-  expression: 'executeExpression',
-  'issue-comments': 'executeIssueComments',
-  fieldconfiguration: 'executeFieldConfiguration',
-  'priority-schemes': 'executePrioritySchemeResource',
-  version: 'executeVersionResource',
-  config: 'executeConfig',
-  issuesecurityschemes: 'executeIssueSecuritySchemes',
-  screens: 'executeScreens',
-  screenscheme: 'executeScreenScheme',
-  plans: 'executePlans',
-  workflows: 'executeWorkflows',
-  workflowscheme: 'executeWorkflowScheme',
-  fields: 'executeFields',
-  jql: 'executeJql',
-  issuelinktype: 'executeIssueLinkType',
-  'issue-link': 'executeIssueLink',
-  'project-template': 'executeProjectTemplate',
-  'universal-avatar': 'executeUniversalAvatar',
-  worklog: 'executeWorklog',
-  'ui-modifications': 'executeUiModifications',
-  permissions: 'executePermissions',
-  pipelines: 'executePipelines',
-  'linked-workspaces': 'executeLinkedWorkspaces',
-  'bulk-by-properties': 'executeBulkByProperties',
-  migration: 'executeMigration',
-};
 
 /**
  * Carve out the per-API help block from `help.ts` source so that resource
@@ -175,14 +30,6 @@ function extractApiHelpBlock(source: string, api: 'confluence' | 'jira'): string
   const match = startRegex.exec(source);
   if (!match) throw new Error(`${constName} not found in help source`);
   return match[1] as string;
-}
-
-function actionsForResource(source: string, resource: string): string[] {
-  const fn = DISPATCHER_FN_BY_RESOURCE[resource];
-  if (!fn) throw new Error(`no dispatcher mapping for ${resource}`);
-  // `search` has no `switch (cmd.action)`; treat as having no discrete actions.
-  if (resource === 'search') return [];
-  return parseCases(source, fn);
 }
 
 function isBinStale(): boolean {
@@ -295,14 +142,10 @@ describe('CLI --help e2e', () => {
     ];
 
     for (const { api, resource } of apiResourceTuples) {
-      it(`${api} ${resource}: action list is non-empty OR resource is actionless (search)`, () => {
+      it(`${api} ${resource}: has a non-empty action list`, () => {
         const source = api === 'confluence' ? confluenceSource : jiraSource;
         const actions = actionsForResource(source, resource);
-        if (resource === 'search') {
-          expect(actions).toEqual([]);
-        } else {
-          expect(actions.length).toBeGreaterThan(0);
-        }
+        expect(actions.length).toBeGreaterThan(0);
       });
 
       it(`${api} ${resource}: every dispatcher action is documented in help text`, () => {

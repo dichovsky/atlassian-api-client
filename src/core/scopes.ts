@@ -170,18 +170,6 @@ const OPERATION_SCOPES: Readonly<Record<string, readonly AtlassianScope[]>> = {
   // GET /labels → oAuthDefinitions: ['read:label:confluence']
   'confluence.labels.list': ['read:label:confluence'],
 
-  // ── Confluence — Content properties ────────────────────────────────────────
-  // GET    /pages/{page-id}/properties                       → ['read:page:confluence']
-  // GET    /pages/{page-id}/properties/{property-id}         → ['read:page:confluence']
-  // POST   /pages/{page-id}/properties                       → ['read:page:confluence','write:page:confluence']
-  // PUT    /pages/{page-id}/properties/{property-id}         → ['read:page:confluence','write:page:confluence']
-  // DELETE /pages/{page-id}/properties/{property-id}         → ['read:page:confluence','write:page:confluence']
-  'confluence.contentProperties.list': ['read:page:confluence'],
-  'confluence.contentProperties.get': ['read:page:confluence'],
-  'confluence.contentProperties.create': ['read:page:confluence', 'write:page:confluence'],
-  'confluence.contentProperties.update': ['read:page:confluence', 'write:page:confluence'],
-  'confluence.contentProperties.delete': ['read:page:confluence', 'write:page:confluence'],
-
   // ── Confluence — Custom content ─────────────────────────────────────────────
   // GET    /custom-content        → oAuthDefinitions: ['read:custom-content:confluence']
   // GET    /custom-content/{id}   → oAuthDefinitions: ['read:custom-content:confluence']
