@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "3.0.0"
   },
-  "sourceHash": "91c1e26f80cc2d42183ca0d2ac7f82377bab54e3577c8d48d323494a066b253c",
+  "sourceHash": "5da335c599c4d2b4be52aca069fda77de9e1eca13864cf1ec2d1cb5b4f9743ec",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -540,7 +540,7 @@
       "name": "ConfluenceClient",
       "kind": "class",
       "file": "src/confluence/client.ts",
-      "line": 45,
+      "line": 44,
       "signature": "export class ConfluenceClient",
       "jsdoc": "Client for the Atlassian Confluence Cloud REST API v2. @example ```ts import { ConfluenceClient } from 'atlassian-api-client'; const client = ne…"
     },
@@ -1859,15 +1859,6 @@
       "typeOnly": true
     },
     {
-      "name": "ListContentPropertiesParams",
-      "kind": "interface",
-      "file": "src/confluence/types/content-properties.ts",
-      "line": 2,
-      "signature": "export interface ListContentPropertiesParams { readonly key?: string; readonly limit?: number; readonly cursor?: string;…",
-      "jsdoc": "Parameters for listing content properties on a page.",
-      "typeOnly": true
-    },
-    {
       "name": "ListCustomContentAttachmentsParams",
       "kind": "interface",
       "file": "src/confluence/types/custom-content.ts",
@@ -3120,15 +3111,6 @@
       "typeOnly": true
     },
     {
-      "name": "UpdateContentPropertyData",
-      "kind": "interface",
-      "file": "src/confluence/types/content-properties.ts",
-      "line": 9,
-      "signature": "export interface UpdateContentPropertyData { readonly key: string; readonly value: unknown; readonly version: { readonly…",
-      "jsdoc": "Request body for updating a content property on a page.",
-      "typeOnly": true
-    },
-    {
       "name": "UpdateCustomContentData",
       "kind": "interface",
       "file": "src/confluence/types/custom-content.ts",
@@ -3528,7 +3510,7 @@
       "name": "detectRequiredScopes",
       "kind": "function",
       "file": "src/core/scopes.ts",
-      "line": 715,
+      "line": 703,
       "signature": "export function detectRequiredScopes(operations: readonly string[]): AtlassianScope[]",
       "jsdoc": "Returns the deduplicated, sorted list of OAuth 2.0 scopes required for the given operations. @example detectRequiredScopes(['jira.issues.get', 'confluence.pages.create']) // → ['read…"
     },
@@ -3568,7 +3550,7 @@
       "name": "listKnownOperations",
       "kind": "function",
       "file": "src/core/scopes.ts",
-      "line": 734,
+      "line": 722,
       "signature": "export function listKnownOperations(): readonly string[]",
       "jsdoc": "Returns all registered operation names in alphabetical order. Useful for validation tooling and documentation generation."
     },
@@ -5676,7 +5658,7 @@
         {
           "name": "ConfluenceClient",
           "kind": "class",
-          "line": 45,
+          "line": 44,
           "exported": true,
           "signature": "export class ConfluenceClient",
           "jsdoc": "Client for the Atlassian Confluence Cloud REST API v2. @example ```ts import { ConfluenceClient } from 'atlassian-api-client'; const client = ne…",
@@ -5684,137 +5666,132 @@
             {
               "name": "pages",
               "kind": "property",
-              "line": 47
+              "line": 46
             },
             {
               "name": "spaces",
               "kind": "property",
-              "line": 49
+              "line": 48
             },
             {
               "name": "blogPosts",
               "kind": "property",
-              "line": 51
+              "line": 50
             },
             {
               "name": "comments",
               "kind": "property",
-              "line": 53
+              "line": 52
             },
             {
               "name": "attachments",
               "kind": "property",
-              "line": 55
+              "line": 54
             },
             {
               "name": "labels",
               "kind": "property",
-              "line": 57
-            },
-            {
-              "name": "contentProperties",
-              "kind": "property",
-              "line": 59
+              "line": 56
             },
             {
               "name": "customContent",
               "kind": "property",
-              "line": 61
+              "line": 58
             },
             {
               "name": "whiteboards",
               "kind": "property",
-              "line": 63
+              "line": 60
             },
             {
               "name": "tasks",
               "kind": "property",
-              "line": 65
+              "line": 62
             },
             {
               "name": "versions",
               "kind": "property",
-              "line": 67
+              "line": 64
             },
             {
               "name": "adminKey",
               "kind": "property",
-              "line": 69
+              "line": 66
             },
             {
               "name": "app",
               "kind": "property",
-              "line": 71
+              "line": 68
             },
             {
               "name": "classificationLevels",
               "kind": "property",
-              "line": 73
+              "line": 70
             },
             {
               "name": "content",
               "kind": "property",
-              "line": 75
+              "line": 72
             },
             {
               "name": "dataPolicies",
               "kind": "property",
-              "line": 77
+              "line": 74
             },
             {
               "name": "databases",
               "kind": "property",
-              "line": 79
+              "line": 76
             },
             {
               "name": "embeds",
               "kind": "property",
-              "line": 81
+              "line": 78
             },
             {
               "name": "folders",
               "kind": "property",
-              "line": 83
+              "line": 80
             },
             {
               "name": "footerComments",
               "kind": "property",
-              "line": 88
+              "line": 85
             },
             {
               "name": "inlineComments",
               "kind": "property",
-              "line": 95
+              "line": 92
             },
             {
               "name": "spacePermissions",
               "kind": "property",
-              "line": 97
+              "line": 94
             },
             {
               "name": "spaceRoleMode",
               "kind": "property",
-              "line": 99
+              "line": 96
             },
             {
               "name": "spaceRoles",
               "kind": "property",
-              "line": 101
+              "line": 98
             },
             {
               "name": "users",
               "kind": "property",
-              "line": 103
+              "line": 100
             },
             {
               "name": "usersBulk",
               "kind": "property",
-              "line": 105
+              "line": 102
             },
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 113
+              "line": 110
             }
           ]
         }
@@ -5829,7 +5806,6 @@
         "./resources/blog-posts.js",
         "./resources/classification-levels.js",
         "./resources/comments.js",
-        "./resources/content-properties.js",
         "./resources/content.js",
         "./resources/custom-content.js",
         "./resources/data-policies.js",
@@ -5939,17 +5915,6 @@
             {
               "exported": "CommentsResource",
               "original": "CommentsResource"
-            }
-          ]
-        },
-        {
-          "kind": "named",
-          "from": "./resources/content-properties.js",
-          "typeOnly": false,
-          "names": [
-            {
-              "exported": "ContentPropertiesResource",
-              "original": "ContentPropertiesResource"
             }
           ]
         },
@@ -6668,21 +6633,6 @@
             {
               "exported": "VersionSortOrder",
               "original": "VersionSortOrder"
-            }
-          ]
-        },
-        {
-          "kind": "named",
-          "from": "./types/content-properties.js",
-          "typeOnly": true,
-          "names": [
-            {
-              "exported": "ListContentPropertiesParams",
-              "original": "ListContentPropertiesParams"
-            },
-            {
-              "exported": "UpdateContentPropertyData",
-              "original": "UpdateContentPropertyData"
             }
           ]
         },
@@ -8193,58 +8143,6 @@
         "../../core/types.js",
         "../types/comments.js",
         "../types/common.js"
-      ]
-    },
-    {
-      "path": "src/confluence/resources/content-properties.ts",
-      "symbols": [
-        {
-          "name": "ContentPropertiesResource",
-          "kind": "class",
-          "line": 15,
-          "exported": true,
-          "signature": "export class ContentPropertiesResource",
-          "jsdoc": "Resource for Confluence page content properties. Content properties are arbitrary key-value metadata attached to pages.",
-          "members": [
-            {
-              "name": "constructor",
-              "kind": "constructor",
-              "line": 16
-            },
-            {
-              "name": "listForPage",
-              "kind": "method",
-              "line": 22
-            },
-            {
-              "name": "getForPage",
-              "kind": "method",
-              "line": 41
-            },
-            {
-              "name": "createForPage",
-              "kind": "method",
-              "line": 50
-            },
-            {
-              "name": "updateForPage",
-              "kind": "method",
-              "line": 60
-            },
-            {
-              "name": "deleteForPage",
-              "kind": "method",
-              "line": 74
-            }
-          ]
-        }
-      ],
-      "imports": [
-        "../../core/pagination.js",
-        "../../core/path.js",
-        "../../core/types.js",
-        "../types/common.js",
-        "../types/content-properties.js"
       ]
     },
     {
@@ -11035,27 +10933,6 @@
           "exported": true,
           "signature": "export interface RedactBlogPostResponse { readonly body?: { readonly redactions?: readonly RedactionPointerResponse[] };…",
           "jsdoc": "Response from `POST /blogposts/{id}/redact` — mirrors `RedactionResponse`."
-        }
-      ]
-    },
-    {
-      "path": "src/confluence/types/content-properties.ts",
-      "symbols": [
-        {
-          "name": "ListContentPropertiesParams",
-          "kind": "interface",
-          "line": 2,
-          "exported": true,
-          "signature": "export interface ListContentPropertiesParams { readonly key?: string; readonly limit?: number; readonly cursor?: string;…",
-          "jsdoc": "Parameters for listing content properties on a page."
-        },
-        {
-          "name": "UpdateContentPropertyData",
-          "kind": "interface",
-          "line": 9,
-          "exported": true,
-          "signature": "export interface UpdateContentPropertyData { readonly key: string; readonly value: unknown; readonly version: { readonly…",
-          "jsdoc": "Request body for updating a content property on a page."
         }
       ]
     },
@@ -14861,7 +14738,7 @@
         {
           "name": "detectRequiredScopes",
           "kind": "function",
-          "line": 715,
+          "line": 703,
           "exported": true,
           "signature": "export function detectRequiredScopes(operations: readonly string[]): AtlassianScope[]",
           "jsdoc": "Returns the deduplicated, sorted list of OAuth 2.0 scopes required for the given operations. @example detectRequiredScopes(['jira.issues.get', 'confluence.pages.create']) // → ['read…"
@@ -14869,7 +14746,7 @@
         {
           "name": "listKnownOperations",
           "kind": "function",
-          "line": 734,
+          "line": 722,
           "exported": true,
           "signature": "export function listKnownOperations(): readonly string[]",
           "jsdoc": "Returns all registered operation names in alphabetical order. Useful for validation tooling and documentation generation."
@@ -14877,21 +14754,21 @@
         {
           "name": "KNOWN_SCOPE_CATALOG",
           "kind": "variable",
-          "line": 743,
+          "line": 731,
           "signature": "const KNOWN_SCOPE_CATALOG: Record<AtlassianScope, true> = { 'read:page:confluence': true, 'write:page:confluence': true,…",
           "jsdoc": "Exhaustive catalog of every {@link AtlassianScope}. Typed as `Record<AtlassianScope, true>` so adding a member to the union WITHOUT adding it here is a compile error — that is what actually keeps the two in sync."
         },
         {
           "name": "KNOWN_SCOPES",
           "kind": "variable",
-          "line": 840,
+          "line": 828,
           "signature": "const KNOWN_SCOPES: ReadonlySet<AtlassianScope> = new Set( Object.keys(KNOWN_SCOPE_CATALOG) as AtlassianScope[], );",
           "jsdoc": "The complete set of well-known Atlassian Cloud OAuth 2.0 scope strings."
         },
         {
           "name": "ScopeValidationResult",
           "kind": "interface",
-          "line": 845,
+          "line": 833,
           "exported": true,
           "signature": "export interface ScopeValidationResult { readonly valid: readonly AtlassianScope[]; readonly unknown: readonly string[];…",
           "jsdoc": "Result of validating a set of scope strings."
@@ -14899,7 +14776,7 @@
         {
           "name": "validateScopes",
           "kind": "function",
-          "line": 866,
+          "line": 854,
           "exported": true,
           "signature": "export function validateScopes(scopes: readonly string[]): ScopeValidationResult",
           "jsdoc": "Validates a list of scope strings against the known Atlassian OAuth 2.0 scope catalog. Returns two partitions: `valid` (recognised) and `unknown` (not in the catalog). Order within each partition follows the input order. @example validateScopes(['read:issue:jira', 'write:made-up']) // → { valid: ['read:issue:…"
@@ -14907,7 +14784,7 @@
         {
           "name": "listKnownScopes",
           "kind": "function",
-          "line": 883,
+          "line": 871,
           "exported": true,
           "signature": "export function listKnownScopes(): readonly AtlassianScope[]",
           "jsdoc": "Returns all known Atlassian OAuth 2.0 scope strings in alphabetical order. Useful for listing available scopes in help output and validation tooling."
@@ -15366,20 +15243,12 @@
               "original": "ContentProperty"
             },
             {
-              "exported": "ListContentPropertiesParams",
-              "original": "ListContentPropertiesParams"
-            },
-            {
               "exported": "ListSharedContentPropertiesParams",
               "original": "ListSharedContentPropertiesParams"
             },
             {
               "exported": "CreateContentPropertyData",
               "original": "CreateContentPropertyData"
-            },
-            {
-              "exported": "UpdateContentPropertyData",
-              "original": "UpdateContentPropertyData"
             },
             {
               "exported": "UpdateSharedContentPropertyData",
