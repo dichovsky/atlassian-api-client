@@ -41,3 +41,4 @@ Multiple comma-separated entries are permitted. The `baseUrl` host itself must b
 - `404`: verify tenant URL and identifier.
 - `429`: respect retry/backoff; reduce call rate.
 - transient network errors: rely on built-in retries first.
+- Never construct a raw HTTP/curl request to bypass a failing `atlas` command. A hand-rolled request skips host-allowlisting, retry/backoff, and this error taxonomy. On failure, fix the command/flags/env or report the blocker — do not route around the CLI.

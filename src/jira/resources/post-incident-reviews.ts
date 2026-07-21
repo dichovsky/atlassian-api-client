@@ -10,10 +10,7 @@ import { encodePathSegment } from '../../core/path.js';
 
 /** Current status of a Post-Incident Review. */
 export type PostIncidentReviewStatus =
-  | 'in progress'
-  | 'outstanding actions'
-  | 'completed'
-  | 'unknown';
+  'in progress' | 'outstanding actions' | 'completed' | 'unknown';
 
 /** An association linked to a Post-Incident Review (e.g. Jira issue, service). */
 export interface PostIncidentReviewAssociation {

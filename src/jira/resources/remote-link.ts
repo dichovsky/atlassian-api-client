@@ -3,13 +3,7 @@ import { encodePathSegment } from '../../core/path.js';
 
 /** Status appearance for a remote link lozenge. */
 export type RemoteLinkAppearance =
-  | 'default'
-  | 'inprogress'
-  | 'moved'
-  | 'new'
-  | 'removed'
-  | 'prototype'
-  | 'success';
+  'default' | 'inprogress' | 'moved' | 'new' | 'removed' | 'prototype' | 'success';
 
 /** The type of a remote link. */
 export type RemoteLinkType =

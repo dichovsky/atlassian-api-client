@@ -12,13 +12,7 @@ import type {
  * Mirrors the OpenAPI `ContentStatus` enum.
  */
 export type ContentStatus =
-  | 'current'
-  | 'draft'
-  | 'archived'
-  | 'historical'
-  | 'trashed'
-  | 'deleted'
-  | 'any';
+  'current' | 'draft' | 'archived' | 'historical' | 'trashed' | 'deleted' | 'any';
 
 /**
  * The representation formats accepted by single-comment retrieval endpoints
@@ -314,10 +308,7 @@ export type FooterCommentVersionDetail = DetailedVersion;
  * `-` for descending.
  */
 export type InlineCommentSortOrder =
-  | 'created-date'
-  | '-created-date'
-  | 'modified-date'
-  | '-modified-date';
+  'created-date' | '-created-date' | 'modified-date' | '-modified-date';
 
 /** Parameters for tenant-wide `GET /inline-comments`. */
 export interface ListInlineCommentsAllParams {

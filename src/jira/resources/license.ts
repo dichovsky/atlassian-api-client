@@ -15,10 +15,7 @@ export interface LicenseMetric {
  * `/rest/api/3/license/approximateLicenseCount/product/{applicationKey}`.
  */
 export type ApplicationKey =
-  | 'jira-core'
-  | 'jira-product-discovery'
-  | 'jira-software'
-  | 'jira-servicedesk';
+  'jira-core' | 'jira-product-discovery' | 'jira-software' | 'jira-servicedesk';
 
 /** Jira License resource — GET /rest/api/3/license/approximateLicenseCount endpoints. */
 export class LicenseResource {
