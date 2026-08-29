@@ -117,6 +117,36 @@ describe('parseCommand', () => {
     expect(result.options['format']).toBe('minimal');
   });
 
+  it('parses the legacy projects --recent count', () => {
+    const result = parseCommand([
+      'node',
+      'atlas',
+      'jira',
+      'projects',
+      'list-legacy',
+      '--recent',
+      '20',
+    ]);
+
+    expect(result.options['recent']).toBe('20');
+  });
+
+  it('parses the Jira-only --software-cloud-id global option', () => {
+    const result = parseCommand([
+      'node',
+      'atlas',
+      'jira',
+      'bulk',
+      'submit-builds',
+      '--software-cloud-id',
+      'cloud-123',
+      '--value',
+      '{"builds":[]}',
+    ]);
+
+    expect(result.options['software-cloud-id']).toBe('cloud-123');
+  });
+
   it('parses --purge boolean flag', () => {
     // Arrange
     const argv = ['node', 'atlas', 'confluence', 'pages', 'delete', '123', '--purge'];
@@ -799,6 +829,53 @@ describe('parseCommand', () => {
     expect(result.options['validate-query']).toBe('true');
   });
 
+  it('parses current board list and create-location flags', () => {
+    const list = parseCommand([
+      'node',
+      'atlas',
+      'jira',
+      'boards',
+      'list',
+      '--account-id-location',
+      'account-1',
+      '--project-location',
+      'PROJ',
+      '--project-type-location',
+      'software,business',
+      '--include-private',
+      'false',
+      '--negate-location-filtering',
+      'true',
+    ]);
+    expect(list.options).toMatchObject({
+      'account-id-location': 'account-1',
+      'project-location': 'PROJ',
+      'project-type-location': 'software,business',
+      'include-private': 'false',
+      'negate-location-filtering': 'true',
+    });
+
+    const create = parseCommand([
+      'node',
+      'atlas',
+      'jira',
+      'boards',
+      'create',
+      '--name',
+      'Discovery',
+      '--type',
+      'agility',
+      '--filter-id',
+      '5',
+      '--location-type',
+      'project',
+      '--location-project-key-or-id',
+      'PROJ',
+    ]);
+    expect(create.options['location-type']).toBe('project');
+    expect(create.options['location-project-key-or-id']).toBe('PROJ');
+  });
+
   // B1063: tri-state filter flags must accept an explicit `false` value rather
   // than swallowing it as a positional (the boolean-flag bug). Each flag below
   // defaults to a non-false value on the wire (or is a 3-valued filter), so the
@@ -926,6 +1003,85 @@ describe('parseCommand', () => {
       const argv = ['node', 'atlas', 'jira', 'priorities', 'search', '--only-default'];
       const result = parseCommand(argv);
       expect(result.options['only-default']).toBe(true);
+    });
+  });
+
+  it('parses the refreshed Confluence v2 space/page/task flags through real parseArgs', () => {
+    const result = parseCommand([
+      'node',
+      'atlas',
+      'confluence',
+      'spaces',
+      'list',
+      '--labels',
+      'team-a,priority',
+      '--favorited-by',
+      'acc-1',
+      '--description-format',
+      'view',
+      '--include-icon',
+      '--include-permissions',
+      '--include-role-assignments',
+      '--no-include-version',
+      '--embedded',
+      '--root-level',
+      '--completed-at-from',
+      '1700000000000',
+      '--completed-at-to',
+      '1710000000000',
+    ]);
+
+    expect(result.options).toMatchObject({
+      labels: 'team-a,priority',
+      'favorited-by': 'acc-1',
+      'description-format': 'view',
+      'include-icon': true,
+      'include-permissions': true,
+      'include-role-assignments': true,
+      'no-include-version': true,
+      embedded: true,
+      'root-level': true,
+      'completed-at-from': '1700000000000',
+      'completed-at-to': '1710000000000',
+    });
+  });
+
+  it('parses refreshed Jira Platform flags through real parseArgs', () => {
+    const result = parseCommand([
+      'node',
+      'atlas',
+      'jira',
+      'issues',
+      'export-archived',
+      '--archived-by',
+      'acc-1,acc-2',
+      '--date-after',
+      '2026-01-01',
+      '--date-before',
+      '2026-01-31',
+      '--issue-types',
+      '10000,10001',
+      '--reporters',
+      'acc-3',
+      '--is-returning-keys',
+      '--field-type',
+      'comment_adf,worklog_adf',
+      '--include-ai-agents',
+      '--include-global-statuses',
+      '--retrigger-completed-migration',
+    ]);
+
+    expect(result.options).toMatchObject({
+      'archived-by': 'acc-1,acc-2',
+      'date-after': '2026-01-01',
+      'date-before': '2026-01-31',
+      'issue-types': '10000,10001',
+      reporters: 'acc-3',
+      'is-returning-keys': true,
+      'field-type': 'comment_adf,worklog_adf',
+      'include-ai-agents': true,
+      'include-global-statuses': true,
+      'retrigger-completed-migration': true,
     });
   });
 });

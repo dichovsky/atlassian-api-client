@@ -8,6 +8,7 @@ import type {
 /** Parameters for listing labels on a page or blog post. */
 export interface ListLabelsParams {
   readonly prefix?: string;
+  readonly sort?: LabelSortOrder;
   readonly limit?: number;
   readonly cursor?: string;
 }

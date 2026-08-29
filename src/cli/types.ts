@@ -15,6 +15,11 @@ export interface GlobalOptions {
    * their tenant. PR review (round 3).
    */
   readonly allowedHosts?: readonly string[];
+  /**
+   * Jira-only opt-in for Atlassian's Software integration OAuth proxy.
+   * Maps to `JiraClientConfig.softwareIntegrationProxy.cloudId`.
+   */
+  readonly softwareCloudId?: string;
 }
 
 export interface ParsedCommand {

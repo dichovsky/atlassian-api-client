@@ -17,6 +17,7 @@ import type { CustomContent } from '../types/custom-content.js';
 import type { Page } from '../types/pages.js';
 import type {
   CreateSpaceData,
+  GetSpaceParams,
   ListSpaceBlogPostsParams,
   ListSpaceContentLabelsParams,
   ListSpaceCustomContentParams,
@@ -95,10 +96,11 @@ export class SpacesResource {
    *
    * @see https://developer.atlassian.com/cloud/confluence/rest/v2/api-group-space/#api-spaces-id-get
    */
-  async get(id: string): Promise<Space> {
+  async get(id: string, params?: GetSpaceParams): Promise<Space> {
     const response = await this.transport.request<Space>({
       method: 'GET',
       path: `${this.baseUrl}/spaces/${encodePathSegment(id)}`,
+      query: params as Query | undefined,
     });
     return response.data;
   }
@@ -633,8 +635,8 @@ export class SpacesResource {
    * `list` and `listAll` so the param-omission rules stay in one place. The
    * `cursor` param is intentionally excluded — `listAll` threads cursors
    * itself, and `list` overlays its caller-supplied cursor after this helper
-   * returns. `keys` is `type: array` → repeated params baked into the path,
-   * not CSV (B1049); `status`/`type` are `type: string` and stay scalar.
+   * returns. `ids`, `keys`, and `labels` are array parameters and are emitted
+   * as repeated query pairs; scalar filters stay in the query bag.
    */
   private buildSpaces(
     basePath: string,
@@ -642,9 +644,20 @@ export class SpacesResource {
   ): PathAndQuery {
     const query: Query = {};
     if (params === undefined) return { path: basePath, query };
-    const path = appendScalarOrArrayParam(basePath, 'keys', params.keys);
+    let path = appendScalarOrArrayParam(basePath, 'ids', params.ids);
+    path = appendScalarOrArrayParam(path, 'keys', params.keys);
+    path = appendScalarOrArrayParam(path, 'labels', params.labels);
     if (params.type !== undefined) query['type'] = params.type;
     if (params.status !== undefined) query['status'] = params.status;
+    if (params['favorited-by'] !== undefined) query['favorited-by'] = params['favorited-by'];
+    if (params['not-favorited-by'] !== undefined) {
+      query['not-favorited-by'] = params['not-favorited-by'];
+    }
+    if (params.sort !== undefined) query['sort'] = params.sort;
+    if (params['description-format'] !== undefined) {
+      query['description-format'] = params['description-format'];
+    }
+    if (params['include-icon'] !== undefined) query['include-icon'] = params['include-icon'];
     if (params.limit !== undefined) query['limit'] = params.limit;
     return { path, query };
   }

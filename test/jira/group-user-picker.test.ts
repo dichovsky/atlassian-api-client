@@ -197,6 +197,14 @@ describe('GroupUserPickerResource', () => {
       expect(transport.lastCall?.options.query).toMatchObject({ caseInsensitive: true });
     });
 
+    it('forwards includeAiAgents from the current spec', async () => {
+      transport.respondWith(makePickerResponse());
+
+      await picker.pick({ query: 'agent', includeAiAgents: true });
+
+      expect(transport.lastCall?.options.query).toMatchObject({ includeAiAgents: true });
+    });
+
     it('forwards projectId array as repeated query params in path, not CSV', async () => {
       // Spec: projectId is type:array, sent as repeated params.
       transport.respondWith(makePickerResponse());

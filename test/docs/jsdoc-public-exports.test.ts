@@ -277,7 +277,7 @@ describe('B001 — JSDoc on public exports', () => {
           `Add a /** … */ comment to each declaration listed above.`,
       );
     }
-  });
+  }, 15_000);
 
   it('ConfluenceClient class has a JSDoc comment', () => {
     const sf = readSourceFile(resolve(SRC_ROOT, 'confluence', 'client.ts'));

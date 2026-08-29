@@ -288,7 +288,13 @@ describe('ConfigResource', () => {
 
   describe('listFields()', () => {
     it('calls GET /config/fieldschemes/{id}/fields', async () => {
-      const page = makePageOf([{ fieldId: 'customfield_10001' }]);
+      const page = makePageOf([
+        {
+          fieldId: 'customfield_10001',
+          parameters: { rendererType: 'jira-text-renderer' },
+          workTypeParameters: [{ workTypeId: '10000', rendererType: 'atlassian-wiki-renderer' }],
+        },
+      ]);
       transport.respondWith(page);
 
       const result = await resource.listFields(10001);
@@ -379,7 +385,17 @@ describe('ConfigResource', () => {
 
   describe('getFieldParameters()', () => {
     it('calls GET /config/fieldschemes/{id}/fields/{fieldId}/parameters', async () => {
-      const params = { fieldId: 'customfield_10001', parameters: { isRequired: true } };
+      const params = {
+        fieldId: 'customfield_10001',
+        parameters: { isRequired: true, rendererType: 'jira-text-renderer' },
+        workTypeParameters: [
+          {
+            isRequired: false,
+            rendererType: 'atlassian-wiki-renderer',
+            workTypeId: 10000,
+          },
+        ],
+      };
       transport.respondWith(params);
 
       const result = await resource.getFieldParameters(10001, 'customfield_10001');
@@ -582,7 +598,12 @@ describe('ConfigResource', () => {
       transport.respondWith(responseBody);
 
       const body = {
-        customfield_10001: [{ schemeIds: [10001], parameters: { isRequired: true } }],
+        customfield_10001: [
+          {
+            schemeIds: [10001],
+            parameters: { isRequired: true, rendererType: 'jira-text-renderer' as const },
+          },
+        ],
       };
       const result = await resource.updateFieldParameters(body);
 

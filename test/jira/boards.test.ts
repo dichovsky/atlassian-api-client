@@ -381,7 +381,7 @@ describe('BoardsResource', () => {
       await expect(gen.next()).rejects.toThrow(ValidationError);
     });
 
-    it('passes all listAll params including projectKeyOrId', async () => {
+    it('passes every list filter through listAll()', async () => {
       // Arrange
       transport.respondWith({
         values: [],
@@ -396,6 +396,14 @@ describe('BoardsResource', () => {
         type: 'kanban',
         name: 'Board',
         projectKeyOrId: 'PROJ',
+        accountIdLocation: 'account-123',
+        projectLocation: 'project-123',
+        includePrivate: true,
+        negateLocationFiltering: false,
+        orderBy: '-name',
+        expand: 'admins',
+        projectTypeLocation: ['software', 'business'],
+        filterId: 10001,
       })) {
         // consume
       }
@@ -406,7 +414,17 @@ describe('BoardsResource', () => {
         type: 'kanban',
         name: 'Board',
         projectKeyOrId: 'PROJ',
+        accountIdLocation: 'account-123',
+        projectLocation: 'project-123',
+        includePrivate: true,
+        negateLocationFiltering: false,
+        orderBy: '-name',
+        expand: 'admins',
+        filterId: 10001,
       });
+      expect(transport.calls[0]?.options.path).toBe(
+        `${BASE_URL}/board?projectTypeLocation=software&projectTypeLocation=business`,
+      );
     });
 
     it('omits undefined optional params when params object is provided with only maxResults', async () => {
@@ -2216,6 +2234,61 @@ describe('BoardsResource', () => {
       await expect(boards.getSprintIssuesEnhanced(42, 10, { maxResults: 0 })).rejects.toThrow(
         ValidationError,
       );
+    });
+  });
+
+  describe('approximate issue counts', () => {
+    it('gets an approximate backlog issue count with optional JQL', async () => {
+      transport.respondWith({ count: 123 });
+
+      const result = await boards.getBacklogApproximateCount(42, {
+        jql: 'statusCategory != Done',
+      });
+
+      expect(result).toEqual({ count: 123 });
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${SOFTWARE_BASE_URL}/board/42/backlog/approximate-count`,
+        query: { jql: 'statusCategory != Done' },
+      });
+    });
+
+    it('gets an approximate backlog issue count without a query bag', async () => {
+      transport.respondWith({ count: 234 });
+
+      await boards.getBacklogApproximateCount(42);
+
+      expect(transport.lastCall?.options.query).toBeUndefined();
+    });
+
+    it('gets an approximate board issue count without a query bag', async () => {
+      transport.respondWith({ count: 456 });
+
+      const result = await boards.getIssueApproximateCount(42);
+
+      expect(result).toEqual({ count: 456 });
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${SOFTWARE_BASE_URL}/board/42/issue/approximate-count`,
+      });
+      expect(transport.lastCall?.options.query).toBeUndefined();
+    });
+
+    it('gets an approximate board issue count with optional JQL', async () => {
+      transport.respondWith({ count: 567 });
+
+      await boards.getIssueApproximateCount(42, { jql: 'assignee = currentUser()' });
+
+      expect(transport.lastCall?.options.query).toEqual({
+        jql: 'assignee = currentUser()',
+      });
+    });
+
+    it.each([
+      ['backlog', () => boards.getBacklogApproximateCount(0)],
+      ['board', () => boards.getIssueApproximateCount(-1)],
+    ])('rejects an invalid boardId for the %s count endpoint', async (_name, request) => {
+      await expect(request()).rejects.toThrow('boardId must be a positive integer');
     });
   });
 

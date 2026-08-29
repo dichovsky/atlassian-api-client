@@ -137,6 +137,46 @@ describe('PagesResource', () => {
 
       expect(transport.lastCall?.options.query).toMatchObject(params);
     });
+
+    it('serializes repeated status filters separately from all scalar get flags', async () => {
+      transport.respondWith(makePage('42'));
+
+      await pages.get('42', {
+        'body-format': 'atlas_doc_format',
+        'get-draft': true,
+        status: ['current', 'draft'],
+        version: 3,
+        'include-labels': true,
+        'include-properties': true,
+        'include-operations': true,
+        'include-likes': true,
+        'include-versions': true,
+        'include-version': false,
+        'include-favorited-by-current-user-status': true,
+        'include-webresources': true,
+        'include-collaborators': true,
+        'include-direct-children': true,
+      });
+
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/pages/42?status=current&status=draft`,
+      );
+      expect(transport.lastCall?.options.query).toEqual({
+        'body-format': 'atlas_doc_format',
+        'get-draft': true,
+        version: 3,
+        'include-labels': true,
+        'include-properties': true,
+        'include-operations': true,
+        'include-likes': true,
+        'include-versions': true,
+        'include-version': false,
+        'include-favorited-by-current-user-status': true,
+        'include-webresources': true,
+        'include-collaborators': true,
+        'include-direct-children': true,
+      });
+    });
   });
 
   // ── create ────────────────────────────────────────────────────────────────
@@ -157,6 +197,20 @@ describe('PagesResource', () => {
       expect(transport.lastCall?.options).toMatchObject({
         method: 'POST',
         path: `${BASE_URL}/pages`,
+        body: data,
+      });
+    });
+
+    it('forwards embedded, private, and root-level create query parameters', async () => {
+      transport.respondWith(makePage('100'));
+      const data = { spaceId: 'SPACE', title: 'Root page' };
+
+      await pages.create(data, { embedded: true, private: true, 'root-level': true });
+
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'POST',
+        path: `${BASE_URL}/pages`,
+        query: { embedded: true, private: true, 'root-level': true },
         body: data,
       });
     });

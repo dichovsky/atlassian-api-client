@@ -129,6 +129,8 @@ export interface SearchStatusesParams {
   readonly searchString?: string;
   /** Filter by status category: `'TODO'`, `'IN_PROGRESS'`, or `'DONE'`. */
   readonly statusCategory?: 'TODO' | 'IN_PROGRESS' | 'DONE';
+  /** Include global statuses when filtering by a project. Defaults to false. */
+  readonly includeGlobalStatuses?: boolean;
 }
 
 /** Query parameters for the usages endpoints (B780-B782). */
@@ -373,5 +375,7 @@ function buildSearchQuery(
   if (params?.maxResults !== undefined) query['maxResults'] = params.maxResults;
   if (params?.searchString !== undefined) query['searchString'] = params.searchString;
   if (params?.statusCategory !== undefined) query['statusCategory'] = params.statusCategory;
+  if (params?.includeGlobalStatuses !== undefined)
+    query['includeGlobalStatuses'] = params.includeGlobalStatuses;
   return query;
 }

@@ -48,7 +48,7 @@ export interface PermissionScheme {
       readonly name?: string;
       readonly self?: string;
       readonly simplified?: boolean;
-      readonly projectTypeKey?: 'software' | 'service_desk' | 'business';
+      readonly projectTypeKey?: 'software' | 'service_desk' | 'business' | 'product_discovery';
     };
   };
 }

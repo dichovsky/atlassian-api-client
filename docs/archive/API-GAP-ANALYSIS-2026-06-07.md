@@ -1,5 +1,7 @@
 # API Coverage Gap Analysis — 2026-06-07
 
+> **2026-08-29 update:** the two Jira Software approximate-count gaps B1002/B1006 described below are now implemented. Counts and blocker text are retained as a historical snapshot.
+
 > Re-verification of this client's coverage of the three official Atlassian OpenAPI specs, with a deterministic path-diff (auto-extracted SDK request paths vs spec operations) followed by multi-agent adversarial verification. Supersedes the informal "coverage complete" status asserted 2026-06-02.
 
 ## Method

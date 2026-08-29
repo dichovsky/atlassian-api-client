@@ -37,7 +37,7 @@ describe('LabelsResource', () => {
     it('includes params when provided', async () => {
       // Arrange
       transport.respondWith({ results: [], _links: {} });
-      const params = { prefix: 'global', limit: 15, cursor: 'tok' };
+      const params = { prefix: 'global', sort: '-name' as const, limit: 15, cursor: 'tok' };
 
       // Act
       await labels.listForPage('page-1', params);

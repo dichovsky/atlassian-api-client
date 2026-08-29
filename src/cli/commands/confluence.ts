@@ -16,11 +16,17 @@ import type {
   CustomContentSortOrder,
   DataPolicySpaceSortOrder,
   GetBlogPostParams,
+  GetPageParams,
+  GetSpaceParams,
   InlineCommentResolutionStatus,
   LabelPrefix,
   LabelSortOrder,
   PageContentStatus,
   PageSortOrder,
+  SpaceDescriptionFormat,
+  SpaceSortOrder,
+  SpaceStatus,
+  SpaceType,
   SpaceRolePrincipalType,
   SpaceRoleType,
   VersionSortOrder,
@@ -102,14 +108,28 @@ async function executePages(client: ConfluenceClient, cmd: ParsedCommand): Promi
         cursor: asString(opts['cursor']),
         'body-format': asString(opts['body-format']) as 'storage' | undefined,
       });
-    case 'get':
-      return client.pages.get(requireArg(cmd.positionalArgs[0], 'page ID'));
-    case 'create':
-      return client.pages.create({
+    case 'get': {
+      const pageId = requireArg(cmd.positionalArgs[0], 'page ID');
+      const getParams = buildGetPageParams(opts);
+      return getParams !== undefined
+        ? client.pages.get(pageId, getParams)
+        : client.pages.get(pageId);
+    }
+    case 'create': {
+      const createParams = {
+        ...(opts['embedded'] === true ? { embedded: true } : {}),
+        ...(opts['private'] === true ? { private: true } : {}),
+        ...(opts['root-level'] === true ? { 'root-level': true } : {}),
+      };
+      const data = {
         spaceId: requireOpt(opts['space-id'], '--space-id'),
         title: requireOpt(opts['title'], '--title'),
         body: makeBody(asString(opts['body'])),
-      });
+      };
+      return Object.keys(createParams).length > 0
+        ? client.pages.create(data, createParams)
+        : client.pages.create(data);
+    }
     case 'update': {
       const versionNum = requirePositiveInt(opts['version-number'], '--version-number');
       // `body` is required by the spec (PageUpdateRequest required array).
@@ -293,12 +313,16 @@ async function executePages(client: ConfluenceClient, cmd: ParsedCommand): Promi
     }
 
     // ── B1020: versions list ──────────────────────────────────────────────
-    // NOTE: ListVersionsParams only has limit+cursor (no sort/body-format)
-    case 'versions':
+    case 'versions': {
+      const versionSort = asEnum(opts['sort'], VERSION_SORT_ORDERS, 'sort');
+      const versionBodyFormat = asEnum(opts['body-format'], CONTENT_BODY_FORMATS, 'body-format');
       return client.versions.listForPage(requireArg(cmd.positionalArgs[0], 'page ID'), {
+        ...(versionBodyFormat !== undefined ? { 'body-format': versionBodyFormat } : {}),
+        ...(versionSort !== undefined ? { sort: versionSort } : {}),
         cursor: asString(opts['cursor']),
         limit: asPositiveInt(opts['limit'], '--limit'),
       });
+    }
 
     // ── B1019: footer / inline comments ──────────────────────────────────
     case 'footer-comments': {
@@ -365,13 +389,35 @@ async function executeSpaces(client: ConfluenceClient, cmd: ParsedCommand): Prom
   const opts = cmd.options;
 
   switch (cmd.action) {
-    case 'list':
+    case 'list': {
+      const type = asEnum(opts['type'], SPACE_TYPES, 'type');
+      const status = asEnum(opts['status'], SPACE_STATUSES, 'status');
+      const sort = asEnum(opts['sort'], SPACE_SORT_ORDERS, 'sort');
+      const descriptionFormat = asEnum(
+        opts['description-format'],
+        SPACE_DESCRIPTION_FORMATS,
+        'description-format',
+      );
       return client.spaces.list({
+        ids: parseCsvIntList(asString(opts['ids'])),
+        keys: parseCsvList(asString(opts['keys'])),
+        ...(type !== undefined ? { type } : {}),
+        ...(status !== undefined ? { status } : {}),
+        labels: parseCsvList(asString(opts['labels'])),
+        'favorited-by': asString(opts['favorited-by']),
+        'not-favorited-by': asString(opts['not-favorited-by']),
+        ...(sort !== undefined ? { sort } : {}),
+        ...(descriptionFormat !== undefined ? { 'description-format': descriptionFormat } : {}),
+        'include-icon': opts['include-icon'] === true ? true : undefined,
         limit: asPositiveInt(opts['limit'], '--limit'),
         cursor: asString(opts['cursor']),
       });
-    case 'get':
-      return client.spaces.get(requireArg(cmd.positionalArgs[0], 'space ID'));
+    }
+    case 'get': {
+      const spaceId = requireArg(cmd.positionalArgs[0], 'space ID');
+      const params = buildGetSpaceParams(opts);
+      return params !== undefined ? client.spaces.get(spaceId, params) : client.spaces.get(spaceId);
+    }
 
     // ── lifecycle (B196) ──────────────────────────────────────────────────
     case 'create': {
@@ -959,11 +1005,18 @@ async function executeAttachments(client: ConfluenceClient, cmd: ParsedCommand):
   const opts = cmd.options;
 
   switch (cmd.action) {
-    case 'list':
+    case 'list': {
+      const sort = asEnum(opts['sort'], ATTACHMENT_SORT_ORDERS, 'sort');
+      const status = parseAttachmentStatuses(asString(opts['status']));
       return client.attachments.listForPage(requireOpt(opts['page-id'], '--page-id'), {
+        ...(sort !== undefined ? { sort } : {}),
+        ...(status !== undefined ? { status } : {}),
+        mediaType: asString(opts['media-type']),
+        filename: asString(opts['filename']),
         limit: asPositiveInt(opts['limit'], '--limit'),
         cursor: asString(opts['cursor']),
       });
+    }
     case 'list-all': {
       const sort = asEnum(opts['sort'], ATTACHMENT_SORT_ORDERS, 'sort');
       const status = parseAttachmentStatuses(asString(opts['status']));
@@ -1140,11 +1193,16 @@ async function executeLabels(client: ConfluenceClient, cmd: ParsedCommand): Prom
   const opts = cmd.options;
 
   switch (cmd.action) {
-    case 'list':
+    case 'list': {
+      const prefix = asEnum(opts['prefix'], LABEL_PREFIXES, 'prefix');
+      const sort = asEnum(opts['sort'], LABEL_SORT_ORDERS, 'sort');
       return client.labels.listForPage(requireOpt(opts['page-id'], '--page-id'), {
+        ...(prefix !== undefined ? { prefix } : {}),
+        ...(sort !== undefined ? { sort } : {}),
         limit: asPositiveInt(opts['limit'], '--limit'),
         cursor: asString(opts['cursor']),
       });
+    }
     case 'list-all': {
       const sort = asEnum(opts['sort'], LABEL_SORT_ORDERS, 'sort');
       return client.labels.list({
@@ -1745,6 +1803,22 @@ const SPACE_PAGE_DEPTHS = ['all', 'root'] as const;
 
 const SPACE_PAGE_STATUSES = ['current', 'archived', 'deleted', 'trashed'] as const;
 
+const SPACE_TYPES: readonly SpaceType[] = [
+  'global',
+  'collaboration',
+  'knowledge_base',
+  'personal',
+  'system',
+  'onboarding',
+  'xflow_sample_space',
+];
+
+const SPACE_STATUSES: readonly SpaceStatus[] = ['current', 'archived', 'trashed'];
+
+const SPACE_SORT_ORDERS: readonly SpaceSortOrder[] = ['id', '-id', 'key', '-key', 'name', '-name'];
+
+const SPACE_DESCRIPTION_FORMATS: readonly SpaceDescriptionFormat[] = ['plain', 'view'];
+
 /**
  * Split `--space-permissions` from the CLI into a non-empty array. Accepts a
  * comma-separated list of permission ids (e.g. `read/space,write/space`);
@@ -1783,6 +1857,8 @@ async function executeTasks(client: ConfluenceClient, cmd: ParsedCommand): Promi
         createdAtTo: asPositiveInt(opts['created-at-to'], '--created-at-to'),
         dueAtFrom: asPositiveInt(opts['due-at-from'], '--due-at-from'),
         dueAtTo: asPositiveInt(opts['due-at-to'], '--due-at-to'),
+        completedAtFrom: asNonNegativeInt(opts['completed-at-from'], '--completed-at-from'),
+        completedAtTo: asNonNegativeInt(opts['completed-at-to'], '--completed-at-to'),
         cursor: asString(opts['cursor']),
         limit: asPositiveInt(opts['limit'], '--limit'),
       });
@@ -1790,10 +1866,14 @@ async function executeTasks(client: ConfluenceClient, cmd: ParsedCommand): Promi
       return client.tasks.get(requireArg(cmd.positionalArgs[0], 'task ID'), {
         'body-format': asString(opts['body-format']) as 'storage' | 'atlas_doc_format' | undefined,
       });
-    case 'update':
-      return client.tasks.update(requireArg(cmd.positionalArgs[0], 'task ID'), {
-        status: requireEnum(opts['status'], TASK_STATUSES, '--status'),
-      });
+    case 'update': {
+      const taskId = requireArg(cmd.positionalArgs[0], 'task ID');
+      const data = { status: requireEnum(opts['status'], TASK_STATUSES, '--status') };
+      const bodyFormat = asEnum(opts['body-format'], CONTENT_BODY_FORMATS, 'body-format');
+      return bodyFormat !== undefined
+        ? client.tasks.update(taskId, data, { 'body-format': bodyFormat })
+        : client.tasks.update(taskId, data);
+    }
     default:
       throw new Error(`Unknown tasks action: ${cmd.action}. Actions: list, get, update`);
   }
@@ -2405,6 +2485,16 @@ function asPositiveInt(value: string | boolean | undefined, name: string): numbe
   return n;
 }
 
+/** Parse an optional epoch-millisecond value (integer, zero included). */
+function asNonNegativeInt(value: string | boolean | undefined, name: string): number | undefined {
+  if (typeof value !== 'string') return undefined;
+  const n = Number(value);
+  if (!Number.isInteger(n) || n < 0) {
+    throw new Error(`${name} must be a non-negative integer, got: ${value}`);
+  }
+  return n;
+}
+
 /**
  * Like {@link asPositiveInt} but rejects missing values: requires the flag,
  * then validates it is a positive integer. Returns the parsed number. The
@@ -2566,6 +2656,25 @@ const PAGE_SORT_ORDERS: readonly PageSortOrder[] = [
   'title',
   '-title',
 ];
+
+const PAGE_LOOKUP_STATUSES = [
+  'current',
+  'archived',
+  'trashed',
+  'deleted',
+  'historical',
+  'draft',
+] as const;
+
+const PAGE_BODY_REPRESENTATIONS = [
+  'storage',
+  'atlas_doc_format',
+  'view',
+  'export_view',
+  'anonymous_export_view',
+  'styled_view',
+  'editor',
+] as const;
 
 const CONTENT_BODY_FORMATS = ['storage', 'atlas_doc_format'] as const;
 
@@ -2788,4 +2897,58 @@ function buildGetBlogPostParams(
   if (opts['include-webresources'] === true) params['include-webresources'] = true;
   if (opts['include-collaborators'] === true) params['include-collaborators'] = true;
   return Object.keys(params).length === 0 ? undefined : (params as GetBlogPostParams);
+}
+
+/** Project the current `GET /pages/{id}` flags onto its query contract. */
+function buildGetPageParams(
+  opts: Record<string, string | boolean | undefined>,
+): GetPageParams | undefined {
+  if (opts['include-version'] === true && opts['no-include-version'] === true) {
+    throw new Error('Cannot specify both --include-version and --no-include-version');
+  }
+  const params: Record<string, unknown> = {};
+  const bodyFormat = asEnum(opts['body-format'], PAGE_BODY_REPRESENTATIONS, 'body-format');
+  if (bodyFormat !== undefined) params['body-format'] = bodyFormat;
+  if (opts['get-draft'] === true) params['get-draft'] = true;
+  const status = asEnumArray(opts['status'], PAGE_LOOKUP_STATUSES, 'status');
+  if (status !== undefined) params['status'] = status;
+  const historicalVersion = asPositiveInt(opts['historical-version'], '--historical-version');
+  if (historicalVersion !== undefined) params['version'] = historicalVersion;
+  if (opts['include-labels'] === true) params['include-labels'] = true;
+  if (opts['include-properties'] === true) params['include-properties'] = true;
+  if (opts['include-operations'] === true) params['include-operations'] = true;
+  if (opts['include-likes'] === true) params['include-likes'] = true;
+  if (opts['include-versions'] === true) params['include-versions'] = true;
+  if (opts['include-version'] === true) {
+    params['include-version'] = true;
+  } else if (opts['no-include-version'] === true) {
+    params['include-version'] = false;
+  }
+  if (opts['include-favorited-by-current-user-status'] === true) {
+    params['include-favorited-by-current-user-status'] = true;
+  }
+  if (opts['include-webresources'] === true) params['include-webresources'] = true;
+  if (opts['include-collaborators'] === true) params['include-collaborators'] = true;
+  if (opts['include-direct-children'] === true) params['include-direct-children'] = true;
+  return Object.keys(params).length === 0 ? undefined : (params as GetPageParams);
+}
+
+/** Project `GET /spaces/{id}` flags while preserving the no-params overload. */
+function buildGetSpaceParams(
+  opts: Record<string, string | boolean | undefined>,
+): GetSpaceParams | undefined {
+  const params: Record<string, unknown> = {};
+  const descriptionFormat = asEnum(
+    opts['description-format'],
+    SPACE_DESCRIPTION_FORMATS,
+    'description-format',
+  );
+  if (descriptionFormat !== undefined) params['description-format'] = descriptionFormat;
+  if (opts['include-icon'] === true) params['include-icon'] = true;
+  if (opts['include-operations'] === true) params['include-operations'] = true;
+  if (opts['include-properties'] === true) params['include-properties'] = true;
+  if (opts['include-permissions'] === true) params['include-permissions'] = true;
+  if (opts['include-role-assignments'] === true) params['include-role-assignments'] = true;
+  if (opts['include-labels'] === true) params['include-labels'] = true;
+  return Object.keys(params).length === 0 ? undefined : (params as GetSpaceParams);
 }

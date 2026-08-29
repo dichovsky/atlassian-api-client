@@ -3,6 +3,7 @@ import { encodePathSegment } from '../../core/path.js';
 import type { OffsetPaginatedResponse } from '../../core/pagination.js';
 import { paginateOffset, validatePageSize } from '../../core/pagination.js';
 import { appendRepeatedParams } from '../../core/query.js';
+import { ValidationError } from '../../core/errors.js';
 import type { Project, ListProjectsParams } from '../types.js';
 import type { TaskProgressBeanObject } from './workflowscheme.js';
 
@@ -139,6 +140,7 @@ export interface ProjectRole {
 }
 
 export interface ProjectRoleDetails extends ProjectRole {
+  readonly type?: 'DEFAULT' | 'GUEST_ROLE' | 'AI_AGENT_ROLE';
   readonly roleConfigurable?: boolean;
   readonly translatedName?: string;
   readonly currentUserRole?: boolean;
@@ -199,18 +201,8 @@ export interface ListProjectVersionsParams {
   readonly expand?: string;
 }
 
-/**
- * Parameters for `GET /rest/api/3/project/{key}/versions` (flat list, no pagination).
- *
- * WIRE NOTE: Spec only accepts `expand` on this endpoint. The extra params below
- * (`maxResults`, `orderBy`, `query`, `status`) are sent by the CLI but are not in
- * the spec — kept for CLI compatibility pending a CLI update (DEFERRED, B1056-F4).
- */
+/** Parameters for `GET /rest/api/3/project/{key}/versions` (flat list). */
 export interface ListAllProjectVersionsParams {
-  readonly maxResults?: number;
-  readonly orderBy?: string;
-  readonly query?: string;
-  readonly status?: string;
   /**
    * Use expand to include additional information in the response.
    * Accepts `operations` (actions performable on the version).
@@ -269,22 +261,14 @@ export interface ProjectType {
   readonly icon?: string;
 }
 
-/**
- * Parameters for `GET /rest/api/3/project` (deprecated legacy endpoint, B929).
- *
- * WIRE NOTE: Spec only accepts `expand`, `recent`, and `properties` on this endpoint.
- * The extra params below (`maxResults`, `orderBy`, etc.) are sent by the CLI but
- * are not in the spec — kept here for CLI compatibility pending a CLI update (DEFERRED).
- */
+/** Parameters for `GET /rest/api/3/project` (deprecated legacy endpoint, B929). */
 export interface ListLegacyProjectsParams {
-  readonly maxResults?: number;
-  readonly orderBy?: string;
-  readonly startAt?: number;
-  readonly expand?: string[];
-  readonly typeKey?: string[];
-  readonly categoryId?: number;
-  readonly action?: string;
-  readonly query?: string;
+  /** Comma-separated expansions such as `description,issueTypes,lead,projectKeys`. */
+  readonly expand?: string;
+  /** Number of recently accessed projects to prioritize, from 0 through 20. */
+  readonly recent?: number;
+  /** Project property keys to include, serialized as repeated query parameters. */
+  readonly properties?: readonly string[];
 }
 
 export interface CreateProjectData {
@@ -428,18 +412,21 @@ export class ProjectsResource {
   /** List projects using the legacy endpoint (B929). */
   async listLegacy(params?: ListLegacyProjectsParams): Promise<Project[]> {
     const query: Record<string, string | number | boolean | undefined> = {};
-    if (params?.maxResults !== undefined) query['maxResults'] = params.maxResults;
-    if (params?.orderBy) query['orderBy'] = params.orderBy;
-    if (params?.startAt !== undefined) query['startAt'] = params.startAt;
-    if (params?.expand) query['expand'] = params.expand.join(',');
-    if (params?.typeKey) query['typeKey'] = params.typeKey.join(',');
-    if (params?.categoryId !== undefined) query['categoryId'] = params.categoryId;
-    if (params?.action) query['action'] = params.action;
-    if (params?.query) query['query'] = params.query;
+    if (params?.expand !== undefined) query['expand'] = params.expand;
+    if (params?.recent !== undefined) {
+      if (!Number.isInteger(params.recent) || params.recent < 0 || params.recent > 20) {
+        throw new ValidationError(
+          `recent must be an integer between 0 and 20, got: ${params.recent}`,
+        );
+      }
+      query['recent'] = params.recent;
+    }
+
+    const path = appendRepeatedParams(`${this.baseUrl}/project`, 'properties', params?.properties);
 
     const response = await this.transport.request<Project[]>({
       method: 'GET',
-      path: `${this.baseUrl}/project`,
+      path,
       query,
     });
     return response.data;
@@ -938,10 +925,6 @@ export class ProjectsResource {
     params?: ListAllProjectVersionsParams,
   ): Promise<ProjectVersion[]> {
     const query: Record<string, string | number | undefined> = {};
-    if (params?.maxResults !== undefined) query['maxResults'] = params.maxResults;
-    if (params?.orderBy !== undefined) query['orderBy'] = params.orderBy;
-    if (params?.query !== undefined) query['query'] = params.query;
-    if (params?.status !== undefined) query['status'] = params.status;
     if (params?.expand !== undefined) query['expand'] = params.expand;
 
     const response = await this.transport.request<ProjectVersion[]>({

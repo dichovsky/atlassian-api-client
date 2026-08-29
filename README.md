@@ -3,7 +3,8 @@
 Typed Node.js/TypeScript clients and CLI for Atlassian Cloud APIs.
 
 - **Confluence Cloud REST API v2** — Pages, Spaces, Blog Posts, Comments, Attachments, Labels, Content Properties, Custom Content, Whiteboards, Tasks, Versions
-- **Jira Cloud Platform REST API v3** — Issues, Projects, Search (JQL), Users, Issue Types, Priorities, Statuses, Issue Comments, Issue Attachments, Labels, Boards, Sprints, Workflows, Dashboards, Filters, Fields, Webhooks, JQL helpers, Bulk operations
+- **Jira Cloud Platform REST API v3** — Issues, Projects, Search (JQL), Users, workflows, schemes, fields, and administration
+- **Jira Software/Agile and DevOps APIs** — Boards, sprints, epics, enhanced issue pagination and counts, builds, deployments, development information, feature flags, operations, remote links, and security information
 
 Zero runtime dependencies. Uses native `fetch` (Node.js 24+).
 
@@ -132,6 +133,38 @@ const client = new JiraClient({
   },
 });
 ```
+
+### Jira Software on-premises OAuth integrations
+
+Atlassian's system-to-system OAuth proxy is opt-in. Set
+`softwareIntegrationProxy.cloudId` to route only Jira Software Development
+Information, Builds, and Deployments through `api.atlassian.com`:
+
+```typescript
+const client = new JiraClient({
+  baseUrl: 'https://yourcompany.atlassian.net',
+  auth: {
+    type: 'bearer',
+    token: process.env.ATLASSIAN_OAUTH_TOKEN!,
+  },
+  softwareIntegrationProxy: {
+    cloudId: process.env.ATLASSIAN_SOFTWARE_CLOUD_ID!,
+  },
+});
+
+await client.bulk.submitBuilds({ builds: [] });
+```
+
+Builds and Deployments use proxy version `0.1`. Development Information changes
+from the site route `/rest/devinfo/0.10` to the proxy route
+`/jira/devinfo/0.1/cloud/{cloudId}`. Every other Jira resource continues to use
+`baseUrl`. The option requires bearer auth and does not activate merely because
+bearer auth is configured. The built-in transport authorizes exactly
+`api.atlassian.com` in addition to the existing `allowedHosts`; custom injected
+transports receive the fully-qualified proxy URLs and remain responsible for
+their own credential-boundary enforcement.
+
+See Atlassian's [Jira Software REST API authentication and base URL guidance](https://developer.atlassian.com/cloud/jira/software/rest/#authentication).
 
 ### Self-hosted / non-Atlassian baseUrl
 
@@ -476,11 +509,19 @@ Map Atlassian operation names to the required Cloud OAuth 2.0 scopes:
 import { detectRequiredScopes, listKnownOperations } from 'atlassian-api-client';
 
 const scopes = detectRequiredScopes(['jira.issues.create', 'confluence.pages.get']);
-// → ['write:jira-work', 'read:confluence-content.all']
+// → granular Jira + Confluence scopes, sorted and deduplicated
+
+const softwareScopes = detectRequiredScopes([
+  'jira.boards.getBacklogApproximateCount',
+  'jira.linkedWorkspaces.listSecurity',
+]);
+// → ['read:board-scope:jira-software', 'read:issue-details:jira', 'read:security:jira']
 
 const allOps = listKnownOperations();
 // → ['confluence.pages.create', 'confluence.pages.delete', ...]
 ```
+
+The validator catalog tracks every granular scope in the pinned OpenAPI specs: 38 Confluence v2 scopes, 33 Jira Software scopes, and 180 Jira Platform Beta scopes (247 unique strings after overlap). Jira Platform classic `Current` scopes are intentionally excluded. The operation-to-scope registry remains a selected convenience mapping rather than a claim that every SDK method has been mapped. `atlas scopes validate <scope>...` validates scope strings without making a network request.
 
 ## OpenAPI Type Generation
 
@@ -516,26 +557,32 @@ Supports `$ref`, `allOf`, `oneOf`, `anyOf`, enum, nullable, and `additionalPrope
 
 ### Spec Drift Guard
 
-A CI script (`scripts/regenerate-types.ts`) monitors three upstream Atlassian OpenAPI specs for
-breaking changes that would affect `generateTypes()`. It fetches the live specs, calls
-`generateTypes()` on each, and reports any failures.
+A CI script (`scripts/regenerate-types.ts`) monitors three upstream Atlassian OpenAPI specs. It
+fetches each live spec, verifies type generation, and compares its canonical contract fingerprint
+with the pinned snapshot in `spec/`. Routes, parameters, request/response schemas, and security
+metadata are included; prose-only descriptions and examples are ignored.
 
 **The script commits nothing** — it is a read-only smoke-test.
 
 ```bash
 # Run locally
 npm run spec-drift
+npm run api-coverage
 ```
 
 Example output:
 
 ```
-✓ jiraPlatform: 968 types generated from https://developer.atlassian.com/cloud/.../swagger-v3.v3.json
-✓ jiraSoftware: 66 types generated from https://developer.atlassian.com/cloud/.../swagger.v3.json
-✓ confluence: 168 types generated from https://developer.atlassian.com/cloud/.../swagger.v3.json
+✓ jiraPlatform: 971 types; contract 44743743b485 (https://developer.atlassian.com/cloud/.../swagger-v3.v3.json)
+✓ jiraSoftware: 66 types; contract 6b07d612f117 (https://developer.atlassian.com/cloud/.../swagger.v3.json)
+✓ confluence: 142 types; contract 8e17d20017a8 (https://developer.atlassian.com/cloud/.../openapi-v2.v3.json)
 ```
 
-In CI, the drift-guard runs on a **weekly schedule and on manual dispatch only** (`.github/workflows/spec-drift.yml`).
+`api-coverage` compares implemented SDK routes with the pinned snapshots and fails on unresolved
+route extraction or a missing non-deprecated operation. Deprecated omissions remain visible in its
+report without failing the check.
+
+In CI, both guards run on a **weekly schedule and on manual dispatch only** (`.github/workflows/spec-drift.yml`).
 It deliberately does **not** run on `push` or `pull_request` — a transient upstream outage must never
 block contributor PRs. A scheduled-job failure is the intended signal that a spec has drifted.
 
@@ -582,6 +629,23 @@ atlas jira issues get PROJ-123 --auth-type bearer --token your-bearer-token
 
 `ATLASSIAN_AUTH_TYPE` defaults to `basic`. Bearer mode does not require `ATLASSIAN_EMAIL`.
 
+For Jira Software on-premises integrations, add the Jira-only cloud ID option.
+It routes Development Information, Builds, and Deployments through Atlassian's
+OAuth proxy; bearer auth alone keeps the normal site routes:
+
+```bash
+export ATLASSIAN_AUTH_TYPE=bearer
+export ATLASSIAN_API_TOKEN=your-system-to-system-oauth-token
+export ATLASSIAN_SOFTWARE_CLOUD_ID=11111111-2222-3333-4444-555555555555
+
+atlas jira bulk submit-builds --value '{"builds":[]}'
+
+# Equivalent per-command opt-in
+atlas jira bulk submit-deployments \
+  --software-cloud-id 11111111-2222-3333-4444-555555555555 \
+  --value '{"deployments":[]}'
+```
+
 ### Self-hosted / non-Atlassian baseUrl
 
 For security, the CLI's default host allowlist only accepts `*.atlassian.{net,com}`, `*.jira-dev.com`, and `*.jira.com` — calls outside that suffix list fail with `ValidationError`. Self-hosted or proxied deployments must opt in with `--allowed-hosts` (or the `ATLASSIAN_ALLOWED_HOSTS` env var). Entries are bare hostnames (no scheme, no port) and must include the `baseUrl` host itself:
@@ -616,8 +680,8 @@ atlas jira projects list --format minimal
 Check whether OAuth 2.0 scope strings are recognised Atlassian Cloud scopes — auth-free, no network calls. Prints a JSON `{ valid, unknown, allValid }` report; exits `0` when every scope is valid and `1` when any are unknown (handy in CI before requesting consent):
 
 ```bash
-atlas scopes validate read:jira-work write:jira-work
-# → { "valid": ["read:jira-work", "write:jira-work"], "unknown": [], "allValid": true }
+atlas scopes validate read:issue:jira write:issue:jira
+# → { "valid": ["read:issue:jira", "write:issue:jira"], "unknown": [], "allValid": true }
 ```
 
 Invoking `atlas scopes validate` with no scope arguments prints the full known-scope catalog (to stderr) as a usage hint.

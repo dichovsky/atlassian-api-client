@@ -58,6 +58,30 @@ describe('AttachmentsResource', () => {
       // Assert
       expect(transport.lastCall?.options.query).toMatchObject(params);
     });
+
+    it('forwards page-specific sort/status/media filters with repeated status values', async () => {
+      transport.respondWith({ results: [], _links: {} });
+
+      await attachments.listForPage('page-1', {
+        sort: '-modified-date',
+        status: ['current', 'trashed'],
+        mediaType: 'image/png',
+        filename: 'diagram.png',
+        cursor: 'next',
+        limit: 20,
+      });
+
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/pages/page-1/attachments?status=current&status=trashed`,
+      );
+      expect(transport.lastCall?.options.query).toEqual({
+        sort: '-modified-date',
+        mediaType: 'image/png',
+        filename: 'diagram.png',
+        cursor: 'next',
+        limit: 20,
+      });
+    });
   });
 
   // ── get ───────────────────────────────────────────────────────────────────

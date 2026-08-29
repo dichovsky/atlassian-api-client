@@ -4,22 +4,25 @@
 
 ## `search`
 
-| Action              | Required flags | Optional flags                                                        |
-| ------------------- | -------------- | --------------------------------------------------------------------- |
-| `(default)` / `get` | `--jql`        | `--max-results`, `--fields`                                           |
-| `approximate-count` | `--jql`        | —                                                                     |
-| `jql-get`           | —              | `--jql`, `--next-page-token`, `--max-results`, `--fields`, `--expand` |
-| `jql-post`          | —              | `--jql`, `--next-page-token`, `--max-results`, `--fields`, `--expand` |
+| Action                                        | Required flags | Optional flags                                                        |
+| --------------------------------------------- | -------------- | --------------------------------------------------------------------- |
+| `search` (default; aliases: omitted, `query`) | `--jql`        | `--max-results`, `--fields`                                           |
+| `legacy-post` (deprecated)                    | `--jql`        | `--max-results`, `--fields`                                           |
+| `get` (deprecated)                            | `--jql`        | `--max-results`, `--fields`                                           |
+| `approximate-count`                           | `--jql`        | —                                                                     |
+| `jql-get`                                     | —              | `--jql`, `--next-page-token`, `--max-results`, `--fields`, `--expand` |
+| `jql-post`                                    | —              | `--jql`, `--next-page-token`, `--max-results`, `--fields`, `--expand` |
 
 ```sh
-atlas jira search get --jql "project = PROJ AND status = Open"
+atlas jira search --jql "project = PROJ AND status = Open"
+atlas jira search search --jql "project = PROJ AND status = Open"
 atlas jira search approximate-count --jql "project = PROJ"
 atlas jira search jql-get --jql "project = PROJ" --max-results 50
 atlas jira search jql-post --jql "project = PROJ AND assignee = currentUser()"
 ```
 
-- `(default)` and `get` use offset-based pagination (`startAt` / `maxResults`) — `POST /search` and `GET /search` respectively.
-- `jql-get` / `jql-post` use cursor-based pagination via `--next-page-token`; pass the `nextPageToken` from the previous response to continue.
+- `search` (also selected when the action is omitted or written as `query`), `jql-get`, and `jql-post` use current `/search/jql` with cursor pagination. Pass the response `nextPageToken` through `--next-page-token` to continue.
+- `legacy-post` and `get` are retained only for compatibility with legacy `POST /search` and `GET /search`, which Atlassian is removing. Do not use them in new automation.
 
 ## `jql`
 

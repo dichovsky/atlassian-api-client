@@ -243,11 +243,18 @@ atlas jira issues rank --issues PROJ-1 --after PROJ-5
 | `get-create-meta-issuetypes` | `<projectIdOrKey>`                 | —              | `--start-at`, `--max-results`                                                         |
 | `get-create-meta-issuetype`  | `<projectIdOrKey>` `<issueTypeId>` | —              | `--start-at`, `--max-results`                                                         |
 
-### Issue Limit Report (B522)
+### Issue Limit Reports
 
-| Action             | Positional | Required flags | Optional flags |
-| ------------------ | ---------- | -------------- | -------------- |
-| `get-limit-report` | —          | —              | —              |
+| Action                 | Positional | Required flags | Optional flags                              |
+| ---------------------- | ---------- | -------------- | ------------------------------------------- |
+| `get-limit-report`     | —          | —              | `--is-returning-keys`                       |
+| `get-adf-limit-report` | —          | —              | `--is-returning-keys`, `--field-type` (CSV) |
+
+`get-limit-report` reports per-issue entity count limits. The experimental
+`get-adf-limit-report` reports ADF byte-size breaches; `--field-type` accepts
+`comment_adf`, `worklog_adf`, `customfield_adf`, `description_adf`, and
+`environment_adf`. Use `--is-returning-keys` to key results by issue key instead
+of numeric ID.
 
 ### Issue Picker (B523)
 
@@ -279,13 +286,15 @@ atlas jira issues rank --issues PROJ-1 --after PROJ-5
 
 ### Archive Export (B538)
 
-| Action            | Positional | Required flags | Optional flags           |
-| ----------------- | ---------- | -------------- | ------------------------ |
-| `export-archived` | —          | —              | `--jql`, `--export-type` |
+| Action            | Positional | Required flags | Optional flags                                                                                 |
+| ----------------- | ---------- | -------------- | ---------------------------------------------------------------------------------------------- |
+| `export-archived` | —          | —              | `--archived-by`, `--date-after`, `--date-before`, `--issue-types`, `--projects`, `--reporters` |
 
-- `--export-type` accepts `CSV` or `XLSX`.
+- List-valued filters are comma-separated.
+- `--date-after` and `--date-before` use `YYYY-MM-DD` and must be supplied together.
+- The endpoint always produces a CSV download link sent by email; it has no JQL or format selector.
 - This is async (202); the CLI returns `{ submitted: true }`.
-- **Note**: uses `/rest/api/3/issues/archive/export` (plural "issues").
+- Endpoint: `PUT /rest/api/3/issues/archive/export` (plural `issues`).
 
 ```sh
 # List worklogs for an issue
@@ -333,8 +342,11 @@ atlas jira issues is-watching-bulk --issue-ids PROJ-1,PROJ-2,PROJ-5
 # Move a worklog (source issue as positional, --ids = worklog IDs, --target-issue = destination)
 atlas jira issues move-worklog PROJ-1 --ids 10001,10002 --target-issue PROJ-2
 
-# Export archived issues
-atlas jira issues export-archived --jql "project = PROJ AND isArchived = true" --export-type CSV
+# Get the experimental ADF-size limit report for comments and worklogs
+atlas jira issues get-adf-limit-report --field-type comment_adf,worklog_adf --is-returning-keys
+
+# Export archived issues from a project and date range
+atlas jira issues export-archived --projects PROJ --date-after 2026-01-01 --date-before 2026-01-31
 ```
 
 ## `changelog`

@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import {
   DashboardsResource,
+  type ListDashboardsParams,
   type ListAvailableGadgetsParams,
 } from '../../src/jira/resources/dashboards.js';
 import { MockTransport } from '../helpers/mock-transport.js';
@@ -71,11 +72,25 @@ describe('DashboardsResource', () => {
       });
     });
 
-    it('does not send deprecated orderBy/expand to GET /dashboard (B1056)', async () => {
-      // orderBy and expand are NOT in the getAllDashboards spec — they should
-      // not be forwarded to the wire even if a caller passes them (backward compat).
+    it('exposes only the three query parameters accepted by GET /dashboard', async () => {
+      type ExpectedKeys = 'filter' | 'startAt' | 'maxResults';
+      type HasExactKeys =
+        Exclude<keyof ListDashboardsParams, ExpectedKeys> extends never
+          ? Exclude<ExpectedKeys, keyof ListDashboardsParams> extends never
+            ? true
+            : false
+          : false;
+      const hasExactKeys: HasExactKeys = true;
+      expect(hasExactKeys).toBe(true);
+
+      // Unknown keys from an untyped JavaScript caller must not leak onto the wire.
       transport.respondWith(makeRawListResponse([]));
-      await dashboards.list({ startAt: 0, maxResults: 10, orderBy: 'name', expand: 'owner' });
+      await dashboards.list({
+        startAt: 0,
+        maxResults: 10,
+        orderBy: 'name',
+        expand: 'owner',
+      } as ListDashboardsParams & { orderBy: string; expand: string });
       const query = transport.lastCall?.options.query as Record<string, unknown>;
       expect(query?.['orderBy']).toBeUndefined();
       expect(query?.['expand']).toBeUndefined();

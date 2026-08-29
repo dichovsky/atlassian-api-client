@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { checkSpec, runDriftGuard, SPEC_URLS } from '../../scripts/regenerate-types.ts';
+import {
+  checkSpec,
+  contractFingerprint,
+  runDriftGuard,
+  SPEC_URLS,
+} from '../../scripts/regenerate-types.ts';
+import type { OpenApiSpec } from '../../src/core/openapi.ts';
 
 /** Minimal valid OpenAPI 3.x spec with two schemas. */
 const MINIMAL_SPEC = JSON.stringify({
@@ -12,6 +18,25 @@ const MINIMAL_SPEC = JSON.stringify({
     },
   },
 });
+
+const MINIMAL_SPEC_OBJECT = JSON.parse(MINIMAL_SPEC) as OpenApiSpec;
+
+function loadMinimalPinned(): Promise<OpenApiSpec> {
+  return Promise.resolve(MINIMAL_SPEC_OBJECT);
+}
+
+function minimalSpecWithFooType(type: string): OpenApiSpec {
+  return {
+    ...MINIMAL_SPEC_OBJECT,
+    components: {
+      ...MINIMAL_SPEC_OBJECT.components,
+      schemas: {
+        ...MINIMAL_SPEC_OBJECT.components?.schemas,
+        Foo: { type },
+      },
+    },
+  };
+}
 
 /** Builds a mock fetch that returns the given body with a given status code. */
 function makeMockFetch(body: string, status = 200): typeof globalThis.fetch {
@@ -79,9 +104,76 @@ describe('checkSpec — success path', () => {
     expect(result.ok).toBe(true);
     expect(result.typeCount).toBe(0);
   });
+
+  it('compares the live contract with an injected pinned spec', async () => {
+    const result = await checkSpec(
+      'test',
+      'https://example.com/spec.json',
+      makeMockFetch(MINIMAL_SPEC),
+      MINIMAL_SPEC_OBJECT,
+    );
+
+    expect(result.ok).toBe(true);
+    expect(result.drift).toBe(false);
+    expect(result.liveFingerprint).toBe(result.pinnedFingerprint);
+  });
+});
+
+describe('contractFingerprint', () => {
+  it('ignores documentation-only changes', () => {
+    const documented = {
+      ...MINIMAL_SPEC_OBJECT,
+      info: { ...MINIMAL_SPEC_OBJECT.info, description: 'new prose' },
+    } as OpenApiSpec;
+
+    expect(contractFingerprint(documented)).toBe(contractFingerprint(MINIMAL_SPEC_OBJECT));
+  });
+
+  it('changes for schema contract changes', () => {
+    const changed = minimalSpecWithFooType('number');
+
+    expect(contractFingerprint(changed)).not.toBe(contractFingerprint(MINIMAL_SPEC_OBJECT));
+  });
+
+  it('does not mistake a schema property named description for documentation prose', () => {
+    const changed: OpenApiSpec = {
+      ...MINIMAL_SPEC_OBJECT,
+      components: {
+        ...MINIMAL_SPEC_OBJECT.components,
+        schemas: {
+          ...MINIMAL_SPEC_OBJECT.components?.schemas,
+          Bar: {
+            type: 'object',
+            properties: {
+              id: { type: 'integer' },
+              description: { type: 'string' },
+            },
+          },
+        },
+      },
+    };
+
+    expect(contractFingerprint(changed)).not.toBe(contractFingerprint(MINIMAL_SPEC_OBJECT));
+  });
 });
 
 describe('checkSpec — error paths', () => {
+  it('returns ok:false when the live contract differs from the pinned contract', async () => {
+    const changed = minimalSpecWithFooType('number');
+
+    const result = await checkSpec(
+      'drifted',
+      'https://example.com/spec.json',
+      makeMockFetch(JSON.stringify(changed)),
+      MINIMAL_SPEC_OBJECT,
+    );
+
+    expect(result.ok).toBe(false);
+    expect(result.drift).toBe(true);
+    expect(result.error).toContain('contract drift');
+    expect(result.liveFingerprint).not.toBe(result.pinnedFingerprint);
+  });
+
   it('returns ok:false when fetch throws a network error', async () => {
     const result = await checkSpec(
       'net-err',
@@ -142,12 +234,28 @@ describe('checkSpec — error paths', () => {
 
 describe('runDriftGuard', () => {
   it('returns one SpecResult per SPEC_URL when all succeed', async () => {
-    const results = await runDriftGuard({ fetch: makeMockFetch(MINIMAL_SPEC) });
+    const results = await runDriftGuard({
+      fetch: makeMockFetch(MINIMAL_SPEC),
+      loadPinned: loadMinimalPinned,
+    });
     expect(results).toHaveLength(Object.keys(SPEC_URLS).length);
     for (const r of results) {
       expect(r.ok).toBe(true);
       expect(r.typeCount).toBe(2);
+      expect(r.drift).toBe(false);
     }
+  });
+
+  it('fails when a fetched contract does not match its pinned snapshot', async () => {
+    const changed = minimalSpecWithFooType('boolean');
+
+    const results = await runDriftGuard({
+      fetch: makeMockFetch(JSON.stringify(changed)),
+      loadPinned: loadMinimalPinned,
+    });
+
+    expect(results).toHaveLength(Object.keys(SPEC_URLS).length);
+    expect(results.every((result) => result.ok === false && result.drift === true)).toBe(true);
   });
 
   it('returns ok:false for every spec when fetch always throws', async () => {

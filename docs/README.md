@@ -5,7 +5,8 @@ Project documentation for `atlassian-api-client`.
 ## Living references
 
 - [ARCHITECTURE.md](ARCHITECTURE.md) — system design: transport/auth/retry/error taxonomy, middleware composition, pagination, CLI shape. Kept current with the code.
-- [DEEP-AUDIT-2026-06-10.md](DEEP-AUDIT-2026-06-10.md) — most recent full-repo audit (coverage, spec conformance, CLI/skill reachability, core review). Backlog items `B1037–B1062` reference its sections.
+- [ATLASSIAN-API-REFRESH-2026-08-30.md](ATLASSIAN-API-REFRESH-2026-08-30.md) — current live-spec refresh, implemented deltas, route coverage, and verification evidence.
+- [DEEP-AUDIT-2026-06-10.md](DEEP-AUDIT-2026-06-10.md) — full-repo audit that remains the source for backlog items `B1037–B1062`; current route status is superseded by the August refresh.
 
 ## Other docs
 

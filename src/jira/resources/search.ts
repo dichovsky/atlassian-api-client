@@ -36,8 +36,23 @@ export interface JqlSearchResult {
   readonly nextPageToken?: string;
   readonly isLast?: boolean;
   readonly names?: Record<string, string>;
-  /** Spec `SearchWarningBean[]`: structured warnings (e.g. JQL_FUNCTION_LIMIT_EXCEEDED). */
-  readonly warnings?: { readonly type?: string; readonly details?: unknown }[];
+  /** Experimental structured warnings returned alongside successful search results. */
+  readonly warnings?: SearchWarning[];
+}
+
+/** Structured details for a search limit warning. */
+export interface SearchWarningLimitDetails {
+  readonly actual?: number;
+  readonly arguments?: string;
+  readonly clause?: string;
+  readonly limit?: number;
+}
+
+/** Experimental warning returned by the enhanced search API. */
+export interface SearchWarning {
+  readonly type?: string;
+  readonly message?: string;
+  readonly details?: SearchWarningLimitDetails;
 }
 
 export class SearchResource {
@@ -46,7 +61,10 @@ export class SearchResource {
     private readonly baseUrl: string,
   ) {}
 
-  /** Search for issues using JQL (POST). */
+  /**
+   * Search for issues using the legacy offset-based JQL endpoint (POST).
+   * @deprecated Atlassian is removing `/rest/api/3/search`; use searchJqlPost().
+   */
   async search(params: SearchParams): Promise<SearchResult> {
     if (params.maxResults !== undefined) validatePageSize(params.maxResults, 'maxResults');
     const body: Record<string, unknown> = {
@@ -68,7 +86,10 @@ export class SearchResource {
     return response.data;
   }
 
-  /** Search for issues using JQL (GET). */
+  /**
+   * Search for issues using the legacy offset-based JQL endpoint (GET).
+   * @deprecated Atlassian is removing `/rest/api/3/search`; use searchJqlGet().
+   */
   async searchGet(params: SearchParams): Promise<SearchResult> {
     if (params.maxResults !== undefined) validatePageSize(params.maxResults, 'maxResults');
     const query: Record<string, string | number | boolean | undefined> = {
@@ -92,7 +113,10 @@ export class SearchResource {
     return response.data;
   }
 
-  /** Iterate over all search results across all pages. */
+  /**
+   * Iterate the legacy offset-based search endpoint.
+   * @deprecated Atlassian is removing `/rest/api/3/search`; page with searchJqlGet/Post instead.
+   */
   async *searchAll(params: Omit<SearchParams, 'startAt'>): AsyncGenerator<Issue> {
     const body: Record<string, unknown> = { jql: params.jql };
     if (params.fields !== undefined) body['fields'] = params.fields;

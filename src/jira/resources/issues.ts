@@ -184,15 +184,41 @@ export interface CreateMetaIssueTypesParams {
 /**
  * Issue limit report response.
  * Spec: IssueLimitReportResponseBean — { issuesApproachingLimit?, issuesBreachingLimit?, limits? }.
- * Each map key is an issue ID; each value is a sub-map of field-name → field-count.
+ * Count maps are keyed by field name, then issue ID/key.
  */
 export interface IssueLimitReport {
-  /** Issues approaching the field limit: { issueId: { fieldName: count } } */
+  /**
+   * IDs of individual entities breaching a limit, grouped by field and issue.
+   * Single-value fields such as description map an issue to an empty array.
+   */
+  readonly entitiesBreachingLimit?: Record<string, Record<string, number[]>>;
+  /** Issues approaching the field limit: { fieldName: { issueIdOrKey: count } } */
   readonly issuesApproachingLimit?: Record<string, Record<string, number>>;
-  /** Issues already breaching the field limit: { issueId: { fieldName: count } } */
+  /** Issues already breaching the field limit: { fieldName: { issueIdOrKey: count } } */
   readonly issuesBreachingLimit?: Record<string, Record<string, number>>;
   /** Defined per-field limits: { fieldName: limit } */
   readonly limits?: Record<string, number>;
+}
+
+/** Query parameters shared by the issue entity-count and ADF limit reports. */
+export interface GetIssueLimitReportParams {
+  /** Return issue keys instead of numeric issue IDs. Defaults to false. */
+  readonly isReturningKeys?: boolean;
+}
+
+/** ADF field kinds accepted by the experimental ADF limit report. */
+export type IssueAdfLimitFieldType =
+  | 'comment_adf'
+  | 'worklog_adf'
+  | 'customfield_adf'
+  | 'description_adf'
+  | 'environment_adf'
+  | (string & {});
+
+/** Query parameters for GET /rest/api/3/issue/limit/adf/report. */
+export interface GetIssueAdfLimitReportParams extends GetIssueLimitReportParams {
+  /** Restrict the report to these ADF field kinds. Sent as repeated query params. */
+  readonly fieldType?: readonly IssueAdfLimitFieldType[];
 }
 
 // ── Issue picker ──────────────────────────────────────────────────────────────
@@ -252,36 +278,21 @@ export interface BulkIssueIsWatchingResult {
 
 /**
  * Date range filter for archived issue export.
- * Spec: DateRangeFilterRequest — { dateAfter?, dateBefore? }.
+ * Spec: DateRangeFilterRequest — both dateAfter and dateBefore are required.
  */
 export interface DateRangeFilterRequest {
-  readonly dateAfter?: string;
-  readonly dateBefore?: string;
+  /** Lower bound in YYYY-MM-DD form. */
+  readonly dateAfter: string;
+  /** Upper bound in YYYY-MM-DD form. */
+  readonly dateBefore: string;
 }
 
 /**
  * Request body for PUT /rest/api/3/issues/archive/export.
  * Spec: ArchivedIssuesFilterRequest — { archivedBy?, archivedDateRange?, issueTypes?, projects?, reporters? }.
  *
- * NOTE: The CLI command currently passes `jql` and `exportType` which are not spec fields;
- * the CLI action cannot be updated in this PR (fenced file). The old fictional fields are
- * retained here to prevent a CLI compile error — tracked as DEFERRED-CLI for a follow-up
- * PR that updates the CLI to use the correct filter fields.
- *
- * @deprecated jql — not a spec field; use the filter fields (archivedBy, archivedDateRange, etc.)
- * @deprecated exportType — not a spec field; the API emails a download link, no format choice exposed
  */
 export interface IssueArchiveExportData {
-  /**
-   * @deprecated Not a spec field. Will be removed in a future release once the CLI is updated.
-   * The spec's ArchivedIssuesFilterRequest does not include a `jql` parameter.
-   */
-  readonly jql?: string;
-  /**
-   * @deprecated Not a spec field. Will be removed in a future release once the CLI is updated.
-   * The spec's ArchivedIssuesFilterRequest does not include an `exportType` parameter.
-   */
-  readonly exportType?: 'CSV' | 'XLSX';
   /** Filter by archiver account IDs. */
   readonly archivedBy?: string[];
   /** Filter by date range of archival. */
@@ -1419,10 +1430,38 @@ export class IssuesResource {
    * Get issue limit report (B522).
    * GET /rest/api/3/issue/limit/report
    */
-  async getLimitReport(): Promise<IssueLimitReport> {
+  async getLimitReport(params?: GetIssueLimitReportParams): Promise<IssueLimitReport> {
+    const query: Record<string, boolean | undefined> = {};
+    if (params?.isReturningKeys !== undefined) {
+      query['isReturningKeys'] = params.isReturningKeys;
+    }
     const response = await this.transport.request<IssueLimitReport>({
       method: 'GET',
       path: `${this.baseUrl}/issue/limit/report`,
+      query,
+    });
+    return response.data;
+  }
+
+  /**
+   * Get issues whose rich-text fields breach the universal ADF byte-size limit.
+   * GET /rest/api/3/issue/limit/adf/report
+   *
+   * @experimental Atlassian currently marks this operation as experimental.
+   */
+  async getAdfLimitReport(params?: GetIssueAdfLimitReportParams): Promise<IssueLimitReport> {
+    const query: Record<string, boolean | undefined> = {};
+    if (params?.isReturningKeys !== undefined) {
+      query['isReturningKeys'] = params.isReturningKeys;
+    }
+    const response = await this.transport.request<IssueLimitReport>({
+      method: 'GET',
+      path: appendRepeatedParams(
+        `${this.baseUrl}/issue/limit/adf/report`,
+        'fieldType',
+        params?.fieldType,
+      ),
+      query,
     });
     return response.data;
   }

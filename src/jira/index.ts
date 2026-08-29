@@ -1,4 +1,5 @@
 export { JiraClient } from './client.js';
+export type { JiraClientConfig, JiraSoftwareIntegrationProxyConfig } from './client.js';
 export type {
   Issue,
   CreatedIssue,
@@ -84,6 +85,9 @@ export type {
   BulkFetchResult,
   IssueArchiveResult,
   IssueLimitReport,
+  GetIssueLimitReportParams,
+  IssueAdfLimitFieldType,
+  GetIssueAdfLimitReportParams,
   DateRangeFilterRequest,
   IssueArchiveExportData,
   ExportArchivedIssuesResult,
@@ -111,6 +115,8 @@ export type {
   ApproximateCountResult,
   JqlSearchParams,
   JqlSearchResult,
+  SearchWarning,
+  SearchWarningLimitDetails,
 } from './resources/search.js';
 export { UsersResource } from './resources/users.js';
 export { IssueTypesResource } from './resources/issue-types.js';
@@ -160,6 +166,8 @@ export type {
   ListBoardsParams,
   ListBoardIssuesParams,
   BoardSummary,
+  ApproximateIssueCount,
+  ApproximateIssueCountParams,
 } from './resources/boards.js';
 export type {
   SoftwareIssueResults,
@@ -240,8 +248,6 @@ export type {
   WorkflowTransitionRulesUpdateErrors,
   WorkflowTransitionRulesDeleteEntry,
   WorkflowsWithTransitionRulesDetails,
-  WorkflowTransitionProperty,
-  GetTransitionPropertiesParams,
   ApprovalConfiguration,
   ConditionGroupConfiguration,
   WorkflowPreviewRequest,
@@ -367,6 +373,10 @@ export type {
   FieldContextDefaultValue,
   FieldContextDefaultValuePage,
   ListFieldContextDefaultValueParams,
+  IssueTypeDefaultValue,
+  ContextDefaultValues,
+  GroupedContextDefaultValuesPage,
+  GetContextDefaultValuesParams,
   FieldContextDefaultValueUpdateBody,
   FieldContextProjectIdsBody,
   FieldContextProjectMapping,
@@ -936,6 +946,7 @@ export type {
   DeletedFieldAssociationScheme,
   FieldAssociationParameters,
   WorkTypeParameters,
+  SearchResultFieldParameters,
   SearchResultWorkTypeParameters,
   FieldAssociationSchemeItemParameters,
   FieldAssociationSchemeFieldResult,
@@ -1091,6 +1102,9 @@ export type {
   ProjectAccessLevel,
   ProjectAssigneeType,
   CustomTemplatesProjectDetails,
+  ProjectCreateResourceIdentifier,
+  RolePayload,
+  RolesCapabilityPayload,
   CustomTemplateRequestDTO,
   ProjectCustomTemplateCreateRequestDTO,
   EditTemplateRequest,
@@ -1156,6 +1170,7 @@ export type {
 export { BulkByPropertiesResource } from './resources/bulk-by-properties.js';
 export type {
   MigrationTaskProgress,
+  SubmitMigrationTaskParams,
   ConnectCustomFieldValueType,
   ConnectCustomFieldValue,
   UpdateCustomFieldValuesBody,
@@ -1194,6 +1209,7 @@ export { WorklogResource } from './resources/worklog.js';
 export type {
   /** Context in which a UI modification is applied (response shape; readOnly fields present). */
   UiModificationContextDetails,
+  UiModificationViewType,
   /** Context input for create/update requests (readOnly fields omitted). */
   UiModificationContextInput,
   /** A Jira UI modification as returned by GET /rest/api/3/uiModifications. */

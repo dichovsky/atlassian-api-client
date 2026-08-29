@@ -217,6 +217,7 @@ export type {
   ChildPage,
   ChildPageSortOrder,
   CreatePageData,
+  CreatePageParams,
   DeletePageParams,
   GetPageClassificationLevelParams,
   GetPageParams,
@@ -239,6 +240,7 @@ export type {
   PageDescendant,
   PageLikeUser,
   PageLikesCount,
+  PageLookupStatus,
   PageOperation,
   PageOperationsResponse,
   RedactPageData,
@@ -276,6 +278,7 @@ export type {
 } from './types/space-roles.js';
 export type {
   CreateSpaceData,
+  GetSpaceParams,
   ListSpaceBlogPostsParams,
   ListSpaceContentLabelsParams,
   ListSpaceCustomContentParams,
@@ -288,10 +291,19 @@ export type {
   SetSpaceRoleAssignmentsResponse,
   Space,
   SpaceContentLabelPrefix,
+  SpaceDescriptionFormat,
+  SpaceDescription,
+  SpaceDescriptionBody,
+  SpaceIcon,
+  SpaceLinks,
+  SpaceNestedEnvelope,
   SpaceOperation,
   SpaceOperationsResponse,
   SpacePageDepth,
   SpacePermissionAssignment,
+  SpaceSortOrder,
+  SpaceStatus,
+  SpaceType,
   UpdateSpaceDefaultClassificationLevelData,
 } from './types/spaces.js';
 export type {

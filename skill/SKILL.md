@@ -8,7 +8,7 @@ version: 0.0.0-dev
 source: atlassian-api-client npm package
 ---
 
-# atlas CLI router (Confluence v2 + Jira v3)
+# atlas CLI router (Confluence v2 + Jira Platform v3, Software/Agile, and DevOps)
 
 ## Core objective
 

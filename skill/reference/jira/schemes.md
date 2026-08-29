@@ -585,11 +585,11 @@ atlas jira screenscheme delete 1
 
 ## `workflows`
 
-Classic workflow management — `/rest/api/3/workflow` (B837–B845 + B934 archived as already-covered), bulk workflow API — `/rest/api/3/workflows` (B846–B850, B851–B854), and transition property management (B935–B938, deprecated).
+Classic workflow management — `/rest/api/3/workflow` (B837–B845 + B934), and the current bulk workflow API — `/rest/api/3/workflows` (B846–B854).
 
 **Pagination:** `list` is offset-paginated (`--start-at`, `--max-results`). The usage actions (`issue-type-usages`, `project-usages`, `workflow-scheme-usages`) use cursor pagination (`--next-page-token`, `--max-results`). `get-rule-config` and `search` (B852) are offset-paginated (`--start-at`, `--max-results`, max 50 per page for rule-config).
 
-**Note:** `GET /rest/api/3/workflow/search` (B934) is implemented as `list` and was already present before this PR.
+**Deprecated classic search:** `list` and `get` call deprecated `GET /rest/api/3/workflow/search`. Prefer `search`, which calls current `GET /rest/api/3/workflows/search` and can filter by `--project-id`.
 
 **Required body endpoints (`--body` JSON):** `bulk-get`, `bulk-create`, `validate-create`, `preview`, `update`, `validate-update`. See [payload-rules.md](payload-rules.md) for JSON-flag tips.
 
@@ -599,36 +599,34 @@ Classic workflow management — `/rest/api/3/workflow` (B837–B845 + B934 archi
 
 **Connect/Forge apps only:** `get-rule-config`, `update-rule-config`, and `delete-rule-config` are restricted to Connect or Forge apps (403 if called from basic/bearer auth directly).
 
-**Deprecated:** B935–B938 (`*-transition-property` actions) target endpoints scheduled for removal June 1, 2026. Use Bulk update workflows instead.
+**Removed API:** Atlassian removed the four workflow transition-property endpoints in July 2026. They are intentionally absent from the SDK and CLI; use bulk workflow read/update operations instead.
+
+**Upcoming change:** Atlassian will stop accepting the `draft` workflow-rule selector on November 2, 2026. Avoid `--draft` in new automation.
 
 ### Actions
 
-| Action                       | Positional args        | Key options                                                                                                                  |
-| ---------------------------- | ---------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| `list`                       | —                      | `--start-at`, `--max-results`, `--expand`, `--query-string`, `--order-by`, `--is-active`                                     |
-| `get`                        | `workflowName`         | —                                                                                                                            |
-| `delete`                     | `entityId`             | —                                                                                                                            |
-| `issue-type-usages`          | `workflowId projectId` | `--next-page-token`, `--max-results`                                                                                         |
-| `project-usages`             | `workflowId`           | `--next-page-token`, `--max-results`                                                                                         |
-| `workflow-scheme-usages`     | `workflowId`           | `--next-page-token`, `--max-results`                                                                                         |
-| `bulk-get`                   | —                      | `--body` (required, JSON `WorkflowReadRequest`)                                                                              |
-| `capabilities`               | —                      | `--workflow-id`, `--project-id`, `--issue-type-id`                                                                           |
-| `bulk-create`                | —                      | `--body` (required, JSON `WorkflowCreateRequest`)                                                                            |
-| `validate-create`            | —                      | `--body` (required, JSON `WorkflowCreateValidateRequest`)                                                                    |
-| `default-editor`             | —                      | —                                                                                                                            |
-| `read-history`               | —                      | `--workflow-id` (required), `--version-number`                                                                               |
-| `list-history`               | —                      | `--workflow-id` (required), `--expand`                                                                                       |
-| `get-rule-config`            | —                      | `--types` (required, CSV), `--start-at`, `--max-results`, `--keys`, `--workflow-names`, `--with-tags`, `--draft`, `--expand` |
-| `update-rule-config`         | —                      | `--workflows` (required, JSON array)                                                                                         |
-| `delete-rule-config`         | —                      | `--workflows` (required, JSON array)                                                                                         |
-| `delete-transition-property` | `transitionId`         | `--key` (req), `--workflow-name` (req), `--workflow-mode`                                                                    |
-| `get-transition-properties`  | `transitionId`         | `--workflow-name` (req), `--key`, `--workflow-mode`, `--include-reserved-keys`                                               |
-| `create-transition-property` | `transitionId`         | `--key` (req), `--workflow-name` (req), `--value` (req), `--workflow-mode`                                                   |
-| `update-transition-property` | `transitionId`         | `--key` (req), `--workflow-name` (req), `--value` (req), `--workflow-mode`                                                   |
-| `preview`                    | —                      | `--body` (required: `WorkflowPreviewRequest` JSON)                                                                           |
-| `search`                     | —                      | `--start-at`, `--max-results`, `--expand`, `--query-string`, `--order-by`, `--scope`, `--is-active`                          |
-| `update`                     | —                      | `--body` (required: `WorkflowUpdateRequest` JSON)                                                                            |
-| `validate-update`            | —                      | `--body` (required: `WorkflowUpdateValidateRequest` JSON)                                                                    |
+| Action                   | Positional args        | Key options                                                                                                                  |
+| ------------------------ | ---------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `list`                   | —                      | `--start-at`, `--max-results`, `--expand`, `--query-string`, `--order-by`, `--is-active`                                     |
+| `get`                    | `workflowName`         | —                                                                                                                            |
+| `delete`                 | `entityId`             | —                                                                                                                            |
+| `issue-type-usages`      | `workflowId projectId` | `--next-page-token`, `--max-results`                                                                                         |
+| `project-usages`         | `workflowId`           | `--next-page-token`, `--max-results`                                                                                         |
+| `workflow-scheme-usages` | `workflowId`           | `--next-page-token`, `--max-results`                                                                                         |
+| `bulk-get`               | —                      | `--body` (required, JSON `WorkflowReadRequest`)                                                                              |
+| `capabilities`           | —                      | `--workflow-id`, `--project-id`, `--issue-type-id`                                                                           |
+| `bulk-create`            | —                      | `--body` (required, JSON `WorkflowCreateRequest`)                                                                            |
+| `validate-create`        | —                      | `--body` (required, JSON `WorkflowCreateValidateRequest`)                                                                    |
+| `default-editor`         | —                      | —                                                                                                                            |
+| `read-history`           | —                      | `--workflow-id` (required), `--version-number`                                                                               |
+| `list-history`           | —                      | `--workflow-id` (required), `--expand`                                                                                       |
+| `get-rule-config`        | —                      | `--types` (required, CSV), `--start-at`, `--max-results`, `--keys`, `--workflow-names`, `--with-tags`, `--draft`, `--expand` |
+| `update-rule-config`     | —                      | `--workflows` (required, JSON array)                                                                                         |
+| `delete-rule-config`     | —                      | `--workflows` (required, JSON array)                                                                                         |
+| `preview`                | —                      | `--body` (required: `WorkflowPreviewRequest` JSON)                                                                           |
+| `search`                 | —                      | `--start-at`, `--max-results`, `--expand`, `--query-string`, `--order-by`, `--scope`, `--is-active`, `--project-id`          |
+| `update`                 | —                      | `--body` (required: `WorkflowUpdateRequest` JSON)                                                                            |
+| `validate-update`        | —                      | `--body` (required: `WorkflowUpdateValidateRequest` JSON)                                                                    |
 
 ```sh
 # List paginated classic workflows — B934
@@ -685,25 +683,13 @@ atlas jira workflows update-rule-config --workflows '[{"workflowId":{"name":"My 
 # Delete transition rule configurations (Connect apps only) — B845
 atlas jira workflows delete-rule-config --workflows '[{"workflowId":{"name":"My Workflow"},"workflowRuleIds":["rule-id"]}]'
 
-# Get transition properties — B936 (deprecated)
-atlas jira workflows get-transition-properties 10000 --workflow-name "My Workflow"
-atlas jira workflows get-transition-properties 10000 --workflow-name "My Workflow" --key jira.permission --workflow-mode live
-
-# Delete a transition property — B935 (deprecated)
-atlas jira workflows delete-transition-property 10000 --workflow-name "My Workflow" --key jira.permission
-
-# Create a transition property — B937 (deprecated)
-atlas jira workflows create-transition-property 10000 --workflow-name "My Workflow" --key jira.permission --value createissue
-
-# Update a transition property — B938 (deprecated)
-atlas jira workflows update-transition-property 10000 --workflow-name "My Workflow" --key jira.permission --value editissue
-
 # Preview workflows for a project — B851
 atlas jira workflows preview --body '{"projectId":"10001","workflowIds":["3215e5cd-f09f-4c8a-921b-dca92bd1e9aa"]}'
 
 # Search workflows (offset-paginated) — B852
 atlas jira workflows search --query-string "Default" --is-active true
 atlas jira workflows search --start-at 0 --max-results 25 --scope GLOBAL
+atlas jira workflows search --project-id 10001
 
 # Bulk update workflows — B853
 atlas jira workflows update --body '{"workflows":[{"id":"3215e5cd-f09f-4c8a-921b-dca92bd1e9aa","description":"Updated"}]}'
@@ -876,7 +862,7 @@ atlas jira workflowscheme bulk-mappings --body '{"id":"10001","workflowsForIssue
 
 Custom field CRUD, field context management, and field admin/association operations.
 
-Covers: B411 (field list-all), B414 (field project associations), B415–B418 (field contexts), B421–B426 (field context options), B419–B420 (context issue-type membership), B429 (context issue-type mappings), B432 (screens for field), B442–B445 (trash/restore/associate), B446 (field search paginated), B447 (trashed fields), B905–B906 (context default values), field list/create/update/delete.
+Covers: B411 (field list-all), B414 (field project associations), B415–B418 (field contexts), B421–B426 (field context options), B419–B420 (context issue-type membership), B429 (context issue-type mappings), B432 (screens for field), B442–B445 (trash/restore/associate), B446 (field search paginated), B447 (trashed fields), the current grouped context default-value reader plus deprecated B905–B906, and field list/create/update/delete.
 
 ### Fields (CRUD)
 
@@ -972,9 +958,13 @@ atlas jira fields context-issuetype-mapping --field-id customfield_10001 --conte
 
 ### Field context default values
 
-Get and set default values for custom field contexts (B905–B906).
+Get and set default values for custom field contexts.
 
-**Note:** Both endpoints are deprecated (CHANGE-3082) and will be removed in October 2026.
+`context-default-get` uses the current grouped reader
+`GET /field/{fieldId}/context/defaultValues`. It returns one item per context,
+with nested defaults grouped by issue type. `context-default-list` and
+`context-default-set` use the deprecated singular `/defaultValue` endpoints
+(CHANGE-3082), scheduled for removal in October 2026.
 
 Default values are polymorphic — each entry is discriminated by a `type` field. Common types:
 
@@ -988,6 +978,12 @@ Default values are polymorphic — each entry is discriminated by a `type` field
 - `url` — URL field: requires `url`
 
 ```sh
+# Get current defaults grouped by context and issue type (recommended)
+atlas jira fields context-default-get --field-id customfield_10001
+
+# Filter the grouped response; both filters are comma-separated lists
+atlas jira fields context-default-get --field-id customfield_10001 --context-id 10025,10026 --issue-type-ids 10000,10001 --start-at 0 --max-results 50
+
 # List default values for a custom field (B905) — paginated, deprecated
 atlas jira fields context-default-list --field-id customfield_10001
 

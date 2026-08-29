@@ -1,7 +1,7 @@
 {
   "name": "atlassian-api-client",
   "version": "3.0.0",
-  "description": "Typed Node.js/TypeScript clients and CLI for Atlassian Confluence Cloud REST API v2 and Jira Cloud Platform REST API v3",
+  "description": "Typed Node.js/TypeScript clients and CLI for Confluence Cloud v2, Jira Cloud Platform v3, Jira Software/Agile, and DevOps APIs",
   "keywords": [
     "atlassian",
     "confluence",
@@ -65,6 +65,7 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "prepublishOnly": "npm run validate",
+    "api-coverage": "python3 scripts/api-gap-analysis.py",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "spec-drift": "node --experimental-strip-types scripts/regenerate-types.ts",

@@ -23,9 +23,13 @@ export interface FieldSchema {
 export interface Field {
   readonly id: string;
   readonly name: string;
+  /** Localized field name for the requesting user. */
+  readonly translatedName?: string;
   readonly schema: FieldSchema;
   readonly key?: string;
   readonly description?: string;
+  /** Localized field description for the requesting user. */
+  readonly translatedDescription?: string;
   readonly isLocked?: boolean;
   readonly isUnscreenable?: boolean;
   readonly contextsCount?: number;
@@ -588,6 +592,33 @@ export interface ListFieldContextDefaultValueParams {
   readonly maxResults?: number;
 }
 
+/** A default value associated with one issue type within a field context. */
+export interface IssueTypeDefaultValue {
+  /** Present and true when the value applies to any issue type not listed separately. */
+  readonly isAnyIssueType?: boolean | null;
+  /** Specific issue type ID, or null for the catch-all entry. */
+  readonly issueTypeId?: string | null;
+  /** Polymorphic field default value. */
+  readonly value?: FieldContextDefaultValue;
+}
+
+/** Default values grouped under one custom-field context. */
+export interface ContextDefaultValues {
+  readonly contextId: number;
+  readonly defaultValues?: readonly IssueTypeDefaultValue[];
+}
+
+/** Page returned by the current grouped default-values endpoint. */
+export type GroupedContextDefaultValuesPage = OffsetPaginatedResponse<ContextDefaultValues>;
+
+/** Query parameters for the current grouped default-values endpoint. */
+export interface GetContextDefaultValuesParams {
+  readonly contextId?: number[];
+  readonly issueTypeId?: string[];
+  readonly startAt?: number;
+  readonly maxResults?: number;
+}
+
 /** Request body for bulk-updating field context default values (B906). */
 export interface FieldContextDefaultValueUpdateBody {
   readonly defaultValues?: readonly FieldContextDefaultValue[];
@@ -1109,6 +1140,35 @@ export class FieldsResource {
         'contextId',
         params?.contextId,
       ),
+      query,
+    });
+    return response.data;
+  }
+
+  /**
+   * Get default values grouped by custom-field context and issue type.
+   * GET /rest/api/3/field/{fieldId}/context/defaultValues
+   *
+   * This is the replacement for the deprecated singular `/defaultValue` reader.
+   */
+  async getContextDefaultValues(
+    fieldId: string,
+    params?: GetContextDefaultValuesParams,
+  ): Promise<GroupedContextDefaultValuesPage> {
+    if (params?.maxResults !== undefined) validatePageSize(params.maxResults, 'maxResults');
+    const query: Record<string, string | number | boolean | undefined> = {};
+    if (params?.startAt !== undefined) query['startAt'] = params.startAt;
+    if (params?.maxResults !== undefined) query['maxResults'] = params.maxResults;
+
+    let path = appendRepeatedParams(
+      `${this.baseUrl}/field/${encodePathSegment(fieldId)}/context/defaultValues`,
+      'contextId',
+      params?.contextId,
+    );
+    path = appendRepeatedParams(path, 'issueTypeId', params?.issueTypeId);
+    const response = await this.transport.request<GroupedContextDefaultValuesPage>({
+      method: 'GET',
+      path,
       query,
     });
     return response.data;

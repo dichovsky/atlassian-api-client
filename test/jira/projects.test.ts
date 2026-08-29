@@ -1,5 +1,9 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { ProjectsResource } from '../../src/jira/resources/projects.js';
+import {
+  ProjectsResource,
+  type ListAllProjectVersionsParams,
+  type ListLegacyProjectsParams,
+} from '../../src/jira/resources/projects.js';
 import { MockTransport } from '../helpers/mock-transport.js';
 import { ValidationError } from '../../src/core/errors.js';
 
@@ -360,33 +364,43 @@ describe('ProjectsResource', () => {
       });
     });
 
-    it('passes all supported params correctly', async () => {
+    it('uses the exact live expand, recent, and repeated-properties contract', async () => {
       // Arrange
       transport.respondWith([]);
 
       // Act
       await projects.listLegacy({
-        maxResults: 25,
-        orderBy: 'name',
-        startAt: 10,
-        expand: ['description', 'lead'],
-        typeKey: ['software', 'business'],
-        categoryId: 5,
-        action: 'view',
-        query: 'example',
+        expand: 'description,lead',
+        recent: 20,
+        properties: ['project.owner', 'project.region'],
       });
 
       // Assert
-      expect(transport.lastCall?.options.query).toMatchObject({
-        maxResults: 25,
-        orderBy: 'name',
-        startAt: 10,
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/project?properties=project.owner&properties=project.region`,
+      );
+      expect(transport.lastCall?.options.query).toEqual({
         expand: 'description,lead',
-        typeKey: 'software,business',
-        categoryId: 5,
-        action: 'view',
-        query: 'example',
+        recent: 20,
       });
+    });
+
+    it('exposes only the live legacy-project query keys', () => {
+      type ExpectedKeys = 'expand' | 'recent' | 'properties';
+      type HasExactKeys =
+        Exclude<keyof ListLegacyProjectsParams, ExpectedKeys> extends never
+          ? Exclude<ExpectedKeys, keyof ListLegacyProjectsParams> extends never
+            ? true
+            : false
+          : false;
+      const hasExactKeys: HasExactKeys = true;
+      expect(hasExactKeys).toBe(true);
+    });
+
+    it('rejects recent values outside the documented 0..20 integer range', async () => {
+      await expect(projects.listLegacy({ recent: 21 })).rejects.toThrow(ValidationError);
+      await expect(projects.listLegacy({ recent: -1 })).rejects.toThrow(ValidationError);
+      await expect(projects.listLegacy({ recent: 1.5 })).rejects.toThrow(ValidationError);
     });
   });
 
@@ -1432,16 +1446,13 @@ describe('ProjectsResource', () => {
       });
     });
 
-    it('passes optional params', async () => {
+    it('passes the only supported optional parameter', async () => {
       transport.respondWith([]);
-      await projects.listAllVersions('PROJ', { orderBy: '-releaseDate', status: 'released' });
-      expect(transport.lastCall?.options.query).toMatchObject({
-        orderBy: '-releaseDate',
-        status: 'released',
-      });
+      await projects.listAllVersions('PROJ', { expand: 'operations' });
+      expect(transport.lastCall?.options.query).toEqual({ expand: 'operations' });
     });
 
-    it('passes all optional params including maxResults, query, and expand', async () => {
+    it('does not leak removed options from untyped JavaScript callers', async () => {
       transport.respondWith([]);
       await projects.listAllVersions('PROJ', {
         maxResults: 10,
@@ -1449,14 +1460,23 @@ describe('ProjectsResource', () => {
         query: 'v1',
         status: 'unreleased',
         expand: 'issuesstatus',
+      } as ListAllProjectVersionsParams & {
+        maxResults: number;
+        orderBy: string;
+        query: string;
+        status: string;
       });
-      expect(transport.lastCall?.options.query).toMatchObject({
-        maxResults: 10,
-        orderBy: 'name',
-        query: 'v1',
-        status: 'unreleased',
-        expand: 'issuesstatus',
-      });
+      expect(transport.lastCall?.options.query).toEqual({ expand: 'issuesstatus' });
+    });
+
+    it('exposes only expand in the flat versions query type', () => {
+      type HasExactKeys = keyof ListAllProjectVersionsParams extends 'expand'
+        ? 'expand' extends keyof ListAllProjectVersionsParams
+          ? true
+          : false
+        : false;
+      const hasExactKeys: HasExactKeys = true;
+      expect(hasExactKeys).toBe(true);
     });
   });
 

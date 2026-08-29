@@ -69,6 +69,16 @@ describe('MigrationResource', () => {
       );
     });
 
+    it('forwards retriggerCompletedMigration as a query parameter', async () => {
+      transport.respondWith(undefined, 202);
+
+      await migration.submitMigrationTask('com.example.app', 'my-custom-field', {
+        retriggerCompletedMigration: true,
+      });
+
+      expect(transport.lastCall?.options.query).toEqual({ retriggerCompletedMigration: true });
+    });
+
     it('throws when jiraIssueFieldsKey is empty', async () => {
       await expect(migration.getMigrationTask('com.example.app', '')).rejects.toThrow(
         'jiraIssueFieldsKey is required',

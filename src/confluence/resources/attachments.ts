@@ -72,7 +72,7 @@ export class AttachmentsResource {
     if (params?.limit !== undefined) validatePageSize(params.limit, 'limit');
     const response = await this.transport.request<CursorPaginatedResponse<Attachment>>({
       method: 'GET',
-      path: `${this.baseUrl}/pages/${encodePathSegment(pageId)}/attachments`,
+      path: this.buildPageAttachmentsPath(pageId, params),
       query: this.buildPageAttachmentsQuery(params),
     });
     return response.data;
@@ -162,7 +162,7 @@ export class AttachmentsResource {
     if (params?.limit !== undefined) validatePageSize(params.limit, 'limit');
     yield* paginateCursor<Attachment>(
       this.transport,
-      `${this.baseUrl}/pages/${encodePathSegment(pageId)}/attachments`,
+      this.buildPageAttachmentsPath(pageId, params),
       this.buildPageAttachmentsQuery(params),
     );
   }
@@ -493,11 +493,24 @@ export class AttachmentsResource {
   private buildPageAttachmentsQuery(params: ListAttachmentsParams | undefined): Query {
     const query: Query = {};
     if (params === undefined) return query;
+    if (params.sort !== undefined) query.sort = params.sort;
     if (params.limit !== undefined) query.limit = params.limit;
     if (params.cursor !== undefined) query.cursor = params.cursor;
     if (params.mediaType !== undefined) query.mediaType = params.mediaType;
     if (params.filename !== undefined) query.filename = params.filename;
     return query;
+  }
+
+  /** Build `GET /pages/{id}/attachments`, preserving repeated status values. */
+  private buildPageAttachmentsPath(
+    pageId: string,
+    params: ListAttachmentsParams | undefined,
+  ): string {
+    return appendScalarOrArrayParam(
+      `${this.baseUrl}/pages/${encodePathSegment(pageId)}/attachments`,
+      'status',
+      params?.status,
+    );
   }
 
   /** Build the query bag for `GET /attachments/{id}`. */

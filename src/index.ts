@@ -366,6 +366,8 @@ export type {
 // Jira
 export { JiraClient } from './jira/index.js';
 export type {
+  JiraClientConfig,
+  JiraSoftwareIntegrationProxyConfig,
   Issue,
   CreatedIssue,
   Project,

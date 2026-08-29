@@ -27,6 +27,8 @@ Full hashes in [spec/README.md](../spec/README.md). Dedup corpus: open PRs #242,
 - 10 deprecated, intentionally skipped — **all verified `deprecated: true` in the pinned spec with recorded skip dispositions** (B907 `getContextsForFieldDeprecated`; B914–B922 the nine `fieldconfigurationscheme` CRUD ops).
 - 2 non-deprecated unimplemented: `GET /rest/software/1.0/board/{boardId}/{backlog,issue}/approximate-count` — **correctly tracked as B1002/B1006 BLOCKED** in BACKLOG.md. ⚠️ The recorded blocker ("exists only under /rest/software/1.0/") is now stale: `softwareBaseUrl` infrastructure shipped with the JSIS endpoints (boards.ts derives it). Only the "needs orchestrator decision" part still holds → Phase 2 should explicitly unblock or re-affirm.
 
+> **2026-08-29 update:** B1002 and B1006 are implemented through the existing `softwareBaseUrl`; the blocker and coverage totals above are retained only as this audit's historical snapshot.
+
 **One SDK call targets a spec-absent operation** → §2 finding F1.
 
 ## 2. Adjudicated findings (FINAL)

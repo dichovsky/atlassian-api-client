@@ -5,12 +5,17 @@ import { paginateCursor, validatePageSize } from '../../core/pagination.js';
 import type { AppProperty, ListAppPropertiesParams, UpsertAppPropertyData } from '../types/app.js';
 
 /**
- * Resource for Confluence Forge / Connect app properties.
+ * Resource for the experimental Confluence Forge app-properties API.
  *
  * App properties are arbitrary JSON values keyed by `propertyKey`, scoped to
  * the calling app (not to any page / blog post / space). The Confluence v2
  * endpoints sit under `/wiki/api/v2/app/properties` and use the same
  * cursor-based pagination as other v2 collections.
+ *
+ * Atlassian requires every operation in this group to be called through
+ * Forge `asApp()`. The default basic/bearer HTTP transport cannot establish
+ * that execution context; use a Forge-aware injected transport. These are
+ * not Connect app properties or user-scoped properties.
  *
  * @see https://developer.atlassian.com/cloud/confluence/rest/v2/api-group-app-properties/
  */
@@ -20,7 +25,10 @@ export class AppResource {
     private readonly baseUrl: string,
   ) {}
 
-  /** List app properties (single page). */
+  /**
+   * List app properties (single page).
+   * @experimental Forge `asApp()` only.
+   */
   async listProperties(
     params?: ListAppPropertiesParams,
   ): Promise<CursorPaginatedResponse<AppProperty>> {
@@ -37,7 +45,10 @@ export class AppResource {
     return response.data;
   }
 
-  /** Get a single app property by key. */
+  /**
+   * Get a single app property by key.
+   * @experimental Forge `asApp()` only.
+   */
   async getProperty(propertyKey: string): Promise<AppProperty> {
     const response = await this.transport.request<AppProperty>({
       method: 'GET',
@@ -55,6 +66,8 @@ export class AppResource {
    * no version field (Confluence does not enforce optimistic concurrency on
    * app properties). The endpoint returns no response body (200 on update, 201
    * on create).
+   *
+   * @experimental Forge `asApp()` only.
    */
   async upsertProperty(propertyKey: string, data: UpsertAppPropertyData): Promise<void> {
     await this.transport.request<undefined>({
@@ -64,7 +77,10 @@ export class AppResource {
     });
   }
 
-  /** Delete an app property by key. */
+  /**
+   * Delete an app property by key.
+   * @experimental Forge `asApp()` only.
+   */
   async deleteProperty(propertyKey: string): Promise<void> {
     await this.transport.request<undefined>({
       method: 'DELETE',

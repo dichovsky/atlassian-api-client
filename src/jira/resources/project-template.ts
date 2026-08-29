@@ -54,6 +54,34 @@ export interface CustomTemplatesProjectDetails {
   readonly additionalProperties?: Record<string, string>;
 }
 
+/** Identifier/reference used by custom project-template capability payloads. */
+export interface ProjectCreateResourceIdentifier {
+  readonly anID?: boolean;
+  readonly areference?: boolean;
+  readonly entityId?: string;
+  readonly entityType?: string;
+  readonly id?: string;
+  readonly type?: 'id' | 'ref';
+}
+
+/** Project role created as part of a custom project template. */
+export interface RolePayload {
+  readonly defaultActors?: readonly ProjectCreateResourceIdentifier[];
+  readonly description?: string;
+  readonly name?: string;
+  readonly onConflict?: 'FAIL' | 'USE' | 'NEW';
+  readonly pcri?: ProjectCreateResourceIdentifier;
+  readonly type?: 'HIDDEN' | 'VIEWABLE' | 'AI_AGENT' | 'EDITABLE' | 'GUEST';
+}
+
+/** Role capability section of a custom project-template request. */
+export interface RolesCapabilityPayload {
+  readonly roleToProjectActors?: Readonly<
+    Record<string, readonly ProjectCreateResourceIdentifier[]>
+  >;
+  readonly roles?: readonly RolePayload[];
+}
+
 /**
  * The deeply-nested capability object for creating a project with a custom
  * template.  Each field corresponds to one project capability (board, workflow,
@@ -69,7 +97,7 @@ export interface CustomTemplateRequestDTO {
   readonly notification?: Record<string, unknown>;
   readonly permissionScheme?: Record<string, unknown>;
   readonly project?: Record<string, unknown>;
-  readonly role?: Record<string, unknown>;
+  readonly role?: RolesCapabilityPayload | null;
   readonly scope?: Record<string, unknown>;
   readonly security?: Record<string, unknown>;
   readonly workflow?: Record<string, unknown>;

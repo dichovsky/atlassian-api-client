@@ -134,6 +134,14 @@ describe('Reference content sanity checks', () => {
     expect(AUTH_SAFETY_REF).toContain('429');
   });
 
+  it('documents Jira Software on-premises OAuth proxy routing', () => {
+    expect(AUTH_SAFETY_REF).toContain('ATLASSIAN_SOFTWARE_CLOUD_ID');
+    expect(AUTH_SAFETY_REF).toContain('--software-cloud-id');
+    expect(AUTH_SAFETY_REF).toContain('api.atlassian.com');
+    expect(JIRA_REF).toContain('/jira/devinfo/0.1/cloud/{cloudId}');
+    expect(JIRA_REF).toContain('site version `0.10`');
+  });
+
   it('forbids bypassing a failing atlas command with a raw HTTP/curl request', () => {
     expect(AUTH_SAFETY_REF).toContain('Never construct a raw HTTP/curl request to bypass');
   });

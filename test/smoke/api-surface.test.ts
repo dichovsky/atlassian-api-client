@@ -21,6 +21,8 @@ import {
 } from '../../src/index.js';
 import type {
   ClientConfig,
+  JiraClientConfig,
+  JiraSoftwareIntegrationProxyConfig,
   Logger,
   Middleware,
   ListLabelsParams,
@@ -85,6 +87,19 @@ describe('JiraClient', () => {
       auth: { type: 'bearer', token: 'my-token' },
     });
     expect(client).toBeDefined();
+  });
+
+  it('exports the Jira Software integration proxy config types', () => {
+    const softwareIntegrationProxy: JiraSoftwareIntegrationProxyConfig = {
+      cloudId: 'cloud-123',
+    };
+    const config: JiraClientConfig = {
+      baseUrl: 'https://test.atlassian.net',
+      auth: { type: 'bearer', token: 'oauth-token' },
+      softwareIntegrationProxy,
+    };
+
+    expect(new JiraClient(config)).toBeDefined();
   });
 
   it('exposes all expected resources', () => {

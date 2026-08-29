@@ -1,5 +1,28 @@
 # Changelog
 
+## Unreleased
+
+### Breaking changes
+
+- Removed the four Jira workflow-transition-property SDK methods and CLI actions because Atlassian removed `/rest/api/3/workflow/transitions/{transitionId}/properties` from the public API on 2026-07-13. Use the bulk workflow read/update APIs.
+- Corrected `IssueArchiveExportData` to the live `ArchivedIssuesFilterRequest` contract. The fictional `jql` and `exportType` fields are gone; use `archivedBy`, `archivedDateRange`, `issueTypes`, `projects`, and `reporters`.
+- `atlas jira search search` (and the actionless/`query` aliases) now use the current cursor-paginated `/rest/api/3/search/jql` endpoint. The legacy routes remain explicitly reachable as `legacy-post` and `get`, both deprecated.
+
+### Added
+
+- Jira Platform grouped custom-field context default values and experimental ADF limit report APIs, plus current query parameters and additive response fields from the 2026-08-29 OpenAPI snapshot.
+- Jira Software board backlog/issue approximate-count APIs, complete current granular OAuth scope recognition, and parameter-level SDK/CLI/skill parity for board filters and rank controls.
+- Opt-in Jira Software system-to-system OAuth proxy routing for Development Information, Builds, and Deployments via `softwareIntegrationProxy.cloudId`, `--software-cloud-id`, or `ATLASSIAN_SOFTWARE_CLOUD_ID`.
+- Full current Confluence Space list/get contracts, task date/update filters, page/attachment/label/version query flags, and lifecycle annotations for deprecated and experimental operations.
+- Complete spec-derived granular scope validation: 38 Confluence, 33 Jira Software, and 180 Jira Platform Beta scopes (247 unique).
+- Canonical OpenAPI contract fingerprints and deterministic endpoint-gap regression checks. The weekly drift job now detects route, parameter, schema, response, security, and SDK route-coverage changes instead of only type-generator failures.
+
+### Changed
+
+- Refreshed all three pinned Atlassian OpenAPI specifications and their documentation metadata.
+- Corrected the accepted query surface for dashboard listing, legacy project listing, and flat project-version listing so unsupported options are no longer silently ignored.
+- Updated CLI help and the bundled skill to distinguish Jira Platform v3, Jira Software/Agile, and DevOps integration APIs.
+
 ## [3.0.0](https://github.com/dichovsky/atlassian-api-client/compare/v2.0.0...v3.0.0) (2026-06-15)
 
 This major release is a **spec-conformance and correctness pass** over the entire library. Following a deep audit against the pinned Atlassian OpenAPI specs (Jira Cloud platform v3, Jira Software / agile 1.0, Confluence Cloud v2), every Jira and Confluence resource's declared request/response TypeScript interfaces were aligned to the authoritative schemas, a class of on-the-wire bugs in 100%-broken methods were fixed, the error taxonomy and OAuth scope catalog were modernized, and two CLI commands had spec-required flags enforced.

@@ -6,34 +6,34 @@
 
 Full Agile board management: list, create, delete, and query board details, issues, epics, features, projects, versions, sprints, properties, quick filters, and reports.
 
-| Action                | Positionals                 | Required flags                    | Optional flags                                                 |
-| --------------------- | --------------------------- | --------------------------------- | -------------------------------------------------------------- |
-| `list`                | —                           | —                                 | `--type`, `--name`, `--project`, `--start-at`, `--max-results` |
-| `get`                 | `<boardId>`                 | —                                 | —                                                              |
-| `create`              | —                           | `--name`, `--type`, `--filter-id` | —                                                              |
-| `delete`              | `<boardId>`                 | —                                 | —                                                              |
-| `backlog`             | `<boardId>`                 | —                                 | `--jql`, `--fields`, `--start-at`, `--max-results`             |
-| `configuration`       | `<boardId>`                 | —                                 | —                                                              |
-| `list-epics`          | `<boardId>`                 | —                                 | `--done`, `--start-at`, `--max-results`                        |
-| `epic-issues`         | `<boardId> <epicId>`        | —                                 | `--jql`, `--fields`, `--start-at`, `--max-results`             |
-| `issues-without-epic` | `<boardId>`                 | —                                 | `--jql`, `--fields`, `--start-at`, `--max-results`             |
-| `get-features`        | `<boardId>`                 | —                                 | —                                                              |
-| `toggle-feature`      | `<boardId>`                 | `--feature`, `--enabling`         | —                                                              |
-| `get-issues`          | `<boardId>`                 | —                                 | `--jql`, `--fields`, `--start-at`, `--max-results`             |
-| `move-issues`         | `<boardId>`                 | `--issues`                        | —                                                              |
-| `list-projects`       | `<boardId>`                 | —                                 | `--start-at`, `--max-results`                                  |
-| `list-projects-full`  | `<boardId>`                 | —                                 | `--start-at`, `--max-results`                                  |
-| `list-sprints`        | `<boardId>`                 | —                                 | `--state`, `--start-at`, `--max-results`                       |
-| `list-versions`       | `<boardId>`                 | —                                 | `--released`, `--start-at`, `--max-results`                    |
-| `sprint-issues`       | `<boardId> <sprintId>`      | —                                 | `--jql`, `--fields`, `--start-at`, `--max-results`             |
-| `list-by-filter`      | `<filterId>`                | —                                 | `--start-at`, `--max-results`                                  |
-| `list-properties`     | `<boardId>`                 | —                                 | —                                                              |
-| `delete-property`     | `<boardId> <propertyKey>`   | —                                 | —                                                              |
-| `get-property`        | `<boardId> <propertyKey>`   | —                                 | —                                                              |
-| `set-property`        | `<boardId> <propertyKey>`   | `--value`                         | —                                                              |
-| `list-quickfilters`   | `<boardId>`                 | —                                 | `--start-at`, `--max-results`                                  |
-| `get-quickfilter`     | `<boardId> <quickFilterId>` | —                                 | —                                                              |
-| `get-reports`         | `<boardId>`                 | —                                 | —                                                              |
+| Action                | Positionals                 | Required flags                    | Optional flags                                                                                                                                                                                                                        |
+| --------------------- | --------------------------- | --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `list`                | —                           | —                                 | `--type`, `--name`, `--project`, `--account-id-location`, `--project-location`, `--include-private`, `--negate-location-filtering`, `--order-by`, `--expand`, `--project-type-location`, `--filter-id`, `--start-at`, `--max-results` |
+| `get`                 | `<boardId>`                 | —                                 | —                                                                                                                                                                                                                                     |
+| `create`              | —                           | `--name`, `--type`, `--filter-id` | `--location-type`, `--location-project-key-or-id`                                                                                                                                                                                     |
+| `delete`              | `<boardId>`                 | —                                 | —                                                                                                                                                                                                                                     |
+| `backlog`             | `<boardId>`                 | —                                 | `--jql`, `--fields`, `--start-at`, `--max-results`, `--validate-query`, `--expand`                                                                                                                                                    |
+| `configuration`       | `<boardId>`                 | —                                 | —                                                                                                                                                                                                                                     |
+| `list-epics`          | `<boardId>`                 | —                                 | `--done`, `--start-at`, `--max-results`                                                                                                                                                                                               |
+| `epic-issues`         | `<boardId> <epicId>`        | —                                 | `--jql`, `--fields`, `--start-at`, `--max-results`, `--validate-query`, `--expand`                                                                                                                                                    |
+| `issues-without-epic` | `<boardId>`                 | —                                 | `--jql`, `--fields`, `--start-at`, `--max-results`, `--validate-query`, `--expand`                                                                                                                                                    |
+| `get-features`        | `<boardId>`                 | —                                 | —                                                                                                                                                                                                                                     |
+| `toggle-feature`      | `<boardId>`                 | `--feature`, `--enabling`         | —                                                                                                                                                                                                                                     |
+| `get-issues`          | `<boardId>`                 | —                                 | `--jql`, `--fields`, `--start-at`, `--max-results`, `--validate-query`, `--expand`                                                                                                                                                    |
+| `move-issues`         | `<boardId>`                 | `--issues`                        | `--before`, `--after`, `--custom-field`                                                                                                                                                                                               |
+| `list-projects`       | `<boardId>`                 | —                                 | `--start-at`, `--max-results`                                                                                                                                                                                                         |
+| `list-projects-full`  | `<boardId>`                 | —                                 | `--start-at`, `--max-results`                                                                                                                                                                                                         |
+| `list-sprints`        | `<boardId>`                 | —                                 | `--state`, `--start-at`, `--max-results`                                                                                                                                                                                              |
+| `list-versions`       | `<boardId>`                 | —                                 | `--released`, `--start-at`, `--max-results`                                                                                                                                                                                           |
+| `sprint-issues`       | `<boardId> <sprintId>`      | —                                 | `--jql`, `--fields`, `--start-at`, `--max-results`, `--validate-query`, `--expand`                                                                                                                                                    |
+| `list-by-filter`      | `<filterId>`                | —                                 | `--start-at`, `--max-results`                                                                                                                                                                                                         |
+| `list-properties`     | `<boardId>`                 | —                                 | —                                                                                                                                                                                                                                     |
+| `delete-property`     | `<boardId> <propertyKey>`   | —                                 | —                                                                                                                                                                                                                                     |
+| `get-property`        | `<boardId> <propertyKey>`   | —                                 | —                                                                                                                                                                                                                                     |
+| `set-property`        | `<boardId> <propertyKey>`   | `--value`                         | —                                                                                                                                                                                                                                     |
+| `list-quickfilters`   | `<boardId>`                 | —                                 | `--start-at`, `--max-results`                                                                                                                                                                                                         |
+| `get-quickfilter`     | `<boardId> <quickFilterId>` | —                                 | —                                                                                                                                                                                                                                     |
+| `get-reports`         | `<boardId>`                 | —                                 | —                                                                                                                                                                                                                                     |
 
 ### Enhanced (JSIS) board issue actions
 
@@ -46,20 +46,27 @@ Non-deprecated, **token-paginated** replacements for the agile board issue listi
 | `issues-without-epic-enhanced` | `<boardId>`            | —              | `--jql`, `--fields`, `--max-results`, `--next-page-token`, `--reconcile-issues`, `--expand`, `--validate-query` |
 | `epic-issues-enhanced`         | `<boardId> <epicId>`   | —              | `--jql`, `--fields`, `--max-results`, `--next-page-token`, `--reconcile-issues`, `--expand`, `--validate-query` |
 | `sprint-issues-enhanced`       | `<boardId> <sprintId>` | —              | `--jql`, `--fields`, `--max-results`, `--next-page-token`, `--reconcile-issues`, `--expand`, `--validate-query` |
+| `backlog-approximate-count`    | `<boardId>`            | —              | `--jql`                                                                                                         |
+| `issues-approximate-count`     | `<boardId>`            | —              | `--jql`                                                                                                         |
 
 - `--next-page-token` is the opaque cursor echoed by the previous page's `nextPageToken`; omit it for the first page.
 - `--reconcile-issues` is a comma-separated list of **positive integer issue IDs** to strongly reconcile (force-index) before searching, e.g. `--reconcile-issues 10001,10002`.
 - `--validate-query true|false` controls server-side JQL validation. The server default is `true`, so pass `--validate-query false` to skip validation; omit the flag for the default. It is a tri-state filter — the value is required (`--validate-query` without a value is rejected).
 - `--fields` is comma-separated field names (same as the non-enhanced actions); `--expand` is a single expand string.
 - `--max-results` caps the page size; the server still controls the actual page boundary via `isLast`/`nextPageToken`.
+- The two `*-approximate-count` actions call the dedicated Jira Software count endpoints and return `{ count?: number }`. Use them when enhanced pagination omits an exact `total`.
 
 **Notes:**
 
-- `--type` accepts `scrum`, `kanban`, or `simple`.
+- `boards list --type` accepts `scrum`, `kanban`, or `simple`; `boards create --type` accepts `kanban`, `scrum`, or `agility`. These are different OpenAPI enums.
+- `--include-private true|false` and `--negate-location-filtering true|false` are explicit tri-state filters; omit either flag to use the server default.
+- `--project-type-location` is comma-separated and is serialized as repeated query parameters.
+- Board creation location is optional. When supplied, `--location-type` accepts `project` or `user`, and `--location-project-key-or-id` supplies the containing project key/ID.
 - `--state` (for `list-sprints`) accepts comma-separated sprint states: `future`, `active`, `closed`.
 - `--enabling` (for `toggle-feature`) accepts `true` or `false` — maps to the spec's boolean `enabling` field.
 - `--feature` is the feature key string (e.g. `SIMPLE_ROADMAP`, `BACKLOG`, `SPRINTS`).
 - `--issues` is comma-separated issue keys, e.g. `--issues PROJ-1,PROJ-2`.
+- For `move-issues`, `--before`/`--after` control relative rank and `--custom-field` is the numeric rank custom-field ID.
 - `--fields` is comma-separated field names, e.g. `--fields summary,status,assignee`.
 - `--done true|false` (for `list-epics`) filters to only done or not-done epics; omit for all epics. Tri-state — the value is required.
 - `--released` (boolean flag for `list-versions`) filters to released versions.
@@ -69,6 +76,7 @@ Non-deprecated, **token-paginated** replacements for the agile board issue listi
 - `propertyKey` is URL-encoded automatically — keys with spaces or special characters are safe to pass as-is.
 - `get-property` response: `{ key: string, value: unknown }` — the caller must narrow `value` to the expected shape.
 - Board properties are arbitrary key-value metadata stored on the board.
+- `backlog`, `get-issues`, `issues-without-epic`, `epic-issues`, and `sprint-issues` are deprecated offset-paginated Agile endpoints. Prefer the matching `*-enhanced` action. `--validate-query true|false` and `--expand` remain available for migrations that still require the deprecated routes.
 
 ```sh
 # List all boards (scrum type)
@@ -82,6 +90,9 @@ atlas jira boards get 42
 
 # Create a board linked to filter 5
 atlas jira boards create --name "My Team Board" --type scrum --filter-id 5
+
+# Create an agility board in a project location
+atlas jira boards create --name "Discovery" --type agility --filter-id 5 --location-type project --location-project-key-or-id PROJ
 
 # Delete a board
 atlas jira boards delete 42
@@ -114,7 +125,7 @@ atlas jira boards toggle-feature 42 --feature SIMPLE_ROADMAP --enabling true
 atlas jira boards get-issues 42 --jql "status != Done" --fields summary,status
 
 # Move issues onto a board
-atlas jira boards move-issues 42 --issues PROJ-1,PROJ-2,PROJ-3
+atlas jira boards move-issues 42 --issues PROJ-1,PROJ-2,PROJ-3 --before PROJ-10
 
 # List projects associated with a board
 atlas jira boards list-projects 42
@@ -181,26 +192,29 @@ atlas jira boards epic-issues-enhanced 42 7 --max-results 25
 
 # Enhanced issues for a specific sprint
 atlas jira boards sprint-issues-enhanced 1 10 --jql "status = 'In Progress'"
+
+# Approximate count for an enhanced board search
+atlas jira boards issues-approximate-count 42 --jql "statusCategory != Done"
 ```
 
 ## `sprints`
 
 Manage Agile sprints directly (not board-scoped). Supports full CRUD, partial patch, issue assignment.
 
-| Action            | Positionals                | Required flags         | Optional flags                                              |
-| ----------------- | -------------------------- | ---------------------- | ----------------------------------------------------------- |
-| `get`             | `<sprintId>`               | —                      | —                                                           |
-| `create`          | —                          | `--name`, `--board-id` | `--start-date`, `--end-date`, `--goal`                      |
-| `update`          | `<sprintId>`               | —                      | `--name`, `--state`, `--start-date`, `--end-date`, `--goal` |
-| `delete`          | `<sprintId>`               | —                      | —                                                           |
-| `get-issues`      | `<sprintId>`               | —                      | `--jql`, `--fields`, `--start-at`, `--max-results`          |
-| `partial-update`  | `<sprintId>`               | —                      | `--name`, `--state`, `--start-date`, `--end-date`, `--goal` |
-| `move-issues`     | `<sprintId>`               | `--issues`             | —                                                           |
-| `list-properties` | `<sprintId>`               | —                      | —                                                           |
-| `get-property`    | `<sprintId> <propertyKey>` | —                      | —                                                           |
-| `set-property`    | `<sprintId> <propertyKey>` | `--value`              | —                                                           |
-| `delete-property` | `<sprintId> <propertyKey>` | —                      | —                                                           |
-| `swap`            | `<sprintId>`               | `--with`               | —                                                           |
+| Action            | Positionals                | Required flags         | Optional flags                                                                     |
+| ----------------- | -------------------------- | ---------------------- | ---------------------------------------------------------------------------------- |
+| `get`             | `<sprintId>`               | —                      | —                                                                                  |
+| `create`          | —                          | `--name`, `--board-id` | `--start-date`, `--end-date`, `--goal`                                             |
+| `update`          | `<sprintId>`               | —                      | `--name`, `--state`, `--start-date`, `--end-date`, `--goal`                        |
+| `delete`          | `<sprintId>`               | —                      | —                                                                                  |
+| `get-issues`      | `<sprintId>`               | —                      | `--jql`, `--fields`, `--start-at`, `--max-results`, `--validate-query`, `--expand` |
+| `partial-update`  | `<sprintId>`               | —                      | `--name`, `--state`, `--start-date`, `--end-date`, `--goal`                        |
+| `move-issues`     | `<sprintId>`               | `--issues`             | `--before`, `--after`, `--custom-field`                                            |
+| `list-properties` | `<sprintId>`               | —                      | —                                                                                  |
+| `get-property`    | `<sprintId> <propertyKey>` | —                      | —                                                                                  |
+| `set-property`    | `<sprintId> <propertyKey>` | `--value`              | —                                                                                  |
+| `delete-property` | `<sprintId> <propertyKey>` | —                      | —                                                                                  |
+| `swap`            | `<sprintId>`               | `--with`               | —                                                                                  |
 
 **Notes:**
 
@@ -208,7 +222,9 @@ Manage Agile sprints directly (not board-scoped). Supports full CRUD, partial pa
 - `partial-update` uses **POST** (Atlassian patch semantics) — only the supplied fields are changed. Safe for single-field edits.
 - `--state` accepts `active`, `closed`, or `future` only.
 - `--issues` is **comma-separated** issue keys or IDs, e.g. `--issues PROJ-1,PROJ-2`. Max **50** per call; the client validates this before sending.
+- `move-issues --before/--after` controls relative rank; `--custom-field` is the numeric rank custom-field ID.
 - `--fields` is comma-separated, e.g. `--fields summary,status,assignee`.
+- `get-issues` is deprecated. Prefer `get-issues-enhanced`; the deprecated route still supports `--validate-query true|false` and `--expand` for migration compatibility.
 - `sprintId` and `--board-id` are numeric IDs (not names).
 - Dates are ISO 8601: `--start-date 2026-06-01T00:00:00.000Z`.
 
@@ -239,7 +255,7 @@ atlas jira sprints partial-update 42 --name "Sprint 5 (revised)"
 atlas jira sprints partial-update 42 --state closed
 
 # Move issues into sprint 42 (comma-separated, max 50)
-atlas jira sprints move-issues 42 --issues PROJ-1,PROJ-2,PROJ-3
+atlas jira sprints move-issues 42 --issues PROJ-1,PROJ-2,PROJ-3 --after PROJ-10
 
 # List sprint issues with JQL filter
 atlas jira sprints get-issues 42 --jql "status != Done" --fields summary,status,assignee
@@ -305,11 +321,11 @@ Manage Agile epics. Supports get, partial update (POST patch semantics), issue a
 | ---------------------- | --------------- | ----------------------- | --------------------------------------------------------------------------------------------------------------- |
 | `get`                  | `<epicIdOrKey>` | —                       | —                                                                                                               |
 | `update`               | `<epicIdOrKey>` | —                       | `--name`, `--summary`, `--color`, `--done`                                                                      |
-| `issues`               | `<epicIdOrKey>` | —                       | `--jql`, `--fields`, `--start-at`, `--max-results`                                                              |
+| `issues`               | `<epicIdOrKey>` | —                       | `--jql`, `--fields`, `--start-at`, `--max-results`, `--validate-query`, `--expand`                              |
 | `issues-enhanced`      | `<epicIdOrKey>` | —                       | `--jql`, `--fields`, `--max-results`, `--next-page-token`, `--reconcile-issues`, `--expand`, `--validate-query` |
 | `move-issues`          | `<epicIdOrKey>` | `--issues`              | —                                                                                                               |
 | `rank`                 | `<epicIdOrKey>` | `--before` or `--after` | `--custom-field`                                                                                                |
-| `issues-none`          | —               | —                       | `--jql`, `--fields`, `--start-at`, `--max-results`                                                              |
+| `issues-none`          | —               | —                       | `--jql`, `--fields`, `--start-at`, `--max-results`, `--validate-query`, `--expand`                              |
 | `issues-none-enhanced` | —               | —                       | `--jql`, `--fields`, `--max-results`, `--next-page-token`, `--reconcile-issues`, `--expand`, `--validate-query` |
 | `remove-issues`        | —               | `--issues`              | —                                                                                                               |
 
@@ -324,6 +340,7 @@ Manage Agile epics. Supports get, partial update (POST patch semantics), issue a
 - `--before` / `--after` accept an epic ID or key to rank the current epic before or after.
 - `--custom-field` is an optional numeric ID of the rank custom field.
 - `issues-none` returns all issues that are not assigned to any epic.
+- `issues` and `issues-none` are deprecated offset-paginated endpoints. Prefer `issues-enhanced` and `issues-none-enhanced`; the deprecated actions retain `--validate-query true|false` and `--expand` for migration compatibility.
 - `remove-issues` moves the specified issues out of their epics (sets epic link to none).
 - `issues-enhanced` and `issues-none-enhanced` are the non-deprecated, **token-paginated** replacements for `issues` and `issues-none` — they hit `/rest/software/1.0` and do not accept `--start-at`.
 - `epicIdOrKey` accepts either a numeric ID (`42`) or an epic key (`PROJ-42`); the value is path-encoded automatically.
@@ -391,19 +408,20 @@ atlas jira epic remove-issues --issues PROJ-10,PROJ-11
 
 Move issues to the Agile backlog. Supports board-scoped (B235) and global (B236) variants via a single `move` action.
 
-| Action | Positionals | Required flags | Optional flags |
-| ------ | ----------- | -------------- | -------------- |
-| `move` | —           | `--issues`     | `--board-id`   |
+| Action | Positionals | Required flags | Optional flags                                        |
+| ------ | ----------- | -------------- | ----------------------------------------------------- |
+| `move` | —           | `--issues`     | `--board-id`, `--before`, `--after`, `--custom-field` |
 
 **Notes:**
 
 - `--issues` is **comma-separated** issue keys or IDs, e.g. `--issues PROJ-1,PROJ-2`. Max **50** per call; the client validates this before sending.
 - `--board-id` scopes the backlog operation to a specific board (calls `POST /rest/agile/1.0/backlog/{boardId}/issue`). Omit `--board-id` for the global backlog endpoint (`POST /rest/agile/1.0/backlog/issue`).
+- `--before`, `--after`, and `--custom-field` are rank controls supported only by the board-scoped endpoint and therefore require `--board-id`.
 - Both variants return 204 No Content; the CLI returns `{ moved: true }`.
 
 ```sh
 # Move issues to the backlog scoped to board 1 (B235)
-atlas jira backlog move --board-id 1 --issues PROJ-1,PROJ-2
+atlas jira backlog move --board-id 1 --issues PROJ-1,PROJ-2 --before PROJ-10
 
 # Move issues to the global backlog (no board scope) (B236)
 atlas jira backlog move --issues PROJ-3,PROJ-4

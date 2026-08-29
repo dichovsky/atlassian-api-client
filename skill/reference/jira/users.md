@@ -158,16 +158,19 @@ atlas jira groups remove-user --group-id grp-1 --account-id 5b10ac8d82e05b22cc7d
 
 ## `group-user-picker`
 
-| Action | Positional | Required flags | Optional flags                                                                                              |
-| ------ | ---------- | -------------- | ----------------------------------------------------------------------------------------------------------- |
-| `pick` | —          | `--query`      | `--max-results`, `--show-avatar`, `--field-id`, `--project-id`, `--project-role`, `--exclude-connect-users` |
+| Action | Positional | Required flags | Optional flags                                                                                                                                                             |
+| ------ | ---------- | -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pick` | —          | `--query`      | `--max-results`, `--show-avatar`, `--avatar-size`, `--field-id`, `--project-id`, `--issue-type-id`, `--case-insensitive`, `--include-ai-agents`, `--exclude-connect-users` |
 
 - `--query` — string to match against both group names and user display names.
 - `--max-results` — maximum results per section (default 50).
 - `--show-avatar` — when `true`, avatar URLs are included in user results.
 - `--field-id` — the custom field ID this picker is for (e.g. `customfield_10050`). **Required for `--project-id` to have any effect** — without `--field-id` the server ignores `--project-id` entirely (spec constraint).
 - `--project-id` — **comma-separated** project IDs to scope user results to project members (sent as repeated params on the wire: `?projectId=a&projectId=b`). **Only effective when `--field-id` is also provided.**
-- `--project-role` — case-sensitive project role name to filter user results.
+- `--issue-type-id` — comma-separated issue type IDs, also sent as repeated params.
+- `--avatar-size` — avatar size such as `small`, `medium`, or `large`.
+- `--case-insensitive` — use case-insensitive group matching.
+- `--include-ai-agents` — include AI agents in user results.
 - `--exclude-connect-users` — when `true`, Atlassian Connect users are excluded.
 - Endpoint: `GET /rest/api/3/groupuserpicker`.
 
@@ -180,4 +183,7 @@ atlas jira group-user-picker pick --query dev --show-avatar --max-results 25
 
 # Scope to a specific project (field-id is required for project-id to take effect)
 atlas jira group-user-picker pick --query eng --field-id customfield_10050 --project-id 10001
+
+# Include AI agents and scope to issue types
+atlas jira group-user-picker pick --query agent --include-ai-agents --issue-type-id 10000,10001
 ```

@@ -154,17 +154,17 @@ atlas jira resolutions search --max-results 10
 
 Bulk management, usage queries, and search for the `/rest/api/3/statuses` surface.
 
-| Action                  | Positional                 | Required flags       | Optional flags                                                                        |
-| ----------------------- | -------------------------- | -------------------- | ------------------------------------------------------------------------------------- |
-| `list`                  | —                          | —                    | —                                                                                     |
-| `bulk-delete`           | —                          | `--ids`              | —                                                                                     |
-| `bulk-create`           | —                          | `--value`, `--scope` | —                                                                                     |
-| `bulk-update`           | —                          | `--value`            | —                                                                                     |
-| `get-issue-type-usages` | `<statusId>` `<projectId>` | —                    | `--next-page-token`, `--max-results`                                                  |
-| `get-project-usages`    | `<statusId>`               | —                    | `--next-page-token`, `--max-results`                                                  |
-| `get-workflow-usages`   | `<statusId>`               | —                    | `--next-page-token`, `--max-results`                                                  |
-| `by-names`              | —                          | `--names`            | —                                                                                     |
-| `search`                | —                          | —                    | `--project-id`, `--start-at`, `--max-results`, `--search-string`, `--status-category` |
+| Action                  | Positional                 | Required flags       | Optional flags                                                                                                     |
+| ----------------------- | -------------------------- | -------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `list`                  | —                          | —                    | —                                                                                                                  |
+| `bulk-delete`           | —                          | `--ids`              | —                                                                                                                  |
+| `bulk-create`           | —                          | `--value`, `--scope` | —                                                                                                                  |
+| `bulk-update`           | —                          | `--value`            | —                                                                                                                  |
+| `get-issue-type-usages` | `<statusId>` `<projectId>` | —                    | `--next-page-token`, `--max-results`                                                                               |
+| `get-project-usages`    | `<statusId>`               | —                    | `--next-page-token`, `--max-results`                                                                               |
+| `get-workflow-usages`   | `<statusId>`               | —                    | `--next-page-token`, `--max-results`                                                                               |
+| `by-names`              | —                          | `--names`            | —                                                                                                                  |
+| `search`                | —                          | —                    | `--project-id`, `--start-at`, `--max-results`, `--search-string`, `--status-category`, `--include-global-statuses` |
 
 - `--ids` for `bulk-delete`: comma-separated status IDs.
 - `--value` for `bulk-create`: JSON array of `{ name, statusCategory, description? }` objects. `statusCategory` must be `TODO`, `IN_PROGRESS`, or `DONE`.
@@ -174,6 +174,7 @@ Bulk management, usage queries, and search for the `/rest/api/3/statuses` surfac
 - **Usage response shapes are nested DTOs**, not a flat page: `get-project-usages` → `{ statusId, projects: { values: [{id}], nextPageToken? } }`; `get-workflow-usages` → `{ statusId, workflows: { values: [{id}], nextPageToken? } }`; `get-issue-type-usages` → `{ statusId, projectId, issueTypes: { values: [{id}], nextPageToken? } }`. Read items from the nested `.values`, and the cursor from the nested `.nextPageToken`.
 - `--names` for `by-names`: comma-separated status names.
 - `--status-category`: one of `TODO`, `IN_PROGRESS`, `DONE`.
+- `--include-global-statuses`: when filtering by `--project-id`, also include statuses whose scope is global.
 
 ```sh
 atlas jira statuses list --ids 10001,10002
@@ -185,18 +186,18 @@ atlas jira statuses get-issue-type-usages 10001 10002
 atlas jira statuses get-project-usages 10001 --next-page-token abc123
 atlas jira statuses get-workflow-usages 10001
 atlas jira statuses by-names --names "In Progress,Done"
-atlas jira statuses search --project-id 10000 --search-string "In Progress" --status-category IN_PROGRESS
+atlas jira statuses search --project-id 10000 --search-string "In Progress" --status-category IN_PROGRESS --include-global-statuses
 ```
 
 ## `expression`
 
 Jira expression validation and evaluation at `/rest/api/3/expression/{analyse,eval,evaluate}` (B409, B904, B410).
 
-| Action     | Positional | Required flags  | Optional flags                   |
-| ---------- | ---------- | --------------- | -------------------------------- |
-| `analyse`  | —          | `--expressions` | `--context-variables`, `--check` |
-| `eval`     | —          | `--expression`  | `--context`, `--expand`          |
-| `evaluate` | —          | `--expression`  | `--context`, `--expand`          |
+| Action              | Positional | Required flags  | Optional flags                   |
+| ------------------- | ---------- | --------------- | -------------------------------- |
+| `analyse`           | —          | `--expressions` | `--context-variables`, `--check` |
+| `eval` (deprecated) | —          | `--expression`  | `--context`, `--expand`          |
+| `evaluate`          | —          | `--expression`  | `--context`, `--expand`          |
 
 - `--expressions` (on `analyse`) is a **JSON array of strings**, e.g. `'["issue.key","issue.summary"]'`.
 - `--context-variables` (on `analyse`) is a **JSON object** mapping variable names to type strings, e.g. `'{"value":"User","listOfStrings":"List<String>"}'`.
@@ -204,8 +205,8 @@ Jira expression validation and evaluation at `/rest/api/3/expression/{analyse,ev
 - `--expression` (on `eval`/`evaluate`) is a single Jira expression string.
 - `--context` (on `eval`/`evaluate`) is a **JSON object** matching the `JiraExpressionEvalContextBean` shape (board, custom, customerRequest, issue, issues.jql, project, serviceDesk, sprint).
 - `--expand` (on `eval`/`evaluate`) is a comma-separated list of expansion keys (e.g. `meta.complexity`).
-- `eval` uses the enhanced (scrolling, `nextPageToken`) JQL search and is eventually consistent.
-- `evaluate` uses the legacy strongly-consistent paginated JQL search (`startAt`/`totalCount`).
+- `eval` uses the legacy strongly-consistent offset-paginated search and is currently being removed by Atlassian.
+- `evaluate` is the current replacement; it uses enhanced eventually-consistent search with a scrolling `nextPageToken` view.
 
 ```sh
 # Validate two expressions
@@ -217,19 +218,19 @@ atlas jira expression analyse \
   --context-variables '{"value":"User"}' \
   --check type
 
-# Evaluate an expression against an issue (enhanced search)
-atlas jira expression eval \
+# Evaluate an expression against an issue (current enhanced search)
+atlas jira expression evaluate \
   --expression "issue.key" \
   --context '{"issue":{"key":"ACJIRA-1470"}}'
 
 # Evaluate using a JQL scrolling view and expand complexity metadata
-atlas jira expression eval \
+atlas jira expression evaluate \
   --expression "issues.map(i => i.key)" \
   --context '{"issues":{"jql":{"query":"project = ACJIRA","maxResults":100}}}' \
   --expand meta.complexity
 
-# Evaluate against the legacy paginated JQL endpoint
-atlas jira expression evaluate \
+# Legacy strongly-consistent endpoint (deprecated)
+atlas jira expression eval \
   --expression "issue.summary" \
   --context '{"issue":{"key":"ACJIRA-1470"}}' \
   --expand meta.complexity

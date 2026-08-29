@@ -81,8 +81,8 @@ export class EpicResource {
     private readonly baseUrl: string,
     /**
      * Base URL for the Jira Software "enhanced" (JSIS) endpoints
-     * (`/rest/software/1.0`). Optional for backwards compatibility with direct
-     * constructor callers: when omitted it is derived from `baseUrl` by
+     * (`/rest/software/1.0`). Optional for backwards-compatible direct
+     * instantiation; when omitted it is derived from `baseUrl` by
      * swapping the agile segment (`/rest/agile/1.0` → `/rest/software/1.0`).
      */
     softwareBaseUrl?: string,
@@ -121,6 +121,8 @@ export class EpicResource {
    *
    * The agile endpoint returns `{issues:[...], startAt, maxResults, total}`.
    * This method maps `.issues` → `.values` for a consistent `OffsetPaginatedResponse` shape.
+   *
+   * @deprecated Use {@link getIssuesEnhanced} for new integrations.
    */
   async getIssues(
     epicIdOrKey: string,
@@ -200,6 +202,8 @@ export class EpicResource {
    *
    * The agile endpoint returns `{issues:[...], startAt, maxResults, total}`.
    * This method maps `.issues` → `.values` for a consistent `OffsetPaginatedResponse` shape.
+   *
+   * @deprecated Use {@link getIssuesWithoutEpicEnhanced} for new integrations.
    */
   async getIssuesWithoutEpic(
     params?: ListEpicIssuesParams,

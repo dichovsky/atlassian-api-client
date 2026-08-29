@@ -76,10 +76,12 @@ describe('CLI --help e2e', () => {
   it('prints Jira help for `atlas jira --help`', async () => {
     const { stdout, code } = await runCli(['jira', '--help']);
     expect(code).toBe(0);
-    expect(stdout).toContain('atlas jira - Jira Cloud Platform REST API v3');
+    expect(stdout).toContain('atlas jira - Jira Cloud Platform v3 + Software/Agile + DevOps APIs');
     for (const resource of jiraResources) {
       expect(stdout).toContain(resource);
     }
+    expect(stdout).toContain('atlas jira projects list-all-versions PROJ --expand operations');
+    expect(stdout).not.toContain('atlas jira projects list-all-versions PROJ --order-by');
   });
 
   it('prints install-skill help for `atlas install-skill --help`', async () => {

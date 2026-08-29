@@ -400,6 +400,7 @@ const jiraIssuesMock = {
   getCreateMetaIssueTypes: vi.fn(),
   getCreateMetaIssueType: vi.fn(),
   getLimitReport: vi.fn(),
+  getAdfLimitReport: vi.fn(),
   picker: vi.fn(),
   setPropertiesByEntityIds: vi.fn(),
   setPropertiesMulti: vi.fn(),
@@ -570,6 +571,8 @@ const jiraBoardsMock = {
   getIssuesWithoutEpicEnhanced: vi.fn(),
   getEpicIssuesEnhanced: vi.fn(),
   getSprintIssuesEnhanced: vi.fn(),
+  getBacklogApproximateCount: vi.fn(),
+  getIssueApproximateCount: vi.fn(),
 };
 const jiraSprintsMock = {
   get: vi.fn(),
@@ -1139,6 +1142,7 @@ const jiraFieldsMock = {
   setContextIssueTypes: vi.fn(),
   removeContextIssueTypes: vi.fn(),
   listContextIssueTypeMappings: vi.fn(),
+  getContextDefaultValues: vi.fn(),
   listContextDefaultValues: vi.fn(),
   setContextDefaultValues: vi.fn(),
   setContextProjects: vi.fn(),
@@ -1179,10 +1183,6 @@ const jiraWorkflowsMock = {
   getTransitionRuleConfigs: vi.fn(),
   updateTransitionRuleConfigs: vi.fn(),
   deleteTransitionRuleConfigs: vi.fn(),
-  deleteTransitionProperty: vi.fn(),
-  getTransitionProperties: vi.fn(),
-  createTransitionProperty: vi.fn(),
-  updateTransitionProperty: vi.fn(),
   previewWorkflows: vi.fn(),
   searchWorkflows: vi.fn(),
   updateWorkflows: vi.fn(),
@@ -1486,6 +1486,70 @@ describe('executeConfluenceCommand', () => {
       expect(result).toEqual(page);
     });
 
+    it('pages get forwards the current body, revision, status, and include flags', async () => {
+      confluencePagesMock.get.mockResolvedValue({ id: '123' });
+
+      await executeConfluenceCommand(
+        cmd('pages', 'get', ['123'], {
+          'body-format': 'view',
+          'get-draft': true,
+          status: 'current,draft',
+          'historical-version': '4',
+          'include-labels': true,
+          'include-properties': true,
+          'include-operations': true,
+          'include-likes': true,
+          'include-versions': true,
+          'include-version': true,
+          'include-favorited-by-current-user-status': true,
+          'include-webresources': true,
+          'include-collaborators': true,
+          'include-direct-children': true,
+        }),
+        GLOBALS,
+      );
+
+      expect(confluencePagesMock.get).toHaveBeenCalledWith('123', {
+        'body-format': 'view',
+        'get-draft': true,
+        status: ['current', 'draft'],
+        version: 4,
+        'include-labels': true,
+        'include-properties': true,
+        'include-operations': true,
+        'include-likes': true,
+        'include-versions': true,
+        'include-version': true,
+        'include-favorited-by-current-user-status': true,
+        'include-webresources': true,
+        'include-collaborators': true,
+        'include-direct-children': true,
+      });
+    });
+
+    it('pages get can explicitly suppress the default version block', async () => {
+      confluencePagesMock.get.mockResolvedValue({ id: '123' });
+      await executeConfluenceCommand(
+        cmd('pages', 'get', ['123'], { 'no-include-version': true }),
+        GLOBALS,
+      );
+      expect(confluencePagesMock.get).toHaveBeenCalledWith('123', {
+        'include-version': false,
+      });
+    });
+
+    it('pages get rejects contradictory version projection flags', async () => {
+      await expect(
+        executeConfluenceCommand(
+          cmd('pages', 'get', ['123'], {
+            'include-version': true,
+            'no-include-version': true,
+          }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('Cannot specify both --include-version and --no-include-version');
+    });
+
     it('pages get throws when page ID is missing', async () => {
       await expect(executeConfluenceCommand(cmd('pages', 'get', []), GLOBALS)).rejects.toThrow(
         'Missing required argument: page ID',
@@ -1528,6 +1592,26 @@ describe('executeConfluenceCommand', () => {
         expect.objectContaining({
           body: { representation: 'storage', value: '<p>Hello</p>' },
         }),
+      );
+    });
+
+    it('pages create forwards embedded, private, and root-level query flags', async () => {
+      confluencePagesMock.create.mockResolvedValue({ id: '1' });
+
+      await executeConfluenceCommand(
+        cmd('pages', 'create', [], {
+          'space-id': 'S1',
+          title: 'Root page',
+          embedded: true,
+          private: true,
+          'root-level': true,
+        }),
+        GLOBALS,
+      );
+
+      expect(confluencePagesMock.create).toHaveBeenCalledWith(
+        expect.objectContaining({ spaceId: 'S1', title: 'Root page' }),
+        { embedded: true, private: true, 'root-level': true },
       );
     });
 
@@ -2146,6 +2230,23 @@ describe('executeConfluenceCommand', () => {
       });
     });
 
+    it('pages versions forwards body-format and sort', async () => {
+      confluenceVersionsMock.listForPage.mockResolvedValue({ results: [] });
+      await executeConfluenceCommand(
+        cmd('pages', 'versions', ['p-1'], {
+          'body-format': 'atlas_doc_format',
+          sort: '-modified-date',
+        }),
+        GLOBALS,
+      );
+      expect(confluenceVersionsMock.listForPage).toHaveBeenCalledWith('p-1', {
+        'body-format': 'atlas_doc_format',
+        sort: '-modified-date',
+        cursor: undefined,
+        limit: undefined,
+      });
+    });
+
     it('pages versions throws when page ID missing', async () => {
       await expect(executeConfluenceCommand(cmd('pages', 'versions'), GLOBALS)).rejects.toThrow(
         'page ID',
@@ -2284,6 +2385,43 @@ describe('executeConfluenceCommand', () => {
       );
     });
 
+    it('spaces list forwards every current list filter and representation option', async () => {
+      confluenceSpacesMock.list.mockResolvedValue({ results: [] });
+
+      await executeConfluenceCommand(
+        cmd('spaces', 'list', [], {
+          ids: '10,20',
+          keys: 'ENG,OPS',
+          type: 'knowledge_base',
+          status: 'trashed',
+          labels: 'team-a,priority',
+          'favorited-by': 'acc-fav',
+          'not-favorited-by': 'acc-hidden',
+          sort: '-name',
+          'description-format': 'view',
+          'include-icon': true,
+          limit: '50',
+          cursor: 'next',
+        }),
+        GLOBALS,
+      );
+
+      expect(confluenceSpacesMock.list).toHaveBeenCalledWith({
+        ids: [10, 20],
+        keys: ['ENG', 'OPS'],
+        type: 'knowledge_base',
+        status: 'trashed',
+        labels: ['team-a', 'priority'],
+        'favorited-by': 'acc-fav',
+        'not-favorited-by': 'acc-hidden',
+        sort: '-name',
+        'description-format': 'view',
+        'include-icon': true,
+        limit: 50,
+        cursor: 'next',
+      });
+    });
+
     it('spaces get calls client.spaces.get with space ID', async () => {
       // Arrange
       confluenceSpacesMock.get.mockResolvedValue({ id: '~SPACE' });
@@ -2294,6 +2432,33 @@ describe('executeConfluenceCommand', () => {
       // Assert
       expect(confluenceSpacesMock.get).toHaveBeenCalledWith('~SPACE');
       expect(result).toEqual({ id: '~SPACE' });
+    });
+
+    it('spaces get forwards all current include parameters', async () => {
+      confluenceSpacesMock.get.mockResolvedValue({ id: '42' });
+
+      await executeConfluenceCommand(
+        cmd('spaces', 'get', ['42'], {
+          'description-format': 'plain',
+          'include-icon': true,
+          'include-operations': true,
+          'include-properties': true,
+          'include-permissions': true,
+          'include-role-assignments': true,
+          'include-labels': true,
+        }),
+        GLOBALS,
+      );
+
+      expect(confluenceSpacesMock.get).toHaveBeenCalledWith('42', {
+        'description-format': 'plain',
+        'include-icon': true,
+        'include-operations': true,
+        'include-properties': true,
+        'include-permissions': true,
+        'include-role-assignments': true,
+        'include-labels': true,
+      });
     });
 
     it('spaces get throws when ID is missing', async () => {
@@ -4142,6 +4307,30 @@ describe('executeConfluenceCommand', () => {
       );
     });
 
+    it('attachments list forwards page attachment sort, status, media type, and filename', async () => {
+      confluenceAttachmentsMock.listForPage.mockResolvedValue({ results: [] });
+
+      await executeConfluenceCommand(
+        cmd('attachments', 'list', [], {
+          'page-id': 'p-1',
+          sort: '-created-date',
+          status: 'current,trashed',
+          'media-type': 'image/png',
+          filename: 'diagram.png',
+        }),
+        GLOBALS,
+      );
+
+      expect(confluenceAttachmentsMock.listForPage).toHaveBeenCalledWith('p-1', {
+        sort: '-created-date',
+        status: ['current', 'trashed'],
+        mediaType: 'image/png',
+        filename: 'diagram.png',
+        limit: undefined,
+        cursor: undefined,
+      });
+    });
+
     it('attachments list throws when page-id is missing', async () => {
       await expect(executeConfluenceCommand(cmd('attachments', 'list'), GLOBALS)).rejects.toThrow(
         '--page-id',
@@ -4580,6 +4769,26 @@ describe('executeConfluenceCommand', () => {
         'p-1',
         expect.objectContaining({ cursor: 'lbl-tok' }),
       );
+    });
+
+    it('labels list forwards and validates page label prefix and sort', async () => {
+      confluenceLabelsMock.listForPage.mockResolvedValue({ results: [] });
+
+      await executeConfluenceCommand(
+        cmd('labels', 'list', [], {
+          'page-id': 'p-1',
+          prefix: 'global',
+          sort: '-name',
+        }),
+        GLOBALS,
+      );
+
+      expect(confluenceLabelsMock.listForPage).toHaveBeenCalledWith('p-1', {
+        prefix: 'global',
+        sort: '-name',
+        limit: undefined,
+        cursor: undefined,
+      });
     });
 
     it('labels unknown action throws', async () => {
@@ -6375,6 +6584,8 @@ describe('executeConfluenceCommand', () => {
         createdAtTo: undefined,
         dueAtFrom: undefined,
         dueAtTo: undefined,
+        completedAtFrom: undefined,
+        completedAtTo: undefined,
         cursor: undefined,
         limit: undefined,
       });
@@ -6401,6 +6612,8 @@ describe('executeConfluenceCommand', () => {
         'created-at-to': '1710000000000',
         'due-at-from': '1705000000000',
         'due-at-to': '1715000000000',
+        'completed-at-from': '1707500000000',
+        'completed-at-to': '1717500000000',
         cursor: 'next-page',
         limit: '50',
       });
@@ -6424,6 +6637,8 @@ describe('executeConfluenceCommand', () => {
         createdAtTo: 1710000000000,
         dueAtFrom: 1705000000000,
         dueAtTo: 1715000000000,
+        completedAtFrom: 1707500000000,
+        completedAtTo: 1717500000000,
         cursor: 'next-page',
         limit: 50,
       });
@@ -6441,6 +6656,12 @@ describe('executeConfluenceCommand', () => {
       await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
         '--limit must be a positive integer',
       );
+    });
+
+    it('tasks list rejects a negative epoch-millisecond filter', async () => {
+      await expect(
+        executeConfluenceCommand(cmd('tasks', 'list', [], { 'completed-at-from': '-1' }), GLOBALS),
+      ).rejects.toThrow('--completed-at-from must be a non-negative integer');
     });
 
     it('tasks list passes negative --task-id as part of the integer array (B1059: no client-side range check for array IDs)', async () => {
@@ -6502,6 +6723,24 @@ describe('executeConfluenceCommand', () => {
       // Assert
       expect(confluenceTasksMock.update).toHaveBeenCalledWith('t-1', { status: 'complete' });
       expect(result).toEqual(payload);
+    });
+
+    it('tasks update forwards body-format as a query parameter', async () => {
+      confluenceTasksMock.update.mockResolvedValue({ id: 't-1', status: 'complete' });
+
+      await executeConfluenceCommand(
+        cmd('tasks', 'update', ['t-1'], {
+          status: 'complete',
+          'body-format': 'atlas_doc_format',
+        }),
+        GLOBALS,
+      );
+
+      expect(confluenceTasksMock.update).toHaveBeenCalledWith(
+        't-1',
+        { status: 'complete' },
+        { 'body-format': 'atlas_doc_format' },
+      );
     });
 
     it('tasks update throws when --status is missing', async () => {
@@ -9844,11 +10083,29 @@ describe('executeJiraCommand', () => {
       expect(result).toMatchObject({ fields: {} });
     });
 
-    it('issues get-limit-report calls getLimitReport', async () => {
+    it('issues get-limit-report calls getLimitReport with current query options', async () => {
       jiraIssuesMock.getLimitReport.mockResolvedValue({ issueIds: [10001] });
-      const result = await executeJiraCommand(cmd('issues', 'get-limit-report', []), GLOBALS);
-      expect(jiraIssuesMock.getLimitReport).toHaveBeenCalled();
+      const result = await executeJiraCommand(
+        cmd('issues', 'get-limit-report', [], { 'is-returning-keys': true }),
+        GLOBALS,
+      );
+      expect(jiraIssuesMock.getLimitReport).toHaveBeenCalledWith({ isReturningKeys: true });
       expect(result).toMatchObject({ issueIds: [10001] });
+    });
+
+    it('issues get-adf-limit-report calls the experimental ADF report', async () => {
+      jiraIssuesMock.getAdfLimitReport.mockResolvedValue({ issuesBreachingLimit: {} });
+      await executeJiraCommand(
+        cmd('issues', 'get-adf-limit-report', [], {
+          'is-returning-keys': true,
+          'field-type': 'comment_adf,worklog_adf',
+        }),
+        GLOBALS,
+      );
+      expect(jiraIssuesMock.getAdfLimitReport).toHaveBeenCalledWith({
+        isReturningKeys: true,
+        fieldType: ['comment_adf', 'worklog_adf'],
+      });
     });
 
     it('issues picker calls picker', async () => {
@@ -9978,47 +10235,50 @@ describe('executeJiraCommand', () => {
       ).rejects.toThrow('--issue-ids');
     });
 
-    it('issues export-archived calls exportArchivedIssues and returns { submitted: true }', async () => {
+    it('issues export-archived forwards current archived-issue filters', async () => {
       jiraIssuesMock.exportArchivedIssues.mockResolvedValue(undefined);
       const result = await executeJiraCommand(
-        cmd('issues', 'export-archived', [], { jql: 'project = PROJ', 'export-type': 'CSV' }),
+        cmd('issues', 'export-archived', [], {
+          'archived-by': 'archiver-1,archiver-2',
+          'date-after': '2026-01-01',
+          'date-before': '2026-02-01',
+          'issue-types': '10001,10002',
+          projects: 'PROJ,OPS',
+          reporters: 'reporter-1',
+        }),
         GLOBALS,
       );
       expect(jiraIssuesMock.exportArchivedIssues).toHaveBeenCalledWith(
-        expect.objectContaining({ jql: 'project = PROJ', exportType: 'CSV' }),
+        expect.objectContaining({
+          archivedBy: ['archiver-1', 'archiver-2'],
+          archivedDateRange: { dateAfter: '2026-01-01', dateBefore: '2026-02-01' },
+          issueTypes: ['10001', '10002'],
+          projects: ['PROJ', 'OPS'],
+          reporters: ['reporter-1'],
+        }),
       );
       expect(result).toEqual({ submitted: true });
     });
 
-    it('issues export-archived without export-type passes undefined exportType', async () => {
+    it('issues export-archived works without filters', async () => {
       jiraIssuesMock.exportArchivedIssues.mockResolvedValue(undefined);
-      const result = await executeJiraCommand(
-        cmd('issues', 'export-archived', [], { jql: 'project = PROJ' }),
-        GLOBALS,
-      );
-      expect(jiraIssuesMock.exportArchivedIssues).toHaveBeenCalledWith(
-        expect.objectContaining({ exportType: undefined }),
-      );
+      const result = await executeJiraCommand(cmd('issues', 'export-archived', []), GLOBALS);
+      expect(jiraIssuesMock.exportArchivedIssues).toHaveBeenCalledWith({
+        archivedBy: undefined,
+        issueTypes: undefined,
+        projects: undefined,
+        reporters: undefined,
+      });
       expect(result).toEqual({ submitted: true });
     });
 
-    it('issues export-archived with XLSX export type calls exportArchivedIssues', async () => {
-      jiraIssuesMock.exportArchivedIssues.mockResolvedValue(undefined);
-      const result = await executeJiraCommand(
-        cmd('issues', 'export-archived', [], { 'export-type': 'XLSX' }),
-        GLOBALS,
-      );
-      expect(jiraIssuesMock.exportArchivedIssues).toHaveBeenCalledWith(
-        expect.objectContaining({ exportType: 'XLSX' }),
-      );
-      expect(result).toEqual({ submitted: true });
-    });
-
-    it('issues export-archived throws when --export-type is invalid', async () => {
-      jiraIssuesMock.exportArchivedIssues.mockResolvedValue(undefined);
+    it('issues export-archived requires both date range boundaries', async () => {
       await expect(
-        executeJiraCommand(cmd('issues', 'export-archived', [], { 'export-type': 'PDF' }), GLOBALS),
-      ).rejects.toThrow('--export-type must be CSV or XLSX');
+        executeJiraCommand(
+          cmd('issues', 'export-archived', [], { 'date-after': '2026-01-01' }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--date-after and --date-before must be provided together');
     });
 
     it('issues unknown action throws', async () => {
@@ -10093,31 +10353,54 @@ describe('executeJiraCommand', () => {
       expect(result).toEqual([{ id: '1', key: 'P' }]);
     });
 
-    it('projects list-legacy passes --query and --type-key', async () => {
+    it('projects list-legacy passes the exact live query surface', async () => {
       // Arrange
       jiraProjectsMock.listLegacy.mockResolvedValue([]);
 
       // Act
       await executeJiraCommand(
-        cmd('projects', 'list-legacy', [], { query: 'ex', 'type-key': 'software,business' }),
+        cmd('projects', 'list-legacy', [], {
+          expand: 'description,lead',
+          recent: '20',
+          properties: 'project.owner,project.region',
+        }),
         GLOBALS,
       );
 
       // Assert
-      expect(jiraProjectsMock.listLegacy).toHaveBeenCalledWith(
-        expect.objectContaining({ query: 'ex', typeKey: ['software', 'business'] }),
-      );
+      expect(jiraProjectsMock.listLegacy).toHaveBeenCalledWith({
+        expand: 'description,lead',
+        recent: 20,
+        properties: ['project.owner', 'project.region'],
+      });
     });
 
-    it('projects list-legacy passes --expand as array', async () => {
+    it('projects list-legacy rejects --recent above 20', async () => {
+      jiraProjectsMock.listLegacy.mockResolvedValue([]);
+      await expect(
+        executeJiraCommand(cmd('projects', 'list-legacy', [], { recent: '21' }), GLOBALS),
+      ).rejects.toThrow('--recent must be an integer between 0 and 20');
+    });
+
+    it('projects list-legacy ignores removed compatibility flags', async () => {
       jiraProjectsMock.listLegacy.mockResolvedValue([]);
       await executeJiraCommand(
-        cmd('projects', 'list-legacy', [], { expand: 'description,lead' }),
+        cmd('projects', 'list-legacy', [], {
+          'max-results': '25',
+          'order-by': 'name',
+          'start-at': '10',
+          'type-key': 'software',
+          'category-id': '5',
+          action: 'view',
+          query: 'example',
+        }),
         GLOBALS,
       );
-      expect(jiraProjectsMock.listLegacy).toHaveBeenCalledWith(
-        expect.objectContaining({ expand: ['description', 'lead'] }),
-      );
+      expect(jiraProjectsMock.listLegacy).toHaveBeenCalledWith({
+        expand: undefined,
+        recent: undefined,
+        properties: undefined,
+      });
     });
 
     it('projects create calls client.projects.create with required fields', async () => {
@@ -10814,10 +11097,18 @@ describe('executeJiraCommand', () => {
     it('projects list-all-versions calls client.projects.listAllVersions', async () => {
       jiraProjectsMock.listAllVersions.mockResolvedValue([{ id: 'v1' }]);
       const result = await executeJiraCommand(
-        cmd('projects', 'list-all-versions', ['PROJ']),
+        cmd('projects', 'list-all-versions', ['PROJ'], {
+          expand: 'operations',
+          'max-results': '10',
+          'order-by': 'name',
+          query: 'v1',
+          status: 'released',
+        }),
         GLOBALS,
       );
-      expect(jiraProjectsMock.listAllVersions).toHaveBeenCalledWith('PROJ', expect.any(Object));
+      expect(jiraProjectsMock.listAllVersions).toHaveBeenCalledWith('PROJ', {
+        expand: 'operations',
+      });
       expect(result).toEqual([{ id: 'v1' }]);
     });
 
@@ -10989,16 +11280,16 @@ describe('executeJiraCommand', () => {
   // ── search ────────────────────────────────────────────────────────────────
 
   describe('search resource', () => {
-    it('search calls client.search.search with jql option', async () => {
+    it('search defaults to current searchJqlGet with jql option', async () => {
       // Arrange
-      jiraSearchMock.search.mockResolvedValue({ issues: [], startAt: 0, maxResults: 50 });
+      jiraSearchMock.searchJqlGet.mockResolvedValue({ issues: [] });
       const parsed = cmd('search', '', [], { jql: 'project = PROJ' });
 
       // Act
       const result = await executeJiraCommand(parsed, GLOBALS);
 
       // Assert
-      expect(jiraSearchMock.search).toHaveBeenCalledWith(
+      expect(jiraSearchMock.searchJqlGet).toHaveBeenCalledWith(
         expect.objectContaining({ jql: 'project = PROJ' }),
       );
       expect(result).toMatchObject({ issues: [] });
@@ -11006,14 +11297,14 @@ describe('executeJiraCommand', () => {
 
     it('search with action=query uses jql option', async () => {
       // Arrange
-      jiraSearchMock.search.mockResolvedValue({ issues: [], startAt: 0, maxResults: 50 });
+      jiraSearchMock.searchJqlGet.mockResolvedValue({ issues: [] });
       const parsed = cmd('search', 'query', [], { jql: 'status = Open' });
 
       // Act
       await executeJiraCommand(parsed, GLOBALS);
 
       // Assert
-      expect(jiraSearchMock.search).toHaveBeenCalledWith(
+      expect(jiraSearchMock.searchJqlGet).toHaveBeenCalledWith(
         expect.objectContaining({ jql: 'status = Open' }),
       );
     });
@@ -11024,9 +11315,15 @@ describe('executeJiraCommand', () => {
       );
     });
 
+    it('search rejects an unknown action instead of falling through to the default query', async () => {
+      await expect(
+        executeJiraCommand(cmd('search', 'made-up', [], { jql: 'project = PROJ' }), GLOBALS),
+      ).rejects.toThrow('Unknown search action: made-up');
+    });
+
     it('search passes max-results and fields options', async () => {
       // Arrange
-      jiraSearchMock.search.mockResolvedValue({ issues: [] });
+      jiraSearchMock.searchJqlGet.mockResolvedValue({ issues: [] });
       const parsed = cmd('search', '', [], {
         jql: 'project = PROJ',
         'max-results': '25',
@@ -11037,7 +11334,7 @@ describe('executeJiraCommand', () => {
       await executeJiraCommand(parsed, GLOBALS);
 
       // Assert
-      expect(jiraSearchMock.search).toHaveBeenCalledWith(
+      expect(jiraSearchMock.searchJqlGet).toHaveBeenCalledWith(
         expect.objectContaining({
           jql: 'project = PROJ',
           maxResults: 25,
@@ -11059,6 +11356,17 @@ describe('executeJiraCommand', () => {
         expect.objectContaining({ jql: 'project = PROJ' }),
       );
       expect(result).toMatchObject({ issues: [] });
+    });
+
+    it('search action=legacy-post keeps the deprecated POST route explicitly reachable', async () => {
+      jiraSearchMock.search.mockResolvedValue({ issues: [] });
+      await executeJiraCommand(
+        cmd('search', 'legacy-post', [], { jql: 'project = PROJ' }),
+        GLOBALS,
+      );
+      expect(jiraSearchMock.search).toHaveBeenCalledWith(
+        expect.objectContaining({ jql: 'project = PROJ' }),
+      );
     });
 
     it('search action=get throws when --jql is missing', async () => {
@@ -12321,7 +12629,7 @@ describe('executeJiraCommand', () => {
       expect(result).toEqual(payload);
     });
 
-    it('boards sprint-issues passes jql, fields, start-at, max-results', async () => {
+    it('boards sprint-issues passes every deprecated issue-list query parameter', async () => {
       // Arrange
       jiraBoardsMock.getSprintIssues.mockResolvedValue({ values: [] });
       const parsed = cmd('boards', 'sprint-issues', ['1', '10'], {
@@ -12329,6 +12637,8 @@ describe('executeJiraCommand', () => {
         fields: 'summary,status',
         'start-at': '5',
         'max-results': '20',
+        'validate-query': 'true',
+        expand: 'names',
       });
 
       // Act
@@ -12343,6 +12653,8 @@ describe('executeJiraCommand', () => {
           fields: ['summary', 'status'],
           startAt: 5,
           maxResults: 20,
+          validateQuery: true,
+          expand: 'names',
         }),
       );
     });
@@ -12403,6 +12715,35 @@ describe('executeJiraCommand', () => {
       );
     });
 
+    it('boards list passes every current Jira Software board filter', async () => {
+      jiraBoardsMock.list.mockResolvedValue({ values: [] });
+      await executeJiraCommand(
+        cmd('boards', 'list', [], {
+          'account-id-location': 'account-123',
+          'project-location': 'PROJ',
+          'include-private': 'false',
+          'negate-location-filtering': 'true',
+          'order-by': '-name',
+          expand: 'admins',
+          'project-type-location': 'software,business',
+          'filter-id': '10001',
+        }),
+        GLOBALS,
+      );
+      expect(jiraBoardsMock.list).toHaveBeenCalledWith(
+        expect.objectContaining({
+          accountIdLocation: 'account-123',
+          projectLocation: 'PROJ',
+          includePrivate: false,
+          negateLocationFiltering: true,
+          orderBy: '-name',
+          expand: 'admins',
+          projectTypeLocation: ['software', 'business'],
+          filterId: 10001,
+        }),
+      );
+    });
+
     it('boards list throws for invalid --type', async () => {
       await expect(
         executeJiraCommand(cmd('boards', 'list', [], { type: 'bad' }), GLOBALS),
@@ -12436,6 +12777,59 @@ describe('executeJiraCommand', () => {
         expect.objectContaining({ name: 'New Board', type: 'scrum', filterId: 5 }),
       );
       expect(result).toEqual(board);
+    });
+
+    it('boards create passes an optional board location', async () => {
+      jiraBoardsMock.create.mockResolvedValue({ id: 99 });
+      await executeJiraCommand(
+        cmd('boards', 'create', [], {
+          name: 'New Board',
+          type: 'agility',
+          'filter-id': '5',
+          'location-type': 'project',
+          'location-project-key-or-id': 'PROJ',
+        }),
+        GLOBALS,
+      );
+      expect(jiraBoardsMock.create).toHaveBeenCalledWith({
+        name: 'New Board',
+        type: 'agility',
+        filterId: 5,
+        location: { type: 'project', projectKeyOrId: 'PROJ' },
+      });
+    });
+
+    it('boards create accepts a user location', async () => {
+      jiraBoardsMock.create.mockResolvedValue({ id: 99 });
+      await executeJiraCommand(
+        cmd('boards', 'create', [], {
+          name: 'Personal board',
+          type: 'kanban',
+          'filter-id': '5',
+          'location-type': 'user',
+        }),
+        GLOBALS,
+      );
+      expect(jiraBoardsMock.create).toHaveBeenCalledWith({
+        name: 'Personal board',
+        type: 'kanban',
+        filterId: 5,
+        location: { type: 'user', projectKeyOrId: undefined },
+      });
+    });
+
+    it('boards create rejects an invalid location type', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('boards', 'create', [], {
+            name: 'Broken board',
+            type: 'kanban',
+            'filter-id': '5',
+            'location-type': 'workspace',
+          }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--location-type must be one of: project, user');
     });
 
     it('boards create throws when --name is missing', async () => {
@@ -12495,7 +12889,7 @@ describe('executeJiraCommand', () => {
       expect(result).toEqual(payload);
     });
 
-    it('boards backlog passes jql, fields, start-at, max-results', async () => {
+    it('boards backlog passes all deprecated issue-list query parameters', async () => {
       jiraBoardsMock.getBacklog.mockResolvedValue({ values: [] });
       await executeJiraCommand(
         cmd('boards', 'backlog', ['42'], {
@@ -12503,6 +12897,8 @@ describe('executeJiraCommand', () => {
           fields: 'summary,status',
           'start-at': '5',
           'max-results': '20',
+          'validate-query': 'false',
+          expand: 'changelog',
         }),
         GLOBALS,
       );
@@ -12513,6 +12909,8 @@ describe('executeJiraCommand', () => {
           fields: ['summary', 'status'],
           startAt: 5,
           maxResults: 20,
+          validateQuery: false,
+          expand: 'changelog',
         }),
       );
     });
@@ -12569,6 +12967,36 @@ describe('executeJiraCommand', () => {
         expect.objectContaining({}),
       );
       expect(result).toEqual(payload);
+    });
+
+    it('boards epic issue actions pass validate-query and expand', async () => {
+      jiraBoardsMock.getEpicIssues.mockResolvedValue({ values: [] });
+      jiraBoardsMock.getIssuesWithoutEpic.mockResolvedValue({ values: [] });
+
+      await executeJiraCommand(
+        cmd('boards', 'epic-issues', ['42', '7'], {
+          'validate-query': 'false',
+          expand: 'changelog',
+        }),
+        GLOBALS,
+      );
+      await executeJiraCommand(
+        cmd('boards', 'issues-without-epic', ['42'], {
+          'validate-query': 'true',
+          expand: 'names',
+        }),
+        GLOBALS,
+      );
+
+      expect(jiraBoardsMock.getEpicIssues).toHaveBeenCalledWith(
+        42,
+        7,
+        expect.objectContaining({ validateQuery: false, expand: 'changelog' }),
+      );
+      expect(jiraBoardsMock.getIssuesWithoutEpic).toHaveBeenCalledWith(
+        42,
+        expect.objectContaining({ validateQuery: true, expand: 'names' }),
+      );
     });
 
     // B244: boards get-features
@@ -12641,7 +13069,7 @@ describe('executeJiraCommand', () => {
       expect(result).toEqual(payload);
     });
 
-    it('boards get-issues passes jql, fields, start-at, max-results', async () => {
+    it('boards get-issues passes every deprecated issue-list query parameter', async () => {
       jiraBoardsMock.getIssues.mockResolvedValue({ values: [] });
       await executeJiraCommand(
         cmd('boards', 'get-issues', ['42'], {
@@ -12649,6 +13077,8 @@ describe('executeJiraCommand', () => {
           fields: 'summary,status',
           'start-at': '5',
           'max-results': '20',
+          'validate-query': 'false',
+          expand: 'changelog',
         }),
         GLOBALS,
       );
@@ -12659,6 +13089,8 @@ describe('executeJiraCommand', () => {
           fields: ['summary', 'status'],
           startAt: 5,
           maxResults: 20,
+          validateQuery: false,
+          expand: 'changelog',
         }),
       );
     });
@@ -12725,8 +13157,33 @@ describe('executeJiraCommand', () => {
         cmd('boards', 'move-issues', ['42'], { issues: 'PROJ-1,PROJ-2' }),
         GLOBALS,
       );
-      expect(jiraBoardsMock.moveIssues).toHaveBeenCalledWith(42, ['PROJ-1', 'PROJ-2']);
+      expect(jiraBoardsMock.moveIssues).toHaveBeenCalledWith(
+        42,
+        ['PROJ-1', 'PROJ-2'],
+        undefined,
+        undefined,
+        undefined,
+      );
       expect(result).toEqual({ moved: true });
+    });
+
+    it('boards move-issues passes rank controls', async () => {
+      jiraBoardsMock.moveIssues.mockResolvedValue(undefined);
+      await executeJiraCommand(
+        cmd('boards', 'move-issues', ['42'], {
+          issues: 'PROJ-1',
+          before: 'PROJ-2',
+          'custom-field': '10020',
+        }),
+        GLOBALS,
+      );
+      expect(jiraBoardsMock.moveIssues).toHaveBeenCalledWith(
+        42,
+        ['PROJ-1'],
+        'PROJ-2',
+        undefined,
+        10020,
+      );
     });
 
     it('boards move-issues throws when --issues is missing', async () => {
@@ -13177,6 +13634,30 @@ describe('executeJiraCommand', () => {
         executeJiraCommand(cmd('boards', 'sprint-issues-enhanced', ['42']), GLOBALS),
       ).rejects.toThrow('Missing required argument: sprintId');
     });
+
+    it('boards backlog-approximate-count forwards boardId and optional JQL', async () => {
+      jiraBoardsMock.getBacklogApproximateCount.mockResolvedValue({ count: 17 });
+      const result = await executeJiraCommand(
+        cmd('boards', 'backlog-approximate-count', ['42'], { jql: 'status != Done' }),
+        GLOBALS,
+      );
+      expect(jiraBoardsMock.getBacklogApproximateCount).toHaveBeenCalledWith(42, {
+        jql: 'status != Done',
+      });
+      expect(result).toEqual({ count: 17 });
+    });
+
+    it('boards issues-approximate-count forwards boardId', async () => {
+      jiraBoardsMock.getIssueApproximateCount.mockResolvedValue({ count: 29 });
+      const result = await executeJiraCommand(
+        cmd('boards', 'issues-approximate-count', ['42']),
+        GLOBALS,
+      );
+      expect(jiraBoardsMock.getIssueApproximateCount).toHaveBeenCalledWith(42, {
+        jql: undefined,
+      });
+      expect(result).toEqual({ count: 29 });
+    });
   });
 
   // ── sprints ───────────────────────────────────────────────────────────────
@@ -13321,7 +13802,7 @@ describe('executeJiraCommand', () => {
       expect(result).toEqual(payload);
     });
 
-    it('sprints get-issues passes jql, fields, start-at, max-results', async () => {
+    it('sprints get-issues passes every deprecated issue-list query parameter', async () => {
       // Arrange
       jiraSprintsMock.getIssues.mockResolvedValue({ values: [] });
       const parsed = cmd('sprints', 'get-issues', ['42'], {
@@ -13329,6 +13810,8 @@ describe('executeJiraCommand', () => {
         fields: 'summary,status',
         'start-at': '5',
         'max-results': '20',
+        'validate-query': 'false',
+        expand: 'changelog',
       });
 
       // Act
@@ -13342,6 +13825,8 @@ describe('executeJiraCommand', () => {
           fields: ['summary', 'status'],
           startAt: 5,
           maxResults: 20,
+          validateQuery: false,
+          expand: 'changelog',
         }),
       );
     });
@@ -13404,7 +13889,13 @@ describe('executeJiraCommand', () => {
       const result = await executeJiraCommand(parsed, GLOBALS);
 
       // Assert
-      expect(jiraSprintsMock.moveIssues).toHaveBeenCalledWith(42, ['KEY-1', 'KEY-2']);
+      expect(jiraSprintsMock.moveIssues).toHaveBeenCalledWith(
+        42,
+        ['KEY-1', 'KEY-2'],
+        undefined,
+        undefined,
+        undefined,
+      );
       expect(result).toEqual({ moved: true });
     });
 
@@ -13417,7 +13908,32 @@ describe('executeJiraCommand', () => {
       await executeJiraCommand(parsed, GLOBALS);
 
       // Assert
-      expect(jiraSprintsMock.moveIssues).toHaveBeenCalledWith(1, ['A-1', 'B-2', 'C-3']);
+      expect(jiraSprintsMock.moveIssues).toHaveBeenCalledWith(
+        1,
+        ['A-1', 'B-2', 'C-3'],
+        undefined,
+        undefined,
+        undefined,
+      );
+    });
+
+    it('sprints move-issues passes rank controls', async () => {
+      jiraSprintsMock.moveIssues.mockResolvedValue(undefined);
+      await executeJiraCommand(
+        cmd('sprints', 'move-issues', ['42'], {
+          issues: 'KEY-1',
+          after: 'KEY-2',
+          'custom-field': '10020',
+        }),
+        GLOBALS,
+      );
+      expect(jiraSprintsMock.moveIssues).toHaveBeenCalledWith(
+        42,
+        ['KEY-1'],
+        undefined,
+        'KEY-2',
+        10020,
+      );
     });
 
     it('sprints move-issues throws when --issues is missing', async () => {
@@ -13747,12 +14263,14 @@ describe('executeJiraCommand', () => {
       expect(result).toEqual(payload);
     });
 
-    it('epic issues passes jql and fields', async () => {
+    it('epic issues passes every deprecated issue-list query parameter', async () => {
       // Arrange
       jiraEpicMock.getIssues.mockResolvedValue({ values: [] });
       const parsed = cmd('epic', 'issues', ['42'], {
         jql: 'status = Done',
         fields: 'summary,status',
+        'validate-query': 'true',
+        expand: 'names',
       });
 
       // Act
@@ -13761,7 +14279,12 @@ describe('executeJiraCommand', () => {
       // Assert
       expect(jiraEpicMock.getIssues).toHaveBeenCalledWith(
         '42',
-        expect.objectContaining({ jql: 'status = Done', fields: ['summary', 'status'] }),
+        expect.objectContaining({
+          jql: 'status = Done',
+          fields: ['summary', 'status'],
+          validateQuery: true,
+          expand: 'names',
+        }),
       );
     });
 
@@ -13839,17 +14362,27 @@ describe('executeJiraCommand', () => {
       expect(result).toEqual(payload);
     });
 
-    it('epic issues-none passes pagination params', async () => {
+    it('epic issues-none passes every deprecated issue-list query parameter', async () => {
       // Arrange
       jiraEpicMock.getIssuesWithoutEpic.mockResolvedValue({ values: [] });
-      const parsed = cmd('epic', 'issues-none', [], { 'start-at': '10', 'max-results': '25' });
+      const parsed = cmd('epic', 'issues-none', [], {
+        'start-at': '10',
+        'max-results': '25',
+        'validate-query': 'false',
+        expand: 'changelog',
+      });
 
       // Act
       await executeJiraCommand(parsed, GLOBALS);
 
       // Assert
       expect(jiraEpicMock.getIssuesWithoutEpic).toHaveBeenCalledWith(
-        expect.objectContaining({ startAt: 10, maxResults: 25 }),
+        expect.objectContaining({
+          startAt: 10,
+          maxResults: 25,
+          validateQuery: false,
+          expand: 'changelog',
+        }),
       );
     });
 
@@ -13924,8 +14457,39 @@ describe('executeJiraCommand', () => {
       const result = await executeJiraCommand(parsed, GLOBALS);
 
       // Assert
-      expect(jiraBacklogMock.moveIssuesToBoard).toHaveBeenCalledWith(1, ['KEY-1', 'KEY-2']);
+      expect(jiraBacklogMock.moveIssuesToBoard).toHaveBeenCalledWith(1, ['KEY-1', 'KEY-2'], {
+        rankBeforeIssue: undefined,
+        rankAfterIssue: undefined,
+        rankCustomFieldId: undefined,
+      });
       expect(result).toEqual({ moved: true });
+    });
+
+    it('backlog move passes rank controls for the board-scoped endpoint', async () => {
+      jiraBacklogMock.moveIssuesToBoard.mockResolvedValue(undefined);
+      await executeJiraCommand(
+        cmd('backlog', 'move', [], {
+          'board-id': '1',
+          issues: 'KEY-1',
+          before: 'KEY-2',
+          'custom-field': '10020',
+        }),
+        GLOBALS,
+      );
+      expect(jiraBacklogMock.moveIssuesToBoard).toHaveBeenCalledWith(1, ['KEY-1'], {
+        rankBeforeIssue: 'KEY-2',
+        rankAfterIssue: undefined,
+        rankCustomFieldId: 10020,
+      });
+    });
+
+    it('backlog move rejects rank controls without --board-id', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('backlog', 'move', [], { issues: 'KEY-1', before: 'KEY-2' }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--before, --after, and --custom-field require --board-id');
     });
 
     it('backlog move without --board-id calls client.backlog.moveIssues and returns { moved: true }', async () => {
@@ -15591,6 +16155,28 @@ describe('executeJiraCommand', () => {
       // Assert
       expect(jiraGroupUserPickerMock.pick).toHaveBeenCalledWith(
         expect.objectContaining({ excludeConnectUsers: true }),
+      );
+    });
+
+    it('group-user-picker pick forwards current agent, issue type, avatar, and case flags', async () => {
+      jiraGroupUserPickerMock.pick.mockResolvedValue({ groups: {}, users: {} });
+      await executeJiraCommand(
+        cmd('group-user-picker', 'pick', [], {
+          query: 'agent',
+          'issue-type-id': '10000,10001',
+          'avatar-size': 'medium',
+          'case-insensitive': true,
+          'include-ai-agents': true,
+        }),
+        GLOBALS,
+      );
+      expect(jiraGroupUserPickerMock.pick).toHaveBeenCalledWith(
+        expect.objectContaining({
+          issueTypeId: ['10000', '10001'],
+          avatarSize: 'medium',
+          caseInsensitive: true,
+          includeAiAgents: true,
+        }),
       );
     });
 
@@ -19585,6 +20171,7 @@ describe('executeJiraCommand', () => {
           'max-results': '10',
           'search-string': 'In',
           'status-category': 'IN_PROGRESS',
+          'include-global-statuses': true,
         }),
         GLOBALS,
       );
@@ -19594,6 +20181,7 @@ describe('executeJiraCommand', () => {
         maxResults: 10,
         searchString: 'In',
         statusCategory: 'IN_PROGRESS',
+        includeGlobalStatuses: true,
       });
       expect(result).toEqual(page);
     });
@@ -23658,226 +24246,6 @@ describe('executeJiraCommand', () => {
       expect(result).toEqual(editorResponse);
     });
 
-    // B935-B938: transition properties
-
-    it('delete-transition-property throws when transitionId is not a positive integer', async () => {
-      await expect(
-        executeJiraCommand(
-          cmd('workflows', 'delete-transition-property', ['abc'], {
-            key: 'jira.permission',
-            'workflow-name': 'My Workflow',
-          }),
-          GLOBALS,
-        ),
-      ).rejects.toThrow('transitionId must be a positive integer');
-    });
-
-    it('delete-transition-property calls deleteTransitionProperty and returns { deleted: true }', async () => {
-      jiraWorkflowsMock.deleteTransitionProperty.mockResolvedValue(undefined);
-      const result = await executeJiraCommand(
-        cmd('workflows', 'delete-transition-property', ['10000'], {
-          key: 'jira.permission',
-          'workflow-name': 'My Workflow',
-        }),
-        GLOBALS,
-      );
-      expect(jiraWorkflowsMock.deleteTransitionProperty).toHaveBeenCalledWith(
-        10000,
-        'jira.permission',
-        'My Workflow',
-        undefined,
-      );
-      expect(result).toEqual({ deleted: true });
-    });
-
-    it('delete-transition-property passes workflowMode', async () => {
-      jiraWorkflowsMock.deleteTransitionProperty.mockResolvedValue(undefined);
-      await executeJiraCommand(
-        cmd('workflows', 'delete-transition-property', ['10000'], {
-          key: 'jira.permission',
-          'workflow-name': 'My Workflow',
-          'workflow-mode': 'draft',
-        }),
-        GLOBALS,
-      );
-      expect(jiraWorkflowsMock.deleteTransitionProperty).toHaveBeenCalledWith(
-        10000,
-        'jira.permission',
-        'My Workflow',
-        'draft',
-      );
-    });
-
-    it('delete-transition-property throws when transitionId is missing', async () => {
-      await expect(
-        executeJiraCommand(
-          cmd('workflows', 'delete-transition-property', [], {
-            key: 'jira.permission',
-            'workflow-name': 'My Workflow',
-          }),
-          GLOBALS,
-        ),
-      ).rejects.toThrow('transitionId');
-    });
-
-    it('delete-transition-property throws when --key is missing', async () => {
-      await expect(
-        executeJiraCommand(
-          cmd('workflows', 'delete-transition-property', ['10000'], {
-            'workflow-name': 'My Workflow',
-          }),
-          GLOBALS,
-        ),
-      ).rejects.toThrow('--key');
-    });
-
-    it('delete-transition-property throws when --workflow-name is missing', async () => {
-      await expect(
-        executeJiraCommand(
-          cmd('workflows', 'delete-transition-property', ['10000'], {
-            key: 'jira.permission',
-          }),
-          GLOBALS,
-        ),
-      ).rejects.toThrow('--workflow-name');
-    });
-
-    it('get-transition-properties calls getTransitionProperties', async () => {
-      const response = { key: 'jira.permission', value: 'createissue', id: 'jira.permission' };
-      jiraWorkflowsMock.getTransitionProperties.mockResolvedValue(response);
-      const result = await executeJiraCommand(
-        cmd('workflows', 'get-transition-properties', ['10000'], {
-          'workflow-name': 'My Workflow',
-        }),
-        GLOBALS,
-      );
-      expect(jiraWorkflowsMock.getTransitionProperties).toHaveBeenCalledWith(
-        10000,
-        'My Workflow',
-        expect.objectContaining({}),
-      );
-      expect(result).toEqual(response);
-    });
-
-    it('get-transition-properties passes optional params', async () => {
-      const response = { key: 'jira.permission', value: 'createissue', id: 'jira.permission' };
-      jiraWorkflowsMock.getTransitionProperties.mockResolvedValue(response);
-      await executeJiraCommand(
-        cmd('workflows', 'get-transition-properties', ['10000'], {
-          'workflow-name': 'My Workflow',
-          key: 'jira.permission',
-          'workflow-mode': 'live',
-          'include-reserved-keys': true,
-        }),
-        GLOBALS,
-      );
-      expect(jiraWorkflowsMock.getTransitionProperties).toHaveBeenCalledWith(
-        10000,
-        'My Workflow',
-        expect.objectContaining({
-          key: 'jira.permission',
-          workflowMode: 'live',
-          includeReservedKeys: true,
-        }),
-      );
-    });
-
-    it('get-transition-properties throws when transitionId is missing', async () => {
-      await expect(
-        executeJiraCommand(
-          cmd('workflows', 'get-transition-properties', [], { 'workflow-name': 'My Workflow' }),
-          GLOBALS,
-        ),
-      ).rejects.toThrow('transitionId');
-    });
-
-    it('get-transition-properties throws when --workflow-name is missing', async () => {
-      await expect(
-        executeJiraCommand(cmd('workflows', 'get-transition-properties', ['10000'], {}), GLOBALS),
-      ).rejects.toThrow('--workflow-name');
-    });
-
-    it('create-transition-property calls createTransitionProperty', async () => {
-      const response = { key: 'jira.permission', value: 'createissue', id: 'jira.permission' };
-      jiraWorkflowsMock.createTransitionProperty.mockResolvedValue(response);
-      const result = await executeJiraCommand(
-        cmd('workflows', 'create-transition-property', ['10000'], {
-          key: 'jira.permission',
-          'workflow-name': 'My Workflow',
-          value: 'createissue',
-        }),
-        GLOBALS,
-      );
-      expect(jiraWorkflowsMock.createTransitionProperty).toHaveBeenCalledWith(
-        10000,
-        'jira.permission',
-        'My Workflow',
-        'createissue',
-        undefined,
-      );
-      expect(result).toEqual(response);
-    });
-
-    it('create-transition-property throws when --value is missing', async () => {
-      await expect(
-        executeJiraCommand(
-          cmd('workflows', 'create-transition-property', ['10000'], {
-            key: 'jira.permission',
-            'workflow-name': 'My Workflow',
-          }),
-          GLOBALS,
-        ),
-      ).rejects.toThrow('--value');
-    });
-
-    it('update-transition-property calls updateTransitionProperty', async () => {
-      const response = { key: 'jira.permission', value: 'editissue', id: 'jira.permission' };
-      jiraWorkflowsMock.updateTransitionProperty.mockResolvedValue(response);
-      const result = await executeJiraCommand(
-        cmd('workflows', 'update-transition-property', ['10000'], {
-          key: 'jira.permission',
-          'workflow-name': 'My Workflow',
-          value: 'editissue',
-          'workflow-mode': 'live',
-        }),
-        GLOBALS,
-      );
-      expect(jiraWorkflowsMock.updateTransitionProperty).toHaveBeenCalledWith(
-        10000,
-        'jira.permission',
-        'My Workflow',
-        'editissue',
-        'live',
-      );
-      expect(result).toEqual(response);
-    });
-
-    it('update-transition-property throws when --value is missing', async () => {
-      await expect(
-        executeJiraCommand(
-          cmd('workflows', 'update-transition-property', ['10000'], {
-            key: 'jira.permission',
-            'workflow-name': 'My Workflow',
-          }),
-          GLOBALS,
-        ),
-      ).rejects.toThrow('--value');
-    });
-
-    it('throws on invalid --workflow-mode', async () => {
-      jiraWorkflowsMock.deleteTransitionProperty.mockResolvedValue(undefined);
-      await expect(
-        executeJiraCommand(
-          cmd('workflows', 'delete-transition-property', ['10000'], {
-            key: 'jira.permission',
-            'workflow-name': 'My Workflow',
-            'workflow-mode': 'invalid',
-          }),
-          GLOBALS,
-        ),
-      ).rejects.toThrow('--workflow-mode');
-    });
-
     // B851: POST /rest/api/3/workflows/preview
     it('preview calls client.workflows.previewWorkflows with body', async () => {
       const response = { workflows: [], statuses: [] };
@@ -23907,6 +24275,7 @@ describe('executeJiraCommand', () => {
           'query-string': 'Default',
           'is-active': 'true',
           scope: 'GLOBAL',
+          'project-id': '10001',
         }),
         GLOBALS,
       );
@@ -23917,6 +24286,7 @@ describe('executeJiraCommand', () => {
           queryString: 'Default',
           isActive: true,
           scope: 'GLOBAL',
+          projectId: 10001,
         }),
       );
       expect(result).toEqual(response);
@@ -25101,7 +25471,29 @@ describe('executeJiraCommand', () => {
       );
     });
 
-    // ── context-default-list (B905) ───────────────────────────────────────
+    // ── current grouped context default values ────────────────────────────
+
+    it('context-default-get calls grouped endpoint with context and issue-type filters', async () => {
+      jiraFieldsMock.getContextDefaultValues.mockResolvedValue({ values: [] });
+      await executeJiraCommand(
+        cmd('fields', 'context-default-get', [], {
+          'field-id': 'customfield_10001',
+          'context-id': '10100,10101',
+          'issue-type-ids': '10001,10002',
+          'start-at': '10',
+          'max-results': '25',
+        }),
+        GLOBALS,
+      );
+      expect(jiraFieldsMock.getContextDefaultValues).toHaveBeenCalledWith('customfield_10001', {
+        contextId: [10100, 10101],
+        issueTypeId: ['10001', '10002'],
+        startAt: 10,
+        maxResults: 25,
+      });
+    });
+
+    // ── deprecated context-default-list (B905) ────────────────────────────
 
     it('context-default-list calls listContextDefaultValues with contextId and pagination', async () => {
       jiraFieldsMock.listContextDefaultValues.mockResolvedValue({
@@ -27924,13 +28316,15 @@ describe('executeJiraCommand', () => {
       ).rejects.toThrow('jiraIssueFieldsKey');
     });
 
-    it('submit-task calls submitMigrationTask with positional args', async () => {
+    it('submit-task calls submitMigrationTask with positional args and retrigger option', async () => {
       // Arrange
       jiraMigrationMock.submitMigrationTask.mockResolvedValue(undefined);
 
       // Act
       const result = await executeJiraCommand(
-        cmd('migration', 'submit-task', ['com.example.app', 'my-custom-field']),
+        cmd('migration', 'submit-task', ['com.example.app', 'my-custom-field'], {
+          'retrigger-completed-migration': true,
+        }),
         GLOBALS,
       );
 
@@ -27938,6 +28332,7 @@ describe('executeJiraCommand', () => {
       expect(jiraMigrationMock.submitMigrationTask).toHaveBeenCalledWith(
         'com.example.app',
         'my-custom-field',
+        { retriggerCompletedMigration: true },
       );
       expect(result).toEqual({ submitted: true });
     });
@@ -28212,7 +28607,7 @@ describe('executeJiraCommand', () => {
 
   // ── dashboards resource ────────────────────────────────────────────────────
   describe('dashboards resource', () => {
-    it('list calls client.dashboards.list with pagination + filter + order-by', async () => {
+    it('list calls client.dashboards.list with only its three supported options', async () => {
       jiraDashboardsMock.list.mockResolvedValue({
         values: [],
         startAt: 0,
@@ -28233,8 +28628,6 @@ describe('executeJiraCommand', () => {
         startAt: 5,
         maxResults: 25,
         filter: 'my',
-        orderBy: 'name',
-        expand: 'permissions',
       });
     });
 

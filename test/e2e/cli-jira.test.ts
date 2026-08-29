@@ -122,13 +122,13 @@ const matrix: readonly MatrixRow[] = [
 
   // ─── search ───────────────────────────────────────────────────────────
   {
-    name: 'search (POST /search)',
+    name: 'search (GET /search/jql)',
     argv: ['jira', 'search', 'search', '--jql', 'project = PROJ', '--max-results', '50'],
-    routes: [{ method: 'POST', path: `${P}/search`, body: F.searchResult }],
-    expectCall: { method: 'POST', pathname: `${P}/search` },
+    routes: [{ method: 'GET', path: `${P}/search/jql`, body: F.searchResult }],
+    expectCall: { method: 'GET', pathname: `${P}/search/jql` },
     expectStdout: ['"key": "PROJ-1"'],
-    expectBody: (body) => {
-      expect(body).toMatchObject({ jql: 'project = PROJ', maxResults: 50 });
+    expectQuery: (query) => {
+      expect(query).toMatchObject({ jql: 'project = PROJ', maxResults: '50' });
     },
   },
 

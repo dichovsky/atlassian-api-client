@@ -17,6 +17,10 @@ import type {
 export type PageContentStatus =
   'current' | 'draft' | 'archived' | 'historical' | 'trashed' | 'deleted' | 'any';
 
+/** Status filters accepted specifically by `GET /pages/{id}`. */
+export type PageLookupStatus =
+  'current' | 'archived' | 'trashed' | 'deleted' | 'historical' | 'draft';
+
 /**
  * Sort tokens accepted by `GET /pages`. Mirrors the OpenAPI `PageSortOrder` enum.
  * Default direction is ascending; prefix with `-` for descending.
@@ -100,7 +104,7 @@ export interface GetPageParams {
    * Status filter for the page; `type:array` in the spec — sent as repeated path params.
    * Accepts a single value or an array.
    */
-  readonly status?: PageContentStatus | readonly PageContentStatus[];
+  readonly status?: PageLookupStatus | readonly PageLookupStatus[];
   readonly version?: number;
   /** Inline up to 50 labels in the response. */
   readonly 'include-labels'?: boolean;
@@ -122,6 +126,16 @@ export interface GetPageParams {
   readonly 'include-collaborators'?: boolean;
   /** Inline up to 50 direct children. */
   readonly 'include-direct-children'?: boolean;
+}
+
+/** Query parameters for creating a Confluence page (`POST /pages`). */
+export interface CreatePageParams {
+  /** Tag the page as embedded and create it in NCS. */
+  readonly embedded?: boolean;
+  /** Restrict the new page to its creator. */
+  readonly private?: boolean;
+  /** Create outside the space homepage tree; cannot be combined with `parentId`. */
+  readonly 'root-level'?: boolean;
 }
 
 /** Request body for creating a Confluence page (`POST /pages`). */

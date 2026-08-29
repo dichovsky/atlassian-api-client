@@ -16,6 +16,7 @@ import type { FooterComment, InlineComment } from '../types/comments.js';
 import type {
   ChildPage,
   CreatePageData,
+  CreatePageParams,
   DeletePageParams,
   GetPageClassificationLevelParams,
   GetPageParams,
@@ -90,19 +91,27 @@ export class PagesResource {
 
   /** Get a page by ID. */
   async get(id: string, params?: GetPageParams): Promise<Page> {
+    const status = params?.status;
+    const query =
+      params === undefined ? undefined : (({ status: _status, ...rest }) => rest)(params);
     const response = await this.transport.request<Page>({
       method: 'GET',
-      path: `${this.baseUrl}/pages/${encodePathSegment(id)}`,
-      query: params as Record<string, string | number | boolean | undefined>,
+      path: appendScalarOrArrayParam(
+        `${this.baseUrl}/pages/${encodePathSegment(id)}`,
+        'status',
+        status,
+      ),
+      query: query as Record<string, string | number | boolean | undefined> | undefined,
     });
     return response.data;
   }
 
   /** Create a new page. */
-  async create(data: CreatePageData): Promise<Page> {
+  async create(data: CreatePageData, params?: CreatePageParams): Promise<Page> {
     const response = await this.transport.request<Page>({
       method: 'POST',
       path: `${this.baseUrl}/pages`,
+      query: params as Record<string, string | number | boolean | undefined> | undefined,
       body: data,
     });
     return response.data;
@@ -255,6 +264,9 @@ export class PagesResource {
    * `ChildPageSortOrder` enum (no `title` sort).
    *
    * @see https://developer.atlassian.com/cloud/confluence/rest/v2/api-group-children/#api-pages-id-children-get
+   * @deprecated Atlassian marks this endpoint deprecated. Use
+   * {@link listDirectChildren} for immediate mixed-content children or
+   * {@link listDescendants} for recursive traversal.
    */
   async listChildren(
     id: string,
@@ -274,7 +286,11 @@ export class PagesResource {
     return response.data;
   }
 
-  /** Iterate every child page across all pages. */
+  /**
+   * Iterate every child page across all pages.
+   * @deprecated Atlassian marks the backing `/children` endpoint deprecated.
+   * Use {@link listDirectChildrenAll} or {@link listDescendantsAll}.
+   */
   async *listChildrenAll(
     id: string,
     params?: Omit<ListChildPagesParams, 'cursor'>,

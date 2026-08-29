@@ -68,9 +68,8 @@ export interface GroupUserPickerResponse {
 export interface GroupUserPickerParams {
   /**
    * Query string to filter results.
-   * Required by the Jira v3 spec (query: required: true); kept optional here
-   * to avoid breaking existing callers (DEFERRED-CLI: cli/commands/jira.ts
-   * passes asString(opts['query']) which may be undefined).
+   * Required by the Jira v3 spec; kept optional here for SDK compatibility.
+   * The CLI requires `--query`.
    */
   readonly query?: string;
   /** Maximum number of results per section (default 50). */
@@ -123,12 +122,13 @@ export interface GroupUserPickerParams {
     | 'xxxlarge@3x';
   /** Whether the search for groups should be case insensitive. */
   readonly caseInsensitive?: boolean;
+  /** Include AI agents in the user suggestions. Defaults to false. */
+  readonly includeAiAgents?: boolean;
   /**
    * @deprecated \`projectRole\` is NOT a valid parameter of
    * \`GET /rest/api/3/groupuserpicker\` — it does not appear in the Jira v3 OpenAPI
    * spec. This property is retained only for backward compatibility with existing
-   * callers (DEFERRED-CLI: cli/commands/jira.ts passes it) and is **never sent on
-   * the wire**.
+   * SDK callers and is **never sent on the wire**.
    */
   readonly projectRole?: string;
   /** Whether to exclude Connect app users and groups. */
@@ -169,6 +169,7 @@ export class GroupUserPickerResource {
     if (params?.fieldId !== undefined) query['fieldId'] = params.fieldId;
     if (params?.avatarSize !== undefined) query['avatarSize'] = params.avatarSize;
     if (params?.caseInsensitive !== undefined) query['caseInsensitive'] = params.caseInsensitive;
+    if (params?.includeAiAgents !== undefined) query['includeAiAgents'] = params.includeAiAgents;
     // The groupuserpicker endpoint's documented filter is `excludeConnectAddons`
     // (the `excludeConnectUsers` spelling belongs to GET /user/picker). Keep the
     // public param name but send the correct wire param so the filter is applied.

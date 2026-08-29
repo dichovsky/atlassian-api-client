@@ -47,7 +47,7 @@ atlas jira component related-issue-counts 10000
 | ----------------------------- | ---------------------------------- | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `list`                        | —                                  | —                                       | `--max-results`                                                                                                                                  |
 | `get`                         | `<projectKeyOrId>`                 | —                                       | —                                                                                                                                                |
-| `list-legacy`                 | —                                  | —                                       | `--max-results`, `--order-by`, `--start-at`, `--expand` (CSV), `--type-key` (CSV), `--category-id`, `--action`, `--query`                        |
+| `list-legacy`                 | —                                  | —                                       | `--expand` (CSV string), `--recent` (0–20), `--properties` (CSV)                                                                                 |
 | `create`                      | —                                  | `--key`, `--name`, `--project-type-key` | `--description`, `--lead-account-id`, `--url`, `--assignee-type`, `--avatar-id`, `--permission-scheme`, `--notification-scheme`, `--category-id` |
 | `update`                      | `<projectIdOrKey>`                 | —                                       | `--name`, `--description`, `--lead-account-id`, `--url`, `--assignee-type`                                                                       |
 | `delete`                      | `<projectIdOrKey>`                 | —                                       | `--enable-undo`                                                                                                                                  |
@@ -86,7 +86,7 @@ atlas jira component related-issue-counts 10000
 | `get-role-details`            | `<projectIdOrKey>`                 | —                                       | `--current-member`, `--exclude-connect-addons`                                                                                                   |
 | `get-statuses`                | `<projectIdOrKey>`                 | —                                       | —                                                                                                                                                |
 | `list-versions`               | `<projectIdOrKey>`                 | —                                       | `--start-at`, `--max-results`, `--order-by`, `--query`, `--status`, `--expand`                                                                   |
-| `list-all-versions`           | `<projectIdOrKey>`                 | —                                       | `--max-results`, `--order-by`, `--query`, `--status`, `--expand`                                                                                 |
+| `list-all-versions`           | `<projectIdOrKey>`                 | —                                       | `--expand`                                                                                                                                       |
 | `get-issue-security-scheme`   | `<projectKeyOrId>`                 | —                                       | —                                                                                                                                                |
 | `get-notification-scheme`     | `<projectKeyOrId>`                 | —                                       | `--expand`                                                                                                                                       |
 | `get-permission-scheme`       | `<projectKeyOrId>`                 | —                                       | `--expand`                                                                                                                                       |
@@ -103,7 +103,7 @@ atlas jira component related-issue-counts 10000
 | `get-valid-project-name`      | —                                  | `--name`                                | —                                                                                                                                                |
 
 - `--assignee-type` accepts `PROJECT_LEAD` or `UNASSIGNED`.
-- `list-legacy` calls the deprecated `GET /project` endpoint (returns a flat array, not paginated).
+- `list-legacy` calls the deprecated `GET /project` endpoint (returns a flat array, not paginated). Its only query flags are `--expand`, `--recent` (an integer from 0 through 20), and `--properties`; property keys are sent as repeated query parameters.
 - `list` uses `GET /project/search` (paginated, preferred).
 - `list-versions` returns a paginated response; `list-all-versions` returns a flat array.
 - `add-role-actors` accepts `--body` as a flat `ActorsMap` JSON object with `user`, `group`, and/or `groupId` string arrays (e.g. `{"user":["acc-1"]}`).
@@ -126,8 +126,8 @@ atlas jira component related-issue-counts 10000
 # List projects (paginated, preferred)
 atlas jira projects list --max-results 50
 
-# List projects using legacy endpoint with filters
-atlas jira projects list-legacy --query "example" --type-key software
+# List projects using the legacy endpoint
+atlas jira projects list-legacy --expand description,lead --recent 10 --properties project.owner,project.region
 
 # Create a project
 atlas jira projects create --key EX --name "Example" --project-type-key software
@@ -177,8 +177,8 @@ atlas jira projects get-statuses PROJ
 # List project versions (paginated)
 atlas jira projects list-versions PROJ --order-by name --status released
 
-# List all project versions (flat array)
-atlas jira projects list-all-versions PROJ --order-by -releaseDate
+# List all project versions (flat array; only expand is supported)
+atlas jira projects list-all-versions PROJ --expand operations
 
 # Get scheme associations
 atlas jira projects get-issue-security-scheme PROJ

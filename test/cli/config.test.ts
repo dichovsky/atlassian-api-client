@@ -1,5 +1,9 @@
 import { describe, it, expect, afterEach, vi } from 'vitest';
-import { resolveGlobalOptions, buildClientConfig } from '../../src/cli/config.js';
+import {
+  resolveGlobalOptions,
+  buildClientConfig,
+  buildJiraClientConfig,
+} from '../../src/cli/config.js';
 
 describe('resolveGlobalOptions', () => {
   afterEach(() => {
@@ -8,6 +12,7 @@ describe('resolveGlobalOptions', () => {
     delete process.env['ATLASSIAN_EMAIL'];
     delete process.env['ATLASSIAN_API_TOKEN'];
     delete process.env['ATLASSIAN_AUTH_TYPE'];
+    delete process.env['ATLASSIAN_SOFTWARE_CLOUD_ID'];
   });
 
   it('uses flag values when all flags are present', () => {
@@ -343,6 +348,45 @@ describe('resolveGlobalOptions', () => {
     expect(result.allowedHosts).toBeUndefined();
   });
 
+  it('resolves --software-cloud-id for Jira Software OAuth proxy routing', () => {
+    const result = resolveGlobalOptions({
+      'base-url': 'https://test.atlassian.net',
+      'auth-type': 'bearer',
+      token: 'oauth-token',
+      'software-cloud-id': 'cloud-from-flag',
+    });
+
+    expect(result.softwareCloudId).toBe('cloud-from-flag');
+  });
+
+  it('falls back to ATLASSIAN_SOFTWARE_CLOUD_ID and lets the flag take precedence', () => {
+    vi.stubEnv('ATLASSIAN_SOFTWARE_CLOUD_ID', 'cloud-from-env');
+    const fromEnv = resolveGlobalOptions({
+      'base-url': 'https://test.atlassian.net',
+      'auth-type': 'bearer',
+      token: 'oauth-token',
+    });
+    const fromFlag = resolveGlobalOptions({
+      'base-url': 'https://test.atlassian.net',
+      'auth-type': 'bearer',
+      token: 'oauth-token',
+      'software-cloud-id': 'cloud-from-flag',
+    });
+
+    expect(fromEnv.softwareCloudId).toBe('cloud-from-env');
+    expect(fromFlag.softwareCloudId).toBe('cloud-from-flag');
+  });
+
+  it('leaves softwareCloudId undefined when no flag or environment value exists', () => {
+    const result = resolveGlobalOptions({
+      'base-url': 'https://test.atlassian.net',
+      'auth-type': 'bearer',
+      token: 'oauth-token',
+    });
+
+    expect(result.softwareCloudId).toBeUndefined();
+  });
+
   it('PR review of round 3: buildClientConfig forwards allowedHosts into ClientConfig', () => {
     const config = buildClientConfig({
       baseUrl: 'https://jira.internal.example',
@@ -434,6 +478,53 @@ describe('buildClientConfig', () => {
         type: 'bearer',
         token: 'bearer-token',
       },
+    });
+  });
+
+  it('does not pass the Jira-only software proxy option to generic clients', () => {
+    const config = buildClientConfig({
+      baseUrl: 'https://test.atlassian.net',
+      authType: 'bearer',
+      email: '',
+      token: 'oauth-token',
+      format: 'json',
+      softwareCloudId: 'cloud-123',
+    });
+
+    expect(config).not.toHaveProperty('softwareIntegrationProxy');
+  });
+});
+
+describe('buildJiraClientConfig', () => {
+  it('maps softwareCloudId to the explicit Jira Software integration proxy option', () => {
+    const config = buildJiraClientConfig({
+      baseUrl: 'https://test.atlassian.net',
+      authType: 'bearer',
+      email: '',
+      token: 'oauth-token',
+      format: 'json',
+      softwareCloudId: 'cloud-123',
+    });
+
+    expect(config).toEqual({
+      baseUrl: 'https://test.atlassian.net',
+      auth: { type: 'bearer', token: 'oauth-token' },
+      softwareIntegrationProxy: { cloudId: 'cloud-123' },
+    });
+  });
+
+  it('preserves normal site routing when softwareCloudId is absent', () => {
+    const config = buildJiraClientConfig({
+      baseUrl: 'https://test.atlassian.net',
+      authType: 'bearer',
+      email: '',
+      token: 'oauth-token',
+      format: 'json',
+    });
+
+    expect(config).toEqual({
+      baseUrl: 'https://test.atlassian.net',
+      auth: { type: 'bearer', token: 'oauth-token' },
     });
   });
 });
