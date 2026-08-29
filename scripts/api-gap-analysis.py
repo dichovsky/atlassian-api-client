@@ -86,6 +86,29 @@ def lex_ts_source(source):
             if buffer[index] not in {"\n", "\r"}:
                 buffer[index] = " "
 
+    def regex_can_start(index):
+        """Conservative JavaScript regex-vs-division disambiguation.
+
+        Resource/client regex literals overwhelmingly occur at expression
+        starts. Previous code tokens are already literal/comment-masked, so
+        punctuation and expression-leading keywords are sufficient here.
+        """
+        previous = index - 1
+        while previous >= 0 and code_chars[previous].isspace():
+            previous -= 1
+        if previous < 0:
+            return True
+        if code_chars[previous] in "([{:;,=!?&|+-*%^~<>":
+            return True
+        end = previous + 1
+        while previous >= 0 and (code_chars[previous].isalnum() or code_chars[previous] in "_$"):
+            previous -= 1
+        keyword = "".join(code_chars[previous + 1:end])
+        return keyword in {
+            "await", "case", "delete", "do", "else", "in", "instanceof",
+            "of", "return", "throw", "typeof", "void", "yield",
+        }
+
     while i < len(source):
         frame = stack[-1]
         mode = frame["mode"]
@@ -121,6 +144,30 @@ def lex_ts_source(source):
                 i += 1
             continue
 
+        if mode == "regex":
+            if source[i] == "\\" and i + 1 < len(source):
+                mask(code_chars, i, i + 2)
+                i += 2
+            elif source[i] == "[":
+                frame["in_class"] = True
+                mask(code_chars, i, i + 1)
+                i += 1
+            elif source[i] == "]" and frame["in_class"]:
+                frame["in_class"] = False
+                mask(code_chars, i, i + 1)
+                i += 1
+            elif source[i] == "/" and not frame["in_class"]:
+                mask(code_chars, i, i + 1)
+                i += 1
+                while i < len(source) and source[i].isalpha():
+                    mask(code_chars, i, i + 1)
+                    i += 1
+                stack.pop()
+            else:
+                mask(code_chars, i, i + 1)
+                i += 1
+            continue
+
         # Normal code and `${...}` template expressions share lexical rules.
         if source.startswith("//", i):
             end = source.find("\n", i + 2)
@@ -136,6 +183,11 @@ def lex_ts_source(source):
             mask(chars, i, end)
             mask(code_chars, i, end)
             i = end
+            continue
+        if source[i] == "/" and regex_can_start(i):
+            mask(code_chars, i, i + 1)
+            stack.append({"mode": "regex", "in_class": False})
+            i += 1
             continue
         if source[i] == "'":
             mask(code_chars, i, i + 1)
@@ -183,7 +235,7 @@ def parse_object_literal(arg, varmap):
         if m and m.group(2) in varmap: out[m.group(1)] = varmap[m.group(2)]
     return out
 
-def parse_base_suffixes(client_src):
+def parse_base_suffixes(client_src, client_code):
     """Derive resource base-path suffixes from the runtime client wiring.
 
     Only initializers rooted in ``resolved.baseUrl`` (or aliases that resolve
@@ -194,11 +246,15 @@ def parse_base_suffixes(client_src):
     """
     initializers = {}
     for m in re.finditer(
-        r"\bconst\s+((?:baseUrl)|(?:[A-Za-z0-9_]+BaseUrl))\s*(?::[^=]+)?=\s*(.*?);",
-        client_src,
-        re.S,
+        r"\bconst\s+((?:baseUrl)|(?:[A-Za-z0-9_]+BaseUrl))\s*(?::[^=]+)?=",
+        client_code,
     ):
-        initializers[m.group(1)] = m.group(2)
+        start = m.end()
+        while start < len(client_src) and client_src[start].isspace():
+            start += 1
+        end = client_code.find(";", start)
+        if end != -1:
+            initializers[m.group(1)] = client_src[start:end]
 
     resolved = {}
     pending = dict(initializers)
@@ -218,11 +274,11 @@ def parse_base_suffixes(client_src):
             break
     return resolved
 
-def parse_wiring(client_src, varmap):
+def parse_wiring(client_src, client_code, varmap):
     wiring = {}
-    for m in re.finditer(r"new\s+([A-Z][A-Za-z0-9]*Resource)\s*\(", client_src):
-        op = client_src.index("(", m.end()-1)
-        end = match_close(client_src, op, "(", ")")
+    for m in re.finditer(r"new\s+([A-Z][A-Za-z0-9]*Resource)\s*\(", client_code):
+        op = client_code.index("(", m.end()-1)
+        end = match_close(client_code, op, "(", ")")
         args = split_top_commas(client_src[op+1:end-1])
         base_args = []
         for a in args[1:]:
@@ -363,11 +419,11 @@ def method_body_span(src, name):
 def extract(api):
     source_root = os.path.abspath(CLI_ARGS.source_root)
     res_dir = os.path.join(source_root, "src", api, "resources")
-    client_src, _client_code = lex_ts_source(
+    client_src, client_code = lex_ts_source(
         open(os.path.join(source_root, "src", api, "client.ts")).read()
     )
-    varmap = parse_base_suffixes(client_src)
-    wiring = parse_wiring(client_src, varmap)
+    varmap = parse_base_suffixes(client_src, client_code)
+    wiring = parse_wiring(client_src, client_code, varmap)
     results, unknowns = [], []
     for f in sorted(glob.glob(os.path.join(res_dir, "*.ts"))):
         if f.endswith("index.ts"): continue

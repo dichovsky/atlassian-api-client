@@ -198,6 +198,154 @@ ${liveImplementation}
     ANALYZER_TIMEOUT_MS,
   );
 
+  it(
+    'uses the executable client base declaration when a string shadows its old value',
+    async () => {
+      const fixtureRoot = await mkdtemp(join(tmpdir(), 'atlassian-api-gap-prefix-shadow-'));
+      const fixtureSrc = join(fixtureRoot, 'src');
+
+      try {
+        await cp(resolve(REPO_ROOT, 'src'), fixtureSrc, { recursive: true });
+        const clientPath = join(fixtureSrc, 'confluence/client.ts');
+        const client = await readFile(clientPath, 'utf8');
+        const liveDeclaration = 'const baseUrl = `${resolved.baseUrl}/wiki/api/v2`;';
+        const changedClient = client.replace(
+          liveDeclaration,
+          `const baseUrl = \`\${resolved.baseUrl}/wiki/api/v9\`;
+    const ignoredBaseExample = "${liveDeclaration}";
+    void ignoredBaseExample;`,
+        );
+        expect(changedClient).not.toBe(client);
+        await writeFile(clientPath, changedClient);
+
+        await expect(
+          execFileAsync('python3', [ANALYZER, '--source-root', fixtureRoot], {
+            cwd: REPO_ROOT,
+          }),
+        ).rejects.toMatchObject({
+          code: 1,
+          stdout: expect.stringMatching(
+            /confluence-v2: 218 ops \| impl \d+ \| MISSING [1-9]\d* \(live [1-9]\d*, dep \d+\)/,
+          ),
+        });
+      } finally {
+        await rm(fixtureRoot, { recursive: true, force: true });
+      }
+    },
+    ANALYZER_TIMEOUT_MS,
+  );
+
+  it(
+    'uses executable client resource wiring instead of a string example',
+    async () => {
+      const fixtureRoot = await mkdtemp(join(tmpdir(), 'atlassian-api-gap-wiring-shadow-'));
+      const fixtureSrc = join(fixtureRoot, 'src');
+
+      try {
+        await cp(resolve(REPO_ROOT, 'src'), fixtureSrc, { recursive: true });
+        const clientPath = join(fixtureSrc, 'confluence/client.ts');
+        const client = await readFile(clientPath, 'utf8');
+        const liveWiring = 'this.pages = new PagesResource(transport, baseUrl);';
+        const changedClient = client.replace(
+          liveWiring,
+          `this.pages = new PagesResource(transport, v1BaseUrl);
+    const ignoredWiringExample = "${liveWiring}";
+    void ignoredWiringExample;`,
+        );
+        expect(changedClient).not.toBe(client);
+        await writeFile(clientPath, changedClient);
+
+        await expect(
+          execFileAsync('python3', [ANALYZER, '--source-root', fixtureRoot], {
+            cwd: REPO_ROOT,
+          }),
+        ).rejects.toMatchObject({
+          code: 1,
+          stdout: expect.stringMatching(
+            /confluence-v2: 218 ops \| impl \d+ \| MISSING [1-9]\d* \(live [1-9]\d*, dep \d+\)/,
+          ),
+        });
+      } finally {
+        await rm(fixtureRoot, { recursive: true, force: true });
+      }
+    },
+    ANALYZER_TIMEOUT_MS,
+  );
+
+  it(
+    'does not count transport request syntax that exists only inside a regex literal',
+    async () => {
+      const fixtureRoot = await mkdtemp(join(tmpdir(), 'atlassian-api-gap-regex-'));
+      const fixtureSrc = join(fixtureRoot, 'src');
+
+      try {
+        await cp(resolve(REPO_ROOT, 'src'), fixtureSrc, { recursive: true });
+        const adminKeyPath = join(fixtureSrc, 'confluence/resources/admin-key.ts');
+        const adminKey = await readFile(adminKeyPath, 'utf8');
+        const liveImplementation = `    const response = await this.transport.request<AdminKey>({
+      method: 'GET',
+      path: \`\${this.baseUrl}/admin-key\`,
+    });
+    return response.data;`;
+        const regexOnlyImplementation = `    const path = \`\${this.baseUrl}/admin-key\`;
+    const example = /this.transport.request({ method: 'GET', path })/;
+    void example;
+    throw new Error('implementation removed');`;
+        const changedAdminKey = adminKey.replace(liveImplementation, regexOnlyImplementation);
+        expect(changedAdminKey).not.toBe(adminKey);
+        await writeFile(adminKeyPath, changedAdminKey);
+
+        await expect(
+          execFileAsync('python3', [ANALYZER, '--source-root', fixtureRoot], {
+            cwd: REPO_ROOT,
+          }),
+        ).rejects.toMatchObject({
+          code: 1,
+          stdout: expect.stringContaining(
+            'confluence-v2: 218 ops | impl 217 | MISSING 1 (live 1, dep 0)',
+          ),
+        });
+      } finally {
+        await rm(fixtureRoot, { recursive: true, force: true });
+      }
+    },
+    ANALYZER_TIMEOUT_MS,
+  );
+
+  it(
+    'keeps executable requests visible after a regex literal containing a quote',
+    async () => {
+      const fixtureRoot = await mkdtemp(join(tmpdir(), 'atlassian-api-gap-regex-quote-'));
+      const fixtureSrc = join(fixtureRoot, 'src');
+
+      try {
+        await cp(resolve(REPO_ROOT, 'src'), fixtureSrc, { recursive: true });
+        const adminKeyPath = join(fixtureSrc, 'confluence/resources/admin-key.ts');
+        const adminKey = await readFile(adminKeyPath, 'utf8');
+        const changedAdminKey = adminKey.replace(
+          '  async get(): Promise<AdminKey> {',
+          `  async get(): Promise<AdminKey> {
+    const quotePattern = /'/;
+    void quotePattern;`,
+        );
+        expect(changedAdminKey).not.toBe(adminKey);
+        await writeFile(adminKeyPath, changedAdminKey);
+
+        const { stdout, stderr } = await execFileAsync(
+          'python3',
+          [ANALYZER, '--source-root', fixtureRoot],
+          { cwd: REPO_ROOT },
+        );
+        expect(stderr).toBe('');
+        expect(stdout).not.toContain('!!! UNRESOLVED');
+        expect(stdout).toContain('confluence-v2: 218 ops | impl 218 | MISSING 0 (live 0, dep 0)');
+      } finally {
+        await rm(fixtureRoot, { recursive: true, force: true });
+      }
+    },
+    ANALYZER_TIMEOUT_MS,
+  );
+
   it('is wired into the scheduled spec-drift workflow', async () => {
     const packageJson = JSON.parse(await readFile(resolve(REPO_ROOT, 'package.json'), 'utf8')) as {
       scripts: Record<string, string>;
