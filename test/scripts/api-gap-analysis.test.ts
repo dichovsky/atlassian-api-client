@@ -158,6 +158,46 @@ ${liveImplementation}
     ANALYZER_TIMEOUT_MS,
   );
 
+  it(
+    'does not count transport request syntax that exists only inside a string literal',
+    async () => {
+      const fixtureRoot = await mkdtemp(join(tmpdir(), 'atlassian-api-gap-strings-'));
+      const fixtureSrc = join(fixtureRoot, 'src');
+
+      try {
+        await cp(resolve(REPO_ROOT, 'src'), fixtureSrc, { recursive: true });
+        const adminKeyPath = join(fixtureSrc, 'confluence/resources/admin-key.ts');
+        const adminKey = await readFile(adminKeyPath, 'utf8');
+        const liveImplementation = `    const response = await this.transport.request<AdminKey>({
+      method: 'GET',
+      path: \`\${this.baseUrl}/admin-key\`,
+    });
+    return response.data;`;
+        const stringOnlyImplementation = `    const path = \`\${this.baseUrl}/admin-key\`;
+    const example = "this.transport.request({ method: 'GET', path })";
+    void example;
+    throw new Error('implementation removed');`;
+        const changedAdminKey = adminKey.replace(liveImplementation, stringOnlyImplementation);
+        expect(changedAdminKey).not.toBe(adminKey);
+        await writeFile(adminKeyPath, changedAdminKey);
+
+        await expect(
+          execFileAsync('python3', [ANALYZER, '--source-root', fixtureRoot], {
+            cwd: REPO_ROOT,
+          }),
+        ).rejects.toMatchObject({
+          code: 1,
+          stdout: expect.stringContaining(
+            'confluence-v2: 218 ops | impl 217 | MISSING 1 (live 1, dep 0)',
+          ),
+        });
+      } finally {
+        await rm(fixtureRoot, { recursive: true, force: true });
+      }
+    },
+    ANALYZER_TIMEOUT_MS,
+  );
+
   it('is wired into the scheduled spec-drift workflow', async () => {
     const packageJson = JSON.parse(await readFile(resolve(REPO_ROOT, 'package.json'), 'utf8')) as {
       scripts: Record<string, string>;

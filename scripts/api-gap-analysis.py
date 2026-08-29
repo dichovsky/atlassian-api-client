@@ -67,23 +67,24 @@ def split_top_commas(s):
     if cur.strip(): parts.append(cur)
     return [p.strip() for p in parts]
 
-def mask_ts_comments(source):
-    """Replace TypeScript comments with spaces while preserving source layout.
+def lex_ts_source(source):
+    """Return layout-preserving comment-masked and code-token-only views.
 
     Regex extraction must never treat a commented-out request as executable.
-    A small lexical state stack protects quotes and template-literal raw text,
-    while still recognizing comments inside ``${...}`` expressions. Keeping
-    every newline and character position stable means the existing span-based
-    helper resolution can operate on the masked source unchanged.
+    Nor may request-like text inside a string or template-literal raw segment
+    count as a call site. A small lexical state stack emits two same-length
+    views: one retains literals for path resolution, while the other retains
+    only executable code (including code inside ``${...}`` expressions).
     """
     chars = list(source)
+    code_chars = list(source)
     stack = [{"mode": "code"}]
     i = 0
 
-    def mask(start, end):
+    def mask(buffer, start, end):
         for index in range(start, end):
-            if chars[index] not in {"\n", "\r"}:
-                chars[index] = " "
+            if buffer[index] not in {"\n", "\r"}:
+                buffer[index] = " "
 
     while i < len(source):
         frame = stack[-1]
@@ -92,24 +93,31 @@ def mask_ts_comments(source):
         if mode in {"single", "double"}:
             quote = "'" if mode == "single" else '"'
             if source[i] == "\\" and i + 1 < len(source):
+                mask(code_chars, i, i + 2)
                 i += 2
             elif source[i] == quote:
+                mask(code_chars, i, i + 1)
                 stack.pop()
                 i += 1
             else:
+                mask(code_chars, i, i + 1)
                 i += 1
             continue
 
         if mode == "template":
             if source[i] == "\\" and i + 1 < len(source):
+                mask(code_chars, i, i + 2)
                 i += 2
             elif source[i] == "`":
+                mask(code_chars, i, i + 1)
                 stack.pop()
                 i += 1
             elif source.startswith("${", i):
+                mask(code_chars, i, i + 2)
                 stack.append({"mode": "template-expression", "depth": 1})
                 i += 2
             else:
+                mask(code_chars, i, i + 1)
                 i += 1
             continue
 
@@ -118,24 +126,29 @@ def mask_ts_comments(source):
             end = source.find("\n", i + 2)
             if end == -1:
                 end = len(source)
-            mask(i, end)
+            mask(chars, i, end)
+            mask(code_chars, i, end)
             i = end
             continue
         if source.startswith("/*", i):
             close = source.find("*/", i + 2)
             end = len(source) if close == -1 else close + 2
-            mask(i, end)
+            mask(chars, i, end)
+            mask(code_chars, i, end)
             i = end
             continue
         if source[i] == "'":
+            mask(code_chars, i, i + 1)
             stack.append({"mode": "single"})
             i += 1
             continue
         if source[i] == '"':
+            mask(code_chars, i, i + 1)
             stack.append({"mode": "double"})
             i += 1
             continue
         if source[i] == "`":
+            mask(code_chars, i, i + 1)
             stack.append({"mode": "template"})
             i += 1
             continue
@@ -150,7 +163,7 @@ def mask_ts_comments(source):
             continue
         i += 1
 
-    return "".join(chars)
+    return "".join(chars), "".join(code_chars)
 
 def strip_comment_only_lines(s):
     """Remove standalone // comments before parsing object-literal fields.
@@ -350,7 +363,7 @@ def method_body_span(src, name):
 def extract(api):
     source_root = os.path.abspath(CLI_ARGS.source_root)
     res_dir = os.path.join(source_root, "src", api, "resources")
-    client_src = mask_ts_comments(
+    client_src, _client_code = lex_ts_source(
         open(os.path.join(source_root, "src", api, "client.ts")).read()
     )
     varmap = parse_base_suffixes(client_src)
@@ -358,8 +371,8 @@ def extract(api):
     results, unknowns = [], []
     for f in sorted(glob.glob(os.path.join(res_dir, "*.ts"))):
         if f.endswith("index.ts"): continue
-        src = mask_ts_comments(open(f).read())
-        clsm = re.search(r"export\s+class\s+([A-Z][A-Za-z0-9]*Resource)", src)
+        src, code_src = lex_ts_source(open(f).read())
+        clsm = re.search(r"export\s+class\s+([A-Z][A-Za-z0-9]*Resource)", code_src)
         if not clsm: continue
         cls = clsm.group(1)
         params = parse_ctor_params(src)
@@ -376,7 +389,7 @@ def extract(api):
         delegated_spans = []
         for helper_name, helper_verb in {"requestSoftwareIssues": "GET"}.items():
             span = method_body_span(src, helper_name)
-            calls = list(re.finditer(r"\bthis\."+re.escape(helper_name)+r"\s*\(", src))
+            calls = list(re.finditer(r"\bthis\."+re.escape(helper_name)+r"\s*\(", code_src))
             if not span or not calls: continue
             delegated_spans.append(span)
             for call in calls:
@@ -395,7 +408,7 @@ def extract(api):
                 results.append({"prefix": prefix, "verb": helper_verb, "suffix": norm(suffix),
                                 "norm_full": norm(full), "file": os.path.basename(f)})
 
-        for rm in re.finditer(r"this\.transport\.request", src):
+        for rm in re.finditer(r"this\.transport\.request", code_src):
             if any(start <= rm.start() < end for start, end in delegated_spans):
                 continue
             op = src.index("(", rm.end())

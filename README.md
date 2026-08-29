@@ -581,9 +581,10 @@ Example output:
 ```
 
 `api-coverage` compares executable SDK routes with the pinned snapshots and fails on unresolved
-route extraction or a missing non-deprecated operation. Its lexical pass excludes commented-out
-requests while preserving strings and template expressions, so dead code cannot satisfy coverage.
-Deprecated omissions remain visible in its report without failing the check.
+route extraction or a missing non-deprecated operation. Its lexical pass uses a code-token-only
+view to locate call sites and a layout-preserving literal view to resolve paths, so neither
+commented-out requests nor request-like examples inside strings can satisfy coverage. Deprecated
+omissions remain visible in its report without failing the check.
 
 In CI, both guards run on a **weekly schedule and on manual dispatch only** (`.github/workflows/spec-drift.yml`).
 It deliberately does **not** run on `push` or `pull_request` — a transient upstream outage must never
