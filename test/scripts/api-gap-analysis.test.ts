@@ -71,6 +71,36 @@ describe('api gap analysis', () => {
     }
   });
 
+  it('fails when a runtime client base prefix drifts from the reviewed spec route', async () => {
+    const fixtureRoot = await mkdtemp(join(tmpdir(), 'atlassian-api-gap-source-'));
+    const fixtureSrc = join(fixtureRoot, 'src');
+
+    try {
+      await cp(resolve(REPO_ROOT, 'src'), fixtureSrc, { recursive: true });
+      const jiraClientPath = join(fixtureSrc, 'jira/client.ts');
+      const jiraClient = await readFile(jiraClientPath, 'utf8');
+      const changedClient = jiraClient.replace(
+        '${resolved.baseUrl}/rest/software/1.0',
+        '${resolved.baseUrl}/rest/software/2.0',
+      );
+      expect(changedClient).not.toBe(jiraClient);
+      await writeFile(jiraClientPath, changedClient);
+
+      await expect(
+        execFileAsync('python3', [ANALYZER, '--source-root', fixtureRoot], {
+          cwd: REPO_ROOT,
+        }),
+      ).rejects.toMatchObject({
+        code: 1,
+        stdout: expect.stringMatching(
+          /jira-software: 105 ops \| impl \d+ \| MISSING [1-9]\d* \(live [1-9]\d*, dep 0\)/,
+        ),
+      });
+    } finally {
+      await rm(fixtureRoot, { recursive: true, force: true });
+    }
+  });
+
   it('is wired into the scheduled spec-drift workflow', async () => {
     const packageJson = JSON.parse(await readFile(resolve(REPO_ROOT, 'package.json'), 'utf8')) as {
       scripts: Record<string, string>;

@@ -14,8 +14,11 @@ auth. Bearer auth by itself does not change routing.
 - Development Information: `https://api.atlassian.com/jira/devinfo/0.1/cloud/{cloudId}` (proxy version `0.1`, site version `0.10`)
 
 This affects the corresponding `bulk`, `bulk-by-properties`, `repository`,
-`exists-by-properties`, and `pipelines` actions. Other DevOps families remain
-on their site bases. Obtain the cloud ID from
+`exists-by-properties`, and `pipelines` actions. The
+`pipelines get-deployment-gating-status` action is the exception: Atlassian does
+not expose it through the proxy, so it always uses the tenant
+`/rest/deployments/0.1` base. Other DevOps families remain on their site bases.
+Obtain the cloud ID from
 `https://your-domain.atlassian.net/_edge/tenant_info`.
 
 ## `app`
@@ -746,7 +749,7 @@ atlas jira repository delete-entity my-repo-123 pullRequest pr-1 --update-sequen
 
 ## `dashboards`
 
-`list` accepts only `--filter` (`my` or `favourite`), `--start-at`, and `--max-results`; sorting and expansion belong to `search`. `get` and `delete` take `<dashboardId>`. `create` requires `--name` and `--share-permissions` (a JSON array of share-permission objects, e.g. `'[{"type":"global"}]'`), with optional `--description` and `--edit-permissions` (JSON); `update <dashboardId>` takes the same flags. The actions below add the rest of the platform's dashboard surface (B391–B405).
+`list` accepts only `--filter` (`my` or `favourite`), `--start-at`, and `--max-results`; the removed `--order-by` and `--expand` flags are rejected with migration guidance because sorting and expansion belong to `search`. `get` and `delete` take `<dashboardId>`. `create` requires `--name` and `--share-permissions` (a JSON array of share-permission objects, e.g. `'[{"type":"global"}]'`), with optional `--description` and `--edit-permissions` (JSON); `update <dashboardId>` takes the same flags. The actions below add the rest of the platform's dashboard surface (B391–B405).
 
 ```sh
 atlas jira dashboards create --name "Team board" --share-permissions '[{"type":"global"}]' --description "Sprint health"

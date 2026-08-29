@@ -147,6 +147,50 @@ describe('parseCommand', () => {
     expect(result.options['software-cloud-id']).toBe('cloud-123');
   });
 
+  it('parses removed --project-role so the handler can return migration guidance', () => {
+    const result = parseCommand([
+      'node',
+      'atlas',
+      'jira',
+      'group-user-picker',
+      'pick',
+      '--query',
+      'alice',
+      '--project-role',
+      'Developers',
+    ]);
+
+    expect(result.options['project-role']).toBe('Developers');
+  });
+
+  it('parses removed --export-type so the handler can return migration guidance', () => {
+    const result = parseCommand([
+      'node',
+      'atlas',
+      'jira',
+      'issues',
+      'export-archived',
+      '--export-type',
+      'XLSX',
+    ]);
+
+    expect(result.options['export-type']).toBe('XLSX');
+  });
+
+  it('parses the project-search --property-query option', () => {
+    const result = parseCommand([
+      'node',
+      'atlas',
+      'jira',
+      'projects',
+      'list',
+      '--property-query',
+      'project.owner=alice',
+    ]);
+
+    expect(result.options['property-query']).toBe('project.owner=alice');
+  });
+
   it('parses --purge boolean flag', () => {
     // Arrange
     const argv = ['node', 'atlas', 'confluence', 'pages', 'delete', '123', '--purge'];

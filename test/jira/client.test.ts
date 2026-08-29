@@ -190,6 +190,8 @@ describe('JiraClient', () => {
       respond();
       await client.pipelines.getDeployment('pipeline-1', 'production', 2);
       respond();
+      await client.pipelines.getDeploymentGatingStatus('pipeline-1', 'production', 2);
+      respond();
       await client.bulkByProperties.deleteBuildsByProperties({ properties: { accountId: 'a' } });
       respond();
       await client.bulkByProperties.deleteDeploymentsByProperties({
@@ -210,6 +212,7 @@ describe('JiraClient', () => {
         'https://api.atlassian.com/jira/devinfo/0.1/cloud/11111111-2222-3333-4444-555555555555/existsByProperties',
         'https://api.atlassian.com/jira/builds/0.1/cloud/11111111-2222-3333-4444-555555555555/pipelines/pipeline-1/builds/1',
         'https://api.atlassian.com/jira/deployments/0.1/cloud/11111111-2222-3333-4444-555555555555/pipelines/pipeline-1/environments/production/deployments/2',
+        'https://test.atlassian.net/rest/deployments/0.1/pipelines/pipeline-1/environments/production/deployments/2/gating-status',
         'https://api.atlassian.com/jira/builds/0.1/cloud/11111111-2222-3333-4444-555555555555/bulkByProperties',
         'https://api.atlassian.com/jira/deployments/0.1/cloud/11111111-2222-3333-4444-555555555555/bulkByProperties',
         'https://api.atlassian.com/jira/devinfo/0.1/cloud/11111111-2222-3333-4444-555555555555/bulkByProperties',

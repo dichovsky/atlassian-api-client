@@ -376,8 +376,12 @@ const GLOBAL_OPTIONS = {
   // projects CRUD options (B929, B652, B661, B662, B696-B700)
   'project-type-key': { type: 'string' as const },
   'type-key': { type: 'string' as const },
+  // Retained only so group-user-picker can fail with migration guidance
+  // instead of a generic parseArgs unknown-option error.
+  'project-role': { type: 'string' as const },
   recent: { type: 'string' as const },
   'category-id': { type: 'string' as const },
+  'property-query': { type: 'string' as const },
   'avatar-id': { type: 'string' as const },
   'permission-scheme': { type: 'string' as const },
   'notification-scheme': { type: 'string' as const },
@@ -417,6 +421,8 @@ const GLOBAL_OPTIONS = {
   'is-returning-keys': { type: 'boolean' as const },
   'field-type': { type: 'string' as const },
   // archive export options (B538)
+  // Retained so removed archive-export selectors receive migration guidance.
+  'export-type': { type: 'string' as const },
   'archived-by': { type: 'string' as const },
   'date-after': { type: 'string' as const },
   'date-before': { type: 'string' as const },

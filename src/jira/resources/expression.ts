@@ -240,9 +240,9 @@ export interface EvaluateExpressionResponse {
  * Covers POST `/rest/api/3/expression/{analyse,eval,evaluate}` (B409, B904,
  * B410). All three endpoints accept JSON request bodies — `analyse`
  * validates and optionally type-checks expressions, `eval` runs an
- * expression against a context using the enhanced search API (scrolling
- * `nextPageToken` view), and `evaluate` runs an expression against a context
- * using the legacy paginated JQL view.
+ * expression against a context using the legacy strongly-consistent,
+ * offset-paginated JQL view, and `evaluate` runs an expression against a
+ * context using the enhanced search API (scrolling `nextPageToken` view).
  */
 export class ExpressionResource {
   constructor(

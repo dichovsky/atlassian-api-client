@@ -10,6 +10,7 @@ Atlassian OpenAPI specs to list unimplemented operations.
 Usage:
   python3 scripts/api-gap-analysis.py
   python3 scripts/api-gap-analysis.py --spec-dir /path/to/spec
+  python3 scripts/api-gap-analysis.py --source-root /path/to/repository
 
 Reads the reviewed snapshots in spec/. Refresh them using spec/README.md before a live audit.
   Writes /tmp/gap_candidates.json + /tmp/unmatched_sdk.json.
@@ -27,6 +28,11 @@ PARSER.add_argument(
     default=os.path.join(ROOT, "spec"),
     help="directory containing the three pinned OpenAPI documents",
 )
+PARSER.add_argument(
+    "--source-root",
+    default=ROOT,
+    help="repository root containing src/{jira,confluence}",
+)
 CLI_ARGS = PARSER.parse_args()
 
 SPEC_FILES = {
@@ -35,27 +41,11 @@ SPEC_FILES = {
     "confluence-v2": "confluence-v2.json",
 }
 
-JIRA_VARS = {
-    "baseUrl": "/rest/api/3", "agileBaseUrl": "/rest/agile/1.0",
-    "softwareBaseUrl": "/rest/software/1.0",
-    "operationsBaseUrl": "/rest/operations/1.0", "securityBaseUrl": "/rest/security/1.0",
-    "devopscomponentsBaseUrl": "/rest/devopscomponents/1.0", "featureFlagsBaseUrl": "/rest/featureflags/0.1",
-    "latestBaseUrl": "/rest/internal/api/latest", "remoteLinkBaseUrl": "/rest/remotelinks/1.0",
-    "serviceRegistryBaseUrl": "/rest/atlassian-connect/1", "devInfoBaseUrl": "/rest/devinfo/0.10",
-    "forgeBaseUrl": "/rest/forge/1", "buildsBaseUrl": "/rest/builds/0.1",
-    "deploymentsBaseUrl": "/rest/deployments/0.1",
+SPEC_PREFIXES = {
+    "jira-platform": "/rest/api/3",
+    "jira-software": "/rest/agile/1.0",
+    "confluence-v2": "/wiki/api/v2",
 }
-CONF_VARS = {
-    "baseUrl": "/wiki/api/v2",
-    # Attachment upload intentionally uses the only supported write endpoint,
-    # which still lives in REST v1. Resolve it so it does not look like an AST
-    # extraction failure, while leaving it outside the v2 comparison surface.
-    "v1BaseUrl": "/wiki/rest/api",
-}
-IN_SCOPE = {"/rest/api/3": "jira-platform", "/rest/agile/1.0": "jira-software",
-            "/rest/software/1.0": "jira-software",
-            "/wiki/api/v2": "confluence-v2"}
-OUT_OF_SCOPE = {"/wiki/rest/api": "confluence-v1 attachment upload"}
 
 def match_close(s, start, op, cl):
     depth = 0
@@ -94,6 +84,41 @@ def parse_object_literal(arg, varmap):
         m = re.match(r"([A-Za-z0-9_]+)\s*:\s*([A-Za-z0-9_]+)", field)
         if m and m.group(2) in varmap: out[m.group(1)] = varmap[m.group(2)]
     return out
+
+def parse_base_suffixes(client_src):
+    """Derive resource base-path suffixes from the runtime client wiring.
+
+    Only initializers rooted in ``resolved.baseUrl`` (or aliases that resolve
+    uniquely to one such initializer) are accepted. This is deliberately
+    fail-closed: an initializer that cannot be proved to have one tenant-route
+    suffix stays unresolved instead of silently falling back to a previously
+    known Atlassian prefix.
+    """
+    initializers = {}
+    for m in re.finditer(
+        r"\bconst\s+((?:baseUrl)|(?:[A-Za-z0-9_]+BaseUrl))\s*(?::[^=]+)?=\s*(.*?);",
+        client_src,
+        re.S,
+    ):
+        initializers[m.group(1)] = m.group(2)
+
+    resolved = {}
+    pending = dict(initializers)
+    while pending:
+        progressed = False
+        for name, expr in list(pending.items()):
+            candidates = set(re.findall(r"`\$\{resolved\.baseUrl\}([^`]*)`", expr))
+            alias_expr = re.sub(r"`[^`]*`", "", expr)
+            for ident in re.findall(r"\b[A-Za-z_][A-Za-z0-9_]*\b", alias_expr):
+                if ident in resolved:
+                    candidates.add(resolved[ident])
+            if len(candidates) == 1:
+                resolved[name] = candidates.pop()
+                del pending[name]
+                progressed = True
+        if not progressed:
+            break
+    return resolved
 
 def parse_wiring(client_src, varmap):
     wiring = {}
@@ -238,9 +263,10 @@ def method_body_span(src, name):
     return (body_start, body_end) if body_end != -1 else None
 
 def extract(api):
-    res_dir = os.path.join(ROOT, "src", api, "resources")
-    client_src = open(os.path.join(ROOT, "src", api, "client.ts")).read()
-    varmap = JIRA_VARS if api == "jira" else CONF_VARS
+    source_root = os.path.abspath(CLI_ARGS.source_root)
+    res_dir = os.path.join(source_root, "src", api, "resources")
+    client_src = open(os.path.join(source_root, "src", api, "client.ts")).read()
+    varmap = parse_base_suffixes(client_src)
     wiring = parse_wiring(client_src, varmap)
     results, unknowns = [], []
     for f in sorted(glob.glob(os.path.join(res_dir, "*.ts"))):
@@ -279,8 +305,7 @@ def extract(api):
                 if error:
                     unknowns.append((os.path.basename(f), error, tpl[:80])); continue
                 full = prefix + suffix
-                results.append({"prefix": prefix, "surface": IN_SCOPE.get(prefix),
-                                "verb": helper_verb, "suffix": norm(suffix),
+                results.append({"prefix": prefix, "verb": helper_verb, "suffix": norm(suffix),
                                 "norm_full": norm(full), "file": os.path.basename(f)})
 
         for rm in re.finditer(r"this\.transport\.request", src):
@@ -310,11 +335,10 @@ def extract(api):
             if error:
                 unknowns.append((os.path.basename(f), error, tpl[:80])); continue
             full = prefix + suffix
-            surface = IN_SCOPE.get(prefix)
-            results.append({"prefix": prefix, "surface": surface, "verb": verb,
-                            "suffix": norm(suffix), "norm_full": norm(full),
+            results.append({"prefix": prefix, "verb": verb, "suffix": norm(suffix),
+                            "norm_full": norm(full),
                             "file": os.path.basename(f)})
-    return results, unknowns
+    return results, unknowns, varmap
 
 def load_spec(name, pref):
     spec_path = os.path.join(os.path.abspath(CLI_ARGS.spec_dir), SPEC_FILES[name])
@@ -330,8 +354,8 @@ def load_spec(name, pref):
                         "deprecated": bool(op.get("deprecated"))})
     return ops
 
-jira_res, jira_unk = extract("jira")
-conf_res, conf_unk = extract("confluence")
+jira_res, jira_unk, jira_vars = extract("jira")
+conf_res, conf_unk, conf_vars = extract("confluence")
 all_res = jira_res + conf_res
 if jira_unk or conf_unk:
     print(f"!!! UNRESOLVED ({len(jira_unk)+len(conf_unk)}) !!!")
@@ -345,9 +369,7 @@ print(f"=== completeness: jira {len(jira_res)}/{len(jira_res)+len(jira_unk)} pat
 impl = {}
 for r in all_res: impl.setdefault((r["verb"], r["norm_full"]), []).append(r["file"])
 matched = set()
-specs = {"jira-platform": load_spec("jira-platform","/rest/api/3"),
-         "jira-software": load_spec("jira-software","/rest/agile/1.0"),
-         "confluence-v2": load_spec("confluence-v2","/wiki/api/v2")}
+specs = {name: load_spec(name, prefix) for name, prefix in SPEC_PREFIXES.items()}
 out = {}
 live_gap_count = 0
 print("\n=== GAP DIFF ===")
@@ -371,8 +393,13 @@ for r in all_res:
     if (r["verb"], r["norm_full"]) not in matched:
         unm.setdefault(r["prefix"],set()).add((r["verb"], r["suffix"]))
 print("\n=== SDK paths matching NO spec op ===")
+out_of_scope = {}
+if "v1BaseUrl" in conf_vars:
+    # Attachment upload intentionally uses the only supported write endpoint,
+    # which still lives in REST v1 and is outside the reviewed v2 spec surface.
+    out_of_scope[conf_vars["v1BaseUrl"]] = "confluence-v1 attachment upload"
 for p,s in sorted(unm.items(), key=lambda x:-len(x[1])):
-    classification = f" [{OUT_OF_SCOPE[p]} — out of reviewed spec scope]" if p in OUT_OF_SCOPE else ""
+    classification = f" [{out_of_scope[p]} — out of reviewed spec scope]" if p in out_of_scope else ""
     print(f"  {len(s):3} {p}{classification}")
 json.dump({p:sorted(list(s)) for p,s in unm.items()}, open("/tmp/unmatched_sdk.json","w"), indent=2)
 

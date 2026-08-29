@@ -361,7 +361,7 @@ EXAMPLES:
   atlas jira search approximate-count --jql "project = PROJ"
   atlas jira search jql-get --jql "project = PROJ" --max-results 50
   atlas jira search jql-post --jql "project = PROJ AND assignee = currentUser()"
-  atlas jira projects list
+  atlas jira projects list --type-key software --status live --query platform --order-by key
   atlas jira boards list --project PROJ --include-private false --order-by name
   atlas jira boards create --name "Discovery" --type agility --filter-id 10001 --location-type project --location-project-key-or-id PROJ
   atlas jira boards issues-approximate-count 42 --jql "statusCategory != Done"

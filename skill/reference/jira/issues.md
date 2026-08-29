@@ -292,8 +292,8 @@ of numeric ID.
 
 - List-valued filters are comma-separated.
 - `--date-after` and `--date-before` use `YYYY-MM-DD` and must be supplied together.
-- The endpoint always produces a CSV download link sent by email; it has no JQL or format selector.
-- This is async (202); the CLI returns `{ submitted: true }`.
+- The endpoint always produces a CSV download link sent by email; it has no JQL or format selector. Legacy `--jql` and `--export-type` are rejected so an old command cannot silently widen or misrepresent the export.
+- This is async (202); the CLI returns the task envelope `{ taskId?, status?, progress?, submittedTime?, payload?, fileUrl? }`. Poll a returned task ID with `atlas jira task get <taskId>`.
 - Endpoint: `PUT /rest/api/3/issues/archive/export` (plural `issues`).
 
 ```sh

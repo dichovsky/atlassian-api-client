@@ -285,11 +285,49 @@ const JIRA_PLATFORM_GRANULAR_SCOPES = [
   'write:workflow:jira',
 ] as const;
 
-/** Well-known granular Atlassian Cloud OAuth 2.0 scopes. */
+/**
+ * Additional scopes recognized by the pinned security-scheme catalogs.
+ *
+ * These stay separate from the operation-level granular catalogs above:
+ * `validateScopes` accepts every scope Atlassian advertises, while
+ * `detectRequiredScopes` continues to recommend only granular operation scopes.
+ */
+const ADDITIONAL_RECOGNIZED_SCOPES = [
+  // Granular catalog entries not selected by current operation annotations.
+  'delete:workflow.property:jira',
+  'read:field.options:jira',
+  'read:issue-field-values:jira',
+  'read:issue-link:jira',
+  'read:issue.votes:jira',
+  'read:role:jira',
+  'read:workflow.property:jira',
+  'write:workflow.property:jira',
+
+  // Classic and Jira Software compatibility scopes still advertised by Atlassian.
+  'manage:jira-configuration',
+  'manage:jira-project',
+  'manage:jira-webhook',
+  'read:build:jira-software',
+  'read:deployment:jira-software',
+  'read:feature-flag:jira-software',
+  'read:jira-user',
+  'read:jira-work',
+  'read:remote-link:jira-software',
+  'read:source-code:jira-software',
+  'write:build:jira-software',
+  'write:deployment:jira-software',
+  'write:feature-flag:jira-software',
+  'write:jira-work',
+  'write:remote-link:jira-software',
+  'write:source-code:jira-software',
+] as const;
+
+/** Well-known Atlassian Cloud OAuth 2.0 scopes. */
 export type AtlassianScope =
   | (typeof CONFLUENCE_GRANULAR_SCOPES)[number]
   | (typeof JIRA_SOFTWARE_GRANULAR_SCOPES)[number]
-  | (typeof JIRA_PLATFORM_GRANULAR_SCOPES)[number];
+  | (typeof JIRA_PLATFORM_GRANULAR_SCOPES)[number]
+  | (typeof ADDITIONAL_RECOGNIZED_SCOPES)[number];
 
 /** Registry mapping operation names to their required OAuth scopes. */
 const OPERATION_SCOPES: Readonly<Record<string, readonly AtlassianScope[]>> = {
@@ -1046,6 +1084,7 @@ const KNOWN_SCOPES: ReadonlySet<AtlassianScope> = new Set([
   ...CONFLUENCE_GRANULAR_SCOPES,
   ...JIRA_SOFTWARE_GRANULAR_SCOPES,
   ...JIRA_PLATFORM_GRANULAR_SCOPES,
+  ...ADDITIONAL_RECOGNIZED_SCOPES,
 ]);
 
 /** Result of validating a set of scope strings. */

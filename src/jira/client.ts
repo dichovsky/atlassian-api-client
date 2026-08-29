@@ -116,7 +116,8 @@ export interface JiraClientConfig extends ClientConfig {
    * When present, Development Information, Builds, and Deployments requests
    * use `https://api.atlassian.com/jira/{type}/{version}/cloud/{cloudId}`.
    * Development Information uses proxy version `0.1` (the site route remains
-   * `0.10`). All other Jira resources continue to use {@link ClientConfig.baseUrl}.
+   * `0.10`). Deployment gating-status is not exposed through the proxy and
+   * continues to use {@link ClientConfig.baseUrl}, as do all other Jira resources.
    *
    * Requires `auth.type: 'bearer'` with an OAuth 2.0 system-to-system access
    * token. Bearer auth alone never enables proxy routing.
@@ -389,9 +390,10 @@ export class JiraClient {
       integrationProxyRoot === undefined
         ? `${resolved.baseUrl}/rest/builds/0.1`
         : `${integrationProxyRoot}/builds/0.1/cloud/${encodedCloudId}`;
+    const tenantDeploymentsBaseUrl = `${resolved.baseUrl}/rest/deployments/0.1`;
     const deploymentsBaseUrl =
       integrationProxyRoot === undefined
-        ? `${resolved.baseUrl}/rest/deployments/0.1`
+        ? tenantDeploymentsBaseUrl
         : `${integrationProxyRoot}/deployments/0.1/cloud/${encodedCloudId}`;
     const allowedHosts =
       integrationProxyRoot !== undefined &&
@@ -492,7 +494,12 @@ export class JiraClient {
     this.uiModifications = new UiModificationsResource(transport, baseUrl);
     this.permissions = new PermissionsResource(transport, baseUrl);
     this.repository = new RepositoryResource(transport, devInfoBaseUrl);
-    this.pipelines = new PipelinesResource(transport, buildsBaseUrl, deploymentsBaseUrl);
+    this.pipelines = new PipelinesResource(
+      transport,
+      buildsBaseUrl,
+      deploymentsBaseUrl,
+      tenantDeploymentsBaseUrl,
+    );
     this.linkedWorkspaces = new LinkedWorkspacesResource(
       transport,
       operationsBaseUrl,

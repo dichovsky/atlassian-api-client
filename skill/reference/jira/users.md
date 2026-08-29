@@ -172,6 +172,7 @@ atlas jira groups remove-user --group-id grp-1 --account-id 5b10ac8d82e05b22cc7d
 - `--case-insensitive` — use case-insensitive group matching.
 - `--include-ai-agents` — include AI agents in user results.
 - `--exclude-connect-users` — when `true`, Atlassian Connect users are excluded.
+- Removed `--project-role` is parsed only to return a migration error; Atlassian removed it from this endpoint. Use `--field-id` with `--project-id` for project-scoped user results. There is no direct role-name replacement.
 - Endpoint: `GET /rest/api/3/groupuserpicker`.
 
 ```sh

@@ -101,7 +101,35 @@ const matrix: readonly MatrixRow[] = [
   // ─── projects ─────────────────────────────────────────────────────────
   {
     name: 'projects list',
-    argv: ['jira', 'projects', 'list', '--max-results', '25'],
+    argv: [
+      'jira',
+      'projects',
+      'list',
+      '--start-at',
+      '10',
+      '--max-results',
+      '25',
+      '--order-by',
+      'key',
+      '--expand',
+      'description,lead',
+      '--status',
+      'live',
+      '--type-key',
+      'software',
+      '--id',
+      '10001',
+      '--keys',
+      'PROJ',
+      '--query',
+      'team',
+      '--category-id',
+      '5',
+      '--property-query',
+      'project.owner=alice',
+      '--properties',
+      'project.owner',
+    ],
     routes: [
       {
         method: 'GET',
@@ -111,6 +139,22 @@ const matrix: readonly MatrixRow[] = [
     ],
     expectCall: { method: 'GET', pathname: `${P}/project/search` },
     expectStdout: ['"key": "PROJ"'],
+    expectQuery: (query) => {
+      expect(query).toMatchObject({
+        startAt: '10',
+        maxResults: '25',
+        orderBy: 'key',
+        expand: 'description,lead',
+        status: 'live',
+        typeKey: 'software',
+        id: '10001',
+        keys: 'PROJ',
+        query: 'team',
+        categoryId: '5',
+        propertyQuery: 'project.owner=alice',
+        properties: 'project.owner',
+      });
+    },
   },
   {
     name: 'projects get',
@@ -229,5 +273,27 @@ describe('atlas jira — full action matrix', () => {
     for (const needle of row.expectStdout ?? []) {
       expect(result.stdout).toContain(needle);
     }
+  });
+
+  it('rejects legacy archive --jql before making an unfiltered export request', async () => {
+    const handle = installFetchMock([]);
+
+    const result = await runAtlas(['jira', 'issues', 'export-archived', '--jql', 'project = PROJ']);
+
+    expect(result.code).toBe(1);
+    expect(result.stderr).toContain('--jql is no longer supported by export-archived');
+    expect(handle.calls).toEqual([]);
+  });
+
+  it('rejects legacy archive --export-type before making an export request', async () => {
+    const handle = installFetchMock([]);
+
+    const result = await runAtlas(['jira', 'issues', 'export-archived', '--export-type', 'XLSX']);
+
+    expect(result.code).toBe(1);
+    expect(result.stderr).toContain(
+      '--export-type is no longer supported by export-archived; Atlassian always produces CSV',
+    );
+    expect(handle.calls).toEqual([]);
   });
 });

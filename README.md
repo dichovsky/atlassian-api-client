@@ -157,7 +157,9 @@ await client.bulk.submitBuilds({ builds: [] });
 
 Builds and Deployments use proxy version `0.1`. Development Information changes
 from the site route `/rest/devinfo/0.10` to the proxy route
-`/jira/devinfo/0.1/cloud/{cloudId}`. Every other Jira resource continues to use
+`/jira/devinfo/0.1/cloud/{cloudId}`. Deployment gating-status is not available
+through the integration proxy, so that request remains on the tenant
+`/rest/deployments/0.1` route. Every other Jira resource continues to use
 `baseUrl`. The option requires bearer auth and does not activate merely because
 bearer auth is configured. The built-in transport authorizes exactly
 `api.atlassian.com` in addition to the existing `allowedHosts`; custom injected
@@ -521,7 +523,7 @@ const allOps = listKnownOperations();
 // → ['confluence.pages.create', 'confluence.pages.delete', ...]
 ```
 
-The validator catalog tracks every granular scope in the pinned OpenAPI specs: 38 Confluence v2 scopes, 33 Jira Software scopes, and 180 Jira Platform Beta scopes (247 unique strings after overlap). Jira Platform classic `Current` scopes are intentionally excluded. The operation-to-scope registry remains a selected convenience mapping rather than a claim that every SDK method has been mapped. `atlas scopes validate <scope>...` validates scope strings without making a network request.
+The operation annotations contain 38 Confluence v2 scopes, 33 Jira Software scopes, and 180 Jira Platform Beta scopes (247 unique granular strings after overlap). Validation recognizes those plus 24 classic or compatibility scopes exposed by the pinned security schemes, for 271 accepted strings in total. `detectRequiredScopes()` continues to recommend granular scopes; the operation registry remains a selected convenience mapping rather than a claim that every SDK method has been mapped. `atlas scopes validate <scope>...` validates scope strings without making a network request.
 
 ## OpenAPI Type Generation
 

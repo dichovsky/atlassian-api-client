@@ -10,6 +10,7 @@ import { ValidationError } from '../../src/core/errors.js';
 
 const BUILDS_BASE_URL = 'https://test.atlassian.net/rest/builds/0.1';
 const DEPLOYMENTS_BASE_URL = 'https://test.atlassian.net/rest/deployments/0.1';
+const PROXY_DEPLOYMENTS_BASE_URL = 'https://api.atlassian.com/jira/deployments/0.1/cloud/cloud-123';
 
 const makeBuild = (overrides?: Partial<{ pipelineId: string; buildNumber: number }>): Build => ({
   schemaVersion: '1.0',
@@ -282,6 +283,25 @@ describe('PipelinesResource', () => {
   // ── getDeploymentGatingStatus ─────────────────────────────────────────────
 
   describe('getDeploymentGatingStatus()', () => {
+    it('uses a dedicated tenant base when deployment reads use the integration proxy', async () => {
+      // Arrange
+      const tenantPipelines = new PipelinesResource(
+        transport,
+        BUILDS_BASE_URL,
+        PROXY_DEPLOYMENTS_BASE_URL,
+        DEPLOYMENTS_BASE_URL,
+      );
+      transport.respondWith(makeGatingStatus());
+
+      // Act
+      await tenantPipelines.getDeploymentGatingStatus('pipeline-abc', 'env-prod', 7);
+
+      // Assert
+      expect(transport.lastCall?.options.path).toBe(
+        `${DEPLOYMENTS_BASE_URL}/pipelines/pipeline-abc/environments/env-prod/deployments/7/gating-status`,
+      );
+    });
+
     it('calls GET .../gating-status and returns gating status', async () => {
       // Arrange
       const gatingStatus = makeGatingStatus();

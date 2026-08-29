@@ -34,13 +34,14 @@ Confluence attachment upload remains one documented REST v1 dependency because C
 - Moved the default CLI issue search to `/rest/api/3/search/jql`; retained the old routes only as explicitly deprecated compatibility actions.
 - Corrected archived-issue export, migration retrigger, workflow search, user/group picker, status search, field scheme, UI modification, project-role, and search-warning contracts.
 - Completed current Jira Software scope recognition and operation mappings, including Security Information scopes.
-- Added opt-in system-to-system OAuth proxy routing for Jira Software Development Information, Builds, and Deployments, with bearer-only validation and a narrowly scoped `api.atlassian.com` credential boundary.
-- Made granular scope validation exhaustive for the pinned contracts: 38 Confluence, 33 Jira Software, and 180 Jira Platform Beta scopes (247 unique after overlap); classic Jira Platform `Current` scopes remain intentionally excluded.
-- Removed silently ignored dashboard/project query options and aligned those SDK, CLI, and skill contracts with the current operation-specific parameters.
+- Added opt-in system-to-system OAuth proxy routing for Jira Software Development Information, Builds, and Deployments, with bearer-only validation and a narrowly scoped `api.atlassian.com` credential boundary. Deployment-gating status remains tenant-routed because it is not part of the proxy contract.
+- Made scope validation exhaustive for the pinned contracts: 247 unique granular operation scopes plus 24 classic or compatibility scopes found in security schemes (271 recognized strings total). Operation recommendations remain granular.
+- Removed silently ignored dashboard/project query options and aligned those SDK, CLI, and skill contracts with the current operation-specific parameters. Obsolete CLI flags now fail with targeted migration guidance, while `atlas jira projects list` exposes the full current `/project/search` query surface as the replacement for deprecated legacy filters.
+- Made archived-issue export reject the removed JQL filter before any request and preserve Atlassian's task response envelope; fixed cursor-token forwarding for all aliases of the default Jira search command.
 - Completed current Confluence Space list/get contracts and response projections, plus missing Page, Attachment, Label, Version, and Task options.
 - Marked deprecated and experimental methods consistently in SDK and skill documentation; documented Forge-only `asApp()` requirements for Confluence app properties.
 - Replaced the former parsing-only drift smoke test with a canonical contract fingerprint comparison covering routes, parameters, bodies, responses, schemas, and security metadata.
-- Promoted the route-gap analyzer to a scheduled CI gate: unresolved SDK routes and uncovered non-deprecated operations now fail the job.
+- Promoted the route-gap analyzer to a scheduled CI gate: unresolved SDK routes and uncovered non-deprecated operations now fail the job. Runtime prefixes are derived from the actual client initializers and resolution fails closed, so a client-prefix change cannot produce a false-green report.
 
 ## Verification
 

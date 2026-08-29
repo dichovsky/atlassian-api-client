@@ -6,7 +6,7 @@
 
 | Action                                        | Required flags | Optional flags                                                        |
 | --------------------------------------------- | -------------- | --------------------------------------------------------------------- |
-| `search` (default; aliases: omitted, `query`) | `--jql`        | `--max-results`, `--fields`                                           |
+| `search` (default; aliases: omitted, `query`) | `--jql`        | `--next-page-token`, `--max-results`, `--fields`                      |
 | `legacy-post` (deprecated)                    | `--jql`        | `--max-results`, `--fields`                                           |
 | `get` (deprecated)                            | `--jql`        | `--max-results`, `--fields`                                           |
 | `approximate-count`                           | `--jql`        | —                                                                     |
@@ -16,6 +16,7 @@
 ```sh
 atlas jira search --jql "project = PROJ AND status = Open"
 atlas jira search search --jql "project = PROJ AND status = Open"
+atlas jira search search --jql "project = PROJ AND status = Open" --next-page-token eyJvIjoyfQ==
 atlas jira search approximate-count --jql "project = PROJ"
 atlas jira search jql-get --jql "project = PROJ" --max-results 50
 atlas jira search jql-post --jql "project = PROJ AND assignee = currentUser()"

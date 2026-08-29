@@ -10236,7 +10236,13 @@ describe('executeJiraCommand', () => {
     });
 
     it('issues export-archived forwards current archived-issue filters', async () => {
-      jiraIssuesMock.exportArchivedIssues.mockResolvedValue(undefined);
+      const task = {
+        taskId: '10990',
+        status: 'ENQUEUED',
+        progress: 0,
+        submittedTime: '2026-08-30T00:00:00.000Z',
+      };
+      jiraIssuesMock.exportArchivedIssues.mockResolvedValue(task);
       const result = await executeJiraCommand(
         cmd('issues', 'export-archived', [], {
           'archived-by': 'archiver-1,archiver-2',
@@ -10257,11 +10263,12 @@ describe('executeJiraCommand', () => {
           reporters: ['reporter-1'],
         }),
       );
-      expect(result).toEqual({ submitted: true });
+      expect(result).toEqual(task);
     });
 
     it('issues export-archived works without filters', async () => {
-      jiraIssuesMock.exportArchivedIssues.mockResolvedValue(undefined);
+      const task = { taskId: '10991', status: 'ENQUEUED', progress: 0 };
+      jiraIssuesMock.exportArchivedIssues.mockResolvedValue(task);
       const result = await executeJiraCommand(cmd('issues', 'export-archived', []), GLOBALS);
       expect(jiraIssuesMock.exportArchivedIssues).toHaveBeenCalledWith({
         archivedBy: undefined,
@@ -10269,7 +10276,29 @@ describe('executeJiraCommand', () => {
         projects: undefined,
         reporters: undefined,
       });
-      expect(result).toEqual({ submitted: true });
+      expect(result).toEqual(task);
+    });
+
+    it('issues export-archived rejects the removed --jql filter instead of exporting everything', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('issues', 'export-archived', [], { jql: 'project = PROJ' }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--jql is no longer supported by export-archived');
+      expect(jiraIssuesMock.exportArchivedIssues).not.toHaveBeenCalled();
+    });
+
+    it('issues export-archived rejects the removed --export-type selector', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('issues', 'export-archived', [], { 'export-type': 'XLSX' }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow(
+        '--export-type is no longer supported by export-archived; Atlassian always produces CSV',
+      );
+      expect(jiraIssuesMock.exportArchivedIssues).not.toHaveBeenCalled();
     });
 
     it('issues export-archived requires both date range boundaries', async () => {
@@ -10315,6 +10344,43 @@ describe('executeJiraCommand', () => {
       expect(jiraProjectsMock.list).toHaveBeenCalledWith(
         expect.objectContaining({ maxResults: 10 }),
       );
+    });
+
+    it('projects list forwards the complete current project-search query surface', async () => {
+      jiraProjectsMock.list.mockResolvedValue({ values: [] });
+
+      await executeJiraCommand(
+        cmd('projects', 'list', [], {
+          'start-at': '10',
+          'max-results': '25',
+          'order-by': 'key',
+          expand: 'description,lead',
+          status: 'live,archived',
+          'type-key': 'software',
+          id: '10001,10002',
+          keys: 'PROJ,OPS',
+          query: 'team',
+          'category-id': '5',
+          'property-query': 'project.owner=alice',
+          properties: 'project.owner,project.region',
+        }),
+        GLOBALS,
+      );
+
+      expect(jiraProjectsMock.list).toHaveBeenCalledWith({
+        startAt: 10,
+        maxResults: 25,
+        orderBy: 'key',
+        expand: ['description', 'lead'],
+        status: ['live', 'archived'],
+        typeKey: 'software',
+        id: [10001, 10002],
+        keys: ['PROJ', 'OPS'],
+        query: 'team',
+        categoryId: 5,
+        propertyQuery: 'project.owner=alice',
+        properties: ['project.owner', 'project.region'],
+      });
     });
 
     it('projects get calls client.projects.get with the project key', async () => {
@@ -10382,25 +10448,32 @@ describe('executeJiraCommand', () => {
       ).rejects.toThrow('--recent must be an integer between 0 and 20');
     });
 
-    it('projects list-legacy ignores removed compatibility flags', async () => {
-      jiraProjectsMock.listLegacy.mockResolvedValue([]);
-      await executeJiraCommand(
-        cmd('projects', 'list-legacy', [], {
-          'max-results': '25',
-          'order-by': 'name',
-          'start-at': '10',
-          'type-key': 'software',
-          'category-id': '5',
-          action: 'view',
-          query: 'example',
-        }),
-        GLOBALS,
+    it.each([
+      ['max-results', '25'],
+      ['order-by', 'name'],
+      ['start-at', '10'],
+      ['type-key', 'software'],
+      ['category-id', '5'],
+      ['query', 'example'],
+    ])(
+      'projects list-legacy rejects removed --%s instead of silently ignoring it',
+      async (flag, value) => {
+        await expect(
+          executeJiraCommand(cmd('projects', 'list-legacy', [], { [flag]: value }), GLOBALS),
+        ).rejects.toThrow(
+          `--${flag} is not supported by projects list-legacy; use projects list instead`,
+        );
+        expect(jiraProjectsMock.listLegacy).not.toHaveBeenCalled();
+      },
+    );
+
+    it('projects list-legacy tells callers to drop the removed --action filter', async () => {
+      await expect(
+        executeJiraCommand(cmd('projects', 'list-legacy', [], { action: 'view' }), GLOBALS),
+      ).rejects.toThrow(
+        '--action is not supported by projects list-legacy and has no current replacement; drop this flag',
       );
-      expect(jiraProjectsMock.listLegacy).toHaveBeenCalledWith({
-        expand: undefined,
-        recent: undefined,
-        properties: undefined,
-      });
+      expect(jiraProjectsMock.listLegacy).not.toHaveBeenCalled();
     });
 
     it('projects create calls client.projects.create with required fields', async () => {
@@ -11099,10 +11172,6 @@ describe('executeJiraCommand', () => {
       const result = await executeJiraCommand(
         cmd('projects', 'list-all-versions', ['PROJ'], {
           expand: 'operations',
-          'max-results': '10',
-          'order-by': 'name',
-          query: 'v1',
-          status: 'released',
         }),
         GLOBALS,
       );
@@ -11111,6 +11180,26 @@ describe('executeJiraCommand', () => {
       });
       expect(result).toEqual([{ id: 'v1' }]);
     });
+
+    it.each([
+      ['max-results', '10'],
+      ['order-by', 'name'],
+      ['query', 'v1'],
+      ['status', 'released'],
+    ])(
+      'projects list-all-versions rejects removed --%s instead of silently ignoring it',
+      async (flag, value) => {
+        await expect(
+          executeJiraCommand(
+            cmd('projects', 'list-all-versions', ['PROJ'], { [flag]: value }),
+            GLOBALS,
+          ),
+        ).rejects.toThrow(
+          `--${flag} is not supported by projects list-all-versions; use projects list-versions instead`,
+        );
+        expect(jiraProjectsMock.listAllVersions).not.toHaveBeenCalled();
+      },
+    );
 
     it('projects get-issue-security-scheme calls client.projects.getIssueSecurityScheme', async () => {
       jiraProjectsMock.getIssueSecurityScheme.mockResolvedValue({ id: 1 });
@@ -11342,6 +11431,25 @@ describe('executeJiraCommand', () => {
         }),
       );
     });
+
+    it.each(['', 'query', 'search'])(
+      'search action %j forwards the cursor needed for page two',
+      async (action) => {
+        jiraSearchMock.searchJqlGet.mockResolvedValue({ issues: [], isLast: true });
+
+        await executeJiraCommand(
+          cmd('search', action, [], {
+            jql: 'project = PROJ',
+            'next-page-token': 'cursor-page-2',
+          }),
+          GLOBALS,
+        );
+
+        expect(jiraSearchMock.searchJqlGet).toHaveBeenCalledWith(
+          expect.objectContaining({ nextPageToken: 'cursor-page-2' }),
+        );
+      },
+    );
 
     it('search action=get calls searchGet with jql', async () => {
       // Arrange
@@ -16086,6 +16194,21 @@ describe('executeJiraCommand', () => {
       expect(jiraGroupUserPickerMock.pick).toHaveBeenCalledWith(
         expect.objectContaining({ query: 'alice', maxResults: 25 }),
       );
+    });
+
+    it('group-user-picker pick rejects removed --project-role with migration guidance', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('group-user-picker', 'pick', [], {
+            query: 'alice',
+            'project-role': 'Developers',
+          }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow(
+        '--project-role is not supported by group-user-picker pick; use --field-id with --project-id',
+      );
+      expect(jiraGroupUserPickerMock.pick).not.toHaveBeenCalled();
     });
 
     it('group-user-picker pick forwards project-id as split array', async () => {
@@ -28607,7 +28730,7 @@ describe('executeJiraCommand', () => {
 
   // ── dashboards resource ────────────────────────────────────────────────────
   describe('dashboards resource', () => {
-    it('list calls client.dashboards.list with only its three supported options', async () => {
+    it('list calls client.dashboards.list with its three supported options', async () => {
       jiraDashboardsMock.list.mockResolvedValue({
         values: [],
         startAt: 0,
@@ -28619,8 +28742,6 @@ describe('executeJiraCommand', () => {
           'start-at': '5',
           'max-results': '25',
           filter: 'my',
-          'order-by': 'name',
-          expand: 'permissions',
         }),
         GLOBALS,
       );
@@ -28629,6 +28750,18 @@ describe('executeJiraCommand', () => {
         maxResults: 25,
         filter: 'my',
       });
+    });
+
+    it.each([
+      ['order-by', 'name'],
+      ['expand', 'permissions'],
+    ])('list rejects removed --%s instead of silently ignoring it', async (flag, value) => {
+      await expect(
+        executeJiraCommand(cmd('dashboards', 'list', [], { [flag]: value }), GLOBALS),
+      ).rejects.toThrow(
+        `--${flag} is not supported by dashboards list; use dashboards search instead`,
+      );
+      expect(jiraDashboardsMock.list).not.toHaveBeenCalled();
     });
 
     it('list calls client.dashboards.list with no options when no flags supplied', async () => {

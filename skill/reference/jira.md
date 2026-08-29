@@ -117,20 +117,22 @@ Find the resource in the matrix below, then read the matching domain file for ac
 
 ## Pagination
 
-Jira `search` uses offset-based pagination via `startAt` + `maxResults`. The CLI exposes `--max-results` for page size but not `--start-at`; for paging past the first batch, drop to the SDK:
+The default Jira `search` action uses cursor pagination. Pass the response's opaque `nextPageToken` back through `--next-page-token`; stop when `isLast` is `true` or no token is returned. The old offset routes are available only through the explicitly deprecated `legacy-post` and `get` actions.
 
 ```ts
-import { JiraClient, paginateSearch } from 'atlassian-api-client';
 const client = new JiraClient(config);
-for await (const issue of paginateSearch(client, { jql: 'project = PROJ' })) {
-  // ...
-}
+const first = await client.search.searchJqlGet({ jql: 'project = PROJ', maxResults: 50 });
+const second = await client.search.searchJqlGet({
+  jql: 'project = PROJ',
+  maxResults: 50,
+  nextPageToken: first.nextPageToken,
+});
 ```
 
 ## Output shape notes
 
 - `issues get` returns the full Jira issue including `fields.summary`, `fields.status.name`, etc. With `--format minimal` you get the issue key (`PROJ-123`).
-- `search` returns `{ issues: [...], total, startAt, maxResults }`. Check `total > startAt + maxResults` to know if more pages exist.
+- Default `search` returns `{ issues: [...], nextPageToken?, isLast?, names?, warnings? }`. Continue with `--next-page-token`; do not expect offset fields such as `total` or `startAt`.
 - `transitions` returns `{ transitions: [{ id, name, to: { name } }, ...] }`. The `id` is what you pass to `--transition-id`.
 - `users me` returns the caller's `accountId`, `emailAddress` (if visible to caller), and `displayName`.
 

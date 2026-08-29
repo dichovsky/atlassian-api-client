@@ -654,12 +654,22 @@ async function executeIssues(client: JiraClient, cmd: ParsedCommand): Promise<un
         issueIds: splitCsvIds(requireOpt(opts['issue-ids'], '--issue-ids')),
       });
     case 'export-archived': {
+      if (opts['jql'] !== undefined) {
+        throw new Error(
+          '--jql is no longer supported by export-archived; use --projects, --archived-by, --date-after/--date-before, --issue-types, or --reporters',
+        );
+      }
+      if (opts['export-type'] !== undefined) {
+        throw new Error(
+          '--export-type is no longer supported by export-archived; Atlassian always produces CSV',
+        );
+      }
       const dateAfter = asString(opts['date-after']);
       const dateBefore = asString(opts['date-before']);
       if ((dateAfter === undefined) !== (dateBefore === undefined)) {
         throw new Error('--date-after and --date-before must be provided together');
       }
-      await client.issues.exportArchivedIssues({
+      return client.issues.exportArchivedIssues({
         archivedBy: parseCsv(opts['archived-by']),
         ...(dateAfter !== undefined && dateBefore !== undefined
           ? { archivedDateRange: { dateAfter, dateBefore } }
@@ -668,7 +678,6 @@ async function executeIssues(client: JiraClient, cmd: ParsedCommand): Promise<un
         projects: parseCsv(opts['projects']),
         reporters: parseCsv(opts['reporters']),
       });
-      return { submitted: true };
     }
     default:
       throw new Error(
@@ -683,11 +692,33 @@ async function executeProjects(client: JiraClient, cmd: ParsedCommand): Promise<
   switch (cmd.action) {
     case 'list':
       return client.projects.list({
+        startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+        orderBy: asString(opts['order-by']),
+        expand: csvFlag(opts['expand']),
+        status: parseCsv(opts['status']),
+        typeKey: asString(opts['type-key']),
+        id: parseCsv(opts['id'])?.map((id) => parsePositiveIntArg(id, '--id')),
+        keys: parseCsv(opts['keys']),
+        query: asString(opts['query']),
+        categoryId: asPositiveInt(opts['category-id'], '--category-id'),
+        propertyQuery: asString(opts['property-query']),
+        properties: parseCsv(opts['properties']),
       });
     case 'get':
       return client.projects.get(requireArg(cmd.positionalArgs[0], 'project key'));
     case 'list-legacy': {
+      if (opts['action'] !== undefined) {
+        throw new Error(
+          '--action is not supported by projects list-legacy and has no current replacement; drop this flag',
+        );
+      }
+      rejectRemovedOptions(
+        opts,
+        'projects list-legacy',
+        ['max-results', 'order-by', 'start-at', 'type-key', 'category-id', 'query'],
+        'use projects list instead',
+      );
       const recent = asNonNegativeInt(opts['recent'], '--recent');
       if (recent !== undefined && recent > 20) {
         throw new Error(`--recent must be an integer between 0 and 20, got: ${recent}`);
@@ -933,6 +964,12 @@ async function executeProjects(client: JiraClient, cmd: ParsedCommand): Promise<
       });
     }
     case 'list-all-versions': {
+      rejectRemovedOptions(
+        opts,
+        'projects list-all-versions',
+        ['max-results', 'order-by', 'query', 'status'],
+        'use projects list-versions instead',
+      );
       const projectIdOrKey = requireArg(cmd.positionalArgs[0], 'projectIdOrKey');
       return client.projects.listAllVersions(projectIdOrKey, {
         expand: asString(opts['expand']),
@@ -1045,6 +1082,7 @@ async function executeSearch(client: JiraClient, cmd: ParsedCommand): Promise<un
       if (!jql) throw new Error('Missing --jql option for search');
       return client.search.searchJqlGet({
         jql,
+        nextPageToken: asString(opts['next-page-token']),
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
         fields: csvFlag(opts['fields']),
       });
@@ -2114,6 +2152,19 @@ function requireOpt(value: string | boolean | undefined, name: string): string {
   return value;
 }
 
+/** Fail fast when a migrated action receives a formerly accepted no-op flag. */
+function rejectRemovedOptions(
+  opts: Readonly<Record<string, string | boolean | undefined>>,
+  action: string,
+  flags: readonly string[],
+  guidance: string,
+): void {
+  const removed = flags.find((flag) => opts[flag] !== undefined);
+  if (removed !== undefined) {
+    throw new Error(`--${removed} is not supported by ${action}; ${guidance}`);
+  }
+}
+
 function asString(value: string | boolean | undefined): string | undefined {
   return typeof value === 'string' ? value : undefined;
 }
@@ -2550,6 +2601,11 @@ async function executeGroupUserPicker(client: JiraClient, cmd: ParsedCommand): P
 
   switch (cmd.action) {
     case 'pick': {
+      if (opts['project-role'] !== undefined) {
+        throw new Error(
+          '--project-role is not supported by group-user-picker pick; use --field-id with --project-id to scope user results',
+        );
+      }
       const projectIdRaw = asString(opts['project-id']);
       const projectId = projectIdRaw
         ? projectIdRaw
@@ -8224,6 +8280,12 @@ async function executeDashboards(client: JiraClient, cmd: ParsedCommand): Promis
   switch (cmd.action) {
     // ── basic CRUD ──────────────────────────────────────────────────────────
     case 'list':
+      rejectRemovedOptions(
+        opts,
+        'dashboards list',
+        ['order-by', 'expand'],
+        'use dashboards search instead',
+      );
       return client.dashboards.list({
         startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
