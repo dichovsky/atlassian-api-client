@@ -45,7 +45,7 @@ jq '.paths["/rest/agile/1.0/board/{boardId}/sprint"]' spec/jira-software.json
 jq '.paths["/spaces/{id}/labels"]' spec/confluence-v2.json
 ```
 
-When citing the spec in a PR description, reference the SHA-256 above so reviewers know which snapshot was checked. `npm run spec-drift` compares a canonical contract fingerprint (routes, parameters, bodies, responses, schemas, and security metadata) while ignoring prose-only documentation changes. `npm run api-coverage` then fails when a current operation in these snapshots has no SDK route or when route extraction is unresolved; deprecated omissions are reported but do not fail the check.
+When citing the spec in a PR description, reference the SHA-256 above so reviewers know which snapshot was checked. `npm run spec-drift` compares a canonical contract fingerprint (routes, parameters, bodies, responses, schemas, and security metadata) while ignoring prose-only documentation changes. `npm run api-coverage` fails closed when a snapshot lacks valid OpenAPI 3.x metadata, paths, operations, or its expected server scope. It also fails when a current operation has no SDK route, route extraction is unresolved, or an in-scope SDK request matches no pinned operation; deprecated omissions and the documented Confluence REST v1 upload exception are reported without failing the check.
 
 ## Re-pinning
 

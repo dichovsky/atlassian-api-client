@@ -97,11 +97,12 @@ const SOFTWARE_INTEGRATION_PROXY_HOST = 'api.atlassian.com';
 /**
  * Atlassian API proxy configuration for Jira Software on-premises integrations.
  *
- * Atlassian exposes only the Development Information, Builds, and Deployments
- * APIs through this system-to-system OAuth route. The tenant `cloudId` is
- * available from `https://your-domain.atlassian.net/_edge/tenant_info`.
+ * Atlassian exposes Development Information, Builds, Deployments, and Feature
+ * Flag ingestion through this system-to-system OAuth route. The tenant
+ * `cloudId` is available from
+ * `https://your-domain.atlassian.net/_edge/tenant_info`.
  *
- * @see https://developer.atlassian.com/cloud/jira/software/rest/#authentication
+ * @see https://developer.atlassian.com/cloud/jira/software/integrate-jsw-cloud-with-onpremises-tools/
  */
 export interface JiraSoftwareIntegrationProxyConfig {
   /** Non-empty Jira Cloud tenant identifier used in the proxy URL path. */
@@ -113,11 +114,13 @@ export interface JiraClientConfig extends ClientConfig {
   /**
    * Opt in to Atlassian's Jira Software OAuth integration proxy.
    *
-   * When present, Development Information, Builds, and Deployments requests
-   * use `https://api.atlassian.com/jira/{type}/{version}/cloud/{cloudId}`.
+   * When present, Development Information, Builds, Deployments, and bulk
+   * Feature Flag ingestion requests use
+   * `https://api.atlassian.com/jira/{type}/{version}/cloud/{cloudId}`.
    * Development Information uses proxy version `0.1` (the site route remains
-   * `0.10`). Deployment gating-status is not exposed through the proxy and
-   * continues to use {@link ClientConfig.baseUrl}, as do all other Jira resources.
+   * `0.10`). Deployment gating-status and non-ingest Feature Flag requests are
+   * not exposed through the proxy and continue to use
+   * {@link ClientConfig.baseUrl}, as do all other Jira resources.
    *
    * Requires `auth.type: 'bearer'` with an OAuth 2.0 system-to-system access
    * token. Bearer auth alone never enables proxy routing.
@@ -371,7 +374,7 @@ export class JiraClient {
     const operationsBaseUrl = `${resolved.baseUrl}/rest/operations/1.0`;
     const securityBaseUrl = `${resolved.baseUrl}/rest/security/1.0`;
     const devopscomponentsBaseUrl = `${resolved.baseUrl}/rest/devopscomponents/1.0`;
-    const featureFlagsBaseUrl = `${resolved.baseUrl}/rest/featureflags/0.1`;
+    const tenantFeatureFlagsBaseUrl = `${resolved.baseUrl}/rest/featureflags/0.1`;
     const latestBaseUrl = `${resolved.baseUrl}/rest/internal/api/latest`;
     const remoteLinkBaseUrl = `${resolved.baseUrl}/rest/remotelinks/1.0`;
     const serviceRegistryBaseUrl = `${resolved.baseUrl}/rest/atlassian-connect/1`;
@@ -395,6 +398,10 @@ export class JiraClient {
       integrationProxyRoot === undefined
         ? tenantDeploymentsBaseUrl
         : `${integrationProxyRoot}/deployments/0.1/cloud/${encodedCloudId}`;
+    const featureFlagsBulkBaseUrl =
+      integrationProxyRoot === undefined
+        ? tenantFeatureFlagsBaseUrl
+        : `${integrationProxyRoot}/featureflags/0.1/cloud/${encodedCloudId}`;
     const allowedHosts =
       integrationProxyRoot !== undefined &&
       !hostMatchesExact(SOFTWARE_INTEGRATION_PROXY_HOST, resolved.allowedHosts)
@@ -427,7 +434,7 @@ export class JiraClient {
       deployments: deploymentsBaseUrl,
       devInfo: devInfoBaseUrl,
       devopsComponents: devopscomponentsBaseUrl,
-      featureFlags: featureFlagsBaseUrl,
+      featureFlags: featureFlagsBulkBaseUrl,
       operations: operationsBaseUrl,
       remoteLinks: remoteLinkBaseUrl,
       security: securityBaseUrl,
@@ -457,7 +464,7 @@ export class JiraClient {
     this.license = new LicenseResource(transport, baseUrl);
     this.settings = new SettingsResource(transport, baseUrl);
     this.redact = new RedactResource(transport, baseUrl);
-    this.flag = new FlagResource(transport, featureFlagsBaseUrl);
+    this.flag = new FlagResource(transport, tenantFeatureFlagsBaseUrl);
     this.task = new TaskResource(transport, baseUrl);
     this.avatar = new AvatarResource(transport, baseUrl);
     this.customFieldOption = new CustomFieldOptionResource(transport, baseUrl);
@@ -510,7 +517,7 @@ export class JiraClient {
       deployments: deploymentsBaseUrl,
       devinfo: devInfoBaseUrl,
       devopscomponents: devopscomponentsBaseUrl,
-      featureflags: featureFlagsBaseUrl,
+      featureflags: tenantFeatureFlagsBaseUrl,
       operations: operationsBaseUrl,
       remotelinks: remoteLinkBaseUrl,
       security: securityBaseUrl,

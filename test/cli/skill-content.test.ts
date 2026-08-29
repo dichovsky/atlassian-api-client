@@ -139,6 +139,8 @@ describe('Reference content sanity checks', () => {
     expect(AUTH_SAFETY_REF).toContain('--software-cloud-id');
     expect(AUTH_SAFETY_REF).toContain('api.atlassian.com');
     expect(JIRA_REF).toContain('/jira/devinfo/0.1/cloud/{cloudId}');
+    expect(JIRA_REF).toContain('/jira/featureflags/0.1/cloud/{cloudId}/bulk');
+    expect(JIRA_REF).toContain('bulk submit-feature-flags');
     expect(JIRA_REF).toContain('site version `0.10`');
   });
 

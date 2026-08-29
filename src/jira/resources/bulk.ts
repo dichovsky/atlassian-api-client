@@ -343,7 +343,7 @@ export interface SubmitDevopsComponentsResponse {
   readonly unknownProjectKeys?: string[];
 }
 
-// ── B971: POST /rest/featureflags/0.1/bulk ───────────────────────────────
+// ── B971: POST tenant or integration-proxy Feature Flags /bulk ──────────
 
 export interface SubmitFeatureFlagsResponse {
   readonly acceptedFeatureFlags?: unknown[];
@@ -664,7 +664,11 @@ export class BulkResource {
 
   // ── B971 ────────────────────────────────────────────────────────────────
 
-  /** Submit feature flags in bulk. POST /rest/featureflags/0.1/bulk */
+  /**
+   * Submit feature flags in bulk. Uses the tenant
+   * `/rest/featureflags/0.1/bulk` route, or the system-to-system OAuth proxy
+   * `/jira/featureflags/0.1/cloud/{cloudId}/bulk` route when configured.
+   */
   async submitFeatureFlags(data: unknown): Promise<SubmitFeatureFlagsResponse> {
     const response = await this.transport.request<SubmitFeatureFlagsResponse>({
       method: 'POST',

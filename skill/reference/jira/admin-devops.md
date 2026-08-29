@@ -4,20 +4,25 @@
 
 ## On-premises OAuth proxy routing
 
-Atlassian exposes only Development Information, Builds, and Deployments to
-on-premises integrations using its system-to-system OAuth proxy. Opt in with
+Atlassian exposes Development Information, Builds, Deployments, and Feature
+Flag ingestion to on-premises integrations using its system-to-system OAuth
+proxy. Opt in with
 `--software-cloud-id <cloudId>` or `ATLASSIAN_SOFTWARE_CLOUD_ID` and bearer
 auth. Bearer auth by itself does not change routing.
 
 - Builds: `https://api.atlassian.com/jira/builds/0.1/cloud/{cloudId}`
 - Deployments: `https://api.atlassian.com/jira/deployments/0.1/cloud/{cloudId}`
 - Development Information: `https://api.atlassian.com/jira/devinfo/0.1/cloud/{cloudId}` (proxy version `0.1`, site version `0.10`)
+- Feature Flag ingestion: `https://api.atlassian.com/jira/featureflags/0.1/cloud/{cloudId}/bulk`
 
-This affects the corresponding `bulk`, `bulk-by-properties`, `repository`,
-`exists-by-properties`, and `pipelines` actions. The
-`pipelines get-deployment-gating-status` action is the exception: Atlassian does
-not expose it through the proxy, so it always uses the tenant
-`/rest/deployments/0.1` base. Other DevOps families remain on their site bases.
+For Builds, Deployments, and Development Information, this affects the
+corresponding `bulk`, `bulk-by-properties`, `repository`,
+`exists-by-properties`, and `pipelines` actions. It also affects
+`bulk submit-feature-flags`. The `pipelines get-deployment-gating-status`
+action is the exception: Atlassian does not expose it through the proxy, so it
+always uses the tenant `/rest/deployments/0.1` base. Feature Flag `flag` actions
+and `bulk-by-properties delete-feature-flags` remain on the tenant
+`/rest/featureflags/0.1` base. Other DevOps families remain on their site bases.
 Obtain the cloud ID from
 `https://your-domain.atlassian.net/_edge/tenant_info`.
 
@@ -542,7 +547,7 @@ atlas jira redact get-status job-abc123
 
 ## `flag`
 
-**URL base:** `/rest/featureflags/0.1` (Jira Software DevInfo Feature Flags API — not `/rest/api/3`).
+**URL base:** `/rest/featureflags/0.1` (Jira Software DevInfo Feature Flags API — not `/rest/api/3`). This tenant base is used for lookup/deletion; system-to-system `bulk submit-feature-flags` ingestion uses `/jira/featureflags/0.1/cloud/{cloudId}/bulk` when proxy routing is enabled.
 
 | Action   | Positional        | Required flags | Optional flags |
 | -------- | ----------------- | -------------- | -------------- |
@@ -827,7 +832,7 @@ the CLI does NOT auto-poll, callers drive the cadence.
 **URL bases:**
 
 - Core endpoints: `/rest/api/3/bulk/*`
-- DevOps ingest endpoints use their own bases — `builds 0.1`, `deployments 0.1`, `devinfo 0.10`, `devopscomponents 1.0`, `featureflags 0.1`, `operations 1.0`, `remotelinks 1.0`, `security 1.0`.
+- DevOps ingest endpoints use their own bases — `builds 0.1`, `deployments 0.1`, `devinfo 0.10`, `devopscomponents 1.0`, `featureflags 0.1`, `operations 1.0`, `remotelinks 1.0`, `security 1.0`. With `--software-cloud-id`, Builds, Deployments, Development Information, and Feature Flag ingestion use the proxy routes listed above.
 
 | Action                     | Positional      | Required flags                     | Optional flags                                         |
 | -------------------------- | --------------- | ---------------------------------- | ------------------------------------------------------ |

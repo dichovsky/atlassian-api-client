@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "3.0.0"
   },
-  "sourceHash": "0df35aa6cdabe6f32e3bb19b0e53c6ff66fc43a25bc80cd4a76b8b855307513c",
+  "sourceHash": "4c573e6ac3ff7fbc5a696a3ad540163c2856233db36404e397fe19d2f743aeba",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -1601,7 +1601,7 @@
       "name": "JiraClient",
       "kind": "class",
       "file": "src/jira/client.ts",
-      "line": 176,
+      "line": 179,
       "signature": "export class JiraClient",
       "jsdoc": "Client for Atlassian Jira Cloud Platform REST API v3, Jira Software/Agile, and bundled DevOps integration APIs. @example ```ts import { JiraClient } from 'atlassian-api-client'; const client = new Jira…"
     },
@@ -1609,7 +1609,7 @@
       "name": "JiraClientConfig",
       "kind": "interface",
       "file": "src/jira/client.ts",
-      "line": 112,
+      "line": 113,
       "signature": "export interface JiraClientConfig extends ClientConfig { readonly softwareIntegrationProxy?: JiraSoftwareIntegrationProx…",
       "jsdoc": "Configuration accepted by {@link JiraClient}.",
       "typeOnly": true
@@ -1637,7 +1637,7 @@
       "name": "JiraSoftwareIntegrationProxyConfig",
       "kind": "interface",
       "file": "src/jira/client.ts",
-      "line": 106,
+      "line": 107,
       "signature": "export interface JiraSoftwareIntegrationProxyConfig { readonly cloudId: string; }",
       "jsdoc": "Atlassian API proxy configuration for Jira Software on-premises integrations.",
       "typeOnly": true
@@ -17112,7 +17112,7 @@
         {
           "name": "JiraSoftwareIntegrationProxyConfig",
           "kind": "interface",
-          "line": 106,
+          "line": 107,
           "exported": true,
           "signature": "export interface JiraSoftwareIntegrationProxyConfig { readonly cloudId: string; }",
           "jsdoc": "Atlassian API proxy configuration for Jira Software on-premises integrations."
@@ -17120,7 +17120,7 @@
         {
           "name": "JiraClientConfig",
           "kind": "interface",
-          "line": 112,
+          "line": 113,
           "exported": true,
           "signature": "export interface JiraClientConfig extends ClientConfig { readonly softwareIntegrationProxy?: JiraSoftwareIntegrationProx…",
           "jsdoc": "Configuration accepted by {@link JiraClient}."
@@ -17128,13 +17128,13 @@
         {
           "name": "resolveSoftwareIntegrationProxy",
           "kind": "function",
-          "line": 128,
+          "line": 131,
           "signature": "function resolveSoftwareIntegrationProxy( config: JiraClientConfig, ): JiraSoftwareIntegrationProxyConfig | undefined"
         },
         {
           "name": "JiraClient",
           "kind": "class",
-          "line": 176,
+          "line": 179,
           "exported": true,
           "signature": "export class JiraClient",
           "jsdoc": "Client for Atlassian Jira Cloud Platform REST API v3, Jira Software/Agile, and bundled DevOps integration APIs. @example ```ts import { JiraClient } from 'atlassian-api-client'; const client = new Jira…",
@@ -17142,442 +17142,442 @@
             {
               "name": "issues",
               "kind": "property",
-              "line": 178
+              "line": 181
             },
             {
               "name": "projects",
               "kind": "property",
-              "line": 180
+              "line": 183
             },
             {
               "name": "search",
               "kind": "property",
-              "line": 182
+              "line": 185
             },
             {
               "name": "users",
               "kind": "property",
-              "line": 184
+              "line": 187
             },
             {
               "name": "issueTypes",
               "kind": "property",
-              "line": 186
+              "line": 189
             },
             {
               "name": "issueType",
               "kind": "property",
-              "line": 188
+              "line": 191
             },
             {
               "name": "priorities",
               "kind": "property",
-              "line": 190
+              "line": 193
             },
             {
               "name": "statuses",
               "kind": "property",
-              "line": 192
+              "line": 195
             },
             {
               "name": "issueComments",
               "kind": "property",
-              "line": 194
+              "line": 197
             },
             {
               "name": "issueAttachments",
               "kind": "property",
-              "line": 196
+              "line": 199
             },
             {
               "name": "labels",
               "kind": "property",
-              "line": 198
+              "line": 201
             },
             {
               "name": "boards",
               "kind": "property",
-              "line": 200
+              "line": 203
             },
             {
               "name": "sprints",
               "kind": "property",
-              "line": 202
+              "line": 205
             },
             {
               "name": "workflows",
               "kind": "property",
-              "line": 204
+              "line": 207
             },
             {
               "name": "dashboards",
               "kind": "property",
-              "line": 206
+              "line": 209
             },
             {
               "name": "filters",
               "kind": "property",
-              "line": 208
+              "line": 211
             },
             {
               "name": "fields",
               "kind": "property",
-              "line": 210
+              "line": 213
             },
             {
               "name": "webhooks",
               "kind": "property",
-              "line": 212
+              "line": 215
             },
             {
               "name": "jql",
               "kind": "property",
-              "line": 214
+              "line": 217
             },
             {
               "name": "bulk",
               "kind": "property",
-              "line": 216
+              "line": 219
             },
             {
               "name": "epic",
               "kind": "property",
-              "line": 218
+              "line": 221
             },
             {
               "name": "backlog",
               "kind": "property",
-              "line": 220
+              "line": 223
             },
             {
               "name": "announcementBanner",
               "kind": "property",
-              "line": 222
+              "line": 225
             },
             {
               "name": "applicationRole",
               "kind": "property",
-              "line": 224
+              "line": 227
             },
             {
               "name": "dataPolicy",
               "kind": "property",
-              "line": 226
+              "line": 229
             },
             {
               "name": "status",
               "kind": "property",
-              "line": 228
+              "line": 231
             },
             {
               "name": "statusCategory",
               "kind": "property",
-              "line": 230
+              "line": 233
             },
             {
               "name": "serverInfo",
               "kind": "property",
-              "line": 232
+              "line": 235
             },
             {
               "name": "instance",
               "kind": "property",
-              "line": 234
+              "line": 237
             },
             {
               "name": "myPermissions",
               "kind": "property",
-              "line": 236
+              "line": 239
             },
             {
               "name": "myPreferences",
               "kind": "property",
-              "line": 238
+              "line": 241
             },
             {
               "name": "auditing",
               "kind": "property",
-              "line": 240
+              "line": 243
             },
             {
               "name": "events",
               "kind": "property",
-              "line": 242
+              "line": 245
             },
             {
               "name": "changelog",
               "kind": "property",
-              "line": 244
+              "line": 247
             },
             {
               "name": "forge",
               "kind": "property",
-              "line": 246
+              "line": 249
             },
             {
               "name": "incidents",
               "kind": "property",
-              "line": 248
+              "line": 251
             },
             {
               "name": "postIncidentReviews",
               "kind": "property",
-              "line": 250
+              "line": 253
             },
             {
               "name": "vulnerability",
               "kind": "property",
-              "line": 252
+              "line": 255
             },
             {
               "name": "devopscomponents",
               "kind": "property",
-              "line": 254
+              "line": 257
             },
             {
               "name": "groups",
               "kind": "property",
-              "line": 256
+              "line": 259
             },
             {
               "name": "groupUserPicker",
               "kind": "property",
-              "line": 258
+              "line": 261
             },
             {
               "name": "securityLevel",
               "kind": "property",
-              "line": 260
+              "line": 263
             },
             {
               "name": "license",
               "kind": "property",
-              "line": 262
+              "line": 265
             },
             {
               "name": "settings",
               "kind": "property",
-              "line": 264
+              "line": 267
             },
             {
               "name": "redact",
               "kind": "property",
-              "line": 266
+              "line": 269
             },
             {
               "name": "flag",
               "kind": "property",
-              "line": 268
+              "line": 271
             },
             {
               "name": "task",
               "kind": "property",
-              "line": 270
+              "line": 273
             },
             {
               "name": "avatar",
               "kind": "property",
-              "line": 272
+              "line": 275
             },
             {
               "name": "customFieldOption",
               "kind": "property",
-              "line": 274
+              "line": 277
             },
             {
               "name": "classificationLevels",
               "kind": "property",
-              "line": 276
+              "line": 279
             },
             {
               "name": "latest",
               "kind": "property",
-              "line": 278
+              "line": 281
             },
             {
               "name": "remoteLink",
               "kind": "property",
-              "line": 280
+              "line": 283
             },
             {
               "name": "serviceRegistry",
               "kind": "property",
-              "line": 282
+              "line": 285
             },
             {
               "name": "existsByProperties",
               "kind": "property",
-              "line": 284
+              "line": 287
             },
             {
               "name": "app",
               "kind": "property",
-              "line": 290
+              "line": 293
             },
             {
               "name": "component",
               "kind": "property",
-              "line": 292
+              "line": 295
             },
             {
               "name": "applicationProperties",
               "kind": "property",
-              "line": 294
+              "line": 297
             },
             {
               "name": "configuration",
               "kind": "property",
-              "line": 296
+              "line": 299
             },
             {
               "name": "issueTypeScreenSchemes",
               "kind": "property",
-              "line": 298
+              "line": 301
             },
             {
               "name": "permissionSchemes",
               "kind": "property",
-              "line": 300
+              "line": 303
             },
             {
               "name": "issueTypeSchemes",
               "kind": "property",
-              "line": 302
+              "line": 305
             },
             {
               "name": "roles",
               "kind": "property",
-              "line": 304
+              "line": 307
             },
             {
               "name": "resolutions",
               "kind": "property",
-              "line": 306
+              "line": 309
             },
             {
               "name": "expression",
               "kind": "property",
-              "line": 308
+              "line": 311
             },
             {
               "name": "fieldConfigurations",
               "kind": "property",
-              "line": 310
+              "line": 313
             },
             {
               "name": "notificationSchemes",
               "kind": "property",
-              "line": 312
+              "line": 315
             },
             {
               "name": "prioritySchemes",
               "kind": "property",
-              "line": 314
+              "line": 317
             },
             {
               "name": "version",
               "kind": "property",
-              "line": 316
+              "line": 319
             },
             {
               "name": "config",
               "kind": "property",
-              "line": 318
+              "line": 321
             },
             {
               "name": "issueSecuritySchemes",
               "kind": "property",
-              "line": 320
+              "line": 323
             },
             {
               "name": "screens",
               "kind": "property",
-              "line": 322
+              "line": 325
             },
             {
               "name": "screenScheme",
               "kind": "property",
-              "line": 324
+              "line": 327
             },
             {
               "name": "plans",
               "kind": "property",
-              "line": 326
+              "line": 329
             },
             {
               "name": "workflowScheme",
               "kind": "property",
-              "line": 328
+              "line": 331
             },
             {
               "name": "issueLinkType",
               "kind": "property",
-              "line": 330
+              "line": 333
             },
             {
               "name": "issueLink",
               "kind": "property",
-              "line": 332
+              "line": 335
             },
             {
               "name": "projectTemplate",
               "kind": "property",
-              "line": 334
+              "line": 337
             },
             {
               "name": "universalAvatar",
               "kind": "property",
-              "line": 336
+              "line": 339
             },
             {
               "name": "worklog",
               "kind": "property",
-              "line": 338
+              "line": 341
             },
             {
               "name": "uiModifications",
               "kind": "property",
-              "line": 340
+              "line": 343
             },
             {
               "name": "permissions",
               "kind": "property",
-              "line": 342
+              "line": 345
             },
             {
               "name": "repository",
               "kind": "property",
-              "line": 344
+              "line": 347
             },
             {
               "name": "pipelines",
               "kind": "property",
-              "line": 346
+              "line": 349
             },
             {
               "name": "linkedWorkspaces",
               "kind": "property",
-              "line": 348
+              "line": 351
             },
             {
               "name": "bulkByProperties",
               "kind": "property",
-              "line": 350
+              "line": 353
             },
             {
               "name": "migration",
               "kind": "property",
-              "line": 352
+              "line": 355
             },
             {
               "name": "addons",
               "kind": "property",
-              "line": 354
+              "line": 357
             },
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 363
+              "line": 366
             }
           ]
         }
@@ -24719,27 +24719,27 @@
             {
               "name": "submitFeatureFlags",
               "kind": "method",
-              "line": 668
+              "line": 672
             },
             {
               "name": "submitOperations",
               "kind": "method",
-              "line": 680
+              "line": 684
             },
             {
               "name": "submitRemoteLinks",
               "kind": "method",
-              "line": 692
+              "line": 696
             },
             {
               "name": "submitSecurity",
               "kind": "method",
-              "line": 704
+              "line": 708
             },
             {
               "name": "requireDevopsBaseUrls",
               "kind": "method",
-              "line": 713
+              "line": 717
             }
           ]
         }

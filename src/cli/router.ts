@@ -14,7 +14,7 @@ const GLOBAL_OPTIONS = {
   // `ClientConfig.allowedHosts`).
   'allowed-hosts': { type: 'string' as const },
   // Jira-only opt-in for the OAuth proxy used by on-premises Development
-  // Information, Builds, and Deployments integrations.
+  // Information, Builds, Deployments, and Feature Flag ingestion integrations.
   'software-cloud-id': { type: 'string' as const },
   help: { type: 'boolean' as const, short: 'h' },
   version: { type: 'boolean' as const },

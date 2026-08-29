@@ -162,13 +162,16 @@ describe('JiraClient', () => {
       });
 
       await client.bulk.submitDevInfo({ repositories: [] });
+      transport.respondWith({});
+      await client.bulk.submitFeatureFlags({ flags: [] });
 
-      expect(transport.lastCall?.options.path).toBe(
+      expect(transport.calls.map(({ options }) => options.path)).toEqual([
         'https://test.atlassian.net/rest/devinfo/0.10/bulk',
-      );
+        'https://test.atlassian.net/rest/featureflags/0.1/bulk',
+      ]);
     });
 
-    it('routes only Development Information, Builds, and Deployments through the OAuth proxy', async () => {
+    it('routes Development Information, Builds, Deployments, and Feature Flags through the OAuth proxy', async () => {
       const transport = new MockTransport();
       const client = new JiraClient({ ...PROXY_CONFIG, transport });
       const respond = (): void => {
@@ -203,6 +206,12 @@ describe('JiraClient', () => {
       });
       respond();
       await client.bulk.submitFeatureFlags({ flags: [] });
+      respond();
+      await client.flag.get('flag-1');
+      respond();
+      await client.bulkByProperties.deleteFeatureFlagsByProperties({
+        properties: { accountId: 'a' },
+      });
 
       expect(transport.calls.map(({ options }) => options.path)).toEqual([
         'https://api.atlassian.com/jira/builds/0.1/cloud/11111111-2222-3333-4444-555555555555/bulk',
@@ -216,7 +225,9 @@ describe('JiraClient', () => {
         'https://api.atlassian.com/jira/builds/0.1/cloud/11111111-2222-3333-4444-555555555555/bulkByProperties',
         'https://api.atlassian.com/jira/deployments/0.1/cloud/11111111-2222-3333-4444-555555555555/bulkByProperties',
         'https://api.atlassian.com/jira/devinfo/0.1/cloud/11111111-2222-3333-4444-555555555555/bulkByProperties',
-        'https://test.atlassian.net/rest/featureflags/0.1/bulk',
+        'https://api.atlassian.com/jira/featureflags/0.1/cloud/11111111-2222-3333-4444-555555555555/bulk',
+        'https://test.atlassian.net/rest/featureflags/0.1/flag/flag-1',
+        'https://test.atlassian.net/rest/featureflags/0.1/bulkByProperties',
       ]);
     });
 

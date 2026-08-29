@@ -19,7 +19,8 @@ Candidates are starting points only — each must be verified against the spec +
 BACKLOG-ARCHIVE.md before being treated as a real gap (the diff cannot tell an
 alternate-prefix duplicate or a deprecated-superseded alias from a true gap).
 """
-import argparse, json, re, os, glob
+import argparse, json, re, os, glob, sys
+from urllib.parse import urlsplit
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PARSER = argparse.ArgumentParser(description="Check SDK route coverage against pinned Atlassian specs")
@@ -41,11 +42,13 @@ SPEC_FILES = {
     "confluence-v2": "confluence-v2.json",
 }
 
-SPEC_PREFIXES = {
-    "jira-platform": "/rest/api/3",
-    "jira-software": "/rest/agile/1.0",
+EXPECTED_SERVER_SCOPES = {
+    "jira-platform": "",
+    "jira-software": "",
     "confluence-v2": "/wiki/api/v2",
 }
+
+HTTP_METHODS = {"get", "post", "put", "delete", "patch"}
 
 def match_close(s, start, op, cl):
     depth = 0
@@ -55,6 +58,37 @@ def match_close(s, start, op, cl):
             depth -= 1
             if depth == 0: return i + 1
     return -1
+
+def find_request_call_objects(code):
+    """Return ``(member, call-paren, object)`` offsets for request calls.
+
+    A bare reference to ``this.transport.request`` is not an implementation.
+    Bind extraction to an optional TypeScript type-argument list, the call
+    parenthesis, and an object literal as the first argument.
+    """
+    calls = []
+    unsupported = []
+    for member in re.finditer(r"\bthis\.transport\.request\b", code):
+        cursor = member.end()
+        while cursor < len(code) and code[cursor].isspace():
+            cursor += 1
+        if cursor < len(code) and code[cursor] == "<":
+            cursor = match_close(code, cursor, "<", ">")
+            if cursor == -1:
+                continue
+            while cursor < len(code) and code[cursor].isspace():
+                cursor += 1
+        if cursor >= len(code) or code[cursor] != "(":
+            continue
+        call_paren = cursor
+        cursor += 1
+        while cursor < len(code) and code[cursor].isspace():
+            cursor += 1
+        if cursor < len(code) and code[cursor] == "{":
+            calls.append((member.start(), call_paren, cursor))
+        else:
+            unsupported.append(member.start())
+    return calls, unsupported
 
 def split_top_commas_aligned(source, code):
     """Split source on executable top-level commas using an aligned code view."""
@@ -108,6 +142,36 @@ def lex_ts_source(source):
             return True
         if code_chars[previous] in "([{:;,=!?&|+-*%^~<>":
             return True
+        if code_chars[previous] == ")":
+            # A closing control-head parenthesis transitions to statement
+            # lexical goal, where a regex literal may start an expression
+            # statement: ``if (condition) /pattern/.test(value)``.
+            depth = 0
+            opener = previous
+            while opener >= 0:
+                if code_chars[opener] == ")":
+                    depth += 1
+                elif code_chars[opener] == "(":
+                    depth -= 1
+                    if depth == 0:
+                        break
+                opener -= 1
+            keyword_end = opener
+            while keyword_end > 0 and code_chars[keyword_end - 1].isspace():
+                keyword_end -= 1
+            keyword_start = keyword_end
+            while (
+                keyword_start > 0
+                and (
+                    code_chars[keyword_start - 1].isalnum()
+                    or code_chars[keyword_start - 1] in "_$"
+                )
+            ):
+                keyword_start -= 1
+            if "".join(code_chars[keyword_start:keyword_end]) in {
+                "for", "if", "while", "with",
+            }:
+                return True
         end = previous + 1
         while previous >= 0 and (code_chars[previous].isalnum() or code_chars[previous] in "_$"):
             previous -= 1
@@ -254,16 +318,25 @@ def parse_base_suffixes(client_src, client_code):
     """
     assert len(client_src) == len(client_code), "source/code views must stay aligned"
     initializers = {}
+    ambiguous = set()
     for m in re.finditer(
         r"\bconst\s+((?:baseUrl)|(?:[A-Za-z0-9_]+BaseUrl))\s*(?::[^=]+)?=",
         client_code,
     ):
+        name = m.group(1)
+        if name in initializers or name in ambiguous:
+            # A flattened regex cannot prove which same-named lexical binding
+            # reaches later resource wiring. Omit the alias so extraction fails
+            # closed instead of selecting a nested/dead shadow.
+            initializers.pop(name, None)
+            ambiguous.add(name)
+            continue
         start = m.end()
         while start < len(client_src) and client_src[start].isspace():
             start += 1
         end = client_code.find(";", start)
         if end != -1:
-            initializers[m.group(1)] = (
+            initializers[name] = (
                 client_src[start:end],
                 client_code[start:end],
             )
@@ -340,6 +413,14 @@ def norm(path_tmpl):
     if s != "/" and s.endswith("/"): s = s[:-1]
     return s
 
+def route_template_key(tpl):
+    """Identity used to prove several templates address the same route."""
+    base = re.match(r"\$\{([^}]*)\}", tpl)
+    return (base.group(1) if base else None, norm(tpl))
+
+def route_templates_agree(candidates):
+    return bool(candidates) and len({route_template_key(tpl) for tpl in candidates}) == 1
+
 def executable_template_matches(expr, expr_code):
     """Yield executable route templates, excluding backticks in other literals."""
     assert len(expr) == len(expr_code), "source/code views must stay aligned"
@@ -371,6 +452,56 @@ def find_statement_end(code, start):
             return index
     return -1
 
+def brace_scope_at(code, position):
+    """Return the still-open executable brace scopes at ``position``."""
+    stack = []
+    for index, token in enumerate(code[:position]):
+        if token == "{":
+            stack.append(index)
+        elif token == "}" and stack:
+            stack.pop()
+    return tuple(stack)
+
+def visible_assignments(assignments, local_code):
+    """Select the closest lexical binding visible at the context endpoint."""
+    use_scope = brace_scope_at(local_code, len(local_code))
+    visible = []
+    for assignment in assignments:
+        declaration_scope = brace_scope_at(local_code, assignment[0])
+        if use_scope[:len(declaration_scope)] == declaration_scope:
+            visible.append((len(declaration_scope), *assignment))
+    if not visible:
+        return []
+    deepest = max(item[0] for item in visible)
+    closest = max(
+        (item for item in visible if item[0] == deepest),
+        key=lambda item: item[1],
+    )
+    return [closest[1:]]
+
+def has_top_level_choice(code):
+    """Whether a path expression can select/compose more than one route."""
+    depth = {"(": 0, "{": 0, "[": 0}
+    pairs = {")": "(", "}": "{", "]": "["}
+    for index, token in enumerate(code):
+        if token in depth:
+            depth[token] += 1
+            continue
+        if token in pairs:
+            opener = pairs[token]
+            if depth[opener] > 0:
+                depth[opener] -= 1
+            continue
+        if any(depth.values()):
+            continue
+        if token == "+":
+            return True
+        if token == "?" and (index + 1 >= len(code) or code[index + 1] != "."):
+            return True
+        if code.startswith("&&", index) or code.startswith("||", index):
+            return True
+    return False
+
 def resolve_path_expr(expr, ctx, ctx_code, definitions=None, definitions_code=None):
     """Resolve a path expression to a template string. Handles inline templates,
     helper-wrapped templates, and local `const x = ...` variable references
@@ -388,41 +519,90 @@ def resolve_path_expr(expr, ctx, ctx_code, definitions=None, definitions_code=No
         assert len(definitions) == len(definitions_code)
     expr = expr.strip()
     expr_code = lex_ts_source(expr)[1]
-    tpl = first_template(expr, expr_code)
-    if tpl: return tpl
-
-    def class_helper_template(call_expr, call_code):
-        helper_call = re.match(r"this\.([A-Za-z_][A-Za-z0-9_]*)\s*\(", call_code.strip())
-        if not helper_call or not definitions or not definitions_code: return None
-        span = method_body_span(definitions, helper_call.group(1), definitions_code)
-        if not span: return None
-        body = definitions[span[0]:span[1]]
-        body_code = definitions_code[span[0]:span[1]]
-        for ret in re.finditer(r"\breturn\b", body_code):
-            value_start = ret.end()
-            value_end = find_statement_end(body_code, value_start)
-            if value_end == -1: continue
-            value = body[value_start:value_end]
-            value_code = body_code[value_start:value_end]
-            helper_tpl = first_template(value, value_code)
-            if helper_tpl: return helper_tpl
-            helper_tpl = try_idents(
-                value,
-                value_code,
-                body[:ret.start()],
-                body_code[:ret.start()],
-                set(),
-                0,
-            )
-            if helper_tpl: return helper_tpl
+    direct_candidates = {
+        match.group(1)
+        for match in executable_template_matches(expr, expr_code)
+    }
+    if has_top_level_choice(expr_code) and (
+        len(direct_candidates) < 2 or not route_templates_agree(direct_candidates)
+    ):
         return None
 
-    # gather candidate identifiers in order; try each that has a local def
-    def try_idents(s, code_s, local_ctx, local_code, seen, depth):
-        if depth > 6: return None
+    def class_helper_templates(call_expr, call_code, depth):
+        if depth > 6:
+            return set()
+        helper_call = re.match(r"this\.([A-Za-z_][A-Za-z0-9_]*)\s*\(", call_code.strip())
+        if not helper_call or not definitions or not definitions_code:
+            return set()
+        span = method_body_span(definitions, helper_call.group(1), definitions_code)
+        if not span:
+            return set()
+        body = definitions[span[0]:span[1]]
+        body_code = definitions_code[span[0]:span[1]]
+        candidates = set()
+        found_return = False
+        for ret in re.finditer(r"\breturn\b", body_code):
+            found_return = True
+            value_start = ret.end()
+            value_end = find_statement_end(body_code, value_start)
+            if value_end == -1:
+                return set()
+            value = body[value_start:value_end]
+            value_code = body_code[value_start:value_end]
+            value_candidates = {
+                match.group(1)
+                for match in executable_template_matches(value, value_code)
+            }
+            if has_top_level_choice(value_code) and (
+                len(value_candidates) < 2 or not route_templates_agree(value_candidates)
+            ):
+                return set()
+            if not value_candidates:
+                value_candidates.update(
+                    class_helper_templates(value, value_code, depth + 1)
+                )
+                value_candidates.update(
+                    try_ident_templates(
+                        value,
+                        value_code,
+                        body[:ret.start()],
+                        body_code[:ret.start()],
+                        set(),
+                        depth + 1,
+                    )
+                )
+            if not route_templates_agree(value_candidates):
+                return set()
+            candidates.add(min(value_candidates, key=len))
+        return (
+            {min(candidates, key=len)}
+            if found_return and route_templates_agree(candidates)
+            else set()
+        )
+
+    # Gather every route candidate reachable through visible local bindings.
+    # The caller accepts the expression only when all candidates agree.
+    def try_ident_templates(s, code_s, local_ctx, local_code, seen, depth):
+        if depth > 6:
+            return set()
+        candidates = set()
         for idm in re.finditer(r"[A-Za-z_][A-Za-z0-9_]*", code_s):
             ident = idm.group(0)
-            if ident in seen: continue
+            if ident in seen or ident in {
+                "as", "const", "false", "let", "new", "null", "return",
+                "this", "true", "undefined",
+            }:
+                continue
+            previous = idm.start() - 1
+            while previous >= 0 and code_s[previous].isspace():
+                previous -= 1
+            if previous >= 0 and code_s[previous] == ".":
+                continue
+            following = idm.end()
+            while following < len(code_s) and code_s[following].isspace():
+                following += 1
+            if following < len(code_s) and code_s[following] == ":":
+                continue
             assignments = []
             declaration = re.compile(
                 r"\b(?:const|let)\s+"+re.escape(ident)+r"\s*(?::[^=;]+)?="
@@ -461,22 +641,41 @@ def resolve_path_expr(expr, ctx, ctx_code, definitions=None, definitions_code=No
                                 local_code[value_start:value_end],
                             )
                         )
-            for _, rhs, rhs_code in sorted(assignments, reverse=True):
+            for _, rhs, rhs_code in visible_assignments(assignments, local_code):
                 seen2 = seen | {ident}
-                t = first_template(rhs, rhs_code)
-                if t: return t
-                t = class_helper_template(rhs, rhs_code)
-                if t: return t
-                t = try_idents(rhs, rhs_code, local_ctx, local_code, seen2, depth+1)
-                if t: return t
-        return None
+                rhs_candidates = {
+                    match.group(1)
+                    for match in executable_template_matches(rhs, rhs_code)
+                }
+                if has_top_level_choice(rhs_code) and (
+                    len(rhs_candidates) < 2 or not route_templates_agree(rhs_candidates)
+                ):
+                    return set()
+                if not rhs_candidates:
+                    rhs_candidates.update(
+                        class_helper_templates(rhs, rhs_code, depth + 1)
+                    )
+                    rhs_candidates.update(
+                        try_ident_templates(
+                            rhs,
+                            rhs_code,
+                            local_ctx,
+                            local_code,
+                            seen2,
+                            depth + 1,
+                        )
+                    )
+                candidates.update(rhs_candidates)
+        return candidates
 
     # Resolve direct class path-helper calls through the helper's return value.
     # The helper may be declared below the request, hence the separate complete
     # definitions source rather than only the call-site context.
-    tpl = class_helper_template(expr, expr_code)
-    if tpl: return tpl
-    return try_idents(expr, expr_code, ctx, ctx_code, set(), 0)
+    candidates = direct_candidates
+    if not candidates:
+        candidates.update(class_helper_templates(expr, expr_code, 0))
+        candidates.update(try_ident_templates(expr, expr_code, ctx, ctx_code, set(), 0))
+    return min(candidates, key=len) if route_templates_agree(candidates) else None
 
 def resolve_template(tpl, fieldmap, helper):
     """Resolve a template's leading base token through client wiring."""
@@ -557,6 +756,14 @@ def enclosing_method_scope_starts(code_src, positions):
             stack.pop()
     return result
 
+def request_spread_is_route_safe(prop_code):
+    """Recognize the one proven route-neutral request spread used by the SDK."""
+    return bool(re.fullmatch(
+        r"\s*\.\.\.\(\s*Object\.keys\(\s*query\s*\)\.length\s*>\s*0"
+        r"\s*&&\s*\{\s*query\s*\}\s*\)\s*",
+        prop_code,
+    ))
+
 def extract(api):
     source_root = os.path.abspath(CLI_ARGS.source_root)
     res_dir = os.path.join(source_root, "src", api, "resources")
@@ -586,14 +793,22 @@ def extract(api):
             )
             for helper_name in {"requestSoftwareIssues"}
         }
-        request_calls = list(re.finditer(r"this\.transport\.request", code_src))
+        request_calls, unsupported_request_calls = find_request_call_objects(code_src)
+        unknowns.extend(
+            (
+                os.path.basename(f),
+                "nonliteral-request-options",
+                src[call_start:call_start + 80],
+            )
+            for call_start in unsupported_request_calls
+        )
         scope_starts = enclosing_method_scope_starts(
             code_src,
             [
                 call.start()
                 for calls in helper_calls.values()
                 for call in calls
-            ] + [call.start() for call in request_calls],
+            ] + [call_start for call_start, _, _ in request_calls],
         )
 
         # A helper-backed request represents one operation for every concrete
@@ -634,18 +849,30 @@ def extract(api):
                 results.append({"prefix": prefix, "verb": helper_verb, "suffix": norm(suffix),
                                 "norm_full": norm(full), "file": os.path.basename(f)})
 
-        for rm in request_calls:
-            if any(start <= rm.start() < end for start, end in delegated_spans):
+        for call_start, _call_paren, obj_start in request_calls:
+            if any(start <= call_start < end for start, end in delegated_spans):
                 continue
-            op = code_src.index("(", rm.end())
-            obj_start = code_src.index("{", op)
             obj_end = match_close(code_src, obj_start, "{", "}")
             obj = src[obj_start:obj_end]
             obj_code = code_src[obj_start:obj_end]
-            scope_start = scope_starts[rm.start()]
-            ctx = src[scope_start:rm.start()] + obj
-            ctx_code = code_src[scope_start:rm.start()] + obj_code
+            scope_start = scope_starts[call_start]
+            ctx = src[scope_start:call_start]
+            ctx_code = code_src[scope_start:call_start]
             props = split_top_commas_aligned(obj[1:-1], obj_code[1:-1])
+            unsafe_spread = next(
+                (
+                    prop_code.strip()
+                    for _, prop_code in props
+                    if prop_code.strip().startswith("...")
+                    and not request_spread_is_route_safe(prop_code)
+                ),
+                None,
+            )
+            if unsafe_spread is not None:
+                unknowns.append(
+                    (os.path.basename(f), "route-unsafe-request-spread", unsafe_spread[:80])
+                )
+                continue
             verb = None; expr = None
             for prop, prop_code in props:
                 mm = re.match(r"\s*method\s*:\s*'([A-Z]+)'", prop)
@@ -673,18 +900,73 @@ def extract(api):
                             "file": os.path.basename(f)})
     return results, unknowns, varmap
 
-def load_spec(name, pref):
+def fail_spec(name, message):
+    print(f"{name}: {message}", file=sys.stderr)
+    raise SystemExit(1)
+
+def load_spec(name, expected_server_scope):
     spec_path = os.path.join(os.path.abspath(CLI_ARGS.spec_dir), SPEC_FILES[name])
     with open(spec_path, encoding="utf-8") as spec_file:
         spec = json.load(spec_file)
+
+    info = spec.get("info") if isinstance(spec, dict) else None
+    if (
+        not isinstance(spec, dict)
+        or not isinstance(spec.get("openapi"), str)
+        or not re.fullmatch(r"3\.\d+(?:\.\d+)?", spec["openapi"])
+        or not isinstance(info, dict)
+        or not isinstance(info.get("title"), str)
+        or not info["title"].strip()
+        or not isinstance(info.get("version"), str)
+        or not info["version"].strip()
+    ):
+        fail_spec(name, "invalid OpenAPI document: expected OpenAPI 3.x info metadata")
+
+    servers = spec.get("servers")
+    if (
+        not isinstance(servers, list)
+        or not servers
+    ):
+        fail_spec(name, "invalid OpenAPI document: expected a non-empty server URL")
+    for server in servers:
+        if (
+            not isinstance(server, dict)
+            or not isinstance(server.get("url"), str)
+            or not server["url"].strip()
+        ):
+            fail_spec(name, "invalid OpenAPI document: expected a non-empty server URL")
+        server_url = urlsplit(server["url"])
+        if server_url.scheme not in {"http", "https"} or not server_url.netloc:
+            fail_spec(name, "invalid OpenAPI document: expected an absolute HTTP(S) server URL")
+        server_scope = server_url.path.rstrip("/")
+        if server_scope == "/":
+            server_scope = ""
+        if server_scope != expected_server_scope:
+            fail_spec(
+                name,
+                f"server scope {server_scope or '/'} does not match expected "
+                f"{expected_server_scope or '/'}",
+            )
+    server_scope = expected_server_scope
+
+    paths = spec.get("paths")
+    if not isinstance(paths, dict) or not paths:
+        fail_spec(name, "invalid OpenAPI document: expected non-empty paths")
     ops = []
-    for p, item in spec.get("paths", {}).items():
+    for p, item in paths.items():
+        if not isinstance(p, str) or not p.startswith("/") or not isinstance(item, dict):
+            fail_spec(name, "invalid OpenAPI document: malformed path item")
         for verb, op in item.items():
-            if verb.lower() not in {"get","post","put","delete","patch"} or not isinstance(op, dict): continue
-            full = p if p.startswith("/rest") else pref + p
+            if verb.lower() not in HTTP_METHODS:
+                continue
+            if not isinstance(op, dict):
+                fail_spec(name, "invalid OpenAPI document: malformed operation")
+            full = server_scope + p
             ops.append({"path": p, "verb": verb.upper(), "norm": norm(full),
                         "operationId": op.get("operationId",""), "summary": op.get("summary",""),
                         "deprecated": bool(op.get("deprecated"))})
+    if not ops:
+        fail_spec(name, "invalid OpenAPI document: expected at least one operation")
     return ops
 
 jira_res, jira_unk, jira_vars = extract("jira")
@@ -702,7 +984,10 @@ print(f"=== completeness: jira {len(jira_res)}/{len(jira_res)+len(jira_unk)} pat
 impl = {}
 for r in all_res: impl.setdefault((r["verb"], r["norm_full"]), []).append(r["file"])
 matched = set()
-specs = {name: load_spec(name, prefix) for name, prefix in SPEC_PREFIXES.items()}
+specs = {
+    name: load_spec(name, expected_server_scope)
+    for name, expected_server_scope in EXPECTED_SERVER_SCOPES.items()
+}
 out = {}
 live_gap_count = 0
 print("\n=== GAP DIFF ===")
@@ -736,5 +1021,6 @@ for p,s in sorted(unm.items(), key=lambda x:-len(x[1])):
     print(f"  {len(s):3} {p}{classification}")
 json.dump({p:sorted(list(s)) for p,s in unm.items()}, open("/tmp/unmatched_sdk.json","w"), indent=2)
 
-if jira_unk or conf_unk or live_gap_count:
+unexpected_sdk_routes = sum(len(routes) for prefix, routes in unm.items() if prefix not in out_of_scope)
+if jira_unk or conf_unk or live_gap_count or unexpected_sdk_routes:
     raise SystemExit(1)

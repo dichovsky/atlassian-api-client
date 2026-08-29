@@ -137,8 +137,9 @@ const client = new JiraClient({
 ### Jira Software on-premises OAuth integrations
 
 Atlassian's system-to-system OAuth proxy is opt-in. Set
-`softwareIntegrationProxy.cloudId` to route only Jira Software Development
-Information, Builds, and Deployments through `api.atlassian.com`:
+`softwareIntegrationProxy.cloudId` to route Jira Software Development
+Information, Builds, Deployments, and Feature Flag ingestion through
+`api.atlassian.com`:
 
 ```typescript
 const client = new JiraClient({
@@ -155,18 +156,20 @@ const client = new JiraClient({
 await client.bulk.submitBuilds({ builds: [] });
 ```
 
-Builds and Deployments use proxy version `0.1`. Development Information changes
-from the site route `/rest/devinfo/0.10` to the proxy route
-`/jira/devinfo/0.1/cloud/{cloudId}`. Deployment gating-status is not available
-through the integration proxy, so that request remains on the tenant
-`/rest/deployments/0.1` route. Every other Jira resource continues to use
-`baseUrl`. The option requires bearer auth and does not activate merely because
-bearer auth is configured. The built-in transport authorizes exactly
-`api.atlassian.com` in addition to the existing `allowedHosts`; custom injected
-transports receive the fully-qualified proxy URLs and remain responsible for
-their own credential-boundary enforcement.
+Builds, Deployments, and Feature Flag ingestion use proxy version `0.1`.
+Development Information changes from the site route `/rest/devinfo/0.10` to the
+proxy route `/jira/devinfo/0.1/cloud/{cloudId}`. In particular,
+`bulk.submitFeatureFlags` uses
+`/jira/featureflags/0.1/cloud/{cloudId}/bulk`. Deployment gating-status is not
+available through the integration proxy, so that request remains on the tenant
+`/rest/deployments/0.1` route. Feature Flag lookup/deletion and every other Jira
+resource continue to use `baseUrl`. The option requires bearer auth and does not
+activate merely because bearer auth is configured. The built-in transport
+authorizes exactly `api.atlassian.com` in addition to the existing
+`allowedHosts`; custom injected transports receive the fully-qualified proxy
+URLs and remain responsible for their own credential-boundary enforcement.
 
-See Atlassian's [Jira Software REST API authentication and base URL guidance](https://developer.atlassian.com/cloud/jira/software/rest/#authentication).
+See Atlassian's [guide to integrating Jira Software Cloud with on-premises tools](https://developer.atlassian.com/cloud/jira/software/integrate-jsw-cloud-with-onpremises-tools/).
 
 ### Self-hosted / non-Atlassian baseUrl
 
@@ -581,7 +584,7 @@ Example output:
 ```
 
 `api-coverage` compares executable SDK routes with the pinned snapshots and fails on unresolved
-route extraction or a missing non-deprecated operation. Its lexical pass uses a code-token-only
+route extraction, a missing non-deprecated operation, or an unexpected in-scope SDK route. Its lexical pass uses a code-token-only
 view to locate client declarations, resource wiring, resource-local path assignments, helper
 returns, and call sites, then an aligned literal view to resolve their values and paths. Comments,
 quoted/template examples, and regex literals cannot satisfy coverage or shadow runtime wiring or
@@ -635,8 +638,9 @@ atlas jira issues get PROJ-123 --auth-type bearer --token your-bearer-token
 `ATLASSIAN_AUTH_TYPE` defaults to `basic`. Bearer mode does not require `ATLASSIAN_EMAIL`.
 
 For Jira Software on-premises integrations, add the Jira-only cloud ID option.
-It routes Development Information, Builds, and Deployments through Atlassian's
-OAuth proxy; bearer auth alone keeps the normal site routes:
+It routes Development Information, Builds, Deployments, and Feature Flag
+ingestion through Atlassian's OAuth proxy; bearer auth alone keeps the normal
+site routes:
 
 ```bash
 export ATLASSIAN_AUTH_TYPE=bearer
@@ -649,6 +653,10 @@ atlas jira bulk submit-builds --value '{"builds":[]}'
 atlas jira bulk submit-deployments \
   --software-cloud-id 11111111-2222-3333-4444-555555555555 \
   --value '{"deployments":[]}'
+
+atlas jira bulk submit-feature-flags \
+  --software-cloud-id 11111111-2222-3333-4444-555555555555 \
+  --value '{"flags":[]}'
 ```
 
 ### Self-hosted / non-Atlassian baseUrl

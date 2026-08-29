@@ -32,8 +32,9 @@ Multiple comma-separated entries are permitted. The `baseUrl` host itself must b
 
 ## Jira Software on-premises OAuth proxy
 
-Only Development Information, Builds, and Deployments support Atlassian's
-system-to-system OAuth integration proxy. Enable it explicitly with
+Development Information, Builds, Deployments, and Feature Flag ingestion
+support Atlassian's system-to-system OAuth integration proxy. Enable it
+explicitly with
 `--software-cloud-id <cloudId>` or `ATLASSIAN_SOFTWARE_CLOUD_ID`; bearer auth
 alone leaves all resources on the normal site routes.
 
@@ -45,12 +46,15 @@ export ATLASSIAN_SOFTWARE_CLOUD_ID=11111111-2222-3333-4444-555555555555
 atlas jira bulk submit-builds --value '{"builds":[]}'
 ```
 
-The option requires a non-empty cloud ID and bearer OAuth token. Builds and
-Deployments use `https://api.atlassian.com/jira/{type}/0.1/cloud/{cloudId}`;
-Development Information uses proxy version `0.1` instead of the site version
-`0.10`. Do not add `api.atlassian.com` to `ATLASSIAN_ALLOWED_HOSTS`: the Jira
-client authorizes that exact host only while proxy mode is enabled. All other
-Jira resources continue to use `ATLASSIAN_BASE_URL`.
+The option requires a non-empty cloud ID and bearer OAuth token. Builds,
+Deployments, and Feature Flag ingestion use
+`https://api.atlassian.com/jira/{type}/0.1/cloud/{cloudId}`; Development
+Information uses proxy version `0.1` instead of the site version `0.10`.
+Specifically, `atlas jira bulk submit-feature-flags --value '{"flags":[]}'`
+uses `/jira/featureflags/0.1/cloud/{cloudId}/bulk`. Do not add
+`api.atlassian.com` to `ATLASSIAN_ALLOWED_HOSTS`: the Jira client authorizes
+that exact host only while proxy mode is enabled. Feature Flag lookup/deletion
+and all other Jira resources continue to use `ATLASSIAN_BASE_URL`.
 
 ## Connect JWT (SDK, not CLI)
 

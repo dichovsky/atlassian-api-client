@@ -19,10 +19,10 @@ This refresh contains public SDK and CLI contract corrections and therefore must
 
 - Jira Platform grouped custom-field context default values and experimental ADF limit report APIs, plus current query parameters and additive response fields from the 2026-08-29 OpenAPI snapshot.
 - Jira Software board backlog/issue approximate-count APIs, complete current granular OAuth scope recognition, and parameter-level SDK/CLI/skill parity for board filters and rank controls.
-- Opt-in Jira Software system-to-system OAuth proxy routing for Development Information, Builds, and Deployments via `softwareIntegrationProxy.cloudId`, `--software-cloud-id`, or `ATLASSIAN_SOFTWARE_CLOUD_ID`.
+- Opt-in Jira Software system-to-system OAuth proxy routing for Development Information, Builds, Deployments, and Feature Flag ingestion via `softwareIntegrationProxy.cloudId`, `--software-cloud-id`, or `ATLASSIAN_SOFTWARE_CLOUD_ID`.
 - Full current Confluence Space list/get contracts, task date/update filters, page/attachment/label/version query flags, and lifecycle annotations for deprecated and experimental operations.
 - Complete spec-derived scope validation: 247 unique granular scopes from operation annotations plus 24 classic/compatibility scopes found in the pinned security schemes (271 recognized scopes total). Operation recommendations remain granular.
-- Canonical OpenAPI contract fingerprints and deterministic endpoint-gap regression checks. The weekly drift job now detects route, parameter, schema, response, security, and executable SDK route-coverage changes instead of only type-generator failures; comments and request-like quoted, template, or regex literals cannot satisfy coverage or shadow client wiring, resource-local path assignments, or helper returns.
+- Canonical OpenAPI contract fingerprints and deterministic endpoint-gap regression checks. The weekly drift job now detects route, parameter, schema, response, security, and executable SDK route-coverage changes instead of only type-generator failures; invalid/empty specs, server-scope drift, ambiguous route expressions, unexpected SDK routes, and request-like comments or literals fail closed.
 
 ### Changed
 
