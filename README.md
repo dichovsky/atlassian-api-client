@@ -580,9 +580,10 @@ Example output:
 ✓ confluence: 142 types; contract 8e17d20017a8 (https://developer.atlassian.com/cloud/.../openapi-v2.v3.json)
 ```
 
-`api-coverage` compares implemented SDK routes with the pinned snapshots and fails on unresolved
-route extraction or a missing non-deprecated operation. Deprecated omissions remain visible in its
-report without failing the check.
+`api-coverage` compares executable SDK routes with the pinned snapshots and fails on unresolved
+route extraction or a missing non-deprecated operation. Its lexical pass excludes commented-out
+requests while preserving strings and template expressions, so dead code cannot satisfy coverage.
+Deprecated omissions remain visible in its report without failing the check.
 
 In CI, both guards run on a **weekly schedule and on manual dispatch only** (`.github/workflows/spec-drift.yml`).
 It deliberately does **not** run on `push` or `pull_request` — a transient upstream outage must never

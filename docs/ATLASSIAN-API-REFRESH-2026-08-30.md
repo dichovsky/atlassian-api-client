@@ -41,7 +41,7 @@ Confluence attachment upload remains one documented REST v1 dependency because C
 - Completed current Confluence Space list/get contracts and response projections, plus missing Page, Attachment, Label, Version, and Task options.
 - Marked deprecated and experimental methods consistently in SDK and skill documentation; documented Forge-only `asApp()` requirements for Confluence app properties.
 - Replaced the former parsing-only drift smoke test with a canonical contract fingerprint comparison covering routes, parameters, bodies, responses, schemas, and security metadata.
-- Promoted the route-gap analyzer to a scheduled CI gate: unresolved SDK routes and uncovered non-deprecated operations now fail the job. Runtime prefixes are derived from the actual client initializers and resolution fails closed, so a client-prefix change cannot produce a false-green report.
+- Promoted the route-gap analyzer to a scheduled CI gate: unresolved SDK routes and uncovered non-deprecated operations now fail the job. Runtime prefixes are derived from the actual client initializers and resolution fails closed; comment-aware lexical masking also prevents a commented-out request from producing a false-green report.
 
 ## Verification
 

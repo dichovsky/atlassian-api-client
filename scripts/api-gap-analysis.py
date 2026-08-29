@@ -67,6 +67,91 @@ def split_top_commas(s):
     if cur.strip(): parts.append(cur)
     return [p.strip() for p in parts]
 
+def mask_ts_comments(source):
+    """Replace TypeScript comments with spaces while preserving source layout.
+
+    Regex extraction must never treat a commented-out request as executable.
+    A small lexical state stack protects quotes and template-literal raw text,
+    while still recognizing comments inside ``${...}`` expressions. Keeping
+    every newline and character position stable means the existing span-based
+    helper resolution can operate on the masked source unchanged.
+    """
+    chars = list(source)
+    stack = [{"mode": "code"}]
+    i = 0
+
+    def mask(start, end):
+        for index in range(start, end):
+            if chars[index] not in {"\n", "\r"}:
+                chars[index] = " "
+
+    while i < len(source):
+        frame = stack[-1]
+        mode = frame["mode"]
+
+        if mode in {"single", "double"}:
+            quote = "'" if mode == "single" else '"'
+            if source[i] == "\\" and i + 1 < len(source):
+                i += 2
+            elif source[i] == quote:
+                stack.pop()
+                i += 1
+            else:
+                i += 1
+            continue
+
+        if mode == "template":
+            if source[i] == "\\" and i + 1 < len(source):
+                i += 2
+            elif source[i] == "`":
+                stack.pop()
+                i += 1
+            elif source.startswith("${", i):
+                stack.append({"mode": "template-expression", "depth": 1})
+                i += 2
+            else:
+                i += 1
+            continue
+
+        # Normal code and `${...}` template expressions share lexical rules.
+        if source.startswith("//", i):
+            end = source.find("\n", i + 2)
+            if end == -1:
+                end = len(source)
+            mask(i, end)
+            i = end
+            continue
+        if source.startswith("/*", i):
+            close = source.find("*/", i + 2)
+            end = len(source) if close == -1 else close + 2
+            mask(i, end)
+            i = end
+            continue
+        if source[i] == "'":
+            stack.append({"mode": "single"})
+            i += 1
+            continue
+        if source[i] == '"':
+            stack.append({"mode": "double"})
+            i += 1
+            continue
+        if source[i] == "`":
+            stack.append({"mode": "template"})
+            i += 1
+            continue
+        if mode == "template-expression":
+            if source[i] == "{":
+                frame["depth"] += 1
+            elif source[i] == "}":
+                frame["depth"] -= 1
+                if frame["depth"] == 0:
+                    stack.pop()
+            i += 1
+            continue
+        i += 1
+
+    return "".join(chars)
+
 def strip_comment_only_lines(s):
     """Remove standalone // comments before parsing object-literal fields.
 
@@ -265,13 +350,15 @@ def method_body_span(src, name):
 def extract(api):
     source_root = os.path.abspath(CLI_ARGS.source_root)
     res_dir = os.path.join(source_root, "src", api, "resources")
-    client_src = open(os.path.join(source_root, "src", api, "client.ts")).read()
+    client_src = mask_ts_comments(
+        open(os.path.join(source_root, "src", api, "client.ts")).read()
+    )
     varmap = parse_base_suffixes(client_src)
     wiring = parse_wiring(client_src, varmap)
     results, unknowns = [], []
     for f in sorted(glob.glob(os.path.join(res_dir, "*.ts"))):
         if f.endswith("index.ts"): continue
-        src = open(f).read()
+        src = mask_ts_comments(open(f).read())
         clsm = re.search(r"export\s+class\s+([A-Z][A-Za-z0-9]*Resource)", src)
         if not clsm: continue
         cls = clsm.group(1)
