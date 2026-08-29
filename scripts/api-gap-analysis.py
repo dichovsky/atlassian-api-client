@@ -56,16 +56,24 @@ def match_close(s, start, op, cl):
             if depth == 0: return i + 1
     return -1
 
-def split_top_commas(s):
-    parts, depth, cur = [], 0, ""
+def split_top_commas_aligned(source, code):
+    """Split source on executable top-level commas using an aligned code view."""
+    assert len(source) == len(code), "source/code views must stay aligned"
+    parts = []
+    start = 0
+    depth = 0
     opens, closes = set("({["), set(")}]")
-    for c in s:
-        if c in opens: depth += 1
-        elif c in closes: depth -= 1
-        if c == "," and depth == 0: parts.append(cur); cur = ""
-        else: cur += c
-    if cur.strip(): parts.append(cur)
-    return [p.strip() for p in parts]
+    for index, token in enumerate(code):
+        if token in opens:
+            depth += 1
+        elif token in closes:
+            depth -= 1
+        elif token == "," and depth == 0:
+            parts.append((source[start:index], code[start:index]))
+            start = index + 1
+    if source[start:].strip() or code[start:].strip():
+        parts.append((source[start:], code[start:]))
+    return parts
 
 def lex_ts_source(source):
     """Return layout-preserving comment-masked and code-token-only views.
@@ -136,7 +144,9 @@ def lex_ts_source(source):
                 stack.pop()
                 i += 1
             elif source.startswith("${", i):
-                mask(code_chars, i, i + 2)
+                # Mask only `$`; retain the balanced interpolation braces and
+                # executable expression so structural scans keep their depth.
+                mask(code_chars, i, i + 1)
                 stack.append({"mode": "template-expression", "depth": 1})
                 i += 2
             else:
@@ -215,23 +225,21 @@ def lex_ts_source(source):
             continue
         i += 1
 
-    return "".join(chars), "".join(code_chars)
+    comment_masked = "".join(chars)
+    code_only = "".join(code_chars)
+    assert len(source) == len(comment_masked) == len(code_only)
+    return comment_masked, code_only
 
-def strip_comment_only_lines(s):
-    """Remove standalone // comments before parsing object-literal fields.
-
-    Request objects often document a query/path encoding choice immediately
-    above the corresponding property. Keeping that comment attached to the
-    comma-delimited field prevents the anchored `path:` matcher from seeing the
-    property (for example the sprint issue `fields` comment).
-    """
-    return re.sub(r"(?m)^[ \t]*//[^\n]*(?:\n|$)", "", s)
-
-def parse_object_literal(arg, varmap):
+def parse_object_literal(arg, arg_code, varmap):
+    assert len(arg) == len(arg_code), "source/code views must stay aligned"
     out = {}
-    body = arg[arg.index("{")+1: arg.rindex("}")]
-    for field in split_top_commas(body):
-        m = re.match(r"([A-Za-z0-9_]+)\s*:\s*([A-Za-z0-9_]+)", field)
+    body_start = arg_code.index("{") + 1
+    body_end = arg_code.rindex("}")
+    for _, field_code in split_top_commas_aligned(
+        arg[body_start:body_end],
+        arg_code[body_start:body_end],
+    ):
+        m = re.match(r"\s*([A-Za-z0-9_]+)\s*:\s*([A-Za-z0-9_]+)", field_code)
         if m and m.group(2) in varmap: out[m.group(1)] = varmap[m.group(2)]
     return out
 
@@ -244,6 +252,7 @@ def parse_base_suffixes(client_src, client_code):
     suffix stays unresolved instead of silently falling back to a previously
     known Atlassian prefix.
     """
+    assert len(client_src) == len(client_code), "source/code views must stay aligned"
     initializers = {}
     for m in re.finditer(
         r"\bconst\s+((?:baseUrl)|(?:[A-Za-z0-9_]+BaseUrl))\s*(?::[^=]+)?=",
@@ -254,15 +263,27 @@ def parse_base_suffixes(client_src, client_code):
             start += 1
         end = client_code.find(";", start)
         if end != -1:
-            initializers[m.group(1)] = client_src[start:end]
+            initializers[m.group(1)] = (
+                client_src[start:end],
+                client_code[start:end],
+            )
 
     resolved = {}
     pending = dict(initializers)
     while pending:
         progressed = False
-        for name, expr in list(pending.items()):
-            candidates = set(re.findall(r"`\$\{resolved\.baseUrl\}([^`]*)`", expr))
-            alias_expr = re.sub(r"`[^`]*`", "", expr)
+        for name, (expr, expr_code) in list(pending.items()):
+            candidates = {
+                match.group(1)[len("${resolved.baseUrl}"):]
+                for match in executable_template_matches(expr, expr_code)
+                if match.group(1).startswith("${resolved.baseUrl}")
+            }
+            alias_chars = list(expr_code)
+            for match in executable_template_matches(expr, expr_code):
+                for index in range(match.start(), match.end()):
+                    if alias_chars[index] not in {"\n", "\r"}:
+                        alias_chars[index] = " "
+            alias_expr = "".join(alias_chars)
             for ident in re.findall(r"\b[A-Za-z_][A-Za-z0-9_]*\b", alias_expr):
                 if ident in resolved:
                     candidates.add(resolved[ident])
@@ -275,28 +296,39 @@ def parse_base_suffixes(client_src, client_code):
     return resolved
 
 def parse_wiring(client_src, client_code, varmap):
+    assert len(client_src) == len(client_code), "source/code views must stay aligned"
     wiring = {}
     for m in re.finditer(r"new\s+([A-Z][A-Za-z0-9]*Resource)\s*\(", client_code):
         op = client_code.index("(", m.end()-1)
         end = match_close(client_code, op, "(", ")")
-        args = split_top_commas(client_src[op+1:end-1])
+        args = split_top_commas_aligned(
+            client_src[op+1:end-1],
+            client_code[op+1:end-1],
+        )
         base_args = []
-        for a in args[1:]:
-            a = a.strip()
-            if a in varmap: base_args.append(varmap[a])
-            elif a.startswith("{"): base_args.append(parse_object_literal(a, varmap))
-            else: base_args.append(("UNKNOWN", a))
+        for arg_src, arg_code in args[1:]:
+            code_value = arg_code.strip()
+            if code_value in varmap:
+                base_args.append(varmap[code_value])
+            elif code_value.startswith("{"):
+                base_args.append(parse_object_literal(arg_src, arg_code, varmap))
+            else:
+                base_args.append(("UNKNOWN", arg_src.strip()))
         wiring[m.group(1)] = base_args
     return wiring
 
-def parse_ctor_params(src):
-    m = re.search(r"constructor\s*\(", src)
+def parse_ctor_params(src, code_src):
+    assert len(src) == len(code_src), "source/code views must stay aligned"
+    m = re.search(r"constructor\s*\(", code_src)
     if not m: return []
-    op = src.index("(", m.end()-1)
-    end = match_close(src, op, "(", ")")
+    op = code_src.index("(", m.end()-1)
+    end = match_close(code_src, op, "(", ")")
     names = []
-    for p in split_top_commas(src[op+1:end-1]):
-        pm = re.search(r"([A-Za-z0-9_]+)\s*[?:]", p)
+    for _, param_code in split_top_commas_aligned(
+        src[op+1:end-1],
+        code_src[op+1:end-1],
+    ):
+        pm = re.search(r"([A-Za-z0-9_]+)\s*[?:]", param_code)
         if pm: names.append(pm.group(1))
     return names[1:] if names else []
 
@@ -308,75 +340,143 @@ def norm(path_tmpl):
     if s != "/" and s.endswith("/"): s = s[:-1]
     return s
 
-def first_template(expr):
-    """First backtick template literal in expr, or None."""
-    m = re.search(r"`([^`]*)`", expr)
-    return m.group(1) if m else None
+def executable_template_matches(expr, expr_code):
+    """Yield executable route templates, excluding backticks in other literals."""
+    assert len(expr) == len(expr_code), "source/code views must stay aligned"
+    for match in re.finditer(r"`([^`]*)`", expr):
+        # Route templates begin with an interpolation. Executable code inside
+        # `${...}` survives in the code-only view, whereas a backtick sequence
+        # embedded in a quoted/regex/template-raw example is fully masked.
+        if expr_code[match.start():match.end()].strip():
+            yield match
 
-def resolve_path_expr(expr, ctx, definitions=None):
+def first_template(expr, expr_code=None):
+    """First executable backtick route template in expr, or None."""
+    code = lex_ts_source(expr)[1] if expr_code is None else expr_code
+    return next((match.group(1) for match in executable_template_matches(expr, code)), None)
+
+def find_statement_end(code, start):
+    """Return the next top-level semicolon in a code-token-only view."""
+    depth = {"(": 0, "{": 0, "[": 0}
+    pairs = {")": "(", "}": "{", "]": "["}
+    for index in range(start, len(code)):
+        token = code[index]
+        if token in depth:
+            depth[token] += 1
+        elif token in pairs:
+            opener = pairs[token]
+            if depth[opener] > 0:
+                depth[opener] -= 1
+        elif token == ";" and all(level == 0 for level in depth.values()):
+            return index
+    return -1
+
+def resolve_path_expr(expr, ctx, ctx_code, definitions=None, definitions_code=None):
     """Resolve a path expression to a template string. Handles inline templates,
     helper-wrapped templates, and local `const x = ...` variable references
     (tracing through helper-call arguments like buildFoo(basePath, params)).
 
-    `definitions` is the complete resource source. It is needed when a request
-    calls a path-building class method declared after the call site, such as
+    `ctx` and `definitions` retain literals; their aligned code-token views are
+    used for discovery so quoted examples cannot masquerade as executable path
+    assignments or helper returns. Complete definitions are needed when a
+    request calls a class method declared after the call site, such as
     `this.buildListPath(params)`.
     """
+    assert len(ctx) == len(ctx_code), "source/code context views must stay aligned"
+    assert (definitions is None) == (definitions_code is None)
+    if definitions is not None:
+        assert len(definitions) == len(definitions_code)
     expr = expr.strip()
-    tpl = first_template(expr)
+    expr_code = lex_ts_source(expr)[1]
+    tpl = first_template(expr, expr_code)
     if tpl: return tpl
 
-    def class_helper_template(call_expr):
-        helper_call = re.match(r"this\.([A-Za-z_][A-Za-z0-9_]*)\s*\(", call_expr.strip())
-        if not helper_call or not definitions: return None
-        span = method_body_span(definitions, helper_call.group(1))
+    def class_helper_template(call_expr, call_code):
+        helper_call = re.match(r"this\.([A-Za-z_][A-Za-z0-9_]*)\s*\(", call_code.strip())
+        if not helper_call or not definitions or not definitions_code: return None
+        span = method_body_span(definitions, helper_call.group(1), definitions_code)
         if not span: return None
         body = definitions[span[0]:span[1]]
-        for ret in re.finditer(r"\breturn\s+(.+?);", body, re.S):
-            helper_tpl = first_template(ret.group(1))
+        body_code = definitions_code[span[0]:span[1]]
+        for ret in re.finditer(r"\breturn\b", body_code):
+            value_start = ret.end()
+            value_end = find_statement_end(body_code, value_start)
+            if value_end == -1: continue
+            value = body[value_start:value_end]
+            value_code = body_code[value_start:value_end]
+            helper_tpl = first_template(value, value_code)
             if helper_tpl: return helper_tpl
-        # Some helpers assign the concrete base path to a local and return it
-        # through an object shorthand (`return { path, query }`).
-        return first_template(body)
-
-    # Resolve direct class path-helper calls through the helper's return value.
-    # The helper may be declared below the request, hence the separate complete
-    # `definitions` source rather than only the call-site context.
-    tpl = class_helper_template(expr)
-    if tpl: return tpl
+            helper_tpl = try_idents(
+                value,
+                value_code,
+                body[:ret.start()],
+                body_code[:ret.start()],
+                set(),
+                0,
+            )
+            if helper_tpl: return helper_tpl
+        return None
 
     # gather candidate identifiers in order; try each that has a local def
-    def try_idents(s, seen, depth):
+    def try_idents(s, code_s, local_ctx, local_code, seen, depth):
         if depth > 6: return None
-        for idm in re.finditer(r"[A-Za-z_][A-Za-z0-9_]*", s):
+        for idm in re.finditer(r"[A-Za-z_][A-Za-z0-9_]*", code_s):
             ident = idm.group(0)
             if ident in seen: continue
-            assignments = [
-                (m.start(), m.group(1))
-                for m in re.finditer(
-                    r"(?:const|let)\s+"+re.escape(ident)+r"\s*=\s*([^;]+);",
-                    ctx,
-                    re.S,
-                )
-            ]
+            assignments = []
+            declaration = re.compile(
+                r"\b(?:const|let)\s+"+re.escape(ident)+r"\s*(?::[^=;]+)?="
+            )
+            for assignment in declaration.finditer(local_code):
+                value_start = assignment.end()
+                value_end = find_statement_end(local_code, value_start)
+                if value_end != -1:
+                    assignments.append(
+                        (
+                            assignment.start(),
+                            local_ctx[value_start:value_end],
+                            local_code[value_start:value_end],
+                        )
+                    )
             # Path/query helpers conventionally return an object which callers
             # immediately destructure. Treat the RHS as the local definition of
             # `path`; choosing the latest assignment keeps resolution scoped to
             # the closest call site instead of an earlier method's `path` local.
-            for m in re.finditer(r"(?:const|let)\s*\{([^}]*)\}\s*=\s*([^;]+);", ctx, re.S):
-                names = {part.strip().split(":", 1)[-1].strip() for part in m.group(1).split(",")}
+            destructuring = re.compile(
+                r"\b(?:const|let)\s*\{([^}]*)\}\s*(?::[^=;]+)?="
+            )
+            for assignment in destructuring.finditer(local_code):
+                names = {
+                    part.strip().split(":", 1)[-1].strip()
+                    for part in assignment.group(1).split(",")
+                }
                 if ident in names:
-                    assignments.append((m.start(), m.group(2)))
-            for _, rhs in sorted(assignments, reverse=True):
+                    value_start = assignment.end()
+                    value_end = find_statement_end(local_code, value_start)
+                    if value_end != -1:
+                        assignments.append(
+                            (
+                                assignment.start(),
+                                local_ctx[value_start:value_end],
+                                local_code[value_start:value_end],
+                            )
+                        )
+            for _, rhs, rhs_code in sorted(assignments, reverse=True):
                 seen2 = seen | {ident}
-                t = first_template(rhs)
+                t = first_template(rhs, rhs_code)
                 if t: return t
-                t = class_helper_template(rhs)
+                t = class_helper_template(rhs, rhs_code)
                 if t: return t
-                t = try_idents(rhs, seen2, depth+1)
+                t = try_idents(rhs, rhs_code, local_ctx, local_code, seen2, depth+1)
                 if t: return t
         return None
-    return try_idents(expr, set(), 0)
+
+    # Resolve direct class path-helper calls through the helper's return value.
+    # The helper may be declared below the request, hence the separate complete
+    # definitions source rather than only the call-site context.
+    tpl = class_helper_template(expr, expr_code)
+    if tpl: return tpl
+    return try_idents(expr, expr_code, ctx, ctx_code, set(), 0)
 
 def resolve_template(tpl, fieldmap, helper):
     """Resolve a template's leading base token through client wiring."""
@@ -401,20 +501,61 @@ def resolve_template(tpl, fieldmap, helper):
     if prefix is None: return None, None, "unresolved-token:"+token
     return prefix, suffix, None
 
-def method_body_span(src, name):
+def method_body_span(src, name, code_src=None):
     """Return the body span of a class method, if present."""
+    scan = code_src if code_src is not None else src
     m = re.search(
         r"(?m)^\s*(?:(?:private|protected|public)\s+)?(?:async\s+)?"+re.escape(name)+r"\s*\(",
-        src,
+        scan,
     )
     if not m: return None
-    op = src.index("(", m.start())
-    params_end = match_close(src, op, "(", ")")
+    op = scan.index("(", m.start())
+    params_end = match_close(scan, op, "(", ")")
     if params_end == -1: return None
-    body_start = src.find("{", params_end)
+    body_start = scan.find("{", params_end)
     if body_start == -1: return None
-    body_end = match_close(src, body_start, "{", "}")
+    body_end = match_close(scan, body_start, "{", "}")
     return (body_start, body_end) if body_end != -1 else None
+
+def enclosing_method_scope_starts(code_src, positions):
+    """Map call offsets to their containing class member body's first offset.
+
+    Local path resolution must not borrow a same-named declaration from an
+    earlier class method. Because the code-only view has balanced braces, the
+    second still-open block inside the containing class is the current member
+    body; deeper blocks remain part of that same lexical scope chain. All call
+    positions are resolved in one source pass to keep the coverage check fast.
+    """
+    targets = sorted(set(positions))
+    if not targets:
+        return {}
+    class_bodies = {
+        body_start
+        for class_match in re.finditer(r"\bclass\s+[A-Za-z_][A-Za-z0-9_]*", code_src)
+        if (body_start := code_src.find("{", class_match.end())) != -1
+    }
+    result = {}
+    stack = []
+    target_index = 0
+    for index, token in enumerate(code_src[:targets[-1] + 1]):
+        while target_index < len(targets) and targets[target_index] == index:
+            target = targets[target_index]
+            class_index = next(
+                (level for level in range(len(stack) - 1, -1, -1)
+                 if stack[level] in class_bodies),
+                None,
+            )
+            result[target] = (
+                stack[class_index + 1] + 1
+                if class_index is not None and class_index + 1 < len(stack)
+                else 0
+            )
+            target_index += 1
+        if token == "{":
+            stack.append(index)
+        elif token == "}" and stack:
+            stack.pop()
+    return result
 
 def extract(api):
     source_root = os.path.abspath(CLI_ARGS.source_root)
@@ -431,7 +572,7 @@ def extract(api):
         clsm = re.search(r"export\s+class\s+([A-Z][A-Za-z0-9]*Resource)", code_src)
         if not clsm: continue
         cls = clsm.group(1)
-        params = parse_ctor_params(src)
+        params = parse_ctor_params(src, code_src)
         wargs = wiring.get(cls, [])
         fieldmap = {params[i]: wargs[i] for i in range(min(len(params), len(wargs)))}
         helper = {}
@@ -439,22 +580,51 @@ def extract(api):
         dict_field = next((k for k, v in fieldmap.items() if isinstance(v, dict)), None)
         if dict_field: helper["requireDevopsBaseUrls"] = fieldmap[dict_field]
 
+        helper_calls = {
+            helper_name: list(
+                re.finditer(r"\bthis\."+re.escape(helper_name)+r"\s*\(", code_src)
+            )
+            for helper_name in {"requestSoftwareIssues"}
+        }
+        request_calls = list(re.finditer(r"this\.transport\.request", code_src))
+        scope_starts = enclosing_method_scope_starts(
+            code_src,
+            [
+                call.start()
+                for calls in helper_calls.values()
+                for call in calls
+            ] + [call.start() for call in request_calls],
+        )
+
         # A helper-backed request represents one operation for every concrete
         # call-site path. Expand those paths before scanning direct transport
         # calls, and skip the helper's own variable `finalPath` request.
         delegated_spans = []
         for helper_name, helper_verb in {"requestSoftwareIssues": "GET"}.items():
-            span = method_body_span(src, helper_name)
-            calls = list(re.finditer(r"\bthis\."+re.escape(helper_name)+r"\s*\(", code_src))
+            span = method_body_span(src, helper_name, code_src)
+            calls = helper_calls[helper_name]
             if not span or not calls: continue
             delegated_spans.append(span)
             for call in calls:
-                op = src.index("(", call.start())
-                end = match_close(src, op, "(", ")")
-                args = split_top_commas(src[op+1:end-1]) if end != -1 else []
+                op = code_src.index("(", call.start())
+                end = match_close(code_src, op, "(", ")")
+                args = (
+                    split_top_commas_aligned(
+                        src[op+1:end-1],
+                        code_src[op+1:end-1],
+                    )
+                    if end != -1 else []
+                )
                 if not args:
                     unknowns.append((os.path.basename(f), "no-helper-path", helper_name)); continue
-                tpl = resolve_path_expr(args[0], src[:call.start()], src)
+                scope_start = scope_starts[call.start()]
+                tpl = resolve_path_expr(
+                    args[0][0],
+                    src[scope_start:call.start()],
+                    code_src[scope_start:call.start()],
+                    src,
+                    code_src,
+                )
                 if not tpl:
                     unknowns.append((os.path.basename(f), "unresolved-helper-path", args[0][:80])); continue
                 prefix, suffix, error = resolve_template(tpl, fieldmap, helper)
@@ -464,27 +634,34 @@ def extract(api):
                 results.append({"prefix": prefix, "verb": helper_verb, "suffix": norm(suffix),
                                 "norm_full": norm(full), "file": os.path.basename(f)})
 
-        for rm in re.finditer(r"this\.transport\.request", code_src):
+        for rm in request_calls:
             if any(start <= rm.start() < end for start, end in delegated_spans):
                 continue
-            op = src.index("(", rm.end())
-            obj_start = src.index("{", op)
-            obj_end = match_close(src, obj_start, "{", "}")
+            op = code_src.index("(", rm.end())
+            obj_start = code_src.index("{", op)
+            obj_end = match_close(code_src, obj_start, "{", "}")
             obj = src[obj_start:obj_end]
-            ctx = src[:rm.start()] + obj  # full preceding context for var resolution
-            props = split_top_commas(strip_comment_only_lines(obj[1:-1]))
+            obj_code = code_src[obj_start:obj_end]
+            scope_start = scope_starts[rm.start()]
+            ctx = src[scope_start:rm.start()] + obj
+            ctx_code = code_src[scope_start:rm.start()] + obj_code
+            props = split_top_commas_aligned(obj[1:-1], obj_code[1:-1])
             verb = None; expr = None
-            for p in props:
-                mm = re.match(r"method:\s*'([A-Z]+)'", p)
+            for prop, prop_code in props:
+                mm = re.match(r"\s*method\s*:\s*'([A-Z]+)'", prop)
+                if not re.match(r"\s*method\s*:", prop_code):
+                    mm = None
                 if mm: verb = mm.group(1)
-                pp = re.match(r"path\s*:\s*(.+)", p, re.S)
+                pp = re.match(r"\s*path\s*:\s*(.+)", prop, re.S)
+                if not re.match(r"\s*path\s*:", prop_code):
+                    pp = None
                 if pp: expr = pp.group(1).strip()
-                elif re.fullmatch(r"path", p.strip()): expr = "path"  # shorthand
+                elif prop_code.strip() == "path": expr = "path"  # shorthand
             if not verb:
                 unknowns.append((os.path.basename(f), "no-method", obj[:80])); continue
             if expr is None:
                 unknowns.append((os.path.basename(f), "no-path", obj[:80])); continue
-            tpl = resolve_path_expr(expr, ctx, src)
+            tpl = resolve_path_expr(expr, ctx, ctx_code, src, code_src)
             if not tpl:
                 unknowns.append((os.path.basename(f), "unresolved-path", expr[:80])); continue
             prefix, suffix, error = resolve_template(tpl, fieldmap, helper)

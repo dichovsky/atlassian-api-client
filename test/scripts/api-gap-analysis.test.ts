@@ -273,6 +273,235 @@ ${liveImplementation}
   );
 
   it(
+    'uses executable resource-local path assignments instead of string examples',
+    async () => {
+      const fixtureRoot = await mkdtemp(join(tmpdir(), 'atlassian-api-gap-local-shadow-'));
+      const fixtureSrc = join(fixtureRoot, 'src');
+
+      try {
+        await cp(resolve(REPO_ROOT, 'src'), fixtureSrc, { recursive: true });
+        const adminKeyPath = join(fixtureSrc, 'confluence/resources/admin-key.ts');
+        const adminKey = await readFile(adminKeyPath, 'utf8');
+        const liveImplementation = `    const response = await this.transport.request<AdminKey>({
+      method: 'GET',
+      path: \`\${this.baseUrl}/admin-key\`,
+    });
+    return response.data;`;
+        const shadowedImplementation = `    const path = \`\${this.baseUrl}/admin-key-wrong\`;
+    const ignoredPathExample = "const path = \`\${this.baseUrl}/admin-key\`;";
+    void ignoredPathExample;
+    const response = await this.transport.request<AdminKey>({
+      method: 'GET',
+      path,
+    });
+    return response.data;`;
+        const changedAdminKey = adminKey.replace(liveImplementation, shadowedImplementation);
+        expect(changedAdminKey).not.toBe(adminKey);
+        await writeFile(adminKeyPath, changedAdminKey);
+
+        await expect(
+          execFileAsync('python3', [ANALYZER, '--source-root', fixtureRoot], {
+            cwd: REPO_ROOT,
+          }),
+        ).rejects.toMatchObject({
+          code: 1,
+          stdout: expect.stringContaining(
+            'confluence-v2: 218 ops | impl 217 | MISSING 1 (live 1, dep 0)',
+          ),
+        });
+      } finally {
+        await rm(fixtureRoot, { recursive: true, force: true });
+      }
+    },
+    ANALYZER_TIMEOUT_MS,
+  );
+
+  it(
+    'does not treat quoted backticks as an executable path template',
+    async () => {
+      const fixtureRoot = await mkdtemp(join(tmpdir(), 'atlassian-api-gap-quoted-template-'));
+      const fixtureSrc = join(fixtureRoot, 'src');
+
+      try {
+        await cp(resolve(REPO_ROOT, 'src'), fixtureSrc, { recursive: true });
+        const adminKeyPath = join(fixtureSrc, 'confluence/resources/admin-key.ts');
+        const adminKey = await readFile(adminKeyPath, 'utf8');
+        const liveImplementation = `    const response = await this.transport.request<AdminKey>({
+      method: 'GET',
+      path: \`\${this.baseUrl}/admin-key\`,
+    });
+    return response.data;`;
+        const quotedTemplateImplementation = `    const path = "\`\${this.baseUrl}/admin-key\`";
+    const response = await this.transport.request<AdminKey>({
+      method: 'GET',
+      path,
+    });
+    return response.data;`;
+        const changedAdminKey = adminKey.replace(liveImplementation, quotedTemplateImplementation);
+        expect(changedAdminKey).not.toBe(adminKey);
+        await writeFile(adminKeyPath, changedAdminKey);
+
+        await expect(
+          execFileAsync('python3', [ANALYZER, '--source-root', fixtureRoot], {
+            cwd: REPO_ROOT,
+          }),
+        ).rejects.toMatchObject({
+          code: 1,
+          stdout: expect.stringContaining(
+            'confluence-v2: 218 ops | impl 217 | MISSING 1 (live 1, dep 0)',
+          ),
+        });
+      } finally {
+        await rm(fixtureRoot, { recursive: true, force: true });
+      }
+    },
+    ANALYZER_TIMEOUT_MS,
+  );
+
+  it(
+    'splits request properties only on executable commas',
+    async () => {
+      const fixtureRoot = await mkdtemp(join(tmpdir(), 'atlassian-api-gap-property-shadow-'));
+      const fixtureSrc = join(fixtureRoot, 'src');
+
+      try {
+        await cp(resolve(REPO_ROOT, 'src'), fixtureSrc, { recursive: true });
+        const adminKeyPath = join(fixtureSrc, 'confluence/resources/admin-key.ts');
+        const adminKey = await readFile(adminKeyPath, 'utf8');
+        const liveImplementation = `    const response = await this.transport.request<AdminKey>({
+      method: 'GET',
+      path: \`\${this.baseUrl}/admin-key\`,
+    });
+    return response.data;`;
+        const shadowedPropertyImplementation = `    const response = await this.transport.request<AdminKey>({
+      method: 'GET',
+      path: \`\${this.baseUrl}/admin-key-wrong\`,
+      query: "ignored, path: \`\${this.baseUrl}/admin-key\`" as never,
+    });
+    return response.data;`;
+        const changedAdminKey = adminKey.replace(
+          liveImplementation,
+          shadowedPropertyImplementation,
+        );
+        expect(changedAdminKey).not.toBe(adminKey);
+        await writeFile(adminKeyPath, changedAdminKey);
+
+        await expect(
+          execFileAsync('python3', [ANALYZER, '--source-root', fixtureRoot], {
+            cwd: REPO_ROOT,
+          }),
+        ).rejects.toMatchObject({
+          code: 1,
+          stdout: expect.stringContaining(
+            'confluence-v2: 218 ops | impl 217 | MISSING 1 (live 1, dep 0)',
+          ),
+        });
+      } finally {
+        await rm(fixtureRoot, { recursive: true, force: true });
+      }
+    },
+    ANALYZER_TIMEOUT_MS,
+  );
+
+  it(
+    'does not resolve request paths from another method scope',
+    async () => {
+      const fixtureRoot = await mkdtemp(join(tmpdir(), 'atlassian-api-gap-method-scope-'));
+      const fixtureSrc = join(fixtureRoot, 'src');
+
+      try {
+        await cp(resolve(REPO_ROOT, 'src'), fixtureSrc, { recursive: true });
+        const adminKeyPath = join(fixtureSrc, 'confluence/resources/admin-key.ts');
+        const adminKey = await readFile(adminKeyPath, 'utf8');
+        const liveImplementation = `  /** Fetch metadata for the currently active admin key. */
+  async get(): Promise<AdminKey> {
+    const response = await this.transport.request<AdminKey>({
+      method: 'GET',
+      path: \`\${this.baseUrl}/admin-key\`,
+    });
+    return response.data;
+  }`;
+        const crossScopedImplementation = `  private ignoredCoveragePath(): string {
+    const wrongPath = \`\${this.baseUrl}/admin-key\`;
+    return wrongPath;
+  }
+
+  private get wrongPath(): string {
+    return \`\${this.baseUrl}/admin-key-wrong\`;
+  }
+
+  /** Fetch metadata for the currently active admin key. */
+  async get(): Promise<AdminKey> {
+    void this.ignoredCoveragePath;
+    const response = await this.transport.request<AdminKey>({
+      method: 'GET',
+      path: this.wrongPath,
+    });
+    return response.data;
+  }`;
+        const changedAdminKey = adminKey.replace(liveImplementation, crossScopedImplementation);
+        expect(changedAdminKey).not.toBe(adminKey);
+        await writeFile(adminKeyPath, changedAdminKey);
+
+        await expect(
+          execFileAsync('python3', [ANALYZER, '--source-root', fixtureRoot], {
+            cwd: REPO_ROOT,
+          }),
+        ).rejects.toMatchObject({
+          code: 1,
+          stdout: expect.stringContaining(
+            'confluence-v2: 218 ops | impl 217 | MISSING 1 (live 1, dep 0)',
+          ),
+        });
+      } finally {
+        await rm(fixtureRoot, { recursive: true, force: true });
+      }
+    },
+    ANALYZER_TIMEOUT_MS,
+  );
+
+  it(
+    'uses executable class-helper returns instead of string examples',
+    async () => {
+      const fixtureRoot = await mkdtemp(join(tmpdir(), 'atlassian-api-gap-helper-shadow-'));
+      const fixtureSrc = join(fixtureRoot, 'src');
+
+      try {
+        await cp(resolve(REPO_ROOT, 'src'), fixtureSrc, { recursive: true });
+        const attachmentsPath = join(fixtureSrc, 'confluence/resources/attachments.ts');
+        const attachments = await readFile(attachmentsPath, 'utf8');
+        const liveReturn =
+          "    return appendScalarOrArrayParam(`${this.baseUrl}/attachments`, 'status', params?.status);";
+        const shadowedReturn = `    const ignoredHelperExample =
+      "return appendScalarOrArrayParam(\`${'${this.baseUrl}'}/attachments\`, 'status', params?.status);";
+    void ignoredHelperExample;
+    return appendScalarOrArrayParam(
+      \`${'${this.baseUrl}'}/attachments-wrong\`,
+      'status',
+      params?.status,
+    );`;
+        const changedAttachments = attachments.replace(liveReturn, shadowedReturn);
+        expect(changedAttachments).not.toBe(attachments);
+        await writeFile(attachmentsPath, changedAttachments);
+
+        await expect(
+          execFileAsync('python3', [ANALYZER, '--source-root', fixtureRoot], {
+            cwd: REPO_ROOT,
+          }),
+        ).rejects.toMatchObject({
+          code: 1,
+          stdout: expect.stringContaining(
+            'confluence-v2: 218 ops | impl 217 | MISSING 1 (live 1, dep 0)',
+          ),
+        });
+      } finally {
+        await rm(fixtureRoot, { recursive: true, force: true });
+      }
+    },
+    ANALYZER_TIMEOUT_MS,
+  );
+
+  it(
     'does not count transport request syntax that exists only inside a regex literal',
     async () => {
       const fixtureRoot = await mkdtemp(join(tmpdir(), 'atlassian-api-gap-regex-'));
