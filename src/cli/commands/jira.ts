@@ -690,7 +690,17 @@ async function executeProjects(client: JiraClient, cmd: ParsedCommand): Promise<
   const opts = cmd.options;
 
   switch (cmd.action) {
-    case 'list':
+    case 'list': {
+      const action = asString(opts['action']);
+      if (
+        action !== undefined &&
+        action !== 'view' &&
+        action !== 'browse' &&
+        action !== 'edit' &&
+        action !== 'create'
+      ) {
+        throw new Error(`--action must be one of: view, browse, edit, create; got: ${action}`);
+      }
       return client.projects.list({
         startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
@@ -704,13 +714,15 @@ async function executeProjects(client: JiraClient, cmd: ParsedCommand): Promise<
         categoryId: asPositiveInt(opts['category-id'], '--category-id'),
         propertyQuery: asString(opts['property-query']),
         properties: parseCsv(opts['properties']),
+        action,
       });
+    }
     case 'get':
       return client.projects.get(requireArg(cmd.positionalArgs[0], 'project key'));
     case 'list-legacy': {
       if (opts['action'] !== undefined) {
         throw new Error(
-          '--action is not supported by projects list-legacy and has no current replacement; drop this flag',
+          '--action is not supported by projects list-legacy; use projects list instead',
         );
       }
       rejectRemovedOptions(

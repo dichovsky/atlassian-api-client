@@ -93,6 +93,7 @@ describe('ProjectsResource', () => {
         expand: ['description'],
         status: ['live'],
         typeKey: 'software',
+        action: 'browse',
       });
 
       // Assert — `expand`/`typeKey` are `type: string` (stay comma-joined in the
@@ -103,6 +104,7 @@ describe('ProjectsResource', () => {
         orderBy: 'name',
         expand: 'description',
         typeKey: 'software',
+        action: 'browse',
       });
       expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/project/search?status=live`);
     });
@@ -273,6 +275,7 @@ describe('ProjectsResource', () => {
         query: 'my project',
         categoryId: 5,
         propertyQuery: 'cf[10000]=value',
+        action: 'edit',
         id: [10001],
         keys: ['PROJ'],
         properties: ['prop1'],
@@ -286,6 +289,7 @@ describe('ProjectsResource', () => {
         query: 'my project',
         categoryId: 5,
         propertyQuery: 'cf[10000]=value',
+        action: 'edit',
       });
       const path = transport.calls[0]?.options.path ?? '';
       expect(path).toContain('id=10001');

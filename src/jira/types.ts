@@ -221,6 +221,8 @@ export interface ListProjectsParams {
   readonly expand?: string[];
   readonly status?: string[];
   readonly typeKey?: string;
+  /** Permission action required on returned projects. Defaults to `view`. */
+  readonly action?: 'view' | 'browse' | 'edit' | 'create';
   /** Filter by project IDs (type: array → repeated params). */
   readonly id?: number[];
   /** Filter by project keys (type: array → repeated params). */

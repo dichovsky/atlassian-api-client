@@ -353,10 +353,11 @@ export class ProjectsResource {
       if (params.startAt !== undefined) query['startAt'] = params.startAt;
       if (params.maxResults !== undefined) query['maxResults'] = params.maxResults;
       if (params.orderBy) query['orderBy'] = params.orderBy;
-      // `expand`/`typeKey` are `type: string` on /project/search (CSV stays);
+      // `expand`/`typeKey`/`action` are `type: string` on /project/search (CSV stays);
       // `status`/`id`/`keys`/`properties` are `type: array` → repeated params baked into path.
       if (params.expand) query['expand'] = params.expand.join(',');
       if (params.typeKey) query['typeKey'] = params.typeKey;
+      if (params.action) query['action'] = params.action;
       if (params.query) query['query'] = params.query;
       if (params.categoryId !== undefined) query['categoryId'] = params.categoryId;
       if (params.propertyQuery) query['propertyQuery'] = params.propertyQuery;
@@ -393,10 +394,12 @@ export class ProjectsResource {
     if (params) {
       if (params.maxResults !== undefined) query['maxResults'] = params.maxResults;
       if (params.orderBy) query['orderBy'] = params.orderBy;
-      // `expand`/`typeKey` are `type: string` (CSV stays); `status`/`id`/`keys`/`properties`
-      // are `type: array` → repeated params baked into the path (B1049).
+      // `expand`/`typeKey`/`action` are `type: string` (CSV stays);
+      // `status`/`id`/`keys`/`properties` are `type: array` → repeated params
+      // baked into the path (B1049).
       if (params.expand) query['expand'] = params.expand.join(',');
       if (params.typeKey) query['typeKey'] = params.typeKey;
+      if (params.action) query['action'] = params.action;
       if (params.query) query['query'] = params.query;
       if (params.categoryId !== undefined) query['categoryId'] = params.categoryId;
       if (params.propertyQuery) query['propertyQuery'] = params.propertyQuery;

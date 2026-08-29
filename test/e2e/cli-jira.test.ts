@@ -129,6 +129,8 @@ const matrix: readonly MatrixRow[] = [
       'project.owner=alice',
       '--properties',
       'project.owner',
+      '--action',
+      'browse',
     ],
     routes: [
       {
@@ -153,6 +155,7 @@ const matrix: readonly MatrixRow[] = [
         categoryId: '5',
         propertyQuery: 'project.owner=alice',
         properties: 'project.owner',
+        action: 'browse',
       });
     },
   },

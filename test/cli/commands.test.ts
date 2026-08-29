@@ -10363,6 +10363,7 @@ describe('executeJiraCommand', () => {
           'category-id': '5',
           'property-query': 'project.owner=alice',
           properties: 'project.owner,project.region',
+          action: 'browse',
         }),
         GLOBALS,
       );
@@ -10380,7 +10381,15 @@ describe('executeJiraCommand', () => {
         categoryId: 5,
         propertyQuery: 'project.owner=alice',
         properties: ['project.owner', 'project.region'],
+        action: 'browse',
       });
+    });
+
+    it('projects list rejects an invalid --action value before making a request', async () => {
+      await expect(
+        executeJiraCommand(cmd('projects', 'list', [], { action: 'delete' }), GLOBALS),
+      ).rejects.toThrow('--action must be one of: view, browse, edit, create');
+      expect(jiraProjectsMock.list).not.toHaveBeenCalled();
     });
 
     it('projects get calls client.projects.get with the project key', async () => {
@@ -10467,11 +10476,11 @@ describe('executeJiraCommand', () => {
       },
     );
 
-    it('projects list-legacy tells callers to drop the removed --action filter', async () => {
+    it('projects list-legacy directs the removed --action filter to current project search', async () => {
       await expect(
         executeJiraCommand(cmd('projects', 'list-legacy', [], { action: 'view' }), GLOBALS),
       ).rejects.toThrow(
-        '--action is not supported by projects list-legacy and has no current replacement; drop this flag',
+        '--action is not supported by projects list-legacy; use projects list instead',
       );
       expect(jiraProjectsMock.listLegacy).not.toHaveBeenCalled();
     });
