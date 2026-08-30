@@ -44,6 +44,7 @@ import type {
   BulkEditDashboardsData,
   DashboardSharePermission,
   SearchDashboardsOrderBy,
+  SearchParams,
   ListSoftwareIssuesParams,
   RedactionItem,
   IssueTypeScreenSchemeOrderBy,
@@ -1048,8 +1049,13 @@ async function executeSearch(client: JiraClient, cmd: ParsedCommand): Promise<un
     case 'legacy-post': {
       return client.search.search({
         jql: requireOpt(opts['jql'], '--jql'),
+        startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
         fields: csvFlag(opts['fields']),
+        expand: csvFlag(opts['expand']),
+        validateQuery: asLegacySearchValidation(opts['validate-query']),
+        properties: csvFlag(opts['properties']),
+        fieldsByKeys: asBoolFlag(opts['fields-by-keys']),
       });
     }
     case 'get': {
@@ -1057,8 +1063,13 @@ async function executeSearch(client: JiraClient, cmd: ParsedCommand): Promise<un
       const jql = requireOpt(opts['jql'], '--jql');
       return client.search.searchGet({
         jql,
+        startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
         fields: csvFlag(opts['fields']),
+        expand: csvFlag(opts['expand']),
+        validateQuery: asLegacySearchValidation(opts['validate-query']),
+        properties: csvFlag(opts['properties']),
+        fieldsByKeys: asBoolFlag(opts['fields-by-keys']),
       });
     }
     case 'approximate-count': {
@@ -1074,6 +1085,10 @@ async function executeSearch(client: JiraClient, cmd: ParsedCommand): Promise<un
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
         fields: csvFlag(opts['fields']),
         expand: csvFlag(opts['expand']),
+        properties: csvFlag(opts['properties']),
+        fieldsByKeys: asBoolFlag(opts['fields-by-keys']),
+        reconcileIssues: asIntArray(opts['reconcile-issues'], '--reconcile-issues'),
+        failFast: asBoolFlag(opts['fail-fast']),
       });
     }
     case 'jql-post': {
@@ -1084,6 +1099,9 @@ async function executeSearch(client: JiraClient, cmd: ParsedCommand): Promise<un
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
         fields: csvFlag(opts['fields']),
         expand: csvFlag(opts['expand']),
+        properties: csvFlag(opts['properties']),
+        fieldsByKeys: asBoolFlag(opts['fields-by-keys']),
+        reconcileIssues: asIntArray(opts['reconcile-issues'], '--reconcile-issues'),
       });
     }
     case '':
@@ -1097,6 +1115,11 @@ async function executeSearch(client: JiraClient, cmd: ParsedCommand): Promise<un
         nextPageToken: asString(opts['next-page-token']),
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
         fields: csvFlag(opts['fields']),
+        expand: csvFlag(opts['expand']),
+        properties: csvFlag(opts['properties']),
+        fieldsByKeys: asBoolFlag(opts['fields-by-keys']),
+        reconcileIssues: asIntArray(opts['reconcile-issues'], '--reconcile-issues'),
+        failFast: asBoolFlag(opts['fail-fast']),
       });
     }
     default:
@@ -2254,6 +2277,26 @@ function asBoolFlag(value: string | boolean | undefined): boolean | undefined {
   if (value === 'true') return true;
   if (value === 'false') return false;
   throw new Error(`expected 'true' or 'false', got: ${value}`);
+}
+
+/** Validate the legacy Jira search endpoint's string-valued validation mode. */
+function asLegacySearchValidation(
+  value: string | boolean | undefined,
+): SearchParams['validateQuery'] {
+  const validation = asString(value);
+  if (validation === undefined) return undefined;
+  if (
+    validation === 'strict' ||
+    validation === 'warn' ||
+    validation === 'none' ||
+    validation === 'true' ||
+    validation === 'false'
+  ) {
+    return validation;
+  }
+  throw new Error(
+    `--validate-query must be one of: strict, warn, none, true, false. Got: ${validation}`,
+  );
 }
 
 /**

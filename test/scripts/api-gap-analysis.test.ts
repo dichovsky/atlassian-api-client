@@ -154,6 +154,48 @@ describe('api gap analysis', () => {
     ANALYZER_TIMEOUT_MS,
   );
 
+  it(
+    'allows only the reviewed Confluence v1 attachment upload route',
+    async () => {
+      const fixtureRoot = await mkdtemp(join(tmpdir(), 'atlassian-api-gap-extra-v1-route-'));
+      const fixtureSrc = join(fixtureRoot, 'src');
+
+      try {
+        await cp(resolve(REPO_ROOT, 'src'), fixtureSrc, { recursive: true });
+        const attachmentsPath = join(fixtureSrc, 'confluence/resources/attachments.ts');
+        const attachments = await readFile(attachmentsPath, 'utf8');
+        const liveRequest = `    const response = await this.transport.request<UploadAttachmentResult>({
+      method: 'POST',
+      path: \`\${this.v1BaseUrl}/content/\${encodePathSegment(pageId)}/child/attachment\`,
+      formData,
+      headers: { 'X-Atlassian-Token': 'nocheck' },
+    });`;
+        const changedAttachments = attachments.replace(
+          liveRequest,
+          `    await this.transport.request({
+      method: 'DELETE',
+      path: \`\${this.v1BaseUrl}/unexpected\`,
+    });
+${liveRequest}`,
+        );
+        expect(changedAttachments).not.toBe(attachments);
+        await writeFile(attachmentsPath, changedAttachments);
+
+        await expect(
+          execFileAsync('python3', [ANALYZER, '--source-root', fixtureRoot], {
+            cwd: REPO_ROOT,
+          }),
+        ).rejects.toMatchObject({
+          code: 1,
+          stdout: expect.stringContaining('2 /wiki/rest/api'),
+        });
+      } finally {
+        await rm(fixtureRoot, { recursive: true, force: true });
+      }
+    },
+    ANALYZER_TIMEOUT_MS,
+  );
+
   it.each([
     ['jira-platform', 'jira-platform-v3.json'],
     ['jira-software', 'jira-software.json'],
@@ -219,6 +261,111 @@ describe('api gap analysis', () => {
   );
 
   it(
+    'fails closed when an operation overrides the reviewed server scope',
+    async () => {
+      const fixtureRoot = await mkdtemp(join(tmpdir(), 'atlassian-api-gap-operation-server-'));
+      const fixtureSpec = join(fixtureRoot, 'spec');
+
+      try {
+        await cp(resolve(REPO_ROOT, 'spec'), fixtureSpec, { recursive: true });
+        const confluencePath = join(fixtureSpec, 'confluence-v2.json');
+        const confluence = JSON.parse(await readFile(confluencePath, 'utf8')) as {
+          paths: Record<string, { get?: Record<string, unknown> }>;
+        };
+        const operation = confluence.paths['/admin-key']?.get;
+        expect(operation).toBeDefined();
+        operation!.servers = [{ url: 'https://api.atlassian.com/other' }];
+        await writeFile(confluencePath, JSON.stringify(confluence));
+
+        await expect(
+          execFileAsync('python3', [ANALYZER, '--spec-dir', fixtureSpec], {
+            cwd: REPO_ROOT,
+          }),
+        ).rejects.toMatchObject({
+          code: 1,
+          stderr: expect.stringContaining(
+            'confluence-v2: server scope /other does not match expected /wiki/api/v2',
+          ),
+        });
+      } finally {
+        await rm(fixtureRoot, { recursive: true, force: true });
+      }
+    },
+    ANALYZER_TIMEOUT_MS,
+  );
+
+  it(
+    'rejects an OpenAPI operation without responses',
+    async () => {
+      const fixtureRoot = await mkdtemp(join(tmpdir(), 'atlassian-api-gap-empty-operation-'));
+      const fixtureSpec = join(fixtureRoot, 'spec');
+
+      try {
+        await cp(resolve(REPO_ROOT, 'spec'), fixtureSpec, { recursive: true });
+        const confluencePath = join(fixtureSpec, 'confluence-v2.json');
+        const confluence = JSON.parse(await readFile(confluencePath, 'utf8')) as {
+          paths: Record<string, { get?: Record<string, unknown> }>;
+        };
+        expect(confluence.paths['/admin-key']?.get).toBeDefined();
+        confluence.paths['/admin-key']!.get = {};
+        await writeFile(confluencePath, JSON.stringify(confluence));
+
+        await expect(
+          execFileAsync('python3', [ANALYZER, '--spec-dir', fixtureSpec], {
+            cwd: REPO_ROOT,
+          }),
+        ).rejects.toMatchObject({
+          code: 1,
+          stderr: expect.stringContaining(
+            'confluence-v2: invalid OpenAPI operation GET /admin-key: expected non-empty responses',
+          ),
+        });
+      } finally {
+        await rm(fixtureRoot, { recursive: true, force: true });
+      }
+    },
+    ANALYZER_TIMEOUT_MS,
+  );
+
+  it(
+    'rejects a non-boolean OpenAPI deprecated marker',
+    async () => {
+      const fixtureRoot = await mkdtemp(join(tmpdir(), 'atlassian-api-gap-deprecated-type-'));
+      const fixtureSpec = join(fixtureRoot, 'spec');
+
+      try {
+        await cp(resolve(REPO_ROOT, 'spec'), fixtureSpec, { recursive: true });
+        const confluencePath = join(fixtureSpec, 'confluence-v2.json');
+        const confluence = JSON.parse(await readFile(confluencePath, 'utf8')) as {
+          paths: Record<string, unknown>;
+        };
+        confluence.paths['/invalid-deprecated-contract-test'] = {
+          get: {
+            deprecated: 'false',
+            operationId: 'invalidDeprecatedContractTest',
+            responses: { '200': { description: 'OK' } },
+          },
+        };
+        await writeFile(confluencePath, JSON.stringify(confluence));
+
+        await expect(
+          execFileAsync('python3', [ANALYZER, '--spec-dir', fixtureSpec], {
+            cwd: REPO_ROOT,
+          }),
+        ).rejects.toMatchObject({
+          code: 1,
+          stderr: expect.stringContaining(
+            'confluence-v2: invalid OpenAPI operation GET /invalid-deprecated-contract-test: deprecated must be boolean',
+          ),
+        });
+      } finally {
+        await rm(fixtureRoot, { recursive: true, force: true });
+      }
+    },
+    ANALYZER_TIMEOUT_MS,
+  );
+
+  it(
     'fails when a runtime client base prefix drifts from the reviewed spec route',
     async () => {
       const fixtureRoot = await mkdtemp(join(tmpdir(), 'atlassian-api-gap-source-'));
@@ -245,6 +392,35 @@ describe('api gap analysis', () => {
             /jira-software: 105 ops \| impl \d+ \| MISSING [1-9]\d* \(live [1-9]\d*, dep 0\)/,
           ),
         });
+      } finally {
+        await rm(fixtureRoot, { recursive: true, force: true });
+      }
+    },
+    ANALYZER_TIMEOUT_MS,
+  );
+
+  it(
+    'fails closed when a runtime client base prefix is transformed',
+    async () => {
+      const fixtureRoot = await mkdtemp(join(tmpdir(), 'atlassian-api-gap-source-transform-'));
+      const fixtureSrc = join(fixtureRoot, 'src');
+
+      try {
+        await cp(resolve(REPO_ROOT, 'src'), fixtureSrc, { recursive: true });
+        const jiraClientPath = join(fixtureSrc, 'jira/client.ts');
+        const jiraClient = await readFile(jiraClientPath, 'utf8');
+        const changedClient = jiraClient.replace(
+          'const baseUrl = `${resolved.baseUrl}/rest/api/3`;',
+          'const baseUrl = `${resolved.baseUrl}/rest/api/3`.concat("-wrong");',
+        );
+        expect(changedClient).not.toBe(jiraClient);
+        await writeFile(jiraClientPath, changedClient);
+
+        await expect(
+          execFileAsync('python3', [ANALYZER, '--source-root', fixtureRoot], {
+            cwd: REPO_ROOT,
+          }),
+        ).rejects.toMatchObject({ code: 1 });
       } finally {
         await rm(fixtureRoot, { recursive: true, force: true });
       }
@@ -859,6 +1035,85 @@ ${liveImplementation}
   );
 
   it(
+    'fails closed when a class helper return spread can override its path',
+    async () => {
+      const fixtureRoot = await mkdtemp(join(tmpdir(), 'atlassian-api-gap-helper-spread-'));
+      const fixtureSrc = join(fixtureRoot, 'src');
+
+      try {
+        await cp(resolve(REPO_ROOT, 'src'), fixtureSrc, { recursive: true });
+        const labelsPath = join(fixtureSrc, 'confluence/resources/labels.ts');
+        const labels = await readFile(labelsPath, 'utf8');
+        let changedLabels = labels.replace(
+          '    const query: Query = {};\n    if (params === undefined) return { path: basePath, query };',
+          `    const query: Query = {};
+    const runtimeOverride: Partial<PathAndQuery> = {
+      path: \`\${this.baseUrl}/labels-wrong\`,
+    };
+    if (params === undefined) return { path: basePath, query, ...runtimeOverride };`,
+        );
+        changedLabels = changedLabels.replace(
+          '    return { path, query };\n  }',
+          '    return { path, query, ...runtimeOverride };\n  }',
+        );
+        expect(changedLabels).not.toBe(labels);
+        await writeFile(labelsPath, changedLabels);
+
+        await expect(
+          execFileAsync('python3', [ANALYZER, '--source-root', fixtureRoot], {
+            cwd: REPO_ROOT,
+          }),
+        ).rejects.toMatchObject({
+          code: 1,
+          stdout: expect.stringContaining(
+            'confluence-v2: 218 ops | impl 217 | MISSING 1 (live 1, dep 0)',
+          ),
+        });
+      } finally {
+        await rm(fixtureRoot, { recursive: true, force: true });
+      }
+    },
+    ANALYZER_TIMEOUT_MS,
+  );
+
+  it(
+    'fails closed when a module path helper transforms its base route',
+    async () => {
+      const fixtureRoot = await mkdtemp(join(tmpdir(), 'atlassian-api-gap-module-helper-'));
+      const fixtureSrc = join(fixtureRoot, 'src');
+
+      try {
+        await cp(resolve(REPO_ROOT, 'src'), fixtureSrc, { recursive: true });
+        const notificationPath = join(fixtureSrc, 'jira/resources/notificationscheme.ts');
+        const notificationSchemes = await readFile(notificationPath, 'utf8');
+        const liveReturn = `  path = appendRepeatedParams(path, 'projectId', params?.projectId);
+  return path;`;
+        const changedNotificationSchemes = notificationSchemes.replace(
+          liveReturn,
+          `  path = appendRepeatedParams(path, 'projectId', params?.projectId);
+  return path + '/wrong';`,
+        );
+        expect(changedNotificationSchemes).not.toBe(notificationSchemes);
+        await writeFile(notificationPath, changedNotificationSchemes);
+
+        await expect(
+          execFileAsync('python3', [ANALYZER, '--source-root', fixtureRoot], {
+            cwd: REPO_ROOT,
+          }),
+        ).rejects.toMatchObject({
+          code: 1,
+          stdout: expect.stringMatching(
+            /jira-platform: 617 ops \| impl \d+ \| MISSING 1[1-9] \(live [1-9]\d*, dep 10\)/,
+          ),
+        });
+      } finally {
+        await rm(fixtureRoot, { recursive: true, force: true });
+      }
+    },
+    ANALYZER_TIMEOUT_MS,
+  );
+
+  it(
     'does not count transport request syntax that exists only inside a regex literal',
     async () => {
       const fixtureRoot = await mkdtemp(join(tmpdir(), 'atlassian-api-gap-regex-'));
@@ -978,6 +1233,36 @@ ${liveImplementation}
   );
 
   it(
+    'masks a regex literal after a for-await control head',
+    async () => {
+      await expectAdminKeyMutationToFail(
+        'atlassian-api-gap-regex-for-await-',
+        `    const path = \`\${this.baseUrl}/admin-key\`;
+    for await (const unused of [])
+      /this.transport.request({ method: 'GET', path })/;
+    throw new Error('implementation removed');`,
+      );
+    },
+    ANALYZER_TIMEOUT_MS,
+  );
+
+  it(
+    'masks a regex literal after an ASI break statement',
+    async () => {
+      await expectAdminKeyMutationToFail(
+        'atlassian-api-gap-regex-break-',
+        `    const path = \`\${this.baseUrl}/admin-key\`;
+    do {
+      break
+      /this.transport.request({ method: 'GET', path })/;
+    } while (false);
+    throw new Error('implementation removed');`,
+      );
+    },
+    ANALYZER_TIMEOUT_MS,
+  );
+
+  it(
     'keeps executable requests visible after a regex literal containing a quote',
     async () => {
       const fixtureRoot = await mkdtemp(join(tmpdir(), 'atlassian-api-gap-regex-quote-'));
@@ -1043,6 +1328,16 @@ ${liveImplementation}
     });
     return response.data;`,
     ],
+    [
+      'a transformed conditional branch',
+      `    const response = await this.transport.request<AdminKey>({
+      method: 'GET',
+      path: (false
+        ? \`\${this.baseUrl}/admin-key\`
+        : String(\`\${this.baseUrl}/admin-key/\`).concat('-wrong')),
+    });
+    return response.data;`,
+    ],
   ])(
     'fails closed when a route expression uses %s',
     async (_description, replacement) => {
@@ -1086,6 +1381,97 @@ ${liveImplementation}
   );
 
   it(
+    'fails closed when a computed request getter can override the path',
+    async () => {
+      await expectAdminKeyMutationToFail(
+        'atlassian-api-gap-computed-request-getter-',
+        `    const propertyName: string = 'path';
+    const wrongPath = \`\${this.baseUrl}/admin-key-wrong\`;
+    const response = await this.transport.request<AdminKey>({
+      method: 'GET',
+      path: \`\${this.baseUrl}/admin-key\`,
+      get [propertyName]() {
+        return wrongPath;
+      },
+    });
+    return response.data;`,
+      );
+    },
+    ANALYZER_TIMEOUT_MS,
+  );
+
+  it(
+    'fails closed when array destructuring rewrites a local path',
+    async () => {
+      await expectAdminKeyMutationToFail(
+        'atlassian-api-gap-array-reassignment-',
+        `    let path = \`\${this.baseUrl}/admin-key\`;
+    const wrongPath = \`\${this.baseUrl}/admin-key-wrong\`;
+    [path] = [wrongPath];
+    const response = await this.transport.request<AdminKey>({
+      method: 'GET',
+      path,
+    });
+    return response.data;`,
+      );
+    },
+    ANALYZER_TIMEOUT_MS,
+  );
+
+  it(
+    'fails closed when object destructuring rewrites a local path',
+    async () => {
+      await expectAdminKeyMutationToFail(
+        'atlassian-api-gap-object-reassignment-',
+        `    let path = \`\${this.baseUrl}/admin-key\`;
+    ({ path } = { path: \`\${this.baseUrl}/admin-key-wrong\` });
+    const response = await this.transport.request<AdminKey>({
+      method: 'GET',
+      path,
+    });
+    return response.data;`,
+      );
+    },
+    ANALYZER_TIMEOUT_MS,
+  );
+
+  it(
+    'discovers requests whose generic contains a function type',
+    async () => {
+      const fixtureRoot = await mkdtemp(join(tmpdir(), 'atlassian-api-gap-function-generic-'));
+      const fixtureSrc = join(fixtureRoot, 'src');
+
+      try {
+        await cp(resolve(REPO_ROOT, 'src'), fixtureSrc, { recursive: true });
+        const adminKeyPath = join(fixtureSrc, 'confluence/resources/admin-key.ts');
+        const adminKey = await readFile(adminKeyPath, 'utf8');
+        const changedAdminKey = adminKey.replace(
+          ADMIN_KEY_GET_IMPLEMENTATION,
+          `    await this.transport.request<{ map: (value: string) => string }>({
+      method: 'GET',
+      path: \`\${this.baseUrl}/admin-key-unexpected\`,
+    });
+${ADMIN_KEY_GET_IMPLEMENTATION}`,
+        );
+        expect(changedAdminKey).not.toBe(adminKey);
+        await writeFile(adminKeyPath, changedAdminKey);
+
+        await expect(
+          execFileAsync('python3', [ANALYZER, '--source-root', fixtureRoot], {
+            cwd: REPO_ROOT,
+          }),
+        ).rejects.toMatchObject({
+          code: 1,
+          stdout: expect.stringContaining('1 /wiki/api/v2'),
+        });
+      } finally {
+        await rm(fixtureRoot, { recursive: true, force: true });
+      }
+    },
+    ANALYZER_TIMEOUT_MS,
+  );
+
+  it(
     'does not count a request inside a statically dead block',
     async () => {
       await expectAdminKeyMutationToFail(
@@ -1097,6 +1483,41 @@ ${liveImplementation}
       });
     }
     throw new Error('implementation removed');`,
+      );
+    },
+    ANALYZER_TIMEOUT_MS,
+  );
+
+  it(
+    'does not count a request after an unconditional throw',
+    async () => {
+      await expectAdminKeyMutationToFail(
+        'atlassian-api-gap-dead-after-throw-',
+        `    throw new Error('implementation removed');
+    const response = await this.transport.request<AdminKey>({
+      method: 'GET',
+      path: \`\${this.baseUrl}/admin-key\`,
+    });
+    return response.data;`,
+      );
+    },
+    ANALYZER_TIMEOUT_MS,
+  );
+
+  it(
+    'does not count a request in the dead else branch of a literal-true condition',
+    async () => {
+      await expectAdminKeyMutationToFail(
+        'atlassian-api-gap-dead-else-',
+        `    if (true) {
+      throw new Error('implementation removed');
+    } else {
+      const response = await this.transport.request<AdminKey>({
+        method: 'GET',
+        path: \`\${this.baseUrl}/admin-key\`,
+      });
+      return response.data;
+    }`,
       );
     },
     ANALYZER_TIMEOUT_MS,
@@ -1117,6 +1538,46 @@ ${liveImplementation}
           `    const wrongAdminBaseUrl = \`\${resolved.baseUrl}/wiki/api/v9\`;
     this.adminKey = new AdminKeyResource(transport, wrongAdminBaseUrl);
     if (false) void new AdminKeyResource(transport, baseUrl);`,
+        );
+        expect(changedClient).not.toBe(client);
+        await writeFile(clientPath, changedClient);
+
+        await expect(
+          execFileAsync('python3', [ANALYZER, '--source-root', fixtureRoot], {
+            cwd: REPO_ROOT,
+          }),
+        ).rejects.toMatchObject({
+          code: 1,
+          stdout: expect.stringMatching(
+            /confluence-v2: 218 ops \| impl \d+ \| MISSING [1-9]\d* \(live [1-9]\d*, dep \d+\)/,
+          ),
+        });
+      } finally {
+        await rm(fixtureRoot, { recursive: true, force: true });
+      }
+    },
+    ANALYZER_TIMEOUT_MS,
+  );
+
+  it(
+    'fails closed on unsupported live resource wiring and ignores dead wiring',
+    async () => {
+      const fixtureRoot = await mkdtemp(join(tmpdir(), 'atlassian-api-gap-conditional-wiring-'));
+      const fixtureSrc = join(fixtureRoot, 'src');
+
+      try {
+        await cp(resolve(REPO_ROOT, 'src'), fixtureSrc, { recursive: true });
+        const clientPath = join(fixtureSrc, 'confluence/client.ts');
+        const client = await readFile(clientPath, 'utf8');
+        const changedClient = client.replace(
+          '    this.adminKey = new AdminKeyResource(transport, baseUrl);',
+          `    const wrongAdminBaseUrl = \`\${resolved.baseUrl}/wiki/api/v9\`;
+    this.adminKey = true
+      ? new AdminKeyResource(transport, wrongAdminBaseUrl)
+      : new AdminKeyResource(transport, wrongAdminBaseUrl);
+    if (false) {
+      this.adminKey = new AdminKeyResource(transport, baseUrl);
+    }`,
         );
         expect(changedClient).not.toBe(client);
         await writeFile(clientPath, changedClient);

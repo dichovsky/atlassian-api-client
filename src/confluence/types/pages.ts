@@ -41,6 +41,22 @@ export type ListPagesSortOrder =
  */
 export type PageBodyWriteRepresentation = 'storage' | 'atlas_doc_format' | 'wiki';
 
+/** Flat body shape accepted by the current `PageCreateRequest` contract. */
+export interface PageBodyWrite {
+  readonly representation?: PageBodyWriteRepresentation;
+  readonly value?: string;
+}
+
+/**
+ * Nested page-create body shape. Only one representation key should normally
+ * be supplied, matching the OpenAPI `PageNestedBodyWrite` description.
+ */
+export interface PageNestedBodyWrite {
+  readonly storage?: PageBodyWrite;
+  readonly atlas_doc_format?: PageBodyWrite;
+  readonly wiki?: PageBodyWrite;
+}
+
 /** Confluence Page. Covers fields from both `PageBulk` and `PageSingle` schemas. */
 export interface Page {
   readonly id: string;
@@ -138,22 +154,24 @@ export interface CreatePageParams {
   readonly 'root-level'?: boolean;
 }
 
-/** Request body for creating a Confluence page (`POST /pages`). */
-export interface CreatePageData {
+interface CreatePageDataBase {
   readonly spaceId: string;
-  readonly title: string;
   readonly parentId?: string;
-  readonly status?: 'current' | 'draft';
   /**
    * Pass `'live'` to create a live doc. Omit for a standard page.
    * Only `'live'` is a valid value per spec.
    */
   readonly subtype?: 'live';
-  readonly body?: {
-    readonly representation: PageBodyWriteRepresentation;
-    readonly value: string;
-  };
+  readonly body?: PageBodyWrite | PageNestedBodyWrite;
 }
+
+/**
+ * Request body for creating a Confluence page (`POST /pages`). A title is
+ * required for the default/current status but optional for draft creation.
+ */
+export type CreatePageData =
+  | (CreatePageDataBase & { readonly status: 'draft'; readonly title?: string })
+  | (CreatePageDataBase & { readonly status?: 'current'; readonly title: string });
 
 /**
  * Request body for updating a Confluence page (`PUT /pages/{id}`).

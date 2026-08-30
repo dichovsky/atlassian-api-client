@@ -214,6 +214,28 @@ describe('PagesResource', () => {
         body: data,
       });
     });
+
+    it('accepts a draft without a title and a nested body', async () => {
+      transport.respondWith(makePage('101'));
+      const data = {
+        spaceId: 'SPACE',
+        status: 'draft' as const,
+        body: {
+          atlas_doc_format: {
+            representation: 'atlas_doc_format' as const,
+            value: '{"type":"doc"}',
+          },
+        },
+      };
+
+      await pages.create(data);
+
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'POST',
+        path: `${BASE_URL}/pages`,
+        body: data,
+      });
+    });
   });
 
   // ── update ────────────────────────────────────────────────────────────────

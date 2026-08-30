@@ -106,6 +106,40 @@ describe('parseCommand', () => {
     expect(result.options['jql']).toBe('project = PROJ AND status = Open');
   });
 
+  it('parses every Jira search parity flag, including GET fail-fast', () => {
+    const result = parseCommand([
+      'node',
+      'atlas',
+      'jira',
+      'search',
+      'jql-get',
+      '--start-at',
+      '10',
+      '--expand',
+      'names,changelog',
+      '--validate-query',
+      'warn',
+      '--properties',
+      'release.owner,release.risk',
+      '--fields-by-keys',
+      '--reconcile-issues',
+      '10001,10002',
+      '--fail-fast',
+    ]);
+
+    expect(result.resource).toBe('search');
+    expect(result.action).toBe('jql-get');
+    expect(result.options).toMatchObject({
+      'start-at': '10',
+      expand: 'names,changelog',
+      'validate-query': 'warn',
+      properties: 'release.owner,release.risk',
+      'fields-by-keys': true,
+      'reconcile-issues': '10001,10002',
+      'fail-fast': true,
+    });
+  });
+
   it('parses format short flag -f', () => {
     // Arrange
     const argv = ['node', 'atlas', 'jira', 'projects', 'list', '-f', 'minimal'];
@@ -1069,6 +1103,12 @@ describe('parseCommand', () => {
       '--no-include-version',
       '--embedded',
       '--root-level',
+      '--body-json',
+      '{"storage":{"representation":"storage","value":"body"}}',
+      '--body-representation',
+      'wiki',
+      '--subtype',
+      'live',
       '--completed-at-from',
       '1700000000000',
       '--completed-at-to',
@@ -1085,6 +1125,9 @@ describe('parseCommand', () => {
       'no-include-version': true,
       embedded: true,
       'root-level': true,
+      'body-json': '{"storage":{"representation":"storage","value":"body"}}',
+      'body-representation': 'wiki',
+      subtype: 'live',
       'completed-at-from': '1700000000000',
       'completed-at-to': '1710000000000',
     });

@@ -1595,6 +1595,59 @@ describe('executeConfluenceCommand', () => {
       );
     });
 
+    it('pages create forwards draft, parent, subtype, and body representation', async () => {
+      confluencePagesMock.create.mockResolvedValue({ id: '1' });
+
+      await executeConfluenceCommand(
+        cmd('pages', 'create', [], {
+          'space-id': 'S1',
+          status: 'draft',
+          'parent-id': 'P1',
+          subtype: 'live',
+          body: 'draft body',
+          'body-representation': 'wiki',
+        }),
+        GLOBALS,
+      );
+
+      expect(confluencePagesMock.create).toHaveBeenCalledWith({
+        spaceId: 'S1',
+        status: 'draft',
+        parentId: 'P1',
+        subtype: 'live',
+        body: { representation: 'wiki', value: 'draft body' },
+      });
+    });
+
+    it('pages create accepts a nested body from --body-json', async () => {
+      confluencePagesMock.create.mockResolvedValue({ id: '1' });
+
+      await executeConfluenceCommand(
+        cmd('pages', 'create', [], {
+          'space-id': 'S1',
+          title: 'Nested body',
+          'body-json': JSON.stringify({
+            atlas_doc_format: {
+              representation: 'atlas_doc_format',
+              value: '{"type":"doc"}',
+            },
+          }),
+        }),
+        GLOBALS,
+      );
+
+      expect(confluencePagesMock.create).toHaveBeenCalledWith({
+        spaceId: 'S1',
+        title: 'Nested body',
+        body: {
+          atlas_doc_format: {
+            representation: 'atlas_doc_format',
+            value: '{"type":"doc"}',
+          },
+        },
+      });
+    });
+
     it('pages create forwards embedded, private, and root-level query flags', async () => {
       confluencePagesMock.create.mockResolvedValue({ id: '1' });
 
@@ -1623,6 +1676,93 @@ describe('executeConfluenceCommand', () => {
     it('pages create throws when title is missing', async () => {
       const parsed = cmd('pages', 'create', [], { 'space-id': 'S1' });
       await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow('--title');
+    });
+
+    it('pages create rejects conflicting plain and JSON body flags', async () => {
+      const parsed = cmd('pages', 'create', [], {
+        'space-id': 'S1',
+        title: 'Page',
+        body: 'plain',
+        'body-json': '{}',
+      });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        '--body and --body-json cannot be used together',
+      );
+    });
+
+    it('pages create rejects body representation without a plain body', async () => {
+      const parsed = cmd('pages', 'create', [], {
+        'space-id': 'S1',
+        title: 'Page',
+        'body-representation': 'wiki',
+      });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        '--body-representation requires --body',
+      );
+    });
+
+    it('pages create rejects body representation together with JSON body', async () => {
+      const parsed = cmd('pages', 'create', [], {
+        'space-id': 'S1',
+        title: 'Page',
+        'body-json': '{}',
+        'body-representation': 'wiki',
+      });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        '--body-representation cannot be used with --body-json',
+      );
+    });
+
+    it.each(['{broken', 'null', '42', '[]'])(
+      'pages create rejects invalid or non-object --body-json value %s',
+      async (bodyJson) => {
+        const parsed = cmd('pages', 'create', [], {
+          'space-id': 'S1',
+          title: 'Page',
+          'body-json': bodyJson,
+        });
+        await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+          '--body-json must be a valid JSON object',
+        );
+      },
+    );
+
+    it('pages create preserves an optional title on a draft', async () => {
+      confluencePagesMock.create.mockResolvedValue({ id: '1' });
+
+      await executeConfluenceCommand(
+        cmd('pages', 'create', [], {
+          'space-id': 'S1',
+          status: 'draft',
+          title: 'Named draft',
+        }),
+        GLOBALS,
+      );
+
+      expect(confluencePagesMock.create).toHaveBeenCalledWith({
+        spaceId: 'S1',
+        status: 'draft',
+        title: 'Named draft',
+      });
+    });
+
+    it('pages create forwards an explicit current status', async () => {
+      confluencePagesMock.create.mockResolvedValue({ id: '1' });
+
+      await executeConfluenceCommand(
+        cmd('pages', 'create', [], {
+          'space-id': 'S1',
+          status: 'current',
+          title: 'Published page',
+        }),
+        GLOBALS,
+      );
+
+      expect(confluencePagesMock.create).toHaveBeenCalledWith({
+        spaceId: 'S1',
+        status: 'current',
+        title: 'Published page',
+      });
     });
 
     it('pages update calls client.pages.update with required body (B1055/4)', async () => {
@@ -11419,27 +11559,39 @@ describe('executeJiraCommand', () => {
       ).rejects.toThrow('Unknown search action: made-up');
     });
 
-    it('search passes max-results and fields options', async () => {
-      // Arrange
-      jiraSearchMock.searchJqlGet.mockResolvedValue({ issues: [] });
-      const parsed = cmd('search', '', [], {
-        jql: 'project = PROJ',
-        'max-results': '25',
-        fields: 'summary,status',
-      });
+    it.each(['', 'query', 'search'])(
+      'search action %j forwards every current GET search parameter',
+      async (action) => {
+        jiraSearchMock.searchJqlGet.mockResolvedValue({ issues: [] });
 
-      // Act
-      await executeJiraCommand(parsed, GLOBALS);
+        await executeJiraCommand(
+          cmd('search', action, [], {
+            jql: 'project = PROJ',
+            'next-page-token': 'tok-2',
+            'max-results': '25',
+            fields: 'summary,status',
+            expand: 'names,changelog',
+            properties: 'release.owner,release.risk',
+            'fields-by-keys': true,
+            'reconcile-issues': '10001,10002',
+            'fail-fast': true,
+          }),
+          GLOBALS,
+        );
 
-      // Assert
-      expect(jiraSearchMock.searchJqlGet).toHaveBeenCalledWith(
-        expect.objectContaining({
+        expect(jiraSearchMock.searchJqlGet).toHaveBeenCalledWith({
           jql: 'project = PROJ',
+          nextPageToken: 'tok-2',
           maxResults: 25,
           fields: ['summary', 'status'],
-        }),
-      );
-    });
+          expand: ['names', 'changelog'],
+          properties: ['release.owner', 'release.risk'],
+          fieldsByKeys: true,
+          reconcileIssues: [10001, 10002],
+          failFast: true,
+        });
+      },
+    );
 
     it.each(['', 'query', 'search'])(
       'search action %j forwards the cursor needed for page two',
@@ -11460,31 +11612,107 @@ describe('executeJiraCommand', () => {
       },
     );
 
-    it('search action=get calls searchGet with jql', async () => {
+    it('search action=get forwards every legacy GET search parameter', async () => {
       // Arrange
       jiraSearchMock.searchGet.mockResolvedValue({ issues: [], startAt: 0, maxResults: 50 });
-      const parsed = cmd('search', 'get', [], { jql: 'project = PROJ' });
+      const parsed = cmd('search', 'get', [], {
+        jql: 'project = PROJ',
+        'start-at': '10',
+        'max-results': '25',
+        fields: 'summary,status',
+        expand: 'names,changelog',
+        'validate-query': 'warn',
+        properties: 'release.owner,release.risk',
+        'fields-by-keys': true,
+      });
 
       // Act
       const result = await executeJiraCommand(parsed, GLOBALS);
 
       // Assert
-      expect(jiraSearchMock.searchGet).toHaveBeenCalledWith(
-        expect.objectContaining({ jql: 'project = PROJ' }),
-      );
+      expect(jiraSearchMock.searchGet).toHaveBeenCalledWith({
+        jql: 'project = PROJ',
+        startAt: 10,
+        maxResults: 25,
+        fields: ['summary', 'status'],
+        expand: ['names', 'changelog'],
+        validateQuery: 'warn',
+        properties: ['release.owner', 'release.risk'],
+        fieldsByKeys: true,
+      });
       expect(result).toMatchObject({ issues: [] });
     });
 
-    it('search action=legacy-post keeps the deprecated POST route explicitly reachable', async () => {
+    it('search action=legacy-post forwards every legacy POST search parameter', async () => {
       jiraSearchMock.search.mockResolvedValue({ issues: [] });
+      await executeJiraCommand(
+        cmd('search', 'legacy-post', [], {
+          jql: 'project = PROJ',
+          'start-at': '5',
+          'max-results': '50',
+          fields: 'summary,status',
+          expand: 'names',
+          'validate-query': 'strict',
+          properties: 'release.owner',
+          'fields-by-keys': true,
+        }),
+        GLOBALS,
+      );
+      expect(jiraSearchMock.search).toHaveBeenCalledWith({
+        jql: 'project = PROJ',
+        startAt: 5,
+        maxResults: 50,
+        fields: ['summary', 'status'],
+        expand: ['names'],
+        validateQuery: 'strict',
+        properties: ['release.owner'],
+        fieldsByKeys: true,
+      });
+    });
+
+    it('legacy search actions reject unsupported validate-query values', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('search', 'get', [], {
+            jql: 'project = PROJ',
+            'validate-query': 'sometimes',
+          }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--validate-query must be one of: strict, warn, none, true, false');
+    });
+
+    it('legacy search omits validateQuery when the flag is absent', async () => {
+      jiraSearchMock.search.mockResolvedValue({ issues: [] });
+
       await executeJiraCommand(
         cmd('search', 'legacy-post', [], { jql: 'project = PROJ' }),
         GLOBALS,
       );
+
       expect(jiraSearchMock.search).toHaveBeenCalledWith(
-        expect.objectContaining({ jql: 'project = PROJ' }),
+        expect.objectContaining({ validateQuery: undefined }),
       );
     });
+
+    it.each(['strict', 'warn', 'none', 'true', 'false'])(
+      'legacy search accepts validate-query=%s',
+      async (validation) => {
+        jiraSearchMock.search.mockResolvedValue({ issues: [] });
+
+        await executeJiraCommand(
+          cmd('search', 'legacy-post', [], {
+            jql: 'project = PROJ',
+            'validate-query': validation,
+          }),
+          GLOBALS,
+        );
+
+        expect(jiraSearchMock.search).toHaveBeenCalledWith(
+          expect.objectContaining({ validateQuery: validation }),
+        );
+      },
+    );
 
     it('search action=get throws when --jql is missing', async () => {
       await expect(executeJiraCommand(cmd('search', 'get', [], {}), GLOBALS)).rejects.toThrow(
@@ -11520,6 +11748,10 @@ describe('executeJiraCommand', () => {
         fields: 'summary,status',
         expand: 'changelog',
         'next-page-token': 'tok-2',
+        properties: 'release.owner,release.risk',
+        'fields-by-keys': true,
+        'reconcile-issues': '10001,10002',
+        'fail-fast': true,
       });
 
       // Act
@@ -11533,6 +11765,10 @@ describe('executeJiraCommand', () => {
           fields: ['summary', 'status'],
           expand: ['changelog'],
           nextPageToken: 'tok-2',
+          properties: ['release.owner', 'release.risk'],
+          fieldsByKeys: true,
+          reconcileIssues: [10001, 10002],
+          failFast: true,
         }),
       );
     });
@@ -11543,6 +11779,9 @@ describe('executeJiraCommand', () => {
       const parsed = cmd('search', 'jql-post', [], {
         jql: 'project = PROJ AND assignee = currentUser()',
         'max-results': '25',
+        properties: 'release.owner,release.risk',
+        'fields-by-keys': true,
+        'reconcile-issues': '10003,10004',
       });
 
       // Act
@@ -11553,8 +11792,17 @@ describe('executeJiraCommand', () => {
         expect.objectContaining({
           jql: 'project = PROJ AND assignee = currentUser()',
           maxResults: 25,
+          properties: ['release.owner', 'release.risk'],
+          fieldsByKeys: true,
+          reconcileIssues: [10003, 10004],
         }),
       );
+    });
+
+    it.each(['jql-get', 'jql-post'])('%s rejects invalid reconcile issue IDs', async (action) => {
+      await expect(
+        executeJiraCommand(cmd('search', action, [], { 'reconcile-issues': '10001,0' }), GLOBALS),
+      ).rejects.toThrow('--reconcile-issues must be a comma-separated list of positive integers');
     });
   });
 

@@ -29,7 +29,10 @@ const GLOBAL_OPTIONS = {
   title: { type: 'string' as const },
   status: { type: 'string' as const },
   body: { type: 'string' as const },
+  'body-json': { type: 'string' as const },
+  'body-representation': { type: 'string' as const },
   'body-format': { type: 'string' as const },
+  subtype: { type: 'string' as const },
   purge: { type: 'boolean' as const },
   jql: { type: 'string' as const },
   project: { type: 'string' as const },
@@ -138,6 +141,9 @@ const GLOBAL_OPTIONS = {
   // so disabling validation is only reachable via `--validate-query false`.
   // Registered `string` so the `false` case isn't lost to positionals.
   'validate-query': { type: 'string' as const },
+  // Enhanced GET /search/jql returns partial results by default; opt in to
+  // failing on the first search error.
+  'fail-fast': { type: 'boolean' as const },
   // blog-posts sub-resource flags (B066-B084)
   'resolution-status': { type: 'string' as const },
   // `redact` convenience overrides — when set, these merge into the

@@ -52,26 +52,9 @@ HTTP_METHODS = {
     "delete", "get", "head", "options", "patch", "post", "put", "trace",
 }
 
-ROUTE_PRESERVING_WRAPPERS = {
+ROUTE_PRESERVING_PRIMITIVES = {
     "appendRepeatedParams",
     "appendScalarOrArrayParam",
-    "buildAvailablePrioritiesPath",
-    "buildBulkPath",
-    "buildGetSecurityLevelMembersPath",
-    "buildGetSecurityLevelsPath",
-    "buildListAll",
-    "buildListMembersPath",
-    "buildListPath",
-    "buildListProjectsPath",
-    "buildProjectPath",
-    "buildProjectsPath",
-    "buildSchemeFieldsPath",
-    "buildSchemeProjectsPath",
-    "buildScreensPath",
-    "buildScreenTabsPath",
-    "buildSearchPath",
-    "buildSpaces",
-    "buildTasksQuery",
 }
 
 def match_close(s, start, op, cl):
@@ -81,6 +64,37 @@ def match_close(s, start, op, cl):
         elif s[i] == cl:
             depth -= 1
             if depth == 0: return i + 1
+    return -1
+
+def match_open(s, end, op, cl):
+    """Return the opening delimiter paired with ``s[end]``."""
+    depth = 0
+    for index in range(end, -1, -1):
+        if s[index] == cl:
+            depth += 1
+        elif s[index] == op:
+            depth -= 1
+            if depth == 0:
+                return index
+    return -1
+
+def match_type_arguments_end(code, start):
+    """Return the offset after a TypeScript type-argument list.
+
+    Unlike a generic delimiter matcher, this must not treat the ``>`` in an
+    arrow token (``=>``) as the end of ``request<{ fn: () => value }>(...)``.
+    The input is the literal-masked code view, so angle brackets here are
+    executable TypeScript punctuation rather than string content.
+    """
+    depth = 0
+    for index in range(start, len(code)):
+        token = code[index]
+        if token == "<":
+            depth += 1
+        elif token == ">" and not (index > start and code[index - 1] == "="):
+            depth -= 1
+            if depth == 0:
+                return index + 1
     return -1
 
 def find_request_call_objects(code):
@@ -97,7 +111,7 @@ def find_request_call_objects(code):
         while cursor < len(code) and code[cursor].isspace():
             cursor += 1
         if cursor < len(code) and code[cursor] == "<":
-            cursor = match_close(code, cursor, "<", ">")
+            cursor = match_type_arguments_end(code, cursor)
             if cursor == -1:
                 continue
             while cursor < len(code) and code[cursor].isspace():
@@ -201,13 +215,29 @@ def lex_ts_source(source):
                 "for", "if", "while", "with",
             }:
                 return True
+            if "".join(code_chars[keyword_start:keyword_end]) == "await":
+                previous_end = keyword_start
+                while previous_end > 0 and code_chars[previous_end - 1].isspace():
+                    previous_end -= 1
+                previous_start = previous_end
+                while (
+                    previous_start > 0
+                    and (
+                        code_chars[previous_start - 1].isalnum()
+                        or code_chars[previous_start - 1] in "_$"
+                    )
+                ):
+                    previous_start -= 1
+                if "".join(code_chars[previous_start:previous_end]) == "for":
+                    return True
         end = previous + 1
         while previous >= 0 and (code_chars[previous].isalnum() or code_chars[previous] in "_$"):
             previous -= 1
         keyword = "".join(code_chars[previous + 1:end])
         return keyword in {
-            "await", "case", "delete", "do", "else", "in", "instanceof",
-            "of", "return", "throw", "typeof", "void", "yield",
+            "await", "break", "case", "continue", "debugger", "delete", "do",
+            "else", "in", "instanceof", "of", "return", "throw", "typeof",
+            "void", "yield",
         }
 
     while i < len(source):
@@ -371,25 +401,55 @@ def parse_base_suffixes(client_src, client_code):
             )
 
     resolved = {}
+
+    def resolved_suffixes(expr, expr_code):
+        """Resolve only route-preserving tenant-base branches of an initializer."""
+        assert len(expr) == len(expr_code)
+        leading = len(expr) - len(expr.lstrip())
+        trailing = len(expr.rstrip())
+        expr = expr[leading:trailing]
+        expr_code = expr_code[leading:trailing]
+        if expr_code.startswith("(") and match_close(
+            expr_code, 0, "(", ")"
+        ) == len(expr_code):
+            return resolved_suffixes(expr[1:-1], expr_code[1:-1])
+        ternary = top_level_ternary(expr_code)
+        if ternary:
+            true_result = resolved_suffixes(
+                expr[ternary[0] + 1:ternary[1]],
+                expr_code[ternary[0] + 1:ternary[1]],
+            )
+            false_result = resolved_suffixes(
+                expr[ternary[1] + 1:],
+                expr_code[ternary[1] + 1:],
+            )
+            if true_result is None or false_result is None:
+                return None
+            return true_result | false_result
+
+        matches = list(executable_template_matches(expr, expr_code))
+        if matches:
+            if not direct_template_usage_is_safe(expr, expr_code, matches):
+                return None
+            return {
+                match.group(1)[len("${resolved.baseUrl}"):]
+                for match in matches
+                if match.group(1).startswith("${resolved.baseUrl}")
+            }
+
+        stripped = strip_enclosing_parens(expr_code)
+        if stripped in resolved:
+            return {resolved[stripped]}
+        if re.fullmatch(r"(?:null|undefined)", stripped):
+            return set()
+        return set()
+
     pending = dict(initializers)
     while pending:
         progressed = False
         for name, (expr, expr_code) in list(pending.items()):
-            candidates = {
-                match.group(1)[len("${resolved.baseUrl}"):]
-                for match in executable_template_matches(expr, expr_code)
-                if match.group(1).startswith("${resolved.baseUrl}")
-            }
-            alias_chars = list(expr_code)
-            for match in executable_template_matches(expr, expr_code):
-                for index in range(match.start(), match.end()):
-                    if alias_chars[index] not in {"\n", "\r"}:
-                        alias_chars[index] = " "
-            alias_expr = "".join(alias_chars)
-            for ident in re.findall(r"\b[A-Za-z_][A-Za-z0-9_]*\b", alias_expr):
-                if ident in resolved:
-                    candidates.add(resolved[ident])
-            if len(candidates) == 1:
+            candidates = resolved_suffixes(expr, expr_code)
+            if candidates is not None and len(candidates) == 1:
                 resolved[name] = candidates.pop()
                 del pending[name]
                 progressed = True
@@ -400,16 +460,38 @@ def parse_base_suffixes(client_src, client_code):
 def parse_wiring(client_src, client_code, varmap):
     assert len(client_src) == len(client_code), "source/code views must stay aligned"
     wiring = {}
-    for m in re.finditer(
-        r"\bthis\.[A-Za-z_][A-Za-z0-9_]*\s*=\s*"
-        r"new\s+([A-Z][A-Za-z0-9]*Resource)\s*\(",
+    for assignment in re.finditer(
+        r"\bthis\.[A-Za-z_][A-Za-z0-9_]*\s*=(?!=|>)",
         client_code,
     ):
-        op = client_code.index("(", m.end()-1)
-        end = match_close(client_code, op, "(", ")")
+        if statically_dead_at(client_code, assignment.start()):
+            continue
+        statement_end = find_statement_end(client_code, assignment.end())
+        if statement_end == -1:
+            continue
+        rhs_code = client_code[assignment.end():statement_end]
+        rhs_src = client_src[assignment.end():statement_end]
+        constructors = set(re.findall(
+            r"\bnew\s+([A-Z][A-Za-z0-9]*Resource)\s*\(", rhs_code
+        ))
+        if not constructors:
+            continue
+        direct = re.match(
+            r"\s*new\s+([A-Z][A-Za-z0-9]*Resource)\s*\(", rhs_code
+        )
+        if not direct:
+            for resource in constructors:
+                wiring[resource] = [("UNKNOWN", "unsupported-resource-wiring")]
+            continue
+        op = rhs_code.index("(", direct.end() - 1)
+        end = match_close(rhs_code, op, "(", ")")
+        if end == -1 or rhs_code[end:].strip():
+            for resource in constructors:
+                wiring[resource] = [("UNKNOWN", "unsupported-resource-wiring")]
+            continue
         args = split_top_commas_aligned(
-            client_src[op+1:end-1],
-            client_code[op+1:end-1],
+            rhs_src[op+1:end-1],
+            rhs_code[op+1:end-1],
         )
         base_args = []
         for arg_src, arg_code in args[1:]:
@@ -420,7 +502,7 @@ def parse_wiring(client_src, client_code, varmap):
                 base_args.append(parse_object_literal(arg_src, arg_code, varmap))
             else:
                 base_args.append(("UNKNOWN", arg_src.strip()))
-        resource = m.group(1)
+        resource = direct.group(1)
         wiring[resource] = (
             [("UNKNOWN", "duplicate-resource-wiring")]
             if resource in wiring else base_args
@@ -516,6 +598,20 @@ def visible_assignments(assignments, local_code):
     )
     return [closest[1:]]
 
+def has_destructuring_write(code, ident, start=0):
+    """Detect an assignment target that can rewrite ``ident`` indirectly."""
+    target = re.escape(ident)
+    assignment = re.compile(
+        r"(?:\[[^\]\n;]*\b" + target + r"\b[^\]\n;]*\]"
+        r"|\{[^}\n;]*\b" + target + r"\b[^}\n;]*\})\s*=(?!=|>)"
+    )
+    for write in assignment.finditer(code, start):
+        prefix = code[max(0, write.start() - 24):write.start()]
+        if re.search(r"\b(?:const|let|var)\s*$", prefix):
+            continue
+        return True
+    return False
+
 def strip_enclosing_parens(code):
     """Remove grouping parentheses that enclose the complete expression."""
     stripped = code.strip()
@@ -550,9 +646,63 @@ def has_top_level_choice(code):
             return True
     return False
 
-def direct_template_usage_is_safe(expr, expr_code, matches):
+def top_level_ternary(code):
+    """Return the question/colon offsets for a top-level ternary expression."""
+    depth = {"(": 0, "{": 0, "[": 0}
+    pairs = {")": "(", "}": "{", "]": "["}
+    question = None
+    nested = 0
+    for index, token in enumerate(code):
+        if token in depth:
+            depth[token] += 1
+            continue
+        if token in pairs:
+            opener = pairs[token]
+            if depth[opener] > 0:
+                depth[opener] -= 1
+            continue
+        if any(depth.values()):
+            continue
+        if token == "?" and (index + 1 >= len(code) or code[index + 1] != "."):
+            if question is None:
+                question = index
+            else:
+                nested += 1
+        elif token == ":" and question is not None:
+            if nested == 0:
+                return question, index
+            nested -= 1
+    return None
+
+def direct_template_usage_is_safe(
+    expr,
+    expr_code,
+    matches,
+    definitions=None,
+    definitions_code=None,
+    helper_stack=None,
+):
     """Prove route templates are not transformed before transport use."""
-    matches = list(matches)
+    assert len(expr) == len(expr_code), "source/code views must stay aligned"
+    leading = len(expr) - len(expr.lstrip())
+    trailing = len(expr.rstrip())
+    expr = expr[leading:trailing]
+    expr_code = expr_code[leading:trailing]
+    if expr_code.startswith("(") and match_close(
+        expr_code, 0, "(", ")"
+    ) == len(expr_code):
+        inner_expr = expr[1:-1]
+        inner_code = expr_code[1:-1]
+        return direct_template_usage_is_safe(
+            inner_expr,
+            inner_code,
+            executable_template_matches(inner_expr, inner_code),
+            definitions,
+            definitions_code,
+            helper_stack,
+        )
+
+    matches = list(executable_template_matches(expr, expr_code))
     if not matches:
         return False
     skeleton_parts = []
@@ -562,29 +712,85 @@ def direct_template_usage_is_safe(expr, expr_code, matches):
         skeleton_parts.append(" __ROUTE__ ")
         previous = match.end()
     skeleton_parts.append(expr_code[previous:])
-    skeleton = strip_enclosing_parens("".join(skeleton_parts))
+    skeleton = "".join(skeleton_parts).strip()
 
     if re.fullmatch(r"__ROUTE__(?:\s+as\s+(?:const|string))?", skeleton):
         return True
-    if re.search(r"__ROUTE__\s*(?:\?\.|\.|\[)", skeleton):
-        return False
-    if has_top_level_choice(expr_code):
-        return (
-            len(matches) >= 2
-            and route_templates_agree({match.group(1) for match in matches})
-            and "," not in strip_enclosing_parens(expr_code)
+    ternary = top_level_ternary(expr_code)
+    if ternary:
+        true_expr = expr[ternary[0] + 1:ternary[1]]
+        true_code = expr_code[ternary[0] + 1:ternary[1]]
+        false_expr = expr[ternary[1] + 1:]
+        false_code = expr_code[ternary[1] + 1:]
+        true_matches = list(executable_template_matches(true_expr, true_code))
+        false_matches = list(executable_template_matches(false_expr, false_code))
+        branch_candidates = {
+            match.group(1) for match in true_matches + false_matches
+        }
+        return bool(
+            true_matches
+            and false_matches
+            and len(true_matches) + len(false_matches) == len(matches)
+            and route_templates_agree(branch_candidates)
+            and direct_template_usage_is_safe(
+                true_expr,
+                true_code,
+                true_matches,
+                definitions,
+                definitions_code,
+                helper_stack,
+            )
+            and direct_template_usage_is_safe(
+                false_expr,
+                false_code,
+                false_matches,
+                definitions,
+                definitions_code,
+                helper_stack,
+            )
         )
+    if has_top_level_choice(expr_code) or re.search(
+        r"__ROUTE__\s*(?:\?\.|\.|\[)", skeleton
+    ):
+        return False
 
-    wrapper = re.match(r"([A-Za-z_][A-Za-z0-9_]*)\s*\(", skeleton)
-    if not wrapper or wrapper.group(1) not in ROUTE_PRESERVING_WRAPPERS:
+    wrapper = re.match(r"([A-Za-z_][A-Za-z0-9_]*)\s*\(", expr_code)
+    if not wrapper:
         return False
-    open_paren = skeleton.index("(", wrapper.start())
-    close = match_close(skeleton, open_paren, "(", ")")
-    if close != len(skeleton):
+    wrapper_name = wrapper.group(1)
+    if (
+        wrapper_name not in ROUTE_PRESERVING_PRIMITIVES
+        and not helper_preserves_first_parameter(
+            definitions,
+            definitions_code,
+            wrapper_name,
+            helper_stack,
+        )
+    ):
         return False
-    args_code = skeleton[open_paren + 1:close - 1]
-    first_arg = split_top_commas_aligned(args_code, args_code)
-    return bool(first_arg and "__ROUTE__" in first_arg[0][1])
+    open_paren = expr_code.index("(", wrapper.start())
+    close = match_close(expr_code, open_paren, "(", ")")
+    if close != len(expr_code):
+        return False
+    args = split_top_commas_aligned(
+        expr[open_paren + 1:close - 1],
+        expr_code[open_paren + 1:close - 1],
+    )
+    if not args:
+        return False
+    first_matches = list(executable_template_matches(args[0][0], args[0][1]))
+    return bool(
+        first_matches
+        and len(first_matches) == len(matches)
+        and direct_template_usage_is_safe(
+            args[0][0],
+            args[0][1],
+            first_matches,
+            definitions,
+            definitions_code,
+            helper_stack,
+        )
+    )
 
 def simple_identifier_expression(code):
     """Whether an identifier-backed path is used without transforms."""
@@ -593,11 +799,24 @@ def simple_identifier_expression(code):
         strip_enclosing_parens(code),
     ))
 
-def route_wrapper_first_identifier(code):
+def route_wrapper_first_identifier(
+    code, definitions=None, definitions_code=None, helper_stack=None
+):
     """Return a reviewed route wrapper's first identifier argument."""
     stripped = strip_enclosing_parens(code)
     wrapper = re.match(r"([A-Za-z_][A-Za-z0-9_]*)\s*\(", stripped)
-    if not wrapper or wrapper.group(1) not in ROUTE_PRESERVING_WRAPPERS:
+    if not wrapper:
+        return None
+    wrapper_name = wrapper.group(1)
+    if (
+        wrapper_name not in ROUTE_PRESERVING_PRIMITIVES
+        and not helper_preserves_first_parameter(
+            definitions,
+            definitions_code,
+            wrapper_name,
+            helper_stack,
+        )
+    ):
         return None
     open_paren = stripped.index("(", wrapper.start())
     close = match_close(stripped, open_paren, "(", ")")
@@ -610,34 +829,84 @@ def route_wrapper_first_identifier(code):
     first = args[0][1].strip()
     return first if re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", first) else None
 
-def self_assignment_is_route_preserving(ident, rhs, rhs_code):
+def self_assignment_is_route_preserving(
+    ident, rhs, rhs_code, definitions=None, definitions_code=None
+):
     """Recognize reviewed query-only mutations of an existing route."""
     stripped = strip_enclosing_parens(rhs_code)
-    if route_wrapper_first_identifier(stripped) == ident:
+    if route_wrapper_first_identifier(
+        stripped, definitions, definitions_code
+    ) == ident:
         return True
     templates = list(executable_template_matches(rhs, rhs_code))
     return bool(
         len(templates) == 1
         and templates[0].group(1).startswith("${" + ident + "}?")
-        and direct_template_usage_is_safe(rhs, rhs_code, templates)
+        and direct_template_usage_is_safe(
+            rhs, rhs_code, templates, definitions, definitions_code
+        )
     )
 
 def statically_dead_at(code, position):
-    """Identify calls enclosed by a literal-false control-flow block."""
-    for brace in brace_scope_at(code, position):
+    """Identify calls in literal-false blocks or after an unconditional exit."""
+    use_scope = brace_scope_at(code, position)
+    for brace in use_scope:
         if re.search(
             r"\b(?:if|while)\s*\(\s*(?:false|0|null|undefined)\s*\)\s*$",
             code[:brace],
         ):
             return True
+        else_match = re.search(r"\belse\s*$", code[:brace])
+        if else_match:
+            previous = else_match.start() - 1
+            while previous >= 0 and code[previous].isspace():
+                previous -= 1
+            if previous >= 0 and code[previous] == "}":
+                if_open = match_open(code, previous, "{", "}")
+                if if_open != -1 and re.search(
+                    r"\bif\s*\(\s*(?:true|1)\s*\)\s*$",
+                    code[:if_open],
+                ):
+                    return True
+    scope_start = use_scope[-1] + 1 if use_scope else 0
+    statement_start = scope_start
+    for exit_token in re.finditer(r"\b(?:return|throw)\b", code[scope_start:position]):
+        token_start = scope_start + exit_token.start()
+        if brace_scope_at(code, token_start) != use_scope:
+            continue
+        exit_end = find_statement_end(
+            code, scope_start + exit_token.end()
+        )
+        if exit_end == -1 or exit_end >= position:
+            continue
+        for index in range(statement_start, token_start):
+            if code[index] == ";" and brace_scope_at(code, index) == use_scope:
+                statement_start = index + 1
+            elif code[index] == "}" and brace_scope_at(code, index + 1) == use_scope:
+                statement_start = index + 1
+        controller = code[statement_start:token_start]
+        if not re.search(
+            r"\b(?:do|else|for|if|while|with)\b",
+            controller,
+        ):
+            return True
     return False
 
-def expression_preserves_route_ident(expr, expr_code, safe_idents):
+def expression_preserves_route_ident(
+    expr,
+    expr_code,
+    safe_idents,
+    definitions=None,
+    definitions_code=None,
+    helper_stack=None,
+):
     """Prove an expression preserves one of the supplied symbolic routes."""
     stripped = strip_enclosing_parens(expr_code)
     if stripped in safe_idents:
         return True
-    wrapper_ident = route_wrapper_first_identifier(stripped)
+    wrapper_ident = route_wrapper_first_identifier(
+        stripped, definitions, definitions_code, helper_stack
+    )
     if wrapper_ident in safe_idents:
         return True
     templates = list(executable_template_matches(expr, expr_code))
@@ -647,16 +916,49 @@ def expression_preserves_route_ident(expr, expr_code, safe_idents):
             templates[0].group(1).startswith("${" + ident + "}?")
             for ident in safe_idents
         )
-        and direct_template_usage_is_safe(expr, expr_code, templates)
+        and direct_template_usage_is_safe(
+            expr,
+            expr_code,
+            templates,
+            definitions,
+            definitions_code,
+            helper_stack,
+        )
     )
 
-def class_helper_preserves_first_parameter(definitions, definitions_code, name):
-    """Prove every returned ``path`` preserves a helper's first parameter."""
-    method = re.search(
-        r"(?m)^\s*(?:(?:private|protected|public)\s+)?(?:async\s+)?"
-        +re.escape(name)+r"\s*\(",
+def helper_declaration_match(definitions_code, name):
+    """Find a module function or class method declaration by name."""
+    function = re.search(
+        r"(?m)^\s*(?:export\s+)?(?:async\s+)?function\s+"
+        + re.escape(name)
+        + r"\s*\(",
         definitions_code,
     )
+    if function:
+        return function
+    return re.search(
+        r"(?m)^\s*(?:(?:private|protected|public)\s+)?(?:static\s+)?"
+        r"(?:async\s+)?"
+        + re.escape(name)
+        + r"\s*\(",
+        definitions_code,
+    )
+
+def property_has_computed_name(prop_code):
+    """Whether an object member has a computed key, including accessors."""
+    return bool(re.match(r"\s*(?:(?:get|set|async)\s+)?\[", prop_code))
+
+def helper_preserves_first_parameter(
+    definitions, definitions_code, name, helper_stack=None
+):
+    """Prove every returned ``path`` preserves a helper's first parameter."""
+    if not definitions or not definitions_code:
+        return False
+    helper_stack = frozenset() if helper_stack is None else frozenset(helper_stack)
+    if name in helper_stack:
+        return False
+    helper_stack = helper_stack | {name}
+    method = helper_declaration_match(definitions_code, name)
     if not method:
         return False
     params_open = definitions_code.index("(", method.start())
@@ -692,12 +994,37 @@ def class_helper_preserves_first_parameter(definitions, definitions_code, name):
                 body[declaration.end():value_end],
                 body_code[declaration.end():value_end],
             ))
+    for declaration in re.finditer(
+        r"\b(?:const|let)\s*\{([^}]*)\}\s*(?::[^=;]+)?=",
+        body_code,
+    ):
+        path_binding = None
+        for part in declaration.group(1).split(","):
+            names = [name.strip() for name in part.split(":", 1)]
+            if names[0] == "path":
+                path_binding = names[-1]
+        value_end = find_statement_end(body_code, declaration.end())
+        if (
+            path_binding
+            and re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", path_binding)
+            and value_end != -1
+        ):
+            declarations.append((
+                path_binding,
+                body[declaration.end():value_end],
+                body_code[declaration.end():value_end],
+            ))
     progressed = True
     while progressed:
         progressed = False
         for ident, rhs, rhs_code in declarations:
             if ident not in safe_idents and expression_preserves_route_ident(
-                rhs, rhs_code, safe_idents
+                rhs,
+                rhs_code,
+                safe_idents,
+                definitions,
+                definitions_code,
+                helper_stack,
             ):
                 safe_idents.add(ident)
                 progressed = True
@@ -715,6 +1042,9 @@ def class_helper_preserves_first_parameter(definitions, definitions_code, name):
                 body[write.end():value_end],
                 body_code[write.end():value_end],
                 safe_idents,
+                definitions,
+                definitions_code,
+                helper_stack,
             ):
                 return False
         compound_write = re.compile(
@@ -742,29 +1072,41 @@ def class_helper_preserves_first_parameter(definitions, definitions_code, name):
             return False
         value = body[ret.end():value_end]
         value_code = body_code[ret.end():value_end]
-        stripped = value_code.strip()
-        if not stripped.startswith("{") or not stripped.endswith("}"):
-            return False
         found_return = True
-        object_start = value_code.index("{")
-        object_end = value_code.rindex("}")
-        properties = split_top_commas_aligned(
-            value[object_start + 1:object_end],
-            value_code[object_start + 1:object_end],
-        )
-        path_expr = None
-        path_code = None
-        for prop, prop_code in properties:
-            explicit = re.match(r"\s*path\s*:\s*(.+)", prop, re.S)
-            if explicit and re.match(r"\s*path\s*:", prop_code):
-                colon = prop_code.index(":")
-                path_expr = prop[colon + 1:]
-                path_code = prop_code[colon + 1:]
-            elif prop_code.strip() == "path":
-                path_expr = "path"
-                path_code = "path"
+        stripped = value_code.strip()
+        path_expr = value
+        path_code = value_code
+        if stripped.startswith("{") and stripped.endswith("}"):
+            object_start = value_code.index("{")
+            object_end = value_code.rindex("}")
+            properties = split_top_commas_aligned(
+                value[object_start + 1:object_end],
+                value_code[object_start + 1:object_end],
+            )
+            if any(
+                property_has_computed_name(prop_code)
+                or prop_code.strip().startswith("...")
+                for _, prop_code in properties
+            ):
+                return False
+            path_expr = None
+            path_code = None
+            for prop, prop_code in properties:
+                explicit = re.match(r"\s*path\s*:\s*(.+)", prop, re.S)
+                if explicit and re.match(r"\s*path\s*:", prop_code):
+                    colon = prop_code.index(":")
+                    path_expr = prop[colon + 1:]
+                    path_code = prop_code[colon + 1:]
+                elif prop_code.strip() == "path":
+                    path_expr = "path"
+                    path_code = "path"
         if path_expr is None or not expression_preserves_route_ident(
-            path_expr, path_code, safe_idents
+            path_expr,
+            path_code,
+            safe_idents,
+            definitions,
+            definitions_code,
+            helper_stack,
         ):
             return False
     return found_return
@@ -801,8 +1143,14 @@ def direct_class_helper_usage_is_safe(
     return bool(
         first_matches
         and len(first_matches) == len(list(matches))
-        and direct_template_usage_is_safe(args[0][0], args[0][1], first_matches)
-        and class_helper_preserves_first_parameter(
+        and direct_template_usage_is_safe(
+            args[0][0],
+            args[0][1],
+            first_matches,
+            definitions,
+            definitions_code,
+        )
+        and helper_preserves_first_parameter(
             definitions, definitions_code, helper.group(1)
         )
     )
@@ -830,7 +1178,11 @@ def resolve_path_expr(expr, ctx, ctx_code, definitions=None, definitions_code=No
         for match in direct_matches
     }
     if direct_candidates and not direct_template_usage_is_safe(
-        expr, expr_code, direct_matches
+        expr,
+        expr_code,
+        direct_matches,
+        definitions,
+        definitions_code,
     ) and not direct_class_helper_usage_is_safe(
         expr, expr_code, definitions, definitions_code, direct_matches
     ):
@@ -869,10 +1221,17 @@ def resolve_path_expr(expr, ctx, ctx_code, definitions=None, definitions_code=No
                 object_start = value_code.index("{")
                 object_end = value_code.rindex("}")
                 path_value = None
-                for prop, prop_code in split_top_commas_aligned(
+                properties = split_top_commas_aligned(
                     value[object_start + 1:object_end],
                     value_code[object_start + 1:object_end],
+                )
+                if any(
+                    property_has_computed_name(prop_code)
+                    or prop_code.strip().startswith("...")
+                    for _, prop_code in properties
                 ):
+                    return set()
+                for prop, prop_code in properties:
                     explicit = re.match(r"\s*path\s*:\s*(.+)", prop, re.S)
                     if explicit and re.match(r"\s*path\s*:", prop_code):
                         colon = prop_code.index(":")
@@ -888,7 +1247,11 @@ def resolve_path_expr(expr, ctx, ctx_code, definitions=None, definitions_code=No
             value_matches = list(executable_template_matches(value, value_code))
             value_candidates = {match.group(1) for match in value_matches}
             if value_candidates and not direct_template_usage_is_safe(
-                value, value_code, value_matches
+                value,
+                value_code,
+                value_matches,
+                definitions,
+                definitions_code,
             ):
                 return set()
             if has_top_level_choice(value_code) and (
@@ -985,7 +1348,11 @@ def resolve_path_expr(expr, ctx, ctx_code, definitions=None, definitions_code=No
                 rhs_matches = list(executable_template_matches(rhs, rhs_code))
                 rhs_candidates = {match.group(1) for match in rhs_matches}
                 if rhs_candidates and not direct_template_usage_is_safe(
-                    rhs, rhs_code, rhs_matches
+                    rhs,
+                    rhs_code,
+                    rhs_matches,
+                    definitions,
+                    definitions_code,
                 ) and not direct_class_helper_usage_is_safe(
                     rhs, rhs_code, definitions, definitions_code, rhs_matches
                 ):
@@ -998,7 +1365,9 @@ def resolve_path_expr(expr, ctx, ctx_code, definitions=None, definitions_code=No
                     rhs_candidates.update(
                         class_helper_templates(rhs, rhs_code, depth + 1)
                     )
-                    wrapper_ident = route_wrapper_first_identifier(rhs_code)
+                    wrapper_ident = route_wrapper_first_identifier(
+                        rhs_code, definitions, definitions_code
+                    )
                     if wrapper_ident:
                         rhs_candidates.update(
                             try_ident_templates(
@@ -1050,7 +1419,11 @@ def resolve_path_expr(expr, ctx, ctx_code, definitions=None, definitions_code=No
                     write_rhs = local_ctx[value_start:value_end]
                     write_code = local_code[value_start:value_end]
                     if self_assignment_is_route_preserving(
-                        ident, write_rhs, write_code
+                        ident,
+                        write_rhs,
+                        write_code,
+                        definitions,
+                        definitions_code,
                     ):
                         continue
                     write_matches = list(
@@ -1060,7 +1433,11 @@ def resolve_path_expr(expr, ctx, ctx_code, definitions=None, definitions_code=No
                         match.group(1) for match in write_matches
                     }
                     if write_candidates and not direct_template_usage_is_safe(
-                        write_rhs, write_code, write_matches
+                        write_rhs,
+                        write_code,
+                        write_matches,
+                        definitions,
+                        definitions_code,
                     ):
                         return set()
                     if not write_candidates and simple_identifier_expression(write_code):
@@ -1103,10 +1480,17 @@ def resolve_path_expr(expr, ctx, ctx_code, definitions=None, definitions_code=No
                         and len(write_templates) == 1
                         and write_templates[0].group(1).startswith(("?", "&"))
                         and direct_template_usage_is_safe(
-                            write_rhs, write_code, write_templates
+                            write_rhs,
+                            write_code,
+                            write_templates,
+                            definitions,
+                            definitions_code,
                         )
                     ):
                         return set()
+
+                if has_destructuring_write(local_code, ident, binding_pos + 1):
+                    return set()
 
                 if re.search(
                     r"(?:\+\+|--)\s*"+re.escape(ident)
@@ -1156,12 +1540,9 @@ def resolve_template(tpl, fieldmap, helper):
     return prefix, suffix, None
 
 def method_body_span(src, name, code_src=None):
-    """Return the body span of a class method, if present."""
+    """Return the body span of a class method or module function."""
     scan = code_src if code_src is not None else src
-    m = re.search(
-        r"(?m)^\s*(?:(?:private|protected|public)\s+)?(?:async\s+)?"+re.escape(name)+r"\s*\(",
-        scan,
-    )
+    m = helper_declaration_match(scan, name)
     if not m: return None
     op = scan.index("(", m.start())
     params_end = match_close(scan, op, "(", ")")
@@ -1366,7 +1747,7 @@ def extract(api):
                 (
                     prop_code.strip()
                     for _, prop_code in props
-                    if prop_code.strip().startswith("[")
+                    if property_has_computed_name(prop_code)
                 ),
                 None,
             )
@@ -1442,31 +1823,33 @@ def load_spec(name, expected_server_scope):
     ):
         fail_spec(name, "invalid OpenAPI document: expected OpenAPI 3.x info metadata")
 
-    servers = spec.get("servers")
-    if (
-        not isinstance(servers, list)
-        or not servers
-    ):
-        fail_spec(name, "invalid OpenAPI document: expected a non-empty server URL")
-    for server in servers:
-        if (
-            not isinstance(server, dict)
-            or not isinstance(server.get("url"), str)
-            or not server["url"].strip()
-        ):
+    def validate_servers(servers):
+        if not isinstance(servers, list) or not servers:
             fail_spec(name, "invalid OpenAPI document: expected a non-empty server URL")
-        server_url = urlsplit(server["url"])
-        if server_url.scheme not in {"http", "https"} or not server_url.netloc:
-            fail_spec(name, "invalid OpenAPI document: expected an absolute HTTP(S) server URL")
-        server_scope = server_url.path.rstrip("/")
-        if server_scope == "/":
-            server_scope = ""
-        if server_scope != expected_server_scope:
-            fail_spec(
-                name,
-                f"server scope {server_scope or '/'} does not match expected "
-                f"{expected_server_scope or '/'}",
-            )
+        for server in servers:
+            if (
+                not isinstance(server, dict)
+                or not isinstance(server.get("url"), str)
+                or not server["url"].strip()
+            ):
+                fail_spec(name, "invalid OpenAPI document: expected a non-empty server URL")
+            server_url = urlsplit(server["url"])
+            if server_url.scheme not in {"http", "https"} or not server_url.netloc:
+                fail_spec(
+                    name,
+                    "invalid OpenAPI document: expected an absolute HTTP(S) server URL",
+                )
+            server_scope = server_url.path.rstrip("/")
+            if server_scope == "/":
+                server_scope = ""
+            if server_scope != expected_server_scope:
+                fail_spec(
+                    name,
+                    f"server scope {server_scope or '/'} does not match expected "
+                    f"{expected_server_scope or '/'}",
+                )
+
+    validate_servers(spec.get("servers"))
     server_scope = expected_server_scope
 
     paths = spec.get("paths")
@@ -1478,11 +1861,28 @@ def load_spec(name, expected_server_scope):
             fail_spec(name, "invalid OpenAPI document: malformed path item")
         if "$ref" in item:
             fail_spec(name, f"unsupported OpenAPI Path Item $ref at {p}")
+        if "servers" in item:
+            validate_servers(item["servers"])
         for verb, op in item.items():
             if verb.lower() not in HTTP_METHODS:
                 continue
             if not isinstance(op, dict):
                 fail_spec(name, "invalid OpenAPI document: malformed operation")
+            responses = op.get("responses")
+            if not isinstance(responses, dict) or not responses:
+                fail_spec(
+                    name,
+                    f"invalid OpenAPI operation {verb.upper()} {p}: "
+                    "expected non-empty responses",
+                )
+            if "deprecated" in op and not isinstance(op["deprecated"], bool):
+                fail_spec(
+                    name,
+                    f"invalid OpenAPI operation {verb.upper()} {p}: "
+                    "deprecated must be boolean",
+                )
+            if "servers" in op:
+                validate_servers(op["servers"])
             full = server_scope + p
             ops.append({"path": p, "verb": verb.upper(), "norm": norm(full),
                         "operationId": op.get("operationId",""), "summary": op.get("summary",""),
@@ -1537,12 +1937,32 @@ out_of_scope = {}
 if "v1BaseUrl" in conf_vars:
     # Attachment upload intentionally uses the only supported write endpoint,
     # which still lives in REST v1 and is outside the reviewed v2 spec surface.
-    out_of_scope[conf_vars["v1BaseUrl"]] = "confluence-v1 attachment upload"
+    out_of_scope[
+        (
+            conf_vars["v1BaseUrl"],
+            "POST",
+            "/content/{}/child/attachment",
+        )
+    ] = "confluence-v1 attachment upload"
 for p,s in sorted(unm.items(), key=lambda x:-len(x[1])):
-    classification = f" [{out_of_scope[p]} — out of reviewed spec scope]" if p in out_of_scope else ""
+    reviewed = {
+        out_of_scope[(p, verb, suffix)]
+        for verb, suffix in s
+        if (p, verb, suffix) in out_of_scope
+    }
+    classification = (
+        f" [{next(iter(reviewed))} — out of reviewed spec scope]"
+        if len(reviewed) == 1 and len(s) == 1
+        else ""
+    )
     print(f"  {len(s):3} {p}{classification}")
 json.dump({p:sorted(list(s)) for p,s in unm.items()}, open("/tmp/unmatched_sdk.json","w"), indent=2)
 
-unexpected_sdk_routes = sum(len(routes) for prefix, routes in unm.items() if prefix not in out_of_scope)
+unexpected_sdk_routes = sum(
+    1
+    for prefix, routes in unm.items()
+    for verb, suffix in routes
+    if (prefix, verb, suffix) not in out_of_scope
+)
 if jira_unk or conf_unk or live_gap_count or unexpected_sdk_routes:
     raise SystemExit(1)

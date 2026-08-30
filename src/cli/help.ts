@@ -129,6 +129,8 @@ API STATUS:
 EXAMPLES:
   atlas confluence pages list --space-id 123
   atlas confluence pages get 456 --body-format view --include-labels
+  atlas confluence pages create --space-id 123 --title "Runbook" --body "<p>Ready</p>"
+  atlas confluence pages create --space-id 123 --status draft --body-json '{"wiki":{"representation":"wiki","value":"Draft"}}'
   atlas confluence pages ancestors 456 --limit 50
   atlas confluence pages descendants 456 --depth 3 --limit 50
   atlas confluence pages direct-children 456 --sort=-modified-date
@@ -359,7 +361,7 @@ EXAMPLES:
   atlas jira issues create --project PROJ --type Bug --summary "Fix this"
   atlas jira search search --jql "project = PROJ AND status = Open"
   atlas jira search approximate-count --jql "project = PROJ"
-  atlas jira search jql-get --jql "project = PROJ" --max-results 50
+  atlas jira search jql-get --jql "project = PROJ" --max-results 50 --properties release.owner --fields-by-keys --fail-fast
   atlas jira search jql-post --jql "project = PROJ AND assignee = currentUser()"
   atlas jira projects list --type-key software --status live --action browse --query platform --order-by key
   atlas jira boards list --project PROJ --include-private false --order-by name

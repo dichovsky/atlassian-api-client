@@ -12,6 +12,7 @@ import type {
   CommentSortOrder,
   CommentStatus,
   ContentSortOrder,
+  CreatePageData,
   CreateSpaceData,
   CustomContentSortOrder,
   DataPolicySpaceSortOrder,
@@ -22,6 +23,9 @@ import type {
   LabelPrefix,
   LabelSortOrder,
   PageContentStatus,
+  PageBodyWrite,
+  PageBodyWriteRepresentation,
+  PageNestedBodyWrite,
   PageSortOrder,
   SpaceDescriptionFormat,
   SpaceSortOrder,
@@ -121,11 +125,25 @@ async function executePages(client: ConfluenceClient, cmd: ParsedCommand): Promi
         ...(opts['private'] === true ? { private: true } : {}),
         ...(opts['root-level'] === true ? { 'root-level': true } : {}),
       };
-      const data = {
+      const status = asEnum(opts['status'], PAGE_CREATE_STATUSES, 'status');
+      const title = asString(opts['title']);
+      const parentId = asString(opts['parent-id']);
+      const subtype = asEnum(opts['subtype'], PAGE_CREATE_SUBTYPES, 'subtype');
+      const body = makePageCreateBody(opts);
+      const common = {
         spaceId: requireOpt(opts['space-id'], '--space-id'),
-        title: requireOpt(opts['title'], '--title'),
-        body: makeBody(asString(opts['body'])),
+        ...(parentId === undefined ? {} : { parentId }),
+        ...(subtype === undefined ? {} : { subtype }),
+        ...(body === undefined ? {} : { body }),
       };
+      const data: CreatePageData =
+        status === 'draft'
+          ? { ...common, status, ...(title === undefined ? {} : { title }) }
+          : {
+              ...common,
+              ...(status === undefined ? {} : { status }),
+              title: requireOpt(title, '--title'),
+            };
       return Object.keys(createParams).length > 0
         ? client.pages.create(data, createParams)
         : client.pages.create(data);
@@ -2823,6 +2841,13 @@ const PAGE_CLASSIFICATION_STATUSES = ['current', 'draft'] as const;
  * either the published (`current`) revision or the in-flight `draft`.
  */
 const PAGE_TITLE_STATUSES = ['current', 'draft'] as const;
+const PAGE_CREATE_STATUSES = ['current', 'draft'] as const;
+const PAGE_CREATE_SUBTYPES = ['live'] as const;
+const PAGE_BODY_WRITE_REPRESENTATIONS: readonly PageBodyWriteRepresentation[] = [
+  'storage',
+  'atlas_doc_format',
+  'wiki',
+];
 
 /**
  * Sort tokens accepted by `GET /pages/{id}/children`. Mirrors the OpenAPI
@@ -2861,6 +2886,43 @@ const BLOG_POST_BODY_REPRESENTATIONS: readonly BlogPostBodyRepresentation[] = [
 function makeBody(value: string | undefined) {
   if (!value) return undefined;
   return { representation: 'storage' as const, value };
+}
+
+function makePageCreateBody(
+  opts: Record<string, string | boolean | undefined>,
+): PageBodyWrite | PageNestedBodyWrite | undefined {
+  const value = asString(opts['body']);
+  const json = asString(opts['body-json']);
+  const representation = asEnum(
+    opts['body-representation'],
+    PAGE_BODY_WRITE_REPRESENTATIONS,
+    'body-representation',
+  );
+  if (value !== undefined && json !== undefined) {
+    throw new Error('--body and --body-json cannot be used together');
+  }
+  if (json !== undefined) {
+    if (representation !== undefined) {
+      throw new Error('--body-representation cannot be used with --body-json');
+    }
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(json) as unknown;
+    } catch {
+      throw new Error('--body-json must be a valid JSON object');
+    }
+    if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      throw new Error('--body-json must be a valid JSON object');
+    }
+    return parsed as PageBodyWrite | PageNestedBodyWrite;
+  }
+  if (value === undefined) {
+    if (representation !== undefined) {
+      throw new Error('--body-representation requires --body');
+    }
+    return undefined;
+  }
+  return { representation: representation ?? 'storage', value };
 }
 
 /**
