@@ -588,7 +588,10 @@ route extraction, a missing non-deprecated operation, or an unexpected in-scope 
 view to locate client declarations, resource wiring, resource-local path assignments, helper
 returns, and call sites, then an aligned literal view to resolve their values and paths. Comments,
 quoted/template examples, and regex literals cannot satisfy coverage or shadow runtime wiring or
-path discovery. Deprecated omissions remain visible in the report without failing the check.
+path discovery. Runtime path transformations, unsafe reassignments, computed request properties,
+statically dead calls, and unresolved OpenAPI Path Item references fail closed; all eight OpenAPI
+HTTP operation keys are audited. Deprecated omissions remain visible in the report without failing
+the check.
 
 In CI, both guards run on a **weekly schedule and on manual dispatch only** (`.github/workflows/spec-drift.yml`).
 It deliberately does **not** run on `push` or `pull_request` — a transient upstream outage must never

@@ -22,7 +22,7 @@ This refresh contains public SDK and CLI contract corrections and therefore must
 - Opt-in Jira Software system-to-system OAuth proxy routing for Development Information, Builds, Deployments, and Feature Flag ingestion via `softwareIntegrationProxy.cloudId`, `--software-cloud-id`, or `ATLASSIAN_SOFTWARE_CLOUD_ID`.
 - Full current Confluence Space list/get contracts, task date/update filters, page/attachment/label/version query flags, and lifecycle annotations for deprecated and experimental operations.
 - Complete spec-derived scope validation: 247 unique granular scopes from operation annotations plus 24 classic/compatibility scopes found in the pinned security schemes (271 recognized scopes total). Operation recommendations remain granular.
-- Canonical OpenAPI contract fingerprints and deterministic endpoint-gap regression checks. The weekly drift job now detects route, parameter, schema, response, security, and executable SDK route-coverage changes instead of only type-generator failures; invalid/empty specs, server-scope drift, ambiguous route expressions, unexpected SDK routes, and request-like comments or literals fail closed.
+- Canonical OpenAPI contract fingerprints and deterministic endpoint-gap regression checks. The weekly drift job now detects route, parameter, schema, response, security, and executable SDK route-coverage changes instead of only type-generator failures; invalid/empty specs, server-scope drift, ambiguous or transformed route expressions, unsafe path reassignments, dead calls, computed request keys, unresolved Path Item references, unexpected SDK routes, and request-like comments or literals fail closed. All eight OpenAPI HTTP operation keys are covered.
 
 ### Changed
 

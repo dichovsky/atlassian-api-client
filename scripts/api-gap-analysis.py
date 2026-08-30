@@ -48,7 +48,31 @@ EXPECTED_SERVER_SCOPES = {
     "confluence-v2": "/wiki/api/v2",
 }
 
-HTTP_METHODS = {"get", "post", "put", "delete", "patch"}
+HTTP_METHODS = {
+    "delete", "get", "head", "options", "patch", "post", "put", "trace",
+}
+
+ROUTE_PRESERVING_WRAPPERS = {
+    "appendRepeatedParams",
+    "appendScalarOrArrayParam",
+    "buildAvailablePrioritiesPath",
+    "buildBulkPath",
+    "buildGetSecurityLevelMembersPath",
+    "buildGetSecurityLevelsPath",
+    "buildListAll",
+    "buildListMembersPath",
+    "buildListPath",
+    "buildListProjectsPath",
+    "buildProjectPath",
+    "buildProjectsPath",
+    "buildSchemeFieldsPath",
+    "buildSchemeProjectsPath",
+    "buildScreensPath",
+    "buildScreenTabsPath",
+    "buildSearchPath",
+    "buildSpaces",
+    "buildTasksQuery",
+}
 
 def match_close(s, start, op, cl):
     depth = 0
@@ -141,6 +165,11 @@ def lex_ts_source(source):
         if previous < 0:
             return True
         if code_chars[previous] in "([{:;,=!?&|+-*%^~<>":
+            return True
+        if code_chars[previous] == "}":
+            # A closed statement block is followed by statement lexical goal,
+            # where a regex literal may begin. Treating a rare object-division
+            # ambiguity as regex is deliberately fail-closed for route scans.
             return True
         if code_chars[previous] == ")":
             # A closing control-head parenthesis transitions to statement
@@ -371,7 +400,11 @@ def parse_base_suffixes(client_src, client_code):
 def parse_wiring(client_src, client_code, varmap):
     assert len(client_src) == len(client_code), "source/code views must stay aligned"
     wiring = {}
-    for m in re.finditer(r"new\s+([A-Z][A-Za-z0-9]*Resource)\s*\(", client_code):
+    for m in re.finditer(
+        r"\bthis\.[A-Za-z_][A-Za-z0-9_]*\s*=\s*"
+        r"new\s+([A-Z][A-Za-z0-9]*Resource)\s*\(",
+        client_code,
+    ):
         op = client_code.index("(", m.end()-1)
         end = match_close(client_code, op, "(", ")")
         args = split_top_commas_aligned(
@@ -387,7 +420,11 @@ def parse_wiring(client_src, client_code, varmap):
                 base_args.append(parse_object_literal(arg_src, arg_code, varmap))
             else:
                 base_args.append(("UNKNOWN", arg_src.strip()))
-        wiring[m.group(1)] = base_args
+        resource = m.group(1)
+        wiring[resource] = (
+            [("UNKNOWN", "duplicate-resource-wiring")]
+            if resource in wiring else base_args
+        )
     return wiring
 
 def parse_ctor_params(src, code_src):
@@ -479,8 +516,19 @@ def visible_assignments(assignments, local_code):
     )
     return [closest[1:]]
 
+def strip_enclosing_parens(code):
+    """Remove grouping parentheses that enclose the complete expression."""
+    stripped = code.strip()
+    while stripped.startswith("("):
+        close = match_close(stripped, 0, "(", ")")
+        if close != len(stripped):
+            break
+        stripped = stripped[1:-1].strip()
+    return stripped
+
 def has_top_level_choice(code):
     """Whether a path expression can select/compose more than one route."""
+    code = strip_enclosing_parens(code)
     depth = {"(": 0, "{": 0, "[": 0}
     pairs = {")": "(", "}": "{", "]": "["}
     for index, token in enumerate(code):
@@ -494,13 +542,270 @@ def has_top_level_choice(code):
             continue
         if any(depth.values()):
             continue
-        if token == "+":
+        if token in {"+", ","}:
             return True
         if token == "?" and (index + 1 >= len(code) or code[index + 1] != "."):
             return True
         if code.startswith("&&", index) or code.startswith("||", index):
             return True
     return False
+
+def direct_template_usage_is_safe(expr, expr_code, matches):
+    """Prove route templates are not transformed before transport use."""
+    matches = list(matches)
+    if not matches:
+        return False
+    skeleton_parts = []
+    previous = 0
+    for match in matches:
+        skeleton_parts.append(expr_code[previous:match.start()])
+        skeleton_parts.append(" __ROUTE__ ")
+        previous = match.end()
+    skeleton_parts.append(expr_code[previous:])
+    skeleton = strip_enclosing_parens("".join(skeleton_parts))
+
+    if re.fullmatch(r"__ROUTE__(?:\s+as\s+(?:const|string))?", skeleton):
+        return True
+    if re.search(r"__ROUTE__\s*(?:\?\.|\.|\[)", skeleton):
+        return False
+    if has_top_level_choice(expr_code):
+        return (
+            len(matches) >= 2
+            and route_templates_agree({match.group(1) for match in matches})
+            and "," not in strip_enclosing_parens(expr_code)
+        )
+
+    wrapper = re.match(r"([A-Za-z_][A-Za-z0-9_]*)\s*\(", skeleton)
+    if not wrapper or wrapper.group(1) not in ROUTE_PRESERVING_WRAPPERS:
+        return False
+    open_paren = skeleton.index("(", wrapper.start())
+    close = match_close(skeleton, open_paren, "(", ")")
+    if close != len(skeleton):
+        return False
+    args_code = skeleton[open_paren + 1:close - 1]
+    first_arg = split_top_commas_aligned(args_code, args_code)
+    return bool(first_arg and "__ROUTE__" in first_arg[0][1])
+
+def simple_identifier_expression(code):
+    """Whether an identifier-backed path is used without transforms."""
+    return bool(re.fullmatch(
+        r"[A-Za-z_][A-Za-z0-9_]*(?:\s+as\s+(?:const|string))?",
+        strip_enclosing_parens(code),
+    ))
+
+def route_wrapper_first_identifier(code):
+    """Return a reviewed route wrapper's first identifier argument."""
+    stripped = strip_enclosing_parens(code)
+    wrapper = re.match(r"([A-Za-z_][A-Za-z0-9_]*)\s*\(", stripped)
+    if not wrapper or wrapper.group(1) not in ROUTE_PRESERVING_WRAPPERS:
+        return None
+    open_paren = stripped.index("(", wrapper.start())
+    close = match_close(stripped, open_paren, "(", ")")
+    if close != len(stripped):
+        return None
+    args_code = stripped[open_paren + 1:close - 1]
+    args = split_top_commas_aligned(args_code, args_code)
+    if not args:
+        return None
+    first = args[0][1].strip()
+    return first if re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", first) else None
+
+def self_assignment_is_route_preserving(ident, rhs, rhs_code):
+    """Recognize reviewed query-only mutations of an existing route."""
+    stripped = strip_enclosing_parens(rhs_code)
+    if route_wrapper_first_identifier(stripped) == ident:
+        return True
+    templates = list(executable_template_matches(rhs, rhs_code))
+    return bool(
+        len(templates) == 1
+        and templates[0].group(1).startswith("${" + ident + "}?")
+        and direct_template_usage_is_safe(rhs, rhs_code, templates)
+    )
+
+def statically_dead_at(code, position):
+    """Identify calls enclosed by a literal-false control-flow block."""
+    for brace in brace_scope_at(code, position):
+        if re.search(
+            r"\b(?:if|while)\s*\(\s*(?:false|0|null|undefined)\s*\)\s*$",
+            code[:brace],
+        ):
+            return True
+    return False
+
+def expression_preserves_route_ident(expr, expr_code, safe_idents):
+    """Prove an expression preserves one of the supplied symbolic routes."""
+    stripped = strip_enclosing_parens(expr_code)
+    if stripped in safe_idents:
+        return True
+    wrapper_ident = route_wrapper_first_identifier(stripped)
+    if wrapper_ident in safe_idents:
+        return True
+    templates = list(executable_template_matches(expr, expr_code))
+    return bool(
+        len(templates) == 1
+        and any(
+            templates[0].group(1).startswith("${" + ident + "}?")
+            for ident in safe_idents
+        )
+        and direct_template_usage_is_safe(expr, expr_code, templates)
+    )
+
+def class_helper_preserves_first_parameter(definitions, definitions_code, name):
+    """Prove every returned ``path`` preserves a helper's first parameter."""
+    method = re.search(
+        r"(?m)^\s*(?:(?:private|protected|public)\s+)?(?:async\s+)?"
+        +re.escape(name)+r"\s*\(",
+        definitions_code,
+    )
+    if not method:
+        return False
+    params_open = definitions_code.index("(", method.start())
+    params_end = match_close(definitions_code, params_open, "(", ")")
+    if params_end == -1:
+        return False
+    params = split_top_commas_aligned(
+        definitions[params_open + 1:params_end - 1],
+        definitions_code[params_open + 1:params_end - 1],
+    )
+    if not params:
+        return False
+    first_param = re.match(
+        r"\s*(?:private\s+|protected\s+|public\s+|readonly\s+)*"
+        r"([A-Za-z_][A-Za-z0-9_]*)",
+        params[0][1],
+    )
+    span = method_body_span(definitions, name, definitions_code)
+    if not first_param or not span:
+        return False
+    body = definitions[span[0]:span[1]]
+    body_code = definitions_code[span[0]:span[1]]
+    safe_idents = {first_param.group(1)}
+    declarations = []
+    for declaration in re.finditer(
+        r"\b(?:const|let)\s+([A-Za-z_][A-Za-z0-9_]*)\s*(?::[^=;]+)?=",
+        body_code,
+    ):
+        value_end = find_statement_end(body_code, declaration.end())
+        if value_end != -1:
+            declarations.append((
+                declaration.group(1),
+                body[declaration.end():value_end],
+                body_code[declaration.end():value_end],
+            ))
+    progressed = True
+    while progressed:
+        progressed = False
+        for ident, rhs, rhs_code in declarations:
+            if ident not in safe_idents and expression_preserves_route_ident(
+                rhs, rhs_code, safe_idents
+            ):
+                safe_idents.add(ident)
+                progressed = True
+
+    for ident in safe_idents:
+        simple_write = re.compile(
+            r"(?<![A-Za-z0-9_.$])"+re.escape(ident)+r"\s*=(?!=|>)"
+        )
+        for write in simple_write.finditer(body_code):
+            prefix = body_code[max(0, write.start() - 16):write.start()]
+            if re.search(r"\b(?:const|let)\s*$", prefix):
+                continue
+            value_end = find_statement_end(body_code, write.end())
+            if value_end == -1 or not expression_preserves_route_ident(
+                body[write.end():value_end],
+                body_code[write.end():value_end],
+                safe_idents,
+            ):
+                return False
+        compound_write = re.compile(
+            r"(?<![A-Za-z0-9_.$])"+re.escape(ident)
+            +r"\s*(\+=|-=|\*=|/=|%=|&&=|\|\|=|\?\?=)"
+        )
+        for write in compound_write.finditer(body_code):
+            value_end = find_statement_end(body_code, write.end())
+            if value_end == -1:
+                return False
+            templates = list(executable_template_matches(
+                body[write.end():value_end], body_code[write.end():value_end]
+            ))
+            if not (
+                write.group(1) == "+="
+                and len(templates) == 1
+                and templates[0].group(1).startswith(("?", "&"))
+            ):
+                return False
+
+    found_return = False
+    for ret in re.finditer(r"\breturn\b", body_code):
+        value_end = find_statement_end(body_code, ret.end())
+        if value_end == -1:
+            return False
+        value = body[ret.end():value_end]
+        value_code = body_code[ret.end():value_end]
+        stripped = value_code.strip()
+        if not stripped.startswith("{") or not stripped.endswith("}"):
+            return False
+        found_return = True
+        object_start = value_code.index("{")
+        object_end = value_code.rindex("}")
+        properties = split_top_commas_aligned(
+            value[object_start + 1:object_end],
+            value_code[object_start + 1:object_end],
+        )
+        path_expr = None
+        path_code = None
+        for prop, prop_code in properties:
+            explicit = re.match(r"\s*path\s*:\s*(.+)", prop, re.S)
+            if explicit and re.match(r"\s*path\s*:", prop_code):
+                colon = prop_code.index(":")
+                path_expr = prop[colon + 1:]
+                path_code = prop_code[colon + 1:]
+            elif prop_code.strip() == "path":
+                path_expr = "path"
+                path_code = "path"
+        if path_expr is None or not expression_preserves_route_ident(
+            path_expr, path_code, safe_idents
+        ):
+            return False
+    return found_return
+
+def direct_class_helper_usage_is_safe(
+    expr, expr_code, definitions, definitions_code, matches
+):
+    """Validate ``this.helper(route, ...)`` by its helper implementation."""
+    if not definitions or not definitions_code:
+        return False
+    leading = len(expr_code) - len(expr_code.lstrip())
+    trailing = len(expr_code.rstrip())
+    trimmed_expr = expr[leading:trailing]
+    trimmed_code = expr_code[leading:trailing]
+    stripped = strip_enclosing_parens(trimmed_code)
+    helper = re.match(r"this\.([A-Za-z_][A-Za-z0-9_]*)\s*\(", stripped)
+    if not helper:
+        return False
+    open_paren = stripped.index("(", helper.start())
+    close = match_close(stripped, open_paren, "(", ")")
+    if close != len(stripped):
+        return False
+    # Views remain aligned before outer grouping is stripped in all current
+    # call sites; reject unusual grouped helper expressions conservatively.
+    if trimmed_code != stripped:
+        return False
+    args = split_top_commas_aligned(
+        trimmed_expr[open_paren + 1:close - 1],
+        trimmed_code[open_paren + 1:close - 1],
+    )
+    if not args:
+        return False
+    first_matches = list(executable_template_matches(args[0][0], args[0][1]))
+    return bool(
+        first_matches
+        and len(first_matches) == len(list(matches))
+        and direct_template_usage_is_safe(args[0][0], args[0][1], first_matches)
+        and class_helper_preserves_first_parameter(
+            definitions, definitions_code, helper.group(1)
+        )
+    )
 
 def resolve_path_expr(expr, ctx, ctx_code, definitions=None, definitions_code=None):
     """Resolve a path expression to a template string. Handles inline templates,
@@ -519,10 +824,17 @@ def resolve_path_expr(expr, ctx, ctx_code, definitions=None, definitions_code=No
         assert len(definitions) == len(definitions_code)
     expr = expr.strip()
     expr_code = lex_ts_source(expr)[1]
+    direct_matches = list(executable_template_matches(expr, expr_code))
     direct_candidates = {
         match.group(1)
-        for match in executable_template_matches(expr, expr_code)
+        for match in direct_matches
     }
+    if direct_candidates and not direct_template_usage_is_safe(
+        expr, expr_code, direct_matches
+    ) and not direct_class_helper_usage_is_safe(
+        expr, expr_code, definitions, definitions_code, direct_matches
+    ):
+        return None
     if has_top_level_choice(expr_code) and (
         len(direct_candidates) < 2 or not route_templates_agree(direct_candidates)
     ):
@@ -531,8 +843,12 @@ def resolve_path_expr(expr, ctx, ctx_code, definitions=None, definitions_code=No
     def class_helper_templates(call_expr, call_code, depth):
         if depth > 6:
             return set()
-        helper_call = re.match(r"this\.([A-Za-z_][A-Za-z0-9_]*)\s*\(", call_code.strip())
+        stripped_call = strip_enclosing_parens(call_code)
+        helper_call = re.match(r"this\.([A-Za-z_][A-Za-z0-9_]*)\s*\(", stripped_call)
         if not helper_call or not definitions or not definitions_code:
+            return set()
+        call_open = stripped_call.index("(", helper_call.start())
+        if match_close(stripped_call, call_open, "(", ")") != len(stripped_call):
             return set()
         span = method_body_span(definitions, helper_call.group(1), definitions_code)
         if not span:
@@ -549,10 +865,32 @@ def resolve_path_expr(expr, ctx, ctx_code, definitions=None, definitions_code=No
                 return set()
             value = body[value_start:value_end]
             value_code = body_code[value_start:value_end]
-            value_candidates = {
-                match.group(1)
-                for match in executable_template_matches(value, value_code)
-            }
+            if value_code.strip().startswith("{") and value_code.strip().endswith("}"):
+                object_start = value_code.index("{")
+                object_end = value_code.rindex("}")
+                path_value = None
+                for prop, prop_code in split_top_commas_aligned(
+                    value[object_start + 1:object_end],
+                    value_code[object_start + 1:object_end],
+                ):
+                    explicit = re.match(r"\s*path\s*:\s*(.+)", prop, re.S)
+                    if explicit and re.match(r"\s*path\s*:", prop_code):
+                        colon = prop_code.index(":")
+                        path_value = (
+                            prop[colon + 1:],
+                            prop_code[colon + 1:],
+                        )
+                    elif prop_code.strip() == "path":
+                        path_value = ("path", "path")
+                if path_value is None:
+                    return set()
+                value, value_code = path_value
+            value_matches = list(executable_template_matches(value, value_code))
+            value_candidates = {match.group(1) for match in value_matches}
+            if value_candidates and not direct_template_usage_is_safe(
+                value, value_code, value_matches
+            ):
+                return set()
             if has_top_level_choice(value_code) and (
                 len(value_candidates) < 2 or not route_templates_agree(value_candidates)
             ):
@@ -603,7 +941,7 @@ def resolve_path_expr(expr, ctx, ctx_code, definitions=None, definitions_code=No
                 following += 1
             if following < len(code_s) and code_s[following] == ":":
                 continue
-            assignments = []
+            declarations = []
             declaration = re.compile(
                 r"\b(?:const|let)\s+"+re.escape(ident)+r"\s*(?::[^=;]+)?="
             )
@@ -611,7 +949,7 @@ def resolve_path_expr(expr, ctx, ctx_code, definitions=None, definitions_code=No
                 value_start = assignment.end()
                 value_end = find_statement_end(local_code, value_start)
                 if value_end != -1:
-                    assignments.append(
+                    declarations.append(
                         (
                             assignment.start(),
                             local_ctx[value_start:value_end],
@@ -634,19 +972,24 @@ def resolve_path_expr(expr, ctx, ctx_code, definitions=None, definitions_code=No
                     value_start = assignment.end()
                     value_end = find_statement_end(local_code, value_start)
                     if value_end != -1:
-                        assignments.append(
+                        declarations.append(
                             (
                                 assignment.start(),
                                 local_ctx[value_start:value_end],
                                 local_code[value_start:value_end],
                             )
                         )
-            for _, rhs, rhs_code in visible_assignments(assignments, local_code):
-                seen2 = seen | {ident}
-                rhs_candidates = {
-                    match.group(1)
-                    for match in executable_template_matches(rhs, rhs_code)
-                }
+            for binding_pos, rhs, rhs_code in visible_assignments(
+                declarations, local_code
+            ):
+                rhs_matches = list(executable_template_matches(rhs, rhs_code))
+                rhs_candidates = {match.group(1) for match in rhs_matches}
+                if rhs_candidates and not direct_template_usage_is_safe(
+                    rhs, rhs_code, rhs_matches
+                ) and not direct_class_helper_usage_is_safe(
+                    rhs, rhs_code, definitions, definitions_code, rhs_matches
+                ):
+                    return set()
                 if has_top_level_choice(rhs_code) and (
                     len(rhs_candidates) < 2 or not route_templates_agree(rhs_candidates)
                 ):
@@ -655,17 +998,125 @@ def resolve_path_expr(expr, ctx, ctx_code, definitions=None, definitions_code=No
                     rhs_candidates.update(
                         class_helper_templates(rhs, rhs_code, depth + 1)
                     )
-                    rhs_candidates.update(
-                        try_ident_templates(
-                            rhs,
-                            rhs_code,
-                            local_ctx,
-                            local_code,
-                            seen2,
-                            depth + 1,
+                    wrapper_ident = route_wrapper_first_identifier(rhs_code)
+                    if wrapper_ident:
+                        rhs_candidates.update(
+                            try_ident_templates(
+                                wrapper_ident,
+                                wrapper_ident,
+                                local_ctx[:binding_pos],
+                                local_code[:binding_pos],
+                                seen - {ident},
+                                depth + 1,
+                            )
                         )
+                    elif simple_identifier_expression(rhs_code):
+                        rhs_candidates.update(
+                            try_ident_templates(
+                                rhs,
+                                rhs_code,
+                                local_ctx[:binding_pos],
+                                local_code[:binding_pos],
+                                seen - {ident},
+                                depth + 1,
+                            )
+                        )
+                if not route_templates_agree(rhs_candidates):
+                    return set()
+
+                # A mutable path may be rewritten after its declaration. Every
+                # write to this lexical binding must be query-only or resolve
+                # to the same route; unknown transformations poison coverage.
+                binding_candidates = set(rhs_candidates)
+                simple_write = re.compile(
+                    r"(?<![A-Za-z0-9_.$])"+re.escape(ident)+r"\s*=(?!=|>)"
+                )
+                for write in simple_write.finditer(local_code, binding_pos + 1):
+                    declaration_prefix = local_code[
+                        max(0, write.start() - 16):write.start()
+                    ]
+                    if re.search(r"\b(?:const|let)\s*$", declaration_prefix):
+                        continue
+                    visible_at_write = visible_assignments(
+                        [item for item in declarations if item[0] < write.start()],
+                        local_code[:write.start()],
                     )
-                candidates.update(rhs_candidates)
+                    if not visible_at_write or visible_at_write[0][0] != binding_pos:
+                        continue
+                    value_start = write.end()
+                    value_end = find_statement_end(local_code, value_start)
+                    if value_end == -1:
+                        return set()
+                    write_rhs = local_ctx[value_start:value_end]
+                    write_code = local_code[value_start:value_end]
+                    if self_assignment_is_route_preserving(
+                        ident, write_rhs, write_code
+                    ):
+                        continue
+                    write_matches = list(
+                        executable_template_matches(write_rhs, write_code)
+                    )
+                    write_candidates = {
+                        match.group(1) for match in write_matches
+                    }
+                    if write_candidates and not direct_template_usage_is_safe(
+                        write_rhs, write_code, write_matches
+                    ):
+                        return set()
+                    if not write_candidates and simple_identifier_expression(write_code):
+                        write_candidates.update(
+                            try_ident_templates(
+                                write_rhs,
+                                write_code,
+                                local_ctx[:write.start()],
+                                local_code[:write.start()],
+                                seen - {ident},
+                                depth + 1,
+                            )
+                        )
+                    if not route_templates_agree(write_candidates):
+                        return set()
+                    binding_candidates.update(write_candidates)
+
+                compound_write = re.compile(
+                    r"(?<![A-Za-z0-9_.$])"+re.escape(ident)
+                    +r"\s*(\+=|-=|\*=|/=|%=|&&=|\|\|=|\?\?=)"
+                )
+                for write in compound_write.finditer(local_code, binding_pos + 1):
+                    visible_at_write = visible_assignments(
+                        [item for item in declarations if item[0] < write.start()],
+                        local_code[:write.start()],
+                    )
+                    if not visible_at_write or visible_at_write[0][0] != binding_pos:
+                        continue
+                    value_start = write.end()
+                    value_end = find_statement_end(local_code, value_start)
+                    if value_end == -1:
+                        return set()
+                    write_rhs = local_ctx[value_start:value_end]
+                    write_code = local_code[value_start:value_end]
+                    write_templates = list(
+                        executable_template_matches(write_rhs, write_code)
+                    )
+                    if not (
+                        write.group(1) == "+="
+                        and len(write_templates) == 1
+                        and write_templates[0].group(1).startswith(("?", "&"))
+                        and direct_template_usage_is_safe(
+                            write_rhs, write_code, write_templates
+                        )
+                    ):
+                        return set()
+
+                if re.search(
+                    r"(?:\+\+|--)\s*"+re.escape(ident)
+                    +r"\b|\b"+re.escape(ident)+r"\s*(?:\+\+|--)",
+                    local_code[binding_pos + 1:],
+                ):
+                    return set()
+                if not route_templates_agree(binding_candidates):
+                    return set()
+                candidates.update(binding_candidates)
         return candidates
 
     # Resolve direct class path-helper calls through the helper's return value.
@@ -673,8 +1124,12 @@ def resolve_path_expr(expr, ctx, ctx_code, definitions=None, definitions_code=No
     # definitions source rather than only the call-site context.
     candidates = direct_candidates
     if not candidates:
-        candidates.update(class_helper_templates(expr, expr_code, 0))
-        candidates.update(try_ident_templates(expr, expr_code, ctx, ctx_code, set(), 0))
+        helper_candidates = class_helper_templates(expr, expr_code, 0)
+        candidates.update(helper_candidates)
+        if not helper_candidates and simple_identifier_expression(expr_code):
+            candidates.update(
+                try_ident_templates(expr, expr_code, ctx, ctx_code, set(), 0)
+            )
     return min(candidates, key=len) if route_templates_agree(candidates) else None
 
 def resolve_template(tpl, fieldmap, helper):
@@ -711,7 +1166,45 @@ def method_body_span(src, name, code_src=None):
     op = scan.index("(", m.start())
     params_end = match_close(scan, op, "(", ")")
     if params_end == -1: return None
-    body_start = scan.find("{", params_end)
+    cursor = params_end
+    while cursor < len(scan) and scan[cursor].isspace():
+        cursor += 1
+    if cursor < len(scan) and scan[cursor] == ":":
+        cursor += 1
+        angle = paren = bracket = 0
+        seen_type_token = False
+        while cursor < len(scan):
+            token = scan[cursor]
+            if token == "<": angle += 1
+            elif token == ">" and angle: angle -= 1
+            elif token == "(": paren += 1
+            elif token == ")" and paren: paren -= 1
+            elif token == "[": bracket += 1
+            elif token == "]" and bracket: bracket -= 1
+            elif token == "{":
+                previous = cursor - 1
+                while previous >= params_end and scan[previous].isspace():
+                    previous -= 1
+                if (
+                    angle or paren or bracket or not seen_type_token
+                    or (previous >= 0 and scan[previous] in "|&")
+                    or scan[max(0, previous - 1):previous + 1] == "=>"
+                ):
+                    type_end = match_close(scan, cursor, "{", "}")
+                    if type_end == -1:
+                        return None
+                    cursor = type_end
+                    seen_type_token = True
+                    continue
+                body_start = cursor
+                break
+            elif not token.isspace():
+                seen_type_token = True
+            cursor += 1
+        else:
+            return None
+    else:
+        body_start = scan.find("{", cursor)
     if body_start == -1: return None
     body_end = match_close(scan, body_start, "{", "}")
     return (body_start, body_end) if body_end != -1 else None
@@ -821,6 +1314,11 @@ def extract(api):
             if not span or not calls: continue
             delegated_spans.append(span)
             for call in calls:
+                if statically_dead_at(code_src, call.start()):
+                    unknowns.append(
+                        (os.path.basename(f), "statically-dead-helper-call", helper_name)
+                    )
+                    continue
                 op = code_src.index("(", call.start())
                 end = match_close(code_src, op, "(", ")")
                 args = (
@@ -852,6 +1350,11 @@ def extract(api):
         for call_start, _call_paren, obj_start in request_calls:
             if any(start <= call_start < end for start, end in delegated_spans):
                 continue
+            if statically_dead_at(code_src, call_start):
+                unknowns.append(
+                    (os.path.basename(f), "statically-dead-request", src[call_start:call_start + 80])
+                )
+                continue
             obj_end = match_close(code_src, obj_start, "{", "}")
             obj = src[obj_start:obj_end]
             obj_code = code_src[obj_start:obj_end]
@@ -859,6 +1362,23 @@ def extract(api):
             ctx = src[scope_start:call_start]
             ctx_code = code_src[scope_start:call_start]
             props = split_top_commas_aligned(obj[1:-1], obj_code[1:-1])
+            unsafe_computed_key = next(
+                (
+                    prop_code.strip()
+                    for _, prop_code in props
+                    if prop_code.strip().startswith("[")
+                ),
+                None,
+            )
+            if unsafe_computed_key is not None:
+                unknowns.append(
+                    (
+                        os.path.basename(f),
+                        "computed-request-property",
+                        unsafe_computed_key[:80],
+                    )
+                )
+                continue
             unsafe_spread = next(
                 (
                     prop_code.strip()
@@ -956,6 +1476,8 @@ def load_spec(name, expected_server_scope):
     for p, item in paths.items():
         if not isinstance(p, str) or not p.startswith("/") or not isinstance(item, dict):
             fail_spec(name, "invalid OpenAPI document: malformed path item")
+        if "$ref" in item:
+            fail_spec(name, f"unsupported OpenAPI Path Item $ref at {p}")
         for verb, op in item.items():
             if verb.lower() not in HTTP_METHODS:
                 continue
