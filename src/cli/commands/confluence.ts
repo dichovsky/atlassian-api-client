@@ -12,7 +12,7 @@ import type {
   CommentSortOrder,
   CommentStatus,
   ContentSortOrder,
-  CreatePageData,
+  CreatePageRequest,
   CreateSpaceData,
   CustomContentSortOrder,
   DataPolicySpaceSortOrder,
@@ -136,7 +136,7 @@ async function executePages(client: ConfluenceClient, cmd: ParsedCommand): Promi
         ...(subtype === undefined ? {} : { subtype }),
         ...(body === undefined ? {} : { body }),
       };
-      const data: CreatePageData =
+      const data: CreatePageRequest =
         status === 'draft'
           ? { ...common, status, ...(title === undefined ? {} : { title }) }
           : {

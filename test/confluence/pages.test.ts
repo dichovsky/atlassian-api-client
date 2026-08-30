@@ -1,6 +1,18 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { PagesResource } from '../../src/confluence/resources/pages.js';
+import type { CreatePageData } from '../../src/confluence/types/pages.js';
 import { MockTransport } from '../helpers/mock-transport.js';
+
+interface ExtendedCreatePageData extends CreatePageData {
+  readonly clientTag?: string;
+}
+
+function passExistingCreatePageData(
+  pages: PagesResource,
+  data: CreatePageData,
+): ReturnType<PagesResource['create']> {
+  return pages.create(data);
+}
 
 const BASE_URL = 'https://test.atlassian.net/wiki/api/v2';
 
@@ -235,6 +247,19 @@ describe('PagesResource', () => {
         path: `${BASE_URL}/pages`,
         body: data,
       });
+    });
+
+    it('preserves CreatePageData interface extension compatibility', async () => {
+      transport.respondWith(makePage('102'));
+      const data: ExtendedCreatePageData = {
+        spaceId: 'SPACE',
+        title: 'Extended page',
+        clientTag: 'downstream-metadata',
+      };
+
+      await passExistingCreatePageData(pages, data);
+
+      expect(transport.lastCall?.options.body).toBe(data);
     });
   });
 

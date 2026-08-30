@@ -218,6 +218,7 @@ export type {
   ChildPageSortOrder,
   CreatePageData,
   CreatePageParams,
+  CreatePageRequest,
   DeletePageParams,
   GetPageClassificationLevelParams,
   GetPageParams,

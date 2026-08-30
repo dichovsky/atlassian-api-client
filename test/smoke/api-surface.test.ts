@@ -27,6 +27,22 @@ import type {
   Middleware,
   ListLabelsParams,
   ConfluenceListLabelsParams,
+  CreatePageParams,
+  CreatePageRequest,
+  GetSpaceParams,
+  PageLookupStatus,
+  PageBodyWrite,
+  PageBodyWriteRepresentation,
+  PageNestedBodyWrite,
+  SpaceDescription,
+  SpaceDescriptionBody,
+  SpaceDescriptionFormat,
+  SpaceIcon,
+  SpaceLinks,
+  SpaceNestedEnvelope,
+  SpaceSortOrder,
+  SpaceStatus,
+  SpaceType,
   JiraListLabelsParams,
   RetryConfig,
   PaginateOptions,
@@ -42,6 +58,35 @@ describe('ConfluenceClient', () => {
   it('is constructable with basic auth', () => {
     const client = new ConfluenceClient(BASE_CONFIG);
     expect(client).toBeDefined();
+  });
+
+  it('exports current page-create contract types', () => {
+    const params: CreatePageParams = { private: true, embedded: false };
+    const representation: PageBodyWriteRepresentation = 'storage';
+    const flatBody: PageBodyWrite = { representation, value: '<p>Hello</p>' };
+    const nestedBody: PageNestedBodyWrite = { storage: flatBody };
+    const draft: CreatePageRequest = { spaceId: 'SPACE', status: 'draft', body: nestedBody };
+
+    expect({ draft, params }).toEqual({ draft, params });
+  });
+
+  it('exports current page and space contract components', () => {
+    type CurrentConfluenceContracts = [
+      PageLookupStatus,
+      GetSpaceParams,
+      SpaceDescriptionFormat,
+      SpaceDescription,
+      SpaceDescriptionBody,
+      SpaceIcon,
+      SpaceLinks,
+      SpaceNestedEnvelope<unknown>,
+      SpaceSortOrder,
+      SpaceStatus,
+      SpaceType,
+    ];
+    const publishedTypes: Partial<CurrentConfluenceContracts> = [];
+
+    expect(publishedTypes).toEqual([]);
   });
 
   it('exposes all expected resources', () => {

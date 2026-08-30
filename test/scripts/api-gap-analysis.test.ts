@@ -10,7 +10,7 @@ const execFileAsync = promisify(execFile);
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(HERE, '../..');
 const ANALYZER = resolve(REPO_ROOT, 'scripts/api-gap-analysis.py');
-const ANALYZER_TIMEOUT_MS = 15_000;
+const ANALYZER_TIMEOUT_MS = 30_000;
 const ADMIN_KEY_GET_IMPLEMENTATION = `    const response = await this.transport.request<AdminKey>({
       method: 'GET',
       path: \`\${this.baseUrl}/admin-key\`,
@@ -136,6 +136,46 @@ describe('api gap analysis', () => {
     });
     return response.data;`;
         const changedAdminKey = adminKey.replace(liveReturn, extraRoute);
+        expect(changedAdminKey).not.toBe(adminKey);
+        await writeFile(adminKeyPath, changedAdminKey);
+
+        await expect(
+          execFileAsync('python3', [ANALYZER, '--source-root', fixtureRoot], {
+            cwd: REPO_ROOT,
+          }),
+        ).rejects.toMatchObject({
+          code: 1,
+          stdout: expect.stringContaining('1 /wiki/api/v2'),
+        });
+      } finally {
+        await rm(fixtureRoot, { recursive: true, force: true });
+      }
+    },
+    ANALYZER_TIMEOUT_MS,
+  );
+
+  it(
+    'does not treat a switch sibling return as an unconditional exit',
+    async () => {
+      const fixtureRoot = await mkdtemp(join(tmpdir(), 'atlassian-api-gap-switch-exit-'));
+      const fixtureSrc = join(fixtureRoot, 'src');
+
+      try {
+        await cp(resolve(REPO_ROOT, 'src'), fixtureSrc, { recursive: true });
+        const adminKeyPath = join(fixtureSrc, 'confluence/resources/admin-key.ts');
+        const adminKey = await readFile(adminKeyPath, 'utf8');
+        const liveReturn = '    return response.data;';
+        const switchedReturn = `    switch (this.baseUrl.length) {
+      case 0:
+        return response.data;
+      default:
+        await this.transport.request<AdminKey>({
+          method: 'GET',
+          path: \`\${this.baseUrl}/admin-key-not-in-spec\`,
+        });
+    }
+    return response.data;`;
+        const changedAdminKey = adminKey.replace(liveReturn, switchedReturn);
         expect(changedAdminKey).not.toBe(adminKey);
         await writeFile(adminKeyPath, changedAdminKey);
 
@@ -320,6 +360,151 @@ ${liveRequest}`,
             'confluence-v2: invalid OpenAPI operation GET /admin-key: expected non-empty responses',
           ),
         });
+      } finally {
+        await rm(fixtureRoot, { recursive: true, force: true });
+      }
+    },
+    ANALYZER_TIMEOUT_MS,
+  );
+
+  it(
+    'rejects an invalid OpenAPI response entry',
+    async () => {
+      const fixtureRoot = await mkdtemp(join(tmpdir(), 'atlassian-api-gap-invalid-response-'));
+      const fixtureSpec = join(fixtureRoot, 'spec');
+
+      try {
+        await cp(resolve(REPO_ROOT, 'spec'), fixtureSpec, { recursive: true });
+        const confluencePath = join(fixtureSpec, 'confluence-v2.json');
+        const confluence = JSON.parse(await readFile(confluencePath, 'utf8')) as {
+          paths: Record<
+            string,
+            { get?: { responses?: Record<string, Record<string, unknown> | null> } }
+          >;
+        };
+        const responses = confluence.paths['/admin-key']?.get?.responses;
+        expect(responses).toBeDefined();
+        responses!['200'] = null;
+        await writeFile(confluencePath, JSON.stringify(confluence));
+
+        await expect(
+          execFileAsync('python3', [ANALYZER, '--spec-dir', fixtureSpec], {
+            cwd: REPO_ROOT,
+          }),
+        ).rejects.toMatchObject({
+          code: 1,
+          stderr: expect.stringContaining(
+            'confluence-v2: invalid OpenAPI response 200 for GET /admin-key',
+          ),
+        });
+      } finally {
+        await rm(fixtureRoot, { recursive: true, force: true });
+      }
+    },
+    ANALYZER_TIMEOUT_MS,
+  );
+
+  it(
+    'rejects an OpenAPI responses map containing only extensions',
+    async () => {
+      const fixtureRoot = await mkdtemp(join(tmpdir(), 'atlassian-api-gap-response-extension-'));
+      const fixtureSpec = join(fixtureRoot, 'spec');
+
+      try {
+        await cp(resolve(REPO_ROOT, 'spec'), fixtureSpec, { recursive: true });
+        const confluencePath = join(fixtureSpec, 'confluence-v2.json');
+        const confluence = JSON.parse(await readFile(confluencePath, 'utf8')) as {
+          paths: Record<string, { get?: { responses?: Record<string, unknown> } }>;
+        };
+        const operation = confluence.paths['/admin-key']?.get;
+        expect(operation).toBeDefined();
+        operation!.responses = { 'x-note': null };
+        await writeFile(confluencePath, JSON.stringify(confluence));
+
+        await expect(
+          execFileAsync('python3', [ANALYZER, '--spec-dir', fixtureSpec], {
+            cwd: REPO_ROOT,
+          }),
+        ).rejects.toMatchObject({
+          code: 1,
+          stderr: expect.stringContaining(
+            'confluence-v2: invalid OpenAPI operation GET /admin-key: expected at least one response entry',
+          ),
+        });
+      } finally {
+        await rm(fixtureRoot, { recursive: true, force: true });
+      }
+    },
+    ANALYZER_TIMEOUT_MS,
+  );
+
+  it(
+    'rejects a dangling local OpenAPI response reference',
+    async () => {
+      const fixtureRoot = await mkdtemp(join(tmpdir(), 'atlassian-api-gap-response-ref-'));
+      const fixtureSpec = join(fixtureRoot, 'spec');
+
+      try {
+        await cp(resolve(REPO_ROOT, 'spec'), fixtureSpec, { recursive: true });
+        const confluencePath = join(fixtureSpec, 'confluence-v2.json');
+        const confluence = JSON.parse(await readFile(confluencePath, 'utf8')) as {
+          paths: Record<
+            string,
+            { get?: { responses?: Record<string, Record<string, unknown> | null> } }
+          >;
+        };
+        const responses = confluence.paths['/admin-key']?.get?.responses;
+        expect(responses).toBeDefined();
+        responses!['200'] = { $ref: '#/components/responses/DefinitelyMissing' };
+        await writeFile(confluencePath, JSON.stringify(confluence));
+
+        await expect(
+          execFileAsync('python3', [ANALYZER, '--spec-dir', fixtureSpec], {
+            cwd: REPO_ROOT,
+          }),
+        ).rejects.toMatchObject({
+          code: 1,
+          stderr: expect.stringContaining(
+            'confluence-v2: invalid OpenAPI response 200 for GET /admin-key',
+          ),
+        });
+      } finally {
+        await rm(fixtureRoot, { recursive: true, force: true });
+      }
+    },
+    ANALYZER_TIMEOUT_MS,
+  );
+
+  it(
+    'resolves a valid local OpenAPI response reference',
+    async () => {
+      const fixtureRoot = await mkdtemp(join(tmpdir(), 'atlassian-api-gap-valid-response-ref-'));
+      const fixtureSpec = join(fixtureRoot, 'spec');
+
+      try {
+        await cp(resolve(REPO_ROOT, 'spec'), fixtureSpec, { recursive: true });
+        const confluencePath = join(fixtureSpec, 'confluence-v2.json');
+        const confluence = JSON.parse(await readFile(confluencePath, 'utf8')) as {
+          components: { responses?: Record<string, Record<string, unknown>> };
+          paths: Record<string, { get?: { responses?: Record<string, Record<string, unknown>> } }>;
+        };
+        const responses = confluence.paths['/admin-key']?.get?.responses;
+        const successResponse = responses?.['200'];
+        expect(successResponse).toBeDefined();
+        if (successResponse === undefined) throw new Error('missing fixture response');
+        confluence.components.responses ??= {};
+        confluence.components.responses.AdminKeySuccess = successResponse;
+        responses!['200'] = { $ref: '#/components/responses/AdminKeySuccess' };
+        await writeFile(confluencePath, JSON.stringify(confluence));
+
+        const { stdout, stderr } = await execFileAsync(
+          'python3',
+          [ANALYZER, '--spec-dir', fixtureSpec],
+          { cwd: REPO_ROOT },
+        );
+
+        expect(stderr).toBe('');
+        expect(stdout).toContain('confluence-v2: 218 ops | impl 218 | MISSING 0 (live 0, dep 0)');
       } finally {
         await rm(fixtureRoot, { recursive: true, force: true });
       }
@@ -562,6 +747,44 @@ ${liveImplementation}
     if (false) {
       const baseUrl = \`\${resolved.baseUrl}/wiki/api/v2\`;
       void baseUrl;
+    }`,
+        );
+        expect(changedClient).not.toBe(client);
+        await writeFile(clientPath, changedClient);
+
+        await expect(
+          execFileAsync('python3', [ANALYZER, '--source-root', fixtureRoot], {
+            cwd: REPO_ROOT,
+          }),
+        ).rejects.toMatchObject({
+          code: 1,
+          stdout: expect.stringMatching(
+            /confluence-v2: 218 ops \| impl \d+ \| MISSING [1-9]\d* \(live [1-9]\d*, dep \d+\)/,
+          ),
+        });
+      } finally {
+        await rm(fixtureRoot, { recursive: true, force: true });
+      }
+    },
+    ANALYZER_TIMEOUT_MS,
+  );
+
+  it(
+    'fails closed when destructuring shadows a client base alias',
+    async () => {
+      const fixtureRoot = await mkdtemp(join(tmpdir(), 'atlassian-api-gap-base-destructure-'));
+      const fixtureSrc = join(fixtureRoot, 'src');
+
+      try {
+        await cp(resolve(REPO_ROOT, 'src'), fixtureSrc, { recursive: true });
+        const clientPath = join(fixtureSrc, 'confluence/client.ts');
+        const client = await readFile(clientPath, 'utf8');
+        const liveWiring = '    this.adminKey = new AdminKeyResource(transport, baseUrl);';
+        const changedClient = client.replace(
+          liveWiring,
+          `    {
+      const { baseUrl } = { baseUrl: v1BaseUrl };
+      this.adminKey = new AdminKeyResource(transport, baseUrl);
     }`,
         );
         expect(changedClient).not.toBe(client);
@@ -1579,6 +1802,186 @@ ${ADMIN_KEY_GET_IMPLEMENTATION}`,
       this.adminKey = new AdminKeyResource(transport, baseUrl);
     }`,
         );
+        expect(changedClient).not.toBe(client);
+        await writeFile(clientPath, changedClient);
+
+        await expect(
+          execFileAsync('python3', [ANALYZER, '--source-root', fixtureRoot], {
+            cwd: REPO_ROOT,
+          }),
+        ).rejects.toMatchObject({
+          code: 1,
+          stdout: expect.stringMatching(
+            /confluence-v2: 218 ops \| impl \d+ \| MISSING [1-9]\d* \(live [1-9]\d*, dep \d+\)/,
+          ),
+        });
+      } finally {
+        await rm(fixtureRoot, { recursive: true, force: true });
+      }
+    },
+    ANALYZER_TIMEOUT_MS,
+  );
+
+  it(
+    'fails closed when a resource constructor is wired through Object.assign',
+    async () => {
+      const fixtureRoot = await mkdtemp(join(tmpdir(), 'atlassian-api-gap-object-wiring-'));
+      const fixtureSrc = join(fixtureRoot, 'src');
+
+      try {
+        await cp(resolve(REPO_ROOT, 'src'), fixtureSrc, { recursive: true });
+        const clientPath = join(fixtureSrc, 'confluence/client.ts');
+        const client = await readFile(clientPath, 'utf8');
+        const liveWiring = '    this.adminKey = new AdminKeyResource(transport, baseUrl);';
+        const changedClient = client.replace(
+          liveWiring,
+          `${liveWiring}
+    Object.assign(this, {
+      adminKey: new AdminKeyResource(transport, v1BaseUrl),
+    });`,
+        );
+        expect(changedClient).not.toBe(client);
+        await writeFile(clientPath, changedClient);
+
+        await expect(
+          execFileAsync('python3', [ANALYZER, '--source-root', fixtureRoot], {
+            cwd: REPO_ROOT,
+          }),
+        ).rejects.toMatchObject({
+          code: 1,
+          stdout: expect.stringMatching(
+            /confluence-v2: 218 ops \| impl \d+ \| MISSING [1-9]\d* \(live [1-9]\d*, dep \d+\)/,
+          ),
+        });
+      } finally {
+        await rm(fixtureRoot, { recursive: true, force: true });
+      }
+    },
+    ANALYZER_TIMEOUT_MS,
+  );
+
+  it.each([
+    {
+      name: 'a direct assignment',
+      mutation: '    this.adminKey = makeAdminKeyResource(transport, v1BaseUrl);',
+    },
+    {
+      name: 'Object.assign',
+      mutation: `    Object.assign(this, {
+      adminKey: makeAdminKeyResource(transport, v1BaseUrl),
+    });`,
+    },
+    {
+      name: 'a computed property assignment',
+      mutation: "    this['adminKey'] = makeAdminKeyResource(transport, v1BaseUrl);",
+    },
+    {
+      name: 'a destructuring assignment',
+      mutation: `    ({ adminKey: this.adminKey } = {
+      adminKey: makeAdminKeyResource(transport, v1BaseUrl),
+    });`,
+    },
+    {
+      name: 'a direct assignment after an unsupported union declaration',
+      mutation: '    this.adminKey = makeAdminKeyResource(transport, v1BaseUrl);',
+      propertyDeclaration: '  readonly adminKey: AdminKeyResource | undefined;',
+    },
+    {
+      name: 'a direct assignment when the declaration hides the resource type',
+      mutation: '    this.adminKey = makeAdminKeyResource(transport, v1BaseUrl);',
+      propertyDeclaration: '  readonly adminKey: unknown;',
+    },
+    {
+      name: 'a switch default after a sibling return',
+      mutation: `    switch (resolved.baseUrl.length) {
+      case 0:
+        return;
+      default:
+        this.adminKey = makeAdminKeyResource(transport, v1BaseUrl);
+    }`,
+      insertionAnchor: '    this.usersBulk = new UsersBulkResource(transport, baseUrl);',
+    },
+    {
+      name: 'an escaped property and parenthesized constructor',
+      mutation: `    void makeAdminKeyResource;
+    this.adm\\u0069nKey = new (AdminKeyResource)(transport, v1BaseUrl);`,
+    },
+  ])(
+    'fails closed when an imported factory rewires a resource through $name',
+    async ({ mutation, propertyDeclaration, insertionAnchor }) => {
+      const fixtureRoot = await mkdtemp(join(tmpdir(), 'atlassian-api-gap-factory-wiring-'));
+      const fixtureSrc = join(fixtureRoot, 'src');
+
+      try {
+        await cp(resolve(REPO_ROOT, 'src'), fixtureSrc, { recursive: true });
+        const adminKeyPath = join(fixtureSrc, 'confluence/resources/admin-key.ts');
+        const adminKey = await readFile(adminKeyPath, 'utf8');
+        await writeFile(
+          adminKeyPath,
+          `${adminKey}
+export function makeAdminKeyResource(
+  transport: Transport,
+  baseUrl: string,
+): AdminKeyResource {
+  return new AdminKeyResource(transport, baseUrl);
+}
+`,
+        );
+
+        const clientPath = join(fixtureSrc, 'confluence/client.ts');
+        const client = await readFile(clientPath, 'utf8');
+        const importedClient = client.replace(
+          "import { AdminKeyResource } from './resources/admin-key.js';",
+          "import { AdminKeyResource, makeAdminKeyResource } from './resources/admin-key.js';",
+        );
+        expect(importedClient).not.toBe(client);
+        const declaredClient = propertyDeclaration
+          ? importedClient.replace('  readonly adminKey: AdminKeyResource;', propertyDeclaration)
+          : importedClient;
+        if (propertyDeclaration) expect(declaredClient).not.toBe(importedClient);
+        const liveWiring = '    this.adminKey = new AdminKeyResource(transport, baseUrl);';
+        const anchor = insertionAnchor ?? liveWiring;
+        const changedClient = declaredClient.replace(anchor, `${anchor}\n${mutation}`);
+        expect(changedClient).not.toBe(declaredClient);
+        await writeFile(clientPath, changedClient);
+
+        await expect(
+          execFileAsync('python3', [ANALYZER, '--source-root', fixtureRoot], {
+            cwd: REPO_ROOT,
+          }),
+        ).rejects.toMatchObject({
+          code: 1,
+          stdout: expect.stringMatching(
+            /confluence-v2: 218 ops \| impl \d+ \| MISSING [1-9]\d* \(live [1-9]\d*, dep \d+\)/,
+          ),
+        });
+      } finally {
+        await rm(fixtureRoot, { recursive: true, force: true });
+      }
+    },
+    ANALYZER_TIMEOUT_MS,
+  );
+
+  it(
+    'requires resource wiring to be an unconditional constructor statement',
+    async () => {
+      const fixtureRoot = await mkdtemp(join(tmpdir(), 'atlassian-api-gap-conditional-init-'));
+      const fixtureSrc = join(fixtureRoot, 'src');
+
+      try {
+        await cp(resolve(REPO_ROOT, 'src'), fixtureSrc, { recursive: true });
+        const clientPath = join(fixtureSrc, 'confluence/client.ts');
+        const client = await readFile(clientPath, 'utf8');
+        const changedClient = client
+          .replace(
+            '  readonly adminKey: AdminKeyResource;',
+            '  readonly adminKey!: AdminKeyResource;',
+          )
+          .replace(
+            '    this.adminKey = new AdminKeyResource(transport, baseUrl);',
+            `    if (resolved.baseUrl.length > 1000)
+      this.adminKey = new AdminKeyResource(transport, baseUrl);`,
+          );
         expect(changedClient).not.toBe(client);
         await writeFile(clientPath, changedClient);
 

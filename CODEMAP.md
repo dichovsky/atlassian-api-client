@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "3.0.0"
   },
-  "sourceHash": "96b0db413756876130bf2742e33783bfc2a5c2aca0124edf7f513b4fdcdfd538",
+  "sourceHash": "768371e9dd08504c5a781a2993e55b2a3ddc2e3ef9f2aa5b17657ee1329c34c7",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -431,7 +431,7 @@
       "name": "ChildPage",
       "kind": "interface",
       "file": "src/confluence/types/pages.ts",
-      "line": 287,
+      "line": 304,
       "signature": "export interface ChildPage { readonly id: string; readonly status?: 'current' | 'archived'; readonly title?: string; rea…",
       "jsdoc": "Child-page entry returned by `GET /pages/{id}/children`.",
       "typeOnly": true
@@ -440,7 +440,7 @@
       "name": "ChildPageSortOrder",
       "kind": "type",
       "file": "src/confluence/types/pages.ts",
-      "line": 276,
+      "line": 293,
       "signature": "export type ChildPageSortOrder = | 'created-date' | '-created-date' | 'id' | '-id' | 'child-position' | '-child-position…",
       "jsdoc": "Sort tokens accepted by `GET /pages/{id}/children`. Mirrors the OpenAPI `ChildPageSortOrder` enum — narrower than `ContentSortOrder` (no `title`).",
       "typeOnly": true
@@ -801,11 +801,29 @@
     },
     {
       "name": "CreatePageData",
+      "kind": "interface",
+      "file": "src/confluence/types/pages.ts",
+      "line": 161,
+      "signature": "export interface CreatePageData { readonly spaceId: string; readonly title: string; readonly parentId?: string; readonly…",
+      "jsdoc": "Backward-compatible title-required page-create shape. Kept as an interface so downstream extension and declaration merging remain valid.",
+      "typeOnly": true
+    },
+    {
+      "name": "CreatePageParams",
+      "kind": "interface",
+      "file": "src/confluence/types/pages.ts",
+      "line": 148,
+      "signature": "export interface CreatePageParams { readonly embedded?: boolean; readonly private?: boolean; readonly 'root-level'?: boo…",
+      "jsdoc": "Query parameters for creating a Confluence page (`POST /pages`).",
+      "typeOnly": true
+    },
+    {
+      "name": "CreatePageRequest",
       "kind": "type",
       "file": "src/confluence/types/pages.ts",
-      "line": 172,
-      "signature": "export type CreatePageData = | (CreatePageDataBase & { readonly status: 'draft'; readonly title?: string }) | (CreatePag…",
-      "jsdoc": "Request body for creating a Confluence page (`POST /pages`). A title is required for the default/current status but optional for draft creation.",
+      "line": 189,
+      "signature": "export type CreatePageRequest = | (CreatePageRequestBase & { readonly status: 'draft'; readonly title?: string }) | (Cre…",
+      "jsdoc": "Exact current request union for `POST /pages`. A title is required for the default/current status but optional for draft creation. Existing `CreatePageData` values remain assignable to this widened method input.",
       "typeOnly": true
     },
     {
@@ -1100,7 +1118,7 @@
       "name": "DeletePageParams",
       "kind": "interface",
       "file": "src/confluence/types/pages.ts",
-      "line": 205,
+      "line": 222,
       "signature": "export interface DeletePageParams { readonly purge?: boolean; readonly draft?: boolean; }",
       "jsdoc": "Parameters for deleting a Confluence page.",
       "typeOnly": true
@@ -1450,7 +1468,7 @@
       "name": "GetPageClassificationLevelParams",
       "kind": "interface",
       "file": "src/confluence/types/pages.ts",
-      "line": 312,
+      "line": 329,
       "signature": "export interface GetPageClassificationLevelParams { readonly status?: 'current' | 'draft' | 'archived'; }",
       "jsdoc": "Parameters for `GET /pages/{id}/classification-level`.",
       "typeOnly": true
@@ -1462,6 +1480,15 @@
       "line": 107,
       "signature": "export interface GetPageParams { readonly 'body-format'?: | 'storage' | 'atlas_doc_format' | 'view' | 'export_view' | 'a…",
       "jsdoc": "Parameters for retrieving a single Confluence page (`GET /pages/{id}`).",
+      "typeOnly": true
+    },
+    {
+      "name": "GetSpaceParams",
+      "kind": "interface",
+      "file": "src/confluence/types/spaces.ts",
+      "line": 106,
+      "signature": "export interface GetSpaceParams { readonly 'description-format'?: SpaceDescriptionFormat; readonly 'include-icon'?: bool…",
+      "jsdoc": "Parameters for retrieving one space with optional inlined resources.",
       "typeOnly": true
     },
     {
@@ -1862,7 +1889,7 @@
       "name": "ListChildPagesParams",
       "kind": "interface",
       "file": "src/confluence/types/pages.ts",
-      "line": 296,
+      "line": 313,
       "signature": "export interface ListChildPagesParams { readonly cursor?: string; readonly limit?: number; readonly sort?: ChildPageSort…",
       "jsdoc": "Parameters for listing child pages (cursor-paginated).",
       "typeOnly": true
@@ -2168,7 +2195,7 @@
       "name": "ListPageAncestorsParams",
       "kind": "interface",
       "file": "src/confluence/types/pages.ts",
-      "line": 228,
+      "line": 245,
       "signature": "export interface ListPageAncestorsParams { readonly limit?: number; }",
       "jsdoc": "Parameters for listing page ancestors.",
       "typeOnly": true
@@ -2177,7 +2204,7 @@
       "name": "ListPageCustomContentParams",
       "kind": "interface",
       "file": "src/confluence/types/pages.ts",
-      "line": 303,
+      "line": 320,
       "signature": "export interface ListPageCustomContentParams { readonly type: string; readonly sort?: CustomContentSortOrder; readonly c…",
       "jsdoc": "Parameters for `GET /pages/{id}/custom-content`. The `type` filter is required by the server.",
       "typeOnly": true
@@ -2186,7 +2213,7 @@
       "name": "ListPageDescendantsParams",
       "kind": "interface",
       "file": "src/confluence/types/pages.ts",
-      "line": 244,
+      "line": 261,
       "signature": "export interface ListPageDescendantsParams { readonly limit?: number; readonly depth?: number; readonly cursor?: string;…",
       "jsdoc": "Parameters for listing page descendants (cursor-paginated).",
       "typeOnly": true
@@ -2195,7 +2222,7 @@
       "name": "ListPageDirectChildrenParams",
       "kind": "interface",
       "file": "src/confluence/types/pages.ts",
-      "line": 266,
+      "line": 283,
       "signature": "export interface ListPageDirectChildrenParams { readonly limit?: number; readonly cursor?: string; readonly sort?: Conte…",
       "jsdoc": "Parameters for listing direct children of a page.",
       "typeOnly": true
@@ -2204,7 +2231,7 @@
       "name": "ListPageFooterCommentsParams",
       "kind": "interface",
       "file": "src/confluence/types/pages.ts",
-      "line": 384,
+      "line": 401,
       "signature": "export interface ListPageFooterCommentsParams { readonly 'body-format'?: 'storage' | 'atlas_doc_format'; readonly status…",
       "jsdoc": "Parameters for `GET /pages/{id}/footer-comments`.",
       "typeOnly": true
@@ -2213,7 +2240,7 @@
       "name": "ListPageInlineCommentsParams",
       "kind": "interface",
       "file": "src/confluence/types/pages.ts",
-      "line": 393,
+      "line": 410,
       "signature": "export interface ListPageInlineCommentsParams { readonly 'body-format'?: 'storage' | 'atlas_doc_format'; readonly status…",
       "jsdoc": "Parameters for `GET /pages/{id}/inline-comments`.",
       "typeOnly": true
@@ -2222,7 +2249,7 @@
       "name": "ListPageLikeUsersParams",
       "kind": "interface",
       "file": "src/confluence/types/pages.ts",
-      "line": 348,
+      "line": 365,
       "signature": "export interface ListPageLikeUsersParams { readonly cursor?: string; readonly limit?: number; }",
       "jsdoc": "Parameters for `GET /pages/{id}/likes/users`.",
       "typeOnly": true
@@ -2543,7 +2570,7 @@
       "name": "PageAncestor",
       "kind": "interface",
       "file": "src/confluence/types/pages.ts",
-      "line": 211,
+      "line": 228,
       "signature": "export interface PageAncestor { readonly id: string; readonly type?: 'page' | 'whiteboard' | 'database' | 'embed' | 'fol…",
       "jsdoc": "Ancestor entry returned by `GET /pages/{id}/ancestors`.",
       "typeOnly": true
@@ -2552,16 +2579,34 @@
       "name": "PageAncestorsResponse",
       "kind": "interface",
       "file": "src/confluence/types/pages.ts",
-      "line": 222,
+      "line": 239,
       "signature": "export interface PageAncestorsResponse { readonly results: readonly PageAncestor[]; readonly _links?: Record<string, str…",
       "jsdoc": "Response shape for `GET /pages/{id}/ancestors`.",
+      "typeOnly": true
+    },
+    {
+      "name": "PageBodyWrite",
+      "kind": "interface",
+      "file": "src/confluence/types/pages.ts",
+      "line": 45,
+      "signature": "export interface PageBodyWrite { readonly representation?: PageBodyWriteRepresentation; readonly value?: string; }",
+      "jsdoc": "Flat body shape accepted by the current `PageCreateRequest` contract.",
+      "typeOnly": true
+    },
+    {
+      "name": "PageBodyWriteRepresentation",
+      "kind": "type",
+      "file": "src/confluence/types/pages.ts",
+      "line": 42,
+      "signature": "export type PageBodyWriteRepresentation = 'storage' | 'atlas_doc_format' | 'wiki';",
+      "jsdoc": "Body-write representation accepted by `POST /pages` and `PUT /pages/{id}`. Mirrors the OpenAPI `PageBodyWrite.representation` enum.",
       "typeOnly": true
     },
     {
       "name": "PageChild",
       "kind": "interface",
       "file": "src/confluence/types/pages.ts",
-      "line": 251,
+      "line": 268,
       "signature": "export interface PageChild { readonly id: string; readonly status?: 'current' | 'archived'; readonly title?: string; rea…",
       "jsdoc": "Direct child entry returned by `GET /pages/{id}/direct-children`.",
       "typeOnly": true
@@ -2570,7 +2615,7 @@
       "name": "PageDescendant",
       "kind": "interface",
       "file": "src/confluence/types/pages.ts",
-      "line": 233,
+      "line": 250,
       "signature": "export interface PageDescendant { readonly id: string; readonly status?: 'current' | 'archived'; readonly title?: string…",
       "jsdoc": "Descendant entry returned by `GET /pages/{id}/descendants`.",
       "typeOnly": true
@@ -2579,7 +2624,7 @@
       "name": "PageLikeUser",
       "kind": "interface",
       "file": "src/confluence/types/pages.ts",
-      "line": 343,
+      "line": 360,
       "signature": "export interface PageLikeUser { readonly accountId?: string; }",
       "jsdoc": "Entry returned by `GET /pages/{id}/likes/users` (Atlassian `Like` schema).",
       "typeOnly": true
@@ -2588,16 +2633,34 @@
       "name": "PageLikesCount",
       "kind": "interface",
       "file": "src/confluence/types/pages.ts",
-      "line": 338,
+      "line": 355,
       "signature": "export interface PageLikesCount { readonly count?: number; }",
       "jsdoc": "Response shape for `GET /pages/{id}/likes/count`.",
+      "typeOnly": true
+    },
+    {
+      "name": "PageLookupStatus",
+      "kind": "type",
+      "file": "src/confluence/types/pages.ts",
+      "line": 21,
+      "signature": "export type PageLookupStatus = 'current' | 'archived' | 'trashed' | 'deleted' | 'historical' | 'draft';",
+      "jsdoc": "Status filters accepted specifically by `GET /pages/{id}`.",
+      "typeOnly": true
+    },
+    {
+      "name": "PageNestedBodyWrite",
+      "kind": "interface",
+      "file": "src/confluence/types/pages.ts",
+      "line": 54,
+      "signature": "export interface PageNestedBodyWrite { readonly storage?: PageBodyWrite; readonly atlas_doc_format?: PageBodyWrite; read…",
+      "jsdoc": "Nested page-create body shape. Only one representation key should normally be supplied, matching the OpenAPI `PageNestedBodyWrite` description.",
       "typeOnly": true
     },
     {
       "name": "PageOperation",
       "kind": "interface",
       "file": "src/confluence/types/pages.ts",
-      "line": 354,
+      "line": 371,
       "signature": "export interface PageOperation { readonly operation?: string; readonly targetType?: string; }",
       "jsdoc": "Permitted operation entry returned by `GET /pages/{id}/operations`.",
       "typeOnly": true
@@ -2606,7 +2669,7 @@
       "name": "PageOperationsResponse",
       "kind": "interface",
       "file": "src/confluence/types/pages.ts",
-      "line": 360,
+      "line": 377,
       "signature": "export interface PageOperationsResponse { readonly operations?: readonly PageOperation[]; }",
       "jsdoc": "Response shape for `GET /pages/{id}/operations`.",
       "typeOnly": true
@@ -2720,7 +2783,7 @@
       "name": "RedactPageData",
       "kind": "type",
       "file": "src/confluence/types/pages.ts",
-      "line": 365,
+      "line": 382,
       "signature": "export type RedactPageData = RedactBlogPostData;",
       "jsdoc": "Request body for `POST /pages/{id}/redact`. Type-aliased to the shared redaction type.",
       "typeOnly": true
@@ -2729,7 +2792,7 @@
       "name": "RedactPageResponse",
       "kind": "type",
       "file": "src/confluence/types/pages.ts",
-      "line": 368,
+      "line": 385,
       "signature": "export type RedactPageResponse = RedactBlogPostResponse;",
       "jsdoc": "Response from `POST /pages/{id}/redact`. Type-aliased to the shared redaction response type.",
       "typeOnly": true
@@ -2810,7 +2873,7 @@
       "name": "ResetPageClassificationLevelData",
       "kind": "interface",
       "file": "src/confluence/types/pages.ts",
-      "line": 333,
+      "line": 350,
       "signature": "export interface ResetPageClassificationLevelData { readonly status: 'current' | 'draft'; }",
       "jsdoc": "Request body for `POST /pages/{id}/classification-level/reset`. `status` accepts `current` or `draft` — the reset falls back to the space-level default for the chosen revision stream.",
       "typeOnly": true
@@ -2941,6 +3004,60 @@
       "typeOnly": true
     },
     {
+      "name": "SpaceDescription",
+      "kind": "type",
+      "file": "src/confluence/types/spaces.ts",
+      "line": 41,
+      "signature": "export type SpaceDescription = DataPolicySpaceDescription;",
+      "jsdoc": "Description projections returned according to `description-format`.",
+      "typeOnly": true
+    },
+    {
+      "name": "SpaceDescriptionBody",
+      "kind": "type",
+      "file": "src/confluence/types/spaces.ts",
+      "line": 38,
+      "signature": "export type SpaceDescriptionBody = DataPolicyBodyType;",
+      "jsdoc": "A plain or rendered description representation returned for a space.",
+      "typeOnly": true
+    },
+    {
+      "name": "SpaceDescriptionFormat",
+      "kind": "type",
+      "file": "src/confluence/types/spaces.ts",
+      "line": 35,
+      "signature": "export type SpaceDescriptionFormat = 'plain' | 'view';",
+      "jsdoc": "Representations accepted for a returned space description.",
+      "typeOnly": true
+    },
+    {
+      "name": "SpaceIcon",
+      "kind": "type",
+      "file": "src/confluence/types/spaces.ts",
+      "line": 44,
+      "signature": "export type SpaceIcon = DataPolicySpaceIcon;",
+      "jsdoc": "Space icon download paths.",
+      "typeOnly": true
+    },
+    {
+      "name": "SpaceLinks",
+      "kind": "type",
+      "file": "src/confluence/types/spaces.ts",
+      "line": 47,
+      "signature": "export type SpaceLinks = DataPolicySpaceLinks;",
+      "jsdoc": "Links exposed on bulk and single space responses.",
+      "typeOnly": true
+    },
+    {
+      "name": "SpaceNestedEnvelope",
+      "kind": "interface",
+      "file": "src/confluence/types/spaces.ts",
+      "line": 50,
+      "signature": "export interface SpaceNestedEnvelope<T> { readonly results?: readonly T[]; readonly meta?: { readonly hasMore?: boolean;…",
+      "jsdoc": "Envelope used by optional expansions on `SpaceSingle`.",
+      "typeOnly": true
+    },
+    {
       "name": "SpaceOperation",
       "kind": "interface",
       "file": "src/confluence/types/spaces.ts",
@@ -3046,6 +3163,33 @@
       "line": 219,
       "signature": "export type SpaceRoleType = 'SYSTEM' | 'CUSTOM';",
       "jsdoc": "The role type of a {@link SpaceRole}. `SYSTEM` roles are platform-defined and not user-editable; `CUSTOM` roles are created and managed by the tenant.",
+      "typeOnly": true
+    },
+    {
+      "name": "SpaceSortOrder",
+      "kind": "type",
+      "file": "src/confluence/types/spaces.ts",
+      "line": 32,
+      "signature": "export type SpaceSortOrder = 'id' | '-id' | 'key' | '-key' | 'name' | '-name';",
+      "jsdoc": "Sort tokens accepted by `GET /spaces`.",
+      "typeOnly": true
+    },
+    {
+      "name": "SpaceStatus",
+      "kind": "type",
+      "file": "src/confluence/types/spaces.ts",
+      "line": 29,
+      "signature": "export type SpaceStatus = 'current' | 'archived' | 'trashed';",
+      "jsdoc": "Lifecycle state of a Confluence space.",
+      "typeOnly": true
+    },
+    {
+      "name": "SpaceType",
+      "kind": "type",
+      "file": "src/confluence/types/spaces.ts",
+      "line": 19,
+      "signature": "export type SpaceType = | 'global' | 'collaboration' | 'knowledge_base' | 'personal' | 'system' | 'onboarding' | 'xflow_…",
+      "jsdoc": "Space types returned by the current Confluence v2 API.",
       "typeOnly": true
     },
     {
@@ -3213,7 +3357,7 @@
       "name": "UpdatePageClassificationLevelData",
       "kind": "interface",
       "file": "src/confluence/types/pages.ts",
-      "line": 323,
+      "line": 340,
       "signature": "export interface UpdatePageClassificationLevelData { readonly id: string; readonly status: 'current' | 'draft'; }",
       "jsdoc": "Request body for `PUT /pages/{id}/classification-level`.",
       "typeOnly": true
@@ -3222,7 +3366,7 @@
       "name": "UpdatePageData",
       "kind": "interface",
       "file": "src/confluence/types/pages.ts",
-      "line": 181,
+      "line": 198,
       "signature": "export interface UpdatePageData { readonly id: string; readonly title: string; readonly status: 'current' | 'draft'; rea…",
       "jsdoc": "Request body for updating a Confluence page (`PUT /pages/{id}`). `body` is required by the spec (`PageUpdateRequest` schema `required` array lists `id`, `status`, `title`, `body`, `version`).",
       "typeOnly": true
@@ -3231,7 +3375,7 @@
       "name": "UpdatePageTitleData",
       "kind": "interface",
       "file": "src/confluence/types/pages.ts",
-      "line": 378,
+      "line": 395,
       "signature": "export interface UpdatePageTitleData { readonly status: 'current' | 'draft'; readonly title: string; }",
       "jsdoc": "Request body for `PUT /pages/{id}/title`.",
       "typeOnly": true
@@ -7128,6 +7272,10 @@
               "original": "CreatePageParams"
             },
             {
+              "exported": "CreatePageRequest",
+              "original": "CreatePageRequest"
+            },
+            {
               "exported": "DeletePageParams",
               "original": "DeletePageParams"
             },
@@ -9207,7 +9355,7 @@
         {
           "name": "PagesResource",
           "kind": "class",
-          "line": 66,
+          "line": 67,
           "exported": true,
           "signature": "export class PagesResource",
           "jsdoc": "Resource for Confluence v2 pages.",
@@ -9215,192 +9363,192 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 67
+              "line": 68
             },
             {
               "name": "list",
               "kind": "method",
-              "line": 75
+              "line": 76
             },
             {
               "name": "get",
               "kind": "method",
-              "line": 93
+              "line": 94
             },
             {
               "name": "create",
               "kind": "method",
-              "line": 110
+              "line": 111
             },
             {
               "name": "update",
               "kind": "method",
-              "line": 121
+              "line": 122
             },
             {
               "name": "delete",
               "kind": "method",
-              "line": 131
+              "line": 132
             },
             {
               "name": "listAll",
               "kind": "method",
-              "line": 140
+              "line": 141
             },
             {
               "name": "listAncestors",
               "kind": "method",
-              "line": 162
+              "line": 163
             },
             {
               "name": "listDescendants",
               "kind": "method",
-              "line": 183
+              "line": 184
             },
             {
               "name": "listDescendantsAll",
               "kind": "method",
-              "line": 202
+              "line": 203
             },
             {
               "name": "listDirectChildren",
               "kind": "method",
-              "line": 225
+              "line": 226
             },
             {
               "name": "listDirectChildrenAll",
               "kind": "method",
-              "line": 244
+              "line": 245
             },
             {
               "name": "listChildren",
               "kind": "method",
-              "line": 271
+              "line": 272
             },
             {
               "name": "listChildrenAll",
               "kind": "method",
-              "line": 294
+              "line": 295
             },
             {
               "name": "getClassificationLevel",
               "kind": "method",
-              "line": 316
+              "line": 317
             },
             {
               "name": "updateClassificationLevel",
               "kind": "method",
-              "line": 340
+              "line": 341
             },
             {
               "name": "resetClassificationLevel",
               "kind": "method",
-              "line": 359
+              "line": 360
             },
             {
               "name": "listCustomContent",
               "kind": "method",
-              "line": 377
+              "line": 378
             },
             {
               "name": "listCustomContentAll",
               "kind": "method",
-              "line": 396
+              "line": 397
             },
             {
               "name": "listFooterComments",
               "kind": "method",
-              "line": 421
+              "line": 422
             },
             {
               "name": "listFooterCommentsAll",
               "kind": "method",
-              "line": 439
+              "line": 440
             },
             {
               "name": "listInlineComments",
               "kind": "method",
-              "line": 456
+              "line": 457
             },
             {
               "name": "listInlineCommentsAll",
               "kind": "method",
-              "line": 474
+              "line": 475
             },
             {
               "name": "getLikeCount",
               "kind": "method",
-              "line": 496
+              "line": 497
             },
             {
               "name": "listLikeUsers",
               "kind": "method",
-              "line": 509
+              "line": 510
             },
             {
               "name": "listLikeUsersAll",
               "kind": "method",
-              "line": 530
+              "line": 531
             },
             {
               "name": "getOperations",
               "kind": "method",
-              "line": 551
+              "line": 552
             },
             {
               "name": "redact",
               "kind": "method",
-              "line": 572
+              "line": 573
             },
             {
               "name": "updateTitle",
               "kind": "method",
-              "line": 593
+              "line": 594
             },
             {
               "name": "listProperties",
               "kind": "method",
-              "line": 616
+              "line": 617
             },
             {
               "name": "listPropertiesAll",
               "kind": "method",
-              "line": 640
+              "line": 641
             },
             {
               "name": "createProperty",
               "kind": "method",
-              "line": 661
+              "line": 662
             },
             {
               "name": "getProperty",
               "kind": "method",
-              "line": 675
+              "line": 676
             },
             {
               "name": "updateProperty",
               "kind": "method",
-              "line": 692
+              "line": 693
             },
             {
               "name": "deleteProperty",
               "kind": "method",
-              "line": 710
+              "line": 711
             },
             {
               "name": "buildCustomContentQuery",
               "kind": "method",
-              "line": 720
+              "line": 721
             },
             {
               "name": "buildFooterComments",
               "kind": "method",
-              "line": 736
+              "line": 737
             },
             {
               "name": "buildInlineComments",
               "kind": "method",
-              "line": 755
+              "line": 756
             }
           ]
         }
@@ -11864,23 +12012,31 @@
           "jsdoc": "Query parameters for creating a Confluence page (`POST /pages`)."
         },
         {
-          "name": "CreatePageDataBase",
+          "name": "CreatePageData",
           "kind": "interface",
-          "line": 157,
-          "signature": "interface CreatePageDataBase { readonly spaceId: string; readonly parentId?: string; readonly subtype?: 'live'; readonly…"
+          "line": 161,
+          "exported": true,
+          "signature": "export interface CreatePageData { readonly spaceId: string; readonly title: string; readonly parentId?: string; readonly…",
+          "jsdoc": "Backward-compatible title-required page-create shape. Kept as an interface so downstream extension and declaration merging remain valid."
         },
         {
-          "name": "CreatePageData",
+          "name": "CreatePageRequestBase",
+          "kind": "interface",
+          "line": 177,
+          "signature": "interface CreatePageRequestBase { readonly spaceId: string; readonly parentId?: string; readonly subtype?: 'live'; reado…"
+        },
+        {
+          "name": "CreatePageRequest",
           "kind": "type",
-          "line": 172,
+          "line": 189,
           "exported": true,
-          "signature": "export type CreatePageData = | (CreatePageDataBase & { readonly status: 'draft'; readonly title?: string }) | (CreatePag…",
-          "jsdoc": "Request body for creating a Confluence page (`POST /pages`). A title is required for the default/current status but optional for draft creation."
+          "signature": "export type CreatePageRequest = | (CreatePageRequestBase & { readonly status: 'draft'; readonly title?: string }) | (Cre…",
+          "jsdoc": "Exact current request union for `POST /pages`. A title is required for the default/current status but optional for draft creation. Existing `CreatePageData` values remain assignable to this widened method input."
         },
         {
           "name": "UpdatePageData",
           "kind": "interface",
-          "line": 181,
+          "line": 198,
           "exported": true,
           "signature": "export interface UpdatePageData { readonly id: string; readonly title: string; readonly status: 'current' | 'draft'; rea…",
           "jsdoc": "Request body for updating a Confluence page (`PUT /pages/{id}`). `body` is required by the spec (`PageUpdateRequest` schema `required` array lists `id`, `status`, `title`, `body`, `version`)."
@@ -11888,7 +12044,7 @@
         {
           "name": "DeletePageParams",
           "kind": "interface",
-          "line": 205,
+          "line": 222,
           "exported": true,
           "signature": "export interface DeletePageParams { readonly purge?: boolean; readonly draft?: boolean; }",
           "jsdoc": "Parameters for deleting a Confluence page."
@@ -11896,7 +12052,7 @@
         {
           "name": "PageAncestor",
           "kind": "interface",
-          "line": 211,
+          "line": 228,
           "exported": true,
           "signature": "export interface PageAncestor { readonly id: string; readonly type?: 'page' | 'whiteboard' | 'database' | 'embed' | 'fol…",
           "jsdoc": "Ancestor entry returned by `GET /pages/{id}/ancestors`."
@@ -11904,7 +12060,7 @@
         {
           "name": "PageAncestorsResponse",
           "kind": "interface",
-          "line": 222,
+          "line": 239,
           "exported": true,
           "signature": "export interface PageAncestorsResponse { readonly results: readonly PageAncestor[]; readonly _links?: Record<string, str…",
           "jsdoc": "Response shape for `GET /pages/{id}/ancestors`."
@@ -11912,7 +12068,7 @@
         {
           "name": "ListPageAncestorsParams",
           "kind": "interface",
-          "line": 228,
+          "line": 245,
           "exported": true,
           "signature": "export interface ListPageAncestorsParams { readonly limit?: number; }",
           "jsdoc": "Parameters for listing page ancestors."
@@ -11920,7 +12076,7 @@
         {
           "name": "PageDescendant",
           "kind": "interface",
-          "line": 233,
+          "line": 250,
           "exported": true,
           "signature": "export interface PageDescendant { readonly id: string; readonly status?: 'current' | 'archived'; readonly title?: string…",
           "jsdoc": "Descendant entry returned by `GET /pages/{id}/descendants`."
@@ -11928,7 +12084,7 @@
         {
           "name": "ListPageDescendantsParams",
           "kind": "interface",
-          "line": 244,
+          "line": 261,
           "exported": true,
           "signature": "export interface ListPageDescendantsParams { readonly limit?: number; readonly depth?: number; readonly cursor?: string;…",
           "jsdoc": "Parameters for listing page descendants (cursor-paginated)."
@@ -11936,7 +12092,7 @@
         {
           "name": "PageChild",
           "kind": "interface",
-          "line": 251,
+          "line": 268,
           "exported": true,
           "signature": "export interface PageChild { readonly id: string; readonly status?: 'current' | 'archived'; readonly title?: string; rea…",
           "jsdoc": "Direct child entry returned by `GET /pages/{id}/direct-children`."
@@ -11944,7 +12100,7 @@
         {
           "name": "ListPageDirectChildrenParams",
           "kind": "interface",
-          "line": 266,
+          "line": 283,
           "exported": true,
           "signature": "export interface ListPageDirectChildrenParams { readonly limit?: number; readonly cursor?: string; readonly sort?: Conte…",
           "jsdoc": "Parameters for listing direct children of a page."
@@ -11952,7 +12108,7 @@
         {
           "name": "ChildPageSortOrder",
           "kind": "type",
-          "line": 276,
+          "line": 293,
           "exported": true,
           "signature": "export type ChildPageSortOrder = | 'created-date' | '-created-date' | 'id' | '-id' | 'child-position' | '-child-position…",
           "jsdoc": "Sort tokens accepted by `GET /pages/{id}/children`. Mirrors the OpenAPI `ChildPageSortOrder` enum — narrower than `ContentSortOrder` (no `title`)."
@@ -11960,7 +12116,7 @@
         {
           "name": "ChildPage",
           "kind": "interface",
-          "line": 287,
+          "line": 304,
           "exported": true,
           "signature": "export interface ChildPage { readonly id: string; readonly status?: 'current' | 'archived'; readonly title?: string; rea…",
           "jsdoc": "Child-page entry returned by `GET /pages/{id}/children`."
@@ -11968,7 +12124,7 @@
         {
           "name": "ListChildPagesParams",
           "kind": "interface",
-          "line": 296,
+          "line": 313,
           "exported": true,
           "signature": "export interface ListChildPagesParams { readonly cursor?: string; readonly limit?: number; readonly sort?: ChildPageSort…",
           "jsdoc": "Parameters for listing child pages (cursor-paginated)."
@@ -11976,7 +12132,7 @@
         {
           "name": "ListPageCustomContentParams",
           "kind": "interface",
-          "line": 303,
+          "line": 320,
           "exported": true,
           "signature": "export interface ListPageCustomContentParams { readonly type: string; readonly sort?: CustomContentSortOrder; readonly c…",
           "jsdoc": "Parameters for `GET /pages/{id}/custom-content`. The `type` filter is required by the server."
@@ -11984,7 +12140,7 @@
         {
           "name": "GetPageClassificationLevelParams",
           "kind": "interface",
-          "line": 312,
+          "line": 329,
           "exported": true,
           "signature": "export interface GetPageClassificationLevelParams { readonly status?: 'current' | 'draft' | 'archived'; }",
           "jsdoc": "Parameters for `GET /pages/{id}/classification-level`."
@@ -11992,7 +12148,7 @@
         {
           "name": "UpdatePageClassificationLevelData",
           "kind": "interface",
-          "line": 323,
+          "line": 340,
           "exported": true,
           "signature": "export interface UpdatePageClassificationLevelData { readonly id: string; readonly status: 'current' | 'draft'; }",
           "jsdoc": "Request body for `PUT /pages/{id}/classification-level`."
@@ -12000,7 +12156,7 @@
         {
           "name": "ResetPageClassificationLevelData",
           "kind": "interface",
-          "line": 333,
+          "line": 350,
           "exported": true,
           "signature": "export interface ResetPageClassificationLevelData { readonly status: 'current' | 'draft'; }",
           "jsdoc": "Request body for `POST /pages/{id}/classification-level/reset`. `status` accepts `current` or `draft` — the reset falls back to the space-level default for the chosen revision stream."
@@ -12008,7 +12164,7 @@
         {
           "name": "PageLikesCount",
           "kind": "interface",
-          "line": 338,
+          "line": 355,
           "exported": true,
           "signature": "export interface PageLikesCount { readonly count?: number; }",
           "jsdoc": "Response shape for `GET /pages/{id}/likes/count`."
@@ -12016,7 +12172,7 @@
         {
           "name": "PageLikeUser",
           "kind": "interface",
-          "line": 343,
+          "line": 360,
           "exported": true,
           "signature": "export interface PageLikeUser { readonly accountId?: string; }",
           "jsdoc": "Entry returned by `GET /pages/{id}/likes/users` (Atlassian `Like` schema)."
@@ -12024,7 +12180,7 @@
         {
           "name": "ListPageLikeUsersParams",
           "kind": "interface",
-          "line": 348,
+          "line": 365,
           "exported": true,
           "signature": "export interface ListPageLikeUsersParams { readonly cursor?: string; readonly limit?: number; }",
           "jsdoc": "Parameters for `GET /pages/{id}/likes/users`."
@@ -12032,7 +12188,7 @@
         {
           "name": "PageOperation",
           "kind": "interface",
-          "line": 354,
+          "line": 371,
           "exported": true,
           "signature": "export interface PageOperation { readonly operation?: string; readonly targetType?: string; }",
           "jsdoc": "Permitted operation entry returned by `GET /pages/{id}/operations`."
@@ -12040,7 +12196,7 @@
         {
           "name": "PageOperationsResponse",
           "kind": "interface",
-          "line": 360,
+          "line": 377,
           "exported": true,
           "signature": "export interface PageOperationsResponse { readonly operations?: readonly PageOperation[]; }",
           "jsdoc": "Response shape for `GET /pages/{id}/operations`."
@@ -12048,7 +12204,7 @@
         {
           "name": "RedactPageData",
           "kind": "type",
-          "line": 365,
+          "line": 382,
           "exported": true,
           "signature": "export type RedactPageData = RedactBlogPostData;",
           "jsdoc": "Request body for `POST /pages/{id}/redact`. Type-aliased to the shared redaction type."
@@ -12056,7 +12212,7 @@
         {
           "name": "RedactPageResponse",
           "kind": "type",
-          "line": 368,
+          "line": 385,
           "exported": true,
           "signature": "export type RedactPageResponse = RedactBlogPostResponse;",
           "jsdoc": "Response from `POST /pages/{id}/redact`. Type-aliased to the shared redaction response type."
@@ -12064,7 +12220,7 @@
         {
           "name": "UpdatePageTitleData",
           "kind": "interface",
-          "line": 378,
+          "line": 395,
           "exported": true,
           "signature": "export interface UpdatePageTitleData { readonly status: 'current' | 'draft'; readonly title: string; }",
           "jsdoc": "Request body for `PUT /pages/{id}/title`."
@@ -12072,7 +12228,7 @@
         {
           "name": "ListPageFooterCommentsParams",
           "kind": "interface",
-          "line": 384,
+          "line": 401,
           "exported": true,
           "signature": "export interface ListPageFooterCommentsParams { readonly 'body-format'?: 'storage' | 'atlas_doc_format'; readonly status…",
           "jsdoc": "Parameters for `GET /pages/{id}/footer-comments`."
@@ -12080,7 +12236,7 @@
         {
           "name": "ListPageInlineCommentsParams",
           "kind": "interface",
-          "line": 393,
+          "line": 410,
           "exported": true,
           "signature": "export interface ListPageInlineCommentsParams { readonly 'body-format'?: 'storage' | 'atlas_doc_format'; readonly status…",
           "jsdoc": "Parameters for `GET /pages/{id}/inline-comments`."
@@ -15441,6 +15597,30 @@
               "original": "CreatePageData"
             },
             {
+              "exported": "CreatePageParams",
+              "original": "CreatePageParams"
+            },
+            {
+              "exported": "CreatePageRequest",
+              "original": "CreatePageRequest"
+            },
+            {
+              "exported": "PageBodyWrite",
+              "original": "PageBodyWrite"
+            },
+            {
+              "exported": "PageBodyWriteRepresentation",
+              "original": "PageBodyWriteRepresentation"
+            },
+            {
+              "exported": "PageNestedBodyWrite",
+              "original": "PageNestedBodyWrite"
+            },
+            {
+              "exported": "PageLookupStatus",
+              "original": "PageLookupStatus"
+            },
+            {
               "exported": "UpdatePageData",
               "original": "UpdatePageData"
             },
@@ -15449,8 +15629,48 @@
               "original": "DeletePageParams"
             },
             {
+              "exported": "GetSpaceParams",
+              "original": "GetSpaceParams"
+            },
+            {
               "exported": "ListSpacesParams",
               "original": "ListSpacesParams"
+            },
+            {
+              "exported": "SpaceDescription",
+              "original": "SpaceDescription"
+            },
+            {
+              "exported": "SpaceDescriptionBody",
+              "original": "SpaceDescriptionBody"
+            },
+            {
+              "exported": "SpaceDescriptionFormat",
+              "original": "SpaceDescriptionFormat"
+            },
+            {
+              "exported": "SpaceIcon",
+              "original": "SpaceIcon"
+            },
+            {
+              "exported": "SpaceLinks",
+              "original": "SpaceLinks"
+            },
+            {
+              "exported": "SpaceNestedEnvelope",
+              "original": "SpaceNestedEnvelope"
+            },
+            {
+              "exported": "SpaceSortOrder",
+              "original": "SpaceSortOrder"
+            },
+            {
+              "exported": "SpaceStatus",
+              "original": "SpaceStatus"
+            },
+            {
+              "exported": "SpaceType",
+              "original": "SpaceType"
             },
             {
               "exported": "ListBlogPostsParams",

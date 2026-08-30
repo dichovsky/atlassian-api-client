@@ -17,6 +17,7 @@ import type {
   ChildPage,
   CreatePageData,
   CreatePageParams,
+  CreatePageRequest,
   DeletePageParams,
   GetPageClassificationLevelParams,
   GetPageParams,
@@ -107,7 +108,7 @@ export class PagesResource {
   }
 
   /** Create a new page. */
-  async create(data: CreatePageData, params?: CreatePageParams): Promise<Page> {
+  async create(data: CreatePageData | CreatePageRequest, params?: CreatePageParams): Promise<Page> {
     const response = await this.transport.request<Page>({
       method: 'POST',
       path: `${this.baseUrl}/pages`,

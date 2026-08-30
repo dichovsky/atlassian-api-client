@@ -400,6 +400,56 @@ def parse_base_suffixes(client_src, client_code):
                 client_code[start:end],
             )
 
+    for name in list(initializers):
+        target = re.escape(name)
+        destructured = re.search(
+            r"(?:\{[^{};]*\b" + target + r"\b[^{};]*\}"
+            r"|\[[^\[\];]*\b" + target + r"\b[^\[\];]*\])\s*=",
+            client_code,
+        )
+        direct_writes = len(re.findall(
+            r"\b" + target + r"\s*(?::[^=;\n]+)?\s*=(?!=|>)",
+            client_code,
+        ))
+        simple_declarations = len(re.findall(
+            r"\b(?:const|let|var)\s+" + target + r"\b",
+            client_code,
+        ))
+        parameter_shadow = any((
+            re.search(
+                r"\([^()]*\b" + target + r"\b[^()]*\)\s*"
+                r"(?::[^=;{}]+)?=>",
+                client_code,
+            ),
+            re.search(
+                r"\bfunction\b[^()]*\([^)]*\b" + target + r"\b[^)]*\)",
+                client_code,
+            ),
+            re.search(
+                r"\bcatch\s*\([^)]*\b" + target + r"\b[^)]*\)",
+                client_code,
+            ),
+            re.search(
+                r"(?:^|[{};])\s*(?:(?:public|protected|private|static|async)\s+)*"
+                r"[A-Za-z_$][A-Za-z0-9_$]*\s*\([^)]*\b" + target
+                + r"\b[^)]*\)\s*(?::[^{}]+)?\{",
+                client_code,
+                re.MULTILINE,
+            ),
+            re.search(
+                r"\b" + target + r"\b\s*(?::[^=,;()]+)?=>",
+                client_code,
+            ),
+        ))
+        if (
+            destructured
+            or direct_writes != 1
+            or simple_declarations != 1
+            or parameter_shadow
+        ):
+            initializers.pop(name, None)
+            ambiguous.add(name)
+
     resolved = {}
 
     def resolved_suffixes(expr, expr_code):
@@ -460,11 +510,73 @@ def parse_base_suffixes(client_src, client_code):
 def parse_wiring(client_src, client_code, varmap):
     assert len(client_src) == len(client_code), "source/code views must stay aligned"
     wiring = {}
+    constructor_match = re.search(r"\bconstructor\s*\(", client_code)
+    constructor_body_start = -1
+    constructor_body_end = -1
+    constructor_scope = ()
+    if constructor_match:
+        params_start = client_code.index("(", constructor_match.start())
+        params_end = match_close(client_code, params_start, "(", ")")
+        if params_end != -1:
+            constructor_body_start = client_code.find("{", params_end)
+            if constructor_body_start != -1:
+                constructor_body_end = match_close(
+                    client_code, constructor_body_start, "{", "}"
+                )
+                constructor_scope = brace_scope_at(
+                    client_code, constructor_body_start + 1
+                )
+
+    def is_plain_constructor_assignment(position):
+        if (
+            constructor_body_start == -1
+            or constructor_body_end == -1
+            or not constructor_body_start < position < constructor_body_end
+            or brace_scope_at(client_code, position) != constructor_scope
+        ):
+            return False
+        statement_start = max(
+            constructor_body_start + 1,
+            client_code.rfind(";", constructor_body_start, position) + 1,
+            client_code.rfind("}", constructor_body_start, position) + 1,
+        )
+        return not client_code[statement_start:position].strip()
+
+    resource_properties = {}
+    unsupported_declaration_resources = set()
+    for declaration in re.finditer(
+        r"^[ \t]*(?:(?:public|protected|private)\s+)?(?:readonly\s+)?"
+        r"([A-Za-z_$][A-Za-z0-9_$]*)\s*([!?]?)\s*:\s*([^;]+);",
+        client_code,
+        re.MULTILINE,
+    ):
+        property_name = declaration.group(1)
+        marker = declaration.group(2)
+        type_expression = declaration.group(3).strip()
+        resources = set(re.findall(
+            r"\b[A-Z][A-Za-z0-9]*Resource\b", type_expression
+        ))
+        if not resources:
+            continue
+        resource_properties.setdefault(property_name, set()).update(resources)
+        if (
+            marker == "?"
+            or len(resources) != 1
+            or type_expression != next(iter(resources))
+        ):
+            unsupported_declaration_resources.update(resources)
+    for resource in unsupported_declaration_resources:
+        wiring[resource] = [("UNKNOWN", "unsupported-resource-property-type")]
+    recognized_property_assignments = []
+    recognized_constructor_spans = []
     for assignment in re.finditer(
-        r"\bthis\.[A-Za-z_][A-Za-z0-9_]*\s*=(?!=|>)",
+        r"\bthis\.([A-Za-z_][A-Za-z0-9_]*)\s*=(?!=|>)",
         client_code,
     ):
-        if statically_dead_at(client_code, assignment.start()):
+        if (
+            statically_dead_at(client_code, assignment.start())
+            or not is_plain_constructor_assignment(assignment.start())
+        ):
             continue
         statement_end = find_statement_end(client_code, assignment.end())
         if statement_end == -1:
@@ -489,6 +601,23 @@ def parse_wiring(client_src, client_code, varmap):
             for resource in constructors:
                 wiring[resource] = [("UNKNOWN", "unsupported-resource-wiring")]
             continue
+        property_name = assignment.group(1)
+        resource = direct.group(1)
+        declared_resources = resource_properties.get(property_name, set())
+        if declared_resources and declared_resources != {resource}:
+            for declared_resource in declared_resources:
+                wiring[declared_resource] = [
+                    ("UNKNOWN", "resource-property-type-mismatch")
+                ]
+            wiring[resource] = [("UNKNOWN", "resource-property-type-mismatch")]
+            continue
+        resource_properties.setdefault(property_name, set()).add(resource)
+        recognized_property_assignments.append(
+            (assignment.start(), property_name, resource)
+        )
+        recognized_constructor_spans.append(
+            (assignment.end(), statement_end, resource)
+        )
         args = split_top_commas_aligned(
             rhs_src[op+1:end-1],
             rhs_code[op+1:end-1],
@@ -502,11 +631,57 @@ def parse_wiring(client_src, client_code, varmap):
                 base_args.append(parse_object_literal(arg_src, arg_code, varmap))
             else:
                 base_args.append(("UNKNOWN", arg_src.strip()))
-        resource = direct.group(1)
         wiring[resource] = (
             [("UNKNOWN", "duplicate-resource-wiring")]
             if resource in wiring else base_args
         )
+    for constructor in re.finditer(
+        r"\bnew\s+([A-Z][A-Za-z0-9]*Resource)\s*\(", client_code
+    ):
+        if statically_dead_at(client_code, constructor.start()):
+            continue
+        resource = constructor.group(1)
+        if not any(
+            start <= constructor.start() < end and recognized_resource == resource
+            for start, end, recognized_resource in recognized_constructor_spans
+        ):
+            wiring[resource] = [("UNKNOWN", "unsupported-resource-construction")]
+    assignment_counts = {}
+    recognized_this_uses = set()
+    for position, property_name, resource in recognized_property_assignments:
+        assignment_counts[property_name] = assignment_counts.get(property_name, 0) + 1
+        recognized_this_uses.add(position)
+    for property_name, resources in resource_properties.items():
+        if assignment_counts.get(property_name) != 1:
+            for resource in resources:
+                wiring[resource] = [
+                    ("UNKNOWN", "unsupported-resource-property-wiring")
+                ]
+    for this_use in re.finditer(r"\bthis\b", client_code):
+        if this_use.start() in recognized_this_uses:
+            continue
+        property_access = re.match(
+            r"\s*\.\s*([A-Za-z_$][A-Za-z0-9_$]*)",
+            client_code[this_use.end():],
+        )
+        if property_access:
+            resources = resource_properties.get(property_access.group(1), set())
+            for resource in resources:
+                wiring[resource] = [
+                    ("UNKNOWN", "unsupported-resource-property-use")
+                ]
+            continue
+        all_resources = set(wiring)
+        for resources in resource_properties.values():
+            all_resources.update(resources)
+        for resource in all_resources:
+            wiring[resource] = [("UNKNOWN", "unsupported-client-instance-use")]
+    if re.search(r"\\u(?:[0-9A-Fa-f]{4}|\{[0-9A-Fa-f]+\})", client_code):
+        all_resources = set(wiring)
+        for resources in resource_properties.values():
+            all_resources.update(resources)
+        for resource in all_resources:
+            wiring[resource] = [("UNKNOWN", "unsupported-escaped-identifier")]
     return wiring
 
 def parse_ctor_params(src, code_src):
@@ -886,7 +1061,7 @@ def statically_dead_at(code, position):
                 statement_start = index + 1
         controller = code[statement_start:token_start]
         if not re.search(
-            r"\b(?:do|else|for|if|while|with)\b",
+            r"\b(?:case|default|do|else|for|if|switch|while|with)\b",
             controller,
         ):
             return True
@@ -1852,6 +2027,37 @@ def load_spec(name, expected_server_scope):
     validate_servers(spec.get("servers"))
     server_scope = expected_server_scope
 
+    def resolve_local_pointer(reference):
+        if not isinstance(reference, str) or not reference.startswith("#/"):
+            return None
+        target = spec
+        for raw_token in reference[2:].split("/"):
+            token = raw_token.replace("~1", "/").replace("~0", "~")
+            if isinstance(target, dict) and token in target:
+                target = target[token]
+            elif isinstance(target, list) and token.isdigit() and int(token) < len(target):
+                target = target[int(token)]
+            else:
+                return None
+        return target
+
+    def valid_response_object(response, seen=None):
+        if not isinstance(response, dict):
+            return False
+        if "$ref" in response:
+            reference = response.get("$ref")
+            if not isinstance(reference, str) or not reference.strip():
+                return False
+            seen = set() if seen is None else seen
+            if reference in seen:
+                return False
+            target = resolve_local_pointer(reference)
+            return valid_response_object(target, seen | {reference})
+        return (
+            isinstance(response.get("description"), str)
+            and bool(response["description"].strip())
+        )
+
     paths = spec.get("paths")
     if not isinstance(paths, dict) or not paths:
         fail_spec(name, "invalid OpenAPI document: expected non-empty paths")
@@ -1875,6 +2081,30 @@ def load_spec(name, expected_server_scope):
                     f"invalid OpenAPI operation {verb.upper()} {p}: "
                     "expected non-empty responses",
                 )
+            response_entries = [
+                response_code
+                for response_code in responses
+                if not response_code.startswith("x-")
+            ]
+            if not response_entries:
+                fail_spec(
+                    name,
+                    f"invalid OpenAPI operation {verb.upper()} {p}: "
+                    "expected at least one response entry",
+                )
+            for response_code, response in responses.items():
+                if response_code.startswith("x-"):
+                    continue
+                valid_code = response_code == "default" or re.fullmatch(
+                    r"[1-5](?:\d{2}|XX)", response_code
+                )
+                valid_response = valid_response_object(response)
+                if not valid_code or not valid_response:
+                    fail_spec(
+                        name,
+                        f"invalid OpenAPI response {response_code} for "
+                        f"{verb.upper()} {p}",
+                    )
             if "deprecated" in op and not isinstance(op["deprecated"], bool):
                 fail_spec(
                     name,

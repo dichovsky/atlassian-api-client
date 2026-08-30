@@ -154,24 +154,41 @@ export interface CreatePageParams {
   readonly 'root-level'?: boolean;
 }
 
-interface CreatePageDataBase {
+/**
+ * Backward-compatible title-required page-create shape. Kept as an interface
+ * so downstream extension and declaration merging remain valid.
+ */
+export interface CreatePageData {
   readonly spaceId: string;
+  readonly title: string;
   readonly parentId?: string;
+  readonly status?: 'current' | 'draft';
   /**
    * Pass `'live'` to create a live doc. Omit for a standard page.
    * Only `'live'` is a valid value per spec.
    */
   readonly subtype?: 'live';
+  readonly body?: {
+    readonly representation: PageBodyWriteRepresentation;
+    readonly value: string;
+  };
+}
+
+interface CreatePageRequestBase {
+  readonly spaceId: string;
+  readonly parentId?: string;
+  readonly subtype?: 'live';
   readonly body?: PageBodyWrite | PageNestedBodyWrite;
 }
 
 /**
- * Request body for creating a Confluence page (`POST /pages`). A title is
- * required for the default/current status but optional for draft creation.
+ * Exact current request union for `POST /pages`. A title is required for the
+ * default/current status but optional for draft creation. Existing
+ * `CreatePageData` values remain assignable to this widened method input.
  */
-export type CreatePageData =
-  | (CreatePageDataBase & { readonly status: 'draft'; readonly title?: string })
-  | (CreatePageDataBase & { readonly status?: 'current'; readonly title: string });
+export type CreatePageRequest =
+  | (CreatePageRequestBase & { readonly status: 'draft'; readonly title?: string })
+  | (CreatePageRequestBase & { readonly status?: 'current'; readonly title: string });
 
 /**
  * Request body for updating a Confluence page (`PUT /pages/{id}`).
