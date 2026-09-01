@@ -43,19 +43,39 @@ export type PageBodyWriteRepresentation = 'storage' | 'atlas_doc_format' | 'wiki
 
 /** Flat body shape accepted by the current `PageCreateRequest` contract. */
 export interface PageBodyWrite {
-  readonly representation?: PageBodyWriteRepresentation;
-  readonly value?: string;
+  readonly representation: PageBodyWriteRepresentation;
+  readonly value: string;
+  readonly storage?: never;
+  readonly atlas_doc_format?: never;
+  readonly wiki?: never;
 }
 
 /**
- * Nested page-create body shape. Only one representation key should normally
- * be supplied, matching the OpenAPI `PageNestedBodyWrite` description.
+ * Nested page-create body shape. Exactly one representation key is accepted,
+ * matching the OpenAPI `PageNestedBodyWrite` description.
  */
-export interface PageNestedBodyWrite {
-  readonly storage?: PageBodyWrite;
-  readonly atlas_doc_format?: PageBodyWrite;
-  readonly wiki?: PageBodyWrite;
-}
+export type PageNestedBodyWrite =
+  | {
+      readonly storage: PageBodyWrite;
+      readonly atlas_doc_format?: never;
+      readonly wiki?: never;
+      readonly representation?: never;
+      readonly value?: never;
+    }
+  | {
+      readonly storage?: never;
+      readonly atlas_doc_format: PageBodyWrite;
+      readonly wiki?: never;
+      readonly representation?: never;
+      readonly value?: never;
+    }
+  | {
+      readonly storage?: never;
+      readonly atlas_doc_format?: never;
+      readonly wiki: PageBodyWrite;
+      readonly representation?: never;
+      readonly value?: never;
+    };
 
 /** Confluence Page. Covers fields from both `PageBulk` and `PageSingle` schemas. */
 export interface Page {

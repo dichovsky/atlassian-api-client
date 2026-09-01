@@ -51,6 +51,8 @@ export interface SpecResult {
 export interface DriftGuardOptions {
   readonly fetch?: typeof globalThis.fetch;
   readonly loadPinned?: (name: SpecName) => Promise<OpenApiSpec>;
+  /** Per-request timeout in milliseconds. Defaults to 30 seconds. */
+  readonly timeoutMs?: number;
 }
 
 const DOCUMENTATION_ONLY_KEYS = new Set([
@@ -64,21 +66,67 @@ const DOCUMENTATION_ONLY_KEYS = new Set([
   'license',
 ]);
 
+/** OpenAPI maps whose keys are user-defined names rather than spec keywords. */
+const NAMED_MAP_KEYS = new Set([
+  '$defs',
+  'content',
+  'dependentRequired',
+  'dependentSchemas',
+  'encoding',
+  'headers',
+  'links',
+  'mapping',
+  'parameters',
+  'pathItems',
+  'paths',
+  'patternProperties',
+  'properties',
+  'requestBodies',
+  'responses',
+  'schemas',
+  'scopes',
+  'securitySchemes',
+  'variables',
+  'webhooks',
+]);
+
+type CanonicalContext = 'object' | 'named-map' | 'named-map-of-maps';
+
 /**
  * Produces deterministic JSON while removing prose/examples that cannot change a request or
  * response contract. Object keys are sorted; array order is retained because it may be meaningful
  * for schemas such as oneOf and security alternatives.
  */
-function canonicalize(value: unknown, parentKey?: string): unknown {
+function canonicalize(
+  value: unknown,
+  context: CanonicalContext = 'object',
+  parentKey?: string,
+): unknown {
   if (Array.isArray(value)) {
-    return value.map((item) => canonicalize(item, parentKey));
+    // Security Requirement Objects are named maps keyed by security-scheme name.
+    const itemContext: CanonicalContext = parentKey === 'security' ? 'named-map' : 'object';
+    return value.map((item) => canonicalize(item, itemContext));
   }
   if (value !== null && typeof value === 'object') {
+    const preserveNames = context !== 'object';
     const entries = Object.entries(value as Record<string, unknown>)
-      // Keys inside a Schema Object's `properties` map are field names, not OpenAPI keywords.
-      .filter(([key]) => parentKey === 'properties' || !DOCUMENTATION_ONLY_KEYS.has(key))
+      // Keys inside named maps are component/field names, not OpenAPI keywords.
+      .filter(([key]) => preserveNames || !DOCUMENTATION_ONLY_KEYS.has(key))
       .sort(([left], [right]) => left.localeCompare(right))
-      .map(([key, item]) => [key, canonicalize(item, key)] as const);
+      .map(([key, item]) => {
+        let childContext: CanonicalContext = 'object';
+        if (context === 'named-map-of-maps') {
+          childContext = 'named-map';
+        } else if (context === 'object') {
+          childContext =
+            key === 'callbacks'
+              ? 'named-map-of-maps'
+              : NAMED_MAP_KEYS.has(key)
+                ? 'named-map'
+                : 'object';
+        }
+        return [key, canonicalize(item, childContext, key)] as const;
+      });
     return Object.fromEntries(entries);
   }
   return value;
@@ -129,7 +177,7 @@ export async function runDriftGuard(options: DriftGuardOptions = {}): Promise<Sp
       });
       continue;
     }
-    results.push(await checkSpec(name, url, fetchFn, pinnedSpec));
+    results.push(await checkSpec(name, url, fetchFn, pinnedSpec, options.timeoutMs));
   }
 
   return results;
@@ -144,10 +192,11 @@ export async function checkSpec(
   url: string,
   fetchFn: typeof globalThis.fetch = globalThis.fetch,
   pinnedSpec?: OpenApiSpec,
+  timeoutMs = 30_000,
 ): Promise<SpecResult> {
   let response: Response;
   try {
-    response = await fetchFn(url);
+    response = await fetchFn(url, { signal: AbortSignal.timeout(timeoutMs) });
   } catch (err) {
     return {
       name,

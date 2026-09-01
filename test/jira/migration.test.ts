@@ -112,6 +112,7 @@ describe('MigrationResource', () => {
         method: 'POST',
         path: `${BASE_URL}/migration/com.example.app/my-custom-field/task`,
       });
+      expect(transport.lastCall?.options.query).toBeUndefined();
     });
 
     it('throws when connectKey is empty', async () => {

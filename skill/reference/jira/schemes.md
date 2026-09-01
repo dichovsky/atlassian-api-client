@@ -339,7 +339,7 @@ Priority scheme management (B644–B651). Covers the full `/rest/api/3/prioritys
 atlas jira priority-schemes list --start-at 0 --max-results 50 --expand priorities,projects
 
 # Filter by IDs / name / default
-atlas jira priority-schemes list --scheme-ids 10000,10001 --order-by -name
+atlas jira priority-schemes list --scheme-ids 10000,10001 --order-by=-name
 atlas jira priority-schemes list --scheme-name "Critical" --only-default
 
 # Create a scheme

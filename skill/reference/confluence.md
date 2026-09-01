@@ -134,7 +134,7 @@ atlas confluence pages delete-property 12345 --property-id prop-1
 # Versions + attachments upload
 atlas confluence pages version 12345 --version-number 2
 atlas confluence pages versions 12345 --limit 25
-atlas confluence pages footer-comments 12345 --sort -created-date --limit 25
+atlas confluence pages footer-comments 12345 --sort=-created-date --limit 25
 atlas confluence pages inline-comments 12345 --body-format storage --resolution-status open
 atlas confluence pages upload-attachment 12345 --file ./screenshot.png --media-type image/png
 ```
@@ -192,7 +192,7 @@ atlas confluence spaces blog-posts 654321 --sort=-created-date --status current 
 atlas confluence spaces pages 654321 --depth root --title "Quarterly" --sort=-modified-date
 atlas confluence spaces custom-content 654321 --type ai.atlassian.collection
 atlas confluence spaces content-labels 654321 --prefix team
-atlas confluence spaces labels 654321 --prefix team --sort -name
+atlas confluence spaces labels 654321 --prefix team --sort=-name
 atlas confluence spaces operations 654321
 
 # Classification
@@ -262,7 +262,7 @@ The remaining actions wrap the `/blogposts/{id}/…` sub-resource family — con
 ```sh
 # Lifecycle
 atlas confluence blog-posts list --space-id 654321 --limit 25
-atlas confluence blog-posts list --space-id 654321 --sort -created-date --status current --body-format storage
+atlas confluence blog-posts list --space-id 654321 --sort=-created-date --status current --body-format storage
 atlas confluence blog-posts get 99999
 atlas confluence blog-posts get 99999 --include-labels --include-likes --body-format atlas_doc_format
 
@@ -272,7 +272,7 @@ atlas confluence blog-posts create-property 99999 --key reviewed --value true
 atlas confluence blog-posts update-property 99999 --property-id prop-1 --key reviewed --value false --version-number 2
 
 # Attachments + classification
-atlas confluence blog-posts attachments 99999 --media-type image/png --sort -created-date
+atlas confluence blog-posts attachments 99999 --media-type image/png --sort=-created-date
 atlas confluence blog-posts attachments 99999 --status current,archived
 atlas confluence blog-posts get-classification-level 99999
 atlas confluence blog-posts update-classification-level 99999 --level-id cl-restricted
@@ -280,7 +280,7 @@ atlas confluence blog-posts reset-classification-level 99999
 
 # Sub-collections
 atlas confluence blog-posts custom-content 99999 --type ai.atlassian.collection
-atlas confluence blog-posts footer-comments 99999 --sort -created-date
+atlas confluence blog-posts footer-comments 99999 --sort=-created-date
 atlas confluence blog-posts inline-comments 99999 --resolution-status open
 atlas confluence blog-posts labels 99999 --prefix global
 
@@ -290,7 +290,7 @@ atlas confluence blog-posts likes-users 99999 --limit 50
 atlas confluence blog-posts operations 99999
 
 # Versions
-atlas confluence blog-posts versions 99999 --sort -modified-date
+atlas confluence blog-posts versions 99999 --sort=-modified-date
 atlas confluence blog-posts version 99999 --version-number 2
 ```
 
@@ -386,12 +386,12 @@ atlas confluence blog-posts version 99999 --version-number 2
 ```sh
 # Inverse relations: given a label, list content with that label
 atlas confluence labels list-all --prefix global --limit 50
-atlas confluence labels attachments 12345 --sort -created-date
+atlas confluence labels attachments 12345 --sort=-created-date
 atlas confluence labels blog-posts 12345 --space-id 100,200 --limit 25
-atlas confluence labels pages 12345 --sort -modified-date
+atlas confluence labels pages 12345 --sort=-modified-date
 
 # Forward relations: given a resource, list labels on it (B1018)
-atlas confluence labels list-for-space 654321 --prefix global --sort -name
+atlas confluence labels list-for-space 654321 --prefix global --sort=-name
 atlas confluence labels list-for-blog-post 99999 --prefix team --limit 25
 ```
 
@@ -607,7 +607,7 @@ atlas confluence data-policies get-metadata
 atlas confluence data-policies list-spaces
 
 # Filter to specific space keys, sort by descending key, larger page
-atlas confluence data-policies list-spaces --keys ENG,OPS --sort -key --limit 50
+atlas confluence data-policies list-spaces --keys ENG,OPS --sort=-key --limit 50
 
 # Filter by IDs
 atlas confluence data-policies list-spaces --ids 100,200,300
@@ -960,7 +960,7 @@ atlas confluence databases get db-1 --include-properties --include-operations
 atlas confluence databases descendants db-1 --depth 3 --limit 50
 
 # Sort direct children by most-recently modified
-atlas confluence databases direct-children db-1 --sort -modified-date
+atlas confluence databases direct-children db-1 --sort=-modified-date
 
 # Classification level lifecycle
 atlas confluence databases get-classification-level db-1
@@ -1073,7 +1073,7 @@ atlas confluence folders get folder-1 --include-properties --include-operations
 atlas confluence folders descendants folder-1 --depth 3 --limit 50
 
 # Sort direct children by most-recently modified
-atlas confluence folders direct-children folder-1 --sort -modified-date
+atlas confluence folders direct-children folder-1 --sort=-modified-date
 
 # Permitted operations
 atlas confluence folders operations folder-1
@@ -1113,7 +1113,7 @@ Top-level (page / blog-post) footer comments exposed through the tenant-wide `/w
 
 ```sh
 # Tenant-wide listing, newest first
-atlas confluence footer-comments list --sort -created-date --limit 25
+atlas confluence footer-comments list --sort=-created-date --limit 25
 
 # Read a single comment with everything inlined
 atlas confluence footer-comments get 77777 --include-likes --include-versions
@@ -1132,7 +1132,7 @@ atlas confluence footer-comments likes-users 77777 --limit 50
 atlas confluence footer-comments operations 77777
 
 # Version history
-atlas confluence footer-comments versions 77777 --sort -modified-date
+atlas confluence footer-comments versions 77777 --sort=-modified-date
 atlas confluence footer-comments version 77777 --version-number 3
 ```
 
@@ -1159,7 +1159,7 @@ Tenant-wide inline comment surface exposed through `/wiki/api/v2/inline-comments
 
 ```sh
 # Tenant-wide listing, newest first
-atlas confluence inline-comments list --sort -created-date --limit 25
+atlas confluence inline-comments list --sort=-created-date --limit 25
 
 # Walk child replies on an inline thread
 atlas confluence inline-comments children 77777 --sort created-date
@@ -1172,7 +1172,7 @@ atlas confluence inline-comments likes-users 77777 --limit 50
 atlas confluence inline-comments operations 77777
 
 # Version history
-atlas confluence inline-comments versions 77777 --sort -modified-date
+atlas confluence inline-comments versions 77777 --sort=-modified-date
 atlas confluence inline-comments version 77777 --version-number 3
 ```
 

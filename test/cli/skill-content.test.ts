@@ -18,13 +18,21 @@ const JIRA_DOMAIN_DIR = resolve(SKILL_DIR, 'reference', 'jira');
 const JIRA_DOMAIN_FILES = readdirSync(JIRA_DOMAIN_DIR)
   .filter((f) => f.endsWith('.md'))
   .sort();
-const JIRA_REF =
-  JIRA_INDEX +
-  '\n' +
-  JIRA_DOMAIN_FILES.map((f) => readFileSync(resolve(JIRA_DOMAIN_DIR, f), 'utf8')).join('\n');
+const JIRA_DOMAIN_DOCS = JIRA_DOMAIN_FILES.map((f) =>
+  readFileSync(resolve(JIRA_DOMAIN_DIR, f), 'utf8'),
+);
+const JIRA_REF = JIRA_INDEX + '\n' + JIRA_DOMAIN_DOCS.join('\n');
 const AUTH_SAFETY_REF = readFileSync(resolve(SKILL_DIR, 'reference', 'auth-and-safety.md'), 'utf8');
 const PAYLOAD_RULES_REF = readFileSync(resolve(SKILL_DIR, 'reference', 'payload-rules.md'), 'utf8');
 const EXAMPLES_REF = readFileSync(resolve(SKILL_DIR, 'reference', 'examples.md'), 'utf8');
+const ALL_REFERENCE_DOCS = [
+  CONFLUENCE_REF,
+  JIRA_INDEX,
+  ...JIRA_DOMAIN_DOCS,
+  AUTH_SAFETY_REF,
+  PAYLOAD_RULES_REF,
+  EXAMPLES_REF,
+];
 // Keep router text compact so the skill stays cheap and leaves room for task context.
 // 5000 characters is roughly 1250 prompt tokens using a 4 chars/token estimate.
 const MAX_SKILL_MD_LENGTH = 5000;
@@ -276,8 +284,13 @@ describe('Reference content sanity checks', () => {
 
 describe('Example commands in skill docs parse correctly', () => {
   const skillExamples = extractAtlasCommands(SKILL_MD);
-  const refExamples = extractAtlasCommands(EXAMPLES_REF);
-  const examples = [...skillExamples, ...refExamples];
+  const refExamples = ALL_REFERENCE_DOCS.flatMap(extractAtlasCommands);
+  const examples = [...new Set([...skillExamples, ...refExamples])];
+  const confluenceResources = extractDispatcherResources(
+    CONFLUENCE_SRC,
+    'executeConfluenceCommand',
+  );
+  const jiraResources = extractDispatcherResources(JIRA_SRC, 'executeJiraCommand');
 
   it('finds at least 10 example commands', () => {
     expect(examples.length).toBeGreaterThanOrEqual(MIN_EXAMPLE_COMMANDS);
@@ -295,120 +308,9 @@ describe('Example commands in skill docs parse correctly', () => {
       const parsed = parseCommand(argv);
       expect(parsed.api).toMatch(/^(confluence|jira|install-skill)$/);
       if (parsed.api === 'confluence') {
-        expect([
-          'pages',
-          'spaces',
-          'blog-posts',
-          'comments',
-          'attachments',
-          'labels',
-          'admin-key',
-          'app',
-          'classification-levels',
-          'content',
-          'data-policies',
-          'databases',
-          'embeds',
-          'folders',
-          'footer-comments',
-          'inline-comments',
-          'space-permissions',
-          'space-role-mode',
-          'space-roles',
-          'tasks',
-          'users',
-          'users-bulk',
-          'whiteboards',
-        ]).toContain(parsed.resource);
+        expect(confluenceResources).toContain(parsed.resource);
       } else if (parsed.api === 'jira') {
-        expect([
-          'issues',
-          'projects',
-          'search',
-          'users',
-          'issue-types',
-          'issuetype',
-          'priorities',
-          'statuses',
-          'boards',
-          'sprints',
-          'epic',
-          'backlog',
-          'announcement-banner',
-          'application-properties',
-          'application-role',
-          'configuration',
-          'data-policy',
-          'webhooks',
-          'status',
-          'status-category',
-          'server-info',
-          'instance',
-          'mypermissions',
-          'mypreferences',
-          'auditing',
-          'events',
-          'changelog',
-          'forge',
-          'incidents',
-          'post-incident-reviews',
-          'vulnerability',
-          'devopscomponents',
-          'groups',
-          'group-user-picker',
-          'security-level',
-          'license',
-          'settings',
-          'redact',
-          'flag',
-          'task',
-          'avatar',
-          'custom-field-option',
-          'classification-levels',
-          'latest',
-          'remote-link',
-          'service-registry',
-          'addons',
-          'exists-by-properties',
-          'repository',
-          'app',
-          'bulk',
-          'issue-attachments',
-          'component',
-          'dashboards',
-          'filters',
-          'issue-type-screen-schemes',
-          'permission-schemes',
-          'issue-type-schemes',
-          'notification-schemes',
-          'roles',
-          'resolutions',
-          'expression',
-          'issue-comments',
-          'labels',
-          'fieldconfiguration',
-          'priority-schemes',
-          'version',
-          'config',
-          'issuesecurityschemes',
-          'screens',
-          'screenscheme',
-          'plans',
-          'workflowscheme',
-          'fields',
-          'jql',
-          'issuelinktype',
-          'issue-link',
-          'project-template',
-          'universal-avatar',
-          'worklog',
-          'ui-modifications',
-          'permissions',
-          'pipelines',
-          'linked-workspaces',
-          'bulk-by-properties',
-          'migration',
-        ]).toContain(parsed.resource);
+        expect(jiraResources).toContain(parsed.resource);
       }
     });
   }
@@ -582,10 +484,10 @@ describe('Resource coverage drift check', () => {
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
-/** Extract `atlas …` command lines from fenced sh code blocks. */
+/** Extract `atlas …` command lines from fenced shell code blocks. */
 function extractAtlasCommands(markdown: string): string[] {
   const lines: string[] = [];
-  const blockRegex = /```sh\n([\s\S]*?)```/g;
+  const blockRegex = /```(?:sh|bash)\n([\s\S]*?)```/g;
   let match: RegExpExecArray | null;
   while ((match = blockRegex.exec(markdown)) !== null) {
     const body = match[1] as string;

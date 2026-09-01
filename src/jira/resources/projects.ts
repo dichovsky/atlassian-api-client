@@ -412,7 +412,10 @@ export class ProjectsResource {
     yield* paginateOffset<Project>(this.transport, path, query, params?.maxResults);
   }
 
-  /** List projects using the legacy endpoint (B929). */
+  /**
+   * List projects using the legacy endpoint (B929).
+   * @deprecated Atlassian marks GET `/rest/api/3/project` deprecated; use {@link list}.
+   */
   async listLegacy(params?: ListLegacyProjectsParams): Promise<Project[]> {
     const query: Record<string, string | number | boolean | undefined> = {};
     if (params?.expand !== undefined) query['expand'] = params.expand;

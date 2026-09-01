@@ -40,9 +40,15 @@ import type {
   SpaceIcon,
   SpaceLinks,
   SpaceNestedEnvelope,
+  SpaceProperty,
   SpaceSortOrder,
   SpaceStatus,
   SpaceType,
+  ApproximateIssueCount,
+  ApproximateIssueCountParams,
+  JqlSearchParams,
+  JqlSearchGetParams,
+  LegacySearchGetParams,
   JiraListLabelsParams,
   RetryConfig,
   PaginateOptions,
@@ -80,6 +86,7 @@ describe('ConfluenceClient', () => {
       SpaceIcon,
       SpaceLinks,
       SpaceNestedEnvelope<unknown>,
+      SpaceProperty,
       SpaceSortOrder,
       SpaceStatus,
       SpaceType,
@@ -239,6 +246,31 @@ describe('Logger and Middleware config', () => {
 });
 
 describe('root type exports', () => {
+  it('exports board approximate-count request and response types', () => {
+    const params: ApproximateIssueCountParams = { jql: 'status != Done' };
+    const result: ApproximateIssueCount = { count: 42 };
+
+    expect(params.jql).toBe('status != Done');
+    expect(result.count).toBe(42);
+  });
+
+  it('keeps legacy GET-only search flags out of shared POST search params', () => {
+    const params: LegacySearchGetParams = { jql: 'project = PROJ', failFast: true };
+
+    expect(params.failFast).toBe(true);
+  });
+
+  it('exports current GET JQL search params with archived-project support', () => {
+    const postParams: JqlSearchParams = { includeArchivedProjects: false };
+    const params: JqlSearchGetParams = {
+      failFast: false,
+      includeArchivedProjects: true,
+    };
+
+    expect(postParams.includeArchivedProjects).toBe(false);
+    expect(params).toEqual({ failFast: false, includeArchivedProjects: true });
+  });
+
   it('keeps ListLabelsParams backward-compatible while exposing explicit aliases', () => {
     const confluenceParams: ListLabelsParams = { prefix: 'global', limit: 10 };
     const confluenceAlias: ConfluenceListLabelsParams = confluenceParams;

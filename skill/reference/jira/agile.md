@@ -60,7 +60,8 @@ Non-deprecated, **token-paginated** replacements for the agile board issue listi
 
 - `boards list --type` accepts `scrum`, `kanban`, or `simple`; `boards create --type` accepts `kanban`, `scrum`, or `agility`. These are different OpenAPI enums.
 - `--include-private true|false` and `--negate-location-filtering true|false` are explicit tri-state filters; omit either flag to use the server default.
-- `--project-type-location` is comma-separated and is serialized as repeated query parameters.
+- `--order-by` accepts `name`, `-name`, or `+name`.
+- `--project-type-location` accepts comma-separated `software` and `service_desk` values and is serialized as repeated query parameters.
 - Board creation location is optional. When supplied, `--location-type` accepts `project` or `user`, and `--location-project-key-or-id` supplies the containing project key/ID.
 - `--state` (for `list-sprints`) accepts comma-separated sprint states: `future`, `active`, `closed`.
 - `--enabling` (for `toggle-feature`) accepts `true` or `false` — maps to the spec's boolean `enabling` field.

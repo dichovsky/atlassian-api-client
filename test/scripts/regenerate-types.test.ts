@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
   checkSpec,
   contractFingerprint,
@@ -155,6 +155,24 @@ describe('contractFingerprint', () => {
 
     expect(contractFingerprint(changed)).not.toBe(contractFingerprint(MINIMAL_SPEC_OBJECT));
   });
+
+  it('does not drop component schemas whose names match documentation keywords', () => {
+    const changed: OpenApiSpec = {
+      ...MINIMAL_SPEC_OBJECT,
+      components: {
+        ...MINIMAL_SPEC_OBJECT.components,
+        schemas: {
+          ...MINIMAL_SPEC_OBJECT.components?.schemas,
+          description: { type: 'number' },
+          example: { type: 'boolean' },
+          examples: { type: 'integer' },
+          summary: { type: 'string' },
+        },
+      },
+    };
+
+    expect(contractFingerprint(changed)).not.toBe(contractFingerprint(MINIMAL_SPEC_OBJECT));
+  });
 });
 
 describe('checkSpec — error paths', () => {
@@ -283,10 +301,39 @@ describe('runDriftGuard', () => {
     }
   });
 
-  it('uses globalThis.fetch when no fetch option is provided (type check only)', () => {
-    // We only verify the default parameter path is reachable at type level.
-    // We do NOT call runDriftGuard() here without injecting a mock, as that
-    // would make a real network request in unit tests.
-    expect(typeof runDriftGuard).toBe('function');
+  it('uses globalThis.fetch with a timeout signal when no fetch option is provided', async () => {
+    const originalFetch = globalThis.fetch;
+    const fetchMock = vi.fn(makeMockFetch(MINIMAL_SPEC));
+    globalThis.fetch = fetchMock;
+
+    try {
+      const results = await runDriftGuard({ loadPinned: loadMinimalPinned });
+
+      expect(results.every((result) => result.ok)).toBe(true);
+      expect(fetchMock).toHaveBeenCalledTimes(Object.keys(SPEC_URLS).length);
+      for (const [, init] of fetchMock.mock.calls) {
+        expect(init?.signal).toBeInstanceOf(AbortSignal);
+      }
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  it('applies the configured timeout to every spec fetch', async () => {
+    const timeoutSpy = vi.spyOn(AbortSignal, 'timeout');
+
+    try {
+      const results = await runDriftGuard({
+        fetch: makeMockFetch(MINIMAL_SPEC),
+        loadPinned: loadMinimalPinned,
+        timeoutMs: 1_234,
+      });
+
+      expect(results.every((result) => result.ok)).toBe(true);
+      expect(timeoutSpy).toHaveBeenCalledTimes(Object.keys(SPEC_URLS).length);
+      expect(timeoutSpy).toHaveBeenCalledWith(1_234);
+    } finally {
+      timeoutSpy.mockRestore();
+    }
   });
 });

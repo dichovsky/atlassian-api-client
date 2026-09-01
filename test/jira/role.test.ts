@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { RoleResource } from '../../src/jira/resources/role.js';
+import type { Role } from '../../src/jira/resources/role.js';
 import { ValidationError } from '../../src/core/errors.js';
 import { MockTransport } from '../helpers/mock-transport.js';
 
@@ -20,6 +21,13 @@ describe('RoleResource', () => {
   beforeEach(() => {
     transport = new MockTransport();
     roles = new RoleResource(transport, BASE_URL);
+  });
+
+  it('does not expose ProjectRoleDetails-only classification on Role', () => {
+    type RoleHasType = 'type' extends keyof Role ? true : false;
+    const roleHasType: RoleHasType = false;
+
+    expect(roleHasType).toBe(false);
   });
 
   // ── list ──────────────────────────────────────────────────────────────────

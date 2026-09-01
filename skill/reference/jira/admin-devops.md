@@ -788,7 +788,7 @@ atlas jira dashboards update 10001 --name "Renamed" --share-permissions '[{"type
 
 ```sh
 # Search for dashboards by name
-atlas jira dashboards search --dashboard-name "Sprint" --order-by -favorite_count --max-results 25
+atlas jira dashboards search --dashboard-name "Sprint" --order-by=-favorite_count --max-results 25
 
 # List gadgets on a dashboard
 atlas jira dashboards list-gadgets 10001

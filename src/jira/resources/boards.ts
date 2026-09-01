@@ -67,7 +67,7 @@ export interface ListBoardsParams {
   /** Whether to negate the location filter. */
   readonly negateLocationFiltering?: boolean;
   /** Field to order results by. */
-  readonly orderBy?: string;
+  readonly orderBy?: 'name' | '-name' | '+name';
   /** A comma-separated list of fields to expand. */
   readonly expand?: string;
   /** Filter by project type key(s). Spec `type: array` → repeated params. */

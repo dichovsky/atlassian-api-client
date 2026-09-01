@@ -454,7 +454,7 @@ Full comment CRUD + property surface + bulk fetch (B1012, B356–B360). Wired vi
 atlas jira issue-comments list PROJ-123
 
 # List with pagination and sort order
-atlas jira issue-comments list PROJ-123 --start-at 0 --max-results 20 --order-by -created
+atlas jira issue-comments list PROJ-123 --start-at 0 --max-results 20 --order-by=-created
 
 # Get a single comment
 atlas jira issue-comments get PROJ-123 10001

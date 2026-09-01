@@ -113,6 +113,8 @@ export type {
 export { SearchResource } from './resources/search.js';
 export type {
   ApproximateCountResult,
+  LegacySearchGetParams,
+  JqlSearchGetParams,
   JqlSearchParams,
   JqlSearchResult,
   SearchWarning,

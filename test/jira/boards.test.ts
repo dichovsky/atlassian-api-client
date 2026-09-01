@@ -402,7 +402,7 @@ describe('BoardsResource', () => {
         negateLocationFiltering: false,
         orderBy: '-name',
         expand: 'admins',
-        projectTypeLocation: ['software', 'business'],
+        projectTypeLocation: ['software', 'service_desk'],
         filterId: 10001,
       })) {
         // consume
@@ -423,7 +423,7 @@ describe('BoardsResource', () => {
         filterId: 10001,
       });
       expect(transport.calls[0]?.options.path).toBe(
-        `${BASE_URL}/board?projectTypeLocation=software&projectTypeLocation=business`,
+        `${BASE_URL}/board?projectTypeLocation=software&projectTypeLocation=service_desk`,
       );
     });
 

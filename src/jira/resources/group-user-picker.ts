@@ -66,12 +66,8 @@ export interface GroupUserPickerResponse {
 
 /** Query parameters for the combined group+user picker. */
 export interface GroupUserPickerParams {
-  /**
-   * Query string to filter results.
-   * Required by the Jira v3 spec; kept optional here for SDK compatibility.
-   * The CLI requires `--query`.
-   */
-  readonly query?: string;
+  /** Query string to filter results. Required by the Jira v3 spec. */
+  readonly query: string;
   /** Maximum number of results per section (default 50). */
   readonly maxResults?: number;
   /** Whether to show avatar URLs in user results. */
@@ -124,23 +120,8 @@ export interface GroupUserPickerParams {
   readonly caseInsensitive?: boolean;
   /** Include AI agents in the user suggestions. Defaults to false. */
   readonly includeAiAgents?: boolean;
-  /**
-   * @deprecated \`projectRole\` is NOT a valid parameter of
-   * \`GET /rest/api/3/groupuserpicker\` — it does not appear in the Jira v3 OpenAPI
-   * spec. This property is retained only for backward compatibility with existing
-   * SDK callers and is **never sent on the wire**.
-   */
-  readonly projectRole?: string;
   /** Whether to exclude Connect app users and groups. */
   readonly excludeConnectUsers?: boolean;
-  /**
-   * @deprecated \`excludeAccountIds\` is NOT a valid parameter of
-   * \`GET /rest/api/3/groupuserpicker\` — it does not appear in the Jira v3 OpenAPI
-   * spec and is silently ignored by the server. This property is retained only for
-   * backward compatibility with existing typed callers and is **never sent on the
-   * wire**. Use the standard \`query\` filter instead.
-   */
-  readonly excludeAccountIds?: string[];
 }
 
 /**
@@ -161,31 +142,28 @@ export class GroupUserPickerResource {
    * Find groups and users matching a query for autocomplete.
    * GET /rest/api/3/groupuserpicker
    */
-  async pick(params?: GroupUserPickerParams): Promise<GroupUserPickerResponse> {
+  async pick(params: GroupUserPickerParams): Promise<GroupUserPickerResponse> {
     const query: Record<string, string | number | boolean | undefined> = {};
-    if (params?.query !== undefined) query['query'] = params.query;
-    if (params?.maxResults !== undefined) query['maxResults'] = params.maxResults;
-    if (params?.showAvatar !== undefined) query['showAvatar'] = params.showAvatar;
-    if (params?.fieldId !== undefined) query['fieldId'] = params.fieldId;
-    if (params?.avatarSize !== undefined) query['avatarSize'] = params.avatarSize;
-    if (params?.caseInsensitive !== undefined) query['caseInsensitive'] = params.caseInsensitive;
-    if (params?.includeAiAgents !== undefined) query['includeAiAgents'] = params.includeAiAgents;
+    query['query'] = params.query;
+    if (params.maxResults !== undefined) query['maxResults'] = params.maxResults;
+    if (params.showAvatar !== undefined) query['showAvatar'] = params.showAvatar;
+    if (params.fieldId !== undefined) query['fieldId'] = params.fieldId;
+    if (params.avatarSize !== undefined) query['avatarSize'] = params.avatarSize;
+    if (params.caseInsensitive !== undefined) query['caseInsensitive'] = params.caseInsensitive;
+    if (params.includeAiAgents !== undefined) query['includeAiAgents'] = params.includeAiAgents;
     // The groupuserpicker endpoint's documented filter is `excludeConnectAddons`
     // (the `excludeConnectUsers` spelling belongs to GET /user/picker). Keep the
     // public param name but send the correct wire param so the filter is applied.
-    if (params?.excludeConnectUsers !== undefined)
+    if (params.excludeConnectUsers !== undefined)
       query['excludeConnectAddons'] = params.excludeConnectUsers;
-    // excludeAccountIds is @deprecated and intentionally NOT serialized — it is not
-    // a valid parameter of GET /groupuserpicker and would be silently ignored.
-    // projectRole is NOT a spec param for GET /groupuserpicker — not serialized.
 
     // projectId and issueTypeId are type:array in the spec — must be repeated params, not CSV.
     let path = appendRepeatedParams(
       `${this.baseUrl}/groupuserpicker`,
       'projectId',
-      params?.projectId,
+      params.projectId,
     );
-    path = appendRepeatedParams(path, 'issueTypeId', params?.issueTypeId);
+    path = appendRepeatedParams(path, 'issueTypeId', params.issueTypeId);
 
     const response = await this.transport.request<GroupUserPickerResponse>({
       method: 'GET',

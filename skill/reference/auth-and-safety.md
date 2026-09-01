@@ -54,7 +54,10 @@ Specifically, `atlas jira bulk submit-feature-flags --value '{"flags":[]}'`
 uses `/jira/featureflags/0.1/cloud/{cloudId}/bulk`. Do not add
 `api.atlassian.com` to `ATLASSIAN_ALLOWED_HOSTS`: the Jira client authorizes
 that exact host only while proxy mode is enabled. Feature Flag lookup/deletion
-and all other Jira resources continue to use `ATLASSIAN_BASE_URL`.
+and all other Jira resources continue to use `ATLASSIAN_BASE_URL`. In
+particular, `atlas jira pipelines get-deployment-gating-status ...` remains a
+tenant request even though sibling deployment ingestion/get/delete actions use
+the proxy.
 
 ## Connect JWT (SDK, not CLI)
 

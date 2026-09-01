@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { PagesResource } from '../../src/confluence/resources/pages.js';
-import type { CreatePageData } from '../../src/confluence/types/pages.js';
+import type { CreatePageData, CreatePageRequest } from '../../src/confluence/types/pages.js';
 import { MockTransport } from '../helpers/mock-transport.js';
 
 interface ExtendedCreatePageData extends CreatePageData {
@@ -194,6 +194,23 @@ describe('PagesResource', () => {
   // ── create ────────────────────────────────────────────────────────────────
 
   describe('create()', () => {
+    it('rejects incomplete or mixed page body shapes at compile time', () => {
+      // @ts-expect-error PageBodyWrite requires both representation and value.
+      const incomplete: CreatePageRequest = { spaceId: 'SPACE', status: 'draft', body: {} };
+      const mixed: CreatePageRequest = {
+        spaceId: 'SPACE',
+        title: 'Mixed',
+        body: {
+          representation: 'storage',
+          value: '<p>flat</p>',
+          // @ts-expect-error Flat and nested body representations are mutually exclusive.
+          storage: { representation: 'storage', value: '<p>nested</p>' },
+        },
+      };
+
+      expect([incomplete, mixed]).toHaveLength(2);
+    });
+
     it('calls POST /pages with the provided body', async () => {
       const created = makePage('99');
       transport.respondWith(created);
@@ -206,11 +223,12 @@ describe('PagesResource', () => {
       const result = await pages.create(data);
 
       expect(result).toEqual(created);
-      expect(transport.lastCall?.options).toMatchObject({
+      expect(transport.lastCall?.options).toEqual({
         method: 'POST',
         path: `${BASE_URL}/pages`,
         body: data,
       });
+      expect(transport.lastCall?.options.query).toBeUndefined();
     });
 
     it('forwards embedded, private, and root-level create query parameters', async () => {
@@ -219,7 +237,7 @@ describe('PagesResource', () => {
 
       await pages.create(data, { embedded: true, private: true, 'root-level': true });
 
-      expect(transport.lastCall?.options).toMatchObject({
+      expect(transport.lastCall?.options).toEqual({
         method: 'POST',
         path: `${BASE_URL}/pages`,
         query: { embedded: true, private: true, 'root-level': true },
@@ -242,11 +260,12 @@ describe('PagesResource', () => {
 
       await pages.create(data);
 
-      expect(transport.lastCall?.options).toMatchObject({
+      expect(transport.lastCall?.options).toEqual({
         method: 'POST',
         path: `${BASE_URL}/pages`,
         body: data,
       });
+      expect(transport.lastCall?.options.query).toBeUndefined();
     });
 
     it('preserves CreatePageData interface extension compatibility', async () => {

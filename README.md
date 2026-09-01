@@ -526,7 +526,7 @@ const allOps = listKnownOperations();
 // → ['confluence.pages.create', 'confluence.pages.delete', ...]
 ```
 
-The operation annotations contain 38 Confluence v2 scopes, 33 Jira Software scopes, and 180 Jira Platform Beta scopes (247 unique granular strings after overlap). Validation recognizes those plus 24 classic or compatibility scopes exposed by the pinned security schemes, for 271 accepted strings in total. `detectRequiredScopes()` continues to recommend granular scopes; the operation registry remains a selected convenience mapping rather than a claim that every SDK method has been mapped. `atlas scopes validate <scope>...` validates scope strings without making a network request.
+The operation annotations contain 38 Confluence v2 scopes, 33 Jira Software scopes, and 180 Jira Platform Beta scopes (247 unique granular strings after overlap). Validation also recognizes 8 granular catalog entries not referenced by current operations and 16 classic or Jira Software compatibility scopes, for 271 accepted strings in total. `detectRequiredScopes()` continues to recommend granular scopes; the operation registry remains a selected convenience mapping rather than a claim that every SDK method has been mapped. `atlas scopes validate <scope>...` validates scope strings without making a network request.
 
 ## OpenAPI Type Generation
 

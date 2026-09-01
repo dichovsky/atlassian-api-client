@@ -11,15 +11,17 @@ Usage:
   python3 scripts/api-gap-analysis.py
   python3 scripts/api-gap-analysis.py --spec-dir /path/to/spec
   python3 scripts/api-gap-analysis.py --source-root /path/to/repository
+  python3 scripts/api-gap-analysis.py --out-dir /path/to/audit-artifacts
 
 Reads the reviewed snapshots in spec/. Refresh them using spec/README.md before a live audit.
-  Writes /tmp/gap_candidates.json + /tmp/unmatched_sdk.json.
+Writes gap_candidates.json + unmatched_sdk.json to a unique temporary directory
+by default, or to --out-dir when supplied.
 
 Candidates are starting points only — each must be verified against the spec +
 BACKLOG-ARCHIVE.md before being treated as a real gap (the diff cannot tell an
 alternate-prefix duplicate or a deprecated-superseded alias from a true gap).
 """
-import argparse, json, re, os, glob, sys
+import argparse, json, re, os, glob, sys, tempfile
 from urllib.parse import urlsplit
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -33,6 +35,10 @@ PARSER.add_argument(
     "--source-root",
     default=ROOT,
     help="repository root containing src/{jira,confluence}",
+)
+PARSER.add_argument(
+    "--out-dir",
+    help="directory for gap_candidates.json and unmatched_sdk.json",
 )
 CLI_ARGS = PARSER.parse_args()
 
@@ -50,6 +56,10 @@ EXPECTED_SERVER_SCOPES = {
 
 HTTP_METHODS = {
     "delete", "get", "head", "options", "patch", "post", "put", "trace",
+}
+
+PATH_ITEM_FIELDS = HTTP_METHODS | {
+    "$ref", "description", "parameters", "servers", "summary",
 }
 
 ROUTE_PRESERVING_PRIMITIVES = {
@@ -113,10 +123,12 @@ def find_request_call_objects(code):
         if cursor < len(code) and code[cursor] == "<":
             cursor = match_type_arguments_end(code, cursor)
             if cursor == -1:
+                unsupported.append(member.start())
                 continue
             while cursor < len(code) and code[cursor].isspace():
                 cursor += 1
         if cursor >= len(code) or code[cursor] != "(":
+            unsupported.append(member.start())
             continue
         call_paren = cursor
         cursor += 1
@@ -127,6 +139,29 @@ def find_request_call_objects(code):
         else:
             unsupported.append(member.start())
     return calls, unsupported
+
+def approved_transport_forwarding_positions(code):
+    """Return ``transport`` offsets passed to reviewed pagination helpers."""
+    positions = set()
+    for call in re.finditer(r"\bpaginate(?:Cursor|Offset|Search)\b", code):
+        cursor = call.end()
+        while cursor < len(code) and code[cursor].isspace():
+            cursor += 1
+        if cursor < len(code) and code[cursor] == "<":
+            cursor = match_type_arguments_end(code, cursor)
+            if cursor == -1:
+                continue
+            while cursor < len(code) and code[cursor].isspace():
+                cursor += 1
+        if cursor >= len(code) or code[cursor] != "(":
+            continue
+        cursor += 1
+        while cursor < len(code) and code[cursor].isspace():
+            cursor += 1
+        transport = re.match(r"this\.transport\b", code[cursor:])
+        if transport:
+            positions.add(cursor + len("this."))
+    return positions
 
 def split_top_commas_aligned(source, code):
     """Split source on executable top-level commas using an aligned code view."""
@@ -934,7 +969,11 @@ def direct_template_usage_is_safe(
         return False
     wrapper_name = wrapper.group(1)
     if (
-        wrapper_name not in ROUTE_PRESERVING_PRIMITIVES
+        not route_primitive_is_trusted(
+            definitions,
+            definitions_code,
+            wrapper_name,
+        )
         and not helper_preserves_first_parameter(
             definitions,
             definitions_code,
@@ -984,7 +1023,11 @@ def route_wrapper_first_identifier(
         return None
     wrapper_name = wrapper.group(1)
     if (
-        wrapper_name not in ROUTE_PRESERVING_PRIMITIVES
+        not route_primitive_is_trusted(
+            definitions,
+            definitions_code,
+            wrapper_name,
+        )
         and not helper_preserves_first_parameter(
             definitions,
             definitions_code,
@@ -1118,6 +1161,45 @@ def helper_declaration_match(definitions_code, name):
         + r"\s*\(",
         definitions_code,
     )
+
+def route_primitive_is_trusted(definitions, definitions_code, name):
+    """Prove a primitive is the unshadowed binding from core/query.js."""
+    function_binding = re.search(
+        r"(?m)^\s*(?:export\s+)?(?:async\s+)?function\s+"
+        + re.escape(name)
+        + r"\s*\(",
+        definitions_code,
+    )
+    if (
+        name not in ROUTE_PRESERVING_PRIMITIVES
+        or not definitions
+        or not definitions_code
+        or function_binding
+    ):
+        return False
+    variable_binding = re.search(
+        r"\b(?:const|let|var)\s+" + re.escape(name) + r"\b",
+        definitions_code,
+    )
+    if variable_binding:
+        return False
+    for imported in re.finditer(
+        r"\bimport\s*\{(?P<bindings>[^}]*)\}\s*from\b",
+        definitions_code,
+    ):
+        source_tail = definitions[imported.end():]
+        if not re.match(
+            r"\s*['\"](?:\.\./)+core/query\.js['\"]",
+            source_tail,
+        ):
+            continue
+        bindings = {
+            binding.strip()
+            for binding in imported.group("bindings").split(",")
+        }
+        if name in bindings:
+            return True
+    return False
 
 def property_has_computed_name(prop_code):
     """Whether an object member has a computed key, including accessors."""
@@ -1822,11 +1904,27 @@ def extract(api):
     varmap = parse_base_suffixes(client_src, client_code)
     wiring = parse_wiring(client_src, client_code, varmap)
     results, unknowns = [], []
-    for f in sorted(glob.glob(os.path.join(res_dir, "*.ts"))):
-        if f.endswith("index.ts"): continue
+    for f in sorted(glob.glob(os.path.join(res_dir, "**", "*.ts"), recursive=True)):
+        if os.path.basename(f) == "index.ts": continue
         src, code_src = lex_ts_source(open(f).read())
-        clsm = re.search(r"export\s+class\s+([A-Z][A-Za-z0-9]*Resource)", code_src)
-        if not clsm: continue
+        class_matches = list(
+            re.finditer(
+                r"export\s+class\s+([A-Z][A-Za-z0-9]*Resource)\b",
+                code_src,
+            )
+        )
+        if len(class_matches) != 1:
+            transport_use = re.search(r"\btransport\b", code_src)
+            if transport_use:
+                unknowns.append(
+                    (
+                        os.path.relpath(f, res_dir),
+                        "unrecognized-resource-file",
+                        src[transport_use.start():transport_use.start() + 80],
+                    )
+                )
+            continue
+        clsm = class_matches[0]
         cls = clsm.group(1)
         params = parse_ctor_params(src, code_src)
         wargs = wiring.get(cls, [])
@@ -1851,6 +1949,39 @@ def extract(api):
             )
             for call_start in unsupported_request_calls
         )
+        constructor = re.search(r"\bconstructor\s*\(", code_src)
+        constructor_span = None
+        if constructor:
+            params_open = code_src.index("(", constructor.start())
+            params_end = match_close(code_src, params_open, "(", ")")
+            if params_end != -1:
+                constructor_span = (params_open, params_end)
+        accounted_request_transports = {
+            call_start + len("this.")
+            for call_start, _, _ in request_calls
+        } | {
+            call_start + len("this.")
+            for call_start in unsupported_request_calls
+        }
+        approved_forwarding = approved_transport_forwarding_positions(code_src)
+        for transport_use in re.finditer(r"\btransport\b", code_src):
+            position = transport_use.start()
+            if (
+                position in accounted_request_transports
+                or position in approved_forwarding
+                or (
+                    constructor_span is not None
+                    and constructor_span[0] < position < constructor_span[1]
+                )
+            ):
+                continue
+            unknowns.append(
+                (
+                    os.path.basename(f),
+                    "unsupported-transport-use",
+                    src[position:position + 80],
+                )
+            )
         scope_starts = enclosing_method_scope_starts(
             code_src,
             [
@@ -1980,6 +2111,21 @@ def fail_spec(name, message):
     print(f"{name}: {message}", file=sys.stderr)
     raise SystemExit(1)
 
+ARTIFACT_DIR = None
+
+def write_artifact(filename, value):
+    """Write one audit artifact without sharing a default path across runs."""
+    global ARTIFACT_DIR
+    if ARTIFACT_DIR is None:
+        if CLI_ARGS.out_dir:
+            ARTIFACT_DIR = os.path.abspath(CLI_ARGS.out_dir)
+            os.makedirs(ARTIFACT_DIR, exist_ok=True)
+        else:
+            ARTIFACT_DIR = tempfile.mkdtemp(prefix="atlassian-api-gap-")
+    artifact_path = os.path.join(ARTIFACT_DIR, filename)
+    with open(artifact_path, "w", encoding="utf-8") as artifact_file:
+        json.dump(value, artifact_file, indent=2)
+
 def load_spec(name, expected_server_scope):
     spec_path = os.path.join(os.path.abspath(CLI_ARGS.spec_dir), SPEC_FILES[name])
     with open(spec_path, encoding="utf-8") as spec_file:
@@ -1989,14 +2135,17 @@ def load_spec(name, expected_server_scope):
     if (
         not isinstance(spec, dict)
         or not isinstance(spec.get("openapi"), str)
-        or not re.fullmatch(r"3\.\d+(?:\.\d+)?", spec["openapi"])
+        or not re.fullmatch(r"3\.(?:0|1)(?:\.\d+)?", spec["openapi"])
         or not isinstance(info, dict)
         or not isinstance(info.get("title"), str)
         or not info["title"].strip()
         or not isinstance(info.get("version"), str)
         or not info["version"].strip()
     ):
-        fail_spec(name, "invalid OpenAPI document: expected OpenAPI 3.x info metadata")
+        fail_spec(
+            name,
+            "invalid OpenAPI document: expected OpenAPI 3.0 or 3.1 info metadata",
+        )
 
     def validate_servers(servers):
         if not isinstance(servers, list) or not servers:
@@ -2065,6 +2214,15 @@ def load_spec(name, expected_server_scope):
     for p, item in paths.items():
         if not isinstance(p, str) or not p.startswith("/") or not isinstance(item, dict):
             fail_spec(name, "invalid OpenAPI document: malformed path item")
+        for field in item:
+            if field.lower().startswith("x-"):
+                continue
+            normalized_field = field.lower() if isinstance(field, str) else field
+            if normalized_field not in PATH_ITEM_FIELDS:
+                fail_spec(
+                    name,
+                    f"unsupported OpenAPI Path Item field {field} at {p}",
+                )
         if "$ref" in item:
             fail_spec(name, f"unsupported OpenAPI Path Item $ref at {p}")
         if "servers" in item:
@@ -2155,7 +2313,7 @@ for name, ops in specs.items():
     out[name]=[{"verb":m["verb"],"path":m["path"],"operationId":m["operationId"],
                 "summary":m["summary"],"deprecated":m["deprecated"],"norm":m["norm"]}
                for m in sorted(missing,key=lambda x:(x["deprecated"],x["path"]))]
-json.dump(out, open("/tmp/gap_candidates.json","w"), indent=2)
+write_artifact("gap_candidates.json", out)
 print(f"\ntotal candidates: {sum(len(v) for v in out.values())}")
 # unmatched SDK paths
 unm={}
@@ -2186,7 +2344,11 @@ for p,s in sorted(unm.items(), key=lambda x:-len(x[1])):
         else ""
     )
     print(f"  {len(s):3} {p}{classification}")
-json.dump({p:sorted(list(s)) for p,s in unm.items()}, open("/tmp/unmatched_sdk.json","w"), indent=2)
+write_artifact(
+    "unmatched_sdk.json",
+    {p:sorted(list(s)) for p,s in unm.items()},
+)
+print(f"\nartifacts: {ARTIFACT_DIR}")
 
 unexpected_sdk_routes = sum(
     1

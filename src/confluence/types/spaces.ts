@@ -44,7 +44,10 @@ export type SpaceDescription = DataPolicySpaceDescription;
 export type SpaceIcon = DataPolicySpaceIcon;
 
 /** Links exposed on bulk and single space responses. */
-export type SpaceLinks = DataPolicySpaceLinks;
+export interface SpaceLinks extends DataPolicySpaceLinks {
+  /** Base URL added by the single-space and create response schemas. */
+  readonly base?: string;
+}
 
 /** Envelope used by optional expansions on `SpaceSingle`. */
 export interface SpaceNestedEnvelope<T> {
@@ -84,7 +87,7 @@ export interface Space {
 /** Parameters for listing Confluence spaces. */
 export interface ListSpacesParams {
   /** Filter by space IDs (up to 250). */
-  readonly ids?: readonly number[];
+  readonly ids?: readonly (string | number)[];
   /** Filter by space keys (up to 250). */
   readonly keys?: readonly string[];
   readonly type?: SpaceType;

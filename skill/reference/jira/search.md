@@ -4,30 +4,31 @@
 
 ## `search`
 
-| Action                                        | Required flags | Optional flags                                                                                                                                 |
-| --------------------------------------------- | -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| `search` (default; aliases: omitted, `query`) | `--jql`        | `--next-page-token`, `--max-results`, `--fields`, `--expand`, `--properties`, `--fields-by-keys`, `--reconcile-issues`, `--fail-fast`          |
-| `legacy-post` (deprecated)                    | `--jql`        | `--start-at`, `--max-results`, `--fields`, `--expand`, `--validate-query`, `--properties`, `--fields-by-keys`                                  |
-| `get` (deprecated)                            | `--jql`        | `--start-at`, `--max-results`, `--fields`, `--expand`, `--validate-query`, `--properties`, `--fields-by-keys`                                  |
-| `approximate-count`                           | `--jql`        | —                                                                                                                                              |
-| `jql-get`                                     | —              | `--jql`, `--next-page-token`, `--max-results`, `--fields`, `--expand`, `--properties`, `--fields-by-keys`, `--reconcile-issues`, `--fail-fast` |
-| `jql-post`                                    | —              | `--jql`, `--next-page-token`, `--max-results`, `--fields`, `--expand`, `--properties`, `--fields-by-keys`, `--reconcile-issues`                |
+| Action                                        | Required flags | Optional flags                                                                                                                                                                |
+| --------------------------------------------- | -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `search` (default; aliases: omitted, `query`) | `--jql`        | `--next-page-token`, `--max-results`, `--fields`, `--expand`, `--properties`, `--fields-by-keys`, `--reconcile-issues`, `--fail-fast`, `--include-archived-projects`          |
+| `legacy-post` (deprecated)                    | `--jql`        | `--start-at`, `--max-results`, `--fields`, `--expand`, `--validate-query`, `--properties`, `--fields-by-keys`                                                                 |
+| `get` (deprecated)                            | `--jql`        | `--start-at`, `--max-results`, `--fields`, `--expand`, `--validate-query`, `--properties`, `--fields-by-keys`, `--fail-fast`                                                  |
+| `approximate-count`                           | `--jql`        | —                                                                                                                                                                             |
+| `jql-get`                                     | —              | `--jql`, `--next-page-token`, `--max-results`, `--fields`, `--expand`, `--properties`, `--fields-by-keys`, `--reconcile-issues`, `--fail-fast`, `--include-archived-projects` |
+| `jql-post`                                    | —              | `--jql`, `--next-page-token`, `--max-results`, `--fields`, `--expand`, `--properties`, `--fields-by-keys`, `--reconcile-issues`, `--include-archived-projects`                |
 
 ```sh
 atlas jira search --jql "project = PROJ AND status = Open"
 atlas jira search search --jql "project = PROJ AND status = Open"
-atlas jira search search --jql "project = PROJ AND status = Open" --expand names,changelog --properties release.owner --fields-by-keys --reconcile-issues 10001,10002 --fail-fast --next-page-token eyJvIjoyfQ==
+atlas jira search search --jql "project = PROJ AND status = Open" --expand names,changelog --properties release.owner --fields-by-keys --reconcile-issues 10001,10002 --fail-fast --include-archived-projects --next-page-token eyJvIjoyfQ==
 atlas jira search approximate-count --jql "project = PROJ"
 atlas jira search jql-get --jql "project = PROJ" --max-results 50 --properties release.owner --fields-by-keys --reconcile-issues 10001,10002 --fail-fast
-atlas jira search jql-post --jql "project = PROJ AND assignee = currentUser()" --fields summary,status --expand names --properties release.owner
-atlas jira search get --jql "project = PROJ" --start-at 50 --validate-query warn --expand names --properties release.owner
+atlas jira search jql-post --jql "project = PROJ AND assignee = currentUser()" --fields summary,status --expand names --properties release.owner --include-archived-projects
+atlas jira search get --jql "project = PROJ" --start-at 50 --validate-query warn --expand names --properties release.owner --fail-fast
 atlas jira search legacy-post --jql "project = PROJ" --start-at 50 --validate-query strict --fields-by-keys
 ```
 
-- `search` (also selected when the action is omitted or written as `query`), `jql-get`, and `jql-post` use current `/search/jql` with cursor pagination. Pass the response `nextPageToken` through `--next-page-token` to continue. `--max-results` must be a positive integer.
+- `search` (also selected when the action is omitted or written as `query`), `jql-get`, and `jql-post` use current `/search/jql` with cursor pagination. Pass the response `nextPageToken` through `--next-page-token` to continue. `--max-results` must be a positive integer. All three current actions reject legacy `--start-at` and `--validate-query`; use `search get` or `search legacy-post` only when migrating old offset-based automation.
 - `--fields`, `--expand`, and `--properties` are comma-separated lists. `--fields-by-keys` tells Jira that entries in `--fields` are field keys instead of IDs.
 - `--reconcile-issues` is a comma-separated list of positive integer issue IDs to reconcile before a current search (maximum 50 IDs). It is supported by `search`/omitted/`query`, `jql-get`, and `jql-post`.
-- `--fail-fast` is a boolean switch supported by current GET search (`search`/omitted/`query` and `jql-get`); it asks Jira to fail on the first search error instead of returning partial results.
+- `--fail-fast` is a boolean switch supported by GET search (`search`/omitted/`query`, `jql-get`, and deprecated `get`); it asks Jira to fail on the first search error instead of returning partial results. The POST actions (`legacy-post`, `jql-post`) reject it.
+- `--include-archived-projects` is a current `/search/jql` boolean switch for both GET and POST. It includes issues from archived projects; omit it for Jira's default (`false`). Legacy `get`, `legacy-post`, and `approximate-count` reject it.
 - `legacy-post` and `get` are retained only for compatibility with legacy `POST /search` and `GET /search`, which Atlassian is removing. Do not use them in new automation. Their `--start-at` must be a non-negative integer, and `--validate-query` accepts exactly `strict`, `warn`, `none`, `true`, or `false`.
 
 ## `jql`

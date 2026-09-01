@@ -2,6 +2,21 @@ import { describe, it, expect } from 'vitest';
 import { parseCommand } from '../../src/cli/router.js';
 
 describe('parseCommand', () => {
+  it('rejects the orphaned database-id option', () => {
+    expect(() =>
+      parseCommand([
+        'node',
+        'atlas',
+        'confluence',
+        'databases',
+        'get',
+        '42',
+        '--database-id',
+        '99',
+      ]),
+    ).toThrow(/Unknown option.*database-id/);
+  });
+
   it('parses a full jira issues get command with options', () => {
     // Arrange
     const argv = ['node', 'atlas', 'jira', 'issues', 'get', 'PROJ-123', '--format', 'table'];
@@ -125,6 +140,7 @@ describe('parseCommand', () => {
       '--reconcile-issues',
       '10001,10002',
       '--fail-fast',
+      '--include-archived-projects',
     ]);
 
     expect(result.resource).toBe('search');
@@ -137,7 +153,32 @@ describe('parseCommand', () => {
       'fields-by-keys': true,
       'reconcile-issues': '10001,10002',
       'fail-fast': true,
+      'include-archived-projects': true,
     });
+  });
+
+  it.each(['legacy-post', 'get', 'approximate-count'])(
+    'rejects --include-archived-projects on search %s',
+    (action) => {
+      expect(() =>
+        parseCommand([
+          'node',
+          'atlas',
+          'jira',
+          'search',
+          action,
+          '--jql',
+          'project = PROJ',
+          '--include-archived-projects',
+        ]),
+      ).toThrow('--include-archived-projects is supported only by current Jira JQL search');
+    },
+  );
+
+  it('rejects --include-archived-projects outside Jira search', () => {
+    expect(() =>
+      parseCommand(['node', 'atlas', 'jira', 'boards', 'list', '--include-archived-projects']),
+    ).toThrow('--include-archived-projects is supported only by current Jira JQL search');
   });
 
   it('parses format short flag -f', () => {
@@ -180,6 +221,56 @@ describe('parseCommand', () => {
 
     expect(result.options['software-cloud-id']).toBe('cloud-123');
   });
+
+  it('rejects the Jira-only --software-cloud-id option for Confluence commands', () => {
+    expect(() =>
+      parseCommand([
+        'node',
+        'atlas',
+        'confluence',
+        'spaces',
+        'list',
+        '--software-cloud-id',
+        'cloud-123',
+      ]),
+    ).toThrow('--software-cloud-id is only supported for Jira commands');
+  });
+
+  it('parses removed workflow flags so dispatch can provide migration guidance', () => {
+    const result = parseCommand([
+      'node',
+      'atlas',
+      'jira',
+      'workflows',
+      'get-transition-properties',
+      '10',
+      '--workflow-name',
+      'My workflow',
+      '--workflow-mode',
+      'live',
+      '--include-reserved-keys',
+    ]);
+
+    expect(result.options['workflow-mode']).toBe('live');
+    expect(result.options['include-reserved-keys']).toBe(true);
+  });
+
+  it.each(['workflow-mode', 'include-reserved-keys'])(
+    'rejects migration-only --%s outside removed workflow actions',
+    (flag) => {
+      expect(() =>
+        parseCommand([
+          'node',
+          'atlas',
+          'jira',
+          'boards',
+          'list',
+          `--${flag}`,
+          ...(flag === 'workflow-mode' ? ['live'] : []),
+        ]),
+      ).toThrow(`--${flag} is accepted only on removed Jira workflow transition-property actions`);
+    },
+  );
 
   it('parses removed --project-role so the handler can return migration guidance', () => {
     const result = parseCommand([
@@ -919,7 +1010,7 @@ describe('parseCommand', () => {
       '--project-location',
       'PROJ',
       '--project-type-location',
-      'software,business',
+      'software,service_desk',
       '--include-private',
       'false',
       '--negate-location-filtering',
@@ -928,7 +1019,7 @@ describe('parseCommand', () => {
     expect(list.options).toMatchObject({
       'account-id-location': 'account-1',
       'project-location': 'PROJ',
-      'project-type-location': 'software,business',
+      'project-type-location': 'software,service_desk',
       'include-private': 'false',
       'negate-location-filtering': 'true',
     });

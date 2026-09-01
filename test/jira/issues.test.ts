@@ -1515,7 +1515,7 @@ describe('IssuesResource', () => {
         fieldType: ['comment_adf', 'worklog_adf'],
       });
 
-      expect(transport.lastCall?.options).toMatchObject({
+      expect(transport.lastCall?.options).toEqual({
         method: 'GET',
         path: `${BASE_URL}/issue/limit/adf/report?fieldType=comment_adf&fieldType=worklog_adf`,
         query: { isReturningKeys: true },

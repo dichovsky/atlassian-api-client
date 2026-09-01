@@ -10532,6 +10532,13 @@ describe('executeJiraCommand', () => {
       expect(jiraProjectsMock.list).not.toHaveBeenCalled();
     });
 
+    it('projects list rejects an invalid --order-by value before making a request', async () => {
+      await expect(
+        executeJiraCommand(cmd('projects', 'list', [], { 'order-by': 'updated' }), GLOBALS),
+      ).rejects.toThrow('--order-by must be one of: category, -category, +category');
+      expect(jiraProjectsMock.list).not.toHaveBeenCalled();
+    });
+
     it('projects get calls client.projects.get with the project key', async () => {
       // Arrange
       jiraProjectsMock.get.mockResolvedValue({ id: '10001', key: 'PROJ' });
@@ -11556,8 +11563,54 @@ describe('executeJiraCommand', () => {
     it('search rejects an unknown action instead of falling through to the default query', async () => {
       await expect(
         executeJiraCommand(cmd('search', 'made-up', [], { jql: 'project = PROJ' }), GLOBALS),
-      ).rejects.toThrow('Unknown search action: made-up');
+      ).rejects.toThrow('Actions: search, query, legacy-post');
     });
+
+    it.each(['start-at', 'validate-query'])(
+      'current cursor search rejects legacy --%s instead of silently dropping it',
+      async (flag) => {
+        await expect(
+          executeJiraCommand(
+            cmd('search', '', [], {
+              jql: 'project = PROJ',
+              [flag]: flag === 'start-at' ? '50' : 'warn',
+            }),
+            GLOBALS,
+          ),
+        ).rejects.toThrow(`--${flag} is not supported by jira search`);
+        expect(jiraSearchMock.searchJqlGet).not.toHaveBeenCalled();
+      },
+    );
+
+    it.each(['jql-get', 'jql-post'])(
+      '%s rejects legacy offset/validation flags instead of silently dropping them',
+      async (action) => {
+        await expect(
+          executeJiraCommand(
+            cmd('search', action, [], {
+              jql: 'project = PROJ',
+              'start-at': '50',
+            }),
+            GLOBALS,
+          ),
+        ).rejects.toThrow(`--start-at is not supported by jira search ${action}`);
+      },
+    );
+
+    it.each(['legacy-post', 'jql-post'])(
+      '%s rejects GET-only --fail-fast instead of silently dropping it',
+      async (action) => {
+        await expect(
+          executeJiraCommand(
+            cmd('search', action, [], {
+              jql: 'project = PROJ',
+              'fail-fast': true,
+            }),
+            GLOBALS,
+          ),
+        ).rejects.toThrow(`--fail-fast is not supported by jira search ${action}`);
+      },
+    );
 
     it.each(['', 'query', 'search'])(
       'search action %j forwards every current GET search parameter',
@@ -11575,6 +11628,7 @@ describe('executeJiraCommand', () => {
             'fields-by-keys': true,
             'reconcile-issues': '10001,10002',
             'fail-fast': true,
+            'include-archived-projects': true,
           }),
           GLOBALS,
         );
@@ -11589,6 +11643,7 @@ describe('executeJiraCommand', () => {
           fieldsByKeys: true,
           reconcileIssues: [10001, 10002],
           failFast: true,
+          includeArchivedProjects: true,
         });
       },
     );
@@ -11612,6 +11667,21 @@ describe('executeJiraCommand', () => {
       },
     );
 
+    it.each(['legacy-post', 'get', 'approximate-count'])(
+      '%s rejects current-only --include-archived-projects',
+      async (action) => {
+        await expect(
+          executeJiraCommand(
+            cmd('search', action, [], {
+              jql: 'project = PROJ',
+              'include-archived-projects': true,
+            }),
+            GLOBALS,
+          ),
+        ).rejects.toThrow(`--include-archived-projects is not supported by jira search ${action}`);
+      },
+    );
+
     it('search action=get forwards every legacy GET search parameter', async () => {
       // Arrange
       jiraSearchMock.searchGet.mockResolvedValue({ issues: [], startAt: 0, maxResults: 50 });
@@ -11624,6 +11694,7 @@ describe('executeJiraCommand', () => {
         'validate-query': 'warn',
         properties: 'release.owner,release.risk',
         'fields-by-keys': true,
+        'fail-fast': true,
       });
 
       // Act
@@ -11639,6 +11710,7 @@ describe('executeJiraCommand', () => {
         validateQuery: 'warn',
         properties: ['release.owner', 'release.risk'],
         fieldsByKeys: true,
+        failFast: true,
       });
       expect(result).toMatchObject({ issues: [] });
     });
@@ -11752,25 +11824,25 @@ describe('executeJiraCommand', () => {
         'fields-by-keys': true,
         'reconcile-issues': '10001,10002',
         'fail-fast': true,
+        'include-archived-projects': true,
       });
 
       // Act
       await executeJiraCommand(parsed, GLOBALS);
 
       // Assert
-      expect(jiraSearchMock.searchJqlGet).toHaveBeenCalledWith(
-        expect.objectContaining({
-          jql: 'project = PROJ',
-          maxResults: 50,
-          fields: ['summary', 'status'],
-          expand: ['changelog'],
-          nextPageToken: 'tok-2',
-          properties: ['release.owner', 'release.risk'],
-          fieldsByKeys: true,
-          reconcileIssues: [10001, 10002],
-          failFast: true,
-        }),
-      );
+      expect(jiraSearchMock.searchJqlGet).toHaveBeenCalledWith({
+        jql: 'project = PROJ',
+        maxResults: 50,
+        fields: ['summary', 'status'],
+        expand: ['changelog'],
+        nextPageToken: 'tok-2',
+        properties: ['release.owner', 'release.risk'],
+        fieldsByKeys: true,
+        reconcileIssues: [10001, 10002],
+        failFast: true,
+        includeArchivedProjects: true,
+      });
     });
 
     it('search action=jql-post calls searchJqlPost with params', async () => {
@@ -11779,24 +11851,30 @@ describe('executeJiraCommand', () => {
       const parsed = cmd('search', 'jql-post', [], {
         jql: 'project = PROJ AND assignee = currentUser()',
         'max-results': '25',
+        fields: 'summary,status',
+        expand: 'names',
+        'next-page-token': 'tok-3',
         properties: 'release.owner,release.risk',
         'fields-by-keys': true,
         'reconcile-issues': '10003,10004',
+        'include-archived-projects': true,
       });
 
       // Act
       await executeJiraCommand(parsed, GLOBALS);
 
       // Assert
-      expect(jiraSearchMock.searchJqlPost).toHaveBeenCalledWith(
-        expect.objectContaining({
-          jql: 'project = PROJ AND assignee = currentUser()',
-          maxResults: 25,
-          properties: ['release.owner', 'release.risk'],
-          fieldsByKeys: true,
-          reconcileIssues: [10003, 10004],
-        }),
-      );
+      expect(jiraSearchMock.searchJqlPost).toHaveBeenCalledWith({
+        jql: 'project = PROJ AND assignee = currentUser()',
+        maxResults: 25,
+        fields: ['summary', 'status'],
+        expand: ['names'],
+        nextPageToken: 'tok-3',
+        properties: ['release.owner', 'release.risk'],
+        fieldsByKeys: true,
+        reconcileIssues: [10003, 10004],
+        includeArchivedProjects: true,
+      });
     });
 
     it.each(['jql-get', 'jql-post'])('%s rejects invalid reconcile issue IDs', async (action) => {
@@ -13090,7 +13168,7 @@ describe('executeJiraCommand', () => {
           'negate-location-filtering': 'true',
           'order-by': '-name',
           expand: 'admins',
-          'project-type-location': 'software,business',
+          'project-type-location': 'software,service_desk',
           'filter-id': '10001',
         }),
         GLOBALS,
@@ -13103,7 +13181,7 @@ describe('executeJiraCommand', () => {
           negateLocationFiltering: true,
           orderBy: '-name',
           expand: 'admins',
-          projectTypeLocation: ['software', 'business'],
+          projectTypeLocation: ['software', 'service_desk'],
           filterId: 10001,
         }),
       );
@@ -13113,6 +13191,13 @@ describe('executeJiraCommand', () => {
       await expect(
         executeJiraCommand(cmd('boards', 'list', [], { type: 'bad' }), GLOBALS),
       ).rejects.toThrow('--type must be one of');
+    });
+
+    it('boards list rejects an invalid --order-by value before making a request', async () => {
+      await expect(
+        executeJiraCommand(cmd('boards', 'list', [], { 'order-by': 'updated' }), GLOBALS),
+      ).rejects.toThrow('--order-by must be one of: name, -name, +name');
+      expect(jiraBoardsMock.list).not.toHaveBeenCalled();
     });
 
     // B238: boards get
@@ -16500,26 +16585,17 @@ describe('executeJiraCommand', () => {
       );
     });
 
-    it('group-user-picker pick does NOT pass excludeAccountIds — deprecated/bogus on this endpoint', async () => {
-      // excludeAccountIds does not exist on GET /groupuserpicker; the --exclude-account-ids
-      // flag is still accepted by the router (shared with users.picker) but must never be
-      // forwarded to pick() — the param is @deprecated and not sent on the wire.
-      jiraGroupUserPickerMock.pick.mockResolvedValue({});
-
-      // Act — supply --exclude-account-ids to exercise the flag-path and confirm it is dropped
-      await executeJiraCommand(
-        cmd('group-user-picker', 'pick', [], {
-          query: 'alice',
-          'exclude-account-ids': 'acc-1,acc-2',
-        }),
-        GLOBALS,
-      );
-
-      // Assert: pick() is called without excludeAccountIds reaching the SDK
-      expect(jiraGroupUserPickerMock.pick).toHaveBeenCalledOnce();
-      expect(jiraGroupUserPickerMock.pick).not.toHaveBeenCalledWith(
-        expect.objectContaining({ excludeAccountIds: expect.anything() }),
-      );
+    it('group-user-picker pick rejects the users-only --exclude-account-ids flag', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('group-user-picker', 'pick', [], {
+            query: 'alice',
+            'exclude-account-ids': 'acc-1,acc-2',
+          }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--exclude-account-ids is not supported by group-user-picker pick');
+      expect(jiraGroupUserPickerMock.pick).not.toHaveBeenCalled();
     });
 
     it('group-user-picker pick forwards exclude-connect-users', async () => {
@@ -16558,6 +16634,16 @@ describe('executeJiraCommand', () => {
           includeAiAgents: true,
         }),
       );
+    });
+
+    it('group-user-picker pick rejects an invalid avatar-size locally', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('group-user-picker', 'pick', [], { query: 'agent', 'avatar-size': 'huge' }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--avatar-size must be one of: xsmall, xsmall@2x, xsmall@3x');
+      expect(jiraGroupUserPickerMock.pick).not.toHaveBeenCalled();
     });
 
     it('group-user-picker unknown action throws', async () => {
@@ -24507,7 +24593,25 @@ describe('executeJiraCommand', () => {
     it('throws on unknown workflows action', async () => {
       await expect(
         executeJiraCommand(cmd('workflows', 'unknown-action', [], {}), GLOBALS),
-      ).rejects.toThrow('Unknown workflows action');
+      ).rejects.toThrow('Atlassian removed the workflow transition-property routes');
+    });
+
+    it.each([
+      'delete-transition-property',
+      'get-transition-properties',
+      'create-transition-property',
+      'update-transition-property',
+    ])('gives migration guidance for removed workflows action %s', async (action) => {
+      await expect(
+        executeJiraCommand(
+          cmd('workflows', action, ['10'], {
+            'workflow-name': 'My workflow',
+            'workflow-mode': 'live',
+            'include-reserved-keys': true,
+          }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('Atlassian removed the workflow transition-property routes');
     });
 
     // B846: bulk-get

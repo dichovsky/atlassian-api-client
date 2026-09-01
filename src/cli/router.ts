@@ -58,7 +58,6 @@ const GLOBAL_OPTIONS = {
   depth: { type: 'string' as const },
   sort: { type: 'string' as const },
   key: { type: 'string' as const },
-  'database-id': { type: 'string' as const },
   'property-id': { type: 'string' as const },
   'level-id': { type: 'string' as const },
   'label-id': { type: 'string' as const },
@@ -144,6 +143,8 @@ const GLOBAL_OPTIONS = {
   // Enhanced GET /search/jql returns partial results by default; opt in to
   // failing on the first search error.
   'fail-fast': { type: 'boolean' as const },
+  // Current GET/POST /search/jql can include issues from archived projects.
+  'include-archived-projects': { type: 'boolean' as const },
   // blog-posts sub-resource flags (B066-B084)
   'resolution-status': { type: 'string' as const },
   // `redact` convenience overrides — when set, these merge into the
@@ -459,6 +460,10 @@ const GLOBAL_OPTIONS = {
   'update-draft-if-needed': { type: 'boolean' as const },
   'workflow-name': { type: 'string' as const },
   'validate-only': { type: 'boolean' as const },
+  // Retained only so removed transition-property commands reach dispatch and
+  // receive actionable migration guidance instead of parseArgs' unknown-option error.
+  'workflow-mode': { type: 'string' as const },
+  'include-reserved-keys': { type: 'boolean' as const },
   // fields context options (B415-B418)
   'context-id': { type: 'string' as const },
   // Tri-state filters (B1063): `--is-any-issue-type`/`--is-global-context`
@@ -568,6 +573,37 @@ export function parseCommand(argv: string[]): ParsedCommand & {
   const resource = positionals[1] ?? '';
   const action = positionals[2] ?? '';
   const positionalArgs = positionals.slice(3);
+
+  if (api === 'confluence' && values['software-cloud-id'] !== undefined) {
+    throw new Error('--software-cloud-id is only supported for Jira commands');
+  }
+
+  const currentJqlSearchAction = ['', 'search', 'query', 'jql-get', 'jql-post'].includes(action);
+  if (
+    values['include-archived-projects'] !== undefined &&
+    !(api === 'jira' && resource === 'search' && currentJqlSearchAction)
+  ) {
+    throw new Error(
+      '--include-archived-projects is supported only by current Jira JQL search (`search`, `query`, `jql-get`, or `jql-post`)',
+    );
+  }
+
+  const removedWorkflowAction = [
+    'delete-transition-property',
+    'get-transition-properties',
+    'create-transition-property',
+    'update-transition-property',
+  ].includes(action);
+  for (const flag of ['workflow-mode', 'include-reserved-keys'] as const) {
+    if (
+      values[flag] !== undefined &&
+      !(api === 'jira' && resource === 'workflows' && removedWorkflowAction)
+    ) {
+      throw new Error(
+        `--${flag} is accepted only on removed Jira workflow transition-property actions so the CLI can provide migration guidance`,
+      );
+    }
+  }
 
   return {
     api,

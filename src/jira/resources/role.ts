@@ -50,8 +50,6 @@ export interface Role {
   };
   readonly translatedName?: string;
   readonly currentUserRole?: boolean;
-  /** Current role classification. */
-  readonly type?: 'DEFAULT' | 'GUEST_ROLE' | 'AI_AGENT_ROLE';
   /** Whether this role is configurable. */
   readonly roleConfigurable?: boolean;
   /** Whether this role is the default for newly created projects. Spec: `default`. */

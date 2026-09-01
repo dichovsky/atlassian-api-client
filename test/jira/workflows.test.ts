@@ -1065,7 +1065,7 @@ describe('WorkflowsResource', () => {
         projectId: 10001,
       });
 
-      expect(transport.lastCall?.options.query).toMatchObject({
+      expect(transport.lastCall?.options.query).toEqual({
         startAt: 0,
         maxResults: 25,
         expand: 'transitions',

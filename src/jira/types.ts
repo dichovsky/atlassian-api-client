@@ -217,7 +217,31 @@ export interface TransitionData {
 export interface ListProjectsParams {
   readonly startAt?: number;
   readonly maxResults?: number;
-  readonly orderBy?: string;
+  readonly orderBy?:
+    | 'category'
+    | '-category'
+    | '+category'
+    | 'key'
+    | '-key'
+    | '+key'
+    | 'name'
+    | '-name'
+    | '+name'
+    | 'owner'
+    | '-owner'
+    | '+owner'
+    | 'issueCount'
+    | '-issueCount'
+    | '+issueCount'
+    | 'lastIssueUpdatedDate'
+    | '-lastIssueUpdatedDate'
+    | '+lastIssueUpdatedDate'
+    | 'archivedDate'
+    | '-archivedDate'
+    | '+archivedDate'
+    | 'deletedDate'
+    | '-deletedDate'
+    | '+deletedDate';
   readonly expand?: string[];
   readonly status?: string[];
   readonly typeKey?: string;

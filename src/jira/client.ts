@@ -398,6 +398,9 @@ export class JiraClient {
       integrationProxyRoot === undefined
         ? tenantDeploymentsBaseUrl
         : `${integrationProxyRoot}/deployments/0.1/cloud/${encodedCloudId}`;
+    // The pinned Jira Software narrative omits Feature Flags from its on-premises
+    // list, but Atlassian's live integration guide linked on
+    // JiraSoftwareIntegrationProxyConfig explicitly includes `featureflags`.
     const featureFlagsBulkBaseUrl =
       integrationProxyRoot === undefined
         ? tenantFeatureFlagsBaseUrl
@@ -517,6 +520,8 @@ export class JiraClient {
       deployments: deploymentsBaseUrl,
       devinfo: devInfoBaseUrl,
       devopscomponents: devopscomponentsBaseUrl,
+      // Atlassian exposes Feature Flag ingestion, but not bulk-by-properties
+      // deletion, through the OAuth proxy; keep deletion tenant-routed deliberately.
       featureflags: tenantFeatureFlagsBaseUrl,
       operations: operationsBaseUrl,
       remotelinks: remoteLinkBaseUrl,

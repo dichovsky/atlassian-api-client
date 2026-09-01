@@ -11,6 +11,7 @@ const makeSpace = (id: string): Space => ({
   name: `Space ${id}`,
   type: 'global',
   status: 'current',
+  _links: { base: 'https://test.atlassian.net/wiki', webui: `/spaces/KEY${id}` },
 });
 
 describe('SpacesResource', () => {
@@ -84,7 +85,7 @@ describe('SpacesResource', () => {
       transport.respondWith({ results: [], _links: {} });
 
       await spaces.list({
-        ids: [10, 20],
+        ids: ['9007199254740993', 20],
         keys: ['ENG', 'OPS'],
         type: 'knowledge_base',
         status: 'trashed',
@@ -99,7 +100,7 @@ describe('SpacesResource', () => {
       });
 
       expect(transport.lastCall?.options.path).toBe(
-        `${BASE_URL}/spaces?ids=10&ids=20&keys=ENG&keys=OPS&labels=team-a&labels=priority`,
+        `${BASE_URL}/spaces?ids=9007199254740993&ids=20&keys=ENG&keys=OPS&labels=team-a&labels=priority`,
       );
       expect(transport.lastCall?.options.query).toEqual({
         type: 'knowledge_base',
@@ -145,6 +146,7 @@ describe('SpacesResource', () => {
 
       // Assert
       expect(result).toEqual(space);
+      expect(result._links?.base).toBe('https://test.atlassian.net/wiki');
       expect(transport.lastCall?.options).toMatchObject({
         method: 'GET',
         path: `${BASE_URL}/spaces/42`,

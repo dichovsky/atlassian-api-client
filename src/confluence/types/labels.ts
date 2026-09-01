@@ -1,13 +1,14 @@
 import type {
   AttachmentSortOrder,
   BlogPostSortOrder,
+  LabelPrefix,
   LabelSortOrder,
   PageSortOrder,
 } from './common.js';
 
 /** Parameters for listing labels on a page or blog post. */
 export interface ListLabelsParams {
-  readonly prefix?: string;
+  readonly prefix?: LabelPrefix;
   readonly sort?: LabelSortOrder;
   readonly limit?: number;
   readonly cursor?: string;

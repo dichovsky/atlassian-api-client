@@ -1,5 +1,5 @@
 import { execFile } from 'node:child_process';
-import { cp, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { cp, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { promisify } from 'node:util';
 import { dirname, join, resolve } from 'node:path';
@@ -77,6 +77,33 @@ describe('api gap analysis', () => {
       expect(stdout).toContain(
         '/wiki/rest/api [confluence-v1 attachment upload — out of reviewed spec scope]',
       );
+    },
+    ANALYZER_TIMEOUT_MS,
+  );
+
+  it(
+    'writes audit artifacts to an explicitly isolated output directory',
+    async () => {
+      const artifactRoot = await mkdtemp(join(tmpdir(), 'atlassian-api-gap-artifacts-'));
+
+      try {
+        const { stdout, stderr } = await execFileAsync(
+          'python3',
+          [ANALYZER, '--out-dir', artifactRoot],
+          { cwd: REPO_ROOT },
+        );
+
+        expect(stderr).toBe('');
+        expect(stdout).toContain(`artifacts: ${artifactRoot}`);
+        expect(
+          JSON.parse(await readFile(join(artifactRoot, 'gap_candidates.json'), 'utf8')),
+        ).toBeDefined();
+        expect(
+          JSON.parse(await readFile(join(artifactRoot, 'unmatched_sdk.json'), 'utf8')),
+        ).toBeDefined();
+      } finally {
+        await rm(artifactRoot, { recursive: true, force: true });
+      }
     },
     ANALYZER_TIMEOUT_MS,
   );
@@ -541,6 +568,73 @@ ${liveRequest}`,
           code: 1,
           stderr: expect.stringContaining(
             'confluence-v2: invalid OpenAPI operation GET /invalid-deprecated-contract-test: deprecated must be boolean',
+          ),
+        });
+      } finally {
+        await rm(fixtureRoot, { recursive: true, force: true });
+      }
+    },
+    ANALYZER_TIMEOUT_MS,
+  );
+
+  it(
+    'rejects an unsupported future OpenAPI minor version',
+    async () => {
+      const fixtureRoot = await mkdtemp(join(tmpdir(), 'atlassian-api-gap-openapi-version-'));
+      const fixtureSpec = join(fixtureRoot, 'spec');
+
+      try {
+        await cp(resolve(REPO_ROOT, 'spec'), fixtureSpec, { recursive: true });
+        const confluencePath = join(fixtureSpec, 'confluence-v2.json');
+        const confluence = JSON.parse(await readFile(confluencePath, 'utf8')) as {
+          openapi: string;
+        };
+        confluence.openapi = '3.2.0';
+        await writeFile(confluencePath, JSON.stringify(confluence));
+
+        await expect(
+          execFileAsync('python3', [ANALYZER, '--spec-dir', fixtureSpec], {
+            cwd: REPO_ROOT,
+          }),
+        ).rejects.toMatchObject({
+          code: 1,
+          stderr: expect.stringContaining(
+            'confluence-v2: invalid OpenAPI document: expected OpenAPI 3.0 or 3.1 info metadata',
+          ),
+        });
+      } finally {
+        await rm(fixtureRoot, { recursive: true, force: true });
+      }
+    },
+    ANALYZER_TIMEOUT_MS,
+  );
+
+  it(
+    'rejects an unknown non-extension OpenAPI Path Item field',
+    async () => {
+      const fixtureRoot = await mkdtemp(join(tmpdir(), 'atlassian-api-gap-path-field-'));
+      const fixtureSpec = join(fixtureRoot, 'spec');
+
+      try {
+        await cp(resolve(REPO_ROOT, 'spec'), fixtureSpec, { recursive: true });
+        const confluencePath = join(fixtureSpec, 'confluence-v2.json');
+        const confluence = JSON.parse(await readFile(confluencePath, 'utf8')) as {
+          paths: Record<string, Record<string, unknown>>;
+        };
+        confluence.paths['/admin-key']!.query = {
+          operationId: 'queryAdminKey',
+          responses: { '200': { description: 'OK' } },
+        };
+        await writeFile(confluencePath, JSON.stringify(confluence));
+
+        await expect(
+          execFileAsync('python3', [ANALYZER, '--spec-dir', fixtureSpec], {
+            cwd: REPO_ROOT,
+          }),
+        ).rejects.toMatchObject({
+          code: 1,
+          stderr: expect.stringContaining(
+            'confluence-v2: unsupported OpenAPI Path Item field query at /admin-key',
           ),
         });
       } finally {
@@ -1337,6 +1431,40 @@ ${liveImplementation}
   );
 
   it(
+    'fails closed when a reviewed route primitive is shadowed in the resource module',
+    async () => {
+      const fixtureRoot = await mkdtemp(join(tmpdir(), 'atlassian-api-gap-primitive-shadow-'));
+      const fixtureSrc = join(fixtureRoot, 'src');
+
+      try {
+        await cp(resolve(REPO_ROOT, 'src'), fixtureSrc, { recursive: true });
+        const notificationPath = join(fixtureSrc, 'jira/resources/notificationscheme.ts');
+        const notificationSchemes = await readFile(notificationPath, 'utf8');
+        const changedNotificationSchemes = notificationSchemes.replace(
+          "import { appendRepeatedParams } from '../../core/query.js';",
+          `function appendRepeatedParams(path: string): string {
+  return path + '-rogue';
+}`,
+        );
+        expect(changedNotificationSchemes).not.toBe(notificationSchemes);
+        await writeFile(notificationPath, changedNotificationSchemes);
+
+        await expect(
+          execFileAsync('python3', [ANALYZER, '--source-root', fixtureRoot], {
+            cwd: REPO_ROOT,
+          }),
+        ).rejects.toMatchObject({
+          code: 1,
+          stdout: expect.stringContaining('!!! UNRESOLVED'),
+        });
+      } finally {
+        await rm(fixtureRoot, { recursive: true, force: true });
+      }
+    },
+    ANALYZER_TIMEOUT_MS,
+  );
+
+  it(
     'does not count transport request syntax that exists only inside a regex literal',
     async () => {
       const fixtureRoot = await mkdtemp(join(tmpdir(), 'atlassian-api-gap-regex-'));
@@ -1408,6 +1536,133 @@ ${liveImplementation}
           stdout: expect.stringContaining(
             'confluence-v2: 218 ops | impl 217 | MISSING 1 (live 1, dep 0)',
           ),
+        });
+      } finally {
+        await rm(fixtureRoot, { recursive: true, force: true });
+      }
+    },
+    ANALYZER_TIMEOUT_MS,
+  );
+
+  it.each([
+    [
+      'Function.call',
+      `    await this.transport.request.call(this.transport, {
+      method: 'DELETE',
+      path: \`\${this.baseUrl}/admin-key-rogue\`,
+    });`,
+    ],
+    [
+      'a transport alias',
+      `    const aliasedTransport = this.transport;
+    await aliasedTransport.request({
+      method: 'DELETE',
+      path: \`\${this.baseUrl}/admin-key-rogue\`,
+    });`,
+    ],
+    [
+      'bracket notation',
+      `    await this.transport['request']({
+      method: 'DELETE',
+      path: \`\${this.baseUrl}/admin-key-rogue\`,
+    });`,
+    ],
+    [
+      'a unicode-escaped member',
+      `    await this.transport.requ\\u0065st({
+      method: 'DELETE',
+      path: \`\${this.baseUrl}/admin-key-rogue\`,
+    });`,
+    ],
+    [
+      'optional invocation',
+      `    await this.transport.request?.({
+      method: 'DELETE',
+      path: \`\${this.baseUrl}/admin-key-rogue\`,
+    });`,
+    ],
+  ])(
+    'fails closed when an extra request is hidden behind %s',
+    async (_description, hiddenRequest) => {
+      const fixtureRoot = await mkdtemp(join(tmpdir(), 'atlassian-api-gap-hidden-request-'));
+      const fixtureSrc = join(fixtureRoot, 'src');
+
+      try {
+        await cp(resolve(REPO_ROOT, 'src'), fixtureSrc, { recursive: true });
+        const adminKeyPath = join(fixtureSrc, 'confluence/resources/admin-key.ts');
+        const adminKey = await readFile(adminKeyPath, 'utf8');
+        const changedAdminKey = adminKey.replace(
+          ADMIN_KEY_GET_IMPLEMENTATION,
+          `${hiddenRequest}\n${ADMIN_KEY_GET_IMPLEMENTATION}`,
+        );
+        expect(changedAdminKey).not.toBe(adminKey);
+        await writeFile(adminKeyPath, changedAdminKey);
+
+        await expect(
+          execFileAsync('python3', [ANALYZER, '--source-root', fixtureRoot], {
+            cwd: REPO_ROOT,
+          }),
+        ).rejects.toMatchObject({
+          code: 1,
+          stdout: expect.stringContaining('!!! UNRESOLVED'),
+        });
+      } finally {
+        await rm(fixtureRoot, { recursive: true, force: true });
+      }
+    },
+    ANALYZER_TIMEOUT_MS,
+  );
+
+  it.each([
+    [
+      'a nested resource file',
+      'experimental/rogue.ts',
+      'RogueNestedResource',
+      '../../../core/types.js',
+    ],
+    [
+      'a resource class without the Resource suffix',
+      'rogue-helper.ts',
+      'RogueHelper',
+      '../../core/types.js',
+    ],
+  ])(
+    'fails closed on transport usage in %s',
+    async (_description, relativePath, className, transportImport) => {
+      const fixtureRoot = await mkdtemp(join(tmpdir(), 'atlassian-api-gap-resource-discovery-'));
+      const fixtureSrc = join(fixtureRoot, 'src');
+
+      try {
+        await cp(resolve(REPO_ROOT, 'src'), fixtureSrc, { recursive: true });
+        const resourcePath = join(fixtureSrc, 'confluence/resources', relativePath);
+        await mkdir(dirname(resourcePath), { recursive: true });
+        await writeFile(
+          resourcePath,
+          `import type { Transport } from '${transportImport}';
+
+export class ${className} {
+  constructor(
+    private readonly transport: Transport,
+    private readonly baseUrl: string,
+  ) {}
+
+  async remove(): Promise<void> {
+    await this.transport.request({
+      method: 'DELETE',
+      path: \`\${this.baseUrl}/admin-key-rogue\`,
+    });
+  }
+}
+`,
+        );
+
+        await expect(
+          execFileAsync('python3', [ANALYZER, '--source-root', fixtureRoot], {
+            cwd: REPO_ROOT,
+          }),
+        ).rejects.toMatchObject({
+          code: 1,
+          stdout: expect.stringContaining('!!! UNRESOLVED'),
         });
       } finally {
         await rm(fixtureRoot, { recursive: true, force: true });

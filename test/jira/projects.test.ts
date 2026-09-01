@@ -98,7 +98,7 @@ describe('ProjectsResource', () => {
 
       // Assert — `expand`/`typeKey` are `type: string` (stay comma-joined in the
       // query bag); `status` is `type: array` (repeated param in the path).
-      expect(transport.lastCall?.options.query).toMatchObject({
+      expect(transport.lastCall?.options.query).toEqual({
         startAt: 10,
         maxResults: 25,
         orderBy: 'name',
@@ -285,11 +285,13 @@ describe('ProjectsResource', () => {
 
       // Assert
       expect(items).toHaveLength(1);
-      expect(transport.calls[0]?.options.query).toMatchObject({
+      expect(transport.calls[0]?.options.query).toEqual({
         query: 'my project',
         categoryId: 5,
         propertyQuery: 'cf[10000]=value',
         action: 'edit',
+        startAt: 0,
+        maxResults: 50,
       });
       const path = transport.calls[0]?.options.path ?? '';
       expect(path).toContain('id=10001');

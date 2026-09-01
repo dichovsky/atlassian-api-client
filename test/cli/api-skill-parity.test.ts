@@ -280,3 +280,51 @@ function describeCliToDocReachability(
 
 describeCliToDocReachability('Jira', 'jira', jiraCliSource);
 describeCliToDocReachability('Confluence', 'confluence', confluenceCliSource);
+
+// ─── Test C: skill-doc action -> CLI reachability ─────────────────────────
+
+/** Resource/action tokens from the top-level resource × action matrix. */
+function extractDocumentedMatrixActions(mdSource: string): Map<string, string[]> {
+  const heading = '## Resource × action matrix';
+  const headingIndex = mdSource.indexOf(heading);
+  if (headingIndex < 0) throw new Error('resource × action matrix not found');
+  const contentStart = headingIndex + heading.length;
+  const nextHeading = mdSource.indexOf('\n## ', contentStart);
+  const matrix = mdSource.slice(contentStart, nextHeading < 0 ? undefined : nextHeading);
+
+  const actionsByResource = new Map<string, string[]>();
+  for (const match of matrix.matchAll(/^\|\s*`([^`]+)`\s*\|([^\n]+)\|$/gm)) {
+    const resource = match[1] as string;
+    const actionCell = match[2] as string;
+    actionsByResource.set(
+      resource,
+      [...actionCell.matchAll(/`([^`]+)`/g)].map((action) => action[1] as string),
+    );
+  }
+  return actionsByResource;
+}
+
+function describeDocToCliReachability(label: string, cliSource: string, mdSource: string): void {
+  const documented = extractDocumentedMatrixActions(mdSource);
+
+  describe(`${label}: every documented skill action is CLI-reachable`, () => {
+    for (const [resource, actions] of documented) {
+      const cliActions = actionsForResource(cliSource, resource);
+      for (const action of actions) {
+        it(`${resource} ${action} has a CLI dispatcher action`, () => {
+          expect(
+            cliActions.includes(action),
+            `documented atlas ${label.toLowerCase()} ${resource} ${action} has no CLI action`,
+          ).toBe(true);
+        });
+      }
+    }
+  });
+}
+
+describeDocToCliReachability('Jira', jiraCliSource, readFileSync(JIRA_MD, 'utf8'));
+describeDocToCliReachability(
+  'Confluence',
+  confluenceCliSource,
+  readFileSync(CONFLUENCE_MD, 'utf8'),
+);

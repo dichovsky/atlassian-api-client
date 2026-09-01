@@ -191,7 +191,7 @@ export class MigrationResource {
     await this.transport.request<unknown>({
       method: 'POST',
       path: `${this.baseUrl}/migration/${encodePathSegment(connectKey, 'connectKey')}/${encodePathSegment(jiraIssueFieldsKey, 'jiraIssueFieldsKey')}/task`,
-      query,
+      query: Object.keys(query).length === 0 ? undefined : query,
     });
   }
 

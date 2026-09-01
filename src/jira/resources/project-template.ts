@@ -84,9 +84,9 @@ export interface RolesCapabilityPayload {
 
 /**
  * The deeply-nested capability object for creating a project with a custom
- * template.  Each field corresponds to one project capability (board, workflow,
- * permissions, etc.).  The spec defines 11 nested payload refs — all are
- * pass-through so we type them as `Record<string,unknown>` to avoid an
+ * template. Each field corresponds to one project capability (board, workflow,
+ * permissions, etc.). The `role` capability is typed explicitly; the other ten
+ * nested payload refs remain `Record<string, unknown>` pass-throughs to avoid an
  * explosion of rarely-used intermediate types.
  */
 export interface CustomTemplateRequestDTO {

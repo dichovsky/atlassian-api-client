@@ -1285,7 +1285,7 @@ describe('FieldsResource', () => {
         maxResults: 25,
       });
 
-      expect(transport.lastCall?.options).toMatchObject({
+      expect(transport.lastCall?.options).toEqual({
         method: 'GET',
         path: `${BASE_URL}/field/customfield_10001/context/defaultValues?contextId=10100&contextId=10101&issueTypeId=10001&issueTypeId=10002`,
         query: { startAt: 10, maxResults: 25 },

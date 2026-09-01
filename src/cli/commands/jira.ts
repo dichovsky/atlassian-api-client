@@ -46,6 +46,8 @@ import type {
   SearchDashboardsOrderBy,
   SearchParams,
   ListSoftwareIssuesParams,
+  ListProjectsParams,
+  ListBoardsParams,
   RedactionItem,
   IssueTypeScreenSchemeOrderBy,
   GroupUserPickerParams,
@@ -705,7 +707,7 @@ async function executeProjects(client: JiraClient, cmd: ParsedCommand): Promise<
       return client.projects.list({
         startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
-        orderBy: asString(opts['order-by']),
+        orderBy: asEnum(opts['order-by'], PROJECT_ORDER_BY_VALUES, 'order-by'),
         expand: csvFlag(opts['expand']),
         status: parseCsv(opts['status']),
         typeKey: asString(opts['type-key']),
@@ -1045,8 +1047,22 @@ async function executeProjects(client: JiraClient, cmd: ParsedCommand): Promise<
 
 async function executeSearch(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
   const opts = cmd.options;
+  const currentJqlSearchAction = ['', 'search', 'query', 'jql-get', 'jql-post'].includes(
+    cmd.action,
+  );
+  if (opts['include-archived-projects'] !== undefined && !currentJqlSearchAction) {
+    throw new Error(
+      `--include-archived-projects is not supported by jira search ${cmd.action}; use current search, query, jql-get, or jql-post`,
+    );
+  }
   switch (cmd.action) {
     case 'legacy-post': {
+      rejectRemovedOptions(
+        opts,
+        'jira search legacy-post',
+        ['fail-fast'],
+        '--fail-fast is available only on GET search; use `search get`, current `search`, or `search jql-get`',
+      );
       return client.search.search({
         jql: requireOpt(opts['jql'], '--jql'),
         startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
@@ -1070,6 +1086,7 @@ async function executeSearch(client: JiraClient, cmd: ParsedCommand): Promise<un
         validateQuery: asLegacySearchValidation(opts['validate-query']),
         properties: csvFlag(opts['properties']),
         fieldsByKeys: asBoolFlag(opts['fields-by-keys']),
+        failFast: asBoolFlag(opts['fail-fast']),
       });
     }
     case 'approximate-count': {
@@ -1079,6 +1096,12 @@ async function executeSearch(client: JiraClient, cmd: ParsedCommand): Promise<un
     }
     case 'jql-get': {
       // B767
+      rejectRemovedOptions(
+        opts,
+        'jira search jql-get',
+        ['start-at', 'validate-query'],
+        'the /search/jql endpoint is cursor-paginated; use --next-page-token',
+      );
       return client.search.searchJqlGet({
         jql: asString(opts['jql']),
         nextPageToken: asString(opts['next-page-token']),
@@ -1089,10 +1112,23 @@ async function executeSearch(client: JiraClient, cmd: ParsedCommand): Promise<un
         fieldsByKeys: asBoolFlag(opts['fields-by-keys']),
         reconcileIssues: asIntArray(opts['reconcile-issues'], '--reconcile-issues'),
         failFast: asBoolFlag(opts['fail-fast']),
+        includeArchivedProjects: asBoolFlag(opts['include-archived-projects']),
       });
     }
     case 'jql-post': {
       // B768
+      rejectRemovedOptions(
+        opts,
+        'jira search jql-post',
+        ['fail-fast'],
+        '--fail-fast is available only on GET search; use current `search` or `search jql-get`',
+      );
+      rejectRemovedOptions(
+        opts,
+        'jira search jql-post',
+        ['start-at', 'validate-query'],
+        'the /search/jql endpoint is cursor-paginated; use --next-page-token',
+      );
       return client.search.searchJqlPost({
         jql: asString(opts['jql']),
         nextPageToken: asString(opts['next-page-token']),
@@ -1102,12 +1138,19 @@ async function executeSearch(client: JiraClient, cmd: ParsedCommand): Promise<un
         properties: csvFlag(opts['properties']),
         fieldsByKeys: asBoolFlag(opts['fields-by-keys']),
         reconcileIssues: asIntArray(opts['reconcile-issues'], '--reconcile-issues'),
+        includeArchivedProjects: asBoolFlag(opts['include-archived-projects']),
       });
     }
     case '':
     case 'query':
     case 'search': {
       // Default to the current enhanced, cursor-paginated search API.
+      rejectRemovedOptions(
+        opts,
+        'jira search',
+        ['start-at', 'validate-query'],
+        'the current /search/jql endpoint is cursor-paginated; use --next-page-token, or use `search get`/`search legacy-post` for deprecated offset pagination',
+      );
       const jql = asString(opts['jql']);
       if (!jql) throw new Error('Missing --jql option for search');
       return client.search.searchJqlGet({
@@ -1120,11 +1163,12 @@ async function executeSearch(client: JiraClient, cmd: ParsedCommand): Promise<un
         fieldsByKeys: asBoolFlag(opts['fields-by-keys']),
         reconcileIssues: asIntArray(opts['reconcile-issues'], '--reconcile-issues'),
         failFast: asBoolFlag(opts['fail-fast']),
+        includeArchivedProjects: asBoolFlag(opts['include-archived-projects']),
       });
     }
     default:
       throw new Error(
-        `Unknown search action: ${cmd.action}. Actions: search, legacy-post, get, approximate-count, jql-get, jql-post`,
+        `Unknown search action: ${cmd.action}. Actions: search, query, legacy-post, get, approximate-count, jql-get, jql-post`,
       );
   }
 }
@@ -1491,7 +1535,7 @@ async function executeBoards(client: JiraClient, cmd: ParsedCommand): Promise<un
         projectLocation: asString(opts['project-location']),
         includePrivate: asBoolFlag(opts['include-private']),
         negateLocationFiltering: asBoolFlag(opts['negate-location-filtering']),
-        orderBy: asString(opts['order-by']),
+        orderBy: asEnum(opts['order-by'], BOARD_ORDER_BY_VALUES, 'order-by'),
         expand: asString(opts['expand']),
         projectTypeLocation: csvFlag(opts['project-type-location']),
         filterId: asPositiveInt(opts['filter-id'], '--filter-id'),
@@ -2200,6 +2244,73 @@ function rejectRemovedOptions(
   }
 }
 
+const PROJECT_ORDER_BY_VALUES = [
+  'category',
+  '-category',
+  '+category',
+  'key',
+  '-key',
+  '+key',
+  'name',
+  '-name',
+  '+name',
+  'owner',
+  '-owner',
+  '+owner',
+  'issueCount',
+  '-issueCount',
+  '+issueCount',
+  'lastIssueUpdatedDate',
+  '-lastIssueUpdatedDate',
+  '+lastIssueUpdatedDate',
+  'archivedDate',
+  '-archivedDate',
+  '+archivedDate',
+  'deletedDate',
+  '-deletedDate',
+  '+deletedDate',
+] as const satisfies readonly NonNullable<ListProjectsParams['orderBy']>[];
+
+const BOARD_ORDER_BY_VALUES = ['name', '-name', '+name'] as const satisfies readonly NonNullable<
+  ListBoardsParams['orderBy']
+>[];
+
+const AVATAR_SIZES = [
+  'xsmall',
+  'xsmall@2x',
+  'xsmall@3x',
+  'small',
+  'small@2x',
+  'small@3x',
+  'medium',
+  'medium@2x',
+  'medium@3x',
+  'large',
+  'large@2x',
+  'large@3x',
+  'xlarge',
+  'xlarge@2x',
+  'xlarge@3x',
+  'xxlarge',
+  'xxlarge@2x',
+  'xxlarge@3x',
+  'xxxlarge',
+  'xxxlarge@2x',
+  'xxxlarge@3x',
+] as const satisfies readonly NonNullable<GroupUserPickerParams['avatarSize']>[];
+
+function asEnum<T extends string>(
+  value: string | boolean | undefined,
+  allowed: readonly T[],
+  flagName: string,
+): T | undefined {
+  if (typeof value !== 'string') return undefined;
+  if (!(allowed as readonly string[]).includes(value)) {
+    throw new Error(`--${flagName} must be one of: ${allowed.join(', ')}, got: ${value}`);
+  }
+  return value as T;
+}
+
 function asString(value: string | boolean | undefined): string | undefined {
   return typeof value === 'string' ? value : undefined;
 }
@@ -2661,6 +2772,11 @@ async function executeGroupUserPicker(client: JiraClient, cmd: ParsedCommand): P
           '--project-role is not supported by group-user-picker pick; use --field-id with --project-id to scope user results',
         );
       }
+      if (opts['exclude-account-ids'] !== undefined) {
+        throw new Error(
+          '--exclude-account-ids is not supported by group-user-picker pick; use users picker when account exclusion is required',
+        );
+      }
       const projectIdRaw = asString(opts['project-id']);
       const projectId = projectIdRaw
         ? projectIdRaw
@@ -2676,7 +2792,7 @@ async function executeGroupUserPicker(client: JiraClient, cmd: ParsedCommand): P
         fieldId: asString(opts['field-id']),
         projectId,
         issueTypeId: parseCsv(opts['issue-type-id']),
-        avatarSize: asString(opts['avatar-size']) as GroupUserPickerParams['avatarSize'],
+        avatarSize: asEnum(opts['avatar-size'], AVATAR_SIZES, 'avatar-size'),
         caseInsensitive: asBoolFlag(opts['case-insensitive']),
         includeAiAgents: asBoolFlag(opts['include-ai-agents']),
         excludeConnectUsers: asBoolFlag(opts['exclude-connect-users']),
@@ -6183,18 +6299,6 @@ const PLANS_ACTIONS = [
 
 const PLANNING_STYLES: readonly PlanningStyle[] = ['Scrum', 'Kanban'];
 
-function asEnumPlans<T extends string>(
-  value: string | boolean | undefined,
-  allowed: readonly T[],
-  flagName: string,
-): T | undefined {
-  if (typeof value !== 'string') return undefined;
-  if (!(allowed as readonly string[]).includes(value)) {
-    throw new Error(`--${flagName} must be one of: ${allowed.join(', ')}, got: ${value}`);
-  }
-  return value as T;
-}
-
 function asFiniteNumber(value: string | boolean | undefined, name: string): number | undefined {
   if (typeof value !== 'string') return undefined;
   const n = Number(value);
@@ -6295,7 +6399,7 @@ async function executePlans(client: JiraClient, cmd: ParsedCommand): Promise<unk
     case 'add-atlassian-team': {
       const planId = parsePositiveIntArg(requireArg(cmd.positionalArgs[0], 'planId'), 'planId');
       const id = requireOpt(opts['atlassian-team-id'], '--atlassian-team-id');
-      const planningStyle = asEnumPlans(opts['planning-style'], PLANNING_STYLES, 'planning-style');
+      const planningStyle = asEnum(opts['planning-style'], PLANNING_STYLES, 'planning-style');
       if (planningStyle === undefined) {
         throw new Error('add-atlassian-team requires --planning-style (Scrum or Kanban)');
       }
@@ -6331,7 +6435,7 @@ async function executePlans(client: JiraClient, cmd: ParsedCommand): Promise<unk
     case 'create-plan-only-team': {
       const planId = parsePositiveIntArg(requireArg(cmd.positionalArgs[0], 'planId'), 'planId');
       const name = requireOpt(opts['name'], '--name');
-      const planningStyle = asEnumPlans(opts['planning-style'], PLANNING_STYLES, 'planning-style');
+      const planningStyle = asEnum(opts['planning-style'], PLANNING_STYLES, 'planning-style');
       if (planningStyle === undefined) {
         throw new Error('create-plan-only-team requires --planning-style (Scrum or Kanban)');
       }
@@ -6412,8 +6516,22 @@ const WORKFLOWS_ACTIONS = [
   'validate-update',
 ];
 
+const REMOVED_WORKFLOW_TRANSITION_PROPERTY_ACTIONS = [
+  'delete-transition-property',
+  'get-transition-properties',
+  'create-transition-property',
+  'update-transition-property',
+] as const;
+
+const REMOVED_WORKFLOW_TRANSITION_PROPERTY_GUIDANCE =
+  'Atlassian removed the workflow transition-property routes; use workflows bulk-get to read transition properties and workflows update (optionally validate-update first) to submit a full versioned definition';
+
 async function executeWorkflows(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
   const opts = cmd.options;
+
+  if ((REMOVED_WORKFLOW_TRANSITION_PROPERTY_ACTIONS as readonly string[]).includes(cmd.action)) {
+    throw new Error(REMOVED_WORKFLOW_TRANSITION_PROPERTY_GUIDANCE);
+  }
 
   switch (cmd.action) {
     // B934 (already-covered by existing list()): GET /rest/api/3/workflow/search
@@ -6608,7 +6726,7 @@ async function executeWorkflows(client: JiraClient, cmd: ParsedCommand): Promise
 
     default:
       throw new Error(
-        `Unknown workflows action: ${cmd.action}. Actions: ${WORKFLOWS_ACTIONS.join(', ')}`,
+        `Unknown workflows action: ${cmd.action}. Actions: ${WORKFLOWS_ACTIONS.join(', ')}. ${REMOVED_WORKFLOW_TRANSITION_PROPERTY_GUIDANCE}`,
       );
   }
 }
