@@ -12,6 +12,7 @@ export default tseslint.config(
         ...globals.node,
       },
       parserOptions: {
+        onUnsupportedTypeScriptVersion: 'error',
         projectService: true,
         tsconfigRootDir: import.meta.dirname,
       },
