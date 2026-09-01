@@ -2489,6 +2489,55 @@ ${ADMIN_KEY_GET_IMPLEMENTATION}`,
   );
 
   it(
+    'does not count a request inside a nested function-expression default parameter',
+    async () => {
+      const fixtureRoot = await mkdtemp(
+        join(tmpdir(), 'atlassian-api-gap-function-expression-default-'),
+      );
+      const fixtureSrc = join(fixtureRoot, 'src');
+
+      try {
+        await cp(resolve(REPO_ROOT, 'src'), fixtureSrc, { recursive: true });
+        const adminKeyPath = join(fixtureSrc, 'confluence/resources/admin-key.ts');
+        const adminKey = await readFile(adminKeyPath, 'utf8');
+        const changedAdminKey = adminKey.replace(
+          `  async get(): Promise<AdminKey> {
+${ADMIN_KEY_GET_IMPLEMENTATION}
+  }`,
+          `  async get(
+    _load = function load(
+      this: AdminKeyResource,
+      _probe = this.transport.request<AdminKey>({
+        method: 'GET',
+        path: \`\${this.baseUrl}/admin-key\`,
+      }),
+    ): void {
+      void _probe;
+    },
+  ): Promise<AdminKey> {
+    void _load;
+    throw new Error('implementation removed');
+  }`,
+        );
+        expect(changedAdminKey).not.toBe(adminKey);
+        await writeFile(adminKeyPath, changedAdminKey);
+
+        await expect(
+          execFileAsync('python3', [ANALYZER, '--source-root', fixtureRoot], {
+            cwd: REPO_ROOT,
+          }),
+        ).rejects.toMatchObject({
+          code: 1,
+          stdout: expect.stringContaining('unsupported-request-call-scope'),
+        });
+      } finally {
+        await rm(fixtureRoot, { recursive: true, force: true });
+      }
+    },
+    ANALYZER_TIMEOUT_MS,
+  );
+
+  it(
     'continues to count a request inside a public method default parameter',
     async () => {
       const fixtureRoot = await mkdtemp(join(tmpdir(), 'atlassian-api-gap-public-default-'));
@@ -2835,6 +2884,62 @@ ${ADMIN_KEY_GET_IMPLEMENTATION}
         ).rejects.toMatchObject({
           code: 1,
           stdout: expect.stringContaining('nonpublic-helper-call'),
+        });
+      } finally {
+        await rm(fixtureRoot, { recursive: true, force: true });
+      }
+    },
+    ANALYZER_TIMEOUT_MS,
+  );
+
+  it(
+    'does not expand a delegated route from a nested function-expression default parameter',
+    async () => {
+      const fixtureRoot = await mkdtemp(
+        join(tmpdir(), 'atlassian-api-gap-function-expression-default-delegated-'),
+      );
+      const fixtureSrc = join(fixtureRoot, 'src');
+
+      try {
+        await cp(resolve(REPO_ROOT, 'src'), fixtureSrc, { recursive: true });
+        const boardsPath = join(fixtureSrc, 'jira/resources/boards.ts');
+        const boards = await readFile(boardsPath, 'utf8');
+        const liveMethod = `  async getBacklogEnhanced(
+    boardId: number,
+    params?: ListSoftwareIssuesParams,
+  ): Promise<SoftwareIssueResults> {
+    if (!Number.isInteger(boardId) || boardId <= 0) {
+      throw new ValidationError('boardId must be a positive integer');
+    }
+    return this.requestSoftwareIssues(\`\${this.softwareBaseUrl}/board/\${boardId}/backlog\`, params);
+  }`;
+        const changedBoards = boards.replace(
+          liveMethod,
+          `  async getBacklogEnhanced(
+    _boardId: number,
+    _params?: ListSoftwareIssuesParams,
+    _load = function load(
+      this: BoardsResource,
+      boardId: number,
+      _probe = this.requestSoftwareIssues(\`\${this.softwareBaseUrl}/board/\${boardId}/backlog\`),
+    ): void {
+      void _probe;
+    },
+  ): Promise<SoftwareIssueResults> {
+    void _load;
+    throw new Error('implementation removed');
+  }`,
+        );
+        expect(changedBoards).not.toBe(boards);
+        await writeFile(boardsPath, changedBoards);
+
+        await expect(
+          execFileAsync('python3', [ANALYZER, '--source-root', fixtureRoot], {
+            cwd: REPO_ROOT,
+          }),
+        ).rejects.toMatchObject({
+          code: 1,
+          stdout: expect.stringContaining('unsupported-helper-call-scope'),
         });
       } finally {
         await rm(fixtureRoot, { recursive: true, force: true });

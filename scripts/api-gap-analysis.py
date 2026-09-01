@@ -2218,6 +2218,7 @@ def nested_callable_spans(source, code, primary_class_body_start):
         params_end = match_close(code, params_open, "(", ")")
         if params_end == -1:
             continue
+        spans.append((params_open + 1, params_end - 1))
         body_start = code.find("{", params_end)
         body_end = match_close(code, body_start, "{", "}") if body_start != -1 else -1
         if body_end != -1:

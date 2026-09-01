@@ -2778,7 +2778,7 @@ async function executeGroupUserPicker(client: JiraClient, cmd: ParsedCommand): P
         );
       }
       const query = requireOpt(opts['query'], '--query');
-      const fieldId = asString(opts['field-id']);
+      const fieldId = asString(opts['field-id'])?.trim() || undefined;
       const projectId = parseCsv(opts['project-id']);
       const issueTypeId = parseCsv(opts['issue-type-id']);
       if (projectId !== undefined && fieldId === undefined) {

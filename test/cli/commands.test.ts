@@ -16580,6 +16580,28 @@ describe('executeJiraCommand', () => {
       expect(jiraGroupUserPickerMock.pick).not.toHaveBeenCalled();
     });
 
+    it.each([
+      ['project-id', '10001', ''],
+      ['issue-type-id', '10000', '   '],
+    ] as const)(
+      'group-user-picker pick rejects --%s with an empty --field-id',
+      async (scopeFlag, scopeValue, fieldId) => {
+        await expect(
+          executeJiraCommand(
+            cmd('group-user-picker', 'pick', [], {
+              query: 'alice',
+              'field-id': fieldId,
+              [scopeFlag]: scopeValue,
+            }),
+            GLOBALS,
+          ),
+        ).rejects.toThrow(
+          `--${scopeFlag} requires --field-id for group-user-picker pick; add --field-id <custom-field-id> or remove --${scopeFlag}`,
+        );
+        expect(jiraGroupUserPickerMock.pick).not.toHaveBeenCalled();
+      },
+    );
+
     it('group-user-picker pick forwards project-id as split array', async () => {
       // Arrange
       jiraGroupUserPickerMock.pick.mockResolvedValue({});
