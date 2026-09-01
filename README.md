@@ -589,9 +589,10 @@ view to locate client declarations, resource wiring, resource-local path assignm
 returns, and call sites, then an aligned literal view to resolve their values and paths. Comments,
 quoted/template examples, and regex literals cannot satisfy coverage or shadow runtime wiring or
 path discovery. Runtime path transformations, unsafe reassignments, computed request properties,
-statically dead calls, and unresolved OpenAPI Path Item references fail closed; all eight OpenAPI
-HTTP operation keys are audited. Deprecated omissions remain visible in the report without failing
-the check.
+shadowed pagination/query imports, uncalled or non-public request callables, unwired or duplicate
+resource classes, statically dead calls, and unresolved OpenAPI Path Item references fail closed;
+nested resource modules are included and all eight OpenAPI HTTP operation keys are audited.
+Deprecated omissions remain visible in the report without failing the check.
 
 In CI, both guards run on a **weekly schedule and on manual dispatch only** (`.github/workflows/spec-drift.yml`).
 It deliberately does **not** run on `push` or `pull_request` — a transient upstream outage must never

@@ -21,7 +21,7 @@ Candidates are starting points only — each must be verified against the spec +
 BACKLOG-ARCHIVE.md before being treated as a real gap (the diff cannot tell an
 alternate-prefix duplicate or a deprecated-superseded alias from a true gap).
 """
-import argparse, json, re, os, glob, sys, tempfile
+import argparse, functools, json, re, os, glob, sys, tempfile
 from urllib.parse import urlsplit
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -66,6 +66,22 @@ ROUTE_PRESERVING_PRIMITIVES = {
     "appendRepeatedParams",
     "appendScalarOrArrayParam",
 }
+
+UNICODE_ESCAPE = re.compile(r"\\u(?:[0-9A-Fa-f]{4}|\{[0-9A-Fa-f]+\})")
+IDENTIFIER_NAME = (
+    r"(?:[A-Za-z0-9_$]|\\u(?:[0-9A-Fa-f]{4}|\{[0-9A-Fa-f]+\}))+"
+)
+
+METHOD_DECLARATION = re.compile(
+    r"(?<![A-Za-z0-9_$\.\]])"
+    r"(?P<modifiers>(?:(?:public|protected|private|static|abstract|override|async)\s+)*)"
+    r"(?:get\s+|set\s+)?\*?\s*"
+    r"(?P<method>[A-Za-z_$][A-Za-z0-9_$]*|#[A-Za-z_$][A-Za-z0-9_$]*"
+    r"|[0-9]+(?:\.[0-9]+)?|\[[^\]]*\])"
+    r"\s*(?:<[^;{}()]*>)?\s*\("
+)
+
+CONTROL_HEADS = {"catch", "for", "if", "switch", "while", "with"}
 
 def match_close(s, start, op, cl):
     depth = 0
@@ -140,10 +156,317 @@ def find_request_call_objects(code):
             unsupported.append(member.start())
     return calls, unsupported
 
-def approved_transport_forwarding_positions(code):
+def decode_identifier_escapes(value):
+    """Decode JavaScript Unicode escapes used inside identifiers/properties."""
+    def replace(match):
+        digits = match.group(0)[2:]
+        if digits.startswith("{"):
+            digits = digits[1:-1]
+        try:
+            codepoint = int(digits, 16)
+            return chr(codepoint) if codepoint <= 0x10FFFF else "\ufffd"
+        except (ValueError, OverflowError):
+            return "\ufffd"
+
+    return UNICODE_ESCAPE.sub(replace, value)
+
+def executable_member_accesses(source, code):
+    """Return executable dotted/static-bracket member accesses.
+
+    The accepted request extractor intentionally recognizes only the canonical
+    ``this.transport.request({...})`` shape. This broader audit decodes legal
+    identifier escapes and static string keys so equivalent or aliased access
+    cannot disappear from the fail-closed accounting pass.
+    """
+    assert len(source) == len(code), "source/code views must stay aligned"
+    accesses = []
+    for member in re.finditer(r"\.\s*(" + IDENTIFIER_NAME + r")", code):
+        accesses.append((
+            member.start(),
+            member.start(1),
+            member.end(),
+            decode_identifier_escapes(member.group(1)),
+        ))
+
+    static_property = re.compile(
+        r"\[\s*(?:'(?P<single>(?:\\.|[^'\\])*)'"
+        r'|"(?P<double>(?:\\.|[^"\\])*)")\s*\]'
+    )
+    for member in static_property.finditer(source):
+        # A property-like substring inside a comment/string/template raw
+        # segment is blank in the aligned executable-code view.
+        if code[member.start()] != "[" or code[member.end() - 1] != "]":
+            continue
+        raw_name = member.group("single")
+        if raw_name is None:
+            raw_name = member.group("double")
+        accesses.append((
+            member.start(),
+            member.start(),
+            member.end(),
+            decode_identifier_escapes(raw_name),
+        ))
+    return sorted(accesses)
+
+def executable_computed_member_invocations(code):
+    """Return dynamic bracket-member calls that cannot be name-proven safe."""
+    return list(re.finditer(
+        r"\]\s*(?:\?\.\s*)?(?:<[^;{}]*>)?\s*\(",
+        code,
+    ))
+
+@functools.lru_cache(maxsize=None)
+def named_import_bindings(source, code):
+    """Return ``(imported, local, module)`` named-import bindings."""
+    assert len(source) == len(code), "source/code views must stay aligned"
+    bindings = []
+    for imported in re.finditer(
+        r"\bimport\s*\{(?P<bindings>[^}]*)\}\s*from\b",
+        code,
+    ):
+        module_match = re.match(
+            r"\s*(['\"])(?P<module>[^'\"]+)\1",
+            source[imported.end():],
+        )
+        if not module_match:
+            continue
+        for raw_binding in imported.group("bindings").split(","):
+            binding = re.fullmatch(
+                r"\s*(?:type\s+)?([A-Za-z_$][A-Za-z0-9_$]*)"
+                r"(?:\s+as\s+([A-Za-z_$][A-Za-z0-9_$]*))?\s*",
+                raw_binding,
+            )
+            if binding:
+                bindings.append((
+                    binding.group(1),
+                    binding.group(2) or binding.group(1),
+                    module_match.group("module"),
+                ))
+    return tuple(bindings)
+
+def quoted_method_code_view(source, code):
+    """Expose executable quoted PropertyNames as aligned synthetic identifiers."""
+    assert len(source) == len(code), "source/code views must stay aligned"
+    view = list(code)
+    quoted = re.compile(
+        r"'(?:\\.|[^'\\])*'|\"(?:\\.|[^\"\\])*\""
+    )
+    for literal in quoted.finditer(source):
+        if code[literal.start():literal.end()].strip():
+            continue
+        cursor = literal.end()
+        while cursor < len(code) and code[cursor].isspace():
+            cursor += 1
+        if cursor < len(code) and code[cursor] == "<":
+            cursor = match_type_arguments_end(code, cursor)
+            if cursor == -1:
+                continue
+            while cursor < len(code) and code[cursor].isspace():
+                cursor += 1
+        if cursor < len(code) and code[cursor] == "(":
+            view[literal.start()] = "m"
+    return "".join(view)
+
+@functools.lru_cache(maxsize=None)
+def method_declaration_spans(code):
+    """Return method parameter/body spans, parent braces, and visibility."""
+    declarations = []
+    for method in METHOD_DECLARATION.finditer(code):
+        method_name = method.group("method")
+        if method_name in CONTROL_HEADS:
+            continue
+        params_open = code.index("(", method.start(), method.end())
+        params_end = match_close(code, params_open, "(", ")")
+        if params_end == -1:
+            continue
+        cursor = params_end
+        while cursor < len(code) and code[cursor].isspace():
+            cursor += 1
+        if cursor < len(code) and code[cursor] == ":":
+            cursor += 1
+            angle = paren = bracket = 0
+            seen_type_token = False
+            while cursor < len(code):
+                token = code[cursor]
+                if token == "<":
+                    angle += 1
+                elif token == ">" and angle:
+                    angle -= 1
+                elif token == "(":
+                    paren += 1
+                elif token == ")" and paren:
+                    paren -= 1
+                elif token == "[":
+                    bracket += 1
+                elif token == "]" and bracket:
+                    bracket -= 1
+                elif token == "{":
+                    previous = cursor - 1
+                    while previous >= params_end and code[previous].isspace():
+                        previous -= 1
+                    if (
+                        angle or paren or bracket or not seen_type_token
+                        or (previous >= 0 and code[previous] in "|&")
+                        or code[max(0, previous - 1):previous + 1] == "=>"
+                    ):
+                        type_end = match_close(code, cursor, "{", "}")
+                        if type_end == -1:
+                            cursor = -1
+                            break
+                        cursor = type_end
+                        seen_type_token = True
+                        continue
+                    break
+                elif not token.isspace():
+                    seen_type_token = True
+                cursor += 1
+        if cursor == -1:
+            continue
+        while cursor < len(code) and code[cursor].isspace():
+            cursor += 1
+        if cursor >= len(code) or code[cursor] != "{":
+            continue
+        body_start = cursor
+        body_end = match_close(code, body_start, "{", "}")
+        if body_end == -1:
+            continue
+        modifiers = method.group("modifiers").split()
+        visibility = next(
+            (modifier for modifier in modifiers if modifier in {"private", "protected"}),
+            "private"
+            if method_name.startswith("#")
+            else "static"
+            if "static" in modifiers
+            else "public",
+        )
+        declarations.append((
+            params_open + 1,
+            params_end - 1,
+            body_start,
+            body_end,
+            brace_parent_map(code).get(body_start),
+            visibility,
+            method_name,
+        ))
+    return tuple(declarations)
+
+@functools.lru_cache(maxsize=None)
+def callable_parameter_spans(code):
+    """Return conservative spans for function/method/arrow parameters."""
+    spans = set()
+
+    def add_params(open_paren):
+        close = match_close(code, open_paren, "(", ")")
+        if close != -1:
+            spans.add((open_paren + 1, close - 1))
+        return close
+
+    for function in re.finditer(
+        r"\bfunction\b(?:\s*\*)?(?:\s+[A-Za-z_$][A-Za-z0-9_$]*)?"
+        r"\s*(?:<[^;{}()]*>)?\s*\(",
+        code,
+    ):
+        add_params(code.index("(", function.start(), function.end()))
+    for constructor in re.finditer(r"\bconstructor\s*\(", code):
+        add_params(code.index("(", constructor.start(), constructor.end()))
+
+    spans.update(
+        (params_start, params_end)
+        for params_start, params_end, *_ in method_declaration_spans(code)
+    )
+
+    # Parenthesized arrow parameters, including defaults.
+    for arrow in re.finditer(r"=>", code):
+        previous = arrow.start() - 1
+        while previous >= 0 and code[previous].isspace():
+            previous -= 1
+        params_close = previous if previous >= 0 and code[previous] == ")" else -1
+        if params_close == -1:
+            candidate = code.rfind(")", 0, arrow.start())
+            if candidate != -1 and re.fullmatch(
+                r"\s*:[^;={}]*",
+                code[candidate + 1:arrow.start()],
+            ):
+                params_close = candidate
+        if params_close != -1:
+            open_paren = match_open(code, params_close, "(", ")")
+            if open_paren != -1:
+                spans.add((open_paren + 1, params_close))
+    return tuple(sorted(spans))
+
+def has_nonimport_binding(code, name):
+    """Conservatively reject any lexical/value shadow of an import binding."""
+    target = re.escape(name)
+    if re.search(
+        r"\b(?:const|let|var|function|class|enum|namespace)\s+" + target + r"\b",
+        code,
+    ):
+        return True
+    for declaration in re.finditer(r"\b(?:const|let|var)\b", code):
+        cursor = declaration.end()
+        while cursor < len(code) and code[cursor].isspace():
+            cursor += 1
+        if cursor >= len(code) or code[cursor] not in "{[":
+            continue
+        close_token = "}" if code[cursor] == "{" else "]"
+        binding_end = match_close(code, cursor, code[cursor], close_token)
+        if (
+            binding_end != -1
+            and re.search(r"\b" + target + r"\b", code[cursor:binding_end])
+        ):
+            return True
+    if re.search(r"\bcatch\s*\([^)]*\b" + target + r"\b", code):
+        return True
+    for start, end in callable_parameter_spans(code):
+        if re.search(r"\b" + target + r"\b", code[start:end]):
+            return True
+    # Single-identifier arrow parameters have no parenthesized span.
+    if re.search(
+        r"(?<![A-Za-z0-9_$])" + target
+        + r"\s*(?::[^=;{},]+)?=>",
+        code,
+    ):
+        return True
+    return False
+
+def trusted_named_imports(source, code, approved_names, module_pattern):
+    """Return unshadowed local bindings for approved named imports."""
+    imports = named_import_bindings(source, code)
+    by_local = {}
+    for imported, local, module in imports:
+        by_local.setdefault(local, []).append((imported, module))
+    trusted = {}
+    binding_code = quoted_method_code_view(source, code)
+    for local, candidates in by_local.items():
+        approved = [
+            candidate
+            for candidate in candidates
+            if candidate[0] in approved_names
+            and re.fullmatch(module_pattern, candidate[1])
+        ]
+        if not approved:
+            continue
+        if len(candidates) != 1 or has_nonimport_binding(binding_code, local):
+            continue
+        trusted[local] = approved[0][0]
+    return trusted
+
+def approved_transport_forwarding_positions(source, code):
     """Return ``transport`` offsets passed to reviewed pagination helpers."""
     positions = set()
-    for call in re.finditer(r"\bpaginate(?:Cursor|Offset|Search)\b", code):
+    helpers = trusted_named_imports(
+        source,
+        code,
+        {"paginateCursor", "paginateOffset", "paginateSearch"},
+        r"(?:\.\./)+core/pagination\.js",
+    )
+    if not helpers:
+        return positions
+    helper_pattern = "|".join(re.escape(name) for name in helpers)
+    for call in re.finditer(
+        r"(?<![A-Za-z0-9_$.])(?:" + helper_pattern + r")\b",
+        code,
+    ):
         cursor = call.end()
         while cursor < len(code) and code[cursor].isspace():
             cursor += 1
@@ -791,6 +1114,19 @@ def brace_scope_at(code, position):
             stack.pop()
     return tuple(stack)
 
+@functools.lru_cache(maxsize=None)
+def brace_parent_map(code):
+    """Map each executable opening brace to its immediately enclosing brace."""
+    parents = {}
+    stack = []
+    for index, token in enumerate(code):
+        if token == "{":
+            parents[index] = stack[-1] if stack else None
+            stack.append(index)
+        elif token == "}" and stack:
+            stack.pop()
+    return parents
+
 def visible_assignments(assignments, local_code):
     """Select the closest lexical binding visible at the context endpoint."""
     use_scope = brace_scope_at(local_code, len(local_code))
@@ -1162,44 +1498,18 @@ def helper_declaration_match(definitions_code, name):
         definitions_code,
     )
 
+@functools.lru_cache(maxsize=None)
 def route_primitive_is_trusted(definitions, definitions_code, name):
     """Prove a primitive is the unshadowed binding from core/query.js."""
-    function_binding = re.search(
-        r"(?m)^\s*(?:export\s+)?(?:async\s+)?function\s+"
-        + re.escape(name)
-        + r"\s*\(",
-        definitions_code,
-    )
-    if (
-        name not in ROUTE_PRESERVING_PRIMITIVES
-        or not definitions
-        or not definitions_code
-        or function_binding
-    ):
+    if not definitions or not definitions_code:
         return False
-    variable_binding = re.search(
-        r"\b(?:const|let|var)\s+" + re.escape(name) + r"\b",
+    trusted = trusted_named_imports(
+        definitions,
         definitions_code,
+        ROUTE_PRESERVING_PRIMITIVES,
+        r"(?:\.\./)+core/query\.js",
     )
-    if variable_binding:
-        return False
-    for imported in re.finditer(
-        r"\bimport\s*\{(?P<bindings>[^}]*)\}\s*from\b",
-        definitions_code,
-    ):
-        source_tail = definitions[imported.end():]
-        if not re.match(
-            r"\s*['\"](?:\.\./)+core/query\.js['\"]",
-            source_tail,
-        ):
-            continue
-        bindings = {
-            binding.strip()
-            for binding in imported.group("bindings").split(",")
-        }
-        if name in bindings:
-            return True
-    return False
+    return name in trusted
 
 def property_has_computed_name(prop_code):
     """Whether an object member has a computed key, including accessors."""
@@ -1887,6 +2197,82 @@ def enclosing_method_scope_starts(code_src, positions):
             stack.pop()
     return result
 
+@functools.lru_cache(maxsize=None)
+def nested_callable_spans(source, code, primary_class_body_start):
+    """Precompute nested callable body intervals for one resource module."""
+    spans = []
+    for class_match in re.finditer(r"\bclass\b", code):
+        body_start = code.find("{", class_match.end())
+        if body_start == primary_class_body_start:
+            continue
+        body_end = match_close(code, body_start, "{", "}") if body_start != -1 else -1
+        if body_end != -1:
+            spans.append((body_start, body_end))
+
+    for function in re.finditer(
+        r"\bfunction\b(?:\s*\*)?(?:\s+[A-Za-z_$][A-Za-z0-9_$]*)?"
+        r"\s*(?:<[^;{}()]*>)?\s*\(",
+        code,
+    ):
+        params_open = code.index("(", function.start(), function.end())
+        params_end = match_close(code, params_open, "(", ")")
+        if params_end == -1:
+            continue
+        body_start = code.find("{", params_end)
+        body_end = match_close(code, body_start, "{", "}") if body_start != -1 else -1
+        if body_end != -1:
+            spans.append((body_start, body_end))
+
+    method_code = quoted_method_code_view(source, code)
+    for _, _, body_start, body_end, parent_brace, _, _ in method_declaration_spans(method_code):
+        # The selected resource's direct members are the supported callable
+        # layer. Object-literal methods (or methods nested in local constructs)
+        # have another open scope between their body and the resource class.
+        if parent_brace != primary_class_body_start:
+            spans.append((body_start, body_end))
+
+    for arrow in re.finditer(r"=>", code):
+        body_start = arrow.end()
+        while body_start < len(code) and code[body_start].isspace():
+            body_start += 1
+        if body_start < len(code) and code[body_start] == "{":
+            body_end = match_close(code, body_start, "{", "}")
+            if body_end != -1:
+                spans.append((body_start, body_end))
+            continue
+
+        depth = {"(": 0, "{": 0, "[": 0}
+        pairs = {")": "(", "}": "{", "]": "["}
+        body_end = len(code)
+        for index in range(body_start, len(code)):
+            token = code[index]
+            if token in depth:
+                depth[token] += 1
+            elif token in pairs:
+                opener = pairs[token]
+                if depth[opener] == 0:
+                    body_end = index
+                    break
+                depth[opener] -= 1
+            elif token in {",", ";"} and not any(depth.values()):
+                body_end = index
+                break
+        if body_start < body_end:
+            spans.append((body_start - 1, body_end))
+    return tuple(sorted(set(spans)))
+
+def nested_callable_at(source, code, position, primary_class_body_start):
+    """Reject requests hidden in nested functions, arrows, or local classes."""
+    if any(
+        body_start < position < body_end
+        for body_start, body_end in nested_callable_spans(
+            source, code, primary_class_body_start
+        )
+    ):
+        return True
+
+    return False
+
 def request_spread_is_route_safe(prop_code):
     """Recognize the one proven route-neutral request spread used by the SDK."""
     return bool(re.fullmatch(
@@ -1904,9 +2290,12 @@ def extract(api):
     varmap = parse_base_suffixes(client_src, client_code)
     wiring = parse_wiring(client_src, client_code, varmap)
     results, unknowns = [], []
+    seen_resource_classes = set()
     for f in sorted(glob.glob(os.path.join(res_dir, "**", "*.ts"), recursive=True)):
-        if os.path.basename(f) == "index.ts": continue
         src, code_src = lex_ts_source(open(f).read())
+        member_accesses = executable_member_accesses(src, code_src)
+        computed_member_calls = executable_computed_member_invocations(code_src)
+        computed_this_accesses = list(re.finditer(r"\bthis\s*\[", code_src))
         class_matches = list(
             re.finditer(
                 r"export\s+class\s+([A-Z][A-Za-z0-9]*Resource)\b",
@@ -1914,18 +2303,72 @@ def extract(api):
             )
         )
         if len(class_matches) != 1:
+            request_member = next(
+                (access for access in member_accesses if access[3] == "request"),
+                None,
+            )
+            transport_type = re.search(r"\bTransport\b", code_src)
             transport_use = re.search(r"\btransport\b", code_src)
-            if transport_use:
+            hazard_position = (
+                request_member[0]
+                if request_member is not None
+                else computed_member_calls[0].start()
+                if computed_member_calls
+                else computed_this_accesses[0].start()
+                if computed_this_accesses
+                else transport_type.start()
+                if transport_type
+                else transport_use.start()
+                if transport_use
+                else None
+            )
+            if hazard_position is not None:
                 unknowns.append(
                     (
                         os.path.relpath(f, res_dir),
                         "unrecognized-resource-file",
-                        src[transport_use.start():transport_use.start() + 80],
+                        src[hazard_position:hazard_position + 80],
                     )
                 )
             continue
         clsm = class_matches[0]
         cls = clsm.group(1)
+        if cls in seen_resource_classes:
+            unknowns.append((
+                os.path.relpath(f, res_dir),
+                "duplicate-resource-class",
+                cls,
+            ))
+            continue
+        seen_resource_classes.add(cls)
+        if cls not in wiring:
+            unknowns.append((
+                os.path.relpath(f, res_dir),
+                "unwired-resource-class",
+                cls,
+            ))
+            continue
+        class_body_start = code_src.find("{", clsm.end())
+        class_body_end = (
+            match_close(code_src, class_body_start, "{", "}")
+            if class_body_start != -1 else -1
+        )
+        method_code_src = quoted_method_code_view(src, code_src)
+        direct_class_members = [
+            declaration
+            for declaration in method_declaration_spans(method_code_src)
+            if declaration[4] == class_body_start
+        ]
+
+        def containing_direct_member(position):
+            return next(
+                (
+                    declaration
+                    for declaration in direct_class_members
+                    if declaration[2] < position < declaration[3]
+                ),
+                None,
+            )
         params = parse_ctor_params(src, code_src)
         wargs = wiring.get(cls, [])
         fieldmap = {params[i]: wargs[i] for i in range(min(len(params), len(wargs)))}
@@ -1963,7 +2406,53 @@ def extract(api):
             call_start + len("this.")
             for call_start in unsupported_request_calls
         }
-        approved_forwarding = approved_transport_forwarding_positions(code_src)
+        approved_forwarding = approved_transport_forwarding_positions(src, code_src)
+        unknowns.extend(
+            (
+                os.path.basename(f),
+                "unsupported-computed-instance-access",
+                src[access.start():access.end() + 60],
+            )
+            for access in computed_this_accesses
+        )
+        unknowns.extend(
+            (
+                os.path.basename(f),
+                "unsupported-computed-member-invocation",
+                src[call.start():call.end() + 60],
+            )
+            for call in computed_member_calls
+        )
+        request_call_ranges = [
+            (call_start, call_paren)
+            for call_start, call_paren, _ in request_calls
+        ] + [
+            (call_start, call_start + len("this.transport.request"))
+            for call_start in unsupported_request_calls
+        ]
+        for access_start, member_start, member_end, member_name in member_accesses:
+            if member_name == "request":
+                if any(
+                    call_start <= access_start < call_end
+                    for call_start, call_end in request_call_ranges
+                ):
+                    continue
+                unknowns.append((
+                    os.path.basename(f),
+                    "unsupported-request-member-use",
+                    src[access_start:member_end + 60],
+                ))
+            elif member_name == "transport":
+                if (
+                    member_start in accounted_request_transports
+                    or member_start in approved_forwarding
+                ):
+                    continue
+                unknowns.append((
+                    os.path.basename(f),
+                    "unsupported-transport-member-use",
+                    src[access_start:member_end + 60],
+                ))
         for transport_use in re.finditer(r"\btransport\b", code_src):
             position = transport_use.start()
             if (
@@ -2001,6 +2490,24 @@ def extract(api):
             if not span or not calls: continue
             delegated_spans.append(span)
             for call in calls:
+                containing_member = containing_direct_member(call.start())
+                if containing_member is not None and containing_member[5] != "public":
+                    unknowns.append((
+                        os.path.basename(f),
+                        "nonpublic-helper-call",
+                        src[call.start():call.start() + 80],
+                    ))
+                    continue
+                if (
+                    not class_body_start < call.start() < class_body_end
+                    or nested_callable_at(src, code_src, call.start(), class_body_start)
+                ):
+                    unknowns.append((
+                        os.path.basename(f),
+                        "unsupported-helper-call-scope",
+                        src[call.start():call.start() + 80],
+                    ))
+                    continue
                 if statically_dead_at(code_src, call.start()):
                     unknowns.append(
                         (os.path.basename(f), "statically-dead-helper-call", helper_name)
@@ -2036,6 +2543,24 @@ def extract(api):
 
         for call_start, _call_paren, obj_start in request_calls:
             if any(start <= call_start < end for start, end in delegated_spans):
+                continue
+            containing_member = containing_direct_member(call_start)
+            if containing_member is not None and containing_member[5] != "public":
+                unknowns.append((
+                    os.path.basename(f),
+                    "nonpublic-request-call",
+                    src[call_start:call_start + 80],
+                ))
+                continue
+            if (
+                not class_body_start < call_start < class_body_end
+                or nested_callable_at(src, code_src, call_start, class_body_start)
+            ):
+                unknowns.append((
+                    os.path.basename(f),
+                    "unsupported-request-call-scope",
+                    src[call_start:call_start + 80],
+                ))
                 continue
             if statically_dead_at(code_src, call_start):
                 unknowns.append(

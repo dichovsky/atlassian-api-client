@@ -10,7 +10,7 @@ const execFileAsync = promisify(execFile);
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(HERE, '../..');
 const ANALYZER = resolve(REPO_ROOT, 'scripts/api-gap-analysis.py');
-const ANALYZER_TIMEOUT_MS = 30_000;
+const ANALYZER_TIMEOUT_MS = 60_000;
 const ADMIN_KEY_GET_IMPLEMENTATION = `    const response = await this.transport.request<AdminKey>({
       method: 'GET',
       path: \`\${this.baseUrl}/admin-key\`,
@@ -1465,6 +1465,176 @@ ${liveImplementation}
   );
 
   it(
+    'fails closed when a default parameter shadows a reviewed route primitive',
+    async () => {
+      const fixtureRoot = await mkdtemp(join(tmpdir(), 'atlassian-api-gap-primitive-param-'));
+      const fixtureSrc = join(fixtureRoot, 'src');
+
+      try {
+        await cp(resolve(REPO_ROOT, 'src'), fixtureSrc, { recursive: true });
+        const notificationPath = join(fixtureSrc, 'jira/resources/notificationscheme.ts');
+        const notificationSchemes = await readFile(notificationPath, 'utf8');
+        const changedNotificationSchemes = notificationSchemes
+          .replace(
+            '/** Append the repeated `id` and `projectId` (`type: array`) params to a scheme-list path. */',
+            `const rogueAppendRepeatedParams: typeof appendRepeatedParams = (path) =>
+  \`\${path}-rogue\`;
+
+/** Append the repeated \`id\` and \`projectId\` (\`type: array\`) params to a scheme-list path. */`,
+          )
+          .replace(
+            `  params: ListNotificationSchemesParams | undefined,
+): string {`,
+            `  params: ListNotificationSchemesParams | undefined,
+  appendRepeatedParams = rogueAppendRepeatedParams,
+): string {`,
+          );
+        expect(changedNotificationSchemes).not.toBe(notificationSchemes);
+        await writeFile(notificationPath, changedNotificationSchemes);
+
+        await expect(
+          execFileAsync('python3', [ANALYZER, '--source-root', fixtureRoot], {
+            cwd: REPO_ROOT,
+          }),
+        ).rejects.toMatchObject({
+          code: 1,
+          stdout: expect.stringContaining('!!! UNRESOLVED'),
+        });
+      } finally {
+        await rm(fixtureRoot, { recursive: true, force: true });
+      }
+    },
+    ANALYZER_TIMEOUT_MS,
+  );
+
+  it(
+    'fails closed when nested destructuring shadows a reviewed route primitive',
+    async () => {
+      const fixtureRoot = await mkdtemp(join(tmpdir(), 'atlassian-api-gap-primitive-destructure-'));
+      const fixtureSrc = join(fixtureRoot, 'src');
+
+      try {
+        await cp(resolve(REPO_ROOT, 'src'), fixtureSrc, { recursive: true });
+        const notificationPath = join(fixtureSrc, 'jira/resources/notificationscheme.ts');
+        const notificationSchemes = await readFile(notificationPath, 'utf8');
+        const changedNotificationSchemes = notificationSchemes
+          .replace(
+            '/** Append the repeated `id` and `projectId` (`type: array`) params to a scheme-list path. */',
+            `const rogueAppendRepeatedParams: typeof appendRepeatedParams = (path) =>
+  \`\${path}-rogue\`;
+
+/** Append the repeated \`id\` and \`projectId\` (\`type: array\`) params to a scheme-list path. */`,
+          )
+          .replace(
+            `  let path = appendRepeatedParams(basePath, 'id', params?.id);`,
+            `  const {
+    nested: { ignored },
+    appendRepeatedParams,
+  } = {
+    nested: { ignored: true },
+    appendRepeatedParams: rogueAppendRepeatedParams,
+  };
+  void ignored;
+  let path = appendRepeatedParams(basePath, 'id', params?.id);`,
+          );
+        expect(changedNotificationSchemes).not.toBe(notificationSchemes);
+        await writeFile(notificationPath, changedNotificationSchemes);
+
+        await expect(
+          execFileAsync('python3', [ANALYZER, '--source-root', fixtureRoot], {
+            cwd: REPO_ROOT,
+          }),
+        ).rejects.toMatchObject({
+          code: 1,
+          stdout: expect.stringContaining('!!! UNRESOLVED'),
+        });
+      } finally {
+        await rm(fixtureRoot, { recursive: true, force: true });
+      }
+    },
+    ANALYZER_TIMEOUT_MS,
+  );
+
+  it(
+    'finds helper-shadowing parameters on quoted object methods',
+    async () => {
+      const fixtureRoot = await mkdtemp(join(tmpdir(), 'atlassian-api-gap-quoted-param-'));
+      const fixtureSrc = join(fixtureRoot, 'src');
+
+      try {
+        await cp(resolve(REPO_ROOT, 'src'), fixtureSrc, { recursive: true });
+        const notificationPath = join(fixtureSrc, 'jira/resources/notificationscheme.ts');
+        const notificationSchemes = await readFile(notificationPath, 'utf8');
+        const changedNotificationSchemes = notificationSchemes.replace(
+          '/** Append the repeated `id` and `projectId` (`type: array`) params to a scheme-list path. */',
+          `const rogueAppendRepeatedParams: typeof appendRepeatedParams = (path) =>
+  \`\${path}-rogue\`;
+const holder = {
+  'build'(appendRepeatedParams = rogueAppendRepeatedParams): string {
+    return appendRepeatedParams('/wrong', 'id', ['1']);
+  },
+};
+void holder;
+
+/** Append the repeated \`id\` and \`projectId\` (\`type: array\`) params to a scheme-list path. */`,
+        );
+        expect(changedNotificationSchemes).not.toBe(notificationSchemes);
+        await writeFile(notificationPath, changedNotificationSchemes);
+
+        await expect(
+          execFileAsync('python3', [ANALYZER, '--source-root', fixtureRoot], {
+            cwd: REPO_ROOT,
+          }),
+        ).rejects.toMatchObject({
+          code: 1,
+          stdout: expect.stringContaining('!!! UNRESOLVED'),
+        });
+      } finally {
+        await rm(fixtureRoot, { recursive: true, force: true });
+      }
+    },
+    ANALYZER_TIMEOUT_MS,
+  );
+
+  it(
+    'finds helper-shadowing parameters on typed arrow functions',
+    async () => {
+      const fixtureRoot = await mkdtemp(join(tmpdir(), 'atlassian-api-gap-arrow-param-'));
+      const fixtureSrc = join(fixtureRoot, 'src');
+
+      try {
+        await cp(resolve(REPO_ROOT, 'src'), fixtureSrc, { recursive: true });
+        const notificationPath = join(fixtureSrc, 'jira/resources/notificationscheme.ts');
+        const notificationSchemes = await readFile(notificationPath, 'utf8');
+        const changedNotificationSchemes = notificationSchemes.replace(
+          '/** Append the repeated `id` and `projectId` (`type: array`) params to a scheme-list path. */',
+          `const rogueAppendRepeatedParams: typeof appendRepeatedParams = (path) =>
+  \`\${path}-rogue\`;
+const shadow = (appendRepeatedParams = rogueAppendRepeatedParams): string =>
+  appendRepeatedParams('/wrong', 'id', ['1']);
+void shadow;
+
+/** Append the repeated \`id\` and \`projectId\` (\`type: array\`) params to a scheme-list path. */`,
+        );
+        expect(changedNotificationSchemes).not.toBe(notificationSchemes);
+        await writeFile(notificationPath, changedNotificationSchemes);
+
+        await expect(
+          execFileAsync('python3', [ANALYZER, '--source-root', fixtureRoot], {
+            cwd: REPO_ROOT,
+          }),
+        ).rejects.toMatchObject({
+          code: 1,
+          stdout: expect.stringContaining('!!! UNRESOLVED'),
+        });
+      } finally {
+        await rm(fixtureRoot, { recursive: true, force: true });
+      }
+    },
+    ANALYZER_TIMEOUT_MS,
+  );
+
+  it(
     'does not count transport request syntax that exists only inside a regex literal',
     async () => {
       const fixtureRoot = await mkdtemp(join(tmpdir(), 'atlassian-api-gap-regex-'));
@@ -1568,6 +1738,51 @@ ${liveImplementation}
     });`,
     ],
     [
+      'a computed transport property',
+      `    await this['transport'].request({
+      method: 'DELETE',
+      path: \`\${this.baseUrl}/admin-key-rogue\`,
+    });`,
+    ],
+    [
+      'an escaped transport property',
+      `    await this.transp\\u006frt.request({
+      method: 'DELETE',
+      path: \`\${this.baseUrl}/admin-key-rogue\`,
+    });`,
+    ],
+    [
+      'an alias sourced from a computed transport property',
+      `    const hiddenTransport = this['transport'];
+    await hiddenTransport.request({
+      method: 'DELETE',
+      path: \`\${this.baseUrl}/admin-key-rogue\`,
+    });`,
+    ],
+    [
+      'an alias sourced from an escaped transport property',
+      `    const hiddenTransport = this.transp\\u006frt;
+    await hiddenTransport.request({
+      method: 'DELETE',
+      path: \`\${this.baseUrl}/admin-key-rogue\`,
+    });`,
+    ],
+    [
+      'a dynamically computed transport request',
+      `    await this['trans' + 'port']['req' + 'uest']({
+      method: 'DELETE',
+      path: \`\${this.baseUrl}/admin-key-rogue\`,
+    });`,
+    ],
+    [
+      'an alias sourced from a dynamically computed request',
+      `    const hiddenRequest = this['trans' + 'port']['req' + 'uest'];
+    await hiddenRequest({
+      method: 'DELETE',
+      path: \`\${this.baseUrl}/admin-key-rogue\`,
+    });`,
+    ],
+    [
       'a unicode-escaped member',
       `    await this.transport.requ\\u0065st({
       method: 'DELETE',
@@ -1606,6 +1821,274 @@ ${liveImplementation}
           code: 1,
           stdout: expect.stringContaining('!!! UNRESOLVED'),
         });
+      } finally {
+        await rm(fixtureRoot, { recursive: true, force: true });
+      }
+    },
+    ANALYZER_TIMEOUT_MS,
+  );
+
+  it(
+    'recursively inspects nested index files with alternate Transport property names',
+    async () => {
+      const fixtureRoot = await mkdtemp(join(tmpdir(), 'atlassian-api-gap-nested-index-'));
+      const fixtureSrc = join(fixtureRoot, 'src');
+
+      try {
+        await cp(resolve(REPO_ROOT, 'src'), fixtureSrc, { recursive: true });
+        const resourcePath = join(fixtureSrc, 'confluence/resources/experimental/index.ts');
+        await mkdir(dirname(resourcePath), { recursive: true });
+        await writeFile(
+          resourcePath,
+          `import type { Transport } from '../../../core/types.js';
+
+export class NestedGateway {
+  constructor(
+    private readonly client: Transport,
+    private readonly baseUrl: string,
+  ) {}
+
+  async remove(): Promise<void> {
+    await this.client.request({
+      method: 'DELETE',
+      path: \`\${this.baseUrl}/admin-key-rogue\`,
+    });
+  }
+}
+`,
+        );
+
+        await expect(
+          execFileAsync('python3', [ANALYZER, '--source-root', fixtureRoot], {
+            cwd: REPO_ROOT,
+          }),
+        ).rejects.toMatchObject({
+          code: 1,
+          stdout: expect.stringContaining('!!! UNRESOLVED'),
+        });
+      } finally {
+        await rm(fixtureRoot, { recursive: true, force: true });
+      }
+    },
+    ANALYZER_TIMEOUT_MS,
+  );
+
+  it(
+    'does not let an unwired duplicate resource class borrow client wiring',
+    async () => {
+      const fixtureRoot = await mkdtemp(join(tmpdir(), 'atlassian-api-gap-duplicate-resource-'));
+      const fixtureSrc = join(fixtureRoot, 'src');
+
+      try {
+        await cp(resolve(REPO_ROOT, 'src'), fixtureSrc, { recursive: true });
+        const adminKeyPath = join(fixtureSrc, 'confluence/resources/admin-key.ts');
+        const adminKey = await readFile(adminKeyPath, 'utf8');
+        const changedAdminKey = adminKey.replace(
+          ADMIN_KEY_GET_IMPLEMENTATION,
+          `    throw new Error('implementation removed');`,
+        );
+        expect(changedAdminKey).not.toBe(adminKey);
+        await writeFile(adminKeyPath, changedAdminKey);
+
+        const duplicatePath = join(
+          fixtureSrc,
+          'confluence/resources/experimental/admin-key-copy.ts',
+        );
+        await mkdir(dirname(duplicatePath), { recursive: true });
+        await writeFile(
+          duplicatePath,
+          `import type { Transport } from '../../../core/types.js';
+import type { AdminKey } from '../../types/admin-key.js';
+
+export class AdminKeyResource {
+  constructor(
+    private readonly transport: Transport,
+    private readonly baseUrl: string,
+  ) {}
+
+  async get(): Promise<AdminKey> {
+    const response = await this.transport.request<AdminKey>({
+      method: 'GET',
+      path: \`\${this.baseUrl}/admin-key\`,
+    });
+    return response.data;
+  }
+}
+`,
+        );
+
+        await expect(
+          execFileAsync('python3', [ANALYZER, '--source-root', fixtureRoot], {
+            cwd: REPO_ROOT,
+          }),
+        ).rejects.toMatchObject({
+          code: 1,
+          stdout: expect.stringContaining('duplicate-resource-class'),
+        });
+      } finally {
+        await rm(fixtureRoot, { recursive: true, force: true });
+      }
+    },
+    ANALYZER_TIMEOUT_MS,
+  );
+
+  it(
+    'fails closed when a local parameter shadows an approved pagination helper',
+    async () => {
+      const fixtureRoot = await mkdtemp(join(tmpdir(), 'atlassian-api-gap-pagination-shadow-'));
+      const fixtureSrc = join(fixtureRoot, 'src');
+
+      try {
+        await cp(resolve(REPO_ROOT, 'src'), fixtureSrc, { recursive: true });
+        const labelsPath = join(fixtureSrc, 'confluence/resources/labels.ts');
+        const labels = await readFile(labelsPath, 'utf8');
+        const changedLabels = labels
+          .replace(
+            '/** Query shape accepted by the underlying transport. Scalars only. */',
+            `const roguePaginateCursor: typeof paginateCursor = async function* <T>(): AsyncGenerator<T> {
+  throw new Error('rogue paginator');
+};
+
+/** Query shape accepted by the underlying transport. Scalars only. */`,
+          )
+          .replace(
+            `  async *listAll(params?: Omit<ListAllLabelsParams, 'cursor'>): AsyncGenerator<Label> {`,
+            `  async *listAll(
+    params?: Omit<ListAllLabelsParams, 'cursor'>,
+    paginateCursor = roguePaginateCursor,
+  ): AsyncGenerator<Label> {`,
+          );
+        expect(changedLabels).not.toBe(labels);
+        await writeFile(labelsPath, changedLabels);
+
+        await expect(
+          execFileAsync('python3', [ANALYZER, '--source-root', fixtureRoot], {
+            cwd: REPO_ROOT,
+          }),
+        ).rejects.toMatchObject({
+          code: 1,
+          stdout: expect.stringContaining('!!! UNRESOLVED'),
+        });
+      } finally {
+        await rm(fixtureRoot, { recursive: true, force: true });
+      }
+    },
+    ANALYZER_TIMEOUT_MS,
+  );
+
+  it(
+    'fails closed when nested destructuring shadows an approved pagination helper',
+    async () => {
+      const fixtureRoot = await mkdtemp(
+        join(tmpdir(), 'atlassian-api-gap-pagination-destructure-'),
+      );
+      const fixtureSrc = join(fixtureRoot, 'src');
+
+      try {
+        await cp(resolve(REPO_ROOT, 'src'), fixtureSrc, { recursive: true });
+        const labelsPath = join(fixtureSrc, 'confluence/resources/labels.ts');
+        const labels = await readFile(labelsPath, 'utf8');
+        const changedLabels = labels
+          .replace(
+            '/** Query shape accepted by the underlying transport. Scalars only. */',
+            `const roguePaginateCursor: typeof paginateCursor = async function* <T>(): AsyncGenerator<T> {
+  throw new Error('rogue paginator');
+};
+
+/** Query shape accepted by the underlying transport. Scalars only. */`,
+          )
+          .replace(
+            `  async *listAll(params?: Omit<ListAllLabelsParams, 'cursor'>): AsyncGenerator<Label> {
+    const { path, query } = this.buildList(params);`,
+            `  async *listAll(params?: Omit<ListAllLabelsParams, 'cursor'>): AsyncGenerator<Label> {
+    const {
+      nested: { ignored },
+      paginateCursor,
+    } = {
+      nested: { ignored: true },
+      paginateCursor: roguePaginateCursor,
+    };
+    void ignored;
+    const { path, query } = this.buildList(params);`,
+          );
+        expect(changedLabels).not.toBe(labels);
+        await writeFile(labelsPath, changedLabels);
+
+        await expect(
+          execFileAsync('python3', [ANALYZER, '--source-root', fixtureRoot], {
+            cwd: REPO_ROOT,
+          }),
+        ).rejects.toMatchObject({
+          code: 1,
+          stdout: expect.stringContaining('!!! UNRESOLVED'),
+        });
+      } finally {
+        await rm(fixtureRoot, { recursive: true, force: true });
+      }
+    },
+    ANALYZER_TIMEOUT_MS,
+  );
+
+  it(
+    'approves only bare calls to an imported pagination helper',
+    async () => {
+      const fixtureRoot = await mkdtemp(join(tmpdir(), 'atlassian-api-gap-pagination-member-'));
+      const fixtureSrc = join(fixtureRoot, 'src');
+
+      try {
+        await cp(resolve(REPO_ROOT, 'src'), fixtureSrc, { recursive: true });
+        const labelsPath = join(fixtureSrc, 'confluence/resources/labels.ts');
+        const labels = await readFile(labelsPath, 'utf8');
+        const changedLabels = labels.replace(
+          '    yield* paginateCursor<Label>(this.transport, path, query);',
+          `    const pagination = { paginateCursor };
+    yield* pagination.paginateCursor<Label>(this.transport, path, query);`,
+        );
+        expect(changedLabels).not.toBe(labels);
+        await writeFile(labelsPath, changedLabels);
+
+        await expect(
+          execFileAsync('python3', [ANALYZER, '--source-root', fixtureRoot], {
+            cwd: REPO_ROOT,
+          }),
+        ).rejects.toMatchObject({
+          code: 1,
+          stdout: expect.stringContaining('!!! UNRESOLVED'),
+        });
+      } finally {
+        await rm(fixtureRoot, { recursive: true, force: true });
+      }
+    },
+    ANALYZER_TIMEOUT_MS,
+  );
+
+  it(
+    'accepts an unshadowed alias of an approved pagination import',
+    async () => {
+      const fixtureRoot = await mkdtemp(join(tmpdir(), 'atlassian-api-gap-pagination-alias-'));
+      const fixtureSrc = join(fixtureRoot, 'src');
+
+      try {
+        await cp(resolve(REPO_ROOT, 'src'), fixtureSrc, { recursive: true });
+        const labelsPath = join(fixtureSrc, 'confluence/resources/labels.ts');
+        const labels = await readFile(labelsPath, 'utf8');
+        const changedLabels = labels
+          .replace(
+            "import { paginateCursor } from '../../core/pagination.js';",
+            "import { paginateCursor as pageThroughCursor } from '../../core/pagination.js';",
+          )
+          .replaceAll('paginateCursor<', 'pageThroughCursor<');
+        expect(changedLabels).not.toBe(labels);
+        await writeFile(labelsPath, changedLabels);
+
+        const { stdout, stderr } = await execFileAsync(
+          'python3',
+          [ANALYZER, '--source-root', fixtureRoot],
+          { cwd: REPO_ROOT },
+        );
+        expect(stderr).toBe('');
+        expect(stdout).not.toContain('!!! UNRESOLVED');
+        expect(stdout).toContain('confluence-v2: 218 ops | impl 218 | MISSING 0 (live 0, dep 0)');
       } finally {
         await rm(fixtureRoot, { recursive: true, force: true });
       }
@@ -1960,6 +2443,227 @@ ${ADMIN_KEY_GET_IMPLEMENTATION}`,
         path: \`\${this.baseUrl}/admin-key\`,
       });
     }
+    throw new Error('implementation removed');`,
+      );
+    },
+    ANALYZER_TIMEOUT_MS,
+  );
+
+  it(
+    'does not count a request inside an uncalled local closure',
+    async () => {
+      await expectAdminKeyMutationToFail(
+        'atlassian-api-gap-uncalled-closure-',
+        `    const loadAdminKey = async (): Promise<AdminKey> => {
+      const response = await this.transport.request<AdminKey>({
+        method: 'GET',
+        path: \`\${this.baseUrl}/admin-key\`,
+      });
+      return response.data;
+    };
+    void loadAdminKey;
+    throw new Error('implementation removed');`,
+      );
+    },
+    ANALYZER_TIMEOUT_MS,
+  );
+
+  it(
+    'does not count a request inside an uncalled object-literal method',
+    async () => {
+      await expectAdminKeyMutationToFail(
+        'atlassian-api-gap-uncalled-object-method-',
+        `    const holder = {
+      async load(this: AdminKeyResource): Promise<AdminKey> {
+        const response = await this.transport.request<AdminKey>({
+          method: 'GET',
+          path: \`\${this.baseUrl}/admin-key\`,
+        });
+        return response.data;
+      },
+    };
+    void holder;
+    throw new Error('implementation removed');`,
+      );
+    },
+    ANALYZER_TIMEOUT_MS,
+  );
+
+  it.each([
+    [
+      'a same-line object method',
+      `    const holder = { async load(this: AdminKeyResource): Promise<AdminKey> {
+      const response = await this.transport.request<AdminKey>({
+        method: 'GET',
+        path: \`\${this.baseUrl}/admin-key\`,
+      });
+      return response.data;
+    } };
+    void holder;
+    throw new Error('implementation removed');`,
+    ],
+    [
+      'a computed object method',
+      `    const holder = { async ['load'](this: AdminKeyResource): Promise<AdminKey> {
+      const response = await this.transport.request<AdminKey>({
+        method: 'GET',
+        path: \`\${this.baseUrl}/admin-key\`,
+      });
+      return response.data;
+    } };
+    void holder;
+    throw new Error('implementation removed');`,
+    ],
+    [
+      'a numeric object method',
+      `    const holder = { async 0(this: AdminKeyResource): Promise<AdminKey> {
+      const response = await this.transport.request<AdminKey>({
+        method: 'GET',
+        path: \`\${this.baseUrl}/admin-key\`,
+      });
+      return response.data;
+    } };
+    void holder;
+    throw new Error('implementation removed');`,
+    ],
+    [
+      'a quoted object method',
+      `    const holder = { async 'load'(this: AdminKeyResource): Promise<AdminKey> {
+      const response = await this.transport.request<AdminKey>({
+        method: 'GET',
+        path: \`\${this.baseUrl}/admin-key\`,
+      });
+      return response.data;
+    } };
+    void holder;
+    throw new Error('implementation removed');`,
+    ],
+    [
+      'an anonymous local class',
+      `    const Holder = class {
+      async load(this: AdminKeyResource): Promise<AdminKey> {
+        const response = await this.transport.request<AdminKey>({
+          method: 'GET',
+          path: \`\${this.baseUrl}/admin-key\`,
+        });
+        return response.data;
+      }
+    };
+    void Holder;
+    throw new Error('implementation removed');`,
+    ],
+  ])(
+    'does not count a request inside %s',
+    async (_description, replacement) => {
+      await expectAdminKeyMutationToFail('atlassian-api-gap-nested-callable-', replacement);
+    },
+    ANALYZER_TIMEOUT_MS,
+  );
+
+  it(
+    'does not count a request moved into an uncalled private resource method',
+    async () => {
+      await expectAdminKeyMutationToFail(
+        'atlassian-api-gap-private-method-',
+        `    throw new Error('implementation removed');
+  }
+
+  private async hiddenGet(): Promise<AdminKey> {
+    const response = await this.transport.request<AdminKey>({
+      method: 'GET',
+      path: \`\${this.baseUrl}/admin-key\`,
+    });
+    return response.data;`,
+      );
+    },
+    ANALYZER_TIMEOUT_MS,
+  );
+
+  it(
+    'does not count a request moved into an uncalled static resource method',
+    async () => {
+      await expectAdminKeyMutationToFail(
+        'atlassian-api-gap-static-method-',
+        `    throw new Error('implementation removed');
+  }
+
+  static async hiddenGet(this: AdminKeyResource): Promise<AdminKey> {
+    const response = await this.transport.request<AdminKey>({
+      method: 'GET',
+      path: \`\${this.baseUrl}/admin-key\`,
+    });
+    return response.data;`,
+      );
+    },
+    ANALYZER_TIMEOUT_MS,
+  );
+
+  it(
+    'does not expand a delegated route from an uncalled private method',
+    async () => {
+      const fixtureRoot = await mkdtemp(join(tmpdir(), 'atlassian-api-gap-private-delegated-'));
+      const fixtureSrc = join(fixtureRoot, 'src');
+
+      try {
+        await cp(resolve(REPO_ROOT, 'src'), fixtureSrc, { recursive: true });
+        const boardsPath = join(fixtureSrc, 'jira/resources/boards.ts');
+        const boards = await readFile(boardsPath, 'utf8');
+        const liveMethod = `  async getBacklogEnhanced(
+    boardId: number,
+    params?: ListSoftwareIssuesParams,
+  ): Promise<SoftwareIssueResults> {
+    if (!Number.isInteger(boardId) || boardId <= 0) {
+      throw new ValidationError('boardId must be a positive integer');
+    }
+    return this.requestSoftwareIssues(\`\${this.softwareBaseUrl}/board/\${boardId}/backlog\`, params);
+  }`;
+        const changedBoards = boards.replace(
+          liveMethod,
+          `  async getBacklogEnhanced(
+    _boardId: number,
+    _params?: ListSoftwareIssuesParams,
+  ): Promise<SoftwareIssueResults> {
+    throw new Error('implementation removed');
+  }
+
+  private async hiddenBacklog(
+    boardId: number,
+    params?: ListSoftwareIssuesParams,
+  ): Promise<SoftwareIssueResults> {
+    return this.requestSoftwareIssues(\`\${this.softwareBaseUrl}/board/\${boardId}/backlog\`, params);
+  }`,
+        );
+        expect(changedBoards).not.toBe(boards);
+        await writeFile(boardsPath, changedBoards);
+
+        await expect(
+          execFileAsync('python3', [ANALYZER, '--source-root', fixtureRoot], {
+            cwd: REPO_ROOT,
+          }),
+        ).rejects.toMatchObject({
+          code: 1,
+          stdout: expect.stringContaining('nonpublic-helper-call'),
+        });
+      } finally {
+        await rm(fixtureRoot, { recursive: true, force: true });
+      }
+    },
+    ANALYZER_TIMEOUT_MS,
+  );
+
+  it(
+    'does not count a request inside an uncalled concise arrow branch',
+    async () => {
+      await expectAdminKeyMutationToFail(
+        'atlassian-api-gap-uncalled-concise-arrow-',
+        `    const loadAdminKey = () =>
+      this.baseUrl.length > 0
+        ? this.transport.request<AdminKey>({
+            method: 'GET',
+            path: \`\${this.baseUrl}/admin-key\`,
+          })
+        : null;
+    void loadAdminKey;
     throw new Error('implementation removed');`,
       );
     },
