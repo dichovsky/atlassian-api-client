@@ -2469,6 +2469,66 @@ ${ADMIN_KEY_GET_IMPLEMENTATION}`,
   );
 
   it(
+    'does not count a request inside an uncalled closure default parameter',
+    async () => {
+      await expectAdminKeyMutationToFail(
+        'atlassian-api-gap-uncalled-closure-default-',
+        `    const loadAdminKey = async (
+      _probe = this.transport.request<AdminKey>({
+        method: 'GET',
+        path: \`\${this.baseUrl}/admin-key\`,
+      }),
+    ): Promise<AdminKey> => {
+      throw new Error('implementation removed');
+    };
+    void loadAdminKey;
+    throw new Error('implementation removed');`,
+      );
+    },
+    ANALYZER_TIMEOUT_MS,
+  );
+
+  it(
+    'continues to count a request inside a public method default parameter',
+    async () => {
+      const fixtureRoot = await mkdtemp(join(tmpdir(), 'atlassian-api-gap-public-default-'));
+      const fixtureSrc = join(fixtureRoot, 'src');
+
+      try {
+        await cp(resolve(REPO_ROOT, 'src'), fixtureSrc, { recursive: true });
+        const adminKeyPath = join(fixtureSrc, 'confluence/resources/admin-key.ts');
+        const adminKey = await readFile(adminKeyPath, 'utf8');
+        const changedAdminKey = adminKey.replace(
+          `  async get(): Promise<AdminKey> {
+${ADMIN_KEY_GET_IMPLEMENTATION}
+  }`,
+          `  async get(
+    response = this.transport.request<AdminKey>({
+      method: 'GET',
+      path: \`\${this.baseUrl}/admin-key\`,
+    }),
+  ): Promise<AdminKey> {
+    return (await response).data;
+  }`,
+        );
+        expect(changedAdminKey).not.toBe(adminKey);
+        await writeFile(adminKeyPath, changedAdminKey);
+
+        const { stdout, stderr } = await execFileAsync(
+          'python3',
+          [ANALYZER, '--source-root', fixtureRoot],
+          { cwd: REPO_ROOT },
+        );
+        expect(stderr).toBe('');
+        expect(stdout).toContain('confluence-v2: 218 ops | impl 218 | MISSING 0 (live 0, dep 0)');
+      } finally {
+        await rm(fixtureRoot, { recursive: true, force: true });
+      }
+    },
+    ANALYZER_TIMEOUT_MS,
+  );
+
+  it(
     'does not count a request inside an uncalled object-literal method',
     async () => {
       await expectAdminKeyMutationToFail(
@@ -2599,6 +2659,83 @@ ${ADMIN_KEY_GET_IMPLEMENTATION}`,
   );
 
   it(
+    'does not count requests in protected, static, or constructor default parameters',
+    async () => {
+      const fixtureRoot = await mkdtemp(
+        join(tmpdir(), 'atlassian-api-gap-nonpublic-constructor-defaults-'),
+      );
+      const fixtureSrc = join(fixtureRoot, 'src');
+
+      try {
+        await cp(resolve(REPO_ROOT, 'src'), fixtureSrc, { recursive: true });
+        const adminKeyPath = join(fixtureSrc, 'confluence/resources/admin-key.ts');
+        const adminKey = await readFile(adminKeyPath, 'utf8');
+        const changedAdminKey = adminKey
+          .replace(
+            `    private readonly baseUrl: string,
+  ) {}`,
+            `    private readonly baseUrl: string,
+    _probe = this.transport.request<AdminKey>({
+      method: 'GET',
+      path: \`\${this.baseUrl}/admin-key\`,
+    }),
+  ) {
+    void _probe;
+  }`,
+          )
+          .replace(
+            ADMIN_KEY_GET_IMPLEMENTATION,
+            `    throw new Error('implementation removed');
+  }
+
+  protected hiddenProtected(
+    _probe = this.transport.request<AdminKey>({
+      method: 'GET',
+      path: \`\${this.baseUrl}/admin-key\`,
+    }),
+  ): void {
+    void _probe;
+  }
+
+  static hiddenStatic(
+    this: AdminKeyResource,
+    _probe = this.transport.request<AdminKey>({
+      method: 'GET',
+      path: \`\${this.baseUrl}/admin-key\`,
+    }),
+  ): void {
+    void _probe;`,
+          );
+        expect(changedAdminKey).not.toBe(adminKey);
+        await writeFile(adminKeyPath, changedAdminKey);
+
+        await expect(
+          execFileAsync('python3', [ANALYZER, '--source-root', fixtureRoot], {
+            cwd: REPO_ROOT,
+          }),
+        ).rejects.toMatchObject({
+          code: 1,
+          stdout: expect.stringMatching(
+            /nonpublic-request-call[\s\S]*unsupported-request-call-scope|unsupported-request-call-scope[\s\S]*nonpublic-request-call/,
+          ),
+        });
+        await expect(
+          execFileAsync('python3', [ANALYZER, '--source-root', fixtureRoot], {
+            cwd: REPO_ROOT,
+          }),
+        ).rejects.toMatchObject({
+          stdout: expect.stringContaining(
+            'confluence-v2: 218 ops | impl 217 | MISSING 1 (live 1, dep 0)',
+          ),
+        });
+      } finally {
+        await rm(fixtureRoot, { recursive: true, force: true });
+      }
+    },
+    ANALYZER_TIMEOUT_MS,
+  );
+
+  it(
     'does not expand a delegated route from an uncalled private method',
     async () => {
       const fixtureRoot = await mkdtemp(join(tmpdir(), 'atlassian-api-gap-private-delegated-'));
@@ -2631,6 +2768,61 @@ ${ADMIN_KEY_GET_IMPLEMENTATION}`,
     params?: ListSoftwareIssuesParams,
   ): Promise<SoftwareIssueResults> {
     return this.requestSoftwareIssues(\`\${this.softwareBaseUrl}/board/\${boardId}/backlog\`, params);
+  }`,
+        );
+        expect(changedBoards).not.toBe(boards);
+        await writeFile(boardsPath, changedBoards);
+
+        await expect(
+          execFileAsync('python3', [ANALYZER, '--source-root', fixtureRoot], {
+            cwd: REPO_ROOT,
+          }),
+        ).rejects.toMatchObject({
+          code: 1,
+          stdout: expect.stringContaining('nonpublic-helper-call'),
+        });
+      } finally {
+        await rm(fixtureRoot, { recursive: true, force: true });
+      }
+    },
+    ANALYZER_TIMEOUT_MS,
+  );
+
+  it(
+    'does not expand a delegated route from a private method default parameter',
+    async () => {
+      const fixtureRoot = await mkdtemp(
+        join(tmpdir(), 'atlassian-api-gap-private-default-delegated-'),
+      );
+      const fixtureSrc = join(fixtureRoot, 'src');
+
+      try {
+        await cp(resolve(REPO_ROOT, 'src'), fixtureSrc, { recursive: true });
+        const boardsPath = join(fixtureSrc, 'jira/resources/boards.ts');
+        const boards = await readFile(boardsPath, 'utf8');
+        const liveMethod = `  async getBacklogEnhanced(
+    boardId: number,
+    params?: ListSoftwareIssuesParams,
+  ): Promise<SoftwareIssueResults> {
+    if (!Number.isInteger(boardId) || boardId <= 0) {
+      throw new ValidationError('boardId must be a positive integer');
+    }
+    return this.requestSoftwareIssues(\`\${this.softwareBaseUrl}/board/\${boardId}/backlog\`, params);
+  }`;
+        const changedBoards = boards.replace(
+          liveMethod,
+          `  async getBacklogEnhanced(
+    _boardId: number,
+    _params?: ListSoftwareIssuesParams,
+  ): Promise<SoftwareIssueResults> {
+    throw new Error('implementation removed');
+  }
+
+  private hiddenBacklog(
+    boardId: number,
+    _probe = this.requestSoftwareIssues(\`\${this.softwareBaseUrl}/board/\${boardId}/backlog\`),
+  ): void {
+    void boardId;
   }`,
         );
         expect(changedBoards).not.toBe(boards);

@@ -2199,7 +2199,7 @@ def enclosing_method_scope_starts(code_src, positions):
 
 @functools.lru_cache(maxsize=None)
 def nested_callable_spans(source, code, primary_class_body_start):
-    """Precompute nested callable body intervals for one resource module."""
+    """Precompute nested callable parameter/body intervals for one resource module."""
     spans = []
     for class_match in re.finditer(r"\bclass\b", code):
         body_start = code.find("{", class_match.end())
@@ -2224,12 +2224,40 @@ def nested_callable_spans(source, code, primary_class_body_start):
             spans.append((body_start, body_end))
 
     method_code = quoted_method_code_view(source, code)
-    for _, _, body_start, body_end, parent_brace, _, _ in method_declaration_spans(method_code):
+    direct_member_params = set()
+    for (
+        params_start,
+        params_end,
+        body_start,
+        body_end,
+        parent_brace,
+        _,
+        method_name,
+    ) in method_declaration_spans(method_code):
         # The selected resource's direct members are the supported callable
         # layer. Object-literal methods (or methods nested in local constructs)
         # have another open scope between their body and the resource class.
+        parameter_scope = brace_scope_at(code, params_start)
+        if (
+            parent_brace == primary_class_body_start
+            and method_name != "constructor"
+            and parameter_scope
+            and parameter_scope[-1] == primary_class_body_start
+        ):
+            direct_member_params.add((params_start, params_end))
+        else:
+            spans.append((params_start, params_end))
         if parent_brace != primary_class_body_start:
             spans.append((body_start, body_end))
+
+    # Default expressions execute in their callable's scope, before its body.
+    # Keep direct resource-member parameters at the supported callable layer;
+    # all other callable parameters are nested/uncalled just like their bodies.
+    spans.extend(
+        span
+        for span in callable_parameter_spans(code)
+        if span not in direct_member_params
+    )
 
     for arrow in re.finditer(r"=>", code):
         body_start = arrow.end()
@@ -2365,7 +2393,10 @@ def extract(api):
                 (
                     declaration
                     for declaration in direct_class_members
-                    if declaration[2] < position < declaration[3]
+                    if (
+                        declaration[0] <= position < declaration[1]
+                        or declaration[2] < position < declaration[3]
+                    )
                 ),
                 None,
             )

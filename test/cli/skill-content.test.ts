@@ -152,6 +152,15 @@ describe('Reference content sanity checks', () => {
     expect(JIRA_REF).toContain('site version `0.10`');
   });
 
+  it('documents the group-user-picker field scope dependency in prose and examples', () => {
+    expect(JIRA_REF).toContain(
+      '**Required for both `--project-id` and `--issue-type-id` to have any effect**',
+    );
+    expect(JIRA_REF).toContain(
+      'atlas jira group-user-picker pick --query agent --include-ai-agents --field-id customfield_10050 --issue-type-id 10000,10001',
+    );
+  });
+
   it('forbids bypassing a failing atlas command with a raw HTTP/curl request', () => {
     expect(AUTH_SAFETY_REF).toContain('Never construct a raw HTTP/curl request to bypass');
   });

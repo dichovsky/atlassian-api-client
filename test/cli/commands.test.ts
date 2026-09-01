@@ -16553,13 +16553,44 @@ describe('executeJiraCommand', () => {
       expect(jiraGroupUserPickerMock.pick).not.toHaveBeenCalled();
     });
 
+    it('group-user-picker pick rejects --project-id without --field-id', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('group-user-picker', 'pick', [], { query: 'alice', 'project-id': '10001' }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow(
+        '--project-id requires --field-id for group-user-picker pick; add --field-id <custom-field-id> or remove --project-id',
+      );
+      expect(jiraGroupUserPickerMock.pick).not.toHaveBeenCalled();
+    });
+
+    it('group-user-picker pick rejects --issue-type-id without --field-id', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('group-user-picker', 'pick', [], {
+            query: 'alice',
+            'issue-type-id': '10000',
+          }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow(
+        '--issue-type-id requires --field-id for group-user-picker pick; add --field-id <custom-field-id> or remove --issue-type-id',
+      );
+      expect(jiraGroupUserPickerMock.pick).not.toHaveBeenCalled();
+    });
+
     it('group-user-picker pick forwards project-id as split array', async () => {
       // Arrange
       jiraGroupUserPickerMock.pick.mockResolvedValue({});
 
       // Act
       await executeJiraCommand(
-        cmd('group-user-picker', 'pick', [], { query: 'a', 'project-id': '10001,10002' }),
+        cmd('group-user-picker', 'pick', [], {
+          query: 'a',
+          'field-id': 'customfield_10050',
+          'project-id': '10001,10002',
+        }),
         GLOBALS,
       );
 
@@ -16619,6 +16650,7 @@ describe('executeJiraCommand', () => {
       await executeJiraCommand(
         cmd('group-user-picker', 'pick', [], {
           query: 'agent',
+          'field-id': 'customfield_10050',
           'issue-type-id': '10000,10001',
           'avatar-size': 'medium',
           'case-insensitive': true,
@@ -16628,6 +16660,7 @@ describe('executeJiraCommand', () => {
       );
       expect(jiraGroupUserPickerMock.pick).toHaveBeenCalledWith(
         expect.objectContaining({
+          fieldId: 'customfield_10050',
           issueTypeId: ['10000', '10001'],
           avatarSize: 'medium',
           caseInsensitive: true,

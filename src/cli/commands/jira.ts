@@ -2777,21 +2777,28 @@ async function executeGroupUserPicker(client: JiraClient, cmd: ParsedCommand): P
           '--exclude-account-ids is not supported by group-user-picker pick; use users picker when account exclusion is required',
         );
       }
-      const projectIdRaw = asString(opts['project-id']);
-      const projectId = projectIdRaw
-        ? projectIdRaw
-            .split(',')
-            .map((s) => s.trim())
-            .filter((s) => s.length > 0)
-        : undefined;
+      const query = requireOpt(opts['query'], '--query');
+      const fieldId = asString(opts['field-id']);
+      const projectId = parseCsv(opts['project-id']);
+      const issueTypeId = parseCsv(opts['issue-type-id']);
+      if (projectId !== undefined && fieldId === undefined) {
+        throw new Error(
+          '--project-id requires --field-id for group-user-picker pick; add --field-id <custom-field-id> or remove --project-id',
+        );
+      }
+      if (issueTypeId !== undefined && fieldId === undefined) {
+        throw new Error(
+          '--issue-type-id requires --field-id for group-user-picker pick; add --field-id <custom-field-id> or remove --issue-type-id',
+        );
+      }
       return client.groupUserPicker.pick({
         // `query` is required by the spec — without it the API returns 400.
-        query: requireOpt(opts['query'], '--query'),
+        query,
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
         showAvatar: asBoolFlag(opts['show-avatar']),
-        fieldId: asString(opts['field-id']),
+        fieldId,
         projectId,
-        issueTypeId: parseCsv(opts['issue-type-id']),
+        issueTypeId,
         avatarSize: asEnum(opts['avatar-size'], AVATAR_SIZES, 'avatar-size'),
         caseInsensitive: asBoolFlag(opts['case-insensitive']),
         includeAiAgents: asBoolFlag(opts['include-ai-agents']),

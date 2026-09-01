@@ -165,9 +165,9 @@ atlas jira groups remove-user --group-id grp-1 --account-id 5b10ac8d82e05b22cc7d
 - `--query` — string to match against both group names and user display names.
 - `--max-results` — maximum results per section (default 50).
 - `--show-avatar` — when `true`, avatar URLs are included in user results.
-- `--field-id` — the custom field ID this picker is for (e.g. `customfield_10050`). **Required for `--project-id` to have any effect** — without `--field-id` the server ignores `--project-id` entirely (spec constraint).
+- `--field-id` — the custom field ID this picker is for (e.g. `customfield_10050`). **Required for both `--project-id` and `--issue-type-id` to have any effect**; the CLI rejects either scoped flag without it.
 - `--project-id` — **comma-separated** project IDs to scope user results to project members (sent as repeated params on the wire: `?projectId=a&projectId=b`). **Only effective when `--field-id` is also provided.**
-- `--issue-type-id` — comma-separated issue type IDs, also sent as repeated params.
+- `--issue-type-id` — comma-separated issue type IDs, also sent as repeated params. **Only effective when `--field-id` is also provided.**
 - `--avatar-size` — one of `xsmall`, `small`, `medium`, `large`, `xlarge`, `xxlarge`, or `xxxlarge`, optionally suffixed with `@2x` or `@3x`.
 - `--case-insensitive` — use case-insensitive group matching.
 - `--include-ai-agents` — include AI agents in user results.
@@ -187,5 +187,5 @@ atlas jira group-user-picker pick --query dev --show-avatar --max-results 25
 atlas jira group-user-picker pick --query eng --field-id customfield_10050 --project-id 10001
 
 # Include AI agents and scope to issue types
-atlas jira group-user-picker pick --query agent --include-ai-agents --issue-type-id 10000,10001
+atlas jira group-user-picker pick --query agent --include-ai-agents --field-id customfield_10050 --issue-type-id 10000,10001
 ```
