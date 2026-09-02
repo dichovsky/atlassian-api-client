@@ -215,7 +215,8 @@ describe('HttpTransport', () => {
       expect(logger.warn).toHaveBeenCalledOnce();
       const [message] = logger.warn.mock.calls[0] as [string];
       expect(message).toContain('deprecated');
-      expect(message).toContain('0.8.0');
+      expect(message).toContain('config.baseUrl');
+      expect(message).not.toContain('0.8.0');
     });
 
     it('PR review of round 3: deprecated 2-arg overload rejects a baseUrl override outside allowedHosts', () => {

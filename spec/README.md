@@ -12,7 +12,7 @@ Pinned snapshots of upstream Atlassian REST API specifications. Used by implemen
 - **Upstream version:** `1001.0.0-SNAPSHOT-52c82d8ebf8c89ab7a9eb0805cd63b984e7a1d4e`
 - **Paths:** 421 (617 operations, 29 deprecated)
 - **SHA-256:** `9029bb1c5ebd513494660bf4c7520281701ed0c984f4a3a1bd0505db29ae7b7d`
-- **Contract fingerprint:** `b30058f5206f`
+- **Contract fingerprint:** `ecba06ea28d7`
 
 ### `jira-software.json`
 
@@ -22,7 +22,7 @@ Pinned snapshots of upstream Atlassian REST API specifications. Used by implemen
 - **Upstream version:** `1001.0.0`
 - **Paths:** 78 (105 operations, 8 deprecated)
 - **SHA-256:** `4e108d54b99064475c6ba0f986cce46dcace81336e034b58a5400b93174b927a`
-- **Contract fingerprint:** `ceb3939baa73`
+- **Contract fingerprint:** `1b3a0fd3f68e`
 
 ### `confluence-v2.json`
 
@@ -32,7 +32,7 @@ Pinned snapshots of upstream Atlassian REST API specifications. Used by implemen
 - **Upstream version:** `2.0.0`
 - **Paths:** 151 (218 operations, 1 deprecated)
 - **SHA-256:** `451377c5a598ee8155acc11b611404f309bed4a4292ea87f88ed3bfed38fa0a8`
-- **Contract fingerprint:** `8e17d20017a8`
+- **Contract fingerprint:** `dbd7f3110251`
 
 ## How to use
 

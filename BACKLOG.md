@@ -2,54 +2,13 @@
 
 > **Agent Rules:** Keep descriptions brief. When a task is completed, REMOVE it from here and APPEND it to BACKLOG-ARCHIVE.md.
 
-## ⚙️ Core
-
-> Deep-audit 2026-06-10 (`docs/DEEP-AUDIT-2026-06-10.md`) core/CLI findings below (B1037–). Adversarially verified; the auth-middleware (#246) and pagination (#247) clusters already shipped and are excluded.
-
-- [ ] 🟢 ♻️ Core: B1066 Remaining native `RangeError` throws outside the `AtlassianError` taxonomy
-  - problem: B1064 (#288) converted `validatePageSize` `RangeError`→`ValidationError`, but several sibling validation guards still throw native `RangeError`: `normalizeMaxPages` (`maxPages`, `src/core/pagination.ts`), confluence `users` emails guard, `users-bulk` accountIds guard, `footer-comments` versionNumber guard. For taxonomy consistency these should also be `ValidationError` (is `AtlassianError`). Surfaced by the B1064 review (which correctly left them out of B1064's scope). **Breaking** (callers catching `RangeError`) → 3.0.0 CHANGELOG (B1062).
-  - files: `src/core/pagination.ts`, `src/confluence/resources/{users,users-bulk,footer-comments}.ts` + their tests
-  - deps: none
-
-## 🖥️ CLI
-
-> SDK-implemented methods not exposed via `atlas` CLI/skill (audit 2026-06-05, code-verified 2026-06-05). SDK already covers these — tasks wire dispatch + router + help + skill docs + tests only; no `src/*/resources/*.ts` changes. `*All` pagination generators are excluded (their base `list`/`search` is already reachable).
-
-## 🧩 Jira
-
-> Deep-audit 2026-06-10 conformance findings (`docs/DEEP-AUDIT-2026-06-10.md` §4). CRITICAL/HIGH that change bytes on the wire below; per-module response-type/type-drift (84 HIGH + 358 MED + 72 LOW) rolled into B1056. Excludes the 30 findings shipped via #249/#250.
-
-- [ ] 🟢 ♻️ Jira: B1056 Response-type / type-drift rollup (85 modules — MED/LOW + non-wire HIGH)
-  - problem: declared request/response interfaces drift from spec schemas (fields that read `undefined` at runtime, wrong optionality, enum subsets, fictional fields) — annoying but not request-corrupting. 79 HIGH + 358 MED + 72 LOW across 85 Jira modules. Full per-module inventory in report §4c + `conformance-final.json`. Heaviest: app, boards, bulk, dashboards, expression, issues, plans, post-incident-reviews, workflows. Fix opportunistically per module or fold into B046 endpoint-registry typing.
-  - files: `src/jira/resources/*.ts`, `src/jira/types*.ts` + tests (per module)
-  - deps: B046 (optional)
-
-## 🧩 Confluence
-
-- [ ] 🟢 ♻️ Confluence: B1059 Response-type / type-drift rollup (21 modules — MED/LOW + 5 HIGH)
-  - problem: declared interfaces drift from spec schemas (5 HIGH + 109 MED + 14 LOW across 21 Confluence modules). Notable: `app.upsertProperty` typed `Promise<AppProperty>` but the spec PUT is bodyless → `undefined` at runtime (HIGH); `attachments.status` CSV-not-repeated (HIGH, see class B1049); `footer-comments`/`inline-comments`/`tasks` type drift. Full inventory in report §4c.
-  - files: `src/confluence/resources/*.ts`, `src/confluence/types/*` + tests (per module)
-  - deps: B046 (optional)
-
-- [ ] 🟢 ♻️ Confluence: B1021 Add `sort` to `ListLabelsParams` (SDK type debt)
-  - problem: `ListLabelsParams` (`src/confluence/types/labels.ts`) omits `sort?: LabelSortOrder`, though the live v2 `GET /spaces/{id}/labels` and `GET /blogposts/{id}/labels` accept it. CLI `labels list-for-space`/`list-for-blog-post` (PR #195) forward `--sort` via object spread — works at runtime, but the param type doesn't declare it. Surfaced in PR #195 review.
-  - solution: add `sort?: LabelSortOrder` to `ListLabelsParams`; confirm `listForSpace`/`listForBlogPost` thread it through to the query (and `list`/`listForPage` if they share the type).
-  - files: `src/confluence/types/labels.ts`, `src/confluence/resources/labels.ts`, `test/confluence/labels.test.ts`
-  - deps: none
-
 ## 🧪 QA
 
-- [ ] 🟢 ♻️ QA: B1061b Public-export trims (deferred 3.0.0 remainder of B1061)
-  - problem: B1061 (#285) removed the dead barrel + bench refs; the 7 unused-public-export trims remain (root-vs-core barrel asymmetry: `HttpMethod`, `ResolvedConfig`, `AuthProvider`, `appendRepeatedParams` core re-export; the 26 Confluence resource classes exported from `confluence/index.ts` but absent from root). Removal is semver-major → 3.0.0 only.
+- [ ] 🟢 ♻️ QA: B1061b Public-export trims (deferred major-only cleanup)
+  - problem: B1061 (#285) removed the dead barrel + bench refs; unused public-export trims remain (root-vs-core barrel asymmetry: `HttpMethod`, `ResolvedConfig`, `AuthProvider`, `appendRepeatedParams` core re-export; the Confluence resource classes exported from `confluence/index.ts` but absent from root). Removal is semver-major and remains deferred.
   - files: `src/core/index.ts`, `src/confluence/index.ts`, `src/index.ts`
-  - deps: 3.0.0 (B1062)
-
-## 🤖 Infra
-
-- [ ] 🟡 📝 Infra: B1062 CHANGELOG breaking changes for next major (3.0.0)
-  - problem: #246/#249/#250 changed typed surfaces (auth `RequestOptions.authorizationOverride` boundary, forge/redact/statuses/role/priorityscheme return + body shapes) — each fixes a 100%-broken method (not a real runtime break) but the typed surface changed. Reviewers flagged 3.0.0. Record the breaking set in CHANGELOG when cutting the next major. Scope to last-published, per [[project_unreleased_breaking_changes]].
-  - files: `CHANGELOG.md`
-  - deps: none
+  - release decision: deliberately deferred from 3.0.0 and 4.0.0 to keep both release cuts focused; revisit only in a future major.
+  - deps: future major release
 
 ## 🏛️ Architecture
 
@@ -103,7 +62,8 @@
   - solution: remove duck-typing once v1 backwards-compat is dropped; collapse to a single `PaginateOptions`-only signature.
   - benefits: `paginateSearch` reads top-to-bottom without the type-narrow detour; one less footgun for new callers.
   - files: `src/core/pagination.ts`, `test/core/pagination.test.ts`, `CHANGELOG.md`
-  - deps: blocked on next major-version bump
+  - release decision: deliberately deferred from 4.0.0 to keep the contract-refresh release focused.
+  - deps: future major release
 
 <!-- api-mapping:generated:start -->
 

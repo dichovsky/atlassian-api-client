@@ -578,9 +578,9 @@ npm run api-coverage
 Example output:
 
 ```
-✓ jiraPlatform: 971 types; contract b30058f5206f (https://developer.atlassian.com/cloud/.../swagger-v3.v3.json)
-✓ jiraSoftware: 66 types; contract 6b07d612f117 (https://developer.atlassian.com/cloud/.../swagger.v3.json)
-✓ confluence: 142 types; contract 8e17d20017a8 (https://developer.atlassian.com/cloud/.../openapi-v2.v3.json)
+✓ jiraPlatform: 971 types; contract ecba06ea28d7 (https://developer.atlassian.com/cloud/.../swagger-v3.v3.json)
+✓ jiraSoftware: 66 types; contract 1b3a0fd3f68e (https://developer.atlassian.com/cloud/.../swagger.v3.json)
+✓ confluence: 142 types; contract dbd7f3110251 (https://developer.atlassian.com/cloud/.../openapi-v2.v3.json)
 ```
 
 `api-coverage` compares executable SDK routes with the pinned snapshots and fails on unresolved
@@ -618,28 +618,20 @@ atlas <api> <resource> <action> [args] [options]
 
 ### Auth
 
-Via flags or environment variables:
+Use environment variables so credentials do not leak through shell history or process listings:
 
 ```bash
 export ATLASSIAN_BASE_URL=https://yourcompany.atlassian.net
 export ATLASSIAN_EMAIL=user@example.com
 export ATLASSIAN_API_TOKEN=your-token
 
-# Or pass basic-auth credentials inline
-atlas jira issues get PROJ-123 \
-  --base-url https://yourcompany.atlassian.net \
-  --email user@example.com \
-  --token your-token
-
 # Bearer auth: OAuth 2.0 access token or PAT
 export ATLASSIAN_AUTH_TYPE=bearer
 export ATLASSIAN_API_TOKEN=your-bearer-token
-
-# Equivalent inline bearer-auth form
-atlas jira issues get PROJ-123 --auth-type bearer --token your-bearer-token
 ```
 
 `ATLASSIAN_AUTH_TYPE` defaults to `basic`. Bearer mode does not require `ATLASSIAN_EMAIL`.
+Credential flags remain available for backward compatibility, but do not use them in interactive shells, scripts, CI logs, or chat transcripts.
 
 For Jira Software on-premises integrations, add the Jira-only cloud ID option.
 It routes Development Information, Builds, Deployments, and Feature Flag

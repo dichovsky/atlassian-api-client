@@ -3,7 +3,7 @@ import { encodePathSegment } from '../../core/path.js';
 import { appendRepeatedParams } from '../../core/query.js';
 import type { IssueAttachment } from '../types.js';
 
-/** @deprecated Unused; kept for backward compatibility until next major. */
+/** @deprecated Unused legacy response wrapper retained for backward compatibility. */
 export interface IssueAttachmentsResponse {
   readonly attachments: IssueAttachment[];
 }
@@ -77,9 +77,9 @@ export interface DownloadAttachmentThumbnailParams {
   /** See {@link DownloadAttachmentContentParams.redirect}. */
   readonly redirect?: boolean;
   /**
-   * When `true`, the server returns a generic placeholder thumbnail if the
-   * attachment has no renderable preview (e.g. an unknown MIME type). When
-   * `false` or omitted, the server returns `404` in that case.
+   * When omitted or `true`, the server returns a generic placeholder thumbnail
+   * if the attachment has no renderable preview (e.g. an unknown MIME type).
+   * Pass `false` to receive `404` instead. The server default is `true`.
    */
   readonly fallbackToDefault?: boolean;
   /** Render-width hint (px). Server may clamp to its own maximum. */
@@ -216,8 +216,9 @@ export class IssueAttachmentsResource {
    * @remarks
    * The response is buffered into memory.
    * {@link DownloadAttachmentThumbnailParams.fallbackToDefault} controls
-   * whether the server returns a generic placeholder (`true`) or `404`
-   * (`false`/omitted) when the attachment has no renderable preview.
+   * whether the server returns a generic placeholder (`true`/omitted, the
+   * server default) or `404` (`false`) when the attachment has no renderable
+   * preview.
    * @see https://developer.atlassian.com/cloud/jira/platform/rest/v3/api-group-issue-attachments/#api-rest-api-3-attachment-thumbnail-id-get
    */
   async downloadThumbnail(

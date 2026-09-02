@@ -84,7 +84,7 @@ export class HttpTransport implements Transport {
    */
   constructor(config: ResolvedConfig);
   /**
-   * @deprecated Since 0.6.0 — scheduled for removal in 0.8.0. Pass the
+   * @deprecated Since 0.6.0. Pass the
    *   API-specific URL in `config.baseUrl` instead and omit the second
    *   argument. When provided, `baseUrl` takes precedence over `config.baseUrl`
    *   for URL construction (preserves v0.x behavior).
@@ -116,7 +116,7 @@ export class HttpTransport implements Transport {
     );
     if (baseUrl !== undefined) {
       this.config.logger?.warn(
-        'HttpTransport(config, baseUrl) is deprecated and will be removed in 0.8.0; ' +
+        'HttpTransport(config, baseUrl) is deprecated; ' +
           'pass the API-specific URL via config.baseUrl instead.',
       );
     }

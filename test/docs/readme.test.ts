@@ -24,9 +24,10 @@ describe('README package documentation', () => {
     expect(README).not.toContain('client.pages.getPage(');
   });
 
-  it('documents CLI bearer authentication', () => {
+  it('documents CLI bearer authentication without inline credentials', () => {
     expect(README).toContain('ATLASSIAN_AUTH_TYPE=bearer');
-    expect(README).toContain('--auth-type bearer');
+    expect(README).toContain('Credential flags remain available for backward compatibility');
+    expect(README).not.toContain('--token your-');
   });
 
   it('documents LRU cache eviction and auth-scoped keys', () => {
@@ -51,7 +52,7 @@ describe('README package documentation', () => {
 
 describe('live documentation consistency', () => {
   it('documents the current supported major version and security controls', () => {
-    expect(SECURITY).toContain('| 1.x     | Yes');
+    expect(SECURITY).toContain('| 4.x     | Yes');
     expect(SECURITY).toContain('`ClientConfig.allowedHosts`');
     expect(SECURITY).toContain('`OAuthRefreshConfig.allowedTokenEndpointHosts`');
     expect(SECURITY).toContain('`ClientConfig.maxResponseBytes`');

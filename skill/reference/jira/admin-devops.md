@@ -474,7 +474,7 @@ atlas jira events list
 - Pins or unpins a Forge issue panel across a batch of projects. This is a **project-level** operation, not a per-issue one.
 - `--module-id` — the moduleId of the Forge panel, in the format `ari:cloud:ecosystem::extension/{app-id}/{environment-id}/static/{module-key}`. Required.
 - `--value` — JSON array of project pin action objects; each must have `action` (`"PIN"` or `"UNPIN"`) and `projectIdOrKey` (string).
-- **Auth:** Requires OAuth 2.0 (3LO) with `manage:jira-configuration` scope. Basic auth (API token) is NOT accepted. Use `--auth-type bearer --token <OAUTH_TOKEN>`.
+- **Auth:** Requires OAuth 2.0 (3LO) with `manage:jira-configuration` scope. Basic auth (API token) is NOT accepted. Set `ATLASSIAN_AUTH_TYPE=bearer` and provide the OAuth access token through `ATLASSIAN_API_TOKEN`; never pass the token in a CLI flag.
 - **URL base:** `POST /rest/api/3/forge/panel/action/bulk/async` — uses the standard REST API base, not a Forge tunnel.
 - Returns a `taskId` that can be used to poll for task completion.
 - The Forge app must be installed on the Jira site before this endpoint is usable.

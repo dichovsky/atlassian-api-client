@@ -1,8 +1,8 @@
 # Changelog
 
-## Unreleased
+## [4.0.0](https://github.com/dichovsky/atlassian-api-client/compare/v3.0.0...v4.0.0) (2026-09-02)
 
-This refresh contains public SDK and CLI contract corrections and therefore must ship in the next major release.
+This major release refreshes the public SDK and CLI against the current Atlassian Cloud contracts. It includes breaking contract corrections and removals; review the migration notes below before upgrading from 3.x.
 
 ### Breaking changes
 
@@ -34,6 +34,8 @@ This refresh contains public SDK and CLI contract corrections and therefore must
 
 - Refreshed all three pinned Atlassian OpenAPI specifications and their documentation metadata.
 - Updated CLI help and the bundled skill to distinguish Jira Platform v3, Jira Software/Agile, and DevOps integration APIs.
+- Production type-checks and builds now use TypeScript 7 while a parallel TypeScript 6 compatibility gate protects compiler-API consumers.
+- CLI/resource/skill parity and installed-skill version stamping now have automated regression coverage in the publish gate.
 
 ## [3.0.0](https://github.com/dichovsky/atlassian-api-client/compare/v2.0.0...v3.0.0) (2026-06-15)
 

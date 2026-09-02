@@ -120,8 +120,7 @@ export class AttachmentsResource {
    *
    * **Note:** This method's return type changed from `CursorPaginatedResponse<Attachment>`
    * (the non-existent v2 shape) to {@link UploadAttachmentResult} (the real v1
-   * envelope). Callers that relied on the old shape will see a type error —
-   * flag for 3.0.0 if needed as a breaking change notice.
+   * envelope). This correction was documented as a 3.0.0 breaking change.
    *
    * @param pageId - The page to attach to.
    * @param filename - The filename as it should appear in Confluence.
