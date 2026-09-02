@@ -41,7 +41,7 @@ PARSER.add_argument(
     "--out-dir",
     help="directory for gap_candidates.json and unmatched_sdk.json",
 )
-CLI_ARGS = PARSER.parse_args()
+CLI_ARGS = None
 
 SPEC_FILES = {
     "jira-platform": "jira-platform-v3.json",
@@ -77,7 +77,7 @@ IDENTIFIER_NAME = (
 METHOD_DECLARATION = re.compile(
     r"(?<![A-Za-z0-9_$\.\]])"
     r"(?P<modifiers>(?:(?:public|protected|private|static|abstract|override|async)\s+)*)"
-    r"(?:get\s+|set\s+)?\*?\s*"
+    r"(?:get\s+|set\s+)?(?:\*\s*)?"
     r"(?P<method>[A-Za-z_$][A-Za-z0-9_$]*|#[A-Za-z_$][A-Za-z0-9_$]*"
     r"|[0-9]+(?:\.[0-9]+)?|\[[^\]]*\])"
     r"\s*(?:<[^;{}()]*>)?\s*\("
@@ -85,6 +85,23 @@ METHOD_DECLARATION = re.compile(
 
 CONTROL_HEADS = {"catch", "for", "if", "switch", "while", "with"}
 
+@functools.lru_cache(maxsize=None)
+def control_head_spans(code):
+    """Index executable control heads once for repeated reachability checks."""
+    return tuple(
+        (match.group(1), match.start(), match.end())
+        for match in re.finditer(r"\b(if|for|switch|while)\s*\(", code)
+    )
+
+@functools.lru_cache(maxsize=None)
+def else_spans(code):
+    """Index executable ``else`` tokens once for repeated scope checks."""
+    return tuple(
+        (match.start(), match.end())
+        for match in re.finditer(r"\belse\b", code)
+    )
+
+@functools.lru_cache(maxsize=None)
 def match_close(s, start, op, cl):
     depth = 0
     for i in range(start, len(s)):
@@ -94,6 +111,7 @@ def match_close(s, start, op, cl):
             if depth == 0: return i + 1
     return -1
 
+@functools.lru_cache(maxsize=None)
 def match_open(s, end, op, cl):
     """Return the opening delimiter paired with ``s[end]``."""
     depth = 0
@@ -1124,6 +1142,30 @@ def brace_intervals(code):
     return tuple(sorted(intervals))
 
 @functools.lru_cache(maxsize=None)
+def delimiter_intervals(code):
+    """Index matched and still-open executable delimiter intervals."""
+    intervals = []
+    stack = []
+    pairs = {")": "(", "}": "{", "]": "["}
+    for index, token in enumerate(code):
+        if token in "({[":
+            stack.append((token, index))
+        elif token in pairs and stack and stack[-1][0] == pairs[token]:
+            opener, start = stack.pop()
+            intervals.append((opener, start, index))
+    intervals.extend((opener, start, len(code)) for opener, start in stack)
+    return tuple(sorted(intervals, key=lambda interval: interval[1]))
+
+@functools.lru_cache(maxsize=None)
+def delimiter_scope_at(code, position):
+    """Return delimiters still open immediately before ``position``."""
+    return tuple(
+        (opener, start, end)
+        for opener, start, end in delimiter_intervals(code)
+        if start < position <= end
+    )
+
+@functools.lru_cache(maxsize=None)
 def brace_scope_at(code, position):
     """Return the still-open executable brace scopes at ``position``."""
     return tuple(
@@ -1687,18 +1729,49 @@ def statically_boolean_value(
         return None
     return False if value is STATIC_NULL else bool(value)
 
+@functools.lru_cache(maxsize=None)
+def statically_dead_brace(code, brace):
+    """Classify one enclosing brace for repeated dead-code checks."""
+    if re.search(
+        r"\b(?:if|while)\s*\(\s*(?:false|0|null)\s*\)\s*$",
+        code[:brace],
+    ):
+        return True
+    else_match = re.search(r"\belse\s*$", code[:brace])
+    if not else_match:
+        return False
+    previous = else_match.start() - 1
+    while previous >= 0 and code[previous].isspace():
+        previous -= 1
+    if previous < 0 or code[previous] != "}":
+        return False
+    if_open = match_open(code, previous, "{", "}")
+    return bool(
+        if_open != -1
+        and re.search(
+            r"\bif\s*\(\s*(?:true|1)\s*\)\s*$",
+            code[:if_open],
+        )
+    )
+
 def prior_guaranteed_conditional_exit_at(code, position, source=None):
     """Whether a statically-true prior ``if`` guarantees an exit."""
     source = code if source is None else source
     use_scope = brace_scope_at(code, position)
-    for controller in re.finditer(r"\bif\s*\(", code[:position]):
-        if not standalone_keyword_at(code, controller.start()):
+    for kind, controller_start, controller_end in control_head_spans(code):
+        if controller_start >= position:
+            break
+        if controller_end > position:
             continue
-        if brace_scope_at(code, controller.start()) != use_scope:
+        if kind != "if":
             continue
-        if conditional_control_at(code, controller.start()):
+        if not standalone_keyword_at(code, controller_start):
             continue
-        params_open = code.index("(", controller.start(), controller.end())
+        if brace_scope_at(code, controller_start) != use_scope:
+            continue
+        if conditional_control_at(code, controller_start):
+            continue
+        params_open = code.index("(", controller_start, controller_end)
         params_end = match_close(code, params_open, "(", ")")
         if params_end == -1 or params_end > position:
             continue
@@ -1709,7 +1782,7 @@ def prior_guaranteed_conditional_exit_at(code, position, source=None):
             code,
             source[condition_start:condition_end],
             code[condition_start:condition_end],
-            controller.start(),
+            controller_start,
         ) is not True:
             continue
 
@@ -1760,14 +1833,20 @@ def prior_guaranteed_switch_exit_at(code, position, source=None):
     """Whether a constant prior switch arm immediately returns or throws."""
     source = code if source is None else source
     use_scope = brace_scope_at(code, position)
-    for controller in re.finditer(r"\bswitch\s*\(", code[:position]):
-        if not standalone_keyword_at(code, controller.start()):
+    for kind, controller_start, controller_end in control_head_spans(code):
+        if controller_start >= position:
+            break
+        if controller_end > position:
             continue
-        if brace_scope_at(code, controller.start()) != use_scope:
+        if kind != "switch":
             continue
-        if conditional_control_at(code, controller.start()):
+        if not standalone_keyword_at(code, controller_start):
             continue
-        params_open = code.index("(", controller.start(), controller.end())
+        if brace_scope_at(code, controller_start) != use_scope:
+            continue
+        if conditional_control_at(code, controller_start):
+            continue
+        params_open = code.index("(", controller_start, controller_end)
         params_end = match_close(code, params_open, "(", ")")
         if params_end == -1:
             continue
@@ -1785,7 +1864,7 @@ def prior_guaranteed_switch_exit_at(code, position, source=None):
             code,
             source[params_open + 1:params_end - 1],
             code[params_open + 1:params_end - 1],
-            controller.start(),
+            controller_start,
         )
         if not known:
             continue
@@ -1818,7 +1897,7 @@ def prior_guaranteed_switch_exit_at(code, position, source=None):
                 code,
                 source[label_value_start:colon],
                 code[label_value_start:colon],
-                controller.start(),
+                controller_start,
             )
             if not case_known:
                 all_cases_known = False
@@ -1859,17 +1938,22 @@ def prior_statically_infinite_loop_at(code, position, source=None):
     """Whether a prior same-scope while/for loop cannot complete normally."""
     source = code if source is None else source
     use_scope = brace_scope_at(code, position)
-    for controller in re.finditer(r"\b(while|for)\s*\(", code[:position]):
-        kind = controller.group(1)
-        if not standalone_keyword_at(code, controller.start()):
+    for kind, controller_start, controller_end in control_head_spans(code):
+        if controller_start >= position:
+            break
+        if controller_end > position:
             continue
-        if brace_scope_at(code, controller.start()) != use_scope:
+        if kind not in {"while", "for"}:
             continue
-        if conditional_control_at(code, controller.start()):
+        if not standalone_keyword_at(code, controller_start):
             continue
-        if kind == "while" and do_while_header_at(code, controller.start()):
+        if brace_scope_at(code, controller_start) != use_scope:
             continue
-        params_open = code.index("(", controller.start(), controller.end())
+        if conditional_control_at(code, controller_start):
+            continue
+        if kind == "while" and do_while_header_at(code, controller_start):
+            continue
+        params_open = code.index("(", controller_start, controller_end)
         params_end = match_close(code, params_open, "(", ")")
         if params_end == -1:
             continue
@@ -1904,7 +1988,7 @@ def prior_statically_infinite_loop_at(code, position, source=None):
                 code,
                 source[condition_start:condition_end],
                 condition_code,
-                controller.start(),
+                controller_start,
             ) is True
         )
         if not condition_true:
@@ -1935,23 +2019,8 @@ def statically_dead_at(code, position, source=None):
     """Identify calls in literal-false blocks or after a guaranteed exit."""
     use_scope = brace_scope_at(code, position)
     for brace in use_scope:
-        if re.search(
-            r"\b(?:if|while)\s*\(\s*(?:false|0|null)\s*\)\s*$",
-            code[:brace],
-        ):
+        if statically_dead_brace(code, brace):
             return True
-        else_match = re.search(r"\belse\s*$", code[:brace])
-        if else_match:
-            previous = else_match.start() - 1
-            while previous >= 0 and code[previous].isspace():
-                previous -= 1
-            if previous >= 0 and code[previous] == "}":
-                if_open = match_open(code, previous, "{", "}")
-                if if_open != -1 and re.search(
-                    r"\bif\s*\(\s*(?:true|1)\s*\)\s*$",
-                    code[:if_open],
-                ):
-                    return True
     return (
         unconditional_exit_before_at(code, position)
         or prior_guaranteed_conditional_exit_at(code, position, source)
@@ -2029,6 +2098,38 @@ def controlled_statement_end(code, start):
     statement_end = find_statement_end(code, start)
     return statement_end + 1 if statement_end != -1 else -1
 
+@functools.lru_cache(maxsize=None)
+def conditional_brace_controller(code, brace):
+    """Classify one braced controller for repeated control-flow checks."""
+    cursor = brace - 1
+    while cursor >= 0 and code[cursor].isspace():
+        cursor -= 1
+    if cursor >= 0 and code[cursor] == ")":
+        params_open = match_open(code, cursor, "(", ")")
+        if params_open != -1:
+            keyword_end = params_open
+            while keyword_end > 0 and code[keyword_end - 1].isspace():
+                keyword_end -= 1
+            keyword_match = re.search(
+                r"([A-Za-z_$][A-Za-z0-9_$]*)$",
+                code[:keyword_end],
+            )
+            keyword = keyword_match.group(1) if keyword_match else None
+            header = code[params_open + 1:cursor]
+            if keyword in {"if", "while"}:
+                return None if header.strip() in {"true", "1"} else keyword
+            if keyword == "for":
+                return (
+                    None
+                    if re.fullmatch(r"\s*;\s*(?:true|1)?\s*;\s*", header)
+                    else keyword
+                )
+            if keyword in {"catch", "switch", "with"}:
+                return keyword
+    controller = re.search(r"\b(?:catch|else)\s*$", code[:brace])
+    return controller.group(0).strip() if controller else None
+
+@functools.lru_cache(maxsize=None)
 def conditional_control_at(code, position):
     """Return an enclosing conditional controller not proven unconditional.
 
@@ -2037,49 +2138,26 @@ def conditional_control_at(code, position):
     the only conditional-looking blocks accepted here.
     """
     for brace in brace_scope_at(code, position):
-        cursor = brace - 1
-        while cursor >= 0 and code[cursor].isspace():
-            cursor -= 1
-        if cursor >= 0 and code[cursor] == ")":
-            params_open = match_open(code, cursor, "(", ")")
-            if params_open != -1:
-                keyword_end = params_open
-                while keyword_end > 0 and code[keyword_end - 1].isspace():
-                    keyword_end -= 1
-                keyword_match = re.search(
-                    r"([A-Za-z_$][A-Za-z0-9_$]*)$",
-                    code[:keyword_end],
-                )
-                keyword = keyword_match.group(1) if keyword_match else None
-                header = code[params_open + 1:cursor]
-                if keyword in {"if", "while"}:
-                    if header.strip() in {"true", "1"}:
-                        continue
-                    return keyword
-                if keyword == "for":
-                    if re.fullmatch(
-                        r"\s*;\s*(?:true|1)?\s*;\s*",
-                        header,
-                    ):
-                        continue
-                    return keyword
-                if keyword in {"catch", "switch", "with"}:
-                    return keyword
-        controller = re.search(r"\b(?:catch|else)\s*$", code[:brace])
+        controller = conditional_brace_controller(code, brace)
         if controller:
-            return controller.group(0).strip()
-    for controller in re.finditer(r"\b(if|for|while)\s*\(", code[:position]):
-        keyword = controller.group(1)
-        if not standalone_keyword_at(code, controller.start()):
+            return controller
+    for keyword, controller_start, controller_end in control_head_spans(code):
+        if controller_start >= position:
+            break
+        if controller_end > position:
             continue
-        params_open = code.index("(", controller.start(), controller.end())
+        if keyword == "switch":
+            continue
+        if not standalone_keyword_at(code, controller_start):
+            continue
+        params_open = code.index("(", controller_start, controller_end)
         params_end = match_close(code, params_open, "(", ")")
         if params_end == -1:
             continue
         if (
             keyword == "while"
             and params_open < position < params_end
-            and do_while_header_at(code, controller.start())
+            and do_while_header_at(code, controller_start)
         ):
             return "do-while-test"
         if keyword == "for" and params_open < position < params_end:
@@ -2118,8 +2196,12 @@ def conditional_control_at(code, position):
         ):
             continue
         return keyword
-    for controller in re.finditer(r"\belse\b", code[:position]):
-        statement_start = controller.end()
+    for controller_start, controller_end in else_spans(code):
+        if controller_start >= position:
+            break
+        if controller_end > position:
+            continue
+        statement_start = controller_end
         while statement_start < len(code) and code[statement_start].isspace():
             statement_start += 1
         if statement_start >= len(code) or code[statement_start] == "{":
@@ -2131,16 +2213,10 @@ def conditional_control_at(code, position):
 
 def conditional_expression_at(code, position):
     """Return a short-circuit/ternary operator guarding the call at position."""
-    delimiter_stack = []
-    delimiter_pairs = {")": "(", "}": "{", "]": "["}
-    for index, token in enumerate(code[:position]):
-        if token in "({[":
-            delimiter_stack.append((token, index))
-        elif token in delimiter_pairs:
-            if delimiter_stack and delimiter_stack[-1][0] == delimiter_pairs[token]:
-                delimiter_stack.pop()
     grouping_ancestors = {
-        index for token, index in delimiter_stack if token in "(["
+        start
+        for token, start, _ in delimiter_scope_at(code, position)
+        if token in "(["
     }
 
     paren = bracket = brace = 0
@@ -2189,20 +2265,11 @@ def conditional_expression_at(code, position):
 
 def destructuring_default_at(code, position):
     """Whether a call is inside an object/array binding default initializer."""
-    openers = []
-    stack = []
-    pairs = {")": "(", "}": "{", "]": "["}
-    for index, token in enumerate(code[:position]):
-        if token in "({[":
-            stack.append((token, index))
-        elif token in pairs:
-            if stack and stack[-1][0] == pairs[token]:
-                stack.pop()
-    openers.extend(
-        (token, index)
-        for token, index in reversed(stack)
+    openers = [
+        (token, start)
+        for token, start, _ in reversed(delimiter_scope_at(code, position))
         if token in "{["
-    )
+    ]
 
     for opener, start in openers:
         closer = "}" if opener == "{" else "]"
@@ -2273,6 +2340,7 @@ def expression_preserves_route_ident(
         )
     )
 
+@functools.lru_cache(maxsize=None)
 def helper_declaration_match(definitions_code, name):
     """Find a module function or class method declaration by name."""
     function = re.search(
@@ -3719,82 +3787,118 @@ def load_spec(name, expected_server_scope):
         fail_spec(name, "invalid OpenAPI document: expected at least one operation")
     return ops
 
-jira_res, jira_unk, jira_vars = extract("jira")
-conf_res, conf_unk, conf_vars = extract("confluence")
-all_res = jira_res + conf_res
-if jira_unk or conf_unk:
-    print(f"!!! UNRESOLVED ({len(jira_unk)+len(conf_unk)}) !!!")
-    for u in (jira_unk+conf_unk)[:60]: print("   ", u)
-    print()
+def main(argv=None):
+    """Run the CLI audit after validating all input specifications."""
+    global CLI_ARGS, ARTIFACT_DIR
+    CLI_ARGS = PARSER.parse_args(argv)
+    ARTIFACT_DIR = None
 
-# Completeness counts resolved operation paths rather than raw transport calls:
-# one delegated helper transport call can fan out to several concrete endpoints.
-print(f"=== completeness: jira {len(jira_res)}/{len(jira_res)+len(jira_unk)} paths | conf {len(conf_res)}/{len(conf_res)+len(conf_unk)} paths ===")
-
-impl = {}
-for r in all_res: impl.setdefault((r["verb"], r["norm_full"]), []).append(r["file"])
-matched = set()
-specs = {
-    name: load_spec(name, expected_server_scope)
-    for name, expected_server_scope in EXPECTED_SERVER_SCOPES.items()
-}
-out = {}
-live_gap_count = 0
-print("\n=== GAP DIFF ===")
-for name, ops in specs.items():
-    missing=[]
-    for o in ops:
-        k=(o["verb"], o["norm"])
-        if k in impl: matched.add(k)
-        else: missing.append(o)
-    live=[m for m in missing if not m["deprecated"]]; dep=[m for m in missing if m["deprecated"]]
-    live_gap_count += len(live)
-    print(f"  {name}: {len(ops)} ops | impl {len(ops)-len(missing)} | MISSING {len(missing)} (live {len(live)}, dep {len(dep)})")
-    out[name]=[{"verb":m["verb"],"path":m["path"],"operationId":m["operationId"],
-                "summary":m["summary"],"deprecated":m["deprecated"],"norm":m["norm"]}
-               for m in sorted(missing,key=lambda x:(x["deprecated"],x["path"]))]
-write_artifact("gap_candidates.json", out)
-print(f"\ntotal candidates: {sum(len(v) for v in out.values())}")
-# unmatched SDK paths
-unm={}
-for r in all_res:
-    if (r["verb"], r["norm_full"]) not in matched:
-        unm.setdefault(r["prefix"],set()).add((r["verb"], r["suffix"]))
-print("\n=== SDK paths matching NO spec op ===")
-out_of_scope = {}
-if "v1BaseUrl" in conf_vars:
-    # Attachment upload intentionally uses the only supported write endpoint,
-    # which still lives in REST v1 and is outside the reviewed v2 spec surface.
-    out_of_scope[
-        (
-            conf_vars["v1BaseUrl"],
-            "POST",
-            "/content/{}/child/attachment",
-        )
-    ] = "confluence-v1 attachment upload"
-for p,s in sorted(unm.items(), key=lambda x:-len(x[1])):
-    reviewed = {
-        out_of_scope[(p, verb, suffix)]
-        for verb, suffix in s
-        if (p, verb, suffix) in out_of_scope
+    specs = {
+        name: load_spec(name, expected_server_scope)
+        for name, expected_server_scope in EXPECTED_SERVER_SCOPES.items()
     }
-    classification = (
-        f" [{next(iter(reviewed))} — out of reviewed spec scope]"
-        if len(reviewed) == 1 and len(s) == 1
-        else ""
-    )
-    print(f"  {len(s):3} {p}{classification}")
-write_artifact(
-    "unmatched_sdk.json",
-    {p:sorted(list(s)) for p,s in unm.items()},
-)
-print(f"\nartifacts: {ARTIFACT_DIR}")
+    jira_res, jira_unk, jira_vars = extract("jira")
+    conf_res, conf_unk, conf_vars = extract("confluence")
+    all_res = jira_res + conf_res
+    if jira_unk or conf_unk:
+        print(f"!!! UNRESOLVED ({len(jira_unk)+len(conf_unk)}) !!!")
+        for unknown in (jira_unk + conf_unk)[:60]:
+            print("   ", unknown)
+        print()
 
-unexpected_sdk_routes = sum(
-    1
-    for prefix, routes in unm.items()
-    for verb, suffix in routes
-    if (prefix, verb, suffix) not in out_of_scope
-)
-if jira_unk or conf_unk or live_gap_count or unexpected_sdk_routes:
-    raise SystemExit(1)
+    # Completeness counts resolved operation paths rather than raw transport
+    # calls: one delegated helper call can fan out to concrete endpoints.
+    print(
+        f"=== completeness: jira {len(jira_res)}/{len(jira_res)+len(jira_unk)} "
+        f"paths | conf {len(conf_res)}/{len(conf_res)+len(conf_unk)} paths ==="
+    )
+
+    impl = {}
+    for result in all_res:
+        impl.setdefault((result["verb"], result["norm_full"]), []).append(
+            result["file"]
+        )
+    matched = set()
+    out = {}
+    live_gap_count = 0
+    print("\n=== GAP DIFF ===")
+    for name, ops in specs.items():
+        missing = []
+        for operation in ops:
+            key = (operation["verb"], operation["norm"])
+            if key in impl:
+                matched.add(key)
+            else:
+                missing.append(operation)
+        live = [item for item in missing if not item["deprecated"]]
+        deprecated = [item for item in missing if item["deprecated"]]
+        live_gap_count += len(live)
+        print(
+            f"  {name}: {len(ops)} ops | impl {len(ops)-len(missing)} | "
+            f"MISSING {len(missing)} (live {len(live)}, dep {len(deprecated)})"
+        )
+        out[name] = [
+            {
+                "verb": item["verb"],
+                "path": item["path"],
+                "operationId": item["operationId"],
+                "summary": item["summary"],
+                "deprecated": item["deprecated"],
+                "norm": item["norm"],
+            }
+            for item in sorted(
+                missing,
+                key=lambda candidate: (candidate["deprecated"], candidate["path"]),
+            )
+        ]
+    write_artifact("gap_candidates.json", out)
+    print(f"\ntotal candidates: {sum(len(value) for value in out.values())}")
+
+    unmatched = {}
+    for result in all_res:
+        if (result["verb"], result["norm_full"]) not in matched:
+            unmatched.setdefault(result["prefix"], set()).add(
+                (result["verb"], result["suffix"])
+            )
+    print("\n=== SDK paths matching NO spec op ===")
+    out_of_scope = {}
+    if "v1BaseUrl" in conf_vars:
+        # Attachment upload intentionally uses the only supported write endpoint,
+        # which still lives in REST v1 and is outside the reviewed v2 spec surface.
+        out_of_scope[
+            (
+                conf_vars["v1BaseUrl"],
+                "POST",
+                "/content/{}/child/attachment",
+            )
+        ] = "confluence-v1 attachment upload"
+    for prefix, routes in sorted(unmatched.items(), key=lambda item: -len(item[1])):
+        reviewed = {
+            out_of_scope[(prefix, verb, suffix)]
+            for verb, suffix in routes
+            if (prefix, verb, suffix) in out_of_scope
+        }
+        classification = (
+            f" [{next(iter(reviewed))} — out of reviewed spec scope]"
+            if len(reviewed) == 1 and len(routes) == 1
+            else ""
+        )
+        print(f"  {len(routes):3} {prefix}{classification}")
+    write_artifact(
+        "unmatched_sdk.json",
+        {prefix: sorted(list(routes)) for prefix, routes in unmatched.items()},
+    )
+    print(f"\nartifacts: {ARTIFACT_DIR}")
+
+    unexpected_sdk_routes = sum(
+        1
+        for prefix, routes in unmatched.items()
+        for verb, suffix in routes
+        if (prefix, verb, suffix) not in out_of_scope
+    )
+    return int(
+        bool(jira_unk or conf_unk or live_gap_count or unexpected_sdk_routes)
+    )
+
+if __name__ == "__main__":
+    raise SystemExit(main())

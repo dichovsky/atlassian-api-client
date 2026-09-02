@@ -124,6 +124,235 @@ async function expectBacklogMutationToFail(
 
 describe('api gap analysis', () => {
   it(
+    'keeps memoized structural scans content-keyed and equivalent to uncached scans',
+    async () => {
+      const probe = String.raw`
+import importlib.util
+import contextlib
+import io
+import json
+import pathlib
+import re
+import subprocess
+import sys
+import tempfile
+
+analyzer_path = pathlib.Path(sys.argv[1])
+repository_root = pathlib.Path(sys.argv[2])
+module_spec = importlib.util.spec_from_file_location("api_gap_analysis", analyzer_path)
+analyzer = importlib.util.module_from_spec(module_spec)
+module_spec.loader.exec_module(analyzer)
+
+dynamic = "if (flag) {\n  call()\n}"
+unconditional = "if (true) {\n  call()\n}"
+position = dynamic.index("call")
+assert position == unconditional.index("call")
+analyzer.conditional_control_at.cache_clear()
+assert analyzer.conditional_control_at(dynamic, position) == "if"
+assert analyzer.conditional_control_at(unconditional, position) is None
+assert analyzer.conditional_control_at(dynamic, position) == "if"
+control_cache = analyzer.conditional_control_at.cache_info()
+assert (control_cache.hits, control_cache.misses) == (1, 2)
+assert analyzer.conditional_control_at(dynamic, position) == analyzer.conditional_control_at.__wrapped__(dynamic, position)
+assert analyzer.conditional_control_at(unconditional, position) == analyzer.conditional_control_at.__wrapped__(unconditional, position)
+
+balanced = "(())"
+unbalanced = "(() "
+analyzer.match_close.cache_clear()
+assert analyzer.match_close(balanced, 0, "(", ")") == 4
+assert analyzer.match_close(unbalanced, 0, "(", ")") == -1
+assert analyzer.match_close(balanced, 0, "(", ")") == 4
+delimiter_cache = analyzer.match_close.cache_info()
+assert (delimiter_cache.hits, delimiter_cache.misses) == (1, 2)
+
+def reference_scope(code, end):
+    stack = []
+    pairs = {")": "(", "}": "{", "]": "["}
+    for index, token in enumerate(code[:end]):
+        if token in "({[":
+            stack.append((token, index))
+        elif token in pairs and stack and stack[-1][0] == pairs[token]:
+            stack.pop()
+    return tuple(stack)
+
+delimiter_cases = (
+    "({[call()]})",
+    "({[call()] }",
+    "({[call(]}))",
+    "function f(value = ({ key: [1, 2] })) {}",
+)
+for code in delimiter_cases:
+    for end in range(len(code) + 1):
+        indexed = tuple(
+            (token, start)
+            for token, start, _ in analyzer.delimiter_scope_at(code, end)
+        )
+        assert indexed == reference_scope(code, end), (code, end, indexed)
+
+original_method_declaration = re.compile(
+    r"(?<![A-Za-z0-9_$\.\]])"
+    r"(?P<modifiers>(?:(?:public|protected|private|static|abstract|override|async)\s+)*)"
+    r"(?:get\s+|set\s+)?\*?\s*"
+    r"(?P<method>[A-Za-z_$][A-Za-z0-9_$]*|#[A-Za-z_$][A-Za-z0-9_$]*"
+    r"|[0-9]+(?:\.[0-9]+)?|\[[^\]]*\])"
+    r"\s*(?:<[^;{}()]*>)?\s*\("
+)
+
+def method_signatures(pattern, code):
+    return tuple(
+        (
+            match.group("modifiers"),
+            match.group("method"),
+            code.index("(", match.start(), match.end()),
+        )
+        for match in pattern.finditer(code)
+    )
+
+source_files = [
+    repository_root / "src/jira/client.ts",
+    repository_root / "src/confluence/client.ts",
+]
+source_files.extend(
+    path
+    for api in ("jira", "confluence")
+    for extension in ("*.ts", "*.mts", "*.cts", "*.tsx")
+    for path in repository_root.glob(f"src/{api}/resources/**/{extension}")
+)
+synthetic_sources = (
+    "class X { ordinary () {} async * generator () {} get value () {} }",
+    "class X { [computed] <T extends {}> (value: T): T { return value; }",
+    "class X { method( { broken: true }",
+)
+for source in [path.read_text() for path in source_files] + list(synthetic_sources):
+    _, code = analyzer.lex_ts_source(source)
+    for view in (code, analyzer.quoted_method_code_view(source, code)):
+        assert method_signatures(analyzer.METHOD_DECLARATION, view) == method_signatures(original_method_declaration, view)
+
+def invoke_main(arguments):
+    stdout = io.StringIO()
+    stderr = io.StringIO()
+    with contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
+        exit_code = analyzer.main(arguments)
+    return exit_code, stdout.getvalue(), stderr.getvalue(), pathlib.Path(analyzer.ARTIFACT_DIR)
+
+def without_artifact_path(output):
+    return "\n".join(
+        line for line in output.splitlines() if not line.startswith("artifacts: ")
+    )
+
+def write_fixture(fixture_root, route):
+    tick = chr(96)
+    dollar = "$"
+    specs = fixture_root / "spec"
+    specs.mkdir(parents=True, exist_ok=True)
+    for api, class_name, suffix in (
+        ("jira", "JiraSampleResource", ""),
+        ("confluence", "ConfluenceSampleResource", "/wiki/api/v2"),
+    ):
+        resources = fixture_root / "src" / api / "resources"
+        resources.mkdir(parents=True, exist_ok=True)
+        client = f"""export class Client {{
+  readonly sample: {class_name};
+  constructor(transport: Transport, resolved: ResolvedConfig) {{
+    const baseUrl = {tick}{dollar}{{resolved.baseUrl}}{suffix}{tick};
+    this.sample = new {class_name}(transport, baseUrl);
+  }}
+}}
+"""
+        resource = f"""export class {class_name} {{
+  constructor(
+    private readonly transport: Transport,
+    private readonly baseUrl: string,
+  ) {{}}
+
+  async get(): Promise<unknown> {{
+    return this.transport.request({{
+      method: 'GET',
+      path: {tick}{dollar}{{this.baseUrl}}/{route}{tick},
+    }});
+  }}
+}}
+"""
+        (fixture_root / "src" / api / "client.ts").write_text(client)
+        (resources / "sample.ts").write_text(resource)
+
+    def openapi(title, server):
+        return {
+            "openapi": "3.0.0",
+            "info": {"title": title, "version": "1"},
+            "servers": [{"url": server}],
+            "paths": {
+                f"/{route}": {
+                    "get": {"responses": {"200": {"description": "OK"}}}
+                }
+            },
+        }
+
+    (specs / "jira-platform-v3.json").write_text(json.dumps(openapi("Jira", "https://example.test")))
+    (specs / "jira-software.json").write_text(json.dumps(openapi("Jira Software", "https://example.test")))
+    (specs / "confluence-v2.json").write_text(json.dumps(openapi("Confluence", "https://example.test/wiki/api/v2")))
+
+with tempfile.TemporaryDirectory(prefix="api-gap-cache-equivalence-") as temporary:
+    temporary_root = pathlib.Path(temporary)
+    fixture_root = temporary_root / "fixture"
+    write_fixture(fixture_root, "one")
+    first_artifacts = temporary_root / "first-artifacts"
+    first_code, first_stdout, first_stderr, first_written = invoke_main([
+        "--source-root", str(fixture_root),
+        "--spec-dir", str(fixture_root / "spec"),
+        "--out-dir", str(first_artifacts),
+    ])
+    assert first_code == 0, (first_stdout, first_stderr)
+    assert first_stderr == ""
+    assert first_written == first_artifacts
+
+    write_fixture(fixture_root, "two")
+    second_artifacts = temporary_root / "second-artifacts"
+    second_code, second_stdout, second_stderr, second_written = invoke_main([
+        "--source-root", str(fixture_root),
+        "--spec-dir", str(fixture_root / "spec"),
+        "--out-dir", str(second_artifacts),
+    ])
+    assert second_code == 0, (second_stdout, second_stderr)
+    assert second_stderr == ""
+    assert second_written == second_artifacts
+    assert second_written != first_written
+
+    cold_artifacts = temporary_root / "cold-artifacts"
+    cold = subprocess.run(
+        [
+            sys.executable,
+            str(analyzer_path),
+            "--source-root", str(fixture_root),
+            "--spec-dir", str(fixture_root / "spec"),
+            "--out-dir", str(cold_artifacts),
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert cold.returncode == second_code
+    assert cold.stderr == second_stderr
+    assert without_artifact_path(cold.stdout) == without_artifact_path(second_stdout)
+    for artifact_name in ("gap_candidates.json", "unmatched_sdk.json"):
+        assert json.loads((second_artifacts / artifact_name).read_text()) == json.loads((cold_artifacts / artifact_name).read_text())
+
+print("cache-equivalence-ok")
+`;
+
+      const { stdout, stderr } = await execFileAsync(
+        'python3',
+        ['-c', probe, ANALYZER, REPO_ROOT],
+        { cwd: REPO_ROOT },
+      );
+
+      expect(stderr).toBe('');
+      expect(stdout.trim()).toBe('cache-equivalence-ok');
+    },
+    ANALYZER_TIMEOUT_MS,
+  );
+
+  it(
     'resolves all Jira Software operations, including helper-backed issue paths',
     async () => {
       const { stdout, stderr } = await execFileAsync('python3', [ANALYZER], {
@@ -353,11 +582,20 @@ ${liveRequest}`,
         await writeFile(join(fixtureSpec, specFile), '{}');
 
         await expect(
-          execFileAsync('python3', [ANALYZER, '--spec-dir', fixtureSpec], {
-            cwd: REPO_ROOT,
-          }),
+          execFileAsync(
+            'python3',
+            [
+              ANALYZER,
+              '--spec-dir',
+              fixtureSpec,
+              '--source-root',
+              join(fixtureRoot, 'missing-source-root'),
+            ],
+            { cwd: REPO_ROOT },
+          ),
         ).rejects.toMatchObject({
           code: 1,
+          stdout: '',
           stderr: expect.stringContaining(`${specName}: invalid OpenAPI document`),
         });
       } finally {
