@@ -137,6 +137,7 @@ import subprocess
 import sys
 import tempfile
 
+sys.dont_write_bytecode = True
 analyzer_path = pathlib.Path(sys.argv[1])
 repository_root = pathlib.Path(sys.argv[2])
 module_spec = importlib.util.spec_from_file_location("api_gap_analysis", analyzer_path)
