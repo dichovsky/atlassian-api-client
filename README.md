@@ -923,10 +923,16 @@ npm run typecheck
 # Lint
 npm run lint
 
-# Test
+# Run every test suite
 npm run test
 
-# Test with coverage
+# Run the fast TypeScript/V8 suite only
+npm run test:unit
+
+# Run all API gap analyzer scenarios (bounded to four processes)
+npm run test:api-gap
+
+# TypeScript tests with exact 100% V8 coverage
 npm run test:coverage
 
 # Full validation
