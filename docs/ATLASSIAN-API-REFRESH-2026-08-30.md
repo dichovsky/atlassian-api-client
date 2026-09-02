@@ -6,7 +6,7 @@ This report records the implementation refresh against the current official Clou
 - Jira Platform REST API v3
 - Jira Software/Agile and bundled DevOps integration APIs
 
-The removals and behavior corrections recorded here are release-breaking and must ship in the next major version; see the Unreleased migration notes in [`CHANGELOG.md`](../CHANGELOG.md).
+The removals and behavior corrections recorded here are release-breaking and ship in 4.0.0; see the migration notes in [`CHANGELOG.md`](../CHANGELOG.md).
 
 The reviewed snapshots are pinned in [`spec/`](../spec/README.md). Their full SHA-256 values are:
 
@@ -61,4 +61,4 @@ npm run spec-drift
 npm run validate
 ```
 
-The gap analyzer is a static route verifier. It does not replace authenticated integration tests against a real Atlassian tenant. Existing broad response-type debt tracked as B1056/B1059 remains separate from the live-delta work recorded here.
+The gap analyzer is a static route verifier. It does not replace authenticated integration tests against a real Atlassian tenant. The broad B1056/B1059 response-type alignment shipped in 3.0.0; this report covers the later live-contract deltas included in 4.0.0.

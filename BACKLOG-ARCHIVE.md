@@ -2957,3 +2957,16 @@
   - files: `src/jira/resources/boards.ts`, `src/jira/index.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `src/cli/help.ts`, `skill/reference/jira/agile.md`, `skill/reference/jira.md`, tests
   - **Impl:** Added typed SDK + CLI/skill action with optional JQL, wired through the existing Jira Software base URL and granular scope detection.
   - **Rat:** Completes the live Jira Software route surface and supplies the supported count companion for enhanced board issue pagination.
+
+## 🧹 Release backlog reconciliation (2026-09-02)
+
+- [x] 🟢 ♻️ Core: B1066 Remaining native `RangeError` taxonomy cleanup
+  - **Impl:** Shipped in v3.0.0; all affected guards now throw `ValidationError`, and `src/` contains no native `RangeError` construction.
+- [x] 🟢 ♻️ Jira: B1056 Response-type / type-drift rollup
+  - **Impl:** Shipped in v3.0.0 through the Jira-wide spec-conformance pass recorded in the 3.0.0 changelog.
+- [x] 🟢 ♻️ Confluence: B1059 Response-type / type-drift rollup
+  - **Impl:** Shipped in v3.0.0 through the Confluence-wide spec-conformance pass recorded in the 3.0.0 changelog.
+- [x] 🟢 ♻️ Confluence: B1021 Add `sort` to `ListLabelsParams`
+  - **Impl:** Shipped in the 2026-09 Atlassian contract refresh; the type and resource query paths now carry the documented sort option.
+- [x] 🟡 📝 Infra: B1062 Document the v3.0.0 breaking changes
+  - **Impl:** Shipped in the v3.0.0 release changelog with migration notes scoped to v2.0.0.

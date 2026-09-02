@@ -142,6 +142,12 @@ describe('Reference content sanity checks', () => {
     expect(AUTH_SAFETY_REF).toContain('429');
   });
 
+  it('does not teach credential-bearing CLI flags in reference docs', () => {
+    const references = ALL_REFERENCE_DOCS.join('\n');
+    expect(references).not.toMatch(/--token(?:\s|=)/);
+    expect(references).not.toMatch(/--email(?:\s|=)/);
+  });
+
   it('documents Jira Software on-premises OAuth proxy routing', () => {
     expect(AUTH_SAFETY_REF).toContain('ATLASSIAN_SOFTWARE_CLOUD_ID');
     expect(AUTH_SAFETY_REF).toContain('--software-cloud-id');
