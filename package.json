@@ -66,17 +66,21 @@
     "lint:fix": "eslint . --fix",
     "prepublishOnly": "npm run validate",
     "api-coverage": "python3 scripts/api-gap-analysis.py",
-    "test": "vitest run",
+    "test": "npm run test:unit && npm run test:api-gap",
+    "test:api-gap": "vitest run --config vitest.api-gap.config.ts",
     "test:coverage": "vitest run --coverage",
     "spec-drift": "node --experimental-strip-types scripts/regenerate-types.ts",
     "test:exports": "node scripts/validate-exports.js",
+    "test:unit": "vitest run",
     "test:watch": "vitest",
     "toolchain:check": "node scripts/check-typescript-toolchain.js",
     "tsc:6": "node node_modules/typescript/bin/tsc6",
     "tsc:7": "node node_modules/@typescript/native/bin/tsc",
     "typecheck": "npm run tsc:7 -- --noEmit",
     "typecheck:ts6": "npm run tsc:6 -- --noEmit --stableTypeOrdering",
-    "validate": "npm run clean && npm run toolchain:check && npm run typecheck:ts6 && npm run typecheck && npm run codemap:check && npm run lint && npm run test:coverage && npm run format:check && npm run build && npm run test:exports"
+    "validate": "npm run clean && npm run validate:quality && npm run test:coverage && npm run test:api-gap && npm run validate:package",
+    "validate:package": "npm run build && npm run test:exports",
+    "validate:quality": "npm run toolchain:check && npm run typecheck:ts6 && npm run typecheck && npm run codemap:check && npm run lint && npm run format:check"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
