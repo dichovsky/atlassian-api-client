@@ -137,6 +137,22 @@ describe('ProjectsResource', () => {
       expect(transport.lastCall?.options.query).not.toHaveProperty('keys');
       expect(transport.lastCall?.options.query).not.toHaveProperty('properties');
     });
+
+    it('preserves int64 string IDs while retaining numeric input compatibility', async () => {
+      transport.respondWith(makeListResponse([]));
+
+      await projects.list({
+        id: ['9007199254740993', 10002],
+        categoryId: '9007199254740995',
+      });
+
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/project/search?id=9007199254740993&id=10002`,
+      );
+      expect(transport.lastCall?.options.query).toEqual({
+        categoryId: '9007199254740995',
+      });
+    });
   });
 
   // ── get ───────────────────────────────────────────────────────────────────

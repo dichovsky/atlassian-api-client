@@ -247,14 +247,14 @@ export interface ListProjectsParams {
   readonly typeKey?: string;
   /** Permission action required on returned projects. Defaults to `view`. */
   readonly action?: 'view' | 'browse' | 'edit' | 'create';
-  /** Filter by project IDs (type: array → repeated params). */
-  readonly id?: number[];
+  /** Filter by project IDs (int64, type: array → repeated params). Strings preserve full precision. */
+  readonly id?: readonly (string | number)[];
   /** Filter by project keys (type: array → repeated params). */
   readonly keys?: string[];
   /** Filter by text matching the project name, description, or key. */
   readonly query?: string;
-  /** Filter by the project category ID. */
-  readonly categoryId?: number;
+  /** Filter by the project category ID (int64). Strings preserve full precision. */
+  readonly categoryId?: string | number;
   /** A JQL query used to filter projects by entity properties. */
   readonly propertyQuery?: string;
   /** Filter by properties (type: array → repeated params). */

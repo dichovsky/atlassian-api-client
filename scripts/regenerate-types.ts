@@ -90,7 +90,9 @@ const NAMED_MAP_KEYS = new Set([
   'webhooks',
 ]);
 
-type CanonicalContext = 'object' | 'named-map' | 'named-map-of-maps';
+const OAUTH_FLOW_KEYS = new Set(['implicit', 'password', 'clientCredentials', 'authorizationCode']);
+
+type CanonicalContext = 'object' | 'named-map' | 'named-map-of-maps' | 'oauth-scopes';
 
 /**
  * Produces deterministic JSON while removing prose/examples that cannot change a request or
@@ -114,6 +116,10 @@ function canonicalize(
       .filter(([key]) => preserveNames || !DOCUMENTATION_ONLY_KEYS.has(key))
       .sort(([left], [right]) => left.localeCompare(right))
       .map(([key, item]) => {
+        // OAuth scope-map values are human-readable descriptions; only each scope name is semantic.
+        if (context === 'oauth-scopes') {
+          return [key, true] as const;
+        }
         let childContext: CanonicalContext = 'object';
         if (context === 'named-map-of-maps') {
           childContext = 'named-map';
@@ -121,9 +127,11 @@ function canonicalize(
           childContext =
             key === 'callbacks'
               ? 'named-map-of-maps'
-              : NAMED_MAP_KEYS.has(key)
-                ? 'named-map'
-                : 'object';
+              : key === 'scopes' && OAUTH_FLOW_KEYS.has(parentKey ?? '')
+                ? 'oauth-scopes'
+                : NAMED_MAP_KEYS.has(key)
+                  ? 'named-map'
+                  : 'object';
         }
         return [key, canonicalize(item, childContext, key)] as const;
       });

@@ -1668,6 +1668,21 @@ describe('executeConfluenceCommand', () => {
       );
     });
 
+    it('pages create rejects --root-level together with --parent-id before dispatch', async () => {
+      await expect(
+        executeConfluenceCommand(
+          cmd('pages', 'create', [], {
+            'space-id': 'S1',
+            title: 'Conflicting parentage',
+            'parent-id': 'P1',
+            'root-level': true,
+          }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--root-level cannot be used with --parent-id');
+      expect(confluencePagesMock.create).not.toHaveBeenCalled();
+    });
+
     it('pages create throws when space-id is missing', async () => {
       const parsed = cmd('pages', 'create', [], { title: 'Page' });
       await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow('--space-id');
@@ -10535,14 +10550,54 @@ describe('executeJiraCommand', () => {
         expand: ['description', 'lead'],
         status: ['live', 'archived'],
         typeKey: 'software',
-        id: [10001, 10002],
+        id: ['10001', '10002'],
         keys: ['PROJ', 'OPS'],
         query: 'team',
-        categoryId: 5,
+        categoryId: '5',
         propertyQuery: 'project.owner=alice',
         properties: ['project.owner', 'project.region'],
         action: 'browse',
       });
+    });
+
+    it('projects list preserves int64 IDs beyond Number.MAX_SAFE_INTEGER', async () => {
+      jiraProjectsMock.list.mockResolvedValue({ values: [] });
+
+      await executeJiraCommand(
+        cmd('projects', 'list', [], {
+          id: '9007199254740993,9007199254740995',
+          'category-id': '9007199254740997',
+        }),
+        GLOBALS,
+      );
+
+      expect(jiraProjectsMock.list).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: ['9007199254740993', '9007199254740995'],
+          categoryId: '9007199254740997',
+        }),
+      );
+    });
+
+    it('projects list rejects non-decimal --id values before dispatch', async () => {
+      await expect(
+        executeJiraCommand(cmd('projects', 'list', [], { id: '10001,1e4' }), GLOBALS),
+      ).rejects.toThrow('--id must be a positive int64 decimal integer, got: 1e4');
+      expect(jiraProjectsMock.list).not.toHaveBeenCalled();
+    });
+
+    it('projects list rejects non-positive --category-id values before dispatch', async () => {
+      await expect(
+        executeJiraCommand(cmd('projects', 'list', [], { 'category-id': '0' }), GLOBALS),
+      ).rejects.toThrow('--category-id must be a positive int64 decimal integer, got: 0');
+      expect(jiraProjectsMock.list).not.toHaveBeenCalled();
+    });
+
+    it('projects list rejects IDs above signed int64 range before dispatch', async () => {
+      await expect(
+        executeJiraCommand(cmd('projects', 'list', [], { id: '9223372036854775808' }), GLOBALS),
+      ).rejects.toThrow('--id must be a positive int64 decimal integer, got: 9223372036854775808');
+      expect(jiraProjectsMock.list).not.toHaveBeenCalled();
     });
 
     it('projects list rejects an invalid --action value before making a request', async () => {
@@ -13284,8 +13339,54 @@ describe('executeJiraCommand', () => {
         name: 'Personal board',
         type: 'kanban',
         filterId: 5,
-        location: { type: 'user', projectKeyOrId: undefined },
+        location: { type: 'user' },
       });
+    });
+
+    it('boards create rejects a location project without --location-type', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('boards', 'create', [], {
+            name: 'Broken board',
+            type: 'kanban',
+            'filter-id': '5',
+            'location-project-key-or-id': 'PROJ',
+          }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--location-project-key-or-id requires --location-type project');
+      expect(jiraBoardsMock.create).not.toHaveBeenCalled();
+    });
+
+    it('boards create requires a project key or ID for a project location', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('boards', 'create', [], {
+            name: 'Broken board',
+            type: 'kanban',
+            'filter-id': '5',
+            'location-type': 'project',
+          }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--location-type project requires --location-project-key-or-id');
+      expect(jiraBoardsMock.create).not.toHaveBeenCalled();
+    });
+
+    it('boards create rejects a project key or ID for a user location', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('boards', 'create', [], {
+            name: 'Broken board',
+            type: 'kanban',
+            'filter-id': '5',
+            'location-type': 'user',
+            'location-project-key-or-id': 'PROJ',
+          }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--location-project-key-or-id cannot be used with --location-type user');
+      expect(jiraBoardsMock.create).not.toHaveBeenCalled();
     });
 
     it('boards create rejects an invalid location type', async () => {

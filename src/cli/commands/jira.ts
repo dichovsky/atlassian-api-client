@@ -711,10 +711,10 @@ async function executeProjects(client: JiraClient, cmd: ParsedCommand): Promise<
         expand: csvFlag(opts['expand']),
         status: parseCsv(opts['status']),
         typeKey: asString(opts['type-key']),
-        id: parseCsv(opts['id'])?.map((id) => parsePositiveIntArg(id, '--id')),
+        id: parseCsv(opts['id'])?.map((id) => parsePositiveDecimalIntegerArg(id, '--id')),
         keys: parseCsv(opts['keys']),
         query: asString(opts['query']),
-        categoryId: asPositiveInt(opts['category-id'], '--category-id'),
+        categoryId: asPositiveDecimalInteger(opts['category-id'], '--category-id'),
         propertyQuery: asString(opts['property-query']),
         properties: parseCsv(opts['properties']),
         action,
@@ -1551,13 +1551,30 @@ async function executeBoards(client: JiraClient, cmd: ParsedCommand): Promise<un
       const filterIdRaw = requireOpt(opts['filter-id'], '--filter-id');
       const locationType = asBoardLocationType(opts['location-type']);
       const projectKeyOrId = asString(opts['location-project-key-or-id']);
+      let location:
+        | { readonly type: 'project'; readonly projectKeyOrId: string }
+        | { readonly type: 'user' }
+        | undefined;
+      if (locationType === undefined) {
+        if (projectKeyOrId !== undefined) {
+          throw new Error('--location-project-key-or-id requires --location-type project');
+        }
+      } else if (locationType === 'project') {
+        if (projectKeyOrId === undefined) {
+          throw new Error('--location-type project requires --location-project-key-or-id');
+        }
+        location = { type: 'project', projectKeyOrId };
+      } else {
+        if (projectKeyOrId !== undefined) {
+          throw new Error('--location-project-key-or-id cannot be used with --location-type user');
+        }
+        location = { type: 'user' };
+      }
       return client.boards.create({
         name: requireOpt(opts['name'], '--name'),
         type: requireBoardType(opts['type']),
         filterId: parsePositiveIntArg(filterIdRaw, '--filter-id'),
-        ...(locationType !== undefined || projectKeyOrId !== undefined
-          ? { location: { type: locationType, projectKeyOrId } }
-          : {}),
+        ...(location === undefined ? {} : { location }),
       });
     }
     case 'delete': {
@@ -2322,6 +2339,23 @@ function asPositiveInt(value: string | boolean | undefined, name: string): numbe
     throw new Error(`${name} must be a positive integer, got: ${value}`);
   }
   return n;
+}
+
+/** Preserve an optional positive decimal integer exactly (notably OpenAPI int64 IDs). */
+function asPositiveDecimalInteger(
+  value: string | boolean | undefined,
+  name: string,
+): string | undefined {
+  if (typeof value !== 'string') return undefined;
+  return parsePositiveDecimalIntegerArg(value.trim(), name);
+}
+
+/** Validate a positive base-10 integer without lossy Number coercion. */
+function parsePositiveDecimalIntegerArg(value: string, name: string): string {
+  if (!/^\d+$/.test(value) || !/[1-9]/.test(value) || BigInt(value) > 9_223_372_036_854_775_807n) {
+    throw new Error(`${name} must be a positive int64 decimal integer, got: ${value}`);
+  }
+  return value;
 }
 
 function asNonNegativeInt(value: string | boolean | undefined, name: string): number | undefined {

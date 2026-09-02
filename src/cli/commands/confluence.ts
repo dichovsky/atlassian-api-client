@@ -120,14 +120,18 @@ async function executePages(client: ConfluenceClient, cmd: ParsedCommand): Promi
         : client.pages.get(pageId);
     }
     case 'create': {
+      const parentId = asString(opts['parent-id']);
+      const rootLevel = opts['root-level'] === true;
+      if (rootLevel && parentId !== undefined) {
+        throw new Error('--root-level cannot be used with --parent-id');
+      }
       const createParams = {
         ...(opts['embedded'] === true ? { embedded: true } : {}),
         ...(opts['private'] === true ? { private: true } : {}),
-        ...(opts['root-level'] === true ? { 'root-level': true } : {}),
+        ...(rootLevel ? { 'root-level': true } : {}),
       };
       const status = asEnum(opts['status'], PAGE_CREATE_STATUSES, 'status');
       const title = asString(opts['title']);
-      const parentId = asString(opts['parent-id']);
       const subtype = asEnum(opts['subtype'], PAGE_CREATE_SUBTYPES, 'subtype');
       const body = makePageCreateBody(opts);
       const common = {

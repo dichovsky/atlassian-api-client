@@ -62,7 +62,7 @@ Non-deprecated, **token-paginated** replacements for the agile board issue listi
 - `--include-private true|false` and `--negate-location-filtering true|false` are explicit tri-state filters; omit either flag to use the server default.
 - `--order-by` accepts `name`, `-name`, or `+name`.
 - `--project-type-location` accepts comma-separated `software` and `service_desk` values and is serialized as repeated query parameters.
-- Board creation location is optional. When supplied, `--location-type` accepts `project` or `user`, and `--location-project-key-or-id` supplies the containing project key/ID.
+- Board creation location is optional. To create a project-located board, pass both `--location-type project` and `--location-project-key-or-id <projectKeyOrId>`. For a user-located board, pass `--location-type user` without `--location-project-key-or-id`. A project key/ID without a location type is invalid.
 - `--state` (for `list-sprints`) accepts comma-separated sprint states: `future`, `active`, `closed`.
 - `--enabling` (for `toggle-feature`) accepts `true` or `false` — maps to the spec's boolean `enabling` field.
 - `--feature` is the feature key string (e.g. `SIMPLE_ROADMAP`, `BACKLOG`, `SPRINTS`).
@@ -94,6 +94,9 @@ atlas jira boards create --name "My Team Board" --type scrum --filter-id 5
 
 # Create an agility board in a project location
 atlas jira boards create --name "Discovery" --type agility --filter-id 5 --location-type project --location-project-key-or-id PROJ
+
+# Create a board in the current user's location
+atlas jira boards create --name "Personal" --type kanban --filter-id 5 --location-type user
 
 # Delete a board
 atlas jira boards delete 42

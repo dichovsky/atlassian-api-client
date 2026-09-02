@@ -173,6 +173,55 @@ describe('contractFingerprint', () => {
 
     expect(contractFingerprint(changed)).not.toBe(contractFingerprint(MINIMAL_SPEC_OBJECT));
   });
+
+  it('ignores OAuth scope description prose while retaining scope names', () => {
+    const oauthSpec = (scopeName: string, description: string): OpenApiSpec =>
+      ({
+        ...MINIMAL_SPEC_OBJECT,
+        components: {
+          ...MINIMAL_SPEC_OBJECT.components,
+          securitySchemes: {
+            oauth: {
+              type: 'oauth2',
+              flows: {
+                authorizationCode: {
+                  authorizationUrl: 'https://example.com/authorize',
+                  tokenUrl: 'https://example.com/token',
+                  scopes: { [scopeName]: description },
+                },
+              },
+            },
+          },
+        },
+      }) as OpenApiSpec;
+
+    const original = oauthSpec('read:project:jira', 'Read project data.');
+    const reworded = oauthSpec('read:project:jira', 'Entirely different explanatory prose.');
+    const renamed = oauthSpec('write:project:jira', 'Read project data.');
+
+    expect(contractFingerprint(reworded)).toBe(contractFingerprint(original));
+    expect(contractFingerprint(renamed)).not.toBe(contractFingerprint(original));
+  });
+
+  it('keeps non-OAuth scopes schema contracts fingerprint-sensitive', () => {
+    const withScopesProperty = (type: string): OpenApiSpec => ({
+      ...MINIMAL_SPEC_OBJECT,
+      components: {
+        ...MINIMAL_SPEC_OBJECT.components,
+        schemas: {
+          ...MINIMAL_SPEC_OBJECT.components?.schemas,
+          ScopedValue: {
+            type: 'object',
+            properties: { scopes: { type } },
+          },
+        },
+      },
+    });
+
+    expect(contractFingerprint(withScopesProperty('string'))).not.toBe(
+      contractFingerprint(withScopesProperty('number')),
+    );
+  });
 });
 
 describe('checkSpec — error paths', () => {
