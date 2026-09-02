@@ -2,6 +2,21 @@ import { describe, it, expect } from 'vitest';
 import { parseCommand } from '../../src/cli/router.js';
 
 describe('parseCommand', () => {
+  it('rejects the orphaned database-id option', () => {
+    expect(() =>
+      parseCommand([
+        'node',
+        'atlas',
+        'confluence',
+        'databases',
+        'get',
+        '42',
+        '--database-id',
+        '99',
+      ]),
+    ).toThrow(/Unknown option.*database-id/);
+  });
+
   it('parses a full jira issues get command with options', () => {
     // Arrange
     const argv = ['node', 'atlas', 'jira', 'issues', 'get', 'PROJ-123', '--format', 'table'];
@@ -106,6 +121,66 @@ describe('parseCommand', () => {
     expect(result.options['jql']).toBe('project = PROJ AND status = Open');
   });
 
+  it('parses every Jira search parity flag, including GET fail-fast', () => {
+    const result = parseCommand([
+      'node',
+      'atlas',
+      'jira',
+      'search',
+      'jql-get',
+      '--start-at',
+      '10',
+      '--expand',
+      'names,changelog',
+      '--validate-query',
+      'warn',
+      '--properties',
+      'release.owner,release.risk',
+      '--fields-by-keys',
+      '--reconcile-issues',
+      '10001,10002',
+      '--fail-fast',
+      '--include-archived-projects',
+    ]);
+
+    expect(result.resource).toBe('search');
+    expect(result.action).toBe('jql-get');
+    expect(result.options).toMatchObject({
+      'start-at': '10',
+      expand: 'names,changelog',
+      'validate-query': 'warn',
+      properties: 'release.owner,release.risk',
+      'fields-by-keys': true,
+      'reconcile-issues': '10001,10002',
+      'fail-fast': true,
+      'include-archived-projects': true,
+    });
+  });
+
+  it.each(['legacy-post', 'get', 'approximate-count'])(
+    'rejects --include-archived-projects on search %s',
+    (action) => {
+      expect(() =>
+        parseCommand([
+          'node',
+          'atlas',
+          'jira',
+          'search',
+          action,
+          '--jql',
+          'project = PROJ',
+          '--include-archived-projects',
+        ]),
+      ).toThrow('--include-archived-projects is supported only by current Jira JQL search');
+    },
+  );
+
+  it('rejects --include-archived-projects outside Jira search', () => {
+    expect(() =>
+      parseCommand(['node', 'atlas', 'jira', 'boards', 'list', '--include-archived-projects']),
+    ).toThrow('--include-archived-projects is supported only by current Jira JQL search');
+  });
+
   it('parses format short flag -f', () => {
     // Arrange
     const argv = ['node', 'atlas', 'jira', 'projects', 'list', '-f', 'minimal'];
@@ -115,6 +190,130 @@ describe('parseCommand', () => {
 
     // Assert
     expect(result.options['format']).toBe('minimal');
+  });
+
+  it('parses the legacy projects --recent count', () => {
+    const result = parseCommand([
+      'node',
+      'atlas',
+      'jira',
+      'projects',
+      'list-legacy',
+      '--recent',
+      '20',
+    ]);
+
+    expect(result.options['recent']).toBe('20');
+  });
+
+  it('parses the Jira-only --software-cloud-id global option', () => {
+    const result = parseCommand([
+      'node',
+      'atlas',
+      'jira',
+      'bulk',
+      'submit-builds',
+      '--software-cloud-id',
+      'cloud-123',
+      '--value',
+      '{"builds":[]}',
+    ]);
+
+    expect(result.options['software-cloud-id']).toBe('cloud-123');
+  });
+
+  it('rejects the Jira-only --software-cloud-id option for Confluence commands', () => {
+    expect(() =>
+      parseCommand([
+        'node',
+        'atlas',
+        'confluence',
+        'spaces',
+        'list',
+        '--software-cloud-id',
+        'cloud-123',
+      ]),
+    ).toThrow('--software-cloud-id is only supported for Jira commands');
+  });
+
+  it('parses removed workflow flags so dispatch can provide migration guidance', () => {
+    const result = parseCommand([
+      'node',
+      'atlas',
+      'jira',
+      'workflows',
+      'get-transition-properties',
+      '10',
+      '--workflow-name',
+      'My workflow',
+      '--workflow-mode',
+      'live',
+      '--include-reserved-keys',
+    ]);
+
+    expect(result.options['workflow-mode']).toBe('live');
+    expect(result.options['include-reserved-keys']).toBe(true);
+  });
+
+  it.each(['workflow-mode', 'include-reserved-keys'])(
+    'rejects migration-only --%s outside removed workflow actions',
+    (flag) => {
+      expect(() =>
+        parseCommand([
+          'node',
+          'atlas',
+          'jira',
+          'boards',
+          'list',
+          `--${flag}`,
+          ...(flag === 'workflow-mode' ? ['live'] : []),
+        ]),
+      ).toThrow(`--${flag} is accepted only on removed Jira workflow transition-property actions`);
+    },
+  );
+
+  it('parses removed --project-role so the handler can return migration guidance', () => {
+    const result = parseCommand([
+      'node',
+      'atlas',
+      'jira',
+      'group-user-picker',
+      'pick',
+      '--query',
+      'alice',
+      '--project-role',
+      'Developers',
+    ]);
+
+    expect(result.options['project-role']).toBe('Developers');
+  });
+
+  it('parses removed --export-type so the handler can return migration guidance', () => {
+    const result = parseCommand([
+      'node',
+      'atlas',
+      'jira',
+      'issues',
+      'export-archived',
+      '--export-type',
+      'XLSX',
+    ]);
+
+    expect(result.options['export-type']).toBe('XLSX');
+  });
+
+  it('parses the project-search --property-query option', () => {
+    const result = parseCommand([
+      'node',
+      'atlas',
+      'jira',
+      'projects',
+      'list',
+      '--property-query',
+      'project.owner=alice',
+    ]);
+
+    expect(result.options['property-query']).toBe('project.owner=alice');
   });
 
   it('parses --purge boolean flag', () => {
@@ -799,6 +998,53 @@ describe('parseCommand', () => {
     expect(result.options['validate-query']).toBe('true');
   });
 
+  it('parses current board list and create-location flags', () => {
+    const list = parseCommand([
+      'node',
+      'atlas',
+      'jira',
+      'boards',
+      'list',
+      '--account-id-location',
+      'account-1',
+      '--project-location',
+      'PROJ',
+      '--project-type-location',
+      'software,service_desk',
+      '--include-private',
+      'false',
+      '--negate-location-filtering',
+      'true',
+    ]);
+    expect(list.options).toMatchObject({
+      'account-id-location': 'account-1',
+      'project-location': 'PROJ',
+      'project-type-location': 'software,service_desk',
+      'include-private': 'false',
+      'negate-location-filtering': 'true',
+    });
+
+    const create = parseCommand([
+      'node',
+      'atlas',
+      'jira',
+      'boards',
+      'create',
+      '--name',
+      'Discovery',
+      '--type',
+      'agility',
+      '--filter-id',
+      '5',
+      '--location-type',
+      'project',
+      '--location-project-key-or-id',
+      'PROJ',
+    ]);
+    expect(create.options['location-type']).toBe('project');
+    expect(create.options['location-project-key-or-id']).toBe('PROJ');
+  });
+
   // B1063: tri-state filter flags must accept an explicit `false` value rather
   // than swallowing it as a positional (the boolean-flag bug). Each flag below
   // defaults to a non-false value on the wire (or is a 3-valued filter), so the
@@ -926,6 +1172,94 @@ describe('parseCommand', () => {
       const argv = ['node', 'atlas', 'jira', 'priorities', 'search', '--only-default'];
       const result = parseCommand(argv);
       expect(result.options['only-default']).toBe(true);
+    });
+  });
+
+  it('parses the refreshed Confluence v2 space/page/task flags through real parseArgs', () => {
+    const result = parseCommand([
+      'node',
+      'atlas',
+      'confluence',
+      'spaces',
+      'list',
+      '--labels',
+      'team-a,priority',
+      '--favorited-by',
+      'acc-1',
+      '--description-format',
+      'view',
+      '--include-icon',
+      '--include-permissions',
+      '--include-role-assignments',
+      '--no-include-version',
+      '--embedded',
+      '--root-level',
+      '--body-json',
+      '{"storage":{"representation":"storage","value":"body"}}',
+      '--body-representation',
+      'wiki',
+      '--subtype',
+      'live',
+      '--completed-at-from',
+      '1700000000000',
+      '--completed-at-to',
+      '1710000000000',
+    ]);
+
+    expect(result.options).toMatchObject({
+      labels: 'team-a,priority',
+      'favorited-by': 'acc-1',
+      'description-format': 'view',
+      'include-icon': true,
+      'include-permissions': true,
+      'include-role-assignments': true,
+      'no-include-version': true,
+      embedded: true,
+      'root-level': true,
+      'body-json': '{"storage":{"representation":"storage","value":"body"}}',
+      'body-representation': 'wiki',
+      subtype: 'live',
+      'completed-at-from': '1700000000000',
+      'completed-at-to': '1710000000000',
+    });
+  });
+
+  it('parses refreshed Jira Platform flags through real parseArgs', () => {
+    const result = parseCommand([
+      'node',
+      'atlas',
+      'jira',
+      'issues',
+      'export-archived',
+      '--archived-by',
+      'acc-1,acc-2',
+      '--date-after',
+      '2026-01-01',
+      '--date-before',
+      '2026-01-31',
+      '--issue-types',
+      '10000,10001',
+      '--reporters',
+      'acc-3',
+      '--is-returning-keys',
+      '--field-type',
+      'comment_adf,worklog_adf',
+      '--include-ai-agents',
+      '--include-global-statuses',
+      '--retrigger-completed-migration',
+    ]);
+
+    expect(result.options).toMatchObject({
+      'archived-by': 'acc-1,acc-2',
+      'date-after': '2026-01-01',
+      'date-before': '2026-01-31',
+      'issue-types': '10000,10001',
+      reporters: 'acc-3',
+      'is-returning-keys': true,
+      'field-type': 'comment_adf,worklog_adf',
+      'include-ai-agents': true,
+      'include-global-statuses': true,
+      'retrigger-completed-migration': true,
     });
   });
 });

@@ -1257,6 +1257,51 @@ describe('FieldsResource', () => {
     });
   });
 
+  describe('getContextDefaultValues()', () => {
+    it('calls the plural defaultValues endpoint with both repeated filters', async () => {
+      const payload = {
+        isLast: true,
+        maxResults: 50,
+        startAt: 0,
+        total: 1,
+        values: [
+          {
+            contextId: 10100,
+            defaultValues: [
+              {
+                issueTypeId: '10001',
+                value: { type: 'option.single', contextId: '10100', optionId: '10002' },
+              },
+            ],
+          },
+        ],
+      };
+      transport.respondWith(payload);
+
+      const result = await fields.getContextDefaultValues('customfield_10001', {
+        contextId: [10100, 10101],
+        issueTypeId: ['10001', '10002'],
+        startAt: 10,
+        maxResults: 25,
+      });
+
+      expect(transport.lastCall?.options).toEqual({
+        method: 'GET',
+        path: `${BASE_URL}/field/customfield_10001/context/defaultValues?contextId=10100&contextId=10101&issueTypeId=10001&issueTypeId=10002`,
+        query: { startAt: 10, maxResults: 25 },
+      });
+      expect(result.values[0]).toMatchObject({ contextId: 10100 });
+    });
+
+    it('encodes the field ID and supports an unfiltered request', async () => {
+      transport.respondWith({ values: [] });
+      await fields.getContextDefaultValues('../admin');
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/field/..%2Fadmin/context/defaultValues`,
+      );
+    });
+  });
+
   // ── setContextDefaultValues (B906) ────────────────────────────────────────
 
   describe('setContextDefaultValues()', () => {

@@ -2,13 +2,17 @@ name: CI
 
 on:
   push:
-    branches: ['**']
+    branches: ['main']
   pull_request:
     branches: ['**']
 
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  ci:
-    name: CI
+  quality:
+    name: Quality
     runs-on: ubuntu-latest
 
     steps:
@@ -23,5 +27,82 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Validate
-        run: npm run validate
+      - name: Validate quality
+        run: npm run validate:quality
+
+  coverage:
+    name: TypeScript tests and coverage
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7.0.1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7.0.0
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests with exact coverage thresholds
+        run: npm run test:coverage
+
+  api_gap:
+    name: API gap analyzer tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v7.0.1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7.0.0
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run analyzer tests with bounded concurrency
+        run: npm run test:api-gap
+
+  package:
+    name: Package
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7.0.1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7.0.0
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build and validate exports
+        run: npm run validate:package
+
+  ci:
+    name: CI
+    if: always()
+    needs: [quality, coverage, api_gap, package]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Require every CI job to pass
+        env:
+          QUALITY_RESULT: ${{ needs.quality.result }}
+          COVERAGE_RESULT: ${{ needs.coverage.result }}
+          API_GAP_RESULT: ${{ needs.api_gap.result }}
+          PACKAGE_RESULT: ${{ needs.package.result }}
+        run: |
+          test "$QUALITY_RESULT" = success
+          test "$COVERAGE_RESULT" = success
+          test "$API_GAP_RESULT" = success
+          test "$PACKAGE_RESULT" = success

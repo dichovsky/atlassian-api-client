@@ -22,6 +22,12 @@ export interface MigrationTaskProgress {
   readonly submitted?: string;
 }
 
+/** Query parameters for submitting a Connect-to-Forge field migration task. */
+export interface SubmitMigrationTaskParams {
+  /** Retrigger a task that has already completed. Defaults to false. */
+  readonly retriggerCompletedMigration?: boolean;
+}
+
 // ── B948: PUT /migration/field ────────────────────────────────────────────────
 
 /** Discriminated union type for a Connect custom field update value (B948). */
@@ -171,12 +177,21 @@ export class MigrationResource {
    * POST /rest/atlassian-connect/1/migration/{connectKey}/{jiraIssueFieldsKey}/task
    * B947 — returns void (202 Accepted)
    */
-  async submitMigrationTask(connectKey: string, jiraIssueFieldsKey: string): Promise<void> {
+  async submitMigrationTask(
+    connectKey: string,
+    jiraIssueFieldsKey: string,
+    params?: SubmitMigrationTaskParams,
+  ): Promise<void> {
     if (!connectKey) throw new ValidationError('connectKey is required');
     if (!jiraIssueFieldsKey) throw new ValidationError('jiraIssueFieldsKey is required');
+    const query: Record<string, boolean | undefined> = {};
+    if (params?.retriggerCompletedMigration !== undefined) {
+      query['retriggerCompletedMigration'] = params.retriggerCompletedMigration;
+    }
     await this.transport.request<unknown>({
       method: 'POST',
       path: `${this.baseUrl}/migration/${encodePathSegment(connectKey, 'connectKey')}/${encodePathSegment(jiraIssueFieldsKey, 'jiraIssueFieldsKey')}/task`,
+      query: Object.keys(query).length === 0 ? undefined : query,
     });
   }
 

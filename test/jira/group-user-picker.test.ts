@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { GroupUserPickerResource } from '../../src/jira/resources/group-user-picker.js';
 import type {
+  GroupUserPickerParams,
   GroupUserPickerResponse,
   GroupSuggestion,
   UserSuggestion,
@@ -53,17 +54,33 @@ describe('GroupUserPickerResource', () => {
   // ── pick ──────────────────────────────────────────────────────────────────
 
   describe('pick()', () => {
-    it('calls GET /groupuserpicker with no params and returns response', async () => {
+    it('calls GET /groupuserpicker with the required query and returns response', async () => {
       const response = makePickerResponse();
       transport.respondWith(response);
 
-      const result = await picker.pick();
+      const result = await picker.pick({ query: 'dev' });
 
       expect(result).toEqual(response);
       expect(transport.lastCall?.options).toMatchObject({
         method: 'GET',
         path: `${BASE_URL}/groupuserpicker`,
+        query: { query: 'dev' },
       });
+    });
+
+    it('requires query and excludes removed non-wire parameter keys', () => {
+      // @ts-expect-error query is required by the Jira v3 contract.
+      const missingQuery: GroupUserPickerParams = {};
+      type HasProjectRole = 'projectRole' extends keyof GroupUserPickerParams ? true : false;
+      type HasExcludeAccountIds = 'excludeAccountIds' extends keyof GroupUserPickerParams
+        ? true
+        : false;
+      const hasProjectRole: HasProjectRole = false;
+      const hasExcludeAccountIds: HasExcludeAccountIds = false;
+
+      expect(missingQuery).toEqual({});
+      expect(hasProjectRole).toBe(false);
+      expect(hasExcludeAccountIds).toBe(false);
     });
 
     it('response shape matches spec FoundUsersAndGroups (groups+users sections only, no top-level header/total)', async () => {
@@ -197,6 +214,14 @@ describe('GroupUserPickerResource', () => {
       expect(transport.lastCall?.options.query).toMatchObject({ caseInsensitive: true });
     });
 
+    it('forwards includeAiAgents from the current spec', async () => {
+      transport.respondWith(makePickerResponse());
+
+      await picker.pick({ query: 'agent', includeAiAgents: true });
+
+      expect(transport.lastCall?.options.query).toMatchObject({ includeAiAgents: true });
+    });
+
     it('forwards projectId array as repeated query params in path, not CSV', async () => {
       // Spec: projectId is type:array, sent as repeated params.
       transport.respondWith(makePickerResponse());
@@ -223,39 +248,12 @@ describe('GroupUserPickerResource', () => {
       expect(query).not.toHaveProperty('issueTypeId');
     });
 
-    it('does NOT emit projectRole — not a spec param for GET /groupuserpicker', async () => {
-      // projectRole is NOT in the spec for GET /groupuserpicker.
-      // Prior code emitted it on the wire; now it must be suppressed.
-      transport.respondWith(makePickerResponse());
-
-      // Pass via cast since TypeScript correctly rejects projectRole now
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await picker.pick({ query: 'dev', projectRole: 'Developer' } as any);
-
-      const query = transport.lastCall?.options.query as Record<string, unknown>;
-      expect(query).not.toHaveProperty('projectRole');
-      const path = transport.lastCall?.options.path as string;
-      expect(path).not.toContain('projectRole');
-    });
-
     it('forwards fieldId as scalar query param', async () => {
       transport.respondWith(makePickerResponse());
 
       await picker.pick({ query: 'dev', fieldId: 'customfield_10050' });
 
       expect(transport.lastCall?.options.query).toMatchObject({ fieldId: 'customfield_10050' });
-    });
-
-    it('does NOT emit excludeAccountIds — deprecated, not a valid param on GET /groupuserpicker', async () => {
-      // The /groupuserpicker spec has no excludeAccountIds param.
-      transport.respondWith(makePickerResponse());
-
-      await picker.pick({ query: 'alice', excludeAccountIds: ['acc-1', 'acc-2'] });
-
-      const query = transport.lastCall?.options.query as Record<string, unknown>;
-      expect(query).not.toHaveProperty('excludeAccountIds');
-      const path = transport.lastCall?.options.path as string;
-      expect(path).not.toContain('excludeAccountIds');
     });
 
     it('maps excludeConnectUsers to the excludeConnectAddons wire param', async () => {
@@ -284,7 +282,7 @@ describe('GroupUserPickerResource', () => {
     it('propagates transport errors', async () => {
       transport.respondWithError(new Error('network error'));
 
-      await expect(picker.pick()).rejects.toThrow('network error');
+      await expect(picker.pick({ query: 'dev' })).rejects.toThrow('network error');
     });
   });
 });

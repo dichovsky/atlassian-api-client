@@ -407,7 +407,7 @@ Recommended orderings:
 
 ### OAuth Scope Detection (`src/core/scopes.ts`)
 
-`detectRequiredScopes(operations)` maps Atlassian operation strings (e.g. `'jira.issues.create'`) to the required Cloud OAuth 2.0 scope strings. `listKnownOperations()` returns all known operation names for tooling.
+`detectRequiredScopes(operations)` maps selected Atlassian operation strings (e.g. `'jira.issues.create'`) to recommended granular Cloud OAuth 2.0 scope strings. `listKnownOperations()` returns the mapped operation names for tooling. Scope validation uses the broader catalog derived from the pinned OpenAPI documents: 247 unique granular scopes referenced by operations, 8 additional granular catalog entries, and 16 classic or Jira Software compatibility scopes, for 271 recognized strings total.
 
 ### OpenAPI Type Generator (`src/core/openapi.ts`)
 

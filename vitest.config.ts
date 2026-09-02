@@ -5,7 +5,12 @@ export default defineConfig({
     globals: false,
     environment: 'node',
     include: ['test/**/*.test.ts'],
-    exclude: ['node_modules/**', 'dist/**', 'test/fixtures/**'],
+    exclude: [
+      'node_modules/**',
+      'dist/**',
+      'test/fixtures/**',
+      'test/scripts/api-gap-analysis.test.ts',
+    ],
     coverage: {
       provider: 'v8',
       include: ['src/**/*.ts'],

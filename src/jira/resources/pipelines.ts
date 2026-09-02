@@ -177,13 +177,15 @@ export interface DeploymentGatingStatus {
  *
  * @devnotes Spans two URL bases:
  *   - `buildsBaseUrl`: `/rest/builds/0.1`   — B954, B955
- *   - `deploymentsBaseUrl`: `/rest/deployments/0.1` — B958, B959, B960
+ *   - `deploymentsBaseUrl`: `/rest/deployments/0.1` — B958, B959
+ *   - `deploymentGatingBaseUrl`: tenant `/rest/deployments/0.1` — B960
  */
 export class PipelinesResource {
   constructor(
     private readonly transport: Transport,
     private readonly buildsBaseUrl: string,
     private readonly deploymentsBaseUrl: string,
+    private readonly deploymentGatingBaseUrl: string = deploymentsBaseUrl,
   ) {}
 
   // ── Builds ────────────────────────────────────────────────────────────────
@@ -260,7 +262,7 @@ export class PipelinesResource {
   ): Promise<DeploymentGatingStatus> {
     const response = await this.transport.request<DeploymentGatingStatus>({
       method: 'GET',
-      path: `${this.deploymentsBaseUrl}/pipelines/${encodePathSegment(pipelineId)}/environments/${encodePathSegment(environmentId)}/deployments/${deploymentSequenceNumber}/gating-status`,
+      path: `${this.deploymentGatingBaseUrl}/pipelines/${encodePathSegment(pipelineId)}/environments/${encodePathSegment(environmentId)}/deployments/${deploymentSequenceNumber}/gating-status`,
     });
     return response.data;
   }

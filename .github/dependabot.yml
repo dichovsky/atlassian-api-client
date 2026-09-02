@@ -17,6 +17,14 @@ updates:
       semver-minor-days: 7
       semver-major-days: 30
 
+    # `typescript` intentionally aliases the TS6 compatibility API while
+    # `@typescript/native` is the TS7 build compiler. Major TS upgrades must
+    # preserve that split until the compiler API and typescript-eslint migrate.
+    ignore:
+      - dependency-name: typescript
+        update-types:
+          - version-update:semver-major
+
     # Group all dev-dependency minor and patch bumps into one PR per week
     # to reduce noise — major bumps remain individual for deliberate review.
     groups:

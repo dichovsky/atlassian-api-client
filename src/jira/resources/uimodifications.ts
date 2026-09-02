@@ -5,6 +5,16 @@ import { paginateOffset, validatePageSize } from '../../core/pagination.js';
 
 // ─── Response types ────────────────────────────────────────────────────────
 
+/** Jira and JSM views supported by UI modification contexts. */
+export type UiModificationViewType =
+  | 'GIC'
+  | 'IssueView'
+  | 'IssueTransition'
+  | 'JSMRequestCreate'
+  | 'GICAgentView'
+  | 'IssueViewAgentView'
+  | 'IssueTransitionAgentView';
+
 /** Context in which a UI modification is applied (response shape). */
 export interface UiModificationContextDetails {
   /**
@@ -26,7 +36,7 @@ export interface UiModificationContextDetails {
   /** The request type ID of the context (JSM only). */
   readonly requestTypeId?: string;
   /** The view type of the context. */
-  readonly viewType?: 'GIC' | 'IssueView' | 'IssueTransition' | 'JSMRequestCreate' | null;
+  readonly viewType?: UiModificationViewType | null;
 }
 
 /**
@@ -47,7 +57,7 @@ export interface UiModificationContextInput {
   /** The request type ID of the context (JSM only). */
   readonly requestTypeId?: string;
   /** The view type of the context. */
-  readonly viewType?: 'GIC' | 'IssueView' | 'IssueTransition' | 'JSMRequestCreate' | null;
+  readonly viewType?: UiModificationViewType | null;
 }
 
 /** A Jira UI modification. */

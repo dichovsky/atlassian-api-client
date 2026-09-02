@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { LabelsResource } from '../../src/confluence/resources/labels.js';
+import type { ListLabelsParams } from '../../src/confluence/types/labels.js';
 import { MockTransport } from '../helpers/mock-transport.js';
 
 const BASE_URL = 'https://test.atlassian.net/wiki/api/v2';
@@ -13,6 +14,14 @@ describe('LabelsResource', () => {
   beforeEach(() => {
     transport = new MockTransport();
     labels = new LabelsResource(transport, BASE_URL);
+  });
+
+  it('rejects undocumented label prefixes at compile time', () => {
+    const params: ListLabelsParams = {
+      // @ts-expect-error Only the current LabelPrefix values are supported.
+      prefix: 'private',
+    };
+    expect(params.prefix).toBe('private');
   });
 
   // ── listForPage ───────────────────────────────────────────────────────────
@@ -37,7 +46,12 @@ describe('LabelsResource', () => {
     it('includes params when provided', async () => {
       // Arrange
       transport.respondWith({ results: [], _links: {} });
-      const params = { prefix: 'global', limit: 15, cursor: 'tok' };
+      const params = {
+        prefix: 'global' as const,
+        sort: '-name' as const,
+        limit: 15,
+        cursor: 'tok',
+      };
 
       // Act
       await labels.listForPage('page-1', params);

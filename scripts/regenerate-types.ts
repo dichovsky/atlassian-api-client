@@ -1,6 +1,7 @@
 /**
  * Spec drift-guard: fetches upstream Atlassian OpenAPI specs, runs generateTypes() on each,
- * and asserts no throw. Commits nothing — this is a read-only smoke-test.
+ * and compares a canonical contract fingerprint with the pinned snapshots in spec/.
+ * Commits nothing — this is a read-only check.
  *
  * CLI entry:  node --experimental-strip-types scripts/regenerate-types.ts
  * npm script: npm run spec-drift
@@ -13,6 +14,8 @@
  * keeping the script dependency-free and in sync with main source at all times.
  */
 
+import { createHash } from 'node:crypto';
+import { readFile } from 'node:fs/promises';
 import { generateTypes } from '../src/core/openapi.ts';
 import type { OpenApiSpec } from '../src/core/openapi.ts';
 
@@ -23,18 +26,138 @@ export const SPEC_URLS = {
   confluence: 'https://developer.atlassian.com/cloud/confluence/openapi-v2.v3.json',
 } as const;
 
+export type SpecName = keyof typeof SPEC_URLS;
+
+/** Pinned counterpart for every monitored upstream specification. */
+export const SPEC_FILES: Readonly<Record<SpecName, URL>> = {
+  jiraPlatform: new URL('../spec/jira-platform-v3.json', import.meta.url),
+  jiraSoftware: new URL('../spec/jira-software.json', import.meta.url),
+  confluence: new URL('../spec/confluence-v2.json', import.meta.url),
+};
+
 /** Summary of a single spec check. */
 export interface SpecResult {
   readonly name: string;
   readonly url: string;
   readonly ok: boolean;
   readonly typeCount?: number;
+  readonly drift?: boolean;
+  readonly liveFingerprint?: string;
+  readonly pinnedFingerprint?: string;
   readonly error?: string;
 }
 
 /** Options for {@link runDriftGuard}. Accepts an injectable fetch for unit tests. */
 export interface DriftGuardOptions {
   readonly fetch?: typeof globalThis.fetch;
+  readonly loadPinned?: (name: SpecName) => Promise<OpenApiSpec>;
+  /** Per-request timeout in milliseconds. Defaults to 30 seconds. */
+  readonly timeoutMs?: number;
+}
+
+const DOCUMENTATION_ONLY_KEYS = new Set([
+  'description',
+  'summary',
+  'externalDocs',
+  'example',
+  'examples',
+  'termsOfService',
+  'contact',
+  'license',
+]);
+
+/** OpenAPI maps whose keys are user-defined names rather than spec keywords. */
+const NAMED_MAP_KEYS = new Set([
+  '$defs',
+  'content',
+  'dependentRequired',
+  'dependentSchemas',
+  'encoding',
+  'headers',
+  'links',
+  'mapping',
+  'parameters',
+  'pathItems',
+  'paths',
+  'patternProperties',
+  'properties',
+  'requestBodies',
+  'responses',
+  'schemas',
+  'scopes',
+  'securitySchemes',
+  'variables',
+  'webhooks',
+]);
+
+const OAUTH_FLOW_KEYS = new Set(['implicit', 'password', 'clientCredentials', 'authorizationCode']);
+
+type CanonicalContext = 'object' | 'named-map' | 'named-map-of-maps' | 'oauth-scopes';
+
+/**
+ * Produces deterministic JSON while removing prose/examples that cannot change a request or
+ * response contract. Object keys are sorted; array order is retained because it may be meaningful
+ * for schemas such as oneOf and security alternatives.
+ */
+function canonicalize(
+  value: unknown,
+  context: CanonicalContext = 'object',
+  parentKey?: string,
+): unknown {
+  if (Array.isArray(value)) {
+    // Security Requirement Objects are named maps keyed by security-scheme name.
+    const itemContext: CanonicalContext = parentKey === 'security' ? 'named-map' : 'object';
+    return value.map((item) => canonicalize(item, itemContext));
+  }
+  if (value !== null && typeof value === 'object') {
+    const preserveNames = context !== 'object';
+    const entries = Object.entries(value as Record<string, unknown>)
+      // Keys inside named maps are component/field names, not OpenAPI keywords.
+      .filter(([key]) => preserveNames || !DOCUMENTATION_ONLY_KEYS.has(key))
+      .sort(([left], [right]) => left.localeCompare(right))
+      .map(([key, item]) => {
+        // OAuth scope-map values are human-readable descriptions; only each scope name is semantic.
+        if (context === 'oauth-scopes') {
+          return [key, typeof item === 'string' ? true : canonicalize(item)] as const;
+        }
+        let childContext: CanonicalContext = 'object';
+        if (context === 'named-map-of-maps') {
+          childContext = 'named-map';
+        } else if (context === 'object') {
+          childContext =
+            key === 'callbacks'
+              ? 'named-map-of-maps'
+              : key === 'scopes' && OAUTH_FLOW_KEYS.has(parentKey ?? '')
+                ? 'oauth-scopes'
+                : NAMED_MAP_KEYS.has(key)
+                  ? 'named-map'
+                  : 'object';
+        }
+        return [key, canonicalize(item, childContext, key)] as const;
+      });
+    return Object.fromEntries(entries);
+  }
+  return value;
+}
+
+/** Hashes the wire-relevant OpenAPI surface, excluding prose-only metadata. */
+export function contractFingerprint(spec: OpenApiSpec): string {
+  const document = spec as unknown as Record<string, unknown>;
+  const projection = canonicalize({
+    openapi: document.openapi,
+    jsonSchemaDialect: document.jsonSchemaDialect,
+    servers: document.servers,
+    security: document.security,
+    paths: document.paths,
+    webhooks: document.webhooks,
+    components: document.components,
+  });
+  return createHash('sha256').update(JSON.stringify(projection)).digest('hex');
+}
+
+async function loadPinnedSpec(name: SpecName): Promise<OpenApiSpec> {
+  const source = await readFile(SPEC_FILES[name], 'utf8');
+  return JSON.parse(source) as OpenApiSpec;
 }
 
 /**
@@ -45,11 +168,24 @@ export interface DriftGuardOptions {
  */
 export async function runDriftGuard(options: DriftGuardOptions = {}): Promise<SpecResult[]> {
   const fetchFn = options.fetch ?? globalThis.fetch;
-  const entries = Object.entries(SPEC_URLS) as [string, string][];
+  const pinnedLoader = options.loadPinned ?? loadPinnedSpec;
+  const entries = Object.entries(SPEC_URLS) as [SpecName, string][];
   const results: SpecResult[] = [];
 
   for (const [name, url] of entries) {
-    results.push(await checkSpec(name, url, fetchFn));
+    let pinnedSpec: OpenApiSpec;
+    try {
+      pinnedSpec = await pinnedLoader(name);
+    } catch (err) {
+      results.push({
+        name,
+        url,
+        ok: false,
+        error: `pinned spec load failed: ${err instanceof Error ? err.message : String(err)}`,
+      });
+      continue;
+    }
+    results.push(await checkSpec(name, url, fetchFn, pinnedSpec, options.timeoutMs));
   }
 
   return results;
@@ -63,10 +199,12 @@ export async function checkSpec(
   name: string,
   url: string,
   fetchFn: typeof globalThis.fetch = globalThis.fetch,
+  pinnedSpec?: OpenApiSpec,
+  timeoutMs = 30_000,
 ): Promise<SpecResult> {
   let response: Response;
   try {
-    response = await fetchFn(url);
+    response = await fetchFn(url, { signal: AbortSignal.timeout(timeoutMs) });
   } catch (err) {
     return {
       name,
@@ -99,6 +237,31 @@ export async function checkSpec(
 
   try {
     const generated = generateTypes(spec);
+    if (pinnedSpec !== undefined) {
+      const liveFingerprint = contractFingerprint(spec);
+      const pinnedFingerprint = contractFingerprint(pinnedSpec);
+      if (liveFingerprint !== pinnedFingerprint) {
+        return {
+          name,
+          url,
+          ok: false,
+          typeCount: generated.typeNames.length,
+          drift: true,
+          liveFingerprint,
+          pinnedFingerprint,
+          error: `contract drift: pinned ${pinnedFingerprint}, live ${liveFingerprint}`,
+        };
+      }
+      return {
+        name,
+        url,
+        ok: true,
+        typeCount: generated.typeNames.length,
+        drift: false,
+        liveFingerprint,
+        pinnedFingerprint,
+      };
+    }
     return { name, url, ok: true, typeCount: generated.typeNames.length };
   } catch (err) {
     return {
@@ -123,7 +286,7 @@ if (isMain) {
   for (const result of results) {
     if (result.ok) {
       process.stdout.write(
-        `✓ ${result.name}: ${result.typeCount ?? 0} types generated from ${result.url}\n`,
+        `✓ ${result.name}: ${result.typeCount ?? 0} types; contract ${result.liveFingerprint?.slice(0, 12) ?? 'not compared'} (${result.url})\n`,
       );
     } else {
       process.stderr.write(

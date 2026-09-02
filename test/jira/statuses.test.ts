@@ -392,6 +392,7 @@ describe('StatusesResource', () => {
         maxResults: 10,
         searchString: 'In Progress',
         statusCategory: 'IN_PROGRESS',
+        includeGlobalStatuses: true,
       });
 
       expect(transport.lastCall?.options.query).toEqual({
@@ -400,6 +401,7 @@ describe('StatusesResource', () => {
         maxResults: 10,
         searchString: 'In Progress',
         statusCategory: 'IN_PROGRESS',
+        includeGlobalStatuses: true,
       });
     });
 

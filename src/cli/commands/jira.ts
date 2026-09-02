@@ -44,9 +44,13 @@ import type {
   BulkEditDashboardsData,
   DashboardSharePermission,
   SearchDashboardsOrderBy,
+  SearchParams,
   ListSoftwareIssuesParams,
+  ListProjectsParams,
+  ListBoardsParams,
   RedactionItem,
   IssueTypeScreenSchemeOrderBy,
+  GroupUserPickerParams,
 } from '../../jira/index.js';
 import type {
   AddWorklogData,
@@ -70,14 +74,14 @@ import type {
   ConnectCustomFieldValue,
   EntityPropertyDetails,
 } from '../../jira/resources/migration.js';
-import { buildClientConfig } from '../config.js';
+import { buildJiraClientConfig } from '../config.js';
 
 /** Execute a Jira CLI command. Returns the data to be printed. */
 export async function executeJiraCommand(
   cmd: ParsedCommand,
   globals: GlobalOptions,
 ): Promise<unknown> {
-  const client = new JiraClient(buildClientConfig(globals));
+  const client = new JiraClient(buildJiraClientConfig(globals));
 
   switch (cmd.resource) {
     case 'issues':
@@ -603,7 +607,14 @@ async function executeIssues(client: JiraClient, cmd: ParsedCommand): Promise<un
         },
       );
     case 'get-limit-report':
-      return client.issues.getLimitReport();
+      return client.issues.getLimitReport({
+        isReturningKeys: asBoolFlag(opts['is-returning-keys']),
+      });
+    case 'get-adf-limit-report':
+      return client.issues.getAdfLimitReport({
+        isReturningKeys: asBoolFlag(opts['is-returning-keys']),
+        fieldType: parseCsv(opts['field-type']),
+      });
     case 'picker':
       return client.issues.picker({
         query: asString(opts['query']),
@@ -645,15 +656,35 @@ async function executeIssues(client: JiraClient, cmd: ParsedCommand): Promise<un
       return client.issues.isWatchingIssuesBulk({
         issueIds: splitCsvIds(requireOpt(opts['issue-ids'], '--issue-ids')),
       });
-    case 'export-archived':
-      await client.issues.exportArchivedIssues({
-        jql: asString(opts['jql']),
-        exportType: asExportType(asString(opts['export-type'])),
+    case 'export-archived': {
+      if (opts['jql'] !== undefined) {
+        throw new Error(
+          '--jql is no longer supported by export-archived; use --projects, --archived-by, --date-after/--date-before, --issue-types, or --reporters',
+        );
+      }
+      if (opts['export-type'] !== undefined) {
+        throw new Error(
+          '--export-type is no longer supported by export-archived; Atlassian always produces CSV',
+        );
+      }
+      const dateAfter = asString(opts['date-after']);
+      const dateBefore = asString(opts['date-before']);
+      if ((dateAfter === undefined) !== (dateBefore === undefined)) {
+        throw new Error('--date-after and --date-before must be provided together');
+      }
+      return client.issues.exportArchivedIssues({
+        archivedBy: parseCsv(opts['archived-by']),
+        ...(dateAfter !== undefined && dateBefore !== undefined
+          ? { archivedDateRange: { dateAfter, dateBefore } }
+          : {}),
+        issueTypes: parseCsv(opts['issue-types']),
+        projects: parseCsv(opts['projects']),
+        reporters: parseCsv(opts['reporters']),
       });
-      return { submitted: true };
+    }
     default:
       throw new Error(
-        `Unknown issues action: ${cmd.action}. Actions: get, create, update, delete, transition, transitions, get-agile, get-estimation, set-estimation, rank, assign, get-changelog, filter-changelog, get-editmeta, notify, list-properties, delete-property, get-property, set-property, delete-all-remotelinks, list-remotelinks, create-remotelink, delete-remotelink, get-remotelink, update-remotelink, remove-vote, get-votes, add-vote, remove-watcher, get-watchers, add-watcher, delete-all-worklogs, list-worklogs, add-worklog, delete-worklog, get-worklog, update-worklog, list-worklog-properties, delete-worklog-property, get-worklog-property, set-worklog-property, move-worklog, archive-issues, archive-issues-jql, bulk-fetch, get-create-meta, get-create-meta-issuetypes, get-create-meta-issuetype, get-limit-report, picker, set-properties-by-entity-ids, set-properties-multi, unarchive-issues, watch-issues-bulk, is-watching-bulk, export-archived`,
+        `Unknown issues action: ${cmd.action}. Actions: get, create, update, delete, transition, transitions, get-agile, get-estimation, set-estimation, rank, assign, get-changelog, filter-changelog, get-editmeta, notify, list-properties, delete-property, get-property, set-property, delete-all-remotelinks, list-remotelinks, create-remotelink, delete-remotelink, get-remotelink, update-remotelink, remove-vote, get-votes, add-vote, remove-watcher, get-watchers, add-watcher, delete-all-worklogs, list-worklogs, add-worklog, delete-worklog, get-worklog, update-worklog, list-worklog-properties, delete-worklog-property, get-worklog-property, set-worklog-property, move-worklog, archive-issues, archive-issues-jql, bulk-fetch, get-create-meta, get-create-meta-issuetypes, get-create-meta-issuetype, get-limit-report, get-adf-limit-report, picker, set-properties-by-entity-ids, set-properties-multi, unarchive-issues, watch-issues-bulk, is-watching-bulk, export-archived`,
       );
   }
 }
@@ -662,24 +693,55 @@ async function executeProjects(client: JiraClient, cmd: ParsedCommand): Promise<
   const opts = cmd.options;
 
   switch (cmd.action) {
-    case 'list':
+    case 'list': {
+      const action = asString(opts['action']);
+      if (
+        action !== undefined &&
+        action !== 'view' &&
+        action !== 'browse' &&
+        action !== 'edit' &&
+        action !== 'create'
+      ) {
+        throw new Error(`--action must be one of: view, browse, edit, create; got: ${action}`);
+      }
       return client.projects.list({
+        startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+        orderBy: asEnum(opts['order-by'], PROJECT_ORDER_BY_VALUES, 'order-by'),
+        expand: csvFlag(opts['expand']),
+        status: parseCsv(opts['status']),
+        typeKey: asString(opts['type-key']),
+        id: parseCsv(opts['id'])?.map((id) => parsePositiveDecimalIntegerArg(id, '--id')),
+        keys: parseCsv(opts['keys']),
+        query: asString(opts['query']),
+        categoryId: asPositiveDecimalInteger(opts['category-id'], '--category-id'),
+        propertyQuery: asString(opts['property-query']),
+        properties: parseCsv(opts['properties']),
+        action,
       });
+    }
     case 'get':
       return client.projects.get(requireArg(cmd.positionalArgs[0], 'project key'));
     case 'list-legacy': {
-      const typeKeyRaw = asString(opts['type-key']);
-      const expandRaw = asString(opts['expand']);
+      if (opts['action'] !== undefined) {
+        throw new Error(
+          '--action is not supported by projects list-legacy; use projects list instead',
+        );
+      }
+      rejectRemovedOptions(
+        opts,
+        'projects list-legacy',
+        ['max-results', 'order-by', 'start-at', 'type-key', 'category-id', 'query'],
+        'use projects list instead',
+      );
+      const recent = asNonNegativeInt(opts['recent'], '--recent');
+      if (recent !== undefined && recent > 20) {
+        throw new Error(`--recent must be an integer between 0 and 20, got: ${recent}`);
+      }
       return client.projects.listLegacy({
-        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
-        orderBy: asString(opts['order-by']),
-        startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
-        ...(expandRaw !== undefined && { expand: expandRaw.split(',').map((s) => s.trim()) }),
-        ...(typeKeyRaw !== undefined && { typeKey: typeKeyRaw.split(',').map((s) => s.trim()) }),
-        categoryId: asPositiveInt(opts['category-id'], '--category-id'),
-        action: asString(opts['action']),
-        query: asString(opts['query']),
+        expand: asString(opts['expand']),
+        recent,
+        properties: parseCsv(opts['properties']),
       });
     }
     case 'create': {
@@ -917,12 +979,14 @@ async function executeProjects(client: JiraClient, cmd: ParsedCommand): Promise<
       });
     }
     case 'list-all-versions': {
+      rejectRemovedOptions(
+        opts,
+        'projects list-all-versions',
+        ['max-results', 'order-by', 'query', 'status'],
+        'use projects list-versions instead',
+      );
       const projectIdOrKey = requireArg(cmd.positionalArgs[0], 'projectIdOrKey');
       return client.projects.listAllVersions(projectIdOrKey, {
-        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
-        orderBy: asString(opts['order-by']),
-        query: asString(opts['query']),
-        status: asString(opts['status']),
         expand: asString(opts['expand']),
       });
     }
@@ -983,14 +1047,46 @@ async function executeProjects(client: JiraClient, cmd: ParsedCommand): Promise<
 
 async function executeSearch(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
   const opts = cmd.options;
+  const currentJqlSearchAction = ['', 'search', 'query', 'jql-get', 'jql-post'].includes(
+    cmd.action,
+  );
+  if (opts['include-archived-projects'] !== undefined && !currentJqlSearchAction) {
+    throw new Error(
+      `--include-archived-projects is not supported by jira search ${cmd.action}; use current search, query, jql-get, or jql-post`,
+    );
+  }
   switch (cmd.action) {
+    case 'legacy-post': {
+      rejectRemovedOptions(
+        opts,
+        'jira search legacy-post',
+        ['fail-fast'],
+        '--fail-fast is available only on GET search; use `search get`, current `search`, or `search jql-get`',
+      );
+      return client.search.search({
+        jql: requireOpt(opts['jql'], '--jql'),
+        startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
+        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+        fields: csvFlag(opts['fields']),
+        expand: csvFlag(opts['expand']),
+        validateQuery: asLegacySearchValidation(opts['validate-query']),
+        properties: csvFlag(opts['properties']),
+        fieldsByKeys: asBoolFlag(opts['fields-by-keys']),
+      });
+    }
     case 'get': {
       // B932: GET /search (existing searchGet method)
       const jql = requireOpt(opts['jql'], '--jql');
       return client.search.searchGet({
         jql,
+        startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
         fields: csvFlag(opts['fields']),
+        expand: csvFlag(opts['expand']),
+        validateQuery: asLegacySearchValidation(opts['validate-query']),
+        properties: csvFlag(opts['properties']),
+        fieldsByKeys: asBoolFlag(opts['fields-by-keys']),
+        failFast: asBoolFlag(opts['fail-fast']),
       });
     }
     case 'approximate-count': {
@@ -1000,34 +1096,80 @@ async function executeSearch(client: JiraClient, cmd: ParsedCommand): Promise<un
     }
     case 'jql-get': {
       // B767
+      rejectRemovedOptions(
+        opts,
+        'jira search jql-get',
+        ['start-at', 'validate-query'],
+        'the /search/jql endpoint is cursor-paginated; use --next-page-token',
+      );
       return client.search.searchJqlGet({
         jql: asString(opts['jql']),
         nextPageToken: asString(opts['next-page-token']),
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
         fields: csvFlag(opts['fields']),
         expand: csvFlag(opts['expand']),
+        properties: csvFlag(opts['properties']),
+        fieldsByKeys: asBoolFlag(opts['fields-by-keys']),
+        reconcileIssues: asIntArray(opts['reconcile-issues'], '--reconcile-issues'),
+        failFast: asBoolFlag(opts['fail-fast']),
+        includeArchivedProjects: asBoolFlag(opts['include-archived-projects']),
       });
     }
     case 'jql-post': {
       // B768
+      rejectRemovedOptions(
+        opts,
+        'jira search jql-post',
+        ['fail-fast'],
+        '--fail-fast is available only on GET search; use current `search` or `search jql-get`',
+      );
+      rejectRemovedOptions(
+        opts,
+        'jira search jql-post',
+        ['start-at', 'validate-query'],
+        'the /search/jql endpoint is cursor-paginated; use --next-page-token',
+      );
       return client.search.searchJqlPost({
         jql: asString(opts['jql']),
         nextPageToken: asString(opts['next-page-token']),
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
         fields: csvFlag(opts['fields']),
         expand: csvFlag(opts['expand']),
+        properties: csvFlag(opts['properties']),
+        fieldsByKeys: asBoolFlag(opts['fields-by-keys']),
+        reconcileIssues: asIntArray(opts['reconcile-issues'], '--reconcile-issues'),
+        includeArchivedProjects: asBoolFlag(opts['include-archived-projects']),
       });
     }
-    default: {
-      // Backwards compat: atlas jira search --jql "..." still works
+    case '':
+    case 'query':
+    case 'search': {
+      // Default to the current enhanced, cursor-paginated search API.
+      rejectRemovedOptions(
+        opts,
+        'jira search',
+        ['start-at', 'validate-query'],
+        'the current /search/jql endpoint is cursor-paginated; use --next-page-token, or use `search get`/`search legacy-post` for deprecated offset pagination',
+      );
       const jql = asString(opts['jql']);
       if (!jql) throw new Error('Missing --jql option for search');
-      return client.search.search({
+      return client.search.searchJqlGet({
         jql,
+        nextPageToken: asString(opts['next-page-token']),
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
         fields: csvFlag(opts['fields']),
+        expand: csvFlag(opts['expand']),
+        properties: csvFlag(opts['properties']),
+        fieldsByKeys: asBoolFlag(opts['fields-by-keys']),
+        reconcileIssues: asIntArray(opts['reconcile-issues'], '--reconcile-issues'),
+        failFast: asBoolFlag(opts['fail-fast']),
+        includeArchivedProjects: asBoolFlag(opts['include-archived-projects']),
       });
     }
+    default:
+      throw new Error(
+        `Unknown search action: ${cmd.action}. Actions: search, query, legacy-post, get, approximate-count, jql-get, jql-post`,
+      );
   }
 }
 
@@ -1371,6 +1513,7 @@ async function executeStatuses(client: JiraClient, cmd: ParsedCommand): Promise<
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
         searchString: asString(opts['search-string']),
         statusCategory: asStatusCategory(opts['status-category']),
+        includeGlobalStatuses: asBoolFlag(opts['include-global-statuses']),
       });
     default:
       throw new Error(
@@ -1388,6 +1531,14 @@ async function executeBoards(client: JiraClient, cmd: ParsedCommand): Promise<un
         type: asBoardType(opts['type']),
         name: asString(opts['name']),
         projectKeyOrId: asString(opts['project']),
+        accountIdLocation: asString(opts['account-id-location']),
+        projectLocation: asString(opts['project-location']),
+        includePrivate: asBoolFlag(opts['include-private']),
+        negateLocationFiltering: asBoolFlag(opts['negate-location-filtering']),
+        orderBy: asEnum(opts['order-by'], BOARD_ORDER_BY_VALUES, 'order-by'),
+        expand: asString(opts['expand']),
+        projectTypeLocation: csvFlag(opts['project-type-location']),
+        filterId: asPositiveInt(opts['filter-id'], '--filter-id'),
         startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
       });
@@ -1398,10 +1549,32 @@ async function executeBoards(client: JiraClient, cmd: ParsedCommand): Promise<un
     }
     case 'create': {
       const filterIdRaw = requireOpt(opts['filter-id'], '--filter-id');
+      const locationType = asBoardLocationType(opts['location-type']);
+      const projectKeyOrId = asString(opts['location-project-key-or-id']);
+      let location:
+        | { readonly type: 'project'; readonly projectKeyOrId: string }
+        | { readonly type: 'user' }
+        | undefined;
+      if (locationType === undefined) {
+        if (projectKeyOrId !== undefined) {
+          throw new Error('--location-project-key-or-id requires --location-type project');
+        }
+      } else if (locationType === 'project') {
+        if (projectKeyOrId === undefined) {
+          throw new Error('--location-type project requires --location-project-key-or-id');
+        }
+        location = { type: 'project', projectKeyOrId };
+      } else {
+        if (projectKeyOrId !== undefined) {
+          throw new Error('--location-project-key-or-id cannot be used with --location-type user');
+        }
+        location = { type: 'user' };
+      }
       return client.boards.create({
         name: requireOpt(opts['name'], '--name'),
         type: requireBoardType(opts['type']),
         filterId: parsePositiveIntArg(filterIdRaw, '--filter-id'),
+        ...(location === undefined ? {} : { location }),
       });
     }
     case 'delete': {
@@ -1416,6 +1589,8 @@ async function executeBoards(client: JiraClient, cmd: ParsedCommand): Promise<un
         fields: csvFlag(opts['fields']),
         startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+        validateQuery: asBoolFlag(opts['validate-query']),
+        expand: asString(opts['expand']),
       });
     }
     case 'configuration': {
@@ -1438,6 +1613,8 @@ async function executeBoards(client: JiraClient, cmd: ParsedCommand): Promise<un
         fields: csvFlag(opts['fields']),
         startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+        validateQuery: asBoolFlag(opts['validate-query']),
+        expand: asString(opts['expand']),
       });
     }
     case 'issues-without-epic': {
@@ -1447,6 +1624,8 @@ async function executeBoards(client: JiraClient, cmd: ParsedCommand): Promise<un
         fields: csvFlag(opts['fields']),
         startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+        validateQuery: asBoolFlag(opts['validate-query']),
+        expand: asString(opts['expand']),
       });
     }
     case 'get-features': {
@@ -1469,6 +1648,8 @@ async function executeBoards(client: JiraClient, cmd: ParsedCommand): Promise<un
         fields: csvFlag(opts['fields']),
         startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+        validateQuery: asBoolFlag(opts['validate-query']),
+        expand: asString(opts['expand']),
       });
     }
     case 'move-issues': {
@@ -1478,7 +1659,13 @@ async function executeBoards(client: JiraClient, cmd: ParsedCommand): Promise<un
         .split(',')
         .map((s) => s.trim())
         .filter((s) => s.length > 0);
-      await client.boards.moveIssues(boardId, issues);
+      await client.boards.moveIssues(
+        boardId,
+        issues,
+        asString(opts['before']),
+        asString(opts['after']),
+        asPositiveInt(opts['custom-field'], '--custom-field'),
+      );
       return { moved: true };
     }
     case 'list-projects': {
@@ -1522,6 +1709,8 @@ async function executeBoards(client: JiraClient, cmd: ParsedCommand): Promise<un
         fields: csvFlag(opts['fields']),
         startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+        validateQuery: asBoolFlag(opts['validate-query']),
+        expand: asString(opts['expand']),
       });
     }
     case 'list-properties': {
@@ -1606,9 +1795,17 @@ async function executeBoards(client: JiraClient, cmd: ParsedCommand): Promise<un
       );
       return client.boards.getSprintIssuesEnhanced(boardId, sprintId, enhancedBoardParams(opts));
     }
+    case 'backlog-approximate-count': {
+      const boardId = parsePositiveIntArg(requireArg(cmd.positionalArgs[0], 'boardId'), 'boardId');
+      return client.boards.getBacklogApproximateCount(boardId, { jql: asString(opts['jql']) });
+    }
+    case 'issues-approximate-count': {
+      const boardId = parsePositiveIntArg(requireArg(cmd.positionalArgs[0], 'boardId'), 'boardId');
+      return client.boards.getIssueApproximateCount(boardId, { jql: asString(opts['jql']) });
+    }
     default:
       throw new Error(
-        `Unknown boards action: ${cmd.action}. Actions: list, get, create, delete, backlog, configuration, list-epics, epic-issues, issues-without-epic, get-features, toggle-feature, get-issues, move-issues, list-projects, list-projects-full, list-sprints, list-versions, sprint-issues, list-by-filter, list-properties, delete-property, get-property, set-property, list-quickfilters, get-quickfilter, get-reports, backlog-enhanced, get-issues-enhanced, issues-without-epic-enhanced, epic-issues-enhanced, sprint-issues-enhanced`,
+        `Unknown boards action: ${cmd.action}. Actions: list, get, create, delete, backlog, configuration, list-epics, epic-issues, issues-without-epic, get-features, toggle-feature, get-issues, move-issues, list-projects, list-projects-full, list-sprints, list-versions, sprint-issues, list-by-filter, list-properties, delete-property, get-property, set-property, list-quickfilters, get-quickfilter, get-reports, backlog-enhanced, get-issues-enhanced, issues-without-epic-enhanced, epic-issues-enhanced, sprint-issues-enhanced, backlog-approximate-count, issues-approximate-count`,
       );
   }
 }
@@ -1688,6 +1885,8 @@ async function executeSprints(client: JiraClient, cmd: ParsedCommand): Promise<u
         fields: csvFlag(opts['fields']),
         startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+        validateQuery: asBoolFlag(opts['validate-query']),
+        expand: asString(opts['expand']),
       });
     }
     case 'partial-update': {
@@ -1713,7 +1912,13 @@ async function executeSprints(client: JiraClient, cmd: ParsedCommand): Promise<u
         .split(',')
         .map((s) => s.trim())
         .filter((s) => s.length > 0);
-      await client.sprints.moveIssues(sprintId, issues);
+      await client.sprints.moveIssues(
+        sprintId,
+        issues,
+        asString(opts['before']),
+        asString(opts['after']),
+        asPositiveInt(opts['custom-field'], '--custom-field'),
+      );
       return { moved: true };
     }
     case 'list-properties': {
@@ -1806,6 +2011,8 @@ async function executeEpic(client: JiraClient, cmd: ParsedCommand): Promise<unkn
         fields: csvFlag(opts['fields']),
         startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+        validateQuery: asBoolFlag(opts['validate-query']),
+        expand: asString(opts['expand']),
       });
     }
     case 'move-issues': {
@@ -1836,6 +2043,8 @@ async function executeEpic(client: JiraClient, cmd: ParsedCommand): Promise<unkn
         fields: csvFlag(opts['fields']),
         startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+        validateQuery: asBoolFlag(opts['validate-query']),
+        expand: asString(opts['expand']),
       });
     case 'issues-enhanced': {
       const epicIdOrKey = requireArg(cmd.positionalArgs[0], 'epicIdOrKey');
@@ -1872,8 +2081,19 @@ async function executeBacklog(client: JiraClient, cmd: ParsedCommand): Promise<u
       const boardIdStr = asString(opts['board-id']);
       if (boardIdStr !== undefined) {
         const boardId = parsePositiveIntArg(boardIdStr, '--board-id');
-        await client.backlog.moveIssuesToBoard(boardId, issues);
+        await client.backlog.moveIssuesToBoard(boardId, issues, {
+          rankBeforeIssue: asString(opts['before']),
+          rankAfterIssue: asString(opts['after']),
+          rankCustomFieldId: asPositiveInt(opts['custom-field'], '--custom-field'),
+        });
       } else {
+        if (
+          opts['before'] !== undefined ||
+          opts['after'] !== undefined ||
+          opts['custom-field'] !== undefined
+        ) {
+          throw new Error('--before, --after, and --custom-field require --board-id');
+        }
         await client.backlog.moveIssues(issues);
       }
       return { moved: true };
@@ -2028,6 +2248,86 @@ function requireOpt(value: string | boolean | undefined, name: string): string {
   return value;
 }
 
+/** Fail fast when a migrated action receives a formerly accepted no-op flag. */
+function rejectRemovedOptions(
+  opts: Readonly<Record<string, string | boolean | undefined>>,
+  action: string,
+  flags: readonly string[],
+  guidance: string,
+): void {
+  const removed = flags.find((flag) => opts[flag] !== undefined);
+  if (removed !== undefined) {
+    throw new Error(`--${removed} is not supported by ${action}; ${guidance}`);
+  }
+}
+
+const PROJECT_ORDER_BY_VALUES = [
+  'category',
+  '-category',
+  '+category',
+  'key',
+  '-key',
+  '+key',
+  'name',
+  '-name',
+  '+name',
+  'owner',
+  '-owner',
+  '+owner',
+  'issueCount',
+  '-issueCount',
+  '+issueCount',
+  'lastIssueUpdatedDate',
+  '-lastIssueUpdatedDate',
+  '+lastIssueUpdatedDate',
+  'archivedDate',
+  '-archivedDate',
+  '+archivedDate',
+  'deletedDate',
+  '-deletedDate',
+  '+deletedDate',
+] as const satisfies readonly NonNullable<ListProjectsParams['orderBy']>[];
+
+const BOARD_ORDER_BY_VALUES = ['name', '-name', '+name'] as const satisfies readonly NonNullable<
+  ListBoardsParams['orderBy']
+>[];
+
+const AVATAR_SIZES = [
+  'xsmall',
+  'xsmall@2x',
+  'xsmall@3x',
+  'small',
+  'small@2x',
+  'small@3x',
+  'medium',
+  'medium@2x',
+  'medium@3x',
+  'large',
+  'large@2x',
+  'large@3x',
+  'xlarge',
+  'xlarge@2x',
+  'xlarge@3x',
+  'xxlarge',
+  'xxlarge@2x',
+  'xxlarge@3x',
+  'xxxlarge',
+  'xxxlarge@2x',
+  'xxxlarge@3x',
+] as const satisfies readonly NonNullable<GroupUserPickerParams['avatarSize']>[];
+
+function asEnum<T extends string>(
+  value: string | boolean | undefined,
+  allowed: readonly T[],
+  flagName: string,
+): T | undefined {
+  if (typeof value !== 'string') return undefined;
+  if (!(allowed as readonly string[]).includes(value)) {
+    throw new Error(`--${flagName} must be one of: ${allowed.join(', ')}, got: ${value}`);
+  }
+  return value as T;
+}
+
 function asString(value: string | boolean | undefined): string | undefined {
   return typeof value === 'string' ? value : undefined;
 }
@@ -2039,6 +2339,23 @@ function asPositiveInt(value: string | boolean | undefined, name: string): numbe
     throw new Error(`${name} must be a positive integer, got: ${value}`);
   }
   return n;
+}
+
+/** Preserve an optional positive decimal integer exactly (notably OpenAPI int64 IDs). */
+function asPositiveDecimalInteger(
+  value: string | boolean | undefined,
+  name: string,
+): string | undefined {
+  if (typeof value !== 'string') return undefined;
+  return parsePositiveDecimalIntegerArg(value.trim(), name);
+}
+
+/** Validate a positive base-10 integer without lossy Number coercion. */
+function parsePositiveDecimalIntegerArg(value: string, name: string): string {
+  if (!/^\d+$/.test(value) || !/[1-9]/.test(value) || BigInt(value) > 9_223_372_036_854_775_807n) {
+    throw new Error(`${name} must be a positive int64 decimal integer, got: ${value}`);
+  }
+  return value;
 }
 
 function asNonNegativeInt(value: string | boolean | undefined, name: string): number | undefined {
@@ -2065,6 +2382,13 @@ function asBoardType(
   if (s === undefined) return undefined;
   if (s === 'scrum' || s === 'kanban' || s === 'simple') return s;
   throw new Error(`--type must be one of: scrum, kanban, simple. Got: ${s}`);
+}
+
+function asBoardLocationType(value: string | boolean | undefined): 'project' | 'user' | undefined {
+  const s = asString(value);
+  if (s === undefined) return undefined;
+  if (s === 'project' || s === 'user') return s;
+  throw new Error(`--location-type must be one of: project, user. Got: ${s}`);
 }
 
 function asAccessType(
@@ -2100,6 +2424,26 @@ function asBoolFlag(value: string | boolean | undefined): boolean | undefined {
   throw new Error(`expected 'true' or 'false', got: ${value}`);
 }
 
+/** Validate the legacy Jira search endpoint's string-valued validation mode. */
+function asLegacySearchValidation(
+  value: string | boolean | undefined,
+): SearchParams['validateQuery'] {
+  const validation = asString(value);
+  if (validation === undefined) return undefined;
+  if (
+    validation === 'strict' ||
+    validation === 'warn' ||
+    validation === 'none' ||
+    validation === 'true' ||
+    validation === 'false'
+  ) {
+    return validation;
+  }
+  throw new Error(
+    `--validate-query must be one of: strict, warn, none, true, false. Got: ${validation}`,
+  );
+}
+
 /**
  * Validates that a flag value is 'true' or 'false' and returns it as a string.
  * Use for query params that are `type:string` in the spec but accept only boolean-like values.
@@ -2109,22 +2453,6 @@ function asStringBoolFlag(value: string | boolean | undefined): string | undefin
   if (value === true || value === 'true') return 'true';
   if (value === false || value === 'false') return 'false';
   throw new Error(`expected 'true' or 'false', got: ${String(value)}`);
-}
-
-function asWorkflowMode(value: string | boolean | undefined): 'live' | 'draft' | undefined {
-  if (value === undefined) return undefined;
-  if (value === 'live' || value === 'draft') return value;
-  throw new Error(`--workflow-mode must be 'live' or 'draft'. Got: ${String(value)}`);
-}
-
-/** Require a positional arg that must be a positive integer; throws on missing or invalid input. */
-function requirePositiveInt(value: string | undefined, name: string): number {
-  const s = requireArg(value, name);
-  const n = Number(s);
-  if (!Number.isInteger(n) || n <= 0) {
-    throw new Error(`${name} must be a positive integer, got: ${s}`);
-  }
-  return n;
 }
 
 /**
@@ -2473,21 +2801,41 @@ async function executeGroupUserPicker(client: JiraClient, cmd: ParsedCommand): P
 
   switch (cmd.action) {
     case 'pick': {
-      const projectIdRaw = asString(opts['project-id']);
-      const projectId = projectIdRaw
-        ? projectIdRaw
-            .split(',')
-            .map((s) => s.trim())
-            .filter((s) => s.length > 0)
-        : undefined;
+      if (opts['project-role'] !== undefined) {
+        throw new Error(
+          '--project-role is not supported by group-user-picker pick; use --field-id with --project-id to scope user results',
+        );
+      }
+      if (opts['exclude-account-ids'] !== undefined) {
+        throw new Error(
+          '--exclude-account-ids is not supported by group-user-picker pick; use users picker when account exclusion is required',
+        );
+      }
+      const query = requireOpt(opts['query'], '--query');
+      const fieldId = asString(opts['field-id'])?.trim() || undefined;
+      const projectId = parseCsv(opts['project-id']);
+      const issueTypeId = parseCsv(opts['issue-type-id']);
+      if (projectId !== undefined && fieldId === undefined) {
+        throw new Error(
+          '--project-id requires --field-id for group-user-picker pick; add --field-id <custom-field-id> or remove --project-id',
+        );
+      }
+      if (issueTypeId !== undefined && fieldId === undefined) {
+        throw new Error(
+          '--issue-type-id requires --field-id for group-user-picker pick; add --field-id <custom-field-id> or remove --issue-type-id',
+        );
+      }
       return client.groupUserPicker.pick({
         // `query` is required by the spec — without it the API returns 400.
-        query: requireOpt(opts['query'], '--query'),
+        query,
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
         showAvatar: asBoolFlag(opts['show-avatar']),
-        fieldId: asString(opts['field-id']),
+        fieldId,
         projectId,
-        projectRole: asString(opts['project-role']),
+        issueTypeId,
+        avatarSize: asEnum(opts['avatar-size'], AVATAR_SIZES, 'avatar-size'),
+        caseInsensitive: asBoolFlag(opts['case-insensitive']),
+        includeAiAgents: asBoolFlag(opts['include-ai-agents']),
         excludeConnectUsers: asBoolFlag(opts['exclude-connect-users']),
       });
     }
@@ -5097,12 +5445,6 @@ async function executePrioritySchemeResource(
   }
 }
 
-function asExportType(raw: string | undefined): 'CSV' | 'XLSX' | undefined {
-  if (raw === undefined) return undefined;
-  if (raw !== 'CSV' && raw !== 'XLSX') throw new Error('--export-type must be CSV or XLSX');
-  return raw;
-}
-
 // ── version (B820-B831, B933) ────────────────────────────────────────────────
 
 const VERSION_ACTIONS = [
@@ -5998,18 +6340,6 @@ const PLANS_ACTIONS = [
 
 const PLANNING_STYLES: readonly PlanningStyle[] = ['Scrum', 'Kanban'];
 
-function asEnumPlans<T extends string>(
-  value: string | boolean | undefined,
-  allowed: readonly T[],
-  flagName: string,
-): T | undefined {
-  if (typeof value !== 'string') return undefined;
-  if (!(allowed as readonly string[]).includes(value)) {
-    throw new Error(`--${flagName} must be one of: ${allowed.join(', ')}, got: ${value}`);
-  }
-  return value as T;
-}
-
 function asFiniteNumber(value: string | boolean | undefined, name: string): number | undefined {
   if (typeof value !== 'string') return undefined;
   const n = Number(value);
@@ -6110,7 +6440,7 @@ async function executePlans(client: JiraClient, cmd: ParsedCommand): Promise<unk
     case 'add-atlassian-team': {
       const planId = parsePositiveIntArg(requireArg(cmd.positionalArgs[0], 'planId'), 'planId');
       const id = requireOpt(opts['atlassian-team-id'], '--atlassian-team-id');
-      const planningStyle = asEnumPlans(opts['planning-style'], PLANNING_STYLES, 'planning-style');
+      const planningStyle = asEnum(opts['planning-style'], PLANNING_STYLES, 'planning-style');
       if (planningStyle === undefined) {
         throw new Error('add-atlassian-team requires --planning-style (Scrum or Kanban)');
       }
@@ -6146,7 +6476,7 @@ async function executePlans(client: JiraClient, cmd: ParsedCommand): Promise<unk
     case 'create-plan-only-team': {
       const planId = parsePositiveIntArg(requireArg(cmd.positionalArgs[0], 'planId'), 'planId');
       const name = requireOpt(opts['name'], '--name');
-      const planningStyle = asEnumPlans(opts['planning-style'], PLANNING_STYLES, 'planning-style');
+      const planningStyle = asEnum(opts['planning-style'], PLANNING_STYLES, 'planning-style');
       if (planningStyle === undefined) {
         throw new Error('create-plan-only-team requires --planning-style (Scrum or Kanban)');
       }
@@ -6202,7 +6532,7 @@ async function executePlans(client: JiraClient, cmd: ParsedCommand): Promise<unk
   }
 }
 
-// ─── workflows (B837-B840, B841-B845, B846-B850, B935-B938) ──────────────────
+// ─── workflows (B837-B840, B841-B854) ───────────────────────────────────────
 
 const WORKFLOWS_ACTIONS = [
   'list',
@@ -6221,18 +6551,28 @@ const WORKFLOWS_ACTIONS = [
   'get-rule-config',
   'update-rule-config',
   'delete-rule-config',
-  'delete-transition-property',
-  'get-transition-properties',
-  'create-transition-property',
-  'update-transition-property',
   'preview',
   'search',
   'update',
   'validate-update',
 ];
 
+const REMOVED_WORKFLOW_TRANSITION_PROPERTY_ACTIONS = [
+  'delete-transition-property',
+  'get-transition-properties',
+  'create-transition-property',
+  'update-transition-property',
+] as const;
+
+const REMOVED_WORKFLOW_TRANSITION_PROPERTY_GUIDANCE =
+  'Atlassian removed the workflow transition-property routes; use workflows bulk-get to read transition properties and workflows update (optionally validate-update first) to submit a full versioned definition';
+
 async function executeWorkflows(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
   const opts = cmd.options;
+
+  if ((REMOVED_WORKFLOW_TRANSITION_PROPERTY_ACTIONS as readonly string[]).includes(cmd.action)) {
+    throw new Error(REMOVED_WORKFLOW_TRANSITION_PROPERTY_GUIDANCE);
+  }
 
   switch (cmd.action) {
     // B934 (already-covered by existing list()): GET /rest/api/3/workflow/search
@@ -6388,67 +6728,6 @@ async function executeWorkflows(client: JiraClient, cmd: ParsedCommand): Promise
       return client.workflows.deleteTransitionRuleConfigs({ workflows });
     }
 
-    // B935: DELETE /rest/api/3/workflow/transitions/{transitionId}/properties
-    case 'delete-transition-property': {
-      const transitionId = requirePositiveInt(cmd.positionalArgs[0], 'transitionId');
-      const key = requireOpt(opts['key'], '--key');
-      const workflowName = requireOpt(opts['workflow-name'], '--workflow-name');
-      const workflowMode = asWorkflowMode(opts['workflow-mode']);
-      await client.workflows.deleteTransitionProperty(
-        transitionId,
-        key,
-        workflowName,
-        workflowMode,
-      );
-      return { deleted: true };
-    }
-
-    // B936: GET /rest/api/3/workflow/transitions/{transitionId}/properties
-    case 'get-transition-properties': {
-      const transitionId = requirePositiveInt(cmd.positionalArgs[0], 'transitionId');
-      const workflowName = requireOpt(opts['workflow-name'], '--workflow-name');
-      return client.workflows.getTransitionProperties(transitionId, workflowName, {
-        includeReservedKeys:
-          opts['include-reserved-keys'] !== undefined
-            ? Boolean(opts['include-reserved-keys'])
-            : undefined,
-        key: asString(opts['key']),
-        workflowMode: asWorkflowMode(opts['workflow-mode']),
-      });
-    }
-
-    // B937: POST /rest/api/3/workflow/transitions/{transitionId}/properties
-    case 'create-transition-property': {
-      const transitionId = requirePositiveInt(cmd.positionalArgs[0], 'transitionId');
-      const key = requireOpt(opts['key'], '--key');
-      const workflowName = requireOpt(opts['workflow-name'], '--workflow-name');
-      const value = requireOpt(opts['value'], '--value');
-      const workflowMode = asWorkflowMode(opts['workflow-mode']);
-      return client.workflows.createTransitionProperty(
-        transitionId,
-        key,
-        workflowName,
-        value,
-        workflowMode,
-      );
-    }
-
-    // B938: PUT /rest/api/3/workflow/transitions/{transitionId}/properties
-    case 'update-transition-property': {
-      const transitionId = requirePositiveInt(cmd.positionalArgs[0], 'transitionId');
-      const key = requireOpt(opts['key'], '--key');
-      const workflowName = requireOpt(opts['workflow-name'], '--workflow-name');
-      const value = requireOpt(opts['value'], '--value');
-      const workflowMode = asWorkflowMode(opts['workflow-mode']);
-      return client.workflows.updateTransitionProperty(
-        transitionId,
-        key,
-        workflowName,
-        value,
-        workflowMode,
-      );
-    }
-
     // B851: POST /rest/api/3/workflows/preview
     case 'preview':
       return client.workflows.previewWorkflows(
@@ -6467,6 +6746,7 @@ async function executeWorkflows(client: JiraClient, cmd: ParsedCommand): Promise
         orderBy: asString(opts['order-by']),
         scope: asString(opts['scope']),
         isActive: asBoolFlag(opts['is-active']),
+        projectId: asPositiveInt(opts['project-id'], '--project-id'),
       });
 
     // B853: POST /rest/api/3/workflows/update
@@ -6487,7 +6767,7 @@ async function executeWorkflows(client: JiraClient, cmd: ParsedCommand): Promise
 
     default:
       throw new Error(
-        `Unknown workflows action: ${cmd.action}. Actions: ${WORKFLOWS_ACTIONS.join(', ')}`,
+        `Unknown workflows action: ${cmd.action}. Actions: ${WORKFLOWS_ACTIONS.join(', ')}. ${REMOVED_WORKFLOW_TRANSITION_PROPERTY_GUIDANCE}`,
       );
   }
 }
@@ -6831,6 +7111,7 @@ const FIELDS_ACTIONS = [
   'context-issuetype-set',
   'context-issuetype-remove',
   'context-issuetype-mapping',
+  'context-default-get',
   'context-default-list',
   'context-default-set',
   'context-project-set',
@@ -7097,6 +7378,19 @@ async function executeFields(client: JiraClient, cmd: ParsedCommand): Promise<un
       const contextId = asIntArray(opts['context-id'], '--context-id');
       return client.fields.listContextDefaultValues(fieldId, {
         ...(contextId !== undefined && { contextId }),
+        ...(startAt !== undefined && { startAt }),
+        ...(maxResults !== undefined && { maxResults }),
+      });
+    }
+    case 'context-default-get': {
+      const fieldId = requireOpt(opts['field-id'], '--field-id');
+      const startAt = asNonNegativeInt(opts['start-at'], '--start-at');
+      const maxResults = asPositiveInt(opts['max-results'], '--max-results');
+      const contextId = asIntArray(opts['context-id'], '--context-id');
+      const issueTypeId = parseCsv(opts['issue-type-ids']);
+      return client.fields.getContextDefaultValues(fieldId, {
+        ...(contextId !== undefined && { contextId }),
+        ...(issueTypeId !== undefined && { issueTypeId }),
         ...(startAt !== undefined && { startAt }),
         ...(maxResults !== undefined && { maxResults }),
       });
@@ -8200,12 +8494,16 @@ async function executeDashboards(client: JiraClient, cmd: ParsedCommand): Promis
   switch (cmd.action) {
     // ── basic CRUD ──────────────────────────────────────────────────────────
     case 'list':
+      rejectRemovedOptions(
+        opts,
+        'dashboards list',
+        ['order-by', 'expand'],
+        'use dashboards search instead',
+      );
       return client.dashboards.list({
         startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
         filter: asString(opts['filter']) as 'my' | 'favourite' | undefined,
-        orderBy: asString(opts['order-by']),
-        expand: asString(opts['expand']),
       });
 
     case 'get':
@@ -8488,7 +8786,9 @@ async function executeMigration(client: JiraClient, cmd: ParsedCommand): Promise
       // B947: POST /migration/{connectKey}/{jiraIssueFieldsKey}/task
       const connectKey = requireArg(cmd.positionalArgs[0], 'connectKey');
       const jiraIssueFieldsKey = requireArg(cmd.positionalArgs[1], 'jiraIssueFieldsKey');
-      await client.migration.submitMigrationTask(connectKey, jiraIssueFieldsKey);
+      await client.migration.submitMigrationTask(connectKey, jiraIssueFieldsKey, {
+        retriggerCompletedMigration: asBoolFlag(opts['retrigger-completed-migration']),
+      });
       return { submitted: true };
     }
     case 'update-fields': {

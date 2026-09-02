@@ -69,6 +69,14 @@ describe('getHelpText', () => {
     expect(text).toContain('ATLASSIAN_AUTH_TYPE');
   });
 
+  it('documents Jira Software OAuth proxy routing', () => {
+    const text = getHelpText();
+
+    expect(text).toContain('--software-cloud-id');
+    expect(text).toContain('ATLASSIAN_SOFTWARE_CLOUD_ID');
+    expect(text).toContain('bearer');
+  });
+
   it('mentions install-skill in global help', () => {
     // Act
     const text = getHelpText();

@@ -32,3 +32,6 @@ jobs:
 
       - name: Run spec drift-guard
         run: npm run spec-drift
+
+      - name: Check implemented API coverage
+        run: npm run api-coverage

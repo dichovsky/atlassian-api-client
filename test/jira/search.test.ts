@@ -1,6 +1,11 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { SearchResource } from '../../src/jira/resources/search.js';
-import type { ApproximateCountResult, JqlSearchResult } from '../../src/jira/resources/search.js';
+import type {
+  ApproximateCountResult,
+  JqlSearchGetParams,
+  JqlSearchParams,
+  JqlSearchResult,
+} from '../../src/jira/resources/search.js';
 import { MockTransport } from '../helpers/mock-transport.js';
 import { ValidationError } from '../../src/core/errors.js';
 
@@ -124,20 +129,51 @@ describe('SearchResource', () => {
         maxResults: 20,
         fields: ['id', 'key', 'summary'],
         expand: ['changelog'],
+        failFast: true,
       });
 
       // Assert — `/search` GET: `fields` is `type: array` → repeated params in
       // the path; `expand` is `type: string` → comma-joined (B1049).
-      expect(transport.lastCall?.options.query).toMatchObject({
+      expect(transport.lastCall?.options.query).toEqual({
         jql: 'project = PROJ',
         startAt: 5,
         maxResults: 20,
         expand: 'changelog',
+        failFast: true,
       });
       expect(transport.lastCall?.options.query).not.toHaveProperty('fields');
       expect(transport.lastCall?.options.path).toBe(
         `${BASE_URL}/search?fields=id&fields=key&fields=summary`,
       );
+    });
+
+    it('types the field schema returned by current JQL search', () => {
+      const result: JqlSearchResult = {
+        issues: [],
+        schema: {
+          summary: { type: 'string', system: 'summary' },
+        },
+      };
+
+      expect(result.schema?.['summary']?.type).toBe('string');
+    });
+
+    it('keeps failFast exclusive to GET search params', () => {
+      const postParams: JqlSearchParams = {
+        jql: 'project = PROJ',
+        // @ts-expect-error failFast is not accepted by POST /search/jql.
+        failFast: true,
+      };
+
+      expect(postParams).toHaveProperty('failFast', true);
+    });
+
+    it('accepts includeArchivedProjects in current GET and POST search params', () => {
+      const getParams: JqlSearchGetParams = { includeArchivedProjects: true };
+      const postParams: JqlSearchParams = { includeArchivedProjects: false };
+
+      expect(getParams.includeArchivedProjects).toBe(true);
+      expect(postParams.includeArchivedProjects).toBe(false);
     });
 
     it('does not include undefined optional params in query', async () => {
@@ -388,6 +424,17 @@ describe('SearchResource', () => {
       expect(query['failFast']).toBeUndefined();
     });
 
+    it.each([true, false])(
+      'sends includeArchivedProjects=%s as a boolean query param',
+      async (includeArchivedProjects) => {
+        transport.respondWith({ issues: [] });
+
+        await search.searchJqlGet({ includeArchivedProjects });
+
+        expect(transport.lastCall?.options.query).toEqual({ includeArchivedProjects });
+      },
+    );
+
     it('sends reconcileIssues as repeated path params when provided', async () => {
       // Spec: reconcileIssues is type:array in GET /rest/api/3/search/jql →
       // repeated params baked into the path.
@@ -537,5 +584,16 @@ describe('SearchResource', () => {
       const body = transport.lastCall?.options.body ?? {};
       expect(body).not.toHaveProperty('reconcileIssues');
     });
+
+    it.each([true, false])(
+      'sends includeArchivedProjects=%s as a boolean in the body',
+      async (includeArchivedProjects) => {
+        transport.respondWith({ issues: [] });
+
+        await search.searchJqlPost({ includeArchivedProjects });
+
+        expect(transport.lastCall?.options.body).toEqual({ includeArchivedProjects });
+      },
+    );
   });
 });

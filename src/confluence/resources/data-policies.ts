@@ -36,7 +36,10 @@ export class DataPoliciesResource {
     private readonly baseUrl: string,
   ) {}
 
-  /** Fetch workspace-level data-policy metadata. */
+  /**
+   * Fetch workspace-level data-policy metadata.
+   * @experimental Atlassian marks this operation experimental.
+   */
   async getMetadata(): Promise<DataPolicyMetadata> {
     const response = await this.transport.request<DataPolicyMetadata>({
       method: 'GET',
@@ -45,7 +48,10 @@ export class DataPoliciesResource {
     return response.data;
   }
 
-  /** List a single page of spaces with data policies applied. */
+  /**
+   * List a single page of spaces with data policies applied.
+   * @experimental Atlassian marks this operation experimental.
+   */
   async listSpaces(
     params?: ListDataPolicySpacesParams,
   ): Promise<CursorPaginatedResponse<DataPolicySpace>> {
@@ -60,7 +66,10 @@ export class DataPoliciesResource {
     return response.data;
   }
 
-  /** Iterate over every space with data policies across all pages. */
+  /**
+   * Iterate over every space with data policies across all pages.
+   * @experimental Uses Atlassian's experimental `data-policies/spaces` operation.
+   */
   async *listAllSpaces(
     params?: Omit<ListDataPolicySpacesParams, 'cursor'>,
   ): AsyncGenerator<DataPolicySpace> {

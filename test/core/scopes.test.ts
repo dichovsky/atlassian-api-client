@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { describe, it, expect } from 'vitest';
 import {
   detectRequiredScopes,
@@ -5,6 +6,115 @@ import {
   validateScopes,
   listKnownScopes,
 } from '../../src/core/scopes.js';
+
+const HTTP_METHODS = new Set(['delete', 'get', 'head', 'options', 'patch', 'post', 'put']);
+
+interface OpenApiScopeEntry {
+  readonly scheme?: string;
+  readonly scopes?: readonly string[];
+  readonly state?: string;
+}
+
+interface OpenApiOperation {
+  readonly security?: readonly Readonly<Record<string, readonly string[]>>[];
+  readonly 'x-atlassian-oauth2-scopes'?: readonly OpenApiScopeEntry[];
+}
+
+interface OpenApiSecurityScheme {
+  readonly flows?: Readonly<Record<string, { readonly scopes?: Readonly<Record<string, string>> }>>;
+}
+
+interface OpenApiDocument {
+  readonly paths: Readonly<Record<string, Readonly<Record<string, OpenApiOperation>>>>;
+  readonly components?: {
+    readonly securitySchemes?: Readonly<Record<string, OpenApiSecurityScheme>>;
+  };
+}
+
+function readSpec(specName: string): OpenApiDocument {
+  const specUrl = new URL(`../../spec/${specName}`, import.meta.url);
+  return JSON.parse(readFileSync(specUrl, 'utf8')) as OpenApiDocument;
+}
+
+function readOperations(spec: OpenApiDocument): readonly OpenApiOperation[] {
+  return Object.values(spec.paths).flatMap((pathItem) =>
+    Object.entries(pathItem)
+      .filter(([method]) => HTTP_METHODS.has(method))
+      .map(([, operation]) => operation),
+  );
+}
+
+function collectSecurityScopes(
+  operations: readonly OpenApiOperation[],
+  scheme: string,
+): readonly string[] {
+  return [
+    ...new Set(
+      operations.flatMap((operation) =>
+        (operation.security ?? []).flatMap((requirement) => requirement[scheme] ?? []),
+      ),
+    ),
+  ].sort();
+}
+
+function collectJiraPlatformGranularScopes(
+  operations: readonly OpenApiOperation[],
+): readonly string[] {
+  const entries = operations.flatMap((operation) => operation['x-atlassian-oauth2-scopes'] ?? []);
+  const classicCurrentScopes = new Set(
+    entries
+      .filter((entry) => entry.scheme === 'OAuth2' && entry.state === 'Current')
+      .flatMap((entry) => entry.scopes ?? []),
+  );
+
+  return [
+    ...new Set(
+      entries
+        .filter((entry) => entry.scheme === 'OAuth2' && entry.state === 'Beta')
+        .flatMap((entry) => entry.scopes ?? [])
+        .filter((scope) => !classicCurrentScopes.has(scope)),
+    ),
+  ].sort();
+}
+
+function collectRecognizedScopes(spec: OpenApiDocument): readonly string[] {
+  const operations = readOperations(spec);
+  const securitySchemeScopes = Object.values(spec.components?.securitySchemes ?? {}).flatMap(
+    (scheme) => Object.values(scheme.flows ?? {}).flatMap((flow) => Object.keys(flow.scopes ?? {})),
+  );
+  const operationSecurityScopes = operations.flatMap((operation) =>
+    (operation.security ?? []).flatMap((requirement) => Object.values(requirement).flat()),
+  );
+  const annotatedScopes = operations.flatMap((operation) =>
+    (operation['x-atlassian-oauth2-scopes'] ?? []).flatMap((entry) => entry.scopes ?? []),
+  );
+
+  return [
+    ...new Set([...securitySchemeScopes, ...operationSecurityScopes, ...annotatedScopes]),
+  ].sort();
+}
+
+const CONFLUENCE_SPEC = readSpec('confluence-v2.json');
+const JIRA_SOFTWARE_SPEC = readSpec('jira-software.json');
+const JIRA_PLATFORM_SPEC = readSpec('jira-platform-v3.json');
+const CONFLUENCE_SPEC_SCOPES = collectSecurityScopes(
+  readOperations(CONFLUENCE_SPEC),
+  'oAuthDefinitions',
+);
+const JIRA_SOFTWARE_SPEC_SCOPES = collectSecurityScopes(
+  readOperations(JIRA_SOFTWARE_SPEC),
+  'OAuth2',
+);
+const JIRA_PLATFORM_SPEC_SCOPES = collectJiraPlatformGranularScopes(
+  readOperations(JIRA_PLATFORM_SPEC),
+);
+const RECOGNIZED_SPEC_SCOPES = [
+  ...new Set([
+    ...collectRecognizedScopes(CONFLUENCE_SPEC),
+    ...collectRecognizedScopes(JIRA_SOFTWARE_SPEC),
+    ...collectRecognizedScopes(JIRA_PLATFORM_SPEC),
+  ]),
+].sort();
 
 describe('detectRequiredScopes', () => {
   it('returns an empty array for an empty input', () => {
@@ -134,6 +244,12 @@ describe('detectRequiredScopes', () => {
     const issueScopes = detectRequiredScopes(['jira.boards.getIssues']);
     expect(issueScopes).toContain('read:board-scope:jira-software');
     expect(issueScopes).toContain('read:issue-details:jira');
+
+    const backlogCountScopes = detectRequiredScopes(['jira.boards.getBacklogApproximateCount']);
+    expect(backlogCountScopes).toEqual([
+      'read:board-scope:jira-software',
+      'read:issue-details:jira',
+    ]);
   });
 
   it('handles granular sprint scopes (B1038)', () => {
@@ -153,6 +269,23 @@ describe('detectRequiredScopes', () => {
 
     const deleteScopes = detectRequiredScopes(['jira.sprints.delete']);
     expect(deleteScopes).toEqual(['delete:sprint:jira-software']);
+  });
+
+  it('handles Jira Software DevOps and security scopes from the live spec', () => {
+    expect(detectRequiredScopes(['jira.bulk.submitBuilds'])).toEqual(['write:build-info:jira']);
+    expect(detectRequiredScopes(['jira.pipelines.deleteDeployment'])).toEqual([
+      'delete:deployment-info:jira',
+    ]);
+    expect(detectRequiredScopes(['jira.repository.get'])).toEqual(['read:dev-info:jira']);
+    expect(detectRequiredScopes(['jira.flag.delete'])).toEqual(['delete:feature-flag-info:jira']);
+    expect(detectRequiredScopes(['jira.remoteLink.get'])).toEqual(['read:remote-link-info:jira']);
+    expect(
+      detectRequiredScopes([
+        'jira.linkedWorkspaces.listSecurity',
+        'jira.linkedWorkspaces.bulkCreateSecurity',
+        'jira.vulnerability.delete',
+      ]),
+    ).toEqual(['delete:security:jira', 'read:security:jira', 'write:security:jira']);
   });
 
   it('handles all bulk operations — granular platform scopes', () => {
@@ -425,10 +558,18 @@ describe('validateScopes', () => {
     expect(result.unknown).toEqual(['write:confluence-content']);
   });
 
-  it('treats classic Jira scopes as unknown (removed after full granular migration)', () => {
-    const result = validateScopes(['read:jira-work', 'write:jira-work', 'manage:jira-project']);
-    expect(result.valid).toEqual([]);
-    expect(result.unknown).toEqual(['read:jira-work', 'write:jira-work', 'manage:jira-project']);
+  it('accepts recognized classic and Jira Software compatibility scopes', () => {
+    const result = validateScopes([
+      'read:jira-work',
+      'manage:jira-configuration',
+      'read:build:jira-software',
+    ]);
+    expect(result.valid).toEqual([
+      'read:jira-work',
+      'manage:jira-configuration',
+      'read:build:jira-software',
+    ]);
+    expect(result.unknown).toEqual([]);
   });
 
   it('reports an unknown scope string', () => {
@@ -455,70 +596,24 @@ describe('validateScopes', () => {
     expect(result.unknown).toEqual(['bad-scope', 'also-bad']);
   });
 
-  it('accepts all known Confluence granular scopes', () => {
-    const confluenceScopes = [
-      'read:page:confluence',
-      'write:page:confluence',
-      'delete:page:confluence',
-      'read:space:confluence',
-      'read:comment:confluence',
-      'write:comment:confluence',
-      'delete:comment:confluence',
-      'read:attachment:confluence',
-      'write:attachment:confluence',
-      'delete:attachment:confluence',
-      'read:label:confluence',
-      'read:custom-content:confluence',
-      'write:custom-content:confluence',
-      'delete:custom-content:confluence',
-      'read:whiteboard:confluence',
-      'write:whiteboard:confluence',
-      'delete:whiteboard:confluence',
-      'read:task:confluence',
-      'write:task:confluence',
-    ];
-    const result = validateScopes(confluenceScopes);
-    expect(result.valid).toEqual(confluenceScopes);
+  it('accepts every Confluence granular scope in the pinned OpenAPI spec', () => {
+    expect(CONFLUENCE_SPEC_SCOPES).toHaveLength(38);
+    const result = validateScopes(CONFLUENCE_SPEC_SCOPES);
+    expect(result.valid).toEqual(CONFLUENCE_SPEC_SCOPES);
     expect(result.unknown).toEqual([]);
   });
 
-  it('accepts known Jira Platform granular scopes', () => {
-    const platformScopes = [
-      'read:issue:jira',
-      'write:issue:jira',
-      'delete:issue:jira',
-      'read:project:jira',
-      'read:user:jira',
-      'read:avatar:jira',
-      'read:dashboard:jira',
-      'write:dashboard:jira',
-      'delete:dashboard:jira',
-      'read:filter:jira',
-      'write:filter:jira',
-      'delete:filter:jira',
-      'read:webhook:jira',
-      'write:webhook:jira',
-      'delete:webhook:jira',
-      'read:workflow:jira',
-      'read:label:jira',
-      'validate:jql:jira',
-    ];
-    const result = validateScopes(platformScopes);
-    expect(result.valid).toEqual(platformScopes);
+  it('accepts every Jira Platform granular Beta scope in the pinned OpenAPI spec', () => {
+    expect(JIRA_PLATFORM_SPEC_SCOPES).toHaveLength(180);
+    const result = validateScopes(JIRA_PLATFORM_SPEC_SCOPES);
+    expect(result.valid).toEqual(JIRA_PLATFORM_SPEC_SCOPES);
     expect(result.unknown).toEqual([]);
   });
 
-  it('accepts all known Jira Software granular scopes', () => {
-    const softwareScopes = [
-      'read:board-scope:jira-software',
-      'read:issue-details:jira',
-      'read:sprint:jira-software',
-      'write:sprint:jira-software',
-      'delete:sprint:jira-software',
-      'read:jql:jira',
-    ];
-    const result = validateScopes(softwareScopes);
-    expect(result.valid).toEqual(softwareScopes);
+  it('accepts every Jira Software OAuth2 scope in the pinned OpenAPI spec', () => {
+    expect(JIRA_SOFTWARE_SPEC_SCOPES).toHaveLength(33);
+    const result = validateScopes(JIRA_SOFTWARE_SPEC_SCOPES);
+    expect(result.valid).toEqual(JIRA_SOFTWARE_SPEC_SCOPES);
     expect(result.unknown).toEqual([]);
   });
 
@@ -540,6 +635,11 @@ describe('listKnownScopes', () => {
     expect(scopes).toEqual([...scopes].sort());
   });
 
+  it('exactly matches every scope recognized by the pinned specs', () => {
+    expect(RECOGNIZED_SPEC_SCOPES).toHaveLength(271);
+    expect(listKnownScopes()).toEqual(RECOGNIZED_SPEC_SCOPES);
+  });
+
   it('includes Jira Platform granular scopes', () => {
     const scopes = listKnownScopes();
     expect(scopes).toContain('read:issue:jira');
@@ -553,15 +653,15 @@ describe('listKnownScopes', () => {
     expect(scopes).toContain('read:label:jira');
   });
 
-  it('does NOT include old Jira Platform classic scopes', () => {
+  it('includes recognized Jira classic and compatibility scopes', () => {
     const scopes = listKnownScopes();
-    expect(scopes).not.toContain('read:jira-work');
-    expect(scopes).not.toContain('write:jira-work');
-    expect(scopes).not.toContain('manage:jira-project');
-    expect(scopes).not.toContain('manage:jira-configuration');
-    expect(scopes).not.toContain('read:jira-user');
-    expect(scopes).not.toContain('manage:jira-webhook');
-    expect(scopes).not.toContain('manage:jira-data-provider');
+    expect(scopes).toContain('read:jira-work');
+    expect(scopes).toContain('write:jira-work');
+    expect(scopes).toContain('manage:jira-project');
+    expect(scopes).toContain('manage:jira-configuration');
+    expect(scopes).toContain('read:jira-user');
+    expect(scopes).toContain('manage:jira-webhook');
+    expect(scopes).toContain('read:build:jira-software');
   });
 
   it('includes granular Jira Software scopes', () => {
@@ -570,6 +670,11 @@ describe('listKnownScopes', () => {
     expect(scopes).toContain('read:sprint:jira-software');
     expect(scopes).toContain('write:sprint:jira-software');
     expect(scopes).toContain('delete:sprint:jira-software');
+    expect(scopes).toContain('read:epic:jira-software');
+    expect(scopes).toContain('write:board-scope:jira-software');
+    expect(scopes).toContain('read:security:jira');
+    expect(scopes).toContain('write:security:jira');
+    expect(scopes).toContain('delete:security:jira');
   });
 
   it('includes granular Confluence scopes', () => {
@@ -594,16 +699,16 @@ describe('listKnownScopes', () => {
     expect(Array.isArray(listKnownScopes())).toBe(true);
   });
 
-  it('has no orphan members — every catalog scope is required by some operation', () => {
-    // Guards against declaring a scope in the AtlassianScope union without wiring
-    // it into OPERATION_SCOPES (e.g. delete:attachment:jira shipped unmapped).
+  it('keeps every mapped operation scope inside the official catalog', () => {
+    // The operation registry intentionally covers selected SDK methods; the
+    // validator catalog is broader and tracks every official granular scope.
     const used = new Set<string>();
     for (const op of listKnownOperations()) {
       for (const scope of detectRequiredScopes([op])) {
         used.add(scope);
       }
     }
-    const orphans = listKnownScopes().filter((scope) => !used.has(scope));
-    expect(orphans).toEqual([]);
+    const unrecognised = [...used].filter((scope) => validateScopes([scope]).unknown.length > 0);
+    expect(unrecognised).toEqual([]);
   });
 });

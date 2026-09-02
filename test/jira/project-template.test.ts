@@ -86,6 +86,26 @@ describe('ProjectTemplateResource', () => {
       });
     });
 
+    it('accepts AI agent roles in the custom template role capability', async () => {
+      transport.respondWithHeaders(undefined, 303, {
+        location: `${BASE_URL}/task/10003`,
+      });
+
+      const role = {
+        roles: [
+          {
+            name: 'Automation Agent',
+            type: 'AI_AGENT' as const,
+            onConflict: 'USE' as const,
+            pcri: { entityType: 'role', type: 'ref' as const, entityId: 'automation-agent' },
+          },
+        ],
+      };
+      await resource.createWithCustomTemplate({ template: { role } });
+
+      expect(transport.lastCall?.options.body).toMatchObject({ template: { role } });
+    });
+
     it('returns Location header URL as string when present', async () => {
       const taskUrl = `${BASE_URL}/task/10001`;
       transport.respondWithHeaders(undefined, 303, { location: taskUrl });

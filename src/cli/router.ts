@@ -13,6 +13,9 @@ const GLOBAL_OPTIONS = {
   // comma-separated list of bare hostnames (no port — same policy as
   // `ClientConfig.allowedHosts`).
   'allowed-hosts': { type: 'string' as const },
+  // Jira-only opt-in for the OAuth proxy used by on-premises Development
+  // Information, Builds, Deployments, and Feature Flag ingestion integrations.
+  'software-cloud-id': { type: 'string' as const },
   help: { type: 'boolean' as const, short: 'h' },
   version: { type: 'boolean' as const },
   // Resource-specific options
@@ -26,7 +29,10 @@ const GLOBAL_OPTIONS = {
   title: { type: 'string' as const },
   status: { type: 'string' as const },
   body: { type: 'string' as const },
+  'body-json': { type: 'string' as const },
+  'body-representation': { type: 'string' as const },
   'body-format': { type: 'string' as const },
+  subtype: { type: 'string' as const },
   purge: { type: 'boolean' as const },
   jql: { type: 'string' as const },
   project: { type: 'string' as const },
@@ -52,7 +58,6 @@ const GLOBAL_OPTIONS = {
   depth: { type: 'string' as const },
   sort: { type: 'string' as const },
   key: { type: 'string' as const },
-  'database-id': { type: 'string' as const },
   'property-id': { type: 'string' as const },
   'level-id': { type: 'string' as const },
   'label-id': { type: 'string' as const },
@@ -66,6 +71,7 @@ const GLOBAL_OPTIONS = {
   'include-likes': { type: 'boolean' as const },
   'include-versions': { type: 'boolean' as const },
   'include-version': { type: 'boolean' as const },
+  'no-include-version': { type: 'boolean' as const },
   'parent-id': { type: 'string' as const },
   // inline-comments resolve / unresolve (PUT /inline-comments/{id}). Boolean
   // flag-pair: `--resolved` marks the thread resolved, `--no-resolved` reopens
@@ -82,6 +88,8 @@ const GLOBAL_OPTIONS = {
   'created-at-to': { type: 'string' as const },
   'due-at-from': { type: 'string' as const },
   'due-at-to': { type: 'string' as const },
+  'completed-at-from': { type: 'string' as const },
+  'completed-at-to': { type: 'string' as const },
   // sprint/epic options
   name: { type: 'string' as const },
   goal: { type: 'string' as const },
@@ -115,6 +123,14 @@ const GLOBAL_OPTIONS = {
   'embed-url': { type: 'string' as const },
   // boards-specific options
   'filter-id': { type: 'string' as const },
+  'account-id-location': { type: 'string' as const },
+  'project-location': { type: 'string' as const },
+  'project-type-location': { type: 'string' as const },
+  // Tri-state board filters; the explicit value preserves `false`.
+  'include-private': { type: 'string' as const },
+  'negate-location-filtering': { type: 'string' as const },
+  'location-type': { type: 'string' as const },
+  'location-project-key-or-id': { type: 'string' as const },
   feature: { type: 'string' as const },
   enabling: { type: 'string' as const },
   released: { type: 'boolean' as const },
@@ -124,6 +140,11 @@ const GLOBAL_OPTIONS = {
   // so disabling validation is only reachable via `--validate-query false`.
   // Registered `string` so the `false` case isn't lost to positionals.
   'validate-query': { type: 'string' as const },
+  // Enhanced GET /search/jql returns partial results by default; opt in to
+  // failing on the first search error.
+  'fail-fast': { type: 'boolean' as const },
+  // Current GET/POST /search/jql can include issues from archived projects.
+  'include-archived-projects': { type: 'boolean' as const },
   // blog-posts sub-resource flags (B066-B084)
   'resolution-status': { type: 'string' as const },
   // `redact` convenience overrides — when set, these merge into the
@@ -158,6 +179,15 @@ const GLOBAL_OPTIONS = {
   file: { type: 'string' as const },
   // spaces sub-resource options (B196-B213)
   alias: { type: 'string' as const },
+  labels: { type: 'string' as const },
+  'favorited-by': { type: 'string' as const },
+  'not-favorited-by': { type: 'string' as const },
+  'description-format': { type: 'string' as const },
+  'include-icon': { type: 'boolean' as const },
+  'include-permissions': { type: 'boolean' as const },
+  'include-role-assignments': { type: 'boolean' as const },
+  embedded: { type: 'boolean' as const },
+  'root-level': { type: 'boolean' as const },
   'role-id': { type: 'string' as const },
   'copy-space-access-configuration': { type: 'string' as const },
   // announcement-banner options (B324-B325)
@@ -185,8 +215,11 @@ const GLOBAL_OPTIONS = {
   exclude: { type: 'string' as const },
   'exclude-account-ids': { type: 'string' as const },
   'exclude-connect-users': { type: 'boolean' as const },
-  'project-role': { type: 'string' as const },
   'show-avatar': { type: 'boolean' as const },
+  'case-insensitive': { type: 'boolean' as const },
+  'include-ai-agents': { type: 'boolean' as const },
+  'include-global-statuses': { type: 'boolean' as const },
+  'retrigger-completed-migration': { type: 'boolean' as const },
   'user-name': { type: 'string' as const },
   // groups CRUD options (B468-B473, B923)
   'group-name': { type: 'string' as const },
@@ -350,7 +383,12 @@ const GLOBAL_OPTIONS = {
   // projects CRUD options (B929, B652, B661, B662, B696-B700)
   'project-type-key': { type: 'string' as const },
   'type-key': { type: 'string' as const },
+  // Retained only so group-user-picker can fail with migration guidance
+  // instead of a generic parseArgs unknown-option error.
+  'project-role': { type: 'string' as const },
+  recent: { type: 'string' as const },
   'category-id': { type: 'string' as const },
+  'property-query': { type: 'string' as const },
   'avatar-id': { type: 'string' as const },
   'permission-scheme': { type: 'string' as const },
   'notification-scheme': { type: 'string' as const },
@@ -386,8 +424,17 @@ const GLOBAL_OPTIONS = {
   'current-project-id': { type: 'string' as const },
   'show-sub-tasks': { type: 'boolean' as const },
   'show-sub-task-parent': { type: 'boolean' as const },
+  // issue limit report options
+  'is-returning-keys': { type: 'boolean' as const },
+  'field-type': { type: 'string' as const },
   // archive export options (B538)
+  // Retained so removed archive-export selectors receive migration guidance.
   'export-type': { type: 'string' as const },
+  'archived-by': { type: 'string' as const },
+  'date-after': { type: 'string' as const },
+  'date-before': { type: 'string' as const },
+  'issue-types': { type: 'string' as const },
+  reporters: { type: 'string' as const },
   // createmeta options (B520, B521)
   'issuetype-ids': { type: 'string' as const },
   'issuetype-names': { type: 'string' as const },
@@ -413,7 +460,8 @@ const GLOBAL_OPTIONS = {
   'update-draft-if-needed': { type: 'boolean' as const },
   'workflow-name': { type: 'string' as const },
   'validate-only': { type: 'boolean' as const },
-  // workflow transition properties options (B935-B938)
+  // Retained only so removed transition-property commands reach dispatch and
+  // receive actionable migration guidance instead of parseArgs' unknown-option error.
   'workflow-mode': { type: 'string' as const },
   'include-reserved-keys': { type: 'boolean' as const },
   // fields context options (B415-B418)
@@ -525,6 +573,37 @@ export function parseCommand(argv: string[]): ParsedCommand & {
   const resource = positionals[1] ?? '';
   const action = positionals[2] ?? '';
   const positionalArgs = positionals.slice(3);
+
+  if (api === 'confluence' && values['software-cloud-id'] !== undefined) {
+    throw new Error('--software-cloud-id is only supported for Jira commands');
+  }
+
+  const currentJqlSearchAction = ['', 'search', 'query', 'jql-get', 'jql-post'].includes(action);
+  if (
+    values['include-archived-projects'] !== undefined &&
+    !(api === 'jira' && resource === 'search' && currentJqlSearchAction)
+  ) {
+    throw new Error(
+      '--include-archived-projects is supported only by current Jira JQL search (`search`, `query`, `jql-get`, or `jql-post`)',
+    );
+  }
+
+  const removedWorkflowAction = [
+    'delete-transition-property',
+    'get-transition-properties',
+    'create-transition-property',
+    'update-transition-property',
+  ].includes(action);
+  for (const flag of ['workflow-mode', 'include-reserved-keys'] as const) {
+    if (
+      values[flag] !== undefined &&
+      !(api === 'jira' && resource === 'workflows' && removedWorkflowAction)
+    ) {
+      throw new Error(
+        `--${flag} is accepted only on removed Jira workflow transition-property actions so the CLI can provide migration guidance`,
+      );
+    }
+  }
 
   return {
     api,

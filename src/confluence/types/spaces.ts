@@ -1,32 +1,120 @@
 import type {
   BlogPostSortOrder,
+  Label,
   LabelSortOrder,
+  SpaceProperty,
   PageSortOrder,
   SpaceRoleAssignment,
   SpaceRolePrincipalType,
   SpaceRoleType,
 } from './common.js';
+import type {
+  DataPolicyBodyType,
+  DataPolicySpaceDescription,
+  DataPolicySpaceIcon,
+  DataPolicySpaceLinks,
+} from './data-policies.js';
+
+/** Space types returned by the current Confluence v2 API. */
+export type SpaceType =
+  | 'global'
+  | 'collaboration'
+  | 'knowledge_base'
+  | 'personal'
+  | 'system'
+  | 'onboarding'
+  | 'xflow_sample_space';
+
+/** Lifecycle state of a Confluence space. */
+export type SpaceStatus = 'current' | 'archived' | 'trashed';
+
+/** Sort tokens accepted by `GET /spaces`. */
+export type SpaceSortOrder = 'id' | '-id' | 'key' | '-key' | 'name' | '-name';
+
+/** Representations accepted for a returned space description. */
+export type SpaceDescriptionFormat = 'plain' | 'view';
+
+/** A plain or rendered description representation returned for a space. */
+export type SpaceDescriptionBody = DataPolicyBodyType;
+
+/** Description projections returned according to `description-format`. */
+export type SpaceDescription = DataPolicySpaceDescription;
+
+/** Space icon download paths. */
+export type SpaceIcon = DataPolicySpaceIcon;
+
+/** Links exposed on bulk and single space responses. */
+export interface SpaceLinks extends DataPolicySpaceLinks {
+  /** Base URL added by the single-space and create response schemas. */
+  readonly base?: string;
+}
+
+/** Envelope used by optional expansions on `SpaceSingle`. */
+export interface SpaceNestedEnvelope<T> {
+  readonly results?: readonly T[];
+  readonly meta?: { readonly hasMore?: boolean; readonly cursor?: string };
+  readonly _links?: { readonly self?: string };
+}
 
 /** Confluence Space. */
 export interface Space {
   readonly id: string;
   readonly key: string;
   readonly name: string;
-  readonly type: string;
-  readonly status: string;
-  readonly description?: Record<string, unknown>;
+  readonly type: SpaceType;
+  readonly status: SpaceStatus;
+  /** Account ID of the user who originally created the space. */
+  readonly authorId?: string;
+  /** Account ID of the user who owns the space. */
+  readonly spaceOwnerId?: string;
+  /** Currently active alias; present on bulk-list responses. */
+  readonly currentActiveAlias?: string;
+  readonly description?: SpaceDescription;
+  readonly icon?: SpaceIcon;
   readonly homepageId?: string;
   readonly createdAt?: string;
-  readonly _links?: Record<string, string>;
+  /** Inlined when `include-labels=true`. */
+  readonly labels?: SpaceNestedEnvelope<Label>;
+  /** Inlined when `include-properties=true`. */
+  readonly properties?: SpaceNestedEnvelope<SpaceProperty>;
+  /** Inlined when `include-operations=true`. */
+  readonly operations?: SpaceNestedEnvelope<SpaceOperation>;
+  /** Inlined when `include-permissions=true`. */
+  readonly permissions?: SpaceNestedEnvelope<SpacePermissionAssignment>;
+  readonly _links?: SpaceLinks;
 }
 
 /** Parameters for listing Confluence spaces. */
 export interface ListSpacesParams {
-  readonly keys?: string[];
-  readonly type?: string;
-  readonly status?: string;
+  /** Filter by space IDs (up to 250). */
+  readonly ids?: readonly (string | number)[];
+  /** Filter by space keys (up to 250). */
+  readonly keys?: readonly string[];
+  readonly type?: SpaceType;
+  readonly status?: SpaceStatus;
+  /** Filter by labels assigned to each space. */
+  readonly labels?: readonly string[];
+  /** Account ID whose favourite spaces should be returned. */
+  readonly 'favorited-by'?: string;
+  /** Account ID whose favourite spaces should be excluded. */
+  readonly 'not-favorited-by'?: string;
+  readonly sort?: SpaceSortOrder;
+  readonly 'description-format'?: SpaceDescriptionFormat;
+  readonly 'include-icon'?: boolean;
   readonly limit?: number;
   readonly cursor?: string;
+}
+
+/** Parameters for retrieving one space with optional inlined resources. */
+export interface GetSpaceParams {
+  readonly 'description-format'?: SpaceDescriptionFormat;
+  readonly 'include-icon'?: boolean;
+  readonly 'include-operations'?: boolean;
+  readonly 'include-properties'?: boolean;
+  readonly 'include-permissions'?: boolean;
+  /** EAP-only in the current Confluence v2 API. */
+  readonly 'include-role-assignments'?: boolean;
+  readonly 'include-labels'?: boolean;
 }
 
 /**

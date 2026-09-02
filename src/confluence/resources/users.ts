@@ -39,6 +39,7 @@ export class UsersResource {
    *   at 100.
    * @returns The `{ emailsWithoutAccess?, invalidEmails? }` envelope. Either
    *   bucket may be omitted when empty.
+   * @experimental Atlassian marks this operation experimental.
    */
   async checkAccessByEmail(
     data: CheckAccessOrInviteByEmailRequest,
@@ -62,6 +63,7 @@ export class UsersResource {
    * @param data - Request body containing the `emails` to invite. Must
    *   contain at least one entry; Confluence rejects empty arrays and caps
    *   the batch at 100.
+   * @experimental Atlassian marks this operation experimental.
    */
   async inviteByEmail(data: CheckAccessOrInviteByEmailRequest): Promise<void> {
     assertNonEmptyEmails(data);

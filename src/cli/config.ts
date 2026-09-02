@@ -1,5 +1,6 @@
 import type { AuthType, GlobalOptions, OutputFormat } from './types.js';
 import type { ClientConfig } from '../core/types.js';
+import type { JiraClientConfig } from '../jira/client.js';
 
 /** Resolve global CLI options from parsed flags and environment variables. */
 export function resolveGlobalOptions(
@@ -11,6 +12,11 @@ export function resolveGlobalOptions(
   const token = resolveValue(options['token'], 'ATLASSIAN_API_TOKEN');
   const format = resolveFormat(options['format']);
   const allowedHosts = resolveAllowedHosts(options['allowed-hosts']);
+  const softwareCloudIdValue = resolveValue(
+    options['software-cloud-id'],
+    'ATLASSIAN_SOFTWARE_CLOUD_ID',
+  );
+  const softwareCloudId = softwareCloudIdValue.length > 0 ? softwareCloudIdValue : undefined;
 
   if (!baseUrl) {
     throw new Error('Missing --base-url or ATLASSIAN_BASE_URL environment variable');
@@ -22,7 +28,7 @@ export function resolveGlobalOptions(
     throw new Error('Missing --token or ATLASSIAN_API_TOKEN environment variable');
   }
 
-  return { baseUrl, authType, email, token, format, allowedHosts };
+  return { baseUrl, authType, email, token, format, allowedHosts, softwareCloudId };
 }
 
 /** Build a ClientConfig from resolved global options. */
@@ -35,6 +41,17 @@ export function buildClientConfig(globals: GlobalOptions): ClientConfig {
   return globals.allowedHosts !== undefined
     ? { baseUrl: globals.baseUrl, auth, allowedHosts: globals.allowedHosts }
     : { baseUrl: globals.baseUrl, auth };
+}
+
+/** Build a JiraClientConfig, including the opt-in Software integration proxy. */
+export function buildJiraClientConfig(globals: GlobalOptions): JiraClientConfig {
+  const config = buildClientConfig(globals);
+  return globals.softwareCloudId === undefined
+    ? config
+    : {
+        ...config,
+        softwareIntegrationProxy: { cloudId: globals.softwareCloudId },
+      };
 }
 
 /**

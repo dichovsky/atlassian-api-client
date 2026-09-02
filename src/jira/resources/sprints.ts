@@ -82,8 +82,8 @@ export class SprintsResource {
     private readonly baseUrl: string,
     /**
      * Base URL for the Jira Software "enhanced" (JSIS) endpoints
-     * (`/rest/software/1.0`). Optional for backwards compatibility with direct
-     * constructor callers: when omitted it is derived from `baseUrl` by
+     * (`/rest/software/1.0`). Optional for backwards-compatible direct
+     * instantiation; when omitted it is derived from `baseUrl` by
      * swapping the agile segment (`/rest/agile/1.0` → `/rest/software/1.0`).
      */
     softwareBaseUrl?: string,

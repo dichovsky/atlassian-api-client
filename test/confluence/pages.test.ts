@@ -1,6 +1,18 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { PagesResource } from '../../src/confluence/resources/pages.js';
+import type { CreatePageData, CreatePageRequest } from '../../src/confluence/types/pages.js';
 import { MockTransport } from '../helpers/mock-transport.js';
+
+interface ExtendedCreatePageData extends CreatePageData {
+  readonly clientTag?: string;
+}
+
+function passExistingCreatePageData(
+  pages: PagesResource,
+  data: CreatePageData,
+): ReturnType<PagesResource['create']> {
+  return pages.create(data);
+}
 
 const BASE_URL = 'https://test.atlassian.net/wiki/api/v2';
 
@@ -137,11 +149,68 @@ describe('PagesResource', () => {
 
       expect(transport.lastCall?.options.query).toMatchObject(params);
     });
+
+    it('serializes repeated status filters separately from all scalar get flags', async () => {
+      transport.respondWith(makePage('42'));
+
+      await pages.get('42', {
+        'body-format': 'atlas_doc_format',
+        'get-draft': true,
+        status: ['current', 'draft'],
+        version: 3,
+        'include-labels': true,
+        'include-properties': true,
+        'include-operations': true,
+        'include-likes': true,
+        'include-versions': true,
+        'include-version': false,
+        'include-favorited-by-current-user-status': true,
+        'include-webresources': true,
+        'include-collaborators': true,
+        'include-direct-children': true,
+      });
+
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/pages/42?status=current&status=draft`,
+      );
+      expect(transport.lastCall?.options.query).toEqual({
+        'body-format': 'atlas_doc_format',
+        'get-draft': true,
+        version: 3,
+        'include-labels': true,
+        'include-properties': true,
+        'include-operations': true,
+        'include-likes': true,
+        'include-versions': true,
+        'include-version': false,
+        'include-favorited-by-current-user-status': true,
+        'include-webresources': true,
+        'include-collaborators': true,
+        'include-direct-children': true,
+      });
+    });
   });
 
   // ── create ────────────────────────────────────────────────────────────────
 
   describe('create()', () => {
+    it('rejects incomplete or mixed page body shapes at compile time', () => {
+      // @ts-expect-error PageBodyWrite requires both representation and value.
+      const incomplete: CreatePageRequest = { spaceId: 'SPACE', status: 'draft', body: {} };
+      const mixed: CreatePageRequest = {
+        spaceId: 'SPACE',
+        title: 'Mixed',
+        body: {
+          representation: 'storage',
+          value: '<p>flat</p>',
+          // @ts-expect-error Flat and nested body representations are mutually exclusive.
+          storage: { representation: 'storage', value: '<p>nested</p>' },
+        },
+      };
+
+      expect([incomplete, mixed]).toHaveLength(2);
+    });
+
     it('calls POST /pages with the provided body', async () => {
       const created = makePage('99');
       transport.respondWith(created);
@@ -154,11 +223,62 @@ describe('PagesResource', () => {
       const result = await pages.create(data);
 
       expect(result).toEqual(created);
-      expect(transport.lastCall?.options).toMatchObject({
+      expect(transport.lastCall?.options).toEqual({
         method: 'POST',
         path: `${BASE_URL}/pages`,
         body: data,
       });
+      expect(transport.lastCall?.options.query).toBeUndefined();
+    });
+
+    it('forwards embedded, private, and root-level create query parameters', async () => {
+      transport.respondWith(makePage('100'));
+      const data = { spaceId: 'SPACE', title: 'Root page' };
+
+      await pages.create(data, { embedded: true, private: true, 'root-level': true });
+
+      expect(transport.lastCall?.options).toEqual({
+        method: 'POST',
+        path: `${BASE_URL}/pages`,
+        query: { embedded: true, private: true, 'root-level': true },
+        body: data,
+      });
+    });
+
+    it('accepts a draft without a title and a nested body', async () => {
+      transport.respondWith(makePage('101'));
+      const data = {
+        spaceId: 'SPACE',
+        status: 'draft' as const,
+        body: {
+          atlas_doc_format: {
+            representation: 'atlas_doc_format' as const,
+            value: '{"type":"doc"}',
+          },
+        },
+      };
+
+      await pages.create(data);
+
+      expect(transport.lastCall?.options).toEqual({
+        method: 'POST',
+        path: `${BASE_URL}/pages`,
+        body: data,
+      });
+      expect(transport.lastCall?.options.query).toBeUndefined();
+    });
+
+    it('preserves CreatePageData interface extension compatibility', async () => {
+      transport.respondWith(makePage('102'));
+      const data: ExtendedCreatePageData = {
+        spaceId: 'SPACE',
+        title: 'Extended page',
+        clientTag: 'downstream-metadata',
+      };
+
+      await passExistingCreatePageData(pages, data);
+
+      expect(transport.lastCall?.options.body).toBe(data);
     });
   });
 

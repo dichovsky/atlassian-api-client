@@ -1467,7 +1467,7 @@ describe('IssuesResource', () => {
     it('sends GET /issue/limit/report', async () => {
       // Spec: IssueLimitReportResponseBean — { issuesApproachingLimit?, issuesBreachingLimit?, limits? }
       const payload = {
-        issuesApproachingLimit: { '10001': { customfield_10000: 95 } },
+        issuesApproachingLimit: { attachment: { '10001': 95 } },
         issuesBreachingLimit: {},
         limits: { customfield_10000: 100 },
       };
@@ -1483,15 +1483,56 @@ describe('IssuesResource', () => {
     it('returns correct spec shape with issuesApproachingLimit and issuesBreachingLimit (B1056)', async () => {
       // Spec: field is issuesApproachingLimit/issuesBreachingLimit/limits, not issueIds
       const payload = {
-        issuesApproachingLimit: { '10001': { customfield_10000: 95 } },
-        issuesBreachingLimit: { '10002': { customfield_10000: 101 } },
+        issuesApproachingLimit: { attachment: { '10001': 95 } },
+        issuesBreachingLimit: { attachment: { '10002': 101 } },
         limits: { customfield_10000: 100 },
       };
       transport.respondWith(payload);
       const result = await issues.getLimitReport();
-      expect(result.issuesApproachingLimit).toMatchObject({ '10001': { customfield_10000: 95 } });
-      expect(result.issuesBreachingLimit).toMatchObject({ '10002': { customfield_10000: 101 } });
+      expect(result.issuesApproachingLimit).toMatchObject({ attachment: { '10001': 95 } });
+      expect(result.issuesBreachingLimit).toMatchObject({ attachment: { '10002': 101 } });
       expect(result.limits).toMatchObject({ customfield_10000: 100 });
+    });
+
+    it('requests issue keys when isReturningKeys is true', async () => {
+      transport.respondWith({});
+      await issues.getLimitReport({ isReturningKeys: true });
+      expect(transport.lastCall?.options.query).toEqual({ isReturningKeys: true });
+    });
+  });
+
+  describe('getAdfLimitReport()', () => {
+    it('sends GET /issue/limit/adf/report with repeated fieldType params', async () => {
+      const payload = {
+        entitiesBreachingLimit: { comment_adf: { 'PROJ-1': [30401] } },
+        issuesBreachingLimit: { comment_adf: { 'PROJ-1': 1 } },
+        limits: { comment_adf: 1048576 },
+      };
+      transport.respondWith(payload);
+
+      const result = await issues.getAdfLimitReport({
+        isReturningKeys: true,
+        fieldType: ['comment_adf', 'worklog_adf'],
+      });
+
+      expect(transport.lastCall?.options).toEqual({
+        method: 'GET',
+        path: `${BASE_URL}/issue/limit/adf/report?fieldType=comment_adf&fieldType=worklog_adf`,
+        query: { isReturningKeys: true },
+      });
+      expect(result.entitiesBreachingLimit).toEqual({ comment_adf: { 'PROJ-1': [30401] } });
+    });
+
+    it('omits optional ADF report filters when none are supplied', async () => {
+      transport.respondWith({});
+
+      await issues.getAdfLimitReport();
+
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/issue/limit/adf/report`,
+        query: {},
+      });
     });
   });
 
@@ -1646,14 +1687,6 @@ describe('IssuesResource', () => {
       expect(body['archivedBy']).toEqual(['uuid-rep-001']);
       expect(body['archivedDateRange']).toMatchObject({ dateAfter: '2023-01-01' });
       expect(result.taskId).toBe('task-1');
-    });
-
-    it('still accepts deprecated jql/exportType fields (CLI compat, see DEFERRED-CLI)', async () => {
-      // These are deprecated but retained to avoid breaking the CLI until it is updated
-      transport.respondWith({ taskId: 'task-2', status: 'ENQUEUED', progress: 0 }, 202);
-      await issues.exportArchivedIssues({ jql: 'project = PROJ', exportType: 'CSV' });
-      const body = transport.lastCall?.options.body as Record<string, unknown>;
-      expect(body['jql']).toBe('project = PROJ');
     });
   });
 });

@@ -2,6 +2,13 @@
 
 Confluence Cloud REST API v2 surface. Load this file when you need a flag or action the canonical examples in `SKILL.md` don't cover.
 
+API lifecycle notes: `pages children` is deprecated by Atlassian; prefer
+`direct-children` for immediate children or `descendants` for recursive
+traversal. The space-permission `transition-*`, `users` access, `data-policies`,
+and Forge `app` property operations are experimental. Forge app properties
+additionally require Forge `asApp()`; the CLI's basic/bearer authentication
+cannot provide that context.
+
 ## Resource × action matrix
 
 | Resource                | Actions                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
@@ -35,43 +42,47 @@ Confluence Cloud REST API v2 surface. Load this file when you need a flag or act
 
 Lifecycle (`list` / `get` / `create` / `update` / `delete`) plus the full `/pages/{id}/…` sub-resource family — hierarchy (`ancestors`, `descendants`, `direct-children`, `children`), classification level (read / write / reset), custom-content children, likes (count + users), permitted operations, the redaction verb, the targeted title update, content-property collections, single-version fetch, and attachment upload.
 
-| Action                        | Positional | Required flags                                          | Optional flags                                                                      |
-| ----------------------------- | ---------- | ------------------------------------------------------- | ----------------------------------------------------------------------------------- |
-| `list`                        | —          | —                                                       | `--space-id`, `--title`, `--status`, `--limit`, `--cursor`, `--body-format`         |
-| `get`                         | `<pageId>` | —                                                       | —                                                                                   |
-| `create`                      | —          | `--space-id`, `--title`, `--body`                       | —                                                                                   |
-| `update`                      | `<pageId>` | `--version-number`, `--title`, `--body`                 | —                                                                                   |
-| `delete`                      | `<pageId>` | —                                                       | `--purge`                                                                           |
-| `ancestors`                   | `<pageId>` | —                                                       | `--limit`                                                                           |
-| `descendants`                 | `<pageId>` | —                                                       | `--limit`, `--depth`, `--cursor`                                                    |
-| `direct-children`             | `<pageId>` | —                                                       | `--limit`, `--cursor`, `--sort`                                                     |
-| `children`                    | `<pageId>` | —                                                       | `--limit`, `--cursor`, `--sort`                                                     |
-| `get-classification-level`    | `<pageId>` | —                                                       | `--status`                                                                          |
-| `update-classification-level` | `<pageId>` | `--level-id`                                            | `--status` (defaults to `current`)                                                  |
-| `reset-classification-level`  | `<pageId>` | —                                                       | `--status` (defaults to `current`)                                                  |
-| `custom-content`              | `<pageId>` | `--type`                                                | `--sort`, `--cursor`, `--limit`, `--body-format`                                    |
-| `likes-count`                 | `<pageId>` | —                                                       | —                                                                                   |
-| `likes-users`                 | `<pageId>` | —                                                       | `--cursor`, `--limit`                                                               |
-| `operations`                  | `<pageId>` | —                                                       | —                                                                                   |
-| `redact`                      | `<pageId>` | `--value` (must include `createdAt`, or `--created-at`) | `--created-at`, `--clean-history`                                                   |
-| `update-title`                | `<pageId>` | `--title`                                               | `--status` (defaults to `current`)                                                  |
-| `list-properties`             | `<pageId>` | —                                                       | `--key`, `--sort`, `--cursor`, `--limit`                                            |
-| `create-property`             | `<pageId>` | `--key`, `--value`                                      | —                                                                                   |
-| `get-property`                | `<pageId>` | `--property-id`                                         | —                                                                                   |
-| `update-property`             | `<pageId>` | `--property-id`, `--key`, `--value`, `--version-number` | —                                                                                   |
-| `delete-property`             | `<pageId>` | `--property-id`                                         | —                                                                                   |
-| `version`                     | `<pageId>` | `--version-number`                                      | —                                                                                   |
-| `versions`                    | `<pageId>` | —                                                       | `--cursor`, `--limit`                                                               |
-| `footer-comments`             | `<pageId>` | —                                                       | `--body-format`, `--status`, `--sort`, `--cursor`, `--limit`                        |
-| `inline-comments`             | `<pageId>` | —                                                       | `--body-format`, `--status`, `--resolution-status`, `--sort`, `--cursor`, `--limit` |
-| `upload-attachment`           | `<pageId>` | `--file`                                                | `--filename` (override), `--media-type` (override MIME)                             |
+| Action                        | Positional | Required flags                                          | Optional flags                                                                                                                                                                                                                                                                                                                                               |
+| ----------------------------- | ---------- | ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `list`                        | —          | —                                                       | `--space-id`, `--title`, `--status`, `--limit`, `--cursor`, `--body-format`                                                                                                                                                                                                                                                                                  |
+| `get`                         | `<pageId>` | —                                                       | `--body-format`, `--get-draft`, `--status`, `--historical-version`, `--include-labels`, `--include-properties`, `--include-operations`, `--include-likes`, `--include-versions`, `--include-version`, `--no-include-version`, `--include-favorited-by-current-user-status`, `--include-webresources`, `--include-collaborators`, `--include-direct-children` |
+| `create`                      | —          | `--space-id`                                            | `--title`, `--parent-id`, `--status`, `--subtype`, `--body`, `--body-representation`, `--body-json`, `--embedded`, `--private`, `--root-level`                                                                                                                                                                                                               |
+| `update`                      | `<pageId>` | `--version-number`, `--title`, `--body`                 | —                                                                                                                                                                                                                                                                                                                                                            |
+| `delete`                      | `<pageId>` | —                                                       | `--purge`                                                                                                                                                                                                                                                                                                                                                    |
+| `ancestors`                   | `<pageId>` | —                                                       | `--limit`                                                                                                                                                                                                                                                                                                                                                    |
+| `descendants`                 | `<pageId>` | —                                                       | `--limit`, `--depth`, `--cursor`                                                                                                                                                                                                                                                                                                                             |
+| `direct-children`             | `<pageId>` | —                                                       | `--limit`, `--cursor`, `--sort`                                                                                                                                                                                                                                                                                                                              |
+| `children` (deprecated)       | `<pageId>` | —                                                       | `--limit`, `--cursor`, `--sort`                                                                                                                                                                                                                                                                                                                              |
+| `get-classification-level`    | `<pageId>` | —                                                       | `--status`                                                                                                                                                                                                                                                                                                                                                   |
+| `update-classification-level` | `<pageId>` | `--level-id`                                            | `--status` (defaults to `current`)                                                                                                                                                                                                                                                                                                                           |
+| `reset-classification-level`  | `<pageId>` | —                                                       | `--status` (defaults to `current`)                                                                                                                                                                                                                                                                                                                           |
+| `custom-content`              | `<pageId>` | `--type`                                                | `--sort`, `--cursor`, `--limit`, `--body-format`                                                                                                                                                                                                                                                                                                             |
+| `likes-count`                 | `<pageId>` | —                                                       | —                                                                                                                                                                                                                                                                                                                                                            |
+| `likes-users`                 | `<pageId>` | —                                                       | `--cursor`, `--limit`                                                                                                                                                                                                                                                                                                                                        |
+| `operations`                  | `<pageId>` | —                                                       | —                                                                                                                                                                                                                                                                                                                                                            |
+| `redact`                      | `<pageId>` | `--value` (must include `createdAt`, or `--created-at`) | `--created-at`, `--clean-history`                                                                                                                                                                                                                                                                                                                            |
+| `update-title`                | `<pageId>` | `--title`                                               | `--status` (defaults to `current`)                                                                                                                                                                                                                                                                                                                           |
+| `list-properties`             | `<pageId>` | —                                                       | `--key`, `--sort`, `--cursor`, `--limit`                                                                                                                                                                                                                                                                                                                     |
+| `create-property`             | `<pageId>` | `--key`, `--value`                                      | —                                                                                                                                                                                                                                                                                                                                                            |
+| `get-property`                | `<pageId>` | `--property-id`                                         | —                                                                                                                                                                                                                                                                                                                                                            |
+| `update-property`             | `<pageId>` | `--property-id`, `--key`, `--value`, `--version-number` | —                                                                                                                                                                                                                                                                                                                                                            |
+| `delete-property`             | `<pageId>` | `--property-id`                                         | —                                                                                                                                                                                                                                                                                                                                                            |
+| `version`                     | `<pageId>` | `--version-number`                                      | —                                                                                                                                                                                                                                                                                                                                                            |
+| `versions`                    | `<pageId>` | —                                                       | `--body-format`, `--sort`, `--cursor`, `--limit`                                                                                                                                                                                                                                                                                                             |
+| `footer-comments`             | `<pageId>` | —                                                       | `--body-format`, `--status`, `--sort`, `--cursor`, `--limit`                                                                                                                                                                                                                                                                                                 |
+| `inline-comments`             | `<pageId>` | —                                                       | `--body-format`, `--status`, `--resolution-status`, `--sort`, `--cursor`, `--limit`                                                                                                                                                                                                                                                                          |
+| `upload-attachment`           | `<pageId>` | `--file`                                                | `--filename` (override), `--media-type` (override MIME)                                                                                                                                                                                                                                                                                                      |
 
+- `get --body-format` accepts `storage`, `atlas_doc_format`, `view`, `export_view`, `anonymous_export_view`, `styled_view`, or `editor`. `--status` accepts a comma-separated subset of `current`, `archived`, `trashed`, `deleted`, `historical`, `draft`; `--historical-version` selects a positive version number. The `--include-*` flags inline the named optional response block. `--no-include-version` is the meaningful override for the version block because Atlassian includes it by default; it is mutually exclusive with `--include-version`.
+- `create --status` accepts `current` or `draft` (omission means current). `--title` is required for current/default creation but optional with `--status draft`. `--parent-id` maps to the request body's `parentId`; `--subtype` accepts only `live`.
+- For a simple body, pass `--body '<p>Storage XML</p>'`; it defaults to `storage`, or choose `--body-representation storage|atlas_doc_format|wiki`. To construct either exact OpenAPI body shape, use `--body-json` with a flat `PageBodyWrite` object or a nested `PageNestedBodyWrite` object, for example `--body-json '{"atlas_doc_format":{"representation":"atlas_doc_format","value":"{\"type\":\"doc\"}"}}'`. Do not combine `--body-json` with `--body` or `--body-representation`.
+- `create --embedded` tags the page for NCS, `--private` restricts it to the creator, and `--root-level` creates it outside the space homepage tree. Do not combine a root-level request with `--parent-id`.
 - `--body-format` on `list` / `custom-content` accepts `storage` (default Confluence storage XML); `custom-content` additionally accepts `raw` / `atlas_doc_format`.
 - `--version-number` for `update` and `update-property` must be a positive integer exactly one greater than the current version (Confluence enforces optimistic concurrency; mismatches return 409). `update-title` does **not** require optimistic concurrency — no `version.number` field.
 - `--purge` on `delete` permanently removes the page; without it the page goes to trash.
 - `ancestors` returns a bare `{ results }` object without a `_links.next` cursor — paginate by re-calling with the highest ancestor's id (same convention as `folders ancestors`, `databases ancestors`).
 - `descendants --depth` accepts integers 1–10 per spec (server-enforced).
-- `direct-children --sort` accepts `ContentSortOrder`: `created-date`, `-created-date`, `id`, `-id`, `modified-date`, `-modified-date`, `child-position`, `-child-position`, `title`, `-title`. `children --sort` is narrower — `ChildPageSortOrder`: `created-date`, `-created-date`, `id`, `-id`, `child-position`, `-child-position`, `modified-date`, `-modified-date` (no `title`). `/children` returns only child pages; `/direct-children` returns any content type rooted at the page.
+- `direct-children --sort` accepts `ContentSortOrder`: `created-date`, `-created-date`, `id`, `-id`, `modified-date`, `-modified-date`, `child-position`, `-child-position`, `title`, `-title`. `children --sort` is narrower — `ChildPageSortOrder`: `created-date`, `-created-date`, `id`, `-id`, `child-position`, `-child-position`, `modified-date`, `-modified-date` (no `title`). Atlassian now marks `/children` deprecated; use `/direct-children` for immediate children or `/descendants` for recursive traversal.
 - `get-classification-level --status` accepts `current` (default), `draft`, or `archived`. `update-classification-level` / `reset-classification-level` `--status` accepts `current` (default) or `draft` — page classification can be updated per-revision-stream (unlike blog-post classification which is locked to `current`). `--level-id` on update sends the chosen classification id.
 - `custom-content --type` is required (Confluence resolves the custom-content namespace from this value). `--sort` accepts `CustomContentSortOrder`: `id`, `-id`, `created-date`, `-created-date`, `modified-date`, `-modified-date`, `title`, `-title`.
 - `likes-count` returns the bare `{ count }` envelope and is not paginated.
@@ -79,7 +90,7 @@ Lifecycle (`list` / `get` / `create` / `update` / `delete`) plus the full `/page
 - `update-title` targets the `/title` sub-resource (separate from full `update`). Use when you only want to rename the page without touching the body or bumping the page version — handy for bulk renames.
 - Content-property `--value` is parsed as JSON when possible, falling back to the raw string (same semantics as `app upsert-property`).
 - `version --version-number` fetches a single past version by number; the response includes the body and audit metadata. (Dispatched to `client.versions.getForPage` since the SDK already exposes the route there.)
-- `versions` lists the full version history of a page (`GET /pages/{id}/versions`). Accepts `--limit` / `--cursor` only (`ListVersionsParams` — no sort or body-format). Dispatched to `client.versions.listForPage`.
+- `versions` lists the full version history of a page (`GET /pages/{id}/versions`). `--body-format` accepts `storage` or `atlas_doc_format`; `--sort` accepts `modified-date` or `-modified-date`. Dispatched to `client.versions.listForPage`.
 - `footer-comments` lists footer (top-level) comments on a page (`GET /pages/{id}/footer-comments`). `--status` accepts `current` or `deleted`. `--sort` is `CommentSortOrder`: `created-date`, `-created-date`, `modified-date`, `-modified-date`. Mirrors `blog-posts footer-comments` exactly.
 - `inline-comments` lists inline (anchored) comments on a page (`GET /pages/{id}/inline-comments`). Extends `footer-comments` params with `--resolution-status` (`open` or `resolved`). Mirrors `blog-posts inline-comments` exactly.
 - `upload-attachment --file` reads a local file and POSTs it as multipart form-data to the Confluence **REST v1** endpoint `POST /wiki/rest/api/content/{pageId}/child/attachment` (the Confluence v2 API has no write path for attachments). The request includes the required `X-Atlassian-Token: nocheck` header. `--filename` overrides the on-disk name; `--media-type` overrides server-side MIME sniffing. Dispatched to `client.attachments.upload(pageId, filename, blob, mime?)`; returns a `UploadAttachmentResult` with a `results` array of uploaded attachment entries.
@@ -123,7 +134,7 @@ atlas confluence pages delete-property 12345 --property-id prop-1
 # Versions + attachments upload
 atlas confluence pages version 12345 --version-number 2
 atlas confluence pages versions 12345 --limit 25
-atlas confluence pages footer-comments 12345 --sort -created-date --limit 25
+atlas confluence pages footer-comments 12345 --sort=-created-date --limit 25
 atlas confluence pages inline-comments 12345 --body-format storage --resolution-status open
 atlas confluence pages upload-attachment 12345 --file ./screenshot.png --media-type image/png
 ```
@@ -132,30 +143,32 @@ atlas confluence pages upload-attachment 12345 --file ./screenshot.png --media-t
 
 Lifecycle (`list` / `get` / `create`) plus the full `/spaces/{id}/…` sub-resource family: per-space blog posts and pages, custom content of a given type, content labels (on contained content) vs. labels (on the space entity itself), default classification level (read / write / clear), permitted operations, permission assignments, role assignments (read + bulk overwrite), and space-property CRUD.
 
-| Action                                | Positional  | Required flags                                          | Optional flags                                                                                          |
-| ------------------------------------- | ----------- | ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| `list`                                | —           | —                                                       | `--limit`, `--cursor`                                                                                   |
-| `get`                                 | `<spaceId>` | —                                                       | —                                                                                                       |
-| `create`                              | —           | `--name`                                                | `--key`, `--alias`, `--description`, `--private`, `--template-key`, `--copy-space-access-configuration` |
-| `blog-posts`                          | `<spaceId>` | —                                                       | `--sort`, `--status`, `--title`, `--body-format`, `--cursor`, `--limit`                                 |
-| `get-default-classification-level`    | `<spaceId>` | —                                                       | —                                                                                                       |
-| `update-default-classification-level` | `<spaceId>` | `--level-id`                                            | —                                                                                                       |
-| `delete-default-classification-level` | `<spaceId>` | —                                                       | —                                                                                                       |
-| `content-labels`                      | `<spaceId>` | —                                                       | `--prefix`, `--sort`, `--cursor`, `--limit`                                                             |
-| `custom-content`                      | `<spaceId>` | `--type`                                                | `--cursor`, `--limit`, `--body-format`                                                                  |
-| `labels`                              | `<spaceId>` | —                                                       | `--prefix`, `--sort`, `--cursor`, `--limit`                                                             |
-| `operations`                          | `<spaceId>` | —                                                       | —                                                                                                       |
-| `pages`                               | `<spaceId>` | —                                                       | `--depth`, `--sort`, `--status`, `--title`, `--body-format`, `--cursor`, `--limit`                      |
-| `permissions`                         | `<spaceId>` | —                                                       | `--cursor`, `--limit`                                                                                   |
-| `role-assignments`                    | `<spaceId>` | —                                                       | `--role-id`, `--role-type`, `--principal-id`, `--principal-type`, `--cursor`, `--limit`                 |
-| `set-role-assignments`                | `<spaceId>` | `--value` (JSON array)                                  | —                                                                                                       |
-| `list-properties`                     | `<spaceId>` | —                                                       | `--key`, `--sort`, `--cursor`, `--limit`                                                                |
-| `create-property`                     | `<spaceId>` | `--key`, `--value`                                      | —                                                                                                       |
-| `get-property`                        | `<spaceId>` | `--property-id`                                         | —                                                                                                       |
-| `update-property`                     | `<spaceId>` | `--property-id`, `--key`, `--value`, `--version-number` | —                                                                                                       |
-| `delete-property`                     | `<spaceId>` | `--property-id`                                         | —                                                                                                       |
+| Action                                | Positional  | Required flags                                          | Optional flags                                                                                                                                                         |
+| ------------------------------------- | ----------- | ------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `list`                                | —           | —                                                       | `--ids`, `--keys`, `--type`, `--status`, `--labels`, `--favorited-by`, `--not-favorited-by`, `--sort`, `--description-format`, `--include-icon`, `--limit`, `--cursor` |
+| `get`                                 | `<spaceId>` | —                                                       | `--description-format`, `--include-icon`, `--include-operations`, `--include-properties`, `--include-permissions`, `--include-role-assignments`, `--include-labels`    |
+| `create`                              | —           | `--name`                                                | `--key`, `--alias`, `--description`, `--private`, `--template-key`, `--copy-space-access-configuration`                                                                |
+| `blog-posts`                          | `<spaceId>` | —                                                       | `--sort`, `--status`, `--title`, `--body-format`, `--cursor`, `--limit`                                                                                                |
+| `get-default-classification-level`    | `<spaceId>` | —                                                       | —                                                                                                                                                                      |
+| `update-default-classification-level` | `<spaceId>` | `--level-id`                                            | —                                                                                                                                                                      |
+| `delete-default-classification-level` | `<spaceId>` | —                                                       | —                                                                                                                                                                      |
+| `content-labels`                      | `<spaceId>` | —                                                       | `--prefix`, `--sort`, `--cursor`, `--limit`                                                                                                                            |
+| `custom-content`                      | `<spaceId>` | `--type`                                                | `--cursor`, `--limit`, `--body-format`                                                                                                                                 |
+| `labels`                              | `<spaceId>` | —                                                       | `--prefix`, `--sort`, `--cursor`, `--limit`                                                                                                                            |
+| `operations`                          | `<spaceId>` | —                                                       | —                                                                                                                                                                      |
+| `pages`                               | `<spaceId>` | —                                                       | `--depth`, `--sort`, `--status`, `--title`, `--body-format`, `--cursor`, `--limit`                                                                                     |
+| `permissions`                         | `<spaceId>` | —                                                       | `--cursor`, `--limit`                                                                                                                                                  |
+| `role-assignments`                    | `<spaceId>` | —                                                       | `--role-id`, `--role-type`, `--principal-id`, `--principal-type`, `--cursor`, `--limit`                                                                                |
+| `set-role-assignments`                | `<spaceId>` | `--value` (JSON array)                                  | —                                                                                                                                                                      |
+| `list-properties`                     | `<spaceId>` | —                                                       | `--key`, `--sort`, `--cursor`, `--limit`                                                                                                                               |
+| `create-property`                     | `<spaceId>` | `--key`, `--value`                                      | —                                                                                                                                                                      |
+| `get-property`                        | `<spaceId>` | `--property-id`                                         | —                                                                                                                                                                      |
+| `update-property`                     | `<spaceId>` | `--property-id`, `--key`, `--value`, `--version-number` | —                                                                                                                                                                      |
+| `delete-property`                     | `<spaceId>` | `--property-id`                                         | —                                                                                                                                                                      |
 
 - `create` requires either `--key` or `--alias` for the space URL identifier (the OpenAPI spec encodes this constraint in prose); `--description` is sent as `{ value, representation: 'plain' }` since the v2 API only accepts the plain representation. `--private` mints a private space (the calling user becomes the sole admin). `--copy-space-access-configuration` clones the access configuration from the named space id. Available on tenants with Role-Based Access Control.
+- `list --ids`, `--keys`, and `--labels` accept comma-separated values. Every `--ids` entry must be a decimal integer; the CLI preserves it as a string so int64 values above JavaScript's safe-integer limit (for example, `9007199254740993`) remain exact. `--type` accepts `global`, `collaboration`, `knowledge_base`, `personal`, `system`, `onboarding`, or `xflow_sample_space`; `--status` accepts `current`, `archived`, or `trashed`. `--sort` accepts `id`, `key`, or `name`, optionally prefixed with `-`. `--description-format` is `plain` or `view`; `--include-icon` fetches the icon.
+- `get` can inline labels, properties, operations, permissions, and the space icon. `--include-role-assignments` is currently EAP-only. Both `list` and `get` return the current `spaceOwnerId` field when Atlassian exposes it.
 - `blog-posts --sort` accepts `BlogPostSortOrder` (`id`, `-id`, `created-date`, `-created-date`, `modified-date`, `-modified-date`). `--status` is comma-separated `current,deleted,trashed` (narrower than the standalone `/blogposts` collection — `historical` / `draft` are not legal here). `--body-format` is `storage` or `atlas_doc_format`.
 - `pages --depth` accepts `all` (default — full subtree) or `root` (top-level pages only). `--status` is comma-separated `current,archived,deleted,trashed`. `--sort` is `PageSortOrder` (`id`, `-id`, `created-date`, `-created-date`, `modified-date`, `-modified-date`, `title`, `-title`). `--body-format` is `storage` or `atlas_doc_format`.
 - `content-labels` returns labels applied to **content within the space** (pages, blog posts, attachments). `labels` returns labels applied to the **space entity itself**. Both accept `--prefix` (`my` or `team` only — narrower than the tenant-wide `/labels` collection which also accepts `global` and `system`) and `--sort` from `LabelSortOrder` (`created-date`, `-created-date`, `id`, `-id`, `name`, `-name`).
@@ -169,8 +182,8 @@ Lifecycle (`list` / `get` / `create`) plus the full `/spaces/{id}/…` sub-resou
 
 ```sh
 # Lifecycle
-atlas confluence spaces list --limit 25
-atlas confluence spaces get 654321
+atlas confluence spaces list --status trashed --sort=-name --include-icon --limit 25
+atlas confluence spaces get 654321 --description-format view --include-labels --include-permissions
 atlas confluence spaces create --name "Engineering" --key ENG --description "Eng wiki"
 atlas confluence spaces create --name "Private Inbox" --alias inbox --private
 
@@ -179,7 +192,7 @@ atlas confluence spaces blog-posts 654321 --sort=-created-date --status current 
 atlas confluence spaces pages 654321 --depth root --title "Quarterly" --sort=-modified-date
 atlas confluence spaces custom-content 654321 --type ai.atlassian.collection
 atlas confluence spaces content-labels 654321 --prefix team
-atlas confluence spaces labels 654321 --prefix team --sort -name
+atlas confluence spaces labels 654321 --prefix team --sort=-name
 atlas confluence spaces operations 654321
 
 # Classification
@@ -249,7 +262,7 @@ The remaining actions wrap the `/blogposts/{id}/…` sub-resource family — con
 ```sh
 # Lifecycle
 atlas confluence blog-posts list --space-id 654321 --limit 25
-atlas confluence blog-posts list --space-id 654321 --sort -created-date --status current --body-format storage
+atlas confluence blog-posts list --space-id 654321 --sort=-created-date --status current --body-format storage
 atlas confluence blog-posts get 99999
 atlas confluence blog-posts get 99999 --include-labels --include-likes --body-format atlas_doc_format
 
@@ -259,7 +272,7 @@ atlas confluence blog-posts create-property 99999 --key reviewed --value true
 atlas confluence blog-posts update-property 99999 --property-id prop-1 --key reviewed --value false --version-number 2
 
 # Attachments + classification
-atlas confluence blog-posts attachments 99999 --media-type image/png --sort -created-date
+atlas confluence blog-posts attachments 99999 --media-type image/png --sort=-created-date
 atlas confluence blog-posts attachments 99999 --status current,archived
 atlas confluence blog-posts get-classification-level 99999
 atlas confluence blog-posts update-classification-level 99999 --level-id cl-restricted
@@ -267,7 +280,7 @@ atlas confluence blog-posts reset-classification-level 99999
 
 # Sub-collections
 atlas confluence blog-posts custom-content 99999 --type ai.atlassian.collection
-atlas confluence blog-posts footer-comments 99999 --sort -created-date
+atlas confluence blog-posts footer-comments 99999 --sort=-created-date
 atlas confluence blog-posts inline-comments 99999 --resolution-status open
 atlas confluence blog-posts labels 99999 --prefix global
 
@@ -277,7 +290,7 @@ atlas confluence blog-posts likes-users 99999 --limit 50
 atlas confluence blog-posts operations 99999
 
 # Versions
-atlas confluence blog-posts versions 99999 --sort -modified-date
+atlas confluence blog-posts versions 99999 --sort=-modified-date
 atlas confluence blog-posts version 99999 --version-number 2
 ```
 
@@ -309,7 +322,7 @@ atlas confluence blog-posts version 99999 --version-number 2
 
 | Action            | Positional       | Required flags                                          | Optional flags                                                            |
 | ----------------- | ---------------- | ------------------------------------------------------- | ------------------------------------------------------------------------- |
-| `list`            | —                | `--page-id`                                             | `--limit`, `--cursor`                                                     |
+| `list`            | —                | `--page-id`                                             | `--sort`, `--status`, `--media-type`, `--filename`, `--limit`, `--cursor` |
 | `list-all`        | —                | —                                                       | `--status`, `--media-type`, `--filename`, `--sort`, `--limit`, `--cursor` |
 | `get`             | `<attachmentId>` | —                                                       | `--version-number`, `--include-*` (see notes)                             |
 | `delete`          | `<attachmentId>` | —                                                       | `--purge`                                                                 |
@@ -326,9 +339,9 @@ atlas confluence blog-posts version 99999 --version-number 2
 | `thumbnail`       | `<attachmentId>` | —                                                       | `--width`, `--height`, `--version-number`                                 |
 
 - To upload an attachment via the CLI, use `atlas confluence pages upload-attachment <pageId> --file <path>` (optional: `--filename` to override the on-disk name, `--media-type` to override MIME sniffing). The handler reads the file from disk and dispatches to `client.attachments.upload(pageId, filename, blob, mime?)`. See the `pages` section for full flag details. To call the SDK directly, pass the file content as a `Blob`; Node ESM callers can wrap a `Buffer` or `Uint8Array` in a `Blob` first. **Note:** upload uses the Confluence REST v1 endpoint (`POST /wiki/rest/api/content/{pageId}/child/attachment`) because the v2 API has no write path for attachments; the `X-Atlassian-Token: nocheck` header is set automatically. The return type is `UploadAttachmentResult` (a `{ results: UploadAttachmentResultItem[] }` envelope), not the v2 cursor-paginated shape.
-- `list-all` hits the tenant-wide `GET /attachments`. `--status` accepts a single value or comma-separated list of `current`, `archived`, `trashed`.
+- `list` hits `GET /pages/{pageId}/attachments`; it supports the same attachment `--sort`, comma-separated `--status`, `--media-type`, and `--filename` filters as the current v2 contract. `list-all` hits the tenant-wide `GET /attachments`. `--status` accepts a single value or comma-separated list of `current`, `archived`, `trashed`.
 - `--sort` enums per action:
-  - `list-all`: `created-date`, `-created-date`, `modified-date`, `-modified-date`
+  - `list`, `list-all`: `created-date`, `-created-date`, `modified-date`, `-modified-date`
   - `versions`: `modified-date`, `-modified-date`
   - `footer-comments`: `created-date`, `-created-date`, `modified-date`, `-modified-date`
   - `labels`: `created-date`, `-created-date`, `id`, `-id`, `name`, `-name`
@@ -351,7 +364,7 @@ atlas confluence blog-posts version 99999 --version-number 2
 
 | Action               | Positional     | Required flags | Optional flags                                                 |
 | -------------------- | -------------- | -------------- | -------------------------------------------------------------- |
-| `list`               | —              | `--page-id`    | `--limit`, `--cursor`                                          |
+| `list`               | —              | `--page-id`    | `--prefix`, `--sort`, `--limit`, `--cursor`                    |
 | `list-all`           | —              | —              | `--label-id`, `--prefix`, `--sort`, `--limit`, `--cursor`      |
 | `attachments`        | `<labelId>`    | —              | `--sort`, `--limit`, `--cursor`                                |
 | `blog-posts`         | `<labelId>`    | —              | `--space-id`, `--body-format`, `--sort`, `--limit`, `--cursor` |
@@ -359,7 +372,7 @@ atlas confluence blog-posts version 99999 --version-number 2
 | `list-for-space`     | `<spaceId>`    | —              | `--prefix`, `--sort`, `--limit`, `--cursor`                    |
 | `list-for-blog-post` | `<blogPostId>` | —              | `--prefix`, `--sort`, `--limit`, `--cursor`                    |
 
-- `list-all` hits the tenant-wide `GET /labels`. `--label-id` and `--prefix` accept comma-separated values (the wire format expects a single CSV string).
+- `list` returns labels for a page and accepts `--prefix` (`my`, `team`, `global`, `system`) plus `--sort` from `LabelSortOrder`. `list-all` hits the tenant-wide `GET /labels`. `--label-id` and `--prefix` accept comma-separated values and are emitted as repeated query parameters.
 - `attachments`, `blog-posts`, `pages` walk the inverse relations: given a label id, return the content tagged with it. They share `--limit` / `--cursor` cursor pagination.
 - `list-for-space` returns labels applied to a **space entity** (`GET /spaces/{id}/labels`). `list-for-blog-post` returns labels on a **blog post** (`GET /blogposts/{id}/labels`). Both accept `--prefix` (`my`, `team`, `global`, `system`) and `--sort` from `LabelSortOrder`.
 - `--sort` enums per action:
@@ -373,12 +386,12 @@ atlas confluence blog-posts version 99999 --version-number 2
 ```sh
 # Inverse relations: given a label, list content with that label
 atlas confluence labels list-all --prefix global --limit 50
-atlas confluence labels attachments 12345 --sort -created-date
+atlas confluence labels attachments 12345 --sort=-created-date
 atlas confluence labels blog-posts 12345 --space-id 100,200 --limit 25
-atlas confluence labels pages 12345 --sort -modified-date
+atlas confluence labels pages 12345 --sort=-modified-date
 
 # Forward relations: given a resource, list labels on it (B1018)
-atlas confluence labels list-for-space 654321 --prefix global --sort -name
+atlas confluence labels list-for-space 654321 --prefix global --sort=-name
 atlas confluence labels list-for-blog-post 99999 --prefix team --limit 25
 ```
 
@@ -412,9 +425,12 @@ atlas confluence admin-key delete
 
 ## `app`
 
-App properties are per-Forge / Connect-app key-value storage; they are scoped
-to the calling app, **not** to any page, space, or user. The CLI exposes the
-four v2 `/app/properties` endpoints.
+App properties are an **experimental, Forge-only** key-value API scoped to the
+calling Forge app, **not** to any page, space, user, or Connect app. Atlassian
+requires Forge `asApp()` for all four `/app/properties` operations. The
+standard `atlas` CLI only supports basic/bearer HTTP authentication and cannot
+create that Forge execution context, so these commands will be rejected by
+Atlassian. Use the SDK methods only with a Forge-aware injected transport.
 
 | Action            | Positional      | Required flags | Optional flags        |
 | ----------------- | --------------- | -------------- | --------------------- |
@@ -430,8 +446,8 @@ four v2 `/app/properties` endpoints.
 - `upsert-property` is a single PUT — it creates the key if absent and replaces
   the existing value otherwise. There is no version field; Confluence does not
   enforce optimistic concurrency on app properties.
-- The CLI authenticates as the calling user, so it can only see / mutate
-  properties belonging to the app whose credentials you supply.
+- Do not substitute a user bearer token or Connect credential for `asApp()`;
+  neither satisfies this API's authentication contract.
 
 ```sh
 # List the first 25 properties this app has stored
@@ -563,7 +579,7 @@ atlas confluence custom-content operations cc-1
 | `get-metadata` | —          | —              | —                                                  |
 | `list-spaces`  | —          | —              | `--ids`, `--keys`, `--sort`, `--limit`, `--cursor` |
 
-Surfaces the Confluence v2 data-policies API. Both endpoints are **app-only**
+Surfaces the **experimental** Confluence v2 data-policies API. Both endpoints are **app-only**
 (Forge / Connect) — user-token callers receive `403 Forbidden`, and the site
 must have the data-policies entitlement enabled. The metadata endpoint also
 requires the `read:configuration:confluence` OAuth scope (or `READ` Connect
@@ -591,7 +607,7 @@ atlas confluence data-policies get-metadata
 atlas confluence data-policies list-spaces
 
 # Filter to specific space keys, sort by descending key, larger page
-atlas confluence data-policies list-spaces --keys ENG,OPS --sort -key --limit 50
+atlas confluence data-policies list-spaces --keys ENG,OPS --sort=-key --limit 50
 
 # Filter by IDs
 atlas confluence data-policies list-spaces --ids 100,200,300
@@ -610,7 +626,10 @@ atlas confluence data-policies list-spaces --ids 100,200,300
 
 Lists the _available_ space-permission definitions for the Confluence Cloud organization (`GET /wiki/api/v2/space-permissions`). These describe the permissions the platform supports (`id`, `displayName`, `description`, `requiredPermissionIds`) — they are **not** per-space grants. Per-space assignments are exposed by the separate `/spaces/{id}/permissions` endpoint (not covered here). Requires the `read:space.permission:confluence` OAuth scope (or `READ` Connect app scope); available on tenants with Role-Based Access Control. Returns the standard `{ results, _links }` cursor-paginated wrapper; `--limit` accepts 1-250 (server default 25).
 
-The **transition sub-commands** (`transition-*`) implement the async bulk RBAC migration API (`/wiki/api/v2/space-permissions/transition/*`). The async flow is:
+The **transition sub-commands** (`transition-*`) implement Atlassian's
+**experimental** async bulk RBAC migration API
+(`/wiki/api/v2/space-permissions/transition/*`). The non-transition `list`
+operation is not experimental. The async flow is:
 
 1. Generate the combinations table (once): `transition-generate-combinations`
 2. Inspect the result: `transition-list-combinations`
@@ -791,20 +810,20 @@ identified by a server-assigned string ID. The CLI exposes the three v2
 `/tasks` endpoints — list with rich filtering, fetch a single task, and toggle
 its `status` between `incomplete` and `complete`.
 
-| Action   | Positional | Required flags | Optional flags                                                                                                                                                                                                                                                   |
-| -------- | ---------- | -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `list`   | —          | —              | `--body-format`, `--include-blank-tasks`, `--status`, `--task-id`, `--space-id`, `--page-id`, `--blog-post-id`, `--created-by`, `--assigned-to`, `--completed-by`, `--created-at-from`, `--created-at-to`, `--due-at-from`, `--due-at-to`, `--limit`, `--cursor` |
-| `get`    | `<taskId>` | —              | `--body-format`                                                                                                                                                                                                                                                  |
-| `update` | `<taskId>` | `--status`     | —                                                                                                                                                                                                                                                                |
+| Action   | Positional | Required flags | Optional flags                                                                                                                                                                                                                                                                                               |
+| -------- | ---------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `list`   | —          | —              | `--body-format`, `--include-blank-tasks`, `--status`, `--task-id`, `--space-id`, `--page-id`, `--blog-post-id`, `--created-by`, `--assigned-to`, `--completed-by`, `--created-at-from`, `--created-at-to`, `--due-at-from`, `--due-at-to`, `--completed-at-from`, `--completed-at-to`, `--limit`, `--cursor` |
+| `get`    | `<taskId>` | —              | `--body-format`                                                                                                                                                                                                                                                                                              |
+| `update` | `<taskId>` | `--status`     | `--body-format`                                                                                                                                                                                                                                                                                              |
 
 - `--status` accepts `incomplete` or `complete` (the only two task states v2 surfaces). On `update` it's required and toggles the task. On `list` it filters results.
 - `--task-id` filters to a single numeric platform task ID (distinct from the string task ID positional argument used by `get` / `update`).
 - `--include-blank-tasks` includes tasks whose `body` is empty (e.g. checkboxes without inline text). Omit to hide them.
 - `--body-format` accepts `storage` or `atlas_doc_format` and controls the representation of the task body when present.
-- The date-range filters (`--created-at-from`, `--created-at-to`, `--due-at-from`, `--due-at-to`) accept ISO-8601 timestamps (e.g. `2026-01-01T00:00:00Z`); ranges are inclusive on both ends.
+- All date-range filters (`--created-at-*`, `--due-at-*`, `--completed-at-*`) accept integer Unix epoch milliseconds, not ISO-8601 strings; ranges are inclusive on both ends.
 - `--space-id`, `--page-id`, `--blog-post-id` scope the listing to tasks within that container; combine to narrow further. The user-attribution filters (`--created-by`, `--assigned-to`, `--completed-by`) accept Atlassian account IDs.
 - Pagination is cursor-based — extract `cursor=…` from `_links.next` and pass it as `--cursor` on the follow-up call.
-- `update` only changes `status`; the task body, assignee, due date, and container are immutable through this endpoint.
+- `update` only changes `status`; `--body-format` controls the representation returned in the response. The task body, assignee, due date, and container are immutable through this endpoint.
 
 ```sh
 # All incomplete tasks across the site (first page)
@@ -815,13 +834,13 @@ atlas confluence tasks list --page-id 12345 --assigned-to acc-123
 
 # Tasks completed in a date window
 atlas confluence tasks list --status complete --completed-by acc-123 \
-  --created-at-from 2026-01-01T00:00:00Z --created-at-to 2026-02-01T00:00:00Z
+  --completed-at-from 1767225600000 --completed-at-to 1769904000000
 
 # Read a single task (with rendered body)
 atlas confluence tasks get task-1 --body-format storage
 
 # Mark a task complete
-atlas confluence tasks update task-1 --status complete
+atlas confluence tasks update task-1 --status complete --body-format storage
 
 # Reopen a task
 atlas confluence tasks update task-1 --status incomplete
@@ -829,7 +848,8 @@ atlas confluence tasks update task-1 --status incomplete
 
 ## `users`
 
-Single-user access controls. Bulk account-ID resolution lives under the
+Experimental single-user access controls. Atlassian marks both operations in
+this resource experimental. Bulk account-ID resolution lives under the
 separate `users-bulk` resource below.
 
 | Action                  | Positional | Required flags | Optional flags |
@@ -940,7 +960,7 @@ atlas confluence databases get db-1 --include-properties --include-operations
 atlas confluence databases descendants db-1 --depth 3 --limit 50
 
 # Sort direct children by most-recently modified
-atlas confluence databases direct-children db-1 --sort -modified-date
+atlas confluence databases direct-children db-1 --sort=-modified-date
 
 # Classification level lifecycle
 atlas confluence databases get-classification-level db-1
@@ -1053,7 +1073,7 @@ atlas confluence folders get folder-1 --include-properties --include-operations
 atlas confluence folders descendants folder-1 --depth 3 --limit 50
 
 # Sort direct children by most-recently modified
-atlas confluence folders direct-children folder-1 --sort -modified-date
+atlas confluence folders direct-children folder-1 --sort=-modified-date
 
 # Permitted operations
 atlas confluence folders operations folder-1
@@ -1093,7 +1113,7 @@ Top-level (page / blog-post) footer comments exposed through the tenant-wide `/w
 
 ```sh
 # Tenant-wide listing, newest first
-atlas confluence footer-comments list --sort -created-date --limit 25
+atlas confluence footer-comments list --sort=-created-date --limit 25
 
 # Read a single comment with everything inlined
 atlas confluence footer-comments get 77777 --include-likes --include-versions
@@ -1112,7 +1132,7 @@ atlas confluence footer-comments likes-users 77777 --limit 50
 atlas confluence footer-comments operations 77777
 
 # Version history
-atlas confluence footer-comments versions 77777 --sort -modified-date
+atlas confluence footer-comments versions 77777 --sort=-modified-date
 atlas confluence footer-comments version 77777 --version-number 3
 ```
 
@@ -1139,7 +1159,7 @@ Tenant-wide inline comment surface exposed through `/wiki/api/v2/inline-comments
 
 ```sh
 # Tenant-wide listing, newest first
-atlas confluence inline-comments list --sort -created-date --limit 25
+atlas confluence inline-comments list --sort=-created-date --limit 25
 
 # Walk child replies on an inline thread
 atlas confluence inline-comments children 77777 --sort created-date
@@ -1152,7 +1172,7 @@ atlas confluence inline-comments likes-users 77777 --limit 50
 atlas confluence inline-comments operations 77777
 
 # Version history
-atlas confluence inline-comments versions 77777 --sort -modified-date
+atlas confluence inline-comments versions 77777 --sort=-modified-date
 atlas confluence inline-comments version 77777 --version-number 3
 ```
 

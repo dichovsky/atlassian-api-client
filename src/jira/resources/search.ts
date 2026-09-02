@@ -2,11 +2,13 @@ import type { Transport } from '../../core/types.js';
 import { paginateSearch, validatePageSize } from '../../core/pagination.js';
 import { appendRepeatedParams } from '../../core/query.js';
 import type { SearchResult, SearchParams, Issue } from '../types.js';
+import type { FieldSchema } from './fields.js';
 
 export interface ApproximateCountResult {
   readonly count: number;
 }
 
+/** Parameters shared by current GET and POST `/rest/api/3/search/jql`. */
 export interface JqlSearchParams {
   readonly jql?: string;
   readonly nextPageToken?: string;
@@ -15,15 +17,27 @@ export interface JqlSearchParams {
   readonly expand?: string[];
   readonly properties?: string[];
   readonly fieldsByKeys?: boolean;
+  /** Include issues from archived projects in current JQL search results. */
+  readonly includeArchivedProjects?: boolean;
   /**
    * Strong-consistency issue IDs to reconcile with search results (max 50).
    * Accepted by both GET and POST /rest/api/3/search/jql.
    */
   readonly reconcileIssues?: number[];
+}
+
+/** Parameters unique to current GET `/rest/api/3/search/jql`. */
+export interface JqlSearchGetParams extends JqlSearchParams {
   /**
    * When true, the search fails fast on first error instead of returning partial results.
-   * Accepted by GET /rest/api/3/search/jql.
+   * Accepted only by GET /rest/api/3/search/jql.
    */
+  readonly failFast?: boolean;
+}
+
+/** Parameters unique to deprecated GET `/rest/api/3/search`. */
+export interface LegacySearchGetParams extends SearchParams {
+  /** Whether to fail on the first field-loading error. */
   readonly failFast?: boolean;
 }
 
@@ -36,8 +50,24 @@ export interface JqlSearchResult {
   readonly nextPageToken?: string;
   readonly isLast?: boolean;
   readonly names?: Record<string, string>;
-  /** Spec `SearchWarningBean[]`: structured warnings (e.g. JQL_FUNCTION_LIMIT_EXCEEDED). */
-  readonly warnings?: { readonly type?: string; readonly details?: unknown }[];
+  readonly schema?: Record<string, FieldSchema>;
+  /** Experimental structured warnings returned alongside successful search results. */
+  readonly warnings?: SearchWarning[];
+}
+
+/** Structured details for a search limit warning. */
+export interface SearchWarningLimitDetails {
+  readonly actual?: number;
+  readonly arguments?: string;
+  readonly clause?: string;
+  readonly limit?: number;
+}
+
+/** Experimental warning returned by the enhanced search API. */
+export interface SearchWarning {
+  readonly type?: string;
+  readonly message?: string;
+  readonly details?: SearchWarningLimitDetails;
 }
 
 export class SearchResource {
@@ -46,7 +76,10 @@ export class SearchResource {
     private readonly baseUrl: string,
   ) {}
 
-  /** Search for issues using JQL (POST). */
+  /**
+   * Search for issues using the legacy offset-based JQL endpoint (POST).
+   * @deprecated Atlassian is removing `/rest/api/3/search`; use searchJqlPost().
+   */
   async search(params: SearchParams): Promise<SearchResult> {
     if (params.maxResults !== undefined) validatePageSize(params.maxResults, 'maxResults');
     const body: Record<string, unknown> = {
@@ -68,8 +101,11 @@ export class SearchResource {
     return response.data;
   }
 
-  /** Search for issues using JQL (GET). */
-  async searchGet(params: SearchParams): Promise<SearchResult> {
+  /**
+   * Search for issues using the legacy offset-based JQL endpoint (GET).
+   * @deprecated Atlassian is removing `/rest/api/3/search`; use searchJqlGet().
+   */
+  async searchGet(params: LegacySearchGetParams): Promise<SearchResult> {
     if (params.maxResults !== undefined) validatePageSize(params.maxResults, 'maxResults');
     const query: Record<string, string | number | boolean | undefined> = {
       jql: params.jql,
@@ -81,6 +117,7 @@ export class SearchResource {
     if (params.expand !== undefined) query['expand'] = params.expand.join(',');
     if (params.validateQuery !== undefined) query['validateQuery'] = params.validateQuery;
     if (params.fieldsByKeys !== undefined) query['fieldsByKeys'] = params.fieldsByKeys;
+    if (params.failFast !== undefined) query['failFast'] = params.failFast;
 
     let path = appendRepeatedParams(`${this.baseUrl}/search`, 'fields', params.fields);
     path = appendRepeatedParams(path, 'properties', params.properties);
@@ -92,7 +129,10 @@ export class SearchResource {
     return response.data;
   }
 
-  /** Iterate over all search results across all pages. */
+  /**
+   * Iterate the legacy offset-based search endpoint.
+   * @deprecated Atlassian is removing `/rest/api/3/search`; page with searchJqlGet/Post instead.
+   */
   async *searchAll(params: Omit<SearchParams, 'startAt'>): AsyncGenerator<Issue> {
     const body: Record<string, unknown> = { jql: params.jql };
     if (params.fields !== undefined) body['fields'] = params.fields;
@@ -111,7 +151,7 @@ export class SearchResource {
   }
 
   /** Search for issues using JQL cursor-based pagination (GET). B767 */
-  async searchJqlGet(params: JqlSearchParams): Promise<JqlSearchResult> {
+  async searchJqlGet(params: JqlSearchGetParams): Promise<JqlSearchResult> {
     if (params.maxResults !== undefined) validatePageSize(params.maxResults, 'maxResults');
     const query: Record<string, string | number | boolean | undefined> = {};
     if (params.jql !== undefined) query['jql'] = params.jql;
@@ -121,6 +161,9 @@ export class SearchResource {
     // params baked into the path; `expand` is `type: string` → CSV (B1049).
     if (params.expand) query['expand'] = params.expand.join(',');
     if (params.fieldsByKeys !== undefined) query['fieldsByKeys'] = params.fieldsByKeys;
+    if (params.includeArchivedProjects !== undefined) {
+      query['includeArchivedProjects'] = params.includeArchivedProjects;
+    }
     if (params.failFast !== undefined) query['failFast'] = params.failFast;
     let path = appendRepeatedParams(`${this.baseUrl}/search/jql`, 'fields', params.fields);
     path = appendRepeatedParams(path, 'properties', params.properties);
@@ -148,6 +191,9 @@ export class SearchResource {
     if (params.expand) body['expand'] = params.expand.join(',');
     if (params.properties) body['properties'] = params.properties;
     if (params.fieldsByKeys !== undefined) body['fieldsByKeys'] = params.fieldsByKeys;
+    if (params.includeArchivedProjects !== undefined) {
+      body['includeArchivedProjects'] = params.includeArchivedProjects;
+    }
     // `reconcileIssues` is `type: array` in POST body — send as array directly.
     if (params.reconcileIssues) body['reconcileIssues'] = params.reconcileIssues;
     const response = await this.transport.request<JqlSearchResult>({

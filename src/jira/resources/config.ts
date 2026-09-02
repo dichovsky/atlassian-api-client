@@ -66,6 +66,7 @@ export interface DeletedFieldAssociationScheme {
 export interface FieldAssociationParameters {
   readonly description?: string;
   readonly isRequired: boolean;
+  readonly rendererType?: string;
 }
 
 /**
@@ -75,7 +76,19 @@ export interface FieldAssociationParameters {
 export interface WorkTypeParameters {
   readonly description?: string;
   readonly isRequired: boolean;
+  readonly rendererType?: string;
   readonly workTypeId: number;
+}
+
+/**
+ * Default parameters in a field search result.
+ * Spec: `SearchResultFieldParameters` — unlike `FieldAssociationParameters`,
+ * every property is optional in this response shape.
+ */
+export interface SearchResultFieldParameters {
+  readonly description?: string;
+  readonly isRequired?: boolean;
+  readonly rendererType?: string;
 }
 
 /**
@@ -85,6 +98,7 @@ export interface WorkTypeParameters {
 export interface SearchResultWorkTypeParameters {
   readonly description?: string;
   readonly isRequired?: boolean;
+  readonly rendererType?: string;
   readonly workTypeId?: string;
 }
 
@@ -103,7 +117,7 @@ export interface FieldAssociationSchemeItemParameters {
 export interface FieldAssociationSchemeFieldResult {
   readonly allowedOperations?: string[];
   readonly fieldId?: string;
-  readonly parameters?: FieldAssociationParameters;
+  readonly parameters?: SearchResultFieldParameters;
   readonly restrictedToWorkTypes?: string[];
   readonly workTypeParameters?: SearchResultWorkTypeParameters[];
 }
@@ -252,11 +266,16 @@ export type RemoveFieldParametersBody = Record<string, ParameterRemovalDetails[]
 
 /** Parameters update payload for a single scheme entry. */
 export interface FieldSchemeParametersUpdate {
-  readonly parameters?: { description?: string; isRequired?: boolean };
+  readonly parameters?: {
+    description?: string;
+    isRequired?: boolean;
+    rendererType?: 'jira-text-renderer' | 'atlassian-wiki-renderer';
+  };
   readonly schemeIds?: number[];
   readonly workTypeParameters?: {
     description?: string;
     isRequired?: boolean;
+    rendererType?: 'jira-text-renderer' | 'atlassian-wiki-renderer';
     workTypeId?: number;
   }[];
 }

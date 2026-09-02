@@ -2946,3 +2946,14 @@
 - [x] 🟢 ♻️ QA: B1061 Dead-code cleanup (minimal)
   - files: `src/confluence/resources/index.ts` (deleted), `tsconfig.json`, `vitest.config.ts`
   - **Impl:** PR #285. Removed the unreachable confluence resources barrel (zero consumers) + stale `bench/` refs. Public-export trims deferred to B1061b (3.0.0).
+
+## 🧩 Atlassian interface refresh (2026-08-29)
+
+- [x] 🔴 🧩 API: B1002 Jira: expose `GET /rest/software/1.0/board/{boardId}/backlog/approximate-count`
+  - files: `src/jira/resources/boards.ts`, `src/jira/index.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `src/cli/help.ts`, `skill/reference/jira/agile.md`, `skill/reference/jira.md`, tests
+  - **Impl:** Added typed SDK + CLI/skill action with optional JQL, wired through the existing Jira Software base URL and granular scope detection.
+  - **Rat:** Enhanced token pagination omits exact totals; Atlassian provides this dedicated non-deprecated approximate-count route. The former "software-only" blocker was obsolete because the client already supports `/rest/software/1.0`.
+- [x] 🔴 🧩 API: B1006 Jira: expose `GET /rest/software/1.0/board/{boardId}/issue/approximate-count`
+  - files: `src/jira/resources/boards.ts`, `src/jira/index.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `src/cli/help.ts`, `skill/reference/jira/agile.md`, `skill/reference/jira.md`, tests
+  - **Impl:** Added typed SDK + CLI/skill action with optional JQL, wired through the existing Jira Software base URL and granular scope detection.
+  - **Rat:** Completes the live Jira Software route surface and supplies the supported count companion for enhanced board issue pagination.

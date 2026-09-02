@@ -64,7 +64,10 @@ export class ConfluenceClient {
   readonly versions: VersionsResource;
   /** Admin key resource. */
   readonly adminKey: AdminKeyResource;
-  /** App properties resource (Forge / Connect app-scoped storage). */
+  /**
+   * Forge `asApp()` property storage (requires a Forge-aware transport).
+   * @experimental Atlassian marks all operations in this group experimental.
+   */
   readonly app: AppResource;
   /** Classification levels resource. */
   readonly classificationLevels: ClassificationLevelsResource;

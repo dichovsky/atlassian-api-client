@@ -78,6 +78,8 @@ export class SpacePermissionsResource {
   /**
    * Bulk-remove space permission access across a selection of spaces (B1031).
    *
+   * @experimental Atlassian marks the transition API experimental.
+   *
    * Submits an async task (`POST /space-permissions/transition/access-removals`,
    * operationId: `bulkRemoveSpacePermissionAccess`). Poll the returned `taskId`
    * with {@link getTransitionTaskStatus} to confirm completion.
@@ -95,6 +97,8 @@ export class SpacePermissionsResource {
 
   /**
    * List the current page of unassigned permission combinations (B1032).
+   *
+   * @experimental Atlassian marks the transition API experimental.
    *
    * `GET /space-permissions/transition/combinations`,
    * operationId: `listSpacePermissionCombinations`.
@@ -122,6 +126,8 @@ export class SpacePermissionsResource {
 
   /**
    * Iterate over every permission combination across all pages (B1032).
+   *
+   * @experimental Uses Atlassian's experimental transition API.
    *
    * Async generator wrapping cursor pagination over
    * `GET /space-permissions/transition/combinations`.
@@ -155,6 +161,8 @@ export class SpacePermissionsResource {
   /**
    * Trigger generation of the permission-combinations table (B1033).
    *
+   * @experimental Atlassian marks the transition API experimental.
+   *
    * Submits an async task (`POST /space-permissions/transition/combinations`,
    * operationId: `generateSpacePermissionCombinations`). No request body is
    * required. Poll the returned `taskId` with {@link getTransitionTaskStatus}.
@@ -171,6 +179,8 @@ export class SpacePermissionsResource {
 
   /**
    * Bulk-assign space permission roles across a selection of spaces (B1034).
+   *
+   * @experimental Atlassian marks the transition API experimental.
    *
    * Submits an async task (`POST /space-permissions/transition/role-assignments`,
    * operationId: `bulkAssignSpacePermissionRoles`). Poll the returned `taskId`
@@ -189,6 +199,8 @@ export class SpacePermissionsResource {
 
   /**
    * Poll the status of an async space-permission transition task (B1035).
+   *
+   * @experimental Atlassian marks the transition API experimental.
    *
    * `GET /space-permissions/transition/tasks/{taskId}`,
    * operationId: `getSpacePermissionTransitionTaskStatus`.

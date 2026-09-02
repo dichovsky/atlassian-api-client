@@ -6,7 +6,7 @@ USAGE:
 
 APIs:
   confluence       Confluence Cloud REST API v2
-  jira             Jira Cloud Platform REST API v3
+  jira             Jira Cloud Platform v3 + Software/Agile + DevOps APIs
 
 UTILITIES:
   install-skill    Install the bundled Claude Code skill (for coding agents)
@@ -23,12 +23,16 @@ GLOBAL OPTIONS:
                    omitted, only the default Atlassian suffix allowlist
                    applies: *.atlassian.net, *.atlassian.com, *.jira-dev.com,
                    *.jira.com. Entries are bare hostnames (no port).
+  --software-cloud-id
+                   Jira-only cloud ID for the Software on-premises OAuth proxy
+                   (or ATLASSIAN_SOFTWARE_CLOUD_ID); requires bearer auth.
   --help, -h       Show help
   --version        Show version
 
 EXAMPLES:
   atlas confluence pages list --base-url https://myco.atlassian.net -e user@co.com -t TOKEN
   atlas jira issues get PROJ-123 --auth-type bearer --token OAUTH_TOKEN
+  atlas jira bulk submit-builds --software-cloud-id CLOUD_ID --auth-type bearer --value '{"builds":[]}'
   atlas jira search --jql "project = PROJ"
   atlas confluence spaces list --base-url https://jira.internal.example --allowed-hosts jira.internal.example
   atlas install-skill --local
@@ -58,6 +62,7 @@ EXIT CODES:
 EXAMPLES:
   atlas scopes validate read:issue:jira
   atlas scopes validate read:issue:jira write:issue:jira read:project:jira
+  atlas scopes validate read:security:jira write:security:jira delete:security:jira
   atlas scopes validate read:issue:jira write:made-up
 `;
 
@@ -114,9 +119,18 @@ RESOURCES:
   users-bulk             lookup
   whiteboards            create, get, delete, ancestors, descendants, direct-children, operations, get-classification-level, update-classification-level, reset-classification-level, list-properties, create-property, get-property, update-property, delete-property
 
+API STATUS:
+  pages children is deprecated by Atlassian; use direct-children or descendants.
+  app properties are experimental and require Forge asApp(); the CLI's
+  basic/bearer auth modes cannot provide that context.
+  data-policies, users access actions, and space-permissions transition-*
+  operations are experimental.
+
 EXAMPLES:
   atlas confluence pages list --space-id 123
-  atlas confluence pages get 456
+  atlas confluence pages get 456 --body-format view --include-labels
+  atlas confluence pages create --space-id 123 --title "Runbook" --body "<p>Ready</p>"
+  atlas confluence pages create --space-id 123 --status draft --body-json '{"wiki":{"representation":"wiki","value":"Draft"}}'
   atlas confluence pages ancestors 456 --limit 50
   atlas confluence pages descendants 456 --depth 3 --limit 50
   atlas confluence pages direct-children 456 --sort=-modified-date
@@ -136,7 +150,7 @@ EXAMPLES:
   atlas confluence pages footer-comments 456 --sort -created-date --limit 25
   atlas confluence pages inline-comments 456 --body-format storage --resolution-status open
   atlas confluence pages upload-attachment 456 --file ./screenshot.png
-  atlas confluence spaces list
+  atlas confluence spaces list --status current --sort=-name --include-icon
   atlas confluence app list-properties --limit 25
   atlas confluence app upsert-property my-flag --value '{"beta":true}'
   atlas confluence comments list-properties 77777
@@ -210,7 +224,7 @@ EXAMPLES:
   atlas confluence spaces create-property 654321 --key feature-flags --value '{"beta":true}'
   atlas confluence spaces update-property 654321 --property-id prop-1 --key feature-flags --value '{"beta":false}' --version-number 2
   atlas confluence tasks list --status incomplete --limit 25
-  atlas confluence tasks update task-1 --status complete
+  atlas confluence tasks update task-1 --status complete --body-format storage
   atlas confluence users check-access-by-email --emails a@example.com,b@example.com
   atlas confluence users invite-by-email --emails a@example.com,b@example.com
   atlas confluence users-bulk lookup --account-ids acc-1,acc-2
@@ -247,12 +261,12 @@ EXAMPLES:
   atlas confluence whiteboards update-classification-level wb-1 --level-id cl-1
 `;
 
-const JIRA_HELP = `atlas jira - Jira Cloud Platform REST API v3
+const JIRA_HELP = `atlas jira - Jira Cloud Platform v3 + Software/Agile + DevOps APIs
 
 RESOURCES:
-  issues        get, create, update, delete, transition, transitions, get-agile, get-estimation, set-estimation, rank, assign, get-changelog, filter-changelog, get-editmeta, notify, list-properties, delete-property, get-property, set-property, delete-all-remotelinks, list-remotelinks, create-remotelink, delete-remotelink, get-remotelink, update-remotelink, remove-vote, get-votes, add-vote, remove-watcher, get-watchers, add-watcher, delete-all-worklogs, list-worklogs, add-worklog, delete-worklog, get-worklog, update-worklog, list-worklog-properties, delete-worklog-property, get-worklog-property, set-worklog-property, move-worklog, archive-issues, archive-issues-jql, bulk-fetch, get-create-meta, get-create-meta-issuetypes, get-create-meta-issuetype, get-limit-report, picker, set-properties-by-entity-ids, set-properties-multi, unarchive-issues, watch-issues-bulk, is-watching-bulk, export-archived
+  issues        get, create, update, delete, transition, transitions, get-agile, get-estimation, set-estimation, rank, assign, get-changelog, filter-changelog, get-editmeta, notify, list-properties, delete-property, get-property, set-property, delete-all-remotelinks, list-remotelinks, create-remotelink, delete-remotelink, get-remotelink, update-remotelink, remove-vote, get-votes, add-vote, remove-watcher, get-watchers, add-watcher, delete-all-worklogs, list-worklogs, add-worklog, delete-worklog, get-worklog, update-worklog, list-worklog-properties, delete-worklog-property, get-worklog-property, set-worklog-property, move-worklog, archive-issues, archive-issues-jql, bulk-fetch, get-create-meta, get-create-meta-issuetypes, get-create-meta-issuetype, get-limit-report, get-adf-limit-report, picker, set-properties-by-entity-ids, set-properties-multi, unarchive-issues, watch-issues-bulk, is-watching-bulk, export-archived
   projects      list, get, list-legacy, create, update, delete, recent, list-types, get-type, get-accessible-type, list-accessible-types, get-email, set-email, get-hierarchy, archive, set-avatar, delete-avatar, load-avatar, get-avatars, get-classification-config, delete-classification-level, get-classification-level, set-classification-level, list-components, list-all-components, delete-async, get-features, set-feature-state, list-properties, delete-property, get-property, set-property, restore, list-roles, delete-role-actors, get-role, add-role-actors, set-role-actors, get-role-details, get-statuses, list-versions, list-all-versions, get-issue-security-scheme, get-notification-scheme, get-permission-scheme, set-permission-scheme, get-security-levels, list-categories, create-category, delete-category, get-category, update-category, get-projects-fields, validate-project-key, get-valid-project-key, get-valid-project-name
-  search        search, get, approximate-count, jql-get, jql-post
+  search        search, query, legacy-post, get, approximate-count, jql-get, jql-post
   users         get, me, search, delete, create, assignable-multi-project, assignable, bulk, bulk-migration, reset-columns, get-columns, set-columns, email, bulk-emails, groups, permission-search, picker, list-properties, delete-property, get-property, set-property, search-query, search-query-key, viewissue-search, list, list-search
   issue-types   list, get
   issuetype     create, delete, update, list-alternatives, load-avatar, list-properties, delete-property, get-property, set-property, list-for-project
@@ -261,7 +275,7 @@ RESOURCES:
   resolutions   list, get, create, update, delete, set-default, move, search
   status        list, get
   status-category  list, get
-  boards        list, get, create, delete, backlog, configuration, list-epics, epic-issues, issues-without-epic, get-features, toggle-feature, get-issues, move-issues, list-projects, list-projects-full, list-sprints, list-versions, sprint-issues, list-by-filter, list-properties, delete-property, get-property, set-property, list-quickfilters, get-quickfilter, get-reports, backlog-enhanced, get-issues-enhanced, issues-without-epic-enhanced, epic-issues-enhanced, sprint-issues-enhanced
+  boards        list, get, create, delete, backlog, configuration, list-epics, epic-issues, issues-without-epic, get-features, toggle-feature, get-issues, move-issues, list-projects, list-projects-full, list-sprints, list-versions, sprint-issues, list-by-filter, list-properties, delete-property, get-property, set-property, list-quickfilters, get-quickfilter, get-reports, backlog-enhanced, get-issues-enhanced, issues-without-epic-enhanced, epic-issues-enhanced, sprint-issues-enhanced, backlog-approximate-count, issues-approximate-count
   sprints       get, create, update, delete, get-issues, get-issues-enhanced, partial-update, move-issues, list-properties, get-property, set-property, delete-property, swap
   epic                   get, update, issues, issues-enhanced, move-issues, rank, issues-none, issues-none-enhanced, remove-issues
   backlog                move
@@ -322,9 +336,9 @@ RESOURCES:
   screens                list, create, delete, update, list-available-fields, list-tabs, create-tab, delete-tab, update-tab, list-tab-fields, add-field-to-tab, remove-field-from-tab, move-field, move-tab, add-to-default, list-all-tabs
   screenscheme           list, list-all, create, update, delete
   plans                  list, create, get, update, archive, duplicate, list-teams, add-atlassian-team, delete-atlassian-team, get-atlassian-team, update-atlassian-team, create-plan-only-team, delete-plan-only-team, get-plan-only-team, update-plan-only-team, trash
-  workflows              list, get, delete, issue-type-usages, project-usages, workflow-scheme-usages, bulk-get, capabilities, bulk-create, validate-create, default-editor, read-history, list-history, get-rule-config, update-rule-config, delete-rule-config, delete-transition-property, get-transition-properties, create-transition-property, update-transition-property, preview, search, update, validate-update
+  workflows              list, get, delete, issue-type-usages, project-usages, workflow-scheme-usages, bulk-get, capabilities, bulk-create, validate-create, default-editor, read-history, list-history, get-rule-config, update-rule-config, delete-rule-config, preview, search, update, validate-update
   workflowscheme         list, create, delete, get, update, delete-default, get-default, set-default, delete-issuetype, get-issuetype, set-issuetype, delete-workflow, get-workflow, set-workflow, project-usages, list-by-project, assign-project, switch-project, create-draft, delete-draft, get-draft, update-draft, delete-draft-default, get-draft-default, set-draft-default, delete-draft-issuetype, get-draft-issuetype, set-draft-issuetype, publish-draft, delete-draft-workflow, get-draft-workflow, set-draft-workflow, bulk-read, bulk-update, bulk-mappings
-  fields                 field-list, field-list-all, field-create, field-update, field-delete, context-list, context-create, context-update, context-delete, context-option-list, context-option-create, context-option-update, context-option-delete, context-option-replace-issues, context-option-move, context-issuetype-set, context-issuetype-remove, context-issuetype-mapping, context-default-list, context-default-set, context-project-set, context-project-remove, context-mapping, context-project-mapping, field-option-list, field-option-create, field-option-delete, field-option-get, field-option-update, field-option-replace-issues, field-option-suggestions-edit, field-option-suggestions-search, field-project-associations, field-screens, field-restore, field-trash, field-remove-associations, field-create-associations, field-trash-list
+  fields                 field-list, field-list-all, field-create, field-update, field-delete, context-list, context-create, context-update, context-delete, context-option-list, context-option-create, context-option-update, context-option-delete, context-option-replace-issues, context-option-move, context-issuetype-set, context-issuetype-remove, context-issuetype-mapping, context-default-get, context-default-list, context-default-set, context-project-set, context-project-remove, context-mapping, context-project-mapping, field-option-list, field-option-create, field-option-delete, field-option-get, field-option-update, field-option-replace-issues, field-option-suggestions-edit, field-option-suggestions-search, field-project-associations, field-screens, field-restore, field-trash, field-remove-associations, field-create-associations, field-trash-list
   jql                    autocomplete-data, autocomplete-data-post, autocomplete-suggestions, get-precomputations, update-precomputations, get-precomputations-by-id, match-issues, parse, migrate-queries, sanitize
   issuelinktype          list, get, create, update, delete
   issue-link             create, get, delete
@@ -338,14 +352,21 @@ RESOURCES:
   bulk-by-properties     delete-builds, delete-deployments, delete-devinfo, delete-devops-components, delete-feature-flags, delete-operations, delete-remote-links, delete-security
   migration              get-task, submit-task, update-fields, update-properties, search-workflow-rules
 
+DEPRECATED JIRA SOFTWARE ISSUE LISTS:
+  boards backlog, get-issues, issues-without-epic, epic-issues, sprint-issues;
+  sprints get-issues; epic issues, issues-none. Prefer the matching enhanced action.
+
 EXAMPLES:
   atlas jira issues get PROJ-123
   atlas jira issues create --project PROJ --type Bug --summary "Fix this"
-  atlas jira search get --jql "project = PROJ AND status = Open"
+  atlas jira search search --jql "project = PROJ AND status = Open"
   atlas jira search approximate-count --jql "project = PROJ"
-  atlas jira search jql-get --jql "project = PROJ" --max-results 50
+  atlas jira search jql-get --jql "project = PROJ" --max-results 50 --properties release.owner --fields-by-keys --fail-fast
   atlas jira search jql-post --jql "project = PROJ AND assignee = currentUser()"
-  atlas jira projects list
+  atlas jira projects list --type-key software --status live --action browse --query platform --order-by key
+  atlas jira boards list --project PROJ --include-private false --order-by name
+  atlas jira boards create --name "Discovery" --type agility --filter-id 10001 --location-type project --location-project-key-or-id PROJ
+  atlas jira boards issues-approximate-count 42 --jql "statusCategory != Done"
   atlas jira incidents get INC-123
   atlas jira incidents delete INC-123
   atlas jira post-incident-reviews get PIR-456
@@ -591,11 +612,6 @@ EXAMPLES:
   atlas jira workflows get-rule-config --types postfunction --workflow-names "My Workflow" --max-results 10
   atlas jira workflows update-rule-config --workflows '[{"workflowId":{"name":"My Workflow"},"postFunctions":[{"id":"rule-id","configuration":{"value":"{}"}}]}]'
   atlas jira workflows delete-rule-config --workflows '[{"workflowId":{"name":"My Workflow"},"workflowRuleIds":["rule-id"]}]'
-  atlas jira workflows get-transition-properties 10000 --workflow-name "My Workflow"
-  atlas jira workflows get-transition-properties 10000 --workflow-name "My Workflow" --key jira.permission --workflow-mode live
-  atlas jira workflows delete-transition-property 10000 --workflow-name "My Workflow" --key jira.permission
-  atlas jira workflows create-transition-property 10000 --workflow-name "My Workflow" --key jira.permission --value createissue
-  atlas jira workflows update-transition-property 10000 --workflow-name "My Workflow" --key jira.permission --value editissue
   atlas jira workflows preview --body '{"projectId":"10001","workflowIds":["3215e5cd-f09f-4c8a-921b-dca92bd1e9aa"]}'
   atlas jira workflows search --query-string "Default" --is-active true
   atlas jira workflows update --body '{"workflows":[{"id":"3215e5cd-f09f-4c8a-921b-dca92bd1e9aa","description":"Updated"}]}'
@@ -664,7 +680,8 @@ EXAMPLES:
   atlas jira projects get-role-details PROJ --current-member --exclude-connect-addons
   atlas jira projects get-statuses PROJ
   atlas jira projects list-versions PROJ --order-by name --status released
-  atlas jira projects list-all-versions PROJ --order-by -releaseDate
+  atlas jira projects list-legacy --expand description,lead --recent 10 --properties project.owner,project.region
+  atlas jira projects list-all-versions PROJ --expand operations
   atlas jira projects get-issue-security-scheme PROJ
   atlas jira projects get-notification-scheme PROJ --expand all
   atlas jira projects get-permission-scheme PROJ --expand permissions

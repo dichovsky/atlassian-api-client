@@ -2,6 +2,30 @@
 
 > Part of the `atlas` Jira skill reference. Resource×action matrix and routing in [`../jira.md`](../jira.md).
 
+## On-premises OAuth proxy routing
+
+Atlassian exposes Development Information, Builds, Deployments, and Feature
+Flag ingestion to on-premises integrations using its system-to-system OAuth
+proxy. Opt in with
+`--software-cloud-id <cloudId>` or `ATLASSIAN_SOFTWARE_CLOUD_ID` and bearer
+auth. Bearer auth by itself does not change routing.
+
+- Builds: `https://api.atlassian.com/jira/builds/0.1/cloud/{cloudId}`
+- Deployments: `https://api.atlassian.com/jira/deployments/0.1/cloud/{cloudId}`
+- Development Information: `https://api.atlassian.com/jira/devinfo/0.1/cloud/{cloudId}` (proxy version `0.1`, site version `0.10`)
+- Feature Flag ingestion: `https://api.atlassian.com/jira/featureflags/0.1/cloud/{cloudId}/bulk`
+
+For Builds, Deployments, and Development Information, this affects the
+corresponding `bulk`, `bulk-by-properties`, `repository`,
+`exists-by-properties`, and `pipelines` actions. It also affects
+`bulk submit-feature-flags`. The `pipelines get-deployment-gating-status`
+action is the exception: Atlassian does not expose it through the proxy, so it
+always uses the tenant `/rest/deployments/0.1` base. Feature Flag `flag` actions
+and `bulk-by-properties delete-feature-flags` remain on the tenant
+`/rest/featureflags/0.1` base. Other DevOps families remain on their site bases.
+Obtain the cloud ID from
+`https://your-domain.atlassian.net/_edge/tenant_info`.
+
 ## `app`
 
 App-scoped resource grouping three distinct API surfaces used by Forge and Atlassian Connect apps:
@@ -114,6 +138,8 @@ atlas jira post-incident-reviews delete PIR-456
 | -------- | ------------------- | -------------- | -------------- |
 | `get`    | `<vulnerabilityId>` | —              | —              |
 | `delete` | `<vulnerabilityId>` | —              | —              |
+
+- OAuth granular scopes: `get` requires `read:security:jira`; `delete` requires `delete:security:jira`.
 
 ```sh
 # Get a vulnerability by ID
@@ -521,7 +547,7 @@ atlas jira redact get-status job-abc123
 
 ## `flag`
 
-**URL base:** `/rest/featureflags/0.1` (Jira Software DevInfo Feature Flags API — not `/rest/api/3`).
+**URL base:** `/rest/featureflags/0.1` (Jira Software DevInfo Feature Flags API — not `/rest/api/3`). This tenant base is used for lookup/deletion; system-to-system `bulk submit-feature-flags` ingestion uses `/jira/featureflags/0.1/cloud/{cloudId}/bulk` when proxy routing is enabled.
 
 | Action   | Positional        | Required flags | Optional flags |
 | -------- | ----------------- | -------------- | -------------- |
@@ -529,7 +555,7 @@ atlas jira redact get-status job-abc123
 | `delete` | `<featureFlagId>` | —              | —              |
 
 - Feature flag entities are stored via the Jira DevInfo API when CI/CD tools push flag state to Jira.
-- Requires a **Connect app** or **OAuth 2.0 (M2M)** token with the `FEATURE_FLAGS` scope; basic auth (API token) is typically not accepted.
+- Requires an app credential accepted by this integration API. Current granular OAuth scopes are `read:feature-flag-info:jira` for `get` and `delete:feature-flag-info:jira` for `delete`.
 
 ```sh
 # Get a feature flag entity by ID
@@ -614,6 +640,8 @@ This is distinct from issue-scoped remote links (`/rest/api/3/issue/{issueIdOrKe
 | -------- | ---------------- | -------------- | -------------- |
 | `get`    | `<remoteLinkId>` | —              | —              |
 | `delete` | `<remoteLinkId>` | —              | —              |
+
+- OAuth granular scopes: `get` requires `read:remote-link-info:jira`; `delete` requires `delete:remote-link-info:jira`.
 
 ```sh
 # Get a remote link by ID
@@ -705,6 +733,8 @@ atlas jira exists-by-properties get --entity-type repository --entity-id repo-1
 | `delete`        | `<repositoryId>`                         | —              | `--update-sequence-id` |
 | `delete-entity` | `<repositoryId> <entityType> <entityId>` | —              | `--update-sequence-id` |
 
+- OAuth granular scopes: `get` requires `read:dev-info:jira`; both delete actions require `delete:dev-info:jira`.
+
 ```sh
 # Get a repository and its associated dev-info entities
 atlas jira repository get my-repo-123
@@ -724,7 +754,7 @@ atlas jira repository delete-entity my-repo-123 pullRequest pr-1 --update-sequen
 
 ## `dashboards`
 
-`list`, `get`, `delete` take only `<dashboardId>` (plus `listAll()` generator pagination over `GET /dashboard`). `create` requires `--name` and `--share-permissions` (a JSON array of share-permission objects, e.g. `'[{"type":"global"}]'`), with optional `--description` and `--edit-permissions` (JSON); `update <dashboardId>` takes the same flags. The actions below add the rest of the platform's dashboard surface (B391–B405).
+`list` accepts only `--filter` (`my` or `favourite`), `--start-at`, and `--max-results`; the removed `--order-by` and `--expand` flags are rejected with migration guidance because sorting and expansion belong to `search`. `get` and `delete` take `<dashboardId>`. `create` requires `--name` and `--share-permissions` (a JSON array of share-permission objects, e.g. `'[{"type":"global"}]'`), with optional `--description` and `--edit-permissions` (JSON); `update <dashboardId>` takes the same flags. The actions below add the rest of the platform's dashboard surface (B391–B405).
 
 ```sh
 atlas jira dashboards create --name "Team board" --share-permissions '[{"type":"global"}]' --description "Sprint health"
@@ -733,6 +763,7 @@ atlas jira dashboards update 10001 --name "Renamed" --share-permissions '[{"type
 
 | Action                   | Positional                             | Required flags                                                      | Optional flags                                                                                                                                                   |
 | ------------------------ | -------------------------------------- | ------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `list`                   | —                                      | —                                                                   | `--filter`, `--start-at`, `--max-results`                                                                                                                        |
 | `list-gadgets`           | `<dashboardId>`                        | —                                                                   | —                                                                                                                                                                |
 | `add-gadget`             | `<dashboardId>`                        | —                                                                   | `--module-key`, `--uri`, `--color`, `--row` + `--column`, `--title`, `--ignore-uri-and-module-key-validation`                                                    |
 | `update-gadget`          | `<dashboardId> <gadgetId>`             | —                                                                   | `--title`, `--color`, `--row` + `--column`                                                                                                                       |
@@ -757,7 +788,7 @@ atlas jira dashboards update 10001 --name "Renamed" --share-permissions '[{"type
 
 ```sh
 # Search for dashboards by name
-atlas jira dashboards search --dashboard-name "Sprint" --order-by -favorite_count --max-results 25
+atlas jira dashboards search --dashboard-name "Sprint" --order-by=-favorite_count --max-results 25
 
 # List gadgets on a dashboard
 atlas jira dashboards list-gadgets 10001
@@ -801,7 +832,7 @@ the CLI does NOT auto-poll, callers drive the cadence.
 **URL bases:**
 
 - Core endpoints: `/rest/api/3/bulk/*`
-- DevOps ingest endpoints use their own bases — `builds 0.1`, `deployments 0.1`, `devinfo 0.10`, `devopscomponents 1.0`, `featureflags 0.1`, `operations 1.0`, `remotelinks 1.0`, `security 1.0`.
+- DevOps ingest endpoints use their own bases — `builds 0.1`, `deployments 0.1`, `devinfo 0.10`, `devopscomponents 1.0`, `featureflags 0.1`, `operations 1.0`, `remotelinks 1.0`, `security 1.0`. With `--software-cloud-id`, Builds, Deployments, Development Information, and Feature Flag ingestion use the proxy routes listed above.
 
 | Action                     | Positional      | Required flags                     | Optional flags                                         |
 | -------------------------- | --------------- | ---------------------------------- | ------------------------------------------------------ |
@@ -827,6 +858,8 @@ the CLI does NOT auto-poll, callers drive the cadence.
 | `submit-security`          | —               | `--value`                          | —                                                      |
 
 `--issues` accepts either a JSON array of issue-update objects (for `create-issues`, where each element is `{ fields: {...}, update?: {...} }`) or a comma-separated list of issue IDs/keys (for `delete-issues`, `get-fields`, `unwatch-issues`, `watch-issues`, `get-transitions`). `--actions` is a comma-separated list of bulk-edit actions. `--value` is a JSON string: an object for `edit-fields` (`editedFieldsInput`), `move-issues` (`targetToSourcesMapping`), and `set-property` (the property value); an array for `transition-issues` (`bulkTransitionInputs`); and the raw provider payload for every DevOps `submit-*` variant. `--filter` for `set-property` / `delete-property` is a JSON object restricting which issues are affected (`entityIds`, `currentValue`, `hasProperty`). `--send-notification true|false` (for `delete-issues`, `edit-fields`, `move-issues`, `transition-issues`) controls the bulk-change notification email; the server default is `true`, so pass `--send-notification false` to suppress it, omit for the default. Tri-state — the value is required.
+
+DevOps ingest granular scopes follow the entity family: `write:build-info:jira`, `write:deployment-info:jira`, `write:dev-info:jira`, `write:feature-flag-info:jira`, `write:remote-link-info:jira`, and `write:security:jira` for the corresponding `submit-*` actions.
 
 ```sh
 # Bulk create two issues (B518)
@@ -1236,6 +1269,7 @@ Jira Software Pipelines resource — builds and deployments at pipeline/environm
 - `pipelineId`: string identifier of the pipeline.
 - `environmentId`: string identifier of the target environment (deployments only).
 - `buildNumber` / `sequenceNumber`: integer.
+- OAuth granular scopes are `read:build-info:jira` / `delete:build-info:jira` for build reads/deletes and `read:deployment-info:jira` / `delete:deployment-info:jira` for deployment reads/deletes.
 
 ```sh
 # Get a build — B955
@@ -1271,6 +1305,7 @@ Operations endpoints use base `/rest/operations/1.0`; Security endpoints use `/r
 | `bulk-create-security`   | —               | `--workspace-ids` | —              |
 
 - `--workspace-ids`: Comma-separated list of workspace IDs, e.g. `ws-1,ws-2`.
+- Security API actions require `read:security:jira`, `write:security:jira`, or `delete:security:jira` according to the operation. These are distinct from the Operations linked-workspace authorization model.
 
 ```sh
 # List linked workspaces (Operations API) — B984
@@ -1313,6 +1348,7 @@ All eight actions share the same contract: `DELETE <product-base>/bulkByProperti
 | `delete-security`          | —          | `--properties` |
 
 - `--properties`: comma-separated `key=value` pairs sent as query params. Multiple pairs use AND logic (all must match). E.g. `accountId=account-123` or `accountId=acc-1,environment=prod`.
+- Granular delete scopes match the entity family. In particular, `delete-security` requires `delete:security:jira`; builds, deployments, dev info, feature flags, and remote links use their respective `delete:*` scope.
 
 ```sh
 # Delete builds associated with a specific account — B953
@@ -1346,13 +1382,13 @@ Connect-to-Forge issue field migration and app migration helpers under `/rest/at
 
 **Important:** `update-fields` (B948), `update-properties` (B949), and `search-workflow-rules` (B950) require the `--transfer-id` flag (UUID) — the Atlassian migration transfer context identifier sent as the `Atlassian-Transfer-Id` request header.
 
-| Action                  | Positional                            | Required flags                                                    | Optional flags |
-| ----------------------- | ------------------------------------- | ----------------------------------------------------------------- | -------------- |
-| `get-task`              | `<connectKey>` `<jiraIssueFieldsKey>` | —                                                                 | —              |
-| `submit-task`           | `<connectKey>` `<jiraIssueFieldsKey>` | —                                                                 | —              |
-| `update-fields`         | —                                     | `--transfer-id`, `--update-value-list` (JSON array)               | —              |
-| `update-properties`     | `<entityType>`                        | `--transfer-id`, `--value` (JSON array)                           | —              |
-| `search-workflow-rules` | —                                     | `--transfer-id`, `--workflow-entity-id`, `--rule-ids` (CSV UUIDs) | `--expand`     |
+| Action                  | Positional                            | Required flags                                                    | Optional flags                    |
+| ----------------------- | ------------------------------------- | ----------------------------------------------------------------- | --------------------------------- |
+| `get-task`              | `<connectKey>` `<jiraIssueFieldsKey>` | —                                                                 | —                                 |
+| `submit-task`           | `<connectKey>` `<jiraIssueFieldsKey>` | —                                                                 | `--retrigger-completed-migration` |
+| `update-fields`         | —                                     | `--transfer-id`, `--update-value-list` (JSON array)               | —                                 |
+| `update-properties`     | `<entityType>`                        | `--transfer-id`, `--value` (JSON array)                           | —                                 |
+| `search-workflow-rules` | —                                     | `--transfer-id`, `--workflow-entity-id`, `--rule-ids` (CSV UUIDs) | `--expand`                        |
 
 - `<entityType>` for `update-properties`: one of `IssueProperty`, `CommentProperty`, `DashboardItemProperty`, `IssueTypeProperty`, `ProjectProperty`, `UserProperty`, `WorklogProperty`, `BoardProperty`, `SprintProperty`.
 - `--update-value-list`: JSON array of `ConnectCustomFieldValue` objects (see spec schema `ConnectCustomFieldValue`).
@@ -1364,6 +1400,9 @@ atlas jira migration get-task com.example.app my-custom-field
 
 # Submit Connect-to-Forge migration task — B947
 atlas jira migration submit-task com.example.app my-custom-field
+
+# Run a completed migration again
+atlas jira migration submit-task com.example.app my-custom-field --retrigger-completed-migration
 
 # Bulk update custom field values on issues — B948
 atlas jira migration update-fields \

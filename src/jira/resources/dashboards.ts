@@ -56,26 +56,13 @@ export interface Dashboard {
  * Query parameters for listing Jira dashboards (`GET /dashboard`,
  * `getAllDashboards`).
  *
- * The spec only accepts `filter`, `startAt`, and `maxResults`.
- * `orderBy` and `expand` are NOT supported by this endpoint — they belong to
- * {@link SearchDashboardsParams} for `GET /dashboard/search`.
- * They are retained here for backward compatibility but have no effect on
- * the server response.
+ * The endpoint accepts only `filter`, `startAt`, and `maxResults`. Use
+ * {@link SearchDashboardsParams} with `search()` for sorting and expansion.
  */
 export interface ListDashboardsParams {
   readonly startAt?: number;
   readonly maxResults?: number;
   readonly filter?: 'my' | 'favourite';
-  /**
-   * @deprecated Not supported by `GET /dashboard`. Use
-   * {@link SearchDashboardsParams.orderBy} with `search()` instead.
-   */
-  readonly orderBy?: string;
-  /**
-   * @deprecated Not supported by `GET /dashboard`. Use
-   * {@link SearchDashboardsParams.expand} with `search()` instead.
-   */
-  readonly expand?: string;
 }
 
 /** Request body for creating a new Jira dashboard. */
@@ -310,8 +297,6 @@ export class DashboardsResource {
       if (params.startAt !== undefined) query['startAt'] = params.startAt;
       if (params.maxResults !== undefined) query['maxResults'] = params.maxResults;
       if (params.filter !== undefined) query['filter'] = params.filter;
-      // Note: `orderBy` and `expand` are NOT supported by `GET /dashboard` (getAllDashboards).
-      // They belong to `GET /dashboard/search` (SearchDashboardsParams).
     }
 
     const response = await this.transport.request<{

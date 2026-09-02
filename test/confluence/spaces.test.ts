@@ -1,15 +1,17 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { SpacesResource } from '../../src/confluence/resources/spaces.js';
+import type { Space } from '../../src/confluence/index.js';
 import { MockTransport } from '../helpers/mock-transport.js';
 
 const BASE_URL = 'https://test.atlassian.net/wiki/api/v2';
 
-const makeSpace = (id: string) => ({
+const makeSpace = (id: string): Space => ({
   id,
   key: `KEY${id}`,
   name: `Space ${id}`,
   type: 'global',
   status: 'current',
+  _links: { base: 'https://test.atlassian.net/wiki', webui: `/spaces/KEY${id}` },
 });
 
 describe('SpacesResource', () => {
@@ -79,6 +81,40 @@ describe('SpacesResource', () => {
       expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/spaces?keys=A`);
     });
 
+    it('serializes every current list filter and response option', async () => {
+      transport.respondWith({ results: [], _links: {} });
+
+      await spaces.list({
+        ids: ['9007199254740993', 20],
+        keys: ['ENG', 'OPS'],
+        type: 'knowledge_base',
+        status: 'trashed',
+        labels: ['team-a', 'priority'],
+        'favorited-by': 'acc-fav',
+        'not-favorited-by': 'acc-hidden',
+        sort: '-name',
+        'description-format': 'view',
+        'include-icon': true,
+        limit: 50,
+        cursor: 'next',
+      });
+
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/spaces?ids=9007199254740993&ids=20&keys=ENG&keys=OPS&labels=team-a&labels=priority`,
+      );
+      expect(transport.lastCall?.options.query).toEqual({
+        type: 'knowledge_base',
+        status: 'trashed',
+        'favorited-by': 'acc-fav',
+        'not-favorited-by': 'acc-hidden',
+        sort: '-name',
+        'description-format': 'view',
+        'include-icon': true,
+        limit: 50,
+        cursor: 'next',
+      });
+    });
+
     it('omits undefined optional fields', async () => {
       // Arrange
       transport.respondWith({ results: [], _links: {} });
@@ -110,10 +146,99 @@ describe('SpacesResource', () => {
 
       // Assert
       expect(result).toEqual(space);
+      expect(result._links?.base).toBe('https://test.atlassian.net/wiki');
       expect(transport.lastCall?.options).toMatchObject({
         method: 'GET',
         path: `${BASE_URL}/spaces/42`,
       });
+    });
+
+    it('forwards all current get expansion parameters', async () => {
+      transport.respondWith(makeSpace('42'));
+
+      await spaces.get('42', {
+        'description-format': 'plain',
+        'include-icon': true,
+        'include-operations': true,
+        'include-properties': true,
+        'include-permissions': true,
+        'include-role-assignments': true,
+        'include-labels': true,
+      });
+
+      expect(transport.lastCall?.options.query).toEqual({
+        'description-format': 'plain',
+        'include-icon': true,
+        'include-operations': true,
+        'include-properties': true,
+        'include-permissions': true,
+        'include-role-assignments': true,
+        'include-labels': true,
+      });
+    });
+
+    it('models all current bulk fields and single-space expansions', async () => {
+      const expandedSpace: Space = {
+        id: '42',
+        key: 'ENG',
+        name: 'Engineering',
+        type: 'knowledge_base',
+        status: 'trashed',
+        authorId: 'account-author',
+        spaceOwnerId: 'account-owner',
+        currentActiveAlias: 'engineering',
+        createdAt: '2026-08-29T18:00:00.000Z',
+        homepageId: '100',
+        description: {
+          plain: { representation: 'plain', value: 'Engineering space' },
+          view: { representation: 'view', value: '<p>Engineering space</p>' },
+        },
+        icon: {
+          path: '/wiki/download/attachments/42/icon.png',
+          apiDownloadLink: '/wiki/api/v2/spaces/42/icon',
+        },
+        labels: {
+          results: [{ id: 'label-1', name: 'engineering', prefix: 'global' }],
+          meta: { hasMore: true, cursor: 'next-label' },
+          _links: { self: '/wiki/api/v2/spaces/42/labels?cursor=next-label' },
+        },
+        properties: {
+          results: [{ id: 'property-1', key: 'owner-team', value: 'platform' }],
+          meta: { hasMore: false },
+        },
+        operations: {
+          results: [{ operation: 'read', targetType: 'space' }],
+          _links: { self: '/wiki/api/v2/spaces/42/operations' },
+        },
+        permissions: {
+          results: [
+            {
+              id: 'permission-1',
+              principal: { type: 'user', id: 'account-reader' },
+              operation: { key: 'read', targetType: 'space' },
+            },
+          ],
+          meta: { hasMore: false },
+          _links: { self: '/wiki/api/v2/spaces/42/permissions' },
+        },
+        _links: { webui: '/spaces/ENG' },
+      };
+      transport.respondWith(expandedSpace);
+
+      const result = await spaces.get('42', {
+        'description-format': 'view',
+        'include-icon': true,
+        'include-labels': true,
+        'include-properties': true,
+        'include-operations': true,
+        'include-permissions': true,
+      });
+
+      expect(result).toEqual(expandedSpace);
+      expect(result.description?.view?.value).toBe('<p>Engineering space</p>');
+      expect(result.labels?.meta?.cursor).toBe('next-label');
+      expect(result.permissions?.results?.[0]?.operation?.targetType).toBe('space');
+      expect(result._links?.webui).toBe('/spaces/ENG');
     });
   });
 

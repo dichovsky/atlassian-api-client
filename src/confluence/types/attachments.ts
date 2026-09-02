@@ -62,6 +62,8 @@ export interface AttachmentOperation {
 
 /** Parameters for listing attachments on a page or blog post. */
 export interface ListAttachmentsParams {
+  readonly sort?: AttachmentSortOrder;
+  readonly status?: AttachmentStatus | readonly AttachmentStatus[];
   readonly limit?: number;
   readonly cursor?: string;
   readonly mediaType?: string;

@@ -289,7 +289,14 @@ describe('UiModificationsResource', () => {
     it('includes optional contexts', async () => {
       transport.respondWith(makeIdentifiers());
 
-      const contexts = [{ issueTypeId: '10000', projectId: '10000', viewType: 'GIC' as const }];
+      const contexts = [
+        {
+          issueTypeId: '10000',
+          projectId: '10000',
+          requestTypeId: '55',
+          viewType: 'IssueViewAgentView' as const,
+        },
+      ];
       await resource.create({
         name: 'My Modification',
         contexts,

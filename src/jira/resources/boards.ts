@@ -67,7 +67,7 @@ export interface ListBoardsParams {
   /** Whether to negate the location filter. */
   readonly negateLocationFiltering?: boolean;
   /** Field to order results by. */
-  readonly orderBy?: string;
+  readonly orderBy?: 'name' | '-name' | '+name';
   /** A comma-separated list of fields to expand. */
   readonly expand?: string;
   /** Filter by project type key(s). Spec `type: array` → repeated params. */
@@ -85,6 +85,18 @@ export interface CreateBoardData {
     readonly type?: 'project' | 'user';
     readonly projectKeyOrId?: string;
   };
+}
+
+/** Approximate issue count returned by Jira Software board count endpoints. */
+export interface ApproximateIssueCount {
+  /** Number of issues matching the board scope and optional JQL filter. */
+  readonly count?: number;
+}
+
+/** Query parameters accepted by Jira Software board count endpoints. */
+export interface ApproximateIssueCountParams {
+  /** Optional JQL filter applied within the board or backlog scope. */
+  readonly jql?: string;
 }
 
 /** A Jira issue as returned by board-scoped issue listing endpoints. */
@@ -251,8 +263,8 @@ export class BoardsResource {
     private readonly baseUrl: string,
     /**
      * Base URL for the Jira Software "enhanced" (JSIS) endpoints
-     * (`/rest/software/1.0`). Optional for backwards compatibility with direct
-     * constructor callers: when omitted it is derived from `baseUrl` by
+     * (`/rest/software/1.0`). Optional for backwards-compatible direct
+     * instantiation; when omitted it is derived from `baseUrl` by
      * swapping the agile segment (`/rest/agile/1.0` → `/rest/software/1.0`).
      */
     softwareBaseUrl?: string,
@@ -342,6 +354,9 @@ export class BoardsResource {
    *
    * The agile endpoint returns `SearchResults` (`{ issues, startAt, maxResults, total }`).
    * This method maps `.issues` → `.values` for a consistent `OffsetPaginatedResponse` shape.
+   *
+   * @deprecated Use {@link getBacklogEnhanced} for token-paginated issue data and
+   * {@link getBacklogApproximateCount} when only an approximate total is needed.
    */
   async getBacklog(
     boardId: number,
@@ -428,6 +443,8 @@ export class BoardsResource {
    *
    * The agile endpoint returns `SearchResults` (`{ issues, startAt, maxResults, total }`).
    * This method maps `.issues` → `.values` for a consistent `OffsetPaginatedResponse` shape.
+   *
+   * @deprecated Use {@link getEpicIssuesEnhanced} for new integrations.
    */
   async getEpicIssues(
     boardId: number,
@@ -473,6 +490,8 @@ export class BoardsResource {
    *
    * The agile endpoint returns `SearchResults` (`{ issues, startAt, maxResults, total }`).
    * This method maps `.issues` → `.values` for a consistent `OffsetPaginatedResponse` shape.
+   *
+   * @deprecated Use {@link getIssuesWithoutEpicEnhanced} for new integrations.
    */
   async getIssuesWithoutEpic(
     boardId: number,
@@ -545,6 +564,9 @@ export class BoardsResource {
    *
    * The agile endpoint returns `SearchResults` (`{ issues, startAt, maxResults, total }`).
    * This method maps `.issues` → `.values` for a consistent `OffsetPaginatedResponse` shape.
+   *
+   * @deprecated Use {@link getIssuesEnhanced} for token-paginated issue data and
+   * {@link getIssueApproximateCount} when only an approximate total is needed.
    */
   async getIssues(
     boardId: number,
@@ -715,6 +737,8 @@ export class BoardsResource {
    *
    * The agile endpoint returns `SearchResults` (`{ issues, startAt, maxResults, total }`).
    * This method maps `.issues` → `.values` for a consistent `OffsetPaginatedResponse` shape.
+   *
+   * @deprecated Use {@link getSprintIssuesEnhanced} for new integrations.
    */
   async getSprintIssues(
     boardId: number,
@@ -848,6 +872,44 @@ export class BoardsResource {
       `${this.softwareBaseUrl}/board/${boardId}/sprint/${sprintId}/issue`,
       params,
     );
+  }
+
+  /**
+   * Get the approximate number of issues in a board backlog, optionally
+   * restricted by JQL.
+   */
+  async getBacklogApproximateCount(
+    boardId: number,
+    params?: ApproximateIssueCountParams,
+  ): Promise<ApproximateIssueCount> {
+    if (!Number.isInteger(boardId) || boardId <= 0) {
+      throw new ValidationError('boardId must be a positive integer');
+    }
+    const response = await this.transport.request<ApproximateIssueCount>({
+      method: 'GET',
+      path: `${this.softwareBaseUrl}/board/${boardId}/backlog/approximate-count`,
+      query: params?.jql === undefined ? undefined : { jql: params.jql },
+    });
+    return response.data;
+  }
+
+  /**
+   * Get the approximate number of issues on a board, optionally restricted by
+   * JQL.
+   */
+  async getIssueApproximateCount(
+    boardId: number,
+    params?: ApproximateIssueCountParams,
+  ): Promise<ApproximateIssueCount> {
+    if (!Number.isInteger(boardId) || boardId <= 0) {
+      throw new ValidationError('boardId must be a positive integer');
+    }
+    const response = await this.transport.request<ApproximateIssueCount>({
+      method: 'GET',
+      path: `${this.softwareBaseUrl}/board/${boardId}/issue/approximate-count`,
+      query: params?.jql === undefined ? undefined : { jql: params.jql },
+    });
+    return response.data;
   }
 
   /**
@@ -1022,11 +1084,24 @@ export class BoardsResource {
       if (params.type !== undefined) query['type'] = params.type;
       if (params.name !== undefined) query['name'] = params.name;
       if (params.projectKeyOrId !== undefined) query['projectKeyOrId'] = params.projectKeyOrId;
+      if (params.accountIdLocation !== undefined)
+        query['accountIdLocation'] = params.accountIdLocation;
+      if (params.projectLocation !== undefined) query['projectLocation'] = params.projectLocation;
+      if (params.includePrivate !== undefined) query['includePrivate'] = params.includePrivate;
+      if (params.negateLocationFiltering !== undefined)
+        query['negateLocationFiltering'] = params.negateLocationFiltering;
+      if (params.orderBy !== undefined) query['orderBy'] = params.orderBy;
+      if (params.expand !== undefined) query['expand'] = params.expand;
+      if (params.filterId !== undefined) query['filterId'] = params.filterId;
     }
 
     yield* paginateOffset<Board>(
       this.transport,
-      `${this.baseUrl}/board`,
+      appendRepeatedParams(
+        `${this.baseUrl}/board`,
+        'projectTypeLocation',
+        params?.projectTypeLocation,
+      ),
       query,
       params?.maxResults,
     );

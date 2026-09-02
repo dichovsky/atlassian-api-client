@@ -109,7 +109,7 @@
 
 ## 🗺️ API Coverage
 
-> **Truly-missing Jira endpoints:** 0 non-blocked as of 2026-06-08. The 9 previously-open gaps (1 platform `getIsWatchingIssueBulk` + 8 software `*JSIS`) shipped as B1022–B1030 (PRs #235/#236/#238). Only 2 remain — both **BLOCKED** (B1002/B1006 approximate-count, software/1.0-only with no agile equivalent). Verified against live specs in `docs/archive/API-GAP-ANALYSIS-2026-06-07.md` (superseded by `docs/DEEP-AUDIT-2026-06-10.md`). (Prior "447 as of 2026-05-30" was stale — pre-dated the coverage wave.)
+> **Jira Software endpoint coverage is complete as of 2026-08-29.** The two dedicated `/rest/software/1.0` approximate-count endpoints shipped as B1002/B1006; the existing `softwareBaseUrl` wiring supports them directly. Historical blocker wording in the June reports is superseded.
 
 > Tracks every endpoint from the three Atlassian OpenAPI specs (sources below) against this client. Keep descriptions brief. When a task is completed, REMOVE it from here and APPEND it to BACKLOG-ARCHIVE.md.
 >
@@ -118,14 +118,5 @@
 > - Jira Software (Agile) REST API — https://developer.atlassian.com/cloud/jira/software/rest/intro/
 > - Jira Cloud Platform REST API v3 — https://developer.atlassian.com/cloud/jira/platform/rest/v3/intro/#about
 > - Confluence Cloud REST API v2 — https://developer.atlassian.com/cloud/confluence/rest/v2/intro/#about
-
-- [ ] 🔴 🧩 API: B1002 Jira: expose GET /rest/software/1.0/board/{boardId}/backlog/approximate-count
-  - files: `src/jira/resources/boards.ts`, `test/jira/boards.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
-  - **BLOCKED:** endpoint exists only under /rest/software/1.0/, no /rest/agile/1.0/ equivalent. Needs orchestrator decision before implementing.
-- [ ] 🔴 🧩 API: B1006 Jira: expose GET /rest/software/1.0/board/{boardId}/issue/approximate-count
-  - files: `src/jira/resources/boards.ts`, `test/jira/boards.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
-  - **BLOCKED:** endpoint exists only under /rest/software/1.0/, no /rest/agile/1.0/ equivalent. Needs orchestrator decision before implementing.
 
 <!-- api-mapping:generated:end -->

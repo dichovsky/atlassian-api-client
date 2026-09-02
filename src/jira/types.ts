@@ -217,18 +217,44 @@ export interface TransitionData {
 export interface ListProjectsParams {
   readonly startAt?: number;
   readonly maxResults?: number;
-  readonly orderBy?: string;
+  readonly orderBy?:
+    | 'category'
+    | '-category'
+    | '+category'
+    | 'key'
+    | '-key'
+    | '+key'
+    | 'name'
+    | '-name'
+    | '+name'
+    | 'owner'
+    | '-owner'
+    | '+owner'
+    | 'issueCount'
+    | '-issueCount'
+    | '+issueCount'
+    | 'lastIssueUpdatedDate'
+    | '-lastIssueUpdatedDate'
+    | '+lastIssueUpdatedDate'
+    | 'archivedDate'
+    | '-archivedDate'
+    | '+archivedDate'
+    | 'deletedDate'
+    | '-deletedDate'
+    | '+deletedDate';
   readonly expand?: string[];
   readonly status?: string[];
   readonly typeKey?: string;
-  /** Filter by project IDs (type: array → repeated params). */
-  readonly id?: number[];
+  /** Permission action required on returned projects. Defaults to `view`. */
+  readonly action?: 'view' | 'browse' | 'edit' | 'create';
+  /** Filter by project IDs (int64, type: array → repeated params). Strings preserve full precision. */
+  readonly id?: readonly (string | number)[];
   /** Filter by project keys (type: array → repeated params). */
   readonly keys?: string[];
   /** Filter by text matching the project name, description, or key. */
   readonly query?: string;
-  /** Filter by the project category ID. */
-  readonly categoryId?: number;
+  /** Filter by the project category ID (int64). Strings preserve full precision. */
+  readonly categoryId?: string | number;
   /** A JQL query used to filter projects by entity properties. */
   readonly propertyQuery?: string;
   /** Filter by properties (type: array → repeated params). */

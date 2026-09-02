@@ -130,23 +130,22 @@ describe('executeScopesCommand validate — with unknown scopes', () => {
     expect(result.unknown).toEqual(['bad:scope-one', 'bad:scope-two']);
   });
 
-  it('returns 1 for now-classic (removed) Jira platform scopes', () => {
+  it('accepts Jira platform classic compatibility scopes advertised by the spec', () => {
     const io = captureIo();
-    // Classic Jira scopes were removed from the catalog — they are now unknown
     const code = executeScopesCommand(
       cmd('validate', 'read:jira-work', ['write:jira-work']),
       io.out,
       io.err,
     );
-    expect(code).toBe(1);
+    expect(code).toBe(0);
     const result = JSON.parse(io.stdout[0] as string) as {
       valid: string[];
       unknown: string[];
       allValid: boolean;
     };
-    expect(result.allValid).toBe(false);
-    expect(result.valid).toEqual([]);
-    expect(result.unknown).toEqual(['read:jira-work', 'write:jira-work']);
+    expect(result.allValid).toBe(true);
+    expect(result.valid).toEqual(['read:jira-work', 'write:jira-work']);
+    expect(result.unknown).toEqual([]);
   });
 
   it('includes unknown count in stderr error message', () => {
@@ -169,11 +168,10 @@ describe('executeScopesCommand validate — empty input', () => {
     const io = captureIo();
     executeScopesCommand(cmd('validate', '', []), io.out, io.err);
     const combined = io.stderr.join('\n');
-    // Should now list granular platform scopes, not classic ones
+    // The complete recognized catalog includes granular and compatibility scopes.
     expect(combined).toContain('read:issue:jira');
     expect(combined).toContain('write:page:confluence');
-    // Classic scopes should NOT appear in known-scopes listing
-    expect(combined).not.toContain('read:jira-work');
+    expect(combined).toContain('read:jira-work');
   });
 });
 
@@ -247,7 +245,7 @@ describe('runCli scopes — integration tests via real parseCommand path', () =>
     expect(io.stderr.some((line) => line.includes('bad:made-up'))).toBe(true);
   });
 
-  it('exits 1 for the removed classic Jira scope read:jira-work', async () => {
+  it('accepts the classic Jira compatibility scope read:jira-work', async () => {
     const io = captureIo();
     const code = await runCli(
       ['node', 'atlas', 'scopes', 'validate', 'read:jira-work'],
@@ -255,14 +253,15 @@ describe('runCli scopes — integration tests via real parseCommand path', () =>
       io.err,
       () => 'test',
     );
-    expect(code).toBe(1);
+    expect(code).toBe(0);
     const result = JSON.parse(io.stdout[0] as string) as {
       valid: string[];
       unknown: string[];
       allValid: boolean;
     };
-    expect(result.allValid).toBe(false);
-    expect(result.unknown).toContain('read:jira-work');
+    expect(result.allValid).toBe(true);
+    expect(result.valid).toEqual(['read:jira-work']);
+    expect(result.unknown).toEqual([]);
   });
 
   it('exits 1 with usage hint when no scopes are given', async () => {

@@ -173,7 +173,7 @@ export interface ExpressionComplexity {
 }
 
 /**
- * JQL metadata block attached to POST /expression/eval (scrolling, enhanced search API)
+ * JQL metadata block attached to deprecated POST /expression/eval (legacy search API)
  * response (`IssuesJqlMetaDataBean` schema).
  *
  * Spec: all four numeric fields are required; `validationWarnings` is optional.
@@ -192,7 +192,7 @@ export interface ExpressionEvalJqlMeta {
 }
 
 /**
- * JQL metadata block attached to POST /expression/evaluate (paginated, legacy)
+ * JQL metadata block attached to POST /expression/evaluate (enhanced search API)
  * response (`JExpEvaluateIssuesJqlMetaDataBean` schema).
  *
  * Spec: uses cursor-based paging — `nextPageToken` is required; `isLast` is optional.
@@ -205,7 +205,7 @@ export interface ExpressionEvaluateJqlMeta {
 }
 
 /**
- * Response envelope for POST /expression/eval (enhanced search API, scrolling JQL).
+ * Response envelope for deprecated POST /expression/eval (strongly consistent, offset-paginated JQL).
  *
  * Uses `IssuesJqlMetaDataBean` for JQL metadata (offset-based paging).
  * `value` is required by spec.
@@ -220,7 +220,7 @@ export interface EvalExpressionResponse {
 }
 
 /**
- * Response envelope for POST /expression/evaluate (strongly-consistent legacy, paginated JQL).
+ * Response envelope for POST /expression/evaluate (eventually consistent, cursor-paginated JQL).
  *
  * Uses `JExpEvaluateIssuesJqlMetaDataBean` for JQL metadata (cursor-based paging).
  * `value` is required by spec.
@@ -240,9 +240,9 @@ export interface EvaluateExpressionResponse {
  * Covers POST `/rest/api/3/expression/{analyse,eval,evaluate}` (B409, B904,
  * B410). All three endpoints accept JSON request bodies — `analyse`
  * validates and optionally type-checks expressions, `eval` runs an
- * expression against a context using the enhanced search API (scrolling
- * `nextPageToken` view), and `evaluate` runs an expression against a context
- * using the legacy paginated JQL view.
+ * expression against a context using the legacy strongly-consistent,
+ * offset-paginated JQL view, and `evaluate` runs an expression against a
+ * context using the enhanced search API (scrolling `nextPageToken` view).
  */
 export class ExpressionResource {
   constructor(
@@ -269,9 +269,10 @@ export class ExpressionResource {
   }
 
   /**
-   * B904: Evaluate a Jira expression using the enhanced search API
-   * (eventually consistent, scrolling JQL view with `nextPageToken`).
+   * B904: Evaluate a Jira expression using the legacy search API
+   * (strongly consistent, offset-paginated JQL view).
    * POST /expression/eval
+   * @deprecated Atlassian is removing this endpoint; use evaluate().
    *
    * Response JQL metadata (`ExpressionEvalJqlMeta`): `startAt`, `maxResults`,
    * `count`, `totalCount` (all required), optional `validationWarnings`.
@@ -294,8 +295,8 @@ export class ExpressionResource {
   }
 
   /**
-   * B410: Evaluate a Jira expression using the strongly-consistent legacy
-   * search API (paginated JQL view with cursor-based `nextPageToken`).
+   * B410: Evaluate a Jira expression using the enhanced search API
+   * (eventually consistent, scrolling JQL view with `nextPageToken`).
    * POST /expression/evaluate
    *
    * Response JQL metadata (`ExpressionEvaluateJqlMeta`): `nextPageToken`

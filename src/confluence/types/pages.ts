@@ -17,6 +17,10 @@ import type {
 export type PageContentStatus =
   'current' | 'draft' | 'archived' | 'historical' | 'trashed' | 'deleted' | 'any';
 
+/** Status filters accepted specifically by `GET /pages/{id}`. */
+export type PageLookupStatus =
+  'current' | 'archived' | 'trashed' | 'deleted' | 'historical' | 'draft';
+
 /**
  * Sort tokens accepted by `GET /pages`. Mirrors the OpenAPI `PageSortOrder` enum.
  * Default direction is ascending; prefix with `-` for descending.
@@ -36,6 +40,42 @@ export type ListPagesSortOrder =
  * Mirrors the OpenAPI `PageBodyWrite.representation` enum.
  */
 export type PageBodyWriteRepresentation = 'storage' | 'atlas_doc_format' | 'wiki';
+
+/** Flat body shape accepted by the current `PageCreateRequest` contract. */
+export interface PageBodyWrite {
+  readonly representation: PageBodyWriteRepresentation;
+  readonly value: string;
+  readonly storage?: never;
+  readonly atlas_doc_format?: never;
+  readonly wiki?: never;
+}
+
+/**
+ * Nested page-create body shape. Exactly one representation key is accepted,
+ * matching the OpenAPI `PageNestedBodyWrite` description.
+ */
+export type PageNestedBodyWrite =
+  | {
+      readonly storage: PageBodyWrite;
+      readonly atlas_doc_format?: never;
+      readonly wiki?: never;
+      readonly representation?: never;
+      readonly value?: never;
+    }
+  | {
+      readonly storage?: never;
+      readonly atlas_doc_format: PageBodyWrite;
+      readonly wiki?: never;
+      readonly representation?: never;
+      readonly value?: never;
+    }
+  | {
+      readonly storage?: never;
+      readonly atlas_doc_format?: never;
+      readonly wiki: PageBodyWrite;
+      readonly representation?: never;
+      readonly value?: never;
+    };
 
 /** Confluence Page. Covers fields from both `PageBulk` and `PageSingle` schemas. */
 export interface Page {
@@ -100,7 +140,7 @@ export interface GetPageParams {
    * Status filter for the page; `type:array` in the spec — sent as repeated path params.
    * Accepts a single value or an array.
    */
-  readonly status?: PageContentStatus | readonly PageContentStatus[];
+  readonly status?: PageLookupStatus | readonly PageLookupStatus[];
   readonly version?: number;
   /** Inline up to 50 labels in the response. */
   readonly 'include-labels'?: boolean;
@@ -124,7 +164,20 @@ export interface GetPageParams {
   readonly 'include-direct-children'?: boolean;
 }
 
-/** Request body for creating a Confluence page (`POST /pages`). */
+/** Query parameters for creating a Confluence page (`POST /pages`). */
+export interface CreatePageParams {
+  /** Tag the page as embedded and create it in NCS. */
+  readonly embedded?: boolean;
+  /** Restrict the new page to its creator. */
+  readonly private?: boolean;
+  /** Create outside the space homepage tree; cannot be combined with `parentId`. */
+  readonly 'root-level'?: boolean;
+}
+
+/**
+ * Backward-compatible title-required page-create shape. Kept as an interface
+ * so downstream extension and declaration merging remain valid.
+ */
 export interface CreatePageData {
   readonly spaceId: string;
   readonly title: string;
@@ -140,6 +193,22 @@ export interface CreatePageData {
     readonly value: string;
   };
 }
+
+interface CreatePageRequestBase {
+  readonly spaceId: string;
+  readonly parentId?: string;
+  readonly subtype?: 'live';
+  readonly body?: PageBodyWrite | PageNestedBodyWrite;
+}
+
+/**
+ * Exact current request union for `POST /pages`. A title is required for the
+ * default/current status but optional for draft creation. Existing
+ * `CreatePageData` values remain assignable to this widened method input.
+ */
+export type CreatePageRequest =
+  | (CreatePageRequestBase & { readonly status: 'draft'; readonly title?: string })
+  | (CreatePageRequestBase & { readonly status?: 'current'; readonly title: string });
 
 /**
  * Request body for updating a Confluence page (`PUT /pages/{id}`).

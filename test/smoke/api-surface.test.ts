@@ -21,10 +21,34 @@ import {
 } from '../../src/index.js';
 import type {
   ClientConfig,
+  JiraClientConfig,
+  JiraSoftwareIntegrationProxyConfig,
   Logger,
   Middleware,
   ListLabelsParams,
   ConfluenceListLabelsParams,
+  CreatePageParams,
+  CreatePageRequest,
+  GetSpaceParams,
+  PageLookupStatus,
+  PageBodyWrite,
+  PageBodyWriteRepresentation,
+  PageNestedBodyWrite,
+  SpaceDescription,
+  SpaceDescriptionBody,
+  SpaceDescriptionFormat,
+  SpaceIcon,
+  SpaceLinks,
+  SpaceNestedEnvelope,
+  SpaceProperty,
+  SpaceSortOrder,
+  SpaceStatus,
+  SpaceType,
+  ApproximateIssueCount,
+  ApproximateIssueCountParams,
+  JqlSearchParams,
+  JqlSearchGetParams,
+  LegacySearchGetParams,
   JiraListLabelsParams,
   RetryConfig,
   PaginateOptions,
@@ -40,6 +64,36 @@ describe('ConfluenceClient', () => {
   it('is constructable with basic auth', () => {
     const client = new ConfluenceClient(BASE_CONFIG);
     expect(client).toBeDefined();
+  });
+
+  it('exports current page-create contract types', () => {
+    const params: CreatePageParams = { private: true, embedded: false };
+    const representation: PageBodyWriteRepresentation = 'storage';
+    const flatBody: PageBodyWrite = { representation, value: '<p>Hello</p>' };
+    const nestedBody: PageNestedBodyWrite = { storage: flatBody };
+    const draft: CreatePageRequest = { spaceId: 'SPACE', status: 'draft', body: nestedBody };
+
+    expect({ draft, params }).toEqual({ draft, params });
+  });
+
+  it('exports current page and space contract components', () => {
+    type CurrentConfluenceContracts = [
+      PageLookupStatus,
+      GetSpaceParams,
+      SpaceDescriptionFormat,
+      SpaceDescription,
+      SpaceDescriptionBody,
+      SpaceIcon,
+      SpaceLinks,
+      SpaceNestedEnvelope<unknown>,
+      SpaceProperty,
+      SpaceSortOrder,
+      SpaceStatus,
+      SpaceType,
+    ];
+    const publishedTypes: Partial<CurrentConfluenceContracts> = [];
+
+    expect(publishedTypes).toEqual([]);
   });
 
   it('exposes all expected resources', () => {
@@ -85,6 +139,19 @@ describe('JiraClient', () => {
       auth: { type: 'bearer', token: 'my-token' },
     });
     expect(client).toBeDefined();
+  });
+
+  it('exports the Jira Software integration proxy config types', () => {
+    const softwareIntegrationProxy: JiraSoftwareIntegrationProxyConfig = {
+      cloudId: 'cloud-123',
+    };
+    const config: JiraClientConfig = {
+      baseUrl: 'https://test.atlassian.net',
+      auth: { type: 'bearer', token: 'oauth-token' },
+      softwareIntegrationProxy,
+    };
+
+    expect(new JiraClient(config)).toBeDefined();
   });
 
   it('exposes all expected resources', () => {
@@ -179,6 +246,31 @@ describe('Logger and Middleware config', () => {
 });
 
 describe('root type exports', () => {
+  it('exports board approximate-count request and response types', () => {
+    const params: ApproximateIssueCountParams = { jql: 'status != Done' };
+    const result: ApproximateIssueCount = { count: 42 };
+
+    expect(params.jql).toBe('status != Done');
+    expect(result.count).toBe(42);
+  });
+
+  it('keeps legacy GET-only search flags out of shared POST search params', () => {
+    const params: LegacySearchGetParams = { jql: 'project = PROJ', failFast: true };
+
+    expect(params.failFast).toBe(true);
+  });
+
+  it('exports current GET JQL search params with archived-project support', () => {
+    const postParams: JqlSearchParams = { includeArchivedProjects: false };
+    const params: JqlSearchGetParams = {
+      failFast: false,
+      includeArchivedProjects: true,
+    };
+
+    expect(postParams.includeArchivedProjects).toBe(false);
+    expect(params).toEqual({ failFast: false, includeArchivedProjects: true });
+  });
+
   it('keeps ListLabelsParams backward-compatible while exposing explicit aliases', () => {
     const confluenceParams: ListLabelsParams = { prefix: 'global', limit: 10 };
     const confluenceAlias: ConfluenceListLabelsParams = confluenceParams;

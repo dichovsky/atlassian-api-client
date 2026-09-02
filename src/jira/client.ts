@@ -1,6 +1,9 @@
 import type { ClientConfig, Transport } from '../core/types.js';
 import { resolveConfig } from '../core/config.js';
 import { HttpTransport } from '../core/transport.js';
+import { ValidationError } from '../core/errors.js';
+import { hostMatchesExact } from '../core/atlassian-hosts.js';
+import { encodePathSegment } from '../core/path.js';
 import { IssuesResource } from './resources/issues.js';
 import { ProjectsResource } from './resources/projects.js';
 import { SearchResource } from './resources/search.js';
@@ -89,8 +92,68 @@ import { BulkByPropertiesResource } from './resources/bulk-by-properties.js';
 import { MigrationResource } from './resources/migration.js';
 import { AddonsResource } from './resources/addons.js';
 
+const SOFTWARE_INTEGRATION_PROXY_HOST = 'api.atlassian.com';
+
 /**
- * Client for the Atlassian Jira Cloud Platform REST API v3.
+ * Atlassian API proxy configuration for Jira Software on-premises integrations.
+ *
+ * Atlassian exposes Development Information, Builds, Deployments, and Feature
+ * Flag ingestion through this system-to-system OAuth route. The tenant
+ * `cloudId` is available from
+ * `https://your-domain.atlassian.net/_edge/tenant_info`.
+ *
+ * @see https://developer.atlassian.com/cloud/jira/software/integrate-jsw-cloud-with-onpremises-tools/
+ */
+export interface JiraSoftwareIntegrationProxyConfig {
+  /** Non-empty Jira Cloud tenant identifier used in the proxy URL path. */
+  readonly cloudId: string;
+}
+
+/** Configuration accepted by {@link JiraClient}. */
+export interface JiraClientConfig extends ClientConfig {
+  /**
+   * Opt in to Atlassian's Jira Software OAuth integration proxy.
+   *
+   * When present, Development Information, Builds, Deployments, and bulk
+   * Feature Flag ingestion requests use
+   * `https://api.atlassian.com/jira/{type}/{version}/cloud/{cloudId}`.
+   * Development Information uses proxy version `0.1` (the site route remains
+   * `0.10`). Deployment gating-status and non-ingest Feature Flag requests are
+   * not exposed through the proxy and continue to use
+   * {@link ClientConfig.baseUrl}, as do all other Jira resources.
+   *
+   * Requires `auth.type: 'bearer'` with an OAuth 2.0 system-to-system access
+   * token. Bearer auth alone never enables proxy routing.
+   */
+  readonly softwareIntegrationProxy?: JiraSoftwareIntegrationProxyConfig;
+}
+
+function resolveSoftwareIntegrationProxy(
+  config: JiraClientConfig,
+): JiraSoftwareIntegrationProxyConfig | undefined {
+  const proxy = config.softwareIntegrationProxy;
+  if (proxy === undefined) return undefined;
+
+  if (proxy === null || typeof proxy !== 'object' || Array.isArray(proxy)) {
+    throw new ValidationError(
+      'softwareIntegrationProxy must be an object with a non-empty cloudId',
+    );
+  }
+  if (typeof proxy.cloudId !== 'string' || proxy.cloudId.trim().length === 0) {
+    throw new ValidationError('softwareIntegrationProxy requires a non-empty cloudId');
+  }
+  if (config.auth.type !== 'bearer') {
+    throw new ValidationError(
+      "softwareIntegrationProxy requires bearer OAuth authentication (auth.type: 'bearer')",
+    );
+  }
+
+  return { cloudId: proxy.cloudId.trim() };
+}
+
+/**
+ * Client for Atlassian Jira Cloud Platform REST API v3, Jira Software/Agile,
+ * and bundled DevOps integration APIs.
  *
  * @example
  * ```ts
@@ -101,6 +164,16 @@ import { AddonsResource } from './resources/addons.js';
  *   auth: { type: 'basic', email: 'user@example.com', apiToken: 'token' },
  * });
  * const issue = await client.issues.get('PROJ-1');
+ * ```
+ *
+ * @example Jira Software on-premises OAuth integration
+ * ```ts
+ * const client = new JiraClient({
+ *   baseUrl: 'https://mycompany.atlassian.net',
+ *   auth: { type: 'bearer', token: process.env.ATLASSIAN_OAUTH_TOKEN! },
+ *   softwareIntegrationProxy: { cloudId: '11111111-2222-3333-4444-555555555555' },
+ * });
+ * await client.bulk.submitBuilds({ builds: [] });
  * ```
  */
 export class JiraClient {
@@ -210,7 +283,7 @@ export class JiraClient {
   readonly remoteLink: RemoteLinkResource;
   /** Atlassian Connect service registry resource (base: /rest/atlassian-connect/1). */
   readonly serviceRegistry: ServiceRegistryResource;
-  /** Jira DevInfo exists-by-properties resource (base: /rest/devinfo/0.10). */
+  /** Jira DevInfo exists-by-properties resource (site `0.10`; OAuth proxy `0.1`). */
   readonly existsByProperties: ExistsByPropertiesResource;
   /**
    * App-scoped resource — Forge custom field context/value, Connect dynamic
@@ -270,9 +343,9 @@ export class JiraClient {
   readonly uiModifications: UiModificationsResource;
   /** Jira global permissions resource — get-all/check/permitted-projects (B613-B615). */
   readonly permissions: PermissionsResource;
-  /** Jira DevInfo repository resource — get/delete/delete-entity (B964-B966, base: /rest/devinfo/0.10). */
+  /** Jira DevInfo repository resource — site `0.10` or OAuth proxy `0.1`. */
   readonly repository: RepositoryResource;
-  /** Jira pipelines resource — builds/deployments at pipeline level (B954,B955,B958,B959,B960). */
+  /** Jira pipelines resource — Builds/Deployments site routes or OAuth proxy routes. */
   readonly pipelines: PipelinesResource;
   /** Jira linked workspaces resource — operations + security API (B984-B986, B995-B998). */
   readonly linkedWorkspaces: LinkedWorkspacesResource;
@@ -284,30 +357,61 @@ export class JiraClient {
   readonly addons: AddonsResource;
 
   /**
-   * Create a new Jira API v3 client.
+   * Create a Jira Cloud Platform v3, Software/Agile, and DevOps client.
    *
-   * @param config - Client configuration including `baseUrl`, `auth`, and optional transport/middleware.
+   * @param config - Client configuration including `baseUrl`, `auth`, optional
+   * transport/middleware, and optional Jira Software integration proxy routing.
    * @throws {ValidationError} if the configuration is invalid.
    */
-  constructor(config: ClientConfig) {
+  constructor(config: JiraClientConfig) {
     const resolved = resolveConfig(config);
+    const softwareIntegrationProxy = resolveSoftwareIntegrationProxy(config);
     const baseUrl = `${resolved.baseUrl}/rest/api/3`;
     const agileBaseUrl = `${resolved.baseUrl}/rest/agile/1.0`;
-    // Base for the non-deprecated Jira Software "enhanced" (JSIS) endpoints.
-    // Consumed here by boards (B1023-B1027); reused by epic/sprints in a follow-up PR.
+    // Base for the non-deprecated Jira Software "enhanced" (JSIS) endpoints,
+    // including board/sprint/epic issue pages and board approximate counts.
     const softwareBaseUrl = `${resolved.baseUrl}/rest/software/1.0`;
     const operationsBaseUrl = `${resolved.baseUrl}/rest/operations/1.0`;
     const securityBaseUrl = `${resolved.baseUrl}/rest/security/1.0`;
     const devopscomponentsBaseUrl = `${resolved.baseUrl}/rest/devopscomponents/1.0`;
-    const featureFlagsBaseUrl = `${resolved.baseUrl}/rest/featureflags/0.1`;
+    const tenantFeatureFlagsBaseUrl = `${resolved.baseUrl}/rest/featureflags/0.1`;
     const latestBaseUrl = `${resolved.baseUrl}/rest/internal/api/latest`;
     const remoteLinkBaseUrl = `${resolved.baseUrl}/rest/remotelinks/1.0`;
     const serviceRegistryBaseUrl = `${resolved.baseUrl}/rest/atlassian-connect/1`;
-    const devInfoBaseUrl = `${resolved.baseUrl}/rest/devinfo/0.10`;
+    const encodedCloudId =
+      softwareIntegrationProxy === undefined
+        ? undefined
+        : encodePathSegment(softwareIntegrationProxy.cloudId, 'softwareIntegrationProxy.cloudId');
+    const integrationProxyRoot =
+      encodedCloudId === undefined ? undefined : `https://${SOFTWARE_INTEGRATION_PROXY_HOST}/jira`;
+    const devInfoBaseUrl =
+      integrationProxyRoot === undefined
+        ? `${resolved.baseUrl}/rest/devinfo/0.10`
+        : `${integrationProxyRoot}/devinfo/0.1/cloud/${encodedCloudId}`;
     const forgeBaseUrl = `${resolved.baseUrl}/rest/forge/1`;
-    const buildsBaseUrl = `${resolved.baseUrl}/rest/builds/0.1`;
-    const deploymentsBaseUrl = `${resolved.baseUrl}/rest/deployments/0.1`;
-    const transport: Transport = config.transport ?? new HttpTransport({ ...resolved, baseUrl });
+    const buildsBaseUrl =
+      integrationProxyRoot === undefined
+        ? `${resolved.baseUrl}/rest/builds/0.1`
+        : `${integrationProxyRoot}/builds/0.1/cloud/${encodedCloudId}`;
+    const tenantDeploymentsBaseUrl = `${resolved.baseUrl}/rest/deployments/0.1`;
+    const deploymentsBaseUrl =
+      integrationProxyRoot === undefined
+        ? tenantDeploymentsBaseUrl
+        : `${integrationProxyRoot}/deployments/0.1/cloud/${encodedCloudId}`;
+    // The pinned Jira Software narrative omits Feature Flags from its on-premises
+    // list, but Atlassian's live integration guide linked on
+    // JiraSoftwareIntegrationProxyConfig explicitly includes `featureflags`.
+    const featureFlagsBulkBaseUrl =
+      integrationProxyRoot === undefined
+        ? tenantFeatureFlagsBaseUrl
+        : `${integrationProxyRoot}/featureflags/0.1/cloud/${encodedCloudId}`;
+    const allowedHosts =
+      integrationProxyRoot !== undefined &&
+      !hostMatchesExact(SOFTWARE_INTEGRATION_PROXY_HOST, resolved.allowedHosts)
+        ? [...resolved.allowedHosts, SOFTWARE_INTEGRATION_PROXY_HOST]
+        : resolved.allowedHosts;
+    const transport: Transport =
+      config.transport ?? new HttpTransport({ ...resolved, baseUrl, allowedHosts });
 
     this.issues = new IssuesResource(transport, baseUrl, agileBaseUrl);
     this.projects = new ProjectsResource(transport, baseUrl);
@@ -333,7 +437,7 @@ export class JiraClient {
       deployments: deploymentsBaseUrl,
       devInfo: devInfoBaseUrl,
       devopsComponents: devopscomponentsBaseUrl,
-      featureFlags: featureFlagsBaseUrl,
+      featureFlags: featureFlagsBulkBaseUrl,
       operations: operationsBaseUrl,
       remoteLinks: remoteLinkBaseUrl,
       security: securityBaseUrl,
@@ -363,7 +467,7 @@ export class JiraClient {
     this.license = new LicenseResource(transport, baseUrl);
     this.settings = new SettingsResource(transport, baseUrl);
     this.redact = new RedactResource(transport, baseUrl);
-    this.flag = new FlagResource(transport, featureFlagsBaseUrl);
+    this.flag = new FlagResource(transport, tenantFeatureFlagsBaseUrl);
     this.task = new TaskResource(transport, baseUrl);
     this.avatar = new AvatarResource(transport, baseUrl);
     this.customFieldOption = new CustomFieldOptionResource(transport, baseUrl);
@@ -400,7 +504,12 @@ export class JiraClient {
     this.uiModifications = new UiModificationsResource(transport, baseUrl);
     this.permissions = new PermissionsResource(transport, baseUrl);
     this.repository = new RepositoryResource(transport, devInfoBaseUrl);
-    this.pipelines = new PipelinesResource(transport, buildsBaseUrl, deploymentsBaseUrl);
+    this.pipelines = new PipelinesResource(
+      transport,
+      buildsBaseUrl,
+      deploymentsBaseUrl,
+      tenantDeploymentsBaseUrl,
+    );
     this.linkedWorkspaces = new LinkedWorkspacesResource(
       transport,
       operationsBaseUrl,
@@ -411,7 +520,9 @@ export class JiraClient {
       deployments: deploymentsBaseUrl,
       devinfo: devInfoBaseUrl,
       devopscomponents: devopscomponentsBaseUrl,
-      featureflags: featureFlagsBaseUrl,
+      // Atlassian exposes Feature Flag ingestion, but not bulk-by-properties
+      // deletion, through the OAuth proxy; keep deletion tenant-routed deliberately.
+      featureflags: tenantFeatureFlagsBaseUrl,
       operations: operationsBaseUrl,
       remotelinks: remoteLinkBaseUrl,
       security: securityBaseUrl,
