@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "3.0.0"
   },
-  "sourceHash": "4a4147755a840d13d7e70cb3d1500625cbe856b875ec0d8a71ea02736804d71e",
+  "sourceHash": "bace22662b7683083b7d8797bbab0b4eb758e32832001ddce6d4c4fd5c4ec56e",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -3954,457 +3954,464 @@
           "jsdoc": "Split a comma-separated CLI flag into a trimmed, non-empty array. Returns `undefined` when the input is unset so optional query params drop out cleanly via spread-omit on the call site."
         },
         {
+          "name": "parseCsvSpaceIdList",
+          "kind": "function",
+          "line": 1671,
+          "signature": "function parseCsvSpaceIdList(raw: string | undefined): readonly string[] | undefined",
+          "jsdoc": "Split the `spaces list --ids` flag into decimal int64 strings. Space IDs can exceed JavaScript's safe-integer range, so converting them through `Number` or `parseInt` would silently change the requested ID. Reject malformed tokens rather than partially parsing or dropping them."
+        },
+        {
           "name": "parseCsvIntList",
           "kind": "function",
-          "line": 1670,
+          "line": 1687,
           "signature": "function parseCsvIntList(raw: string | undefined): readonly number[] | undefined",
           "jsdoc": "Split a comma-separated CLI flag of integers into a `readonly number[]`. Returns `undefined` when the input is unset. Each item is coerced via `parseInt` with base-10 and non-finite values are filtered out."
         },
         {
           "name": "executeSpacePermissions",
           "kind": "function",
-          "line": 1677,
+          "line": 1694,
           "signature": "async function executeSpacePermissions( client: ConfluenceClient, cmd: ParsedCommand, ): Promise<unknown>"
         },
         {
           "name": "executeSpaceRoleMode",
           "kind": "function",
-          "line": 1735,
+          "line": 1752,
           "signature": "async function executeSpaceRoleMode( client: ConfluenceClient, cmd: ParsedCommand, ): Promise<unknown>"
         },
         {
           "name": "executeSpaceRoles",
           "kind": "function",
-          "line": 1747,
+          "line": 1764,
           "signature": "async function executeSpaceRoles(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "SPACE_ROLE_TYPES",
           "kind": "variable",
-          "line": 1799,
+          "line": 1816,
           "signature": "const SPACE_ROLE_TYPES: readonly SpaceRoleType[] = ['SYSTEM', 'CUSTOM'];"
         },
         {
           "name": "SPACE_ROLE_PRINCIPAL_TYPES",
           "kind": "variable",
-          "line": 1801,
+          "line": 1818,
           "signature": "const SPACE_ROLE_PRINCIPAL_TYPES: readonly SpaceRolePrincipalType[] = [ 'USER', 'GROUP', 'ACCESS_CLASS', ];"
         },
         {
           "name": "SPACE_BLOG_POST_STATUSES",
           "kind": "variable",
-          "line": 1816,
+          "line": 1833,
           "signature": "const SPACE_BLOG_POST_STATUSES = ['current', 'deleted', 'trashed'] as const;"
         },
         {
           "name": "SPACE_CONTENT_LABEL_PREFIXES",
           "kind": "variable",
-          "line": 1818,
+          "line": 1835,
           "signature": "const SPACE_CONTENT_LABEL_PREFIXES = ['my', 'team'] as const;"
         },
         {
           "name": "SPACE_PAGE_DEPTHS",
           "kind": "variable",
-          "line": 1820,
+          "line": 1837,
           "signature": "const SPACE_PAGE_DEPTHS = ['all', 'root'] as const;"
         },
         {
           "name": "SPACE_PAGE_STATUSES",
           "kind": "variable",
-          "line": 1822,
+          "line": 1839,
           "signature": "const SPACE_PAGE_STATUSES = ['current', 'archived', 'deleted', 'trashed'] as const;"
         },
         {
           "name": "SPACE_TYPES",
           "kind": "variable",
-          "line": 1824,
+          "line": 1841,
           "signature": "const SPACE_TYPES: readonly SpaceType[] = [ 'global', 'collaboration', 'knowledge_base', 'personal', 'system', 'onboardi…"
         },
         {
           "name": "SPACE_STATUSES",
           "kind": "variable",
-          "line": 1834,
+          "line": 1851,
           "signature": "const SPACE_STATUSES: readonly SpaceStatus[] = ['current', 'archived', 'trashed'];"
         },
         {
           "name": "SPACE_SORT_ORDERS",
           "kind": "variable",
-          "line": 1836,
+          "line": 1853,
           "signature": "const SPACE_SORT_ORDERS: readonly SpaceSortOrder[] = ['id', '-id', 'key', '-key', 'name', '-name'];"
         },
         {
           "name": "SPACE_DESCRIPTION_FORMATS",
           "kind": "variable",
-          "line": 1838,
+          "line": 1855,
           "signature": "const SPACE_DESCRIPTION_FORMATS: readonly SpaceDescriptionFormat[] = ['plain', 'view'];"
         },
         {
           "name": "parseSpacePermissions",
           "kind": "function",
-          "line": 1847,
+          "line": 1864,
           "signature": "function parseSpacePermissions(raw: string): readonly string[]",
           "jsdoc": "Split `--space-permissions` from the CLI into a non-empty array. Accepts a comma-separated list of permission ids (e.g. `read/space,write/space`); surrounding whitespace per entry is trimmed and empty entries are dropped. Rejects an all-empty payload with a clear error so callers fail fast before the HTTP round trip."
         },
         {
           "name": "executeTasks",
           "kind": "function",
-          "line": 1858,
+          "line": 1875,
           "signature": "async function executeTasks(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "TASK_STATUSES",
           "kind": "variable",
-          "line": 1900,
+          "line": 1917,
           "signature": "const TASK_STATUSES = ['incomplete', 'complete'] as const;"
         },
         {
           "name": "executeUsers",
           "kind": "function",
-          "line": 1902,
+          "line": 1919,
           "signature": "async function executeUsers(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "parseRequiredCsvList",
           "kind": "function",
-          "line": 1927,
+          "line": 1944,
           "signature": "function parseRequiredCsvList(raw: string, emptyError: string): readonly string[]",
           "jsdoc": "Split a required comma-separated CLI flag into a non-empty, trimmed list. Surrounding whitespace per entry is trimmed and empty entries are dropped; an all-empty payload throws `emptyError` so callers fail fast before the HTTP round trip. Shared by `--emails` (users) and `--account-ids` (users-bulk) so both get identical comma-separated batch semantics."
         },
         {
           "name": "parseEmailList",
           "kind": "function",
-          "line": 1944,
+          "line": 1961,
           "signature": "function parseEmailList(raw: string): readonly string[]",
           "jsdoc": "Parse `--emails` from the CLI into a non-empty list. Mirrors the `--account-ids` parsing used by `users-bulk` so callers get consistent comma-separated batch semantics across both user resources: surrounding whitespace per entry is trimmed and empty entries are dropped."
         },
         {
           "name": "executeUsersBulk",
           "kind": "function",
-          "line": 1948,
+          "line": 1965,
           "signature": "async function executeUsersBulk(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeDatabases",
           "kind": "function",
-          "line": 1963,
+          "line": 1980,
           "signature": "async function executeDatabases(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeEmbeds",
           "kind": "function",
-          "line": 2065,
+          "line": 2082,
           "signature": "async function executeEmbeds(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeFolders",
           "kind": "function",
-          "line": 2148,
+          "line": 2165,
           "signature": "async function executeFolders(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeFooterComments",
           "kind": "function",
-          "line": 2230,
+          "line": 2247,
           "signature": "async function executeFooterComments( client: ConfluenceClient, cmd: ParsedCommand, ): Promise<unknown>"
         },
         {
           "name": "executeInlineComments",
           "kind": "function",
-          "line": 2313,
+          "line": 2330,
           "signature": "async function executeInlineComments( client: ConfluenceClient, cmd: ParsedCommand, ): Promise<unknown>"
         },
         {
           "name": "executeWhiteboards",
           "kind": "function",
-          "line": 2371,
+          "line": 2388,
           "signature": "async function executeWhiteboards(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "requireArg",
           "kind": "function",
-          "line": 2483,
+          "line": 2500,
           "signature": "function requireArg(value: string | undefined, name: string): string"
         },
         {
           "name": "requireOpt",
           "kind": "function",
-          "line": 2488,
+          "line": 2505,
           "signature": "function requireOpt(value: string | boolean | undefined, name: string): string"
         },
         {
           "name": "asString",
           "kind": "function",
-          "line": 2493,
+          "line": 2510,
           "signature": "function asString(value: string | boolean | undefined): string | undefined"
         },
         {
           "name": "asPositiveInt",
           "kind": "function",
-          "line": 2497,
+          "line": 2514,
           "signature": "function asPositiveInt(value: string | boolean | undefined, name: string): number | undefined"
         },
         {
           "name": "asNonNegativeInt",
           "kind": "function",
-          "line": 2507,
+          "line": 2524,
           "signature": "function asNonNegativeInt(value: string | boolean | undefined, name: string): number | undefined",
           "jsdoc": "Parse an optional epoch-millisecond value (integer, zero included)."
         },
         {
           "name": "requirePositiveInt",
           "kind": "function",
-          "line": 2522,
+          "line": 2539,
           "signature": "function requirePositiveInt(value: string | boolean | undefined, name: string): number",
           "jsdoc": "Like {@link asPositiveInt} but rejects missing values: requires the flag, then validates it is a positive integer. Returns the parsed number. The thrown message matches the hand-rolled sites it replaces (`<name> must be a positive integer, got: <value>`)."
         },
         {
           "name": "asDepth",
           "kind": "function",
-          "line": 2535,
+          "line": 2552,
           "signature": "function asDepth(value: string | boolean | undefined): number | undefined",
           "jsdoc": "Validate depth parameter for descendant/child queries (must be 1–10 per spec). Returns `undefined` when unset, otherwise validates and returns the integer."
         },
         {
           "name": "asEnum",
           "kind": "function",
-          "line": 2549,
+          "line": 2566,
           "signature": "function asEnum<T extends string>( value: string | boolean | undefined, allowed: readonly T[], flagName: string, ): T | …",
           "jsdoc": "Narrow a free-form CLI string to a typed enum, rejecting anything outside the allowlist with a user-facing error. Returns `undefined` when the flag is unset so callers can use spread-omit on optional query keys."
         },
         {
           "name": "asEnumArray",
           "kind": "function",
-          "line": 2567,
+          "line": 2584,
           "signature": "function asEnumArray<T extends string>( value: string | boolean | undefined, allowed: readonly T[], flagName: string, ):…",
           "jsdoc": "Parse a comma-separated CLI value into a typed enum array. Each comma-split token is validated against the allowlist; an empty or missing input returns `undefined` so callers can spread-omit the key. Use for query params that the spec models as `array<enum>` (e.g. attachment `status`)."
         },
         {
           "name": "requireEnum",
           "kind": "function",
-          "line": 2591,
+          "line": 2608,
           "signature": "function requireEnum<T extends string>( value: string | boolean | undefined, allowed: readonly T[], flagName: string, ):…",
           "jsdoc": "Like `asEnum` but rejects missing values. Use when the flag is required and must come from a fixed allowlist (e.g. `tasks update --status`)."
         },
         {
           "name": "CONTENT_SORT_ORDERS",
           "kind": "variable",
-          "line": 2605,
+          "line": 2622,
           "signature": "const CONTENT_SORT_ORDERS: readonly ContentSortOrder[] = [ 'created-date', '-created-date', 'id', '-id', 'modified-date'…"
         },
         {
           "name": "PROPERTY_SORT_ORDERS",
           "kind": "variable",
-          "line": 2618,
+          "line": 2635,
           "signature": "const PROPERTY_SORT_ORDERS = ['key', '-key'] as const;"
         },
         {
           "name": "COMMENT_SORT_ORDERS",
           "kind": "variable",
-          "line": 2620,
+          "line": 2637,
           "signature": "const COMMENT_SORT_ORDERS: readonly CommentSortOrder[] = [ 'created-date', '-created-date', 'modified-date', '-modified-…"
         },
         {
           "name": "VERSION_SORT_ORDERS",
           "kind": "variable",
-          "line": 2627,
+          "line": 2644,
           "signature": "const VERSION_SORT_ORDERS: readonly VersionSortOrder[] = ['modified-date', '-modified-date'];"
         },
         {
           "name": "DATA_POLICY_SPACE_SORT_ORDERS",
           "kind": "variable",
-          "line": 2629,
+          "line": 2646,
           "signature": "const DATA_POLICY_SPACE_SORT_ORDERS: readonly DataPolicySpaceSortOrder[] = [ 'id', '-id', 'key', '-key', 'name', '-name'…"
         },
         {
           "name": "LABEL_SORT_ORDERS",
           "kind": "variable",
-          "line": 2638,
+          "line": 2655,
           "signature": "const LABEL_SORT_ORDERS: readonly LabelSortOrder[] = [ 'created-date', '-created-date', 'id', '-id', 'name', '-name', ];"
         },
         {
           "name": "ATTACHMENT_SORT_ORDERS",
           "kind": "variable",
-          "line": 2647,
+          "line": 2664,
           "signature": "const ATTACHMENT_SORT_ORDERS: readonly AttachmentSortOrder[] = [ 'created-date', '-created-date', 'modified-date', '-mod…"
         },
         {
           "name": "ATTACHMENT_STATUSES",
           "kind": "variable",
-          "line": 2654,
+          "line": 2671,
           "signature": "const ATTACHMENT_STATUSES: readonly AttachmentStatus[] = ['current', 'archived', 'trashed'];"
         },
         {
           "name": "LABEL_PREFIXES",
           "kind": "variable",
-          "line": 2656,
+          "line": 2673,
           "signature": "const LABEL_PREFIXES: readonly LabelPrefix[] = ['my', 'team', 'global', 'system'];"
         },
         {
           "name": "BLOG_POST_SORT_ORDERS",
           "kind": "variable",
-          "line": 2658,
+          "line": 2675,
           "signature": "const BLOG_POST_SORT_ORDERS: readonly BlogPostSortOrder[] = [ 'id', '-id', 'created-date', '-created-date', 'modified-da…"
         },
         {
           "name": "PAGE_SORT_ORDERS",
           "kind": "variable",
-          "line": 2667,
+          "line": 2684,
           "signature": "const PAGE_SORT_ORDERS: readonly PageSortOrder[] = [ 'id', '-id', 'created-date', '-created-date', 'modified-date', '-mo…"
         },
         {
           "name": "PAGE_LOOKUP_STATUSES",
           "kind": "variable",
-          "line": 2678,
+          "line": 2695,
           "signature": "const PAGE_LOOKUP_STATUSES = [ 'current', 'archived', 'trashed', 'deleted', 'historical', 'draft', ] as const;"
         },
         {
           "name": "PAGE_BODY_REPRESENTATIONS",
           "kind": "variable",
-          "line": 2687,
+          "line": 2704,
           "signature": "const PAGE_BODY_REPRESENTATIONS = [ 'storage', 'atlas_doc_format', 'view', 'export_view', 'anonymous_export_view', 'styl…"
         },
         {
           "name": "CONTENT_BODY_FORMATS",
           "kind": "variable",
-          "line": 2697,
+          "line": 2714,
           "signature": "const CONTENT_BODY_FORMATS = ['storage', 'atlas_doc_format'] as const;"
         },
         {
           "name": "WHITEBOARD_TEMPLATE_KEYS",
           "kind": "variable",
-          "line": 2699,
+          "line": 2716,
           "signature": "const WHITEBOARD_TEMPLATE_KEYS: readonly WhiteboardTemplateKey[] = [ '2x2-prioritization', '4ls-retro', 'annual-calendar…"
         },
         {
           "name": "WHITEBOARD_LOCALES",
           "kind": "variable",
-          "line": 2755,
+          "line": 2772,
           "signature": "const WHITEBOARD_LOCALES: readonly WhiteboardLocale[] = [ 'de-DE', 'cs-CZ', 'ko-KR', 'fr-FR', 'it-IT', 'ja-JP', 'nl-NL',…"
         },
         {
           "name": "CUSTOM_CONTENT_BODY_FORMATS",
           "kind": "variable",
-          "line": 2779,
+          "line": 2796,
           "signature": "const CUSTOM_CONTENT_BODY_FORMATS = ['raw', 'storage', 'atlas_doc_format'] as const;"
         },
         {
           "name": "CUSTOM_CONTENT_BODY_FORMATS_SINGLE",
           "kind": "variable",
-          "line": 2786,
+          "line": 2803,
           "signature": "const CUSTOM_CONTENT_BODY_FORMATS_SINGLE = [ 'raw', 'storage', 'atlas_doc_format', 'view', 'export_view', 'anonymous_exp…",
           "jsdoc": "Extended body-format vocabulary accepted only by `GET /custom-content/{id}` — adds the read-only `view`, `export_view`, and `anonymous_export_view` projections from the spec's `CustomContentBodyRepresentationSingle` enum."
         },
         {
           "name": "CUSTOM_CONTENT_SORT_ORDERS",
           "kind": "variable",
-          "line": 2795,
+          "line": 2812,
           "signature": "const CUSTOM_CONTENT_SORT_ORDERS: readonly CustomContentSortOrder[] = [ 'id', '-id', 'created-date', '-created-date', 'm…"
         },
         {
           "name": "CHILD_CUSTOM_CONTENT_SORT_ORDERS",
           "kind": "variable",
-          "line": 2806,
+          "line": 2823,
           "signature": "const CHILD_CUSTOM_CONTENT_SORT_ORDERS: readonly ChildCustomContentSortOrder[] = [ 'id', '-id', 'created-date', '-create…"
         },
         {
           "name": "COMMENT_STATUSES",
           "kind": "variable",
-          "line": 2815,
+          "line": 2832,
           "signature": "const COMMENT_STATUSES: readonly CommentStatus[] = [ 'current', 'deleted', 'trashed', 'historical', 'draft', ];"
         },
         {
           "name": "INLINE_COMMENT_RESOLUTION_STATUSES",
           "kind": "variable",
-          "line": 2823,
+          "line": 2840,
           "signature": "const INLINE_COMMENT_RESOLUTION_STATUSES: readonly InlineCommentResolutionStatus[] = [ 'resolved', 'open', 'dangling', '…"
         },
         {
           "name": "CLASSIFICATION_STATUS",
           "kind": "variable",
-          "line": 2830,
+          "line": 2847,
           "signature": "const CLASSIFICATION_STATUS = ['current', 'draft', 'archived'] as const;"
         },
         {
           "name": "PAGE_CLASSIFICATION_STATUSES",
           "kind": "variable",
-          "line": 2837,
+          "line": 2854,
           "signature": "const PAGE_CLASSIFICATION_STATUSES = ['current', 'draft'] as const;",
           "jsdoc": "Status enum accepted by `PUT /pages/{id}/classification-level` and the matching reset endpoint — page allows both `current` and `draft` (unlike the blog-post variant which is locked to `current`)."
         },
         {
           "name": "PAGE_TITLE_STATUSES",
           "kind": "variable",
-          "line": 2843,
+          "line": 2860,
           "signature": "const PAGE_TITLE_STATUSES = ['current', 'draft'] as const;",
           "jsdoc": "Status enum accepted by `PUT /pages/{id}/title`. The endpoint targets either the published (`current`) revision or the in-flight `draft`."
         },
         {
           "name": "PAGE_CREATE_STATUSES",
           "kind": "variable",
-          "line": 2844,
+          "line": 2861,
           "signature": "const PAGE_CREATE_STATUSES = ['current', 'draft'] as const;"
         },
         {
           "name": "PAGE_CREATE_SUBTYPES",
           "kind": "variable",
-          "line": 2845,
+          "line": 2862,
           "signature": "const PAGE_CREATE_SUBTYPES = ['live'] as const;"
         },
         {
           "name": "PAGE_BODY_WRITE_REPRESENTATIONS",
           "kind": "variable",
-          "line": 2846,
+          "line": 2863,
           "signature": "const PAGE_BODY_WRITE_REPRESENTATIONS: readonly PageBodyWriteRepresentation[] = [ 'storage', 'atlas_doc_format', 'wiki',…"
         },
         {
           "name": "CHILD_PAGE_SORT_ORDERS",
           "kind": "variable",
-          "line": 2857,
+          "line": 2874,
           "signature": "const CHILD_PAGE_SORT_ORDERS: readonly ChildPageSortOrder[] = [ 'created-date', '-created-date', 'id', '-id', 'child-pos…",
           "jsdoc": "Sort tokens accepted by `GET /pages/{id}/children`. Mirrors the OpenAPI `ChildPageSortOrder` enum — narrower than `ContentSortOrder` (no `title` sort because child-page rows don't reliably carry a title field)."
         },
         {
           "name": "BLOG_POST_LOOKUP_STATUSES",
           "kind": "variable",
-          "line": 2868,
+          "line": 2885,
           "signature": "const BLOG_POST_LOOKUP_STATUSES: readonly BlogPostLookupStatus[] = [ 'current', 'trashed', 'deleted', 'historical', 'dra…"
         },
         {
           "name": "BLOG_POST_BODY_REPRESENTATIONS",
           "kind": "variable",
-          "line": 2876,
+          "line": 2893,
           "signature": "const BLOG_POST_BODY_REPRESENTATIONS: readonly BlogPostBodyRepresentation[] = [ 'storage', 'atlas_doc_format', 'view', '…"
         },
         {
           "name": "makeBody",
           "kind": "function",
-          "line": 2886,
+          "line": 2903,
           "signature": "function makeBody(value: string | undefined)"
         },
         {
           "name": "makePageCreateBody",
           "kind": "function",
-          "line": 2891,
+          "line": 2908,
           "signature": "function makePageCreateBody( opts: Record<string, string | boolean | undefined>, ): PageBodyWrite | PageNestedBodyWrite …"
         },
         {
           "name": "buildGetBlogPostParams",
           "kind": "function",
-          "line": 2939,
+          "line": 2956,
           "signature": "function buildGetBlogPostParams( opts: Record<string, string | boolean | undefined>, ): GetBlogPostParams | undefined",
           "jsdoc": "Project the CLI flag bag onto a `GetBlogPostParams` query bag. Returns `undefined` when no spec-mapped flag is present so the caller can short-circuit to the no-arg `blogPosts.get(id)` overload (avoids sending an empty `query={}` object to the transport)."
         },
         {
           "name": "buildGetPageParams",
           "kind": "function",
-          "line": 2965,
+          "line": 2982,
           "signature": "function buildGetPageParams( opts: Record<string, string | boolean | undefined>, ): GetPageParams | undefined",
           "jsdoc": "Project the current `GET /pages/{id}` flags onto its query contract."
         },
         {
           "name": "buildGetSpaceParams",
           "kind": "function",
-          "line": 2999,
+          "line": 3016,
           "signature": "function buildGetSpaceParams( opts: Record<string, string | boolean | undefined>, ): GetSpaceParams | undefined",
           "jsdoc": "Project `GET /spaces/{id}` flags while preserving the no-params overload."
         }

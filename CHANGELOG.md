@@ -20,7 +20,7 @@ This refresh contains public SDK and CLI contract corrections and therefore must
 
 ### Added
 
-- Jira Platform grouped custom-field context default values and experimental ADF limit report APIs, plus current query parameters and additive response fields from the 2026-09-01 OpenAPI snapshot.
+- Jira Platform grouped custom-field context default values and experimental ADF limit report APIs, plus current query parameters and additive response fields from the 2026-09-01 OpenAPI snapshot. The 2026-09-02 re-pin also records the optional `StatusPayload.scope: 'GLOBAL'` field for statuses nested in custom project-template workflow capabilities; the existing open workflow payload accepts it without a signature change.
 - Current Jira `/rest/api/3/search/jql` GET and POST support for opting into archived projects through `includeArchivedProjects` and the scoped `--include-archived-projects` CLI switch. Omit it to retain Jira's default (`false`).
 - Jira Software board backlog/issue approximate-count APIs, complete current granular OAuth scope recognition, and parameter-level SDK/CLI/skill parity for rank controls.
 - Opt-in Jira Software system-to-system OAuth proxy routing for Development Information, Builds, Deployments, and Feature Flag ingestion via `softwareIntegrationProxy.cloudId`, `--software-cloud-id`, or `ATLASSIAN_SOFTWARE_CLOUD_ID`.

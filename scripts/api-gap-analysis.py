@@ -2,10 +2,11 @@
 """Atlassian SDK coverage gap analysis — deterministic auto-diff.
 
 CI coverage guard and standalone audit tool. Extracts every transport-backed
-operation path+verb from src/{jira,confluence}/resources/*.ts (including
-delegated helper call sites and resolving each resource's base-URL prefix from
-the client wiring), normalizes path params, and diffs against the three official
-Atlassian OpenAPI specs to list unimplemented operations.
+operation path+verb from compiled TypeScript sources under
+src/{jira,confluence}/resources (including delegated helper call sites and
+resolving each resource's base-URL prefix from the client wiring), normalizes
+path params, and diffs against the three official Atlassian OpenAPI specs to
+list unimplemented operations.
 
 Usage:
   python3 scripts/api-gap-analysis.py
@@ -1059,11 +1060,15 @@ def parse_ctor_params(src, code_src):
     return names[1:] if names else []
 
 def norm(path_tmpl):
+    """Normalize only route syntax that is equivalent at request time.
+
+    A URL's doubled and trailing slashes are preserved by the transport and may
+    address a different route, so they must remain significant in the coverage
+    comparison.
+    """
     path_tmpl = path_tmpl.split("?")[0]
     s = re.sub(r"\$\{[^}]*\}", "{}", path_tmpl)
     s = re.sub(r"\{[^}]*\}", "{}", s)
-    s = re.sub(r"//+", "/", s)
-    if s != "/" and s.endswith("/"): s = s[:-1]
     return s
 
 def route_template_key(tpl):
@@ -1156,6 +1161,113 @@ def visible_assignments(assignments, local_code):
         key=lambda item: item[1],
     )
     return [closest[1:]]
+
+def parameter_list_binds_name(params_code, name):
+    """Whether a TypeScript parameter list declares ``name`` as a value."""
+    target = re.escape(name)
+    for _, parameter in split_top_commas_aligned(params_code, params_code):
+        stripped = parameter.strip()
+        direct = re.match(
+            r"(?:(?:private|protected|public|readonly|override)\s+)*"
+            r"(?:\.\.\.\s*)?([A-Za-z_$][A-Za-z0-9_$]*)\b",
+            stripped,
+        )
+        if direct:
+            if direct.group(1) == name:
+                return True
+            continue
+        if stripped.startswith(("{", "[")) and re.search(
+            r"\b" + target + r"\b", stripped
+        ):
+            # Destructuring aliases/defaults require a full binding parser to
+            # distinguish keys from targets. Treat any occurrence as a shadow
+            # rather than borrowing an outer constant through the pattern.
+            return True
+    return False
+
+def has_visible_shadowing_binding_after(
+    code, name, binding_position, use_position
+):
+    """Reject a nearer lexical/value binding before resolving an outer const."""
+    target = re.escape(name)
+    use_scope = brace_scope_at(code, use_position)
+
+    def binding_scope_is_visible(position):
+        declaration_scope = brace_scope_at(code, position)
+        return use_scope[:len(declaration_scope)] == declaration_scope
+
+    # Method, object-method, and named-function parameters are scoped to their
+    # callable body even though their textual declaration precedes its brace.
+    for (
+        params_start,
+        params_end,
+        body_start,
+        body_end,
+        *_rest,
+    ) in method_declaration_spans(code):
+        if (
+            binding_position < params_start < use_position
+            and body_start < use_position < body_end
+            and parameter_list_binds_name(
+                code[params_start:params_end], name
+            )
+        ):
+            return True
+
+    search_start = binding_position + 1
+    local_code = code[search_start:use_position]
+    for declaration in re.finditer(r"\b(?:const|let|var)\b", local_code):
+        position = search_start + declaration.start()
+        if not binding_scope_is_visible(position):
+            continue
+        cursor = search_start + declaration.end()
+        while cursor < use_position and code[cursor].isspace():
+            cursor += 1
+        direct = re.match(r"[A-Za-z_$][A-Za-z0-9_$]*", code[cursor:use_position])
+        if direct and direct.group(0) == name:
+            return True
+        if cursor < use_position and code[cursor] in "{[":
+            close_token = "}" if code[cursor] == "{" else "]"
+            binding_end = match_close(
+                code[:use_position], cursor, code[cursor], close_token
+            )
+            if (
+                binding_end != -1
+                and re.search(r"\b" + target + r"\b", code[cursor:binding_end])
+            ):
+                return True
+
+    for declaration in re.finditer(
+        r"\b(?:function|class|enum|namespace)\s+" + target + r"\b",
+        local_code,
+    ):
+        if binding_scope_is_visible(search_start + declaration.start()):
+            return True
+
+    for catch in re.finditer(r"\bcatch\s*\(", local_code):
+        catch_start = search_start + catch.start()
+        params_open = code.index("(", catch_start, search_start + catch.end())
+        params_end = match_close(code, params_open, "(", ")")
+        if params_end == -1 or params_end > use_position:
+            continue
+        body_start = params_end
+        while body_start < len(code) and code[body_start].isspace():
+            body_start += 1
+        body_end = (
+            match_close(code, body_start, "{", "}")
+            if body_start < len(code) and code[body_start] == "{"
+            else -1
+        )
+        if (
+            body_end != -1
+            and body_start < use_position < body_end
+            and re.search(
+                r"\b" + target + r"\b",
+                code[params_open + 1:params_end - 1],
+            )
+        ):
+            return True
+    return False
 
 def has_destructuring_write(code, ident, start=0):
     """Detect an assignment target that can rewrite ``ident`` indirectly."""
@@ -1540,6 +1652,13 @@ def statically_constant_value(
     if not visible:
         return False, None
     binding_position, value_source, value_code = visible[0]
+    if has_visible_shadowing_binding_after(
+        code,
+        name,
+        binding_position,
+        use_position,
+    ):
+        return False, None
     return statically_constant_value(
         source,
         code,
@@ -2222,7 +2341,13 @@ def helper_preserves_first_parameter(
         return False
     body = definitions[span[0]:span[1]]
     body_code = definitions_code[span[0]:span[1]]
-    safe_idents = {first_param.group(1)}
+    first_param_name = first_param.group(1)
+    # A same-spelled nested binding is not the helper parameter. Without a
+    # binding-aware AST, reject the helper rather than treating the shadow as
+    # route-preserving merely because its identifier text matches.
+    if has_nonimport_binding(body_code, first_param_name):
+        return False
+    safe_idents = {first_param_name}
     declarations = []
     for declaration in re.finditer(
         r"\b(?:const|let)\s+([A-Za-z_][A-Za-z0-9_]*)\s*(?::[^=;]+)?=",
@@ -2994,7 +3119,12 @@ def extract(api):
     wiring = parse_wiring(client_src, client_code, varmap)
     results, unknowns = [], []
     seen_resource_classes = set()
-    for f in sorted(glob.glob(os.path.join(res_dir, "**", "*.ts"), recursive=True)):
+    resource_files = sorted({
+        f
+        for pattern in ("*.ts", "*.mts", "*.cts", "*.tsx")
+        for f in glob.glob(os.path.join(res_dir, "**", pattern), recursive=True)
+    })
+    for f in resource_files:
         src, code_src = lex_ts_source(open(f).read())
         escaped_syntax = UNICODE_ESCAPE.search(code_src)
         if escaped_syntax:
@@ -3409,6 +3539,12 @@ def extract(api):
             results.append({"prefix": prefix, "verb": verb, "suffix": norm(suffix),
                             "norm_full": norm(full),
                             "file": os.path.basename(f)})
+    for cls in sorted(set(wiring) - seen_resource_classes):
+        unknowns.append((
+            "client.ts",
+            "wired-resource-class-not-scanned",
+            cls,
+        ))
     return results, unknowns, varmap
 
 def fail_spec(name, message):

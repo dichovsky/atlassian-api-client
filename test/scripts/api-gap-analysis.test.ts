@@ -1427,6 +1427,53 @@ ${liveImplementation}
   );
 
   it(
+    'fails closed when a nested binding shadows a route helper parameter',
+    async () => {
+      const fixtureRoot = await mkdtemp(join(tmpdir(), 'atlassian-api-gap-helper-param-shadow-'));
+      const fixtureSrc = join(fixtureRoot, 'src');
+
+      try {
+        await cp(resolve(REPO_ROOT, 'src'), fixtureSrc, { recursive: true });
+        const adminKeyPath = join(fixtureSrc, 'confluence/resources/admin-key.ts');
+        const adminKey = await readFile(adminKeyPath, 'utf8');
+        let changedAdminKey = adminKey.replace(
+          'path: `${this.baseUrl}/admin-key`,',
+          'path: this.preserve(`${this.baseUrl}/admin-key`),',
+        );
+        changedAdminKey = changedAdminKey.replace(
+          '  /**\n   * Enable (or rotate) the admin key.',
+          `  private preserve(path: string): string {
+    void path;
+    {
+      const path = \`\${this.baseUrl}/admin-key-not-in-spec\`;
+      return path;
+    }
+  }
+
+  /**
+   * Enable (or rotate) the admin key.`,
+        );
+        expect(changedAdminKey).not.toBe(adminKey);
+        await writeFile(adminKeyPath, changedAdminKey);
+
+        await expect(
+          execFileAsync('python3', [ANALYZER, '--source-root', fixtureRoot], {
+            cwd: REPO_ROOT,
+          }),
+        ).rejects.toMatchObject({
+          code: 1,
+          stdout: expect.stringContaining(
+            'confluence-v2: 218 ops | impl 217 | MISSING 1 (live 1, dep 0)',
+          ),
+        });
+      } finally {
+        await rm(fixtureRoot, { recursive: true, force: true });
+      }
+    },
+    ANALYZER_TIMEOUT_MS,
+  );
+
+  it(
     'fails closed when a class helper return spread can override its path',
     async () => {
       const fixtureRoot = await mkdtemp(join(tmpdir(), 'atlassian-api-gap-helper-spread-'));
@@ -1949,6 +1996,136 @@ export class NestedGateway {
   );
 
   it(
+    'inspects a wired resource implemented in a compiled .mts source file',
+    async () => {
+      const fixtureRoot = await mkdtemp(join(tmpdir(), 'atlassian-api-gap-mts-resource-'));
+      const fixtureSrc = join(fixtureRoot, 'src');
+
+      try {
+        await cp(resolve(REPO_ROOT, 'src'), fixtureSrc, { recursive: true });
+        const resourcePath = join(fixtureSrc, 'confluence/resources/rogue.mts');
+        await writeFile(
+          resourcePath,
+          `import type { Transport } from '../../core/types.js';
+
+export class RogueResource {
+  constructor(
+    private readonly transport: Transport,
+    private readonly baseUrl: string,
+  ) {}
+
+  async remove(): Promise<void> {
+    await this.transport.request({
+      method: 'DELETE',
+      path: \`\${this.baseUrl}/admin-key-rogue\`,
+    });
+  }
+}
+`,
+        );
+
+        const clientPath = join(fixtureSrc, 'confluence/client.ts');
+        const client = await readFile(clientPath, 'utf8');
+        const changedClient = client
+          .replace(
+            "import { AdminKeyResource } from './resources/admin-key.js';",
+            `import { AdminKeyResource } from './resources/admin-key.js';
+import { RogueResource } from './resources/rogue.mjs';`,
+          )
+          .replace(
+            '  readonly adminKey: AdminKeyResource;',
+            `  readonly adminKey: AdminKeyResource;
+  readonly rogue: RogueResource;`,
+          )
+          .replace(
+            '    this.adminKey = new AdminKeyResource(transport, baseUrl);',
+            `    this.adminKey = new AdminKeyResource(transport, baseUrl);
+    this.rogue = new RogueResource(transport, baseUrl);`,
+          );
+        expect(changedClient).not.toBe(client);
+        await writeFile(clientPath, changedClient);
+
+        await expect(
+          execFileAsync('python3', [ANALYZER, '--source-root', fixtureRoot], {
+            cwd: REPO_ROOT,
+          }),
+        ).rejects.toMatchObject({
+          code: 1,
+          stdout: expect.stringContaining('  1 /wiki/api/v2'),
+        });
+      } finally {
+        await rm(fixtureRoot, { recursive: true, force: true });
+      }
+    },
+    ANALYZER_TIMEOUT_MS,
+  );
+
+  it(
+    'fails closed when client wiring references a resource outside the scanned directory',
+    async () => {
+      const fixtureRoot = await mkdtemp(join(tmpdir(), 'atlassian-api-gap-unscanned-wiring-'));
+      const fixtureSrc = join(fixtureRoot, 'src');
+
+      try {
+        await cp(resolve(REPO_ROOT, 'src'), fixtureSrc, { recursive: true });
+        const resourcePath = join(fixtureSrc, 'confluence/rogue.ts');
+        await writeFile(
+          resourcePath,
+          `import type { Transport } from '../core/types.js';
+
+export class RogueResource {
+  constructor(
+    private readonly transport: Transport,
+    private readonly baseUrl: string,
+  ) {}
+
+  async remove(): Promise<void> {
+    await this.transport.request({
+      method: 'DELETE',
+      path: \`\${this.baseUrl}/admin-key-rogue\`,
+    });
+  }
+}
+`,
+        );
+
+        const clientPath = join(fixtureSrc, 'confluence/client.ts');
+        const client = await readFile(clientPath, 'utf8');
+        const changedClient = client
+          .replace(
+            "import { AdminKeyResource } from './resources/admin-key.js';",
+            `import { AdminKeyResource } from './resources/admin-key.js';
+import { RogueResource } from './rogue.js';`,
+          )
+          .replace(
+            '  readonly adminKey: AdminKeyResource;',
+            `  readonly adminKey: AdminKeyResource;
+  readonly rogue: RogueResource;`,
+          )
+          .replace(
+            '    this.adminKey = new AdminKeyResource(transport, baseUrl);',
+            `    this.adminKey = new AdminKeyResource(transport, baseUrl);
+    this.rogue = new RogueResource(transport, baseUrl);`,
+          );
+        expect(changedClient).not.toBe(client);
+        await writeFile(clientPath, changedClient);
+
+        await expect(
+          execFileAsync('python3', [ANALYZER, '--source-root', fixtureRoot], {
+            cwd: REPO_ROOT,
+          }),
+        ).rejects.toMatchObject({
+          code: 1,
+          stdout: expect.stringContaining('wired-resource-class-not-scanned'),
+        });
+      } finally {
+        await rm(fixtureRoot, { recursive: true, force: true });
+      }
+    },
+    ANALYZER_TIMEOUT_MS,
+  );
+
+  it(
     'does not let an unwired duplicate resource class borrow client wiring',
     async () => {
       const fixtureRoot = await mkdtemp(join(tmpdir(), 'atlassian-api-gap-duplicate-resource-'));
@@ -2171,6 +2348,49 @@ export class AdminKeyResource {
     ANALYZER_TIMEOUT_MS,
   );
 
+  it(
+    'keeps a request reachable when a method parameter shadows an outer constant',
+    async () => {
+      const fixtureRoot = await mkdtemp(join(tmpdir(), 'atlassian-api-gap-constant-param-shadow-'));
+      const fixtureSrc = join(fixtureRoot, 'src');
+
+      try {
+        await cp(resolve(REPO_ROOT, 'src'), fixtureSrc, { recursive: true });
+        const adminKeyPath = join(fixtureSrc, 'confluence/resources/admin-key.ts');
+        const adminKey = await readFile(adminKeyPath, 'utf8');
+        let changedAdminKey = adminKey.replace(
+          'export class AdminKeyResource {',
+          "const mode = 'disabled' as const;\n\nexport class AdminKeyResource {",
+        );
+        changedAdminKey = changedAdminKey.replace(
+          '  async get(): Promise<AdminKey> {',
+          "  async get(mode: 'disabled' | 'enabled' = 'enabled'): Promise<AdminKey> {",
+        );
+        changedAdminKey = changedAdminKey.replace(
+          ADMIN_KEY_GET_IMPLEMENTATION,
+          `    switch (mode) {
+      case 'disabled':
+        throw new Error('disabled');
+    }
+${ADMIN_KEY_GET_IMPLEMENTATION}`,
+        );
+        expect(changedAdminKey).not.toBe(adminKey);
+        await writeFile(adminKeyPath, changedAdminKey);
+
+        const { stdout, stderr } = await execFileAsync(
+          'python3',
+          [ANALYZER, '--source-root', fixtureRoot],
+          { cwd: REPO_ROOT },
+        );
+        expect(stderr).toBe('');
+        expect(stdout).toContain('confluence-v2: 218 ops | impl 218 | MISSING 0 (live 0, dep 0)');
+      } finally {
+        await rm(fixtureRoot, { recursive: true, force: true });
+      }
+    },
+    ANALYZER_TIMEOUT_MS,
+  );
+
   it.each([
     [
       'a nested resource file',
@@ -2341,6 +2561,24 @@ export class ${className} {
     if (false) {}
     /this.transport.request({ method: 'GET', path })/;
     throw new Error('implementation removed');`,
+      );
+    },
+    ANALYZER_TIMEOUT_MS,
+  );
+
+  it.each([
+    ['a doubled path slash', '//admin-key'],
+    ['a trailing path slash', '/admin-key/'],
+  ])(
+    'keeps %s distinct from the canonical spec route',
+    async (_description, pathSuffix) => {
+      await expectAdminKeyMutationToFail(
+        'atlassian-api-gap-significant-slash-',
+        `    const response = await this.transport.request<AdminKey>({
+      method: 'GET',
+      path: \`\${this.baseUrl}${pathSuffix}\`,
+    });
+    return response.data;`,
       );
     },
     ANALYZER_TIMEOUT_MS,

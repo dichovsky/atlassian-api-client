@@ -417,7 +417,7 @@ async function executeSpaces(client: ConfluenceClient, cmd: ParsedCommand): Prom
         'description-format',
       );
       return client.spaces.list({
-        ids: parseCsvIntList(asString(opts['ids'])),
+        ids: parseCsvSpaceIdList(asString(opts['ids'])),
         keys: parseCsvList(asString(opts['keys'])),
         ...(type !== undefined ? { type } : {}),
         ...(status !== undefined ? { status } : {}),
@@ -1660,6 +1660,23 @@ function parseCsvList(raw: string | undefined): readonly string[] | undefined {
     .map((s) => s.trim())
     .filter((s) => s.length > 0);
   return items.length > 0 ? items : undefined;
+}
+
+/**
+ * Split the `spaces list --ids` flag into decimal int64 strings. Space IDs can
+ * exceed JavaScript's safe-integer range, so converting them through `Number`
+ * or `parseInt` would silently change the requested ID. Reject malformed
+ * tokens rather than partially parsing or dropping them.
+ */
+function parseCsvSpaceIdList(raw: string | undefined): readonly string[] | undefined {
+  const ids = parseCsvList(raw);
+  if (ids === undefined) return undefined;
+  for (const id of ids) {
+    if (!/^-?\d+$/.test(id)) {
+      throw new Error(`--ids must contain only decimal integer space IDs, got: ${id}`);
+    }
+  }
+  return ids;
 }
 
 /**

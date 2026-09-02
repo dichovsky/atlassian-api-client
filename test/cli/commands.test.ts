@@ -2547,7 +2547,7 @@ describe('executeConfluenceCommand', () => {
       );
 
       expect(confluenceSpacesMock.list).toHaveBeenCalledWith({
-        ids: [10, 20],
+        ids: ['10', '20'],
         keys: ['ENG', 'OPS'],
         type: 'knowledge_base',
         status: 'trashed',
@@ -2560,6 +2560,26 @@ describe('executeConfluenceCommand', () => {
         limit: 50,
         cursor: 'next',
       });
+    });
+
+    it('spaces list preserves int64 IDs exactly without Number coercion', async () => {
+      confluenceSpacesMock.list.mockResolvedValue({ results: [] });
+
+      await executeConfluenceCommand(
+        cmd('spaces', 'list', [], { ids: '9007199254740993,20' }),
+        GLOBALS,
+      );
+
+      expect(confluenceSpacesMock.list).toHaveBeenCalledWith(
+        expect.objectContaining({ ids: ['9007199254740993', '20'] }),
+      );
+    });
+
+    it.each(['10abc', 'not-a-number'])('spaces list rejects malformed ID %s', async (ids) => {
+      await expect(
+        executeConfluenceCommand(cmd('spaces', 'list', [], { ids }), GLOBALS),
+      ).rejects.toThrow(`--ids must contain only decimal integer space IDs, got: ${ids}`);
+      expect(confluenceSpacesMock.list).not.toHaveBeenCalled();
     });
 
     it('spaces get calls client.spaces.get with space ID', async () => {

@@ -12,7 +12,7 @@ The reviewed snapshots are pinned in [`spec/`](../spec/README.md). Their full SH
 
 | Interface        | Paths | Operations | SHA-256                                                            |
 | ---------------- | ----: | ---------: | ------------------------------------------------------------------ |
-| Jira Platform v3 |   421 |        617 | `2783f5d3849cceb55d10d83f3994d4a6af8845458fd3472862af9b405982c12b` |
+| Jira Platform v3 |   421 |        617 | `9029bb1c5ebd513494660bf4c7520281701ed0c984f4a3a1bd0505db29ae7b7d` |
 | Jira Software    |    78 |        105 | `4e108d54b99064475c6ba0f986cce46dcace81336e034b58a5400b93174b927a` |
 | Confluence v2    |   151 |        218 | `451377c5a598ee8155acc11b611404f309bed4a4292ea87f88ed3bfed38fa0a8` |
 
@@ -35,6 +35,7 @@ Confluence attachment upload remains one documented REST v1 dependency because C
 - Removed the four workflow-transition-property operations removed by Atlassian in July 2026.
 - Moved the default CLI issue search to `/rest/api/3/search/jql`; retained the old routes only as explicitly deprecated compatibility actions.
 - Re-pinned Jira Platform v3 on 2026-09-01 and added the live `includeArchivedProjects` option to both current GET and POST JQL search, including the scoped `--include-archived-projects` CLI switch. Jira's default remains `false` when omitted.
+- Re-pinned Jira Platform v3 again on 2026-09-02 after Atlassian added optional `StatusPayload.scope: 'GLOBAL'` for statuses nested in custom project-template workflow capabilities. The existing open `workflow` capability payload already accepts this additive field; the bundled skill now documents how to construct it.
 - Corrected archived-issue export, migration retrigger, workflow search, user/group picker, status search, field scheme, UI modification, project-role, and search-warning contracts.
 - Completed current Jira Software scope recognition and operation mappings, including Security Information scopes.
 - Added opt-in system-to-system OAuth proxy routing for Jira Software Development Information, Builds, Deployments, and Feature Flag ingestion, with bearer-only validation and a narrowly scoped `api.atlassian.com` credential boundary. Deployment-gating status and non-ingest Feature Flag operations remain tenant-routed because they are not part of the proxy contract.

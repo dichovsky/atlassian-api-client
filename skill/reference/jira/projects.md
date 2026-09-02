@@ -381,6 +381,7 @@ Custom project template management (B653–B657). Covers the full `/rest/api/3/p
 | `save-template`   | —          | at least one of the optional flags | `--template-name`, `--template-description`, `--project-id` (int), `--template-type` (`LIVE`\|`SNAPSHOT`), `--enable-screen-delegated-admin`, `--enable-workflow-delegated-admin`                                                                |
 
 - `--template` for `create` is a JSON object with capability keys: `boardFeatures`, `boards`, `field`, `issueType`, `notification`, `permissionScheme`, `project`, `role`, `scope`, `security`, `workflow`.
+- Within `workflow.statuses[]`, the optional `scope` field accepts only `"GLOBAL"` to share that status across projects; omit it for Jira's default project-scoped behavior.
 - `--access-level` must be one of: `open`, `limited`, `private`, `free`.
 - `--assignee-type` must be one of: `PROJECT_DEFAULT`, `COMPONENT_LEAD`, `PROJECT_LEAD`, `UNASSIGNED`.
 - `--template-type` must be one of: `LIVE`, `SNAPSHOT`.
