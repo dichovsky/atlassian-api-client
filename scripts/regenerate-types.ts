@@ -118,7 +118,7 @@ function canonicalize(
       .map(([key, item]) => {
         // OAuth scope-map values are human-readable descriptions; only each scope name is semantic.
         if (context === 'oauth-scopes') {
-          return [key, true] as const;
+          return [key, typeof item === 'string' ? true : canonicalize(item)] as const;
         }
         let childContext: CanonicalContext = 'object';
         if (context === 'named-map-of-maps') {

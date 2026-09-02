@@ -198,9 +198,20 @@ describe('contractFingerprint', () => {
     const original = oauthSpec('read:project:jira', 'Read project data.');
     const reworded = oauthSpec('read:project:jira', 'Entirely different explanatory prose.');
     const renamed = oauthSpec('write:project:jira', 'Read project data.');
+    const invalidValue = oauthSpec('read:project:jira', 'Read project data.') as unknown as {
+      components: {
+        securitySchemes: { oauth: { flows: { authorizationCode: { scopes: object } } } };
+      };
+    };
+    invalidValue.components.securitySchemes.oauth.flows.authorizationCode.scopes = {
+      'read:project:jira': 1,
+    };
 
     expect(contractFingerprint(reworded)).toBe(contractFingerprint(original));
     expect(contractFingerprint(renamed)).not.toBe(contractFingerprint(original));
+    expect(contractFingerprint(invalidValue as unknown as OpenApiSpec)).not.toBe(
+      contractFingerprint(original),
+    );
   });
 
   it('keeps non-OAuth scopes schema contracts fingerprint-sensitive', () => {
