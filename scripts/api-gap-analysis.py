@@ -68,6 +68,7 @@ ROUTE_PRESERVING_PRIMITIVES = {
 }
 
 UNICODE_ESCAPE = re.compile(r"\\u(?:[0-9A-Fa-f]{4}|\{[0-9A-Fa-f]+\})")
+STATIC_NULL = object()
 IDENTIFIER_NAME = (
     r"(?:[A-Za-z0-9_$]|\\u(?:[0-9A-Fa-f]{4}|\{[0-9A-Fa-f]+\}))+"
 )
@@ -932,7 +933,7 @@ def parse_wiring(client_src, client_code, varmap):
         client_code,
     ):
         if (
-            statically_dead_at(client_code, assignment.start())
+            statically_dead_at(client_code, assignment.start(), client_src)
             or not is_plain_constructor_assignment(assignment.start())
         ):
             continue
@@ -996,7 +997,7 @@ def parse_wiring(client_src, client_code, varmap):
     for constructor in re.finditer(
         r"\bnew\s+([A-Z][A-Za-z0-9]*Resource)\s*\(", client_code
     ):
-        if statically_dead_at(client_code, constructor.start()):
+        if statically_dead_at(client_code, constructor.start(), client_src):
             continue
         resource = constructor.group(1)
         if not any(
@@ -1104,15 +1105,27 @@ def find_statement_end(code, start):
             return index
     return -1
 
-def brace_scope_at(code, position):
-    """Return the still-open executable brace scopes at ``position``."""
+@functools.lru_cache(maxsize=None)
+def brace_intervals(code):
+    """Return executable brace intervals as ``(open, close)`` pairs."""
+    intervals = []
     stack = []
-    for index, token in enumerate(code[:position]):
+    for index, token in enumerate(code):
         if token == "{":
             stack.append(index)
         elif token == "}" and stack:
-            stack.pop()
-    return tuple(stack)
+            intervals.append((stack.pop(), index))
+    intervals.extend((start, len(code)) for start in stack)
+    return tuple(sorted(intervals))
+
+@functools.lru_cache(maxsize=None)
+def brace_scope_at(code, position):
+    """Return the still-open executable brace scopes at ``position``."""
+    return tuple(
+        start
+        for start, end in brace_intervals(code)
+        if start < position <= end
+    )
 
 @functools.lru_cache(maxsize=None)
 def brace_parent_map(code):
@@ -1401,30 +1414,15 @@ def self_assignment_is_route_preserving(
         )
     )
 
-def statically_dead_at(code, position):
-    """Identify calls in literal-false blocks or after an unconditional exit."""
+def unconditional_exit_before_at(code, position):
+    """Whether the current lexical block exits before ``position``."""
     use_scope = brace_scope_at(code, position)
-    for brace in use_scope:
-        if re.search(
-            r"\b(?:if|while)\s*\(\s*(?:false|0|null|undefined)\s*\)\s*$",
-            code[:brace],
-        ):
-            return True
-        else_match = re.search(r"\belse\s*$", code[:brace])
-        if else_match:
-            previous = else_match.start() - 1
-            while previous >= 0 and code[previous].isspace():
-                previous -= 1
-            if previous >= 0 and code[previous] == "}":
-                if_open = match_open(code, previous, "{", "}")
-                if if_open != -1 and re.search(
-                    r"\bif\s*\(\s*(?:true|1)\s*\)\s*$",
-                    code[:if_open],
-                ):
-                    return True
     scope_start = use_scope[-1] + 1 if use_scope else 0
     statement_start = scope_start
-    for exit_token in re.finditer(r"\b(?:return|throw)\b", code[scope_start:position]):
+    for exit_token in re.finditer(
+        r"\b(?:break|continue|return|throw)\b",
+        code[scope_start:position],
+    ):
         token_start = scope_start + exit_token.start()
         if brace_scope_at(code, token_start) != use_scope:
             continue
@@ -1445,6 +1443,682 @@ def statically_dead_at(code, position):
         ):
             return True
     return False
+
+def standalone_keyword_at(code, position):
+    """Reject property/optional-member tokens that resemble control keywords."""
+    previous = position - 1
+    while previous >= 0 and code[previous].isspace():
+        previous -= 1
+    return previous < 0 or code[previous] not in ".?"
+
+def statically_constant_value(
+    source,
+    code,
+    expression_source,
+    expression_code,
+    use_position,
+    seen=None,
+):
+    """Resolve a deliberately small subset of immutable scalar expressions."""
+    assert len(source) == len(code), "source/code views must stay aligned"
+    assert len(expression_source) == len(expression_code)
+    leading = len(expression_source) - len(expression_source.lstrip())
+    trailing = len(expression_source.rstrip())
+    expression_source = expression_source[leading:trailing]
+    expression_code = expression_code[leading:trailing]
+    as_const = re.search(r"\bas\s+const\s*$", expression_code)
+    if as_const:
+        expression_source = expression_source[:as_const.start()].rstrip()
+        expression_code = expression_code[:as_const.start()].rstrip()
+    while (
+        expression_code.startswith("(")
+        and match_close(expression_code, 0, "(", ")") == len(expression_code)
+    ):
+        expression_source = expression_source[1:-1].strip()
+        expression_code = expression_code[1:-1].strip()
+
+    if expression_code in {"true", "false"}:
+        return True, expression_code == "true"
+    if expression_code == "null":
+        return True, STATIC_NULL
+    if expression_code == "undefined":
+        # Unlike null, undefined is a shadowable identifier in JavaScript.
+        return False, None
+    if re.fullmatch(r"-?(?:0|[1-9][0-9]*)(?:\.[0-9]+)?", expression_code):
+        return True, float(expression_code) if "." in expression_code else int(expression_code)
+    if re.fullmatch(
+        r"'(?:\\.|[^'\\])*'|\"(?:\\.|[^\"\\])*\"",
+        expression_source,
+        re.S,
+    ):
+        if "\\" in expression_source:
+            return False, None
+        return True, expression_source[1:-1]
+
+    negated = re.fullmatch(r"!\s*(.+)", expression_code, re.S)
+    if negated:
+        inner_start, inner_end = negated.span(1)
+        known, value = statically_constant_value(
+            source,
+            code,
+            expression_source[inner_start:inner_end],
+            expression_code[inner_start:inner_end],
+            use_position,
+            seen,
+        )
+        truthy = False if value is STATIC_NULL else bool(value)
+        return (True, not truthy) if known else (False, None)
+
+    identifier = re.fullmatch(
+        r"[A-Za-z_$][A-Za-z0-9_$]*",
+        expression_code,
+    )
+    if not identifier:
+        return False, None
+    name = identifier.group(0)
+    seen = set() if seen is None else set(seen)
+    if name in seen:
+        return False, None
+    seen.add(name)
+
+    local_code = code[:use_position]
+    local_source = source[:use_position]
+    declarations = []
+    declaration = re.compile(
+        r"\bconst\s+" + re.escape(name) + r"\s*(?::[^=;]+)?\s*="
+    )
+    for assignment in declaration.finditer(local_code):
+        value_start = assignment.end()
+        value_end = find_statement_end(local_code, value_start)
+        if value_end != -1:
+            declarations.append((
+                assignment.start(),
+                local_source[value_start:value_end],
+                local_code[value_start:value_end],
+            ))
+    visible = visible_assignments(declarations, local_code)
+    if not visible:
+        return False, None
+    binding_position, value_source, value_code = visible[0]
+    return statically_constant_value(
+        source,
+        code,
+        value_source,
+        value_code,
+        binding_position,
+        seen,
+    )
+
+def statically_boolean_value(
+    source,
+    code,
+    expression_source,
+    expression_code,
+    use_position,
+):
+    """Resolve an immutable scalar expression using JavaScript truthiness."""
+    known, value = statically_constant_value(
+        source,
+        code,
+        expression_source,
+        expression_code,
+        use_position,
+    )
+    if not known:
+        return None
+    return False if value is STATIC_NULL else bool(value)
+
+def prior_guaranteed_conditional_exit_at(code, position, source=None):
+    """Whether a statically-true prior ``if`` guarantees an exit."""
+    source = code if source is None else source
+    use_scope = brace_scope_at(code, position)
+    for controller in re.finditer(r"\bif\s*\(", code[:position]):
+        if not standalone_keyword_at(code, controller.start()):
+            continue
+        if brace_scope_at(code, controller.start()) != use_scope:
+            continue
+        if conditional_control_at(code, controller.start()):
+            continue
+        params_open = code.index("(", controller.start(), controller.end())
+        params_end = match_close(code, params_open, "(", ")")
+        if params_end == -1 or params_end > position:
+            continue
+        condition_start = params_open + 1
+        condition_end = params_end - 1
+        if statically_boolean_value(
+            source,
+            code,
+            source[condition_start:condition_end],
+            code[condition_start:condition_end],
+            controller.start(),
+        ) is not True:
+            continue
+
+        statement_start = params_end
+        while statement_start < len(code) and code[statement_start].isspace():
+            statement_start += 1
+        if statement_start >= len(code):
+            continue
+        if code[statement_start] == "{":
+            statement_end = match_close(code, statement_start, "{", "}")
+            if (
+                statement_end != -1
+                and statement_end <= position
+                and re.match(
+                    r"^\s*(?:(?:const|let|var)\b[^;]*;\s*)*(?:return|throw)\b",
+                    code[statement_start + 1:statement_end - 1],
+                    re.S,
+                )
+            ):
+                return True
+            continue
+
+        statement_end = find_statement_end(code, statement_start)
+        if statement_end == -1 or statement_end >= position:
+            continue
+        statement = code[statement_start:statement_end].strip()
+        if re.match(r"^(?:return|throw)\b", statement):
+            return True
+    return False
+
+def case_label_colon(code, start, end):
+    """Return a switch-label colon outside nested expressions."""
+    depth = {"(": 0, "{": 0, "[": 0}
+    closing = {")": "(", "}": "{", "]": "["}
+    for index in range(start, end):
+        token = code[index]
+        if token in depth:
+            depth[token] += 1
+        elif token in closing:
+            opener = closing[token]
+            if depth[opener]:
+                depth[opener] -= 1
+        elif token == ":" and not any(depth.values()):
+            return index
+    return -1
+
+def prior_guaranteed_switch_exit_at(code, position, source=None):
+    """Whether a constant prior switch arm immediately returns or throws."""
+    source = code if source is None else source
+    use_scope = brace_scope_at(code, position)
+    for controller in re.finditer(r"\bswitch\s*\(", code[:position]):
+        if not standalone_keyword_at(code, controller.start()):
+            continue
+        if brace_scope_at(code, controller.start()) != use_scope:
+            continue
+        if conditional_control_at(code, controller.start()):
+            continue
+        params_open = code.index("(", controller.start(), controller.end())
+        params_end = match_close(code, params_open, "(", ")")
+        if params_end == -1:
+            continue
+        body_start = params_end
+        while body_start < len(code) and code[body_start].isspace():
+            body_start += 1
+        if body_start >= len(code) or code[body_start] != "{":
+            continue
+        body_end = match_close(code, body_start, "{", "}")
+        if body_end == -1 or body_end > position:
+            continue
+
+        known, discriminant = statically_constant_value(
+            source,
+            code,
+            source[params_open + 1:params_end - 1],
+            code[params_open + 1:params_end - 1],
+            controller.start(),
+        )
+        if not known:
+            continue
+
+        switch_scope = brace_scope_at(code, body_start + 1)
+        labels = []
+        for label in re.finditer(r"\b(?:case|default)\b", code[body_start + 1:body_end - 1]):
+            label_start = body_start + 1 + label.start()
+            if brace_scope_at(code, label_start) != switch_scope:
+                continue
+            colon = case_label_colon(code, label_start + len(label.group(0)), body_end - 1)
+            if colon != -1:
+                labels.append((label.group(0), label_start, colon))
+        default_indices = [
+            index
+            for index, (kind, _, _) in enumerate(labels)
+            if kind == "default"
+        ]
+        if len(default_indices) > 1:
+            continue
+        default_index = default_indices[0] if default_indices else None
+        all_cases_known = True
+        for index, (kind, label_start, colon) in enumerate(labels):
+            if kind == "default":
+                default_index = index
+                continue
+            label_value_start = label_start + len(kind)
+            case_known, case_value = statically_constant_value(
+                source,
+                code,
+                source[label_value_start:colon],
+                code[label_value_start:colon],
+                controller.start(),
+            )
+            if not case_known:
+                all_cases_known = False
+                break
+            same_value = (
+                isinstance(case_value, (int, float))
+                and not isinstance(case_value, bool)
+                and isinstance(discriminant, (int, float))
+                and not isinstance(discriminant, bool)
+                and case_value == discriminant
+                or type(case_value) is type(discriminant)
+                and case_value == discriminant
+            )
+            if not same_value:
+                continue
+            arm_end = labels[index + 1][1] if index + 1 < len(labels) else body_end - 1
+            arm = code[colon + 1:arm_end]
+            return bool(re.match(
+                r"^\s*(?:(?:const|let|var)\b[^;]*;\s*)*(?:return|throw)\b",
+                arm,
+                re.S,
+            ))
+        if all_cases_known and default_index is not None:
+            _, _, colon = labels[default_index]
+            arm_end = (
+                labels[default_index + 1][1]
+                if default_index + 1 < len(labels)
+                else body_end - 1
+            )
+            return bool(re.match(
+                r"^\s*(?:(?:const|let|var)\b[^;]*;\s*)*(?:return|throw)\b",
+                code[colon + 1:arm_end],
+                re.S,
+            ))
+    return False
+
+def prior_statically_infinite_loop_at(code, position, source=None):
+    """Whether a prior same-scope while/for loop cannot complete normally."""
+    source = code if source is None else source
+    use_scope = brace_scope_at(code, position)
+    for controller in re.finditer(r"\b(while|for)\s*\(", code[:position]):
+        kind = controller.group(1)
+        if not standalone_keyword_at(code, controller.start()):
+            continue
+        if brace_scope_at(code, controller.start()) != use_scope:
+            continue
+        if conditional_control_at(code, controller.start()):
+            continue
+        if kind == "while" and do_while_header_at(code, controller.start()):
+            continue
+        params_open = code.index("(", controller.start(), controller.end())
+        params_end = match_close(code, params_open, "(", ")")
+        if params_end == -1:
+            continue
+
+        if kind == "while":
+            condition_start = params_open + 1
+            condition_end = params_end - 1
+        else:
+            header = code[params_open + 1:params_end - 1]
+            separators = []
+            depth = {"(": 0, "{": 0, "[": 0}
+            closing = {")": "(", "}": "{", "]": "["}
+            for offset, token in enumerate(header):
+                if token in depth:
+                    depth[token] += 1
+                elif token in closing:
+                    opener = closing[token]
+                    if depth[opener]:
+                        depth[opener] -= 1
+                elif token == ";" and not any(depth.values()):
+                    separators.append(params_open + 1 + offset)
+            if len(separators) != 2:
+                continue
+            condition_start = separators[0] + 1
+            condition_end = separators[1]
+
+        condition_code = code[condition_start:condition_end]
+        condition_true = (
+            not condition_code.strip()
+            or statically_boolean_value(
+                source,
+                code,
+                source[condition_start:condition_end],
+                condition_code,
+                controller.start(),
+            ) is True
+        )
+        if not condition_true:
+            continue
+
+        body_start = params_end
+        while body_start < len(code) and code[body_start].isspace():
+            body_start += 1
+        if body_start >= len(code):
+            continue
+        if code[body_start] == "{":
+            body_end = match_close(code, body_start, "{", "}")
+            body_code = code[body_start + 1:body_end - 1] if body_end != -1 else ""
+        elif code[body_start] == ";":
+            body_end = body_start + 1
+            body_code = ""
+        else:
+            continue
+        if (
+            body_end != -1
+            and body_end <= position
+            and not re.search(r"\bbreak\b", body_code)
+        ):
+            return True
+    return False
+
+def statically_dead_at(code, position, source=None):
+    """Identify calls in literal-false blocks or after a guaranteed exit."""
+    use_scope = brace_scope_at(code, position)
+    for brace in use_scope:
+        if re.search(
+            r"\b(?:if|while)\s*\(\s*(?:false|0|null)\s*\)\s*$",
+            code[:brace],
+        ):
+            return True
+        else_match = re.search(r"\belse\s*$", code[:brace])
+        if else_match:
+            previous = else_match.start() - 1
+            while previous >= 0 and code[previous].isspace():
+                previous -= 1
+            if previous >= 0 and code[previous] == "}":
+                if_open = match_open(code, previous, "{", "}")
+                if if_open != -1 and re.search(
+                    r"\bif\s*\(\s*(?:true|1)\s*\)\s*$",
+                    code[:if_open],
+                ):
+                    return True
+    return (
+        unconditional_exit_before_at(code, position)
+        or prior_guaranteed_conditional_exit_at(code, position, source)
+        or prior_guaranteed_switch_exit_at(code, position, source)
+        or prior_statically_infinite_loop_at(code, position, source)
+    )
+
+def do_while_header_at(code, while_position):
+    """Whether ``while_position`` starts a trailing ``do...while`` test."""
+    cursor = while_position - 1
+    while cursor >= 0 and code[cursor].isspace():
+        cursor -= 1
+    if cursor >= 0 and code[cursor] == "}":
+        body_start = match_open(code, cursor, "{", "}")
+        return bool(
+            body_start != -1
+            and re.search(r"\bdo\s*$", code[:body_start])
+        )
+    if cursor >= 0 and code[cursor] == ";":
+        scope = brace_scope_at(code, while_position)
+        scope_start = scope[-1] + 1 if scope else 0
+        return bool(re.search(
+            r"\bdo\b[^{}]*;\s*$",
+            code[scope_start:while_position],
+            re.S,
+        ))
+    return False
+
+def controlled_statement_end(code, start):
+    """Return the end of one JavaScript statement, including control forms."""
+    while start < len(code) and code[start].isspace():
+        start += 1
+    if start >= len(code):
+        return -1
+    if code[start] == "{":
+        return match_close(code, start, "{", "}")
+
+    control = re.match(r"(if|for|switch|while|with)\s*\(", code[start:])
+    if control and standalone_keyword_at(code, start):
+        params_open = code.index("(", start, start + control.end())
+        params_end = match_close(code, params_open, "(", ")")
+        if params_end == -1:
+            return -1
+        body_end = controlled_statement_end(code, params_end)
+        if body_end == -1:
+            return -1
+        if control.group(1) != "if":
+            return body_end
+        cursor = body_end
+        while cursor < len(code) and code[cursor].isspace():
+            cursor += 1
+        else_match = re.match(r"else\b", code[cursor:])
+        return (
+            controlled_statement_end(code, cursor + else_match.end())
+            if else_match
+            else body_end
+        )
+
+    if re.match(r"do\b", code[start:]) and standalone_keyword_at(code, start):
+        body_end = controlled_statement_end(code, start + 2)
+        if body_end == -1:
+            return -1
+        trailer = re.match(r"\s*while\s*\(", code[body_end:])
+        if not trailer:
+            return -1
+        params_open = code.index("(", body_end, body_end + trailer.end())
+        params_end = match_close(code, params_open, "(", ")")
+        if params_end == -1:
+            return -1
+        cursor = params_end
+        while cursor < len(code) and code[cursor].isspace():
+            cursor += 1
+        return cursor + 1 if cursor < len(code) and code[cursor] == ";" else params_end
+
+    statement_end = find_statement_end(code, start)
+    return statement_end + 1 if statement_end != -1 else -1
+
+def conditional_control_at(code, position):
+    """Return an enclosing conditional controller not proven unconditional.
+
+    Coverage may only rely on a call whose enclosing control flow is certain
+    to execute. Resource pagination uses explicit infinite loops, which are
+    the only conditional-looking blocks accepted here.
+    """
+    for brace in brace_scope_at(code, position):
+        cursor = brace - 1
+        while cursor >= 0 and code[cursor].isspace():
+            cursor -= 1
+        if cursor >= 0 and code[cursor] == ")":
+            params_open = match_open(code, cursor, "(", ")")
+            if params_open != -1:
+                keyword_end = params_open
+                while keyword_end > 0 and code[keyword_end - 1].isspace():
+                    keyword_end -= 1
+                keyword_match = re.search(
+                    r"([A-Za-z_$][A-Za-z0-9_$]*)$",
+                    code[:keyword_end],
+                )
+                keyword = keyword_match.group(1) if keyword_match else None
+                header = code[params_open + 1:cursor]
+                if keyword in {"if", "while"}:
+                    if header.strip() in {"true", "1"}:
+                        continue
+                    return keyword
+                if keyword == "for":
+                    if re.fullmatch(
+                        r"\s*;\s*(?:true|1)?\s*;\s*",
+                        header,
+                    ):
+                        continue
+                    return keyword
+                if keyword in {"catch", "switch", "with"}:
+                    return keyword
+        controller = re.search(r"\b(?:catch|else)\s*$", code[:brace])
+        if controller:
+            return controller.group(0).strip()
+    for controller in re.finditer(r"\b(if|for|while)\s*\(", code[:position]):
+        keyword = controller.group(1)
+        if not standalone_keyword_at(code, controller.start()):
+            continue
+        params_open = code.index("(", controller.start(), controller.end())
+        params_end = match_close(code, params_open, "(", ")")
+        if params_end == -1:
+            continue
+        if (
+            keyword == "while"
+            and params_open < position < params_end
+            and do_while_header_at(code, controller.start())
+        ):
+            return "do-while-test"
+        if keyword == "for" and params_open < position < params_end:
+            depth = {"(": 0, "{": 0, "[": 0}
+            closing = {")": "(", "}": "{", "]": "["}
+            separators = []
+            for index in range(params_open + 1, params_end - 1):
+                token = code[index]
+                if token in depth:
+                    depth[token] += 1
+                elif token in closing:
+                    opener = closing[token]
+                    if depth[opener]:
+                        depth[opener] -= 1
+                elif token == ";" and not any(depth.values()):
+                    separators.append(index)
+            if len(separators) == 2 and position > separators[1]:
+                return "for-update"
+            continue
+        if params_end > position:
+            continue
+        statement_start = params_end
+        while statement_start < len(code) and code[statement_start].isspace():
+            statement_start += 1
+        if statement_start >= len(code) or code[statement_start] == "{":
+            continue
+        statement_end = controlled_statement_end(code, statement_start)
+        if statement_end == -1 or not statement_start <= position < statement_end:
+            continue
+        header = code[params_open + 1:params_end - 1]
+        if keyword in {"if", "while"} and header.strip() in {"true", "1"}:
+            continue
+        if keyword == "for" and re.fullmatch(
+            r"\s*;\s*(?:true|1)?\s*;\s*",
+            header,
+        ):
+            continue
+        return keyword
+    for controller in re.finditer(r"\belse\b", code[:position]):
+        statement_start = controller.end()
+        while statement_start < len(code) and code[statement_start].isspace():
+            statement_start += 1
+        if statement_start >= len(code) or code[statement_start] == "{":
+            continue
+        statement_end = controlled_statement_end(code, statement_start)
+        if statement_end != -1 and statement_start <= position < statement_end:
+            return "else"
+    return None
+
+def conditional_expression_at(code, position):
+    """Return a short-circuit/ternary operator guarding the call at position."""
+    delimiter_stack = []
+    delimiter_pairs = {")": "(", "}": "{", "]": "["}
+    for index, token in enumerate(code[:position]):
+        if token in "({[":
+            delimiter_stack.append((token, index))
+        elif token in delimiter_pairs:
+            if delimiter_stack and delimiter_stack[-1][0] == delimiter_pairs[token]:
+                delimiter_stack.pop()
+    grouping_ancestors = {
+        index for token, index in delimiter_stack if token in "(["
+    }
+
+    paren = bracket = brace = 0
+    start = 0
+    for index in range(position - 1, -1, -1):
+        token = code[index]
+        if token == ")":
+            paren += 1
+        elif token == "(":
+            if paren:
+                paren -= 1
+        elif token == "]":
+            bracket += 1
+        elif token == "[":
+            if bracket:
+                bracket -= 1
+        elif token == "}":
+            if paren == 0 and bracket == 0 and brace == 0:
+                start = index + 1
+                break
+            brace += 1
+        elif token == "{":
+            if brace:
+                brace -= 1
+            elif paren == 0 and bracket == 0:
+                start = index + 1
+                break
+        elif (
+            token in {";", ","}
+            and paren == 0
+            and bracket == 0
+            and brace == 0
+            and not any(opener < index for opener in grouping_ancestors)
+        ):
+            start = index + 1
+            break
+    prefix = code[start:position]
+    short_circuit = re.search(r"&&|\|\||\?\?", prefix)
+    if short_circuit:
+        return short_circuit.group(0)
+    if "?." in prefix:
+        return "?."
+    if re.search(r"(?<![?.])\?(?![?.])", prefix):
+        return "?:"
+    return None
+
+def destructuring_default_at(code, position):
+    """Whether a call is inside an object/array binding default initializer."""
+    openers = []
+    stack = []
+    pairs = {")": "(", "}": "{", "]": "["}
+    for index, token in enumerate(code[:position]):
+        if token in "({[":
+            stack.append((token, index))
+        elif token in pairs:
+            if stack and stack[-1][0] == pairs[token]:
+                stack.pop()
+    openers.extend(
+        (token, index)
+        for token, index in reversed(stack)
+        if token in "{["
+    )
+
+    for opener, start in openers:
+        closer = "}" if opener == "{" else "]"
+        end = match_close(code, start, opener, closer)
+        if end == -1 or end <= position:
+            continue
+        cursor = end
+        while cursor < len(code) and code[cursor].isspace():
+            cursor += 1
+        if (
+            cursor >= len(code)
+            or code[cursor] != "="
+            or code[cursor:cursor + 2] in {"==", "=>"}
+        ):
+            continue
+
+        depth = {"(": 0, "{": 0, "[": 0}
+        closing = {")": "(", "}": "{", "]": "["}
+        for index in range(start + 1, position):
+            token = code[index]
+            if token in depth:
+                depth[token] += 1
+            elif token in closing:
+                nested_opener = closing[token]
+                if depth[nested_opener]:
+                    depth[nested_opener] -= 1
+            elif (
+                token == "="
+                and not any(depth.values())
+                and code[max(start + 1, index - 1):index + 1]
+                    not in {"!=", "<=", ">=", "=="}
+                and code[index:index + 2] not in {"=>", "=="}
+            ):
+                return opener
+    return None
 
 def expression_preserves_route_ident(
     expr,
@@ -2322,6 +2996,25 @@ def extract(api):
     seen_resource_classes = set()
     for f in sorted(glob.glob(os.path.join(res_dir, "**", "*.ts"), recursive=True)):
         src, code_src = lex_ts_source(open(f).read())
+        escaped_syntax = UNICODE_ESCAPE.search(code_src)
+        if escaped_syntax:
+            unknowns.append((
+                os.path.relpath(f, res_dir),
+                "unsupported-escaped-identifier",
+                src[escaped_syntax.start():escaped_syntax.start() + 80],
+            ))
+            continue
+        # ECMAScript identifiers may use the full Unicode identifier tables.
+        # This lexical analyzer deliberately rejects raw non-ASCII executable
+        # syntax rather than risk skipping a request hidden behind such a name.
+        non_ascii_syntax = re.search(r"[^\x00-\x7f]", code_src)
+        if non_ascii_syntax:
+            unknowns.append((
+                os.path.relpath(f, res_dir),
+                "unsupported-non-ascii-syntax",
+                src[non_ascii_syntax.start():non_ascii_syntax.start() + 80],
+            ))
+            continue
         member_accesses = executable_member_accesses(src, code_src)
         computed_member_calls = executable_computed_member_invocations(code_src)
         computed_this_accesses = list(re.finditer(r"\bthis\s*\[", code_src))
@@ -2540,10 +3233,38 @@ def extract(api):
                         src[call.start():call.start() + 80],
                     ))
                     continue
-                if statically_dead_at(code_src, call.start()):
+                if statically_dead_at(code_src, call.start(), src):
                     unknowns.append(
                         (os.path.basename(f), "statically-dead-helper-call", helper_name)
                     )
+                    continue
+                conditional_control = conditional_control_at(code_src, call.start())
+                if conditional_control:
+                    unknowns.append((
+                        os.path.basename(f),
+                        "conditional-helper-call",
+                        conditional_control,
+                    ))
+                    continue
+                destructuring_default = destructuring_default_at(
+                    code_src, call.start()
+                )
+                if destructuring_default:
+                    unknowns.append((
+                        os.path.basename(f),
+                        "conditional-helper-default",
+                        destructuring_default,
+                    ))
+                    continue
+                conditional_expression = conditional_expression_at(
+                    code_src, call.start()
+                )
+                if conditional_expression:
+                    unknowns.append((
+                        os.path.basename(f),
+                        "conditional-helper-expression",
+                        conditional_expression,
+                    ))
                     continue
                 op = code_src.index("(", call.start())
                 end = match_close(code_src, op, "(", ")")
@@ -2594,10 +3315,36 @@ def extract(api):
                     src[call_start:call_start + 80],
                 ))
                 continue
-            if statically_dead_at(code_src, call_start):
+            if statically_dead_at(code_src, call_start, src):
                 unknowns.append(
                     (os.path.basename(f), "statically-dead-request", src[call_start:call_start + 80])
                 )
+                continue
+            conditional_control = conditional_control_at(code_src, call_start)
+            if conditional_control:
+                unknowns.append((
+                    os.path.basename(f),
+                    "conditional-request-call",
+                    conditional_control,
+                ))
+                continue
+            destructuring_default = destructuring_default_at(
+                code_src, call_start
+            )
+            if destructuring_default:
+                unknowns.append((
+                    os.path.basename(f),
+                    "conditional-request-default",
+                    destructuring_default,
+                ))
+                continue
+            conditional_expression = conditional_expression_at(code_src, call_start)
+            if conditional_expression:
+                unknowns.append((
+                    os.path.basename(f),
+                    "conditional-request-expression",
+                    conditional_expression,
+                ))
                 continue
             obj_end = match_close(code_src, obj_start, "{", "}")
             obj = src[obj_start:obj_end]

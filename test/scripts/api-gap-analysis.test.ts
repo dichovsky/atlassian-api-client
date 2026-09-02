@@ -16,6 +16,15 @@ const ADMIN_KEY_GET_IMPLEMENTATION = `    const response = await this.transport.
       path: \`\${this.baseUrl}/admin-key\`,
     });
     return response.data;`;
+const BACKLOG_ENHANCED_IMPLEMENTATION = `  async getBacklogEnhanced(
+    boardId: number,
+    params?: ListSoftwareIssuesParams,
+  ): Promise<SoftwareIssueResults> {
+    if (!Number.isInteger(boardId) || boardId <= 0) {
+      throw new ValidationError('boardId must be a positive integer');
+    }
+    return this.requestSoftwareIssues(\`\${this.softwareBaseUrl}/board/\${boardId}/backlog\`, params);
+  }`;
 
 async function expectAdminKeyMutationToFail(
   fixturePrefix: string,
@@ -41,6 +50,72 @@ async function expectAdminKeyMutationToFail(
       stdout: expect.stringContaining(
         'confluence-v2: 218 ops | impl 217 | MISSING 1 (live 1, dep 0)',
       ),
+    });
+  } finally {
+    await rm(fixtureRoot, { recursive: true, force: true });
+  }
+}
+
+async function expectAdminKeyMutationToPass(
+  fixturePrefix: string,
+  replacement: string,
+): Promise<void> {
+  const fixtureRoot = await mkdtemp(join(tmpdir(), fixturePrefix));
+  const fixtureSrc = join(fixtureRoot, 'src');
+
+  try {
+    await cp(resolve(REPO_ROOT, 'src'), fixtureSrc, { recursive: true });
+    const adminKeyPath = join(fixtureSrc, 'confluence/resources/admin-key.ts');
+    const adminKey = await readFile(adminKeyPath, 'utf8');
+    const changedAdminKey = adminKey.replace(ADMIN_KEY_GET_IMPLEMENTATION, replacement);
+    expect(changedAdminKey).not.toBe(adminKey);
+    await writeFile(adminKeyPath, changedAdminKey);
+
+    let stdout: string;
+    let stderr: string;
+    try {
+      ({ stdout, stderr } = await execFileAsync(
+        'python3',
+        [ANALYZER, '--source-root', fixtureRoot],
+        { cwd: REPO_ROOT },
+      ));
+    } catch (error) {
+      const failed = error as Error & { stdout?: string; stderr?: string };
+      throw new Error(
+        `Analyzer unexpectedly rejected reachable control:\n${failed.stdout ?? ''}${failed.stderr ?? ''}`,
+        { cause: error },
+      );
+    }
+    expect(stderr).toBe('');
+    expect(stdout).toContain('confluence-v2: 218 ops | impl 218 | MISSING 0 (live 0, dep 0)');
+  } finally {
+    await rm(fixtureRoot, { recursive: true, force: true });
+  }
+}
+
+async function expectBacklogMutationToFail(
+  fixturePrefix: string,
+  replacement: string,
+  expectedReason: string,
+): Promise<void> {
+  const fixtureRoot = await mkdtemp(join(tmpdir(), fixturePrefix));
+  const fixtureSrc = join(fixtureRoot, 'src');
+
+  try {
+    await cp(resolve(REPO_ROOT, 'src'), fixtureSrc, { recursive: true });
+    const boardsPath = join(fixtureSrc, 'jira/resources/boards.ts');
+    const boards = await readFile(boardsPath, 'utf8');
+    const changedBoards = boards.replace(BACKLOG_ENHANCED_IMPLEMENTATION, replacement);
+    expect(changedBoards).not.toBe(boards);
+    await writeFile(boardsPath, changedBoards);
+
+    await expect(
+      execFileAsync('python3', [ANALYZER, '--source-root', fixtureRoot], {
+        cwd: REPO_ROOT,
+      }),
+    ).rejects.toMatchObject({
+      code: 1,
+      stdout: expect.stringContaining(expectedReason),
     });
   } finally {
     await rm(fixtureRoot, { recursive: true, force: true });
@@ -212,7 +287,7 @@ describe('api gap analysis', () => {
           }),
         ).rejects.toMatchObject({
           code: 1,
-          stdout: expect.stringContaining('1 /wiki/api/v2'),
+          stdout: expect.stringContaining('conditional-request-call'),
         });
       } finally {
         await rm(fixtureRoot, { recursive: true, force: true });
@@ -2449,6 +2524,724 @@ ${ADMIN_KEY_GET_IMPLEMENTATION}`,
     ANALYZER_TIMEOUT_MS,
   );
 
+  it.each([
+    [
+      'Boolean(false)',
+      `    if (Boolean(false)) {
+      await this.transport.request<AdminKey>({
+        method: 'GET',
+        path: \`\${this.baseUrl}/admin-key\`,
+      });
+    }
+    throw new Error('implementation removed');`,
+    ],
+    [
+      'for false',
+      `    for (; false; ) {
+      await this.transport.request<AdminKey>({
+        method: 'GET',
+        path: \`\${this.baseUrl}/admin-key\`,
+      });
+    }
+    throw new Error('implementation removed');`,
+    ],
+    [
+      'const false alias',
+      `    const disabled = false;
+    if (disabled) {
+      await this.transport.request<AdminKey>({
+        method: 'GET',
+        path: \`\${this.baseUrl}/admin-key\`,
+      });
+    }
+    throw new Error('implementation removed');`,
+    ],
+  ] as const)(
+    'does not count a direct request under unresolved conditional control: %s',
+    async (_controlKind, replacement) => {
+      await expectAdminKeyMutationToFail('atlassian-api-gap-conditional-request-', replacement);
+    },
+    ANALYZER_TIMEOUT_MS,
+  );
+
+  it(
+    'does not expand a delegated route under unresolved conditional control',
+    async () => {
+      const fixtureRoot = await mkdtemp(join(tmpdir(), 'atlassian-api-gap-conditional-delegated-'));
+      const fixtureSrc = join(fixtureRoot, 'src');
+
+      try {
+        await cp(resolve(REPO_ROOT, 'src'), fixtureSrc, { recursive: true });
+        const boardsPath = join(fixtureSrc, 'jira/resources/boards.ts');
+        const boards = await readFile(boardsPath, 'utf8');
+        const liveMethod = `  async getBacklogEnhanced(
+    boardId: number,
+    params?: ListSoftwareIssuesParams,
+  ): Promise<SoftwareIssueResults> {
+    if (!Number.isInteger(boardId) || boardId <= 0) {
+      throw new ValidationError('boardId must be a positive integer');
+    }
+    return this.requestSoftwareIssues(\`\${this.softwareBaseUrl}/board/\${boardId}/backlog\`, params);
+  }`;
+        const changedBoards = boards.replace(
+          liveMethod,
+          `  async getBacklogEnhanced(
+    boardId: number,
+    params?: ListSoftwareIssuesParams,
+  ): Promise<SoftwareIssueResults> {
+    if (Boolean(false)) {
+      return this.requestSoftwareIssues(\`\${this.softwareBaseUrl}/board/\${boardId}/backlog\`, params);
+    }
+    throw new Error('implementation removed');
+  }`,
+        );
+        expect(changedBoards).not.toBe(boards);
+        await writeFile(boardsPath, changedBoards);
+
+        await expect(
+          execFileAsync('python3', [ANALYZER, '--source-root', fixtureRoot], {
+            cwd: REPO_ROOT,
+          }),
+        ).rejects.toMatchObject({
+          code: 1,
+          stdout: expect.stringContaining('conditional-helper-call'),
+        });
+      } finally {
+        await rm(fixtureRoot, { recursive: true, force: true });
+      }
+    },
+    ANALYZER_TIMEOUT_MS,
+  );
+
+  it.each([
+    ['if', 'if (disabled)'],
+    ['for', 'for (; disabled; )'],
+    ['while', 'while (disabled)'],
+  ] as const)(
+    'does not count a direct request under an unbraced %s statement',
+    async (_controlKind, controller) => {
+      await expectAdminKeyMutationToFail(
+        'atlassian-api-gap-unbraced-conditional-request-',
+        `    const disabled = false;
+    ${controller}
+      return (await this.transport.request<AdminKey>({
+        method: 'GET',
+        path: \`\${this.baseUrl}/admin-key\`,
+      })).data;
+    throw new Error('implementation removed');`,
+      );
+    },
+    ANALYZER_TIMEOUT_MS,
+  );
+
+  it(
+    'does not expand a delegated route under an unbraced if statement',
+    async () => {
+      const fixtureRoot = await mkdtemp(
+        join(tmpdir(), 'atlassian-api-gap-unbraced-conditional-delegated-'),
+      );
+      const fixtureSrc = join(fixtureRoot, 'src');
+
+      try {
+        await cp(resolve(REPO_ROOT, 'src'), fixtureSrc, { recursive: true });
+        const boardsPath = join(fixtureSrc, 'jira/resources/boards.ts');
+        const boards = await readFile(boardsPath, 'utf8');
+        const liveMethod = `  async getBacklogEnhanced(
+    boardId: number,
+    params?: ListSoftwareIssuesParams,
+  ): Promise<SoftwareIssueResults> {
+    if (!Number.isInteger(boardId) || boardId <= 0) {
+      throw new ValidationError('boardId must be a positive integer');
+    }
+    return this.requestSoftwareIssues(\`\${this.softwareBaseUrl}/board/\${boardId}/backlog\`, params);
+  }`;
+        const changedBoards = boards.replace(
+          liveMethod,
+          `  async getBacklogEnhanced(
+    boardId: number,
+    params?: ListSoftwareIssuesParams,
+  ): Promise<SoftwareIssueResults> {
+    const disabled = false;
+    if (disabled)
+      return this.requestSoftwareIssues(\`\${this.softwareBaseUrl}/board/\${boardId}/backlog\`, params);
+    throw new Error('implementation removed');
+  }`,
+        );
+        expect(changedBoards).not.toBe(boards);
+        await writeFile(boardsPath, changedBoards);
+
+        await expect(
+          execFileAsync('python3', [ANALYZER, '--source-root', fixtureRoot], {
+            cwd: REPO_ROOT,
+          }),
+        ).rejects.toMatchObject({
+          code: 1,
+          stdout: expect.stringContaining('conditional-helper-call'),
+        });
+      } finally {
+        await rm(fixtureRoot, { recursive: true, force: true });
+      }
+    },
+    ANALYZER_TIMEOUT_MS,
+  );
+
+  it.each([
+    [
+      'ternary branch',
+      `    const disabled = false;
+    const response = disabled
+      ? await this.transport.request<AdminKey>({
+          method: 'GET',
+          path: \`\${this.baseUrl}/admin-key\`,
+        })
+      : undefined;
+    void response;
+    throw new Error('implementation removed');`,
+    ],
+    [
+      'short-circuit RHS',
+      `    const disabled = false;
+    const response = disabled && await this.transport.request<AdminKey>({
+      method: 'GET',
+      path: \`\${this.baseUrl}/admin-key\`,
+    });
+    void response;
+    throw new Error('implementation removed');`,
+    ],
+    [
+      'parenthesized short-circuit RHS',
+      `    const disabled = false;
+    const response = disabled && (await this.transport.request<AdminKey>({
+      method: 'GET',
+      path: \`\${this.baseUrl}/admin-key\`,
+    }));
+    void response;
+    throw new Error('implementation removed');`,
+    ],
+  ] as const)(
+    'does not count a direct request in a conditional expression: %s',
+    async (_expressionKind, replacement) => {
+      await expectAdminKeyMutationToFail('atlassian-api-gap-conditional-expression-', replacement);
+    },
+    ANALYZER_TIMEOUT_MS,
+  );
+
+  it(
+    'does not expand a delegated route on a short-circuit RHS',
+    async () => {
+      const fixtureRoot = await mkdtemp(
+        join(tmpdir(), 'atlassian-api-gap-conditional-expression-delegated-'),
+      );
+      const fixtureSrc = join(fixtureRoot, 'src');
+
+      try {
+        await cp(resolve(REPO_ROOT, 'src'), fixtureSrc, { recursive: true });
+        const boardsPath = join(fixtureSrc, 'jira/resources/boards.ts');
+        const boards = await readFile(boardsPath, 'utf8');
+        const liveMethod = `  async getBacklogEnhanced(
+    boardId: number,
+    params?: ListSoftwareIssuesParams,
+  ): Promise<SoftwareIssueResults> {
+    if (!Number.isInteger(boardId) || boardId <= 0) {
+      throw new ValidationError('boardId must be a positive integer');
+    }
+    return this.requestSoftwareIssues(\`\${this.softwareBaseUrl}/board/\${boardId}/backlog\`, params);
+  }`;
+        const changedBoards = boards.replace(
+          liveMethod,
+          `  async getBacklogEnhanced(
+    boardId: number,
+    params?: ListSoftwareIssuesParams,
+  ): Promise<SoftwareIssueResults> {
+    const disabled = false;
+    void (disabled && (this.requestSoftwareIssues(\`\${this.softwareBaseUrl}/board/\${boardId}/backlog\`, params)));
+    throw new Error('implementation removed');
+  }`,
+        );
+        expect(changedBoards).not.toBe(boards);
+        await writeFile(boardsPath, changedBoards);
+
+        await expect(
+          execFileAsync('python3', [ANALYZER, '--source-root', fixtureRoot], {
+            cwd: REPO_ROOT,
+          }),
+        ).rejects.toMatchObject({
+          code: 1,
+          stdout: expect.stringContaining('conditional-helper-expression'),
+        });
+      } finally {
+        await rm(fixtureRoot, { recursive: true, force: true });
+      }
+    },
+    ANALYZER_TIMEOUT_MS,
+  );
+
+  it.each([
+    [
+      'object',
+      `    const { response = await this.transport.request<AdminKey>({
+      method: 'GET',
+      path: \`\${this.baseUrl}/admin-key\`,
+    }) } = { response: null };
+    void response;
+    throw new Error('implementation removed');`,
+    ],
+    [
+      'array',
+      `    const [response = await this.transport.request<AdminKey>({
+      method: 'GET',
+      path: \`\${this.baseUrl}/admin-key\`,
+    })] = [null];
+    void response;
+    throw new Error('implementation removed');`,
+    ],
+  ] as const)(
+    'does not count a direct request in an %s destructuring default',
+    async (_patternKind, replacement) => {
+      await expectAdminKeyMutationToFail('atlassian-api-gap-destructuring-default-', replacement);
+    },
+    ANALYZER_TIMEOUT_MS,
+  );
+
+  it.each([
+    [
+      'object',
+      `    const { response = this.requestSoftwareIssues(\`\${this.softwareBaseUrl}/board/\${boardId}/backlog\`, params) } = { response: null };
+    void response;`,
+    ],
+    [
+      'array',
+      `    const [response = this.requestSoftwareIssues(\`\${this.softwareBaseUrl}/board/\${boardId}/backlog\`, params)] = [null];
+    void response;`,
+    ],
+  ] as const)(
+    'does not expand a delegated route in an %s destructuring default',
+    async (_patternKind, conditionalBody) => {
+      await expectBacklogMutationToFail(
+        'atlassian-api-gap-destructuring-default-delegated-',
+        `  async getBacklogEnhanced(
+    boardId: number,
+    params?: ListSoftwareIssuesParams,
+  ): Promise<SoftwareIssueResults> {
+${conditionalBody}
+    throw new Error('implementation removed');
+  }`,
+        'conditional-helper-default',
+      );
+    },
+    ANALYZER_TIMEOUT_MS,
+  );
+
+  it(
+    'does not count a direct request in a zero-iteration for update clause',
+    async () => {
+      await expectAdminKeyMutationToFail(
+        'atlassian-api-gap-for-update-',
+        `    for (let index = 0; index < 0; await this.transport.request<AdminKey>({
+      method: 'GET',
+      path: \`\${this.baseUrl}/admin-key\`,
+    })) {
+      index += 1;
+    }
+    throw new Error('implementation removed');`,
+      );
+    },
+    ANALYZER_TIMEOUT_MS,
+  );
+
+  it(
+    'does not expand a delegated route in a zero-iteration for update clause',
+    async () => {
+      await expectBacklogMutationToFail(
+        'atlassian-api-gap-for-update-delegated-',
+        `  async getBacklogEnhanced(
+    boardId: number,
+    params?: ListSoftwareIssuesParams,
+  ): Promise<SoftwareIssueResults> {
+    for (let index = 0; index < 0; void this.requestSoftwareIssues(\`\${this.softwareBaseUrl}/board/\${boardId}/backlog\`, params)) {
+      index += 1;
+    }
+    throw new Error('implementation removed');
+  }`,
+        'conditional-helper-call',
+      );
+    },
+    ANALYZER_TIMEOUT_MS,
+  );
+
+  it(
+    'does not count a direct request in a do-while test skipped by break',
+    async () => {
+      await expectAdminKeyMutationToFail(
+        'atlassian-api-gap-do-while-test-',
+        `    do {
+      break;
+    } while (Boolean(await this.transport.request<AdminKey>({
+      method: 'GET',
+      path: \`\${this.baseUrl}/admin-key\`,
+    })));
+    throw new Error('implementation removed');`,
+      );
+    },
+    ANALYZER_TIMEOUT_MS,
+  );
+
+  it(
+    'does not expand a delegated route in a do-while test skipped by break',
+    async () => {
+      await expectBacklogMutationToFail(
+        'atlassian-api-gap-do-while-test-delegated-',
+        `  async getBacklogEnhanced(
+    boardId: number,
+    params?: ListSoftwareIssuesParams,
+  ): Promise<SoftwareIssueResults> {
+    do {
+      break;
+    } while (Boolean(await this.requestSoftwareIssues(\`\${this.softwareBaseUrl}/board/\${boardId}/backlog\`, params)));
+    throw new Error('implementation removed');
+  }`,
+        'conditional-helper-call',
+      );
+    },
+    ANALYZER_TIMEOUT_MS,
+  );
+
+  it.each([
+    [
+      'optional call argument',
+      `    const maybeConsume = undefined as ((value: unknown) => void) | undefined;
+    maybeConsume?.(await this.transport.request<AdminKey>({
+      method: 'GET',
+      path: \`\${this.baseUrl}/admin-key\`,
+    }));`,
+    ],
+    [
+      'optional computed key',
+      `    const maybeValues = undefined as Record<string, unknown> | undefined;
+    void maybeValues?.[String((await this.transport.request<AdminKey>({
+      method: 'GET',
+      path: \`\${this.baseUrl}/admin-key\`,
+    })).data)];`,
+    ],
+  ] as const)(
+    'does not count a direct request in an %s',
+    async (_optionalKind, conditionalBody) => {
+      await expectAdminKeyMutationToFail(
+        'atlassian-api-gap-optional-chain-',
+        `${conditionalBody}
+    throw new Error('implementation removed');`,
+      );
+    },
+    ANALYZER_TIMEOUT_MS,
+  );
+
+  it(
+    'does not expand a delegated route in an optional call argument',
+    async () => {
+      await expectBacklogMutationToFail(
+        'atlassian-api-gap-optional-chain-delegated-',
+        `  async getBacklogEnhanced(
+    boardId: number,
+    params?: ListSoftwareIssuesParams,
+  ): Promise<SoftwareIssueResults> {
+    const maybeConsume = undefined as ((value: unknown) => void) | undefined;
+    maybeConsume?.(this.requestSoftwareIssues(\`\${this.softwareBaseUrl}/board/\${boardId}/backlog\`, params));
+    throw new Error('implementation removed');
+  }`,
+        'conditional-helper-expression',
+      );
+    },
+    ANALYZER_TIMEOUT_MS,
+  );
+
+  it(
+    'does not count a direct request after a guaranteed conditional exit',
+    async () => {
+      await expectAdminKeyMutationToFail(
+        'atlassian-api-gap-guaranteed-conditional-exit-',
+        `    const disabled = true;
+    if (disabled) {
+      throw new Error('implementation removed');
+    }
+${ADMIN_KEY_GET_IMPLEMENTATION}`,
+      );
+    },
+    ANALYZER_TIMEOUT_MS,
+  );
+
+  it(
+    'does not expand a delegated route after a guaranteed conditional exit',
+    async () => {
+      const fixtureRoot = await mkdtemp(
+        join(tmpdir(), 'atlassian-api-gap-guaranteed-conditional-exit-delegated-'),
+      );
+      const fixtureSrc = join(fixtureRoot, 'src');
+
+      try {
+        await cp(resolve(REPO_ROOT, 'src'), fixtureSrc, { recursive: true });
+        const boardsPath = join(fixtureSrc, 'jira/resources/boards.ts');
+        const boards = await readFile(boardsPath, 'utf8');
+        const liveMethod = `  async getBacklogEnhanced(
+    boardId: number,
+    params?: ListSoftwareIssuesParams,
+  ): Promise<SoftwareIssueResults> {
+    if (!Number.isInteger(boardId) || boardId <= 0) {
+      throw new ValidationError('boardId must be a positive integer');
+    }
+    return this.requestSoftwareIssues(\`\${this.softwareBaseUrl}/board/\${boardId}/backlog\`, params);
+  }`;
+        const changedBoards = boards.replace(
+          liveMethod,
+          `  async getBacklogEnhanced(
+    boardId: number,
+    params?: ListSoftwareIssuesParams,
+  ): Promise<SoftwareIssueResults> {
+    const disabled = true;
+    if (disabled) {
+      throw new Error('implementation removed');
+    }
+    return this.requestSoftwareIssues(\`\${this.softwareBaseUrl}/board/\${boardId}/backlog\`, params);
+  }`,
+        );
+        expect(changedBoards).not.toBe(boards);
+        await writeFile(boardsPath, changedBoards);
+
+        await expect(
+          execFileAsync('python3', [ANALYZER, '--source-root', fixtureRoot], {
+            cwd: REPO_ROOT,
+          }),
+        ).rejects.toMatchObject({
+          code: 1,
+          stdout: expect.stringContaining('statically-dead-helper-call'),
+        });
+      } finally {
+        await rm(fixtureRoot, { recursive: true, force: true });
+      }
+    },
+    ANALYZER_TIMEOUT_MS,
+  );
+
+  it.each([
+    [
+      'matching case after default',
+      `      default:
+        break;
+      case 'disabled':
+        throw new Error('implementation removed');`,
+    ],
+    [
+      'throwing default after a nonmatch',
+      `      case 'enabled':
+        break;
+      default:
+        throw new Error('implementation removed');`,
+    ],
+  ] as const)(
+    'does not count a direct request after a guaranteed constant switch exit: %s',
+    async (_switchKind, switchBody) => {
+      await expectAdminKeyMutationToFail(
+        'atlassian-api-gap-guaranteed-switch-exit-',
+        `    const mode = 'disabled' as const;
+    switch (mode) {
+${switchBody}
+    }
+${ADMIN_KEY_GET_IMPLEMENTATION}`,
+      );
+    },
+    ANALYZER_TIMEOUT_MS,
+  );
+
+  it.each([
+    [
+      'matching case after default',
+      `      default:
+        break;
+      case 'disabled':
+        throw new Error('implementation removed');`,
+    ],
+    [
+      'throwing default after a nonmatch',
+      `      case 'enabled':
+        break;
+      default:
+        throw new Error('implementation removed');`,
+    ],
+  ] as const)(
+    'does not expand a delegated route after a guaranteed constant switch exit: %s',
+    async (_switchKind, switchBody) => {
+      await expectBacklogMutationToFail(
+        'atlassian-api-gap-guaranteed-switch-exit-delegated-',
+        `  async getBacklogEnhanced(
+    boardId: number,
+    params?: ListSoftwareIssuesParams,
+  ): Promise<SoftwareIssueResults> {
+    const mode = 'disabled' as const;
+    switch (mode) {
+${switchBody}
+    }
+    return this.requestSoftwareIssues(\`\${this.softwareBaseUrl}/board/\${boardId}/backlog\`, params);
+  }`,
+        'statically-dead-helper-call',
+      );
+    },
+    ANALYZER_TIMEOUT_MS,
+  );
+
+  it.each([
+    [
+      'const-aliased while',
+      '    const keepRunning = true;\n    while (keepRunning)',
+      '      await Promise.resolve();',
+    ],
+    ['literal for', '    for (; true; )', '      continue;'],
+    ['omitted-test for', '    for (;;)', '      await Promise.resolve();'],
+  ] as const)(
+    'does not count a direct request after a statically infinite %s loop',
+    async (_loopKind, controller, body) => {
+      await expectAdminKeyMutationToFail(
+        'atlassian-api-gap-infinite-loop-',
+        `${controller} {
+${body}
+    }
+${ADMIN_KEY_GET_IMPLEMENTATION}`,
+      );
+    },
+    ANALYZER_TIMEOUT_MS,
+  );
+
+  it.each([
+    [
+      'const-aliased while',
+      '    const keepRunning = true;\n    while (keepRunning)',
+      '      await Promise.resolve();',
+    ],
+    ['literal for', '    for (; true; )', '      continue;'],
+    ['omitted-test for', '    for (;;)', '      await Promise.resolve();'],
+  ] as const)(
+    'does not expand a delegated route after a statically infinite %s loop',
+    async (_loopKind, controller, body) => {
+      await expectBacklogMutationToFail(
+        'atlassian-api-gap-infinite-loop-delegated-',
+        `  async getBacklogEnhanced(
+    boardId: number,
+    params?: ListSoftwareIssuesParams,
+  ): Promise<SoftwareIssueResults> {
+${controller} {
+${body}
+    }
+    return this.requestSoftwareIssues(\`\${this.softwareBaseUrl}/board/\${boardId}/backlog\`, params);
+  }`,
+        'statically-dead-helper-call',
+      );
+    },
+    ANALYZER_TIMEOUT_MS,
+  );
+
+  it.each([
+    [
+      'conditionally executed switch',
+      `    const flag = false;
+    if (flag)
+      switch ('disabled') {
+        case 'disabled':
+          throw new Error('conditional exit');
+      }`,
+    ],
+    [
+      'conditionally executed infinite loop',
+      `    const flag = false;
+    if (flag)
+      while (true) {
+        await Promise.resolve();
+      }`,
+    ],
+    [
+      'shadowed Boolean call',
+      `    const Boolean = (_value: unknown): boolean => false;
+    if (Boolean(true)) {
+      throw new Error('conditional exit');
+    }`,
+    ],
+    [
+      'shadowed undefined identifier',
+      `    const undefined = true;
+    if (undefined) {
+      throw new Error('conditional exit');
+    }`,
+    ],
+    [
+      'strictly nonmatching switch value',
+      `    const mode: boolean | number = true;
+    switch (mode) {
+      case 1:
+        throw new Error('conditional exit');
+    }`,
+    ],
+    [
+      'nonterminal first duplicate switch arm',
+      `    const mode = 'disabled' as const;
+    switch (mode) {
+      case 'disabled':
+        break;
+      case 'disabled':
+        throw new Error('later duplicate');
+    }`,
+    ],
+    [
+      'unknown earlier switch case',
+      `    const mode = 'disabled' as const;
+    const unknown = Math.random() > 0.5 ? 'disabled' : 'enabled';
+    switch (mode) {
+      case unknown:
+        break;
+      case 'disabled':
+        throw new Error('later match');
+    }`,
+    ],
+    [
+      'null versus shadowable undefined switch case',
+      `    const mode: null | undefined = null;
+    switch (mode) {
+      case undefined:
+        throw new Error('strictly nonmatching case');
+    }`,
+    ],
+    [
+      'property method named while',
+      `    const object = {
+      while(_value: boolean): void {},
+    };
+    object.while(true);`,
+    ],
+    [
+      'unbraced loop body with a reachable break',
+      `    const shouldBreak = true;
+    while (true)
+      if (shouldBreak) break;
+      else continue;`,
+    ],
+    [
+      'labeled break in finally',
+      `    outer: while (true) {
+      try {
+        await Promise.resolve();
+      } finally {
+        break outer;
+      }
+    }`,
+    ],
+  ] as const)(
+    'keeps a direct request reachable after a %s',
+    async (_controlKind, prefix) => {
+      await expectAdminKeyMutationToPass(
+        'atlassian-api-gap-reachable-control-',
+        `${prefix}
+${ADMIN_KEY_GET_IMPLEMENTATION}`,
+      );
+    },
+    ANALYZER_TIMEOUT_MS,
+  );
+
   it(
     'does not count a request inside an uncalled local closure',
     async () => {
@@ -2488,9 +3281,13 @@ ${ADMIN_KEY_GET_IMPLEMENTATION}`,
     ANALYZER_TIMEOUT_MS,
   );
 
-  it(
-    'does not count a request inside a nested function-expression default parameter',
-    async () => {
+  it.each([
+    ['plain', 'load', 'unsupported-request-call-scope'],
+    ['escaped', String.raw`lo\u0061d`, 'unsupported-escaped-identifier'],
+    ['raw Unicode', 'łoad', 'unsupported-non-ascii-syntax'],
+  ] as const)(
+    'does not count a request inside a nested function-expression default parameter with a %s name',
+    async (_nameKind, functionName, expectedReason) => {
       const fixtureRoot = await mkdtemp(
         join(tmpdir(), 'atlassian-api-gap-function-expression-default-'),
       );
@@ -2505,7 +3302,7 @@ ${ADMIN_KEY_GET_IMPLEMENTATION}`,
 ${ADMIN_KEY_GET_IMPLEMENTATION}
   }`,
           `  async get(
-    _load = function load(
+    _load = function ${functionName}(
       this: AdminKeyResource,
       _probe = this.transport.request<AdminKey>({
         method: 'GET',
@@ -2528,7 +3325,7 @@ ${ADMIN_KEY_GET_IMPLEMENTATION}
           }),
         ).rejects.toMatchObject({
           code: 1,
-          stdout: expect.stringContaining('unsupported-request-call-scope'),
+          stdout: expect.stringContaining(expectedReason),
         });
       } finally {
         await rm(fixtureRoot, { recursive: true, force: true });
@@ -2892,9 +3689,13 @@ ${ADMIN_KEY_GET_IMPLEMENTATION}
     ANALYZER_TIMEOUT_MS,
   );
 
-  it(
-    'does not expand a delegated route from a nested function-expression default parameter',
-    async () => {
+  it.each([
+    ['plain', 'load', 'unsupported-helper-call-scope'],
+    ['escaped', String.raw`lo\u0061d`, 'unsupported-escaped-identifier'],
+    ['raw Unicode', 'łoad', 'unsupported-non-ascii-syntax'],
+  ] as const)(
+    'does not expand a delegated route from a nested function-expression default parameter with a %s name',
+    async (_nameKind, functionName, expectedReason) => {
       const fixtureRoot = await mkdtemp(
         join(tmpdir(), 'atlassian-api-gap-function-expression-default-delegated-'),
       );
@@ -2918,7 +3719,7 @@ ${ADMIN_KEY_GET_IMPLEMENTATION}
           `  async getBacklogEnhanced(
     _boardId: number,
     _params?: ListSoftwareIssuesParams,
-    _load = function load(
+    _load = function ${functionName}(
       this: BoardsResource,
       boardId: number,
       _probe = this.requestSoftwareIssues(\`\${this.softwareBaseUrl}/board/\${boardId}/backlog\`),
@@ -2939,7 +3740,7 @@ ${ADMIN_KEY_GET_IMPLEMENTATION}
           }),
         ).rejects.toMatchObject({
           code: 1,
-          stdout: expect.stringContaining('unsupported-helper-call-scope'),
+          stdout: expect.stringContaining(expectedReason),
         });
       } finally {
         await rm(fixtureRoot, { recursive: true, force: true });
