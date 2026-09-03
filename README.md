@@ -350,7 +350,7 @@ Both are validated as non-negative finite numbers at construction; the jitter sl
 ### Atlassian Connect JWT
 
 ```typescript
-import { createConnectJwtMiddleware } from 'atlassian-api-client';
+import { ConfluenceClient, JiraClient, createConnectJwtMiddleware } from 'atlassian-api-client';
 
 const connectMiddleware = createConnectJwtMiddleware({
   issuer: 'com.example.my-app',
