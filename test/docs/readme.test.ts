@@ -63,16 +63,43 @@ describe('README package documentation', () => {
 });
 
 describe('live documentation consistency', () => {
-  it('keeps an empty linked Unreleased section ahead of the latest release', () => {
-    const unreleased = CHANGELOG.indexOf(
-      '## [Unreleased](https://github.com/dichovsky/atlassian-api-client/compare/v4.0.0...HEAD)',
-    );
-    const latestRelease = CHANGELOG.indexOf('## [4.0.0]');
+  it.each([
+    ['repository changelog', CHANGELOG],
+    [
+      'unreleased notes',
+      `# Changelog
 
-    expect(unreleased).toBeGreaterThan(-1);
-    expect(latestRelease).toBeGreaterThan(unreleased);
-    expect(CHANGELOG.slice(unreleased, latestRelease).trim()).toBe(
-      '## [Unreleased](https://github.com/dichovsky/atlassian-api-client/compare/v4.0.0...HEAD)',
+## [Unreleased](https://github.com/dichovsky/atlassian-api-client/compare/v4.0.0...HEAD)
+
+### Fixed
+
+- Correct an attachment response type.
+
+## [4.0.0] (2026-09-02)
+`,
+    ],
+    [
+      'next release',
+      `# Changelog
+
+## [Unreleased](https://github.com/dichovsky/atlassian-api-client/compare/v4.0.1...HEAD)
+
+## [4.0.1] (2026-09-04)
+
+### Fixed
+
+- Correct an attachment response type.
+
+## [4.0.0] (2026-09-02)
+`,
+    ],
+  ])('keeps Unreleased linked to the latest release (%s)', (_name, changelog) => {
+    const headings = changelog.match(/^## .+$/gm) ?? [];
+    const latestVersion = /^## \[(\d+\.\d+\.\d+)\]/.exec(headings[1] ?? '')?.[1];
+
+    expect(latestVersion).toBeDefined();
+    expect(headings[0]).toBe(
+      `## [Unreleased](https://github.com/dichovsky/atlassian-api-client/compare/v${latestVersion}...HEAD)`,
     );
   });
 
@@ -109,6 +136,7 @@ describe('live documentation consistency', () => {
     expect(RELEASING).toContain('npm deprecate');
     expect(RELEASING).toContain('npm dist-tag add');
     expect(RELEASING).toContain('Post-release');
+    expect(RELEASING).toContain('sets **Workflow filename** to `publish.yml`');
   });
 
   it('keeps the June deep audit explicitly historical and correctly linked', () => {

@@ -105,7 +105,7 @@ Before each release, and after changing the workflow, verify these external cont
 - release-tag rules prevent deletion and force updates, restrict creation, and enforce the stable `vX.Y.Z` pattern;
 - GitHub Actions requires immutable full-SHA action references;
 - the `release` environment requires explicit approval and accepts only `v*` tags;
-- the npm trusted publisher names this repository, `.github/workflows/publish.yml`, and the `release` environment;
+- the npm trusted publisher names this repository, sets **Workflow filename** to `publish.yml` (the file at `.github/workflows/publish.yml`), and uses the `release` environment;
 - dependency alerts and security updates, secret scanning and push protection, CodeQL default setup, private vulnerability reporting, and immutable GitHub releases remain enabled.
 
 If any control is missing or the OIDC subject no longer matches npm's trusted-publisher configuration, stop before tagging and repair the configuration through reviewed changes.
