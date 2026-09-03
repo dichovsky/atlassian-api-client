@@ -355,16 +355,23 @@ import { createConnectJwtMiddleware } from 'atlassian-api-client';
 const connectMiddleware = createConnectJwtMiddleware({
   issuer: 'com.example.my-app',
   sharedSecret: process.env.CONNECT_SECRET!,
+  // Confluence only — its Connect base URL is https://<site>.atlassian.net/wiki,
+  // so `/wiki` must be discarded from the QSH canonical URI. Omit for Jira.
+  // contextPath: '/wiki',
 });
 
 const client = new JiraClient({
   baseUrl: 'https://yourcompany.atlassian.net',
-  auth: { type: 'bearer', token: '' },
+  // `auth` is required by config validation; the middleware's JWT replaces it
+  // on the wire, so any non-empty placeholder works.
+  auth: { type: 'bearer', token: 'connect-jwt' },
   middleware: [connectMiddleware],
 });
 ```
 
 Signs every request with an HS256 JWT per the Atlassian Connect spec (QSH, iss, iat, exp claims).
+The QSH canonical URI is the request path relative to the product base URL: protocol, host,
+`contextPath`, and query string are discarded and a trailing slash is stripped.
 
 #### Verifying inbound asymmetric (RS256) JWTs
 
