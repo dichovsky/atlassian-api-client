@@ -355,9 +355,6 @@ import { createConnectJwtMiddleware } from 'atlassian-api-client';
 const connectMiddleware = createConnectJwtMiddleware({
   issuer: 'com.example.my-app',
   sharedSecret: process.env.CONNECT_SECRET!,
-  // Confluence only — its Connect base URL is https://<site>.atlassian.net/wiki,
-  // so `/wiki` must be discarded from the QSH canonical URI. Omit for Jira.
-  // contextPath: '/wiki',
 });
 
 const client = new JiraClient({
@@ -366,6 +363,20 @@ const client = new JiraClient({
   // on the wire, so any non-empty placeholder works.
   auth: { type: 'bearer', token: 'connect-jwt' },
   middleware: [connectMiddleware],
+});
+
+// Confluence: its Connect base URL is https://<site>.atlassian.net/wiki, so the
+// `/wiki` context path MUST be discarded from the QSH canonical URI — set it.
+const confluence = new ConfluenceClient({
+  baseUrl: 'https://yourcompany.atlassian.net',
+  auth: { type: 'bearer', token: 'connect-jwt' },
+  middleware: [
+    createConnectJwtMiddleware({
+      issuer: 'com.example.my-app',
+      sharedSecret: process.env.CONNECT_SECRET!,
+      contextPath: '/wiki',
+    }),
+  ],
 });
 ```
 

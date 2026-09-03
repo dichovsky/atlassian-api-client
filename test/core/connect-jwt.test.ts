@@ -781,6 +781,22 @@ describe('computeQsh contextPath and & encoding (Connect spec)', () => {
     expect(computeQsh('GET', '/wiki/x', undefined, '/')).toBe(expected);
   });
 
+  it('accepts a full base URL as contextPath and reduces it to its path', () => {
+    expect(
+      computeQsh(
+        'GET',
+        'https://x.atlassian.net/wiki/api/v2/pages',
+        undefined,
+        'https://x.atlassian.net/wiki',
+      ),
+    ).toBe(sha('GET&/api/v2/pages&'));
+  });
+
+  it('throws ValidationError (not a raw TypeError) for an unparseable absolute path or contextPath', () => {
+    expect(() => computeQsh('GET', 'https://')).toThrow(ValidationError);
+    expect(() => computeQsh('GET', '/x', undefined, 'https://')).toThrow(ValidationError);
+  });
+
   it('percent-encodes & in the path', () => {
     expect(computeQsh('GET', '/a&b/c')).toBe(sha('GET&/a%26b/c&'));
   });

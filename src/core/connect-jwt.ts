@@ -23,7 +23,8 @@ export interface ConnectJwtConfig {
   /**
    * Product context path discarded from the QSH canonical URI, e.g. `'/wiki'`
    * for Confluence Cloud (its Connect base URL is `https://<site>.atlassian.net/wiki`).
-   * Jira Cloud has no context path — leave unset.
+   * A full base URL (`'https://<site>.atlassian.net/wiki'`) is accepted and
+   * reduced to its path. Jira Cloud has no context path — leave unset.
    */
   readonly contextPath?: string;
 }
@@ -80,7 +81,12 @@ export function signConnectJwt(config: ConnectJwtConfig, options: RequestOptions
  * - `canonicalQuery`: percent-encoded key=value pairs sorted by codepoint
  *   (uppercase before lowercase, per the Connect spec), `undefined` values excluded
  *
+ * `path` is expected to be the absolute request URL, which is what every
+ * library resource sends; a relative path is hashed as-is (not resolved
+ * against the client `baseUrl`).
+ *
  * Exported for testing and manual verification.
+ * @throws {ValidationError} when `path` or `contextPath` is an unparseable absolute URL.
  */
 export function computeQsh(
   method: HttpMethod,
@@ -151,8 +157,9 @@ export function computeQsh(
  * never emit an empty path, and percent-encode `&`.
  */
 function canonicalizePath(pathWithoutQuery: string, contextPath?: string): string {
-  const isAbsolute = /^https?:\/\//i.test(pathWithoutQuery);
-  const pathname = isAbsolute ? new URL(pathWithoutQuery).pathname : pathWithoutQuery;
+  const pathname = ABSOLUTE_URL_RE.test(pathWithoutQuery)
+    ? parsePathname(pathWithoutQuery, 'path')
+    : pathWithoutQuery;
   const prefix = normalizeContextPath(contextPath);
   const stripsPrefix = prefix !== '' && (pathname === prefix || pathname.startsWith(`${prefix}/`));
   const relative = stripsPrefix ? pathname.slice(prefix.length) : pathname;
@@ -160,11 +167,28 @@ function canonicalizePath(pathWithoutQuery: string, contextPath?: string): strin
   return (trimmed === '' ? '/' : trimmed).replace(/&/g, '%26');
 }
 
-/** `'wiki'` / `'/wiki/'` → `'/wiki'`; `undefined` / `''` / `'/'` → `''` (nothing to strip). */
+/**
+ * `'wiki'` / `'/wiki/'` / `'https://site.atlassian.net/wiki'` → `'/wiki'`;
+ * `undefined` / `''` / `'/'` → `''` (nothing to strip).
+ */
 function normalizeContextPath(contextPath: string | undefined): string {
   if (contextPath === undefined) return '';
-  const withSlash = contextPath.startsWith('/') ? contextPath : `/${contextPath}`;
+  const path = ABSOLUTE_URL_RE.test(contextPath)
+    ? parsePathname(contextPath, 'contextPath')
+    : contextPath;
+  const withSlash = path.startsWith('/') ? path : `/${path}`;
   return withSlash.replace(/\/+$/, '');
+}
+
+const ABSOLUTE_URL_RE = /^https?:\/\//i;
+
+/** `URL.pathname` of an absolute URL, in the taxonomy; the raw value is never echoed. */
+function parsePathname(url: string, what: 'path' | 'contextPath'): string {
+  try {
+    return new URL(url).pathname;
+  } catch {
+    throw new ValidationError(`computeQsh: ${what} is not a valid absolute URL`);
+  }
 }
 
 /**
