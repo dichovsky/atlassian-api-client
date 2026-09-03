@@ -350,7 +350,7 @@ Both are validated as non-negative finite numbers at construction; the jitter sl
 ### Atlassian Connect JWT
 
 ```typescript
-import { createConnectJwtMiddleware } from 'atlassian-api-client';
+import { ConfluenceClient, JiraClient, createConnectJwtMiddleware } from 'atlassian-api-client';
 
 const connectMiddleware = createConnectJwtMiddleware({
   issuer: 'com.example.my-app',
@@ -359,12 +359,30 @@ const connectMiddleware = createConnectJwtMiddleware({
 
 const client = new JiraClient({
   baseUrl: 'https://yourcompany.atlassian.net',
-  auth: { type: 'bearer', token: '' },
+  // `auth` is required by config validation; the middleware's JWT replaces it
+  // on the wire, so any non-empty placeholder works.
+  auth: { type: 'bearer', token: 'connect-jwt' },
   middleware: [connectMiddleware],
+});
+
+// Confluence: its Connect base URL is https://<site>.atlassian.net/wiki, so the
+// `/wiki` context path MUST be discarded from the QSH canonical URI — set it.
+const confluence = new ConfluenceClient({
+  baseUrl: 'https://yourcompany.atlassian.net',
+  auth: { type: 'bearer', token: 'connect-jwt' },
+  middleware: [
+    createConnectJwtMiddleware({
+      issuer: 'com.example.my-app',
+      sharedSecret: process.env.CONNECT_SECRET!,
+      contextPath: '/wiki',
+    }),
+  ],
 });
 ```
 
 Signs every request with an HS256 JWT per the Atlassian Connect spec (QSH, iss, iat, exp claims).
+The QSH canonical URI is the request path relative to the product base URL: protocol, host,
+`contextPath`, and query string are discarded and a trailing slash is stripped.
 
 #### Verifying inbound asymmetric (RS256) JWTs
 

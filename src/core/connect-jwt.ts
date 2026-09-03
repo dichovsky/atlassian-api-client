@@ -20,6 +20,13 @@ export interface ConnectJwtConfig {
    * @default 180
    */
   readonly tokenLifetimeSeconds?: number;
+  /**
+   * Product context path discarded from the QSH canonical URI, e.g. `'/wiki'`
+   * for Confluence Cloud (its Connect base URL is `https://<site>.atlassian.net/wiki`).
+   * A full base URL (`'https://<site>.atlassian.net/wiki'`) is accepted and
+   * reduced to its path. Jira Cloud has no context path — leave unset.
+   */
+  readonly contextPath?: string;
 }
 
 /**
@@ -51,7 +58,7 @@ export function createConnectJwtMiddleware(config: ConnectJwtConfig): Middleware
 export function signConnectJwt(config: ConnectJwtConfig, options: RequestOptions): string {
   const now = Math.floor(Date.now() / 1000);
   const exp = now + (config.tokenLifetimeSeconds ?? 180);
-  const qsh = computeQsh(options.method, options.path, options.query);
+  const qsh = computeQsh(options.method, options.path, options.query, config.contextPath);
 
   const headerB64 = base64UrlEncode(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
   const payloadB64 = base64UrlEncode(JSON.stringify({ iss: config.issuer, iat: now, exp, qsh }));
@@ -68,20 +75,31 @@ export function signConnectJwt(config: ConnectJwtConfig, options: RequestOptions
  * Computes the Query String Hash (QSH) per the Atlassian Connect specification.
  *
  * QSH = SHA-256(`METHOD&canonicalPath&canonicalQuery`)
- * - `canonicalPath`: path without the query string
+ * - `canonicalPath`: request path only — protocol/host/port of an absolute
+ *   URL, the `contextPath` prefix, and the query string are discarded; a
+ *   trailing `/` is stripped and `&` is percent-encoded
  * - `canonicalQuery`: percent-encoded key=value pairs sorted by codepoint
  *   (uppercase before lowercase, per the Connect spec), `undefined` values excluded
  *
+ * `path` is expected to be the absolute request URL, which is what every
+ * library resource sends; a relative path is hashed as-is (not resolved
+ * against the client `baseUrl`).
+ *
  * Exported for testing and manual verification.
+ * @throws {ValidationError} when `path` or `contextPath` is an unparseable absolute URL.
  */
 export function computeQsh(
   method: HttpMethod,
   path: string,
   query?: Readonly<Record<string, string | number | boolean | undefined>>,
+  contextPath?: string,
 ): string {
   const canonicalMethod = method.toUpperCase();
   const questionMark = path.indexOf('?');
-  const canonicalPath = questionMark >= 0 ? path.slice(0, questionMark) : path;
+  const canonicalPath = canonicalizePath(
+    questionMark >= 0 ? path.slice(0, questionMark) : path,
+    contextPath,
+  );
 
   // Collect ALL request query parameters into key → values. The Connect QSH
   // spec canonicalizes every query parameter of the request, so two sources
@@ -130,6 +148,47 @@ export function computeQsh(
 
   const qshInput = `${canonicalMethod}&${canonicalPath}&${canonicalQuery}`;
   return createHash('sha256').update(qshInput).digest('hex');
+}
+
+/**
+ * Canonical URI per the Connect spec: discard protocol/server/port (every
+ * resource passes an absolute `https://host/rest/...` URL as `path`) and the
+ * product context path, strip a trailing `/` unless it is the only character,
+ * never emit an empty path, and percent-encode `&`.
+ */
+function canonicalizePath(pathWithoutQuery: string, contextPath?: string): string {
+  const pathname = ABSOLUTE_URL_RE.test(pathWithoutQuery)
+    ? parsePathname(pathWithoutQuery, 'path')
+    : pathWithoutQuery;
+  const prefix = normalizeContextPath(contextPath);
+  const stripsPrefix = prefix !== '' && (pathname === prefix || pathname.startsWith(`${prefix}/`));
+  const relative = stripsPrefix ? pathname.slice(prefix.length) : pathname;
+  const trimmed = relative.length > 1 ? relative.replace(/\/$/, '') : relative;
+  return (trimmed === '' ? '/' : trimmed).replace(/&/g, '%26');
+}
+
+/**
+ * `'wiki'` / `'/wiki/'` / `'https://site.atlassian.net/wiki'` → `'/wiki'`;
+ * `undefined` / `''` / `'/'` → `''` (nothing to strip).
+ */
+function normalizeContextPath(contextPath: string | undefined): string {
+  if (contextPath === undefined) return '';
+  const path = ABSOLUTE_URL_RE.test(contextPath)
+    ? parsePathname(contextPath, 'contextPath')
+    : contextPath;
+  const withSlash = path.startsWith('/') ? path : `/${path}`;
+  return withSlash.replace(/\/+$/, '');
+}
+
+const ABSOLUTE_URL_RE = /^https?:\/\//i;
+
+/** `URL.pathname` of an absolute URL, in the taxonomy; the raw value is never echoed. */
+function parsePathname(url: string, what: 'path' | 'contextPath'): string {
+  try {
+    return new URL(url).pathname;
+  } catch {
+    throw new ValidationError(`computeQsh: ${what} is not a valid absolute URL`);
+  }
 }
 
 /**

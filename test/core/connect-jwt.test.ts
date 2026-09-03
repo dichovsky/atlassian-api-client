@@ -15,6 +15,8 @@ import {
   type KeyObject,
 } from 'node:crypto';
 import { ValidationError } from '../../src/core/errors.js';
+import { JiraClient } from '../../src/jira/client.js';
+import { ConfluenceClient } from '../../src/confluence/client.js';
 
 const makeOpts = (overrides?: Partial<RequestOptions>): RequestOptions => ({
   method: 'GET',
@@ -703,5 +705,124 @@ describe('verifyConnectAsymmetricJwt', () => {
       expect(message).not.toContain(publicKeyPem);
       expect(message).not.toContain('BEGIN');
     }
+  });
+});
+
+describe('computeQsh canonical URI (Connect spec)', () => {
+  // Spec: "Discard the protocol, server, port, context path and query
+  // parameters from the full URL" and "Do not suffix with a '/' character
+  // unless it is the only character".
+  it('hashes only the path when the request path is an absolute URL', () => {
+    const expected = createHash('sha256').update('GET&/rest/api/3/issue/KEY-1&').digest('hex');
+    expect(computeQsh('GET', 'https://test.atlassian.net/rest/api/3/issue/KEY-1')).toBe(expected);
+  });
+
+  it('strips a trailing slash', () => {
+    const expected = createHash('sha256').update('GET&/rest/api/3/myself&').digest('hex');
+    expect(computeQsh('GET', '/rest/api/3/myself/')).toBe(expected);
+  });
+
+  it('signs a JiraClient request with the canonical path, not the absolute URL', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(
+        new Response('{}', { status: 200, headers: { 'content-type': 'application/json' } }),
+      );
+    const client = new JiraClient({
+      baseUrl: 'https://test.atlassian.net',
+      auth: { type: 'bearer', token: 'placeholder' },
+      retries: 0,
+      fetch: fetchMock as typeof fetch,
+      middleware: [createConnectJwtMiddleware(BASE_CONFIG)],
+    });
+
+    await client.issues.get('KEY-1');
+
+    const [url, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
+    expect(new URL(url).search).toBe('');
+    const token = (new Headers(init.headers).get('authorization') ?? '').replace('JWT ', '');
+    const { payload } = decodeJwt(token);
+    const expected = createHash('sha256')
+      .update(`GET&${new URL(url).pathname}&`)
+      .digest('hex');
+    expect(payload['qsh']).toBe(expected);
+  });
+});
+
+describe('computeQsh contextPath and & encoding (Connect spec)', () => {
+  const sha = (canonical: string): string => createHash('sha256').update(canonical).digest('hex');
+
+  it('discards the product context path from an absolute URL', () => {
+    expect(computeQsh('GET', 'https://x.atlassian.net/wiki/api/v2/pages', undefined, '/wiki')).toBe(
+      sha('GET&/api/v2/pages&'),
+    );
+  });
+
+  it('normalizes contextPath spelling (missing leading slash, trailing slash)', () => {
+    const expected = sha('GET&/api/v2/pages&');
+    expect(computeQsh('GET', '/wiki/api/v2/pages', undefined, 'wiki')).toBe(expected);
+    expect(computeQsh('GET', '/wiki/api/v2/pages', undefined, '/wiki/')).toBe(expected);
+  });
+
+  it('yields "/" when the path is exactly the context path', () => {
+    expect(computeQsh('GET', 'https://x.atlassian.net/wiki', undefined, '/wiki')).toBe(
+      sha('GET&/&'),
+    );
+  });
+
+  it('does not strip a context path that is only a partial segment match', () => {
+    expect(computeQsh('GET', '/wikipedia/x', undefined, '/wiki')).toBe(sha('GET&/wikipedia/x&'));
+  });
+
+  it('treats undefined, empty, and "/" contextPath as nothing to strip', () => {
+    const expected = sha('GET&/wiki/x&');
+    expect(computeQsh('GET', '/wiki/x')).toBe(expected);
+    expect(computeQsh('GET', '/wiki/x', undefined, '')).toBe(expected);
+    expect(computeQsh('GET', '/wiki/x', undefined, '/')).toBe(expected);
+  });
+
+  it('accepts a full base URL as contextPath and reduces it to its path', () => {
+    expect(
+      computeQsh(
+        'GET',
+        'https://x.atlassian.net/wiki/api/v2/pages',
+        undefined,
+        'https://x.atlassian.net/wiki',
+      ),
+    ).toBe(sha('GET&/api/v2/pages&'));
+  });
+
+  it('throws ValidationError (not a raw TypeError) for an unparseable absolute path or contextPath', () => {
+    expect(() => computeQsh('GET', 'https://')).toThrow(ValidationError);
+    expect(() => computeQsh('GET', '/x', undefined, 'https://')).toThrow(ValidationError);
+  });
+
+  it('percent-encodes & in the path', () => {
+    expect(computeQsh('GET', '/a&b/c')).toBe(sha('GET&/a%26b/c&'));
+  });
+
+  it('signs a ConfluenceClient request relative to the /wiki context path', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(
+        new Response('{}', { status: 200, headers: { 'content-type': 'application/json' } }),
+      );
+    const client = new ConfluenceClient({
+      baseUrl: 'https://test.atlassian.net',
+      auth: { type: 'bearer', token: 'placeholder' },
+      retries: 0,
+      fetch: fetchMock as typeof fetch,
+      middleware: [createConnectJwtMiddleware({ ...BASE_CONFIG, contextPath: '/wiki' })],
+    });
+
+    await client.pages.get('123');
+
+    const [url, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
+    const parsed = new URL(url);
+    expect(parsed.pathname).toBe('/wiki/api/v2/pages/123');
+    expect(parsed.search).toBe('');
+    const token = (new Headers(init.headers).get('authorization') ?? '').replace('JWT ', '');
+    const { payload } = decodeJwt(token);
+    expect(payload['qsh']).toBe(sha('GET&/api/v2/pages/123&'));
   });
 });
