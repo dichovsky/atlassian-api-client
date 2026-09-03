@@ -199,7 +199,7 @@ export interface GetAttachmentThumbnailParams {
  *
  * The v1 response is richer than the v2 `Attachment` shape; this interface
  * captures the minimum fields needed to identify the created attachment.
- * Flag for inclusion in a future major-version richer type model.
+ * The full response-model follow-up is tracked explicitly as B1067.
  */
 export interface UploadAttachmentResultItem {
   readonly id: string;

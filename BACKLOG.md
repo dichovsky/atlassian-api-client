@@ -4,6 +4,11 @@
 
 ## 🧪 QA
 
+- [ ] 🟢 ♻️ QA: B1067 Model the full Confluence v1 attachment-upload response
+  - problem: `UploadAttachmentResultItem` deliberately exposes only the stable identification, metadata, extension, and link fields needed by current callers; the v1 content response also carries richer content, history, container, restriction, and expandable fields that are not yet represented.
+  - solution: capture fresh v1 upload fixtures, compare them with Atlassian's current v1 schema, and decide which fields can be added compatibly versus whether a full-model replacement belongs in a future major; preserve the `UploadAttachmentResult` envelope.
+  - files: `src/confluence/types/attachments.ts`, `test/confluence/attachments.test.ts`, `CHANGELOG.md`
+  - deps: next intentional public-type review; do not infer fields from the v2 `Attachment` schema
 - [ ] 🟢 ♻️ QA: B1061b Public-export trims (deferred major-only cleanup)
   - problem: B1061 (#285) removed the dead barrel + bench refs; unused public-export trims remain (root-vs-core barrel asymmetry: `HttpMethod`, `ResolvedConfig`, `AuthProvider`, `appendRepeatedParams` core re-export; the Confluence resource classes exported from `confluence/index.ts` but absent from root). Removal is semver-major and remains deferred.
   - files: `src/core/index.ts`, `src/confluence/index.ts`, `src/index.ts`

@@ -2832,7 +2832,7 @@
 
 ## 🛠️ Deep-audit 2026-06-10 — CRITICAL+HIGH fix wave (2026-06-13)
 
-> The 5 Layer-2 CRITICAL wire-contract defects + 3 HIGH defects from `docs/DEEP-AUDIT-2026-06-10.md`, shipped as 8 PRs (#262–#269). Each spec-verified against the pinned Atlassian specs, red→green regression-tested, 100% covered, and independently reviewed (fresh-lineage Opus, worktree-safe). CLI + skill parity enforced where the surface changed.
+> The 5 Layer-2 CRITICAL wire-contract defects + 3 HIGH defects from `docs/archive/DEEP-AUDIT-2026-06-10.md`, shipped as 8 PRs (#262–#269). Each spec-verified against the pinned Atlassian specs, red→green regression-tested, 100% covered, and independently reviewed (fresh-lineage Opus, worktree-safe). CLI + skill parity enforced where the surface changed.
 
 - [x] 🔴 🐛 Core: B1037 `computeQsh` drops `appendRepeatedParams` query params → Connect-JWT 401
   - files: `src/core/connect-jwt.ts`, `test/core/connect-jwt.test.ts`
@@ -2869,7 +2869,7 @@
 
 ## 🔐 Deep-audit 2026-06-10 — security cluster (2026-06-13)
 
-> The two security findings from `docs/DEEP-AUDIT-2026-06-10.md` §5b, shipped as #271/#272. Each verified by an independent Opus security reviewer running real exploit payloads (worktree-safe); the reviews escalated coverage materially in both cases (B025: 1→3 closed injection vectors; B1052: 3→15 files).
+> The two security findings from `docs/archive/DEEP-AUDIT-2026-06-10.md` §5b, shipped as #271/#272. Each verified by an independent Opus security reviewer running real exploit payloads (worktree-safe); the reviews escalated coverage materially in both cases (B025: 1→3 closed injection vectors; B1052: 3→15 files).
 
 - [x] 🔴 🐛 Core: B025 OpenAPI generator injection / malformed-input hardening
   - files: `src/core/openapi.ts`, `test/core/openapi.test.ts`

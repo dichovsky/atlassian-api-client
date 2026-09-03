@@ -5,34 +5,230 @@ on:
     tags:
       - 'v*'
 
-permissions:
-  contents: read
-  id-token: write # OIDC token for npm trusted publishing + provenance
+permissions: {}
+
+concurrency:
+  group: publish-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
-  publish:
-    name: Publish to npm
+  preflight:
+    name: Verify release candidate
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      actions: read
+      contents: read
+    outputs:
+      release-sha: ${{ steps.release.outputs.release_sha }}
+      version: ${{ steps.release.outputs.version }}
 
     steps:
-      - uses: actions/checkout@v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Match the tag to package metadata
+        run: node scripts/validate-release-tag.js "$GITHUB_REF_NAME"
+
+      - name: Require an annotated, verified tag
+        id: release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          tag_object_sha="$(
+            gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/${GITHUB_REF_NAME}" |
+              jq -er 'select(.object.type == "tag") | .object.sha'
+          )"
+          tag_object="$(
+            gh api "repos/${GITHUB_REPOSITORY}/git/tags/${tag_object_sha}"
+          )"
+          release_sha="$(
+            jq -er \
+              'select(.object.type == "commit") | select(.verification.verified == true) | .object.sha' \
+              <<<"${tag_object}"
+          )"
+          [[ "${release_sha}" =~ ^[0-9a-f]{40}$ ]]
+          test "$(git rev-parse HEAD)" = "${release_sha}"
+
+          echo "release_sha=${release_sha}" >>"${GITHUB_OUTPUT}"
+          echo "version=${GITHUB_REF_NAME#v}" >>"${GITHUB_OUTPUT}"
+
+      - name: Require the exact current main tip
+        env:
+          RELEASE_SHA: ${{ steps.release.outputs.release_sha }}
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin '+refs/heads/main:refs/remotes/origin/main'
+          test "$(git rev-parse refs/remotes/origin/main)" = "${RELEASE_SHA}"
+
+      - name: Require successful CI for this exact main push
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          release_sha='${{ steps.release.outputs.release_sha }}'
+          runs="$(
+            gh api \
+              "repos/${GITHUB_REPOSITORY}/actions/workflows/ci.yml/runs?head_sha=${release_sha}&branch=main&event=push&status=success&per_page=100"
+          )"
+          successful_runs="$(
+            jq -er --arg sha "${release_sha}" \
+              '[.workflow_runs[] | select(
+                .head_sha == $sha and
+                .head_branch == "main" and
+                .event == "push" and
+                .status == "completed" and
+                .conclusion == "success"
+              )] | length' \
+              <<<"${runs}"
+          )"
+          test "${successful_runs}" -gt 0
+
+  publish:
+    name: Publish to npm
+    needs: preflight
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: release
+    permissions:
+      contents: read
+      id-token: write # npm trusted publishing and provenance
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.preflight.outputs.release-sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Recheck the current main tip after approval
+        env:
+          RELEASE_SHA: ${{ needs.preflight.outputs.release-sha }}
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin '+refs/heads/main:refs/remotes/origin/main'
+          test "$(git rev-parse HEAD)" = "${RELEASE_SHA}"
+          test "$(git rev-parse refs/remotes/origin/main)" = "${RELEASE_SHA}"
 
       - name: Setup Node.js
-        uses: actions/setup-node@v7.0.0
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version-file: '.nvmrc'
-          # No dependency cache in release builds (supply-chain hygiene).
           registry-url: 'https://registry.npmjs.org'
 
-      - name: Ensure npm supports trusted publishing (>= 11.5.1)
-        run: npm install -g npm@^11.5.1
+      - name: Require npm trusted-publishing support
+        run: |
+          set -euo pipefail
+          npm_version="$(npm --version)"
+          [[ "${npm_version}" =~ ^([0-9]+)\.([0-9]+)\.[0-9]+ ]]
+          npm_major="${BASH_REMATCH[1]}"
+          npm_minor="${BASH_REMATCH[2]}"
+          if ((npm_major < 11 || (npm_major == 11 && npm_minor < 5))); then
+            echo "npm >= 11.5.1 is required for trusted publishing; found ${npm_version}" >&2
+            exit 1
+          fi
 
       - name: Install dependencies
         run: npm ci
 
-      # Trusted publishing: npm authenticates via the OIDC id-token above — no
-      # NPM_TOKEN needed, and provenance is generated automatically. The explicit
-      # --provenance flag keeps it on and fails loudly if prerequisites go missing.
-      # npm runs prepublishOnly first, so the full validation gate still runs once.
-      - name: Validate and publish
+      - name: Build package before npm inspects its bin entry
+        run: npm run build
+
+      # npm runs prepublishOnly, which executes the complete validation gate.
+      - name: Publish with trusted publishing and provenance
         run: npm publish --provenance
+
+  verify:
+    name: Verify published package
+    needs: [preflight, publish]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions: {}
+
+    steps:
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '24'
+
+      - name: Wait for the exact version to reach the registry
+        env:
+          PACKAGE_NAME: atlassian-api-client
+          VERSION: ${{ needs.preflight.outputs.version }}
+        run: |
+          set -euo pipefail
+          for attempt in {1..12}; do
+            published_version="$(npm view "${PACKAGE_NAME}@${VERSION}" version 2>/dev/null || true)"
+            latest_version="$(npm view "${PACKAGE_NAME}" dist-tags.latest 2>/dev/null || true)"
+            if [[ "${published_version}" == "${VERSION}" && "${latest_version}" == "${VERSION}" ]]; then
+              exit 0
+            fi
+            if ((attempt == 12)); then
+              echo \
+                "Registry did not return ${PACKAGE_NAME}@${VERSION} with dist-tags.latest=${VERSION}" \
+                >&2
+              exit 1
+            fi
+            sleep 10
+          done
+
+      - name: Smoke-test the registry artifact
+        env:
+          PACKAGE_NAME: atlassian-api-client
+          VERSION: ${{ needs.preflight.outputs.version }}
+        run: |
+          set -euo pipefail
+
+          verify_once() {
+            local verify_root cli
+            verify_root="$(mktemp -d)" || return 1
+            cli="${verify_root}/node_modules/.bin/atlas"
+
+            if npm install \
+              --prefix "${verify_root}" \
+              --ignore-scripts \
+              --no-audit \
+              --no-fund \
+              "${PACKAGE_NAME}@${VERSION}" &&
+              test -x "${cli}" &&
+              test "$("${cli}" --version)" = "atlas v${VERSION}" &&
+              (
+                cd "${verify_root}" &&
+                  node --input-type=module -e '
+                    const pkg = await import("atlassian-api-client");
+                    const config = {
+                      baseUrl: "https://release-verification.atlassian.net",
+                      auth: { type: "bearer", token: "verification-only" },
+                    };
+                    const confluence = new pkg.ConfluenceClient(config);
+                    const jira = new pkg.JiraClient(config);
+                    if (!confluence.pages || !jira.issues) {
+                      throw new Error("Constructed clients are missing core resources");
+                    }
+                  ' &&
+                  npm audit signatures &&
+                  "${cli}" install-skill --path "${verify_root}/installed-skill" &&
+                  grep -Fx "version: ${VERSION}" "${verify_root}/installed-skill/SKILL.md"
+              ); then
+              rm -rf "${verify_root}"
+              return 0
+            fi
+
+            rm -rf "${verify_root}"
+            return 1
+          }
+
+          for attempt in {1..6}; do
+            if verify_once; then
+              exit 0
+            fi
+            if ((attempt == 6)); then
+              echo "Published artifact verification failed after ${attempt} attempts" >&2
+              exit 1
+            fi
+            sleep 15
+          done

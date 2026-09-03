@@ -9,6 +9,18 @@ const README = readFileSync(resolve(REPO_ROOT, 'README.md'), 'utf8');
 const ARCHITECTURE = readFileSync(resolve(REPO_ROOT, 'docs', 'ARCHITECTURE.md'), 'utf8');
 const CONTRIBUTING = readFileSync(resolve(REPO_ROOT, 'CONTRIBUTING.md'), 'utf8');
 const SECURITY = readFileSync(resolve(REPO_ROOT, 'SECURITY.md'), 'utf8');
+const CHANGELOG = readFileSync(resolve(REPO_ROOT, 'CHANGELOG.md'), 'utf8');
+const DOCS_INDEX = readFileSync(resolve(REPO_ROOT, 'docs', 'README.md'), 'utf8');
+const RELEASING = readFileSync(resolve(REPO_ROOT, 'docs', 'RELEASING.md'), 'utf8');
+const DEEP_AUDIT = readFileSync(
+  resolve(REPO_ROOT, 'docs', 'archive', 'DEEP-AUDIT-2026-06-10.md'),
+  'utf8',
+);
+const BACKLOG = readFileSync(resolve(REPO_ROOT, 'BACKLOG.md'), 'utf8');
+const ATTACHMENT_TYPES = readFileSync(
+  resolve(REPO_ROOT, 'src', 'confluence', 'types', 'attachments.ts'),
+  'utf8',
+);
 const PAYLOAD_RULES = readFileSync(
   resolve(REPO_ROOT, 'skill', 'reference', 'payload-rules.md'),
   'utf8',
@@ -51,6 +63,46 @@ describe('README package documentation', () => {
 });
 
 describe('live documentation consistency', () => {
+  it.each([
+    ['repository changelog', CHANGELOG],
+    [
+      'unreleased notes',
+      `# Changelog
+
+## [Unreleased](https://github.com/dichovsky/atlassian-api-client/compare/v4.0.0...HEAD)
+
+### Fixed
+
+- Correct an attachment response type.
+
+## [4.0.0] (2026-09-02)
+`,
+    ],
+    [
+      'next release',
+      `# Changelog
+
+## [Unreleased](https://github.com/dichovsky/atlassian-api-client/compare/v4.0.1...HEAD)
+
+## [4.0.1] (2026-09-04)
+
+### Fixed
+
+- Correct an attachment response type.
+
+## [4.0.0] (2026-09-02)
+`,
+    ],
+  ])('keeps Unreleased linked to the latest release (%s)', (_name, changelog) => {
+    const headings = changelog.match(/^## .+$/gm) ?? [];
+    const latestVersion = /^## \[(\d+\.\d+\.\d+)\]/.exec(headings[1] ?? '')?.[1];
+
+    expect(latestVersion).toBeDefined();
+    expect(headings[0]).toBe(
+      `## [Unreleased](https://github.com/dichovsky/atlassian-api-client/compare/v${latestVersion}...HEAD)`,
+    );
+  });
+
   it('documents the current supported major version and security controls', () => {
     expect(SECURITY).toContain('| 4.x     | Yes');
     expect(SECURITY).toContain('`ClientConfig.allowedHosts`');
@@ -70,6 +122,35 @@ describe('live documentation consistency', () => {
     expect(CONTRIBUTING).toContain('`npm run format:check`');
     expect(CONTRIBUTING).toContain('`npm run test:exports`');
     expect(CONTRIBUTING).toContain('`npm pack --dry-run --json`');
+    expect(CONTRIBUTING).toContain('[release runbook](docs/RELEASING.md)');
+  });
+
+  it('documents the guarded release, verification, and rollback process', () => {
+    expect(DOCS_INDEX).toContain('[RELEASING.md](RELEASING.md)');
+    expect(RELEASING).toContain('npm run release:check -- vX.Y.Z');
+    expect(RELEASING).toContain('npm publish --provenance');
+    expect(RELEASING).toContain('signed annotated tag');
+    expect(RELEASING).toContain('OIDC');
+    expect(RELEASING).toContain('Never publish from a workstation');
+    expect(RELEASING).toContain('Never move or reuse a published tag');
+    expect(RELEASING).toContain('npm deprecate');
+    expect(RELEASING).toContain('npm dist-tag add');
+    expect(RELEASING).toContain('Post-release');
+    expect(RELEASING).toContain('sets **Workflow filename** to `publish.yml`');
+  });
+
+  it('keeps the June deep audit explicitly historical and correctly linked', () => {
+    expect(DOCS_INDEX).toContain('[DEEP-AUDIT-2026-06-10.md](archive/DEEP-AUDIT-2026-06-10.md)');
+    expect(DEEP_AUDIT).toContain('HISTORICAL SNAPSHOT');
+    expect(DEEP_AUDIT).toContain('[spec/README.md](../../spec/README.md)');
+    expect(DEEP_AUDIT).not.toContain('non-functional on HEAD');
+    expect(DEEP_AUDIT).not.toContain('future **3.0.0**');
+  });
+
+  it('tracks the deferred richer attachment upload model concretely', () => {
+    expect(BACKLOG).toContain('B1067');
+    expect(ATTACHMENT_TYPES).toContain('B1067');
+    expect(ATTACHMENT_TYPES).not.toContain('Flag for inclusion in a future major-version');
   });
 
   it('describes the pinned OpenAPI snapshot as JSON', () => {

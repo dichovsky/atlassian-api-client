@@ -6,7 +6,7 @@ Project documentation for `atlassian-api-client`.
 
 - [ARCHITECTURE.md](ARCHITECTURE.md) — system design: transport/auth/retry/error taxonomy, middleware composition, pagination, CLI shape. Kept current with the code.
 - [ATLASSIAN-API-REFRESH-2026-08-30.md](ATLASSIAN-API-REFRESH-2026-08-30.md) — current live-spec refresh, implemented deltas, route coverage, and verification evidence.
-- [DEEP-AUDIT-2026-06-10.md](DEEP-AUDIT-2026-06-10.md) — historical full-repo audit and source for surviving backlog work; current route status is superseded by the August refresh.
+- [RELEASING.md](RELEASING.md) — release-readiness gates, trusted publication, post-release checks, and rollback procedure.
 
 ## Other docs
 
@@ -18,5 +18,6 @@ Project documentation for `atlassian-api-client`.
 
 Dated, point-in-time reports superseded by later work — kept for provenance, not current status. See [archive/](archive/):
 
-- `API-GAP-ANALYSIS-2026-06-07.md` — coverage gap analysis (superseded by `DEEP-AUDIT-2026-06-10.md`).
+- [API-GAP-ANALYSIS-2026-06-07.md](archive/API-GAP-ANALYSIS-2026-06-07.md) — coverage gap analysis (superseded by the June deep audit below).
 - `BACKLOG-AUDIT.md` — 2026-05-23 backlog path snapshot.
+- [DEEP-AUDIT-2026-06-10.md](archive/DEEP-AUDIT-2026-06-10.md) — full-repository audit whose findings have since been resolved or moved to the backlog.

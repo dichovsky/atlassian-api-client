@@ -1,8 +1,10 @@
 # Deep Audit — 2026-06-10/11
 
+> **HISTORICAL SNAPSHOT — NOT CURRENT RELEASE STATUS.** This report preserves the repository state observed on 2026-06-10/11. Its actionable findings were subsequently fixed or transferred to `BACKLOG.md`; use [`ATLASSIAN-API-REFRESH-2026-08-30.md`](../ATLASSIAN-API-REFRESH-2026-08-30.md), [`BACKLOG.md`](../../BACKLOG.md), and the current test suite for present status.
+>
 > Full-repo audit: independent API-coverage re-run (3 layers), bidirectional spec-conformance diff, deep core/CLI review, useless-code adjudication, and documentation content audit. Findings are backlog-only (no code fixes in this wave); documentation reorganization ships separately (Phase 3). Every spec claim cites the pinned snapshots below.
 >
-> **Status: FINAL — all layers complete.** Layer 1 (coverage), Layer 2 (conformance, 113/113 modules), Layer 3 (reachability, 113/113 modules), core/CLI deep review, useless-code, and documentation audit are done. CRITICAL/HIGH findings were adversarially verified (independent skeptic agents trying to refute each); refuted findings are excluded from the counts below.
+> **Status at the time of audit: FINAL — all layers complete.** Layer 1 (coverage), Layer 2 (conformance, 113/113 modules), Layer 3 (reachability, 113/113 modules), core/CLI deep review, useless-code, and documentation audit are done. CRITICAL/HIGH findings were adversarially verified (independent skeptic agents trying to refute each); refuted findings are excluded from the counts below.
 
 ## 0. Inputs and denominators
 
@@ -13,7 +15,7 @@
 | Confluence v2         | `2.0.0`                             | 218     | 1          | `21eac830…40e8c0a7` |
 | **Total**             |                                     | **942** | **45**     |                     |
 
-Full hashes in [spec/README.md](../spec/README.md). Dedup corpus: open PRs #242, #246, #247, #248, #249, #250 (full diffs) and issues #240–#245, plus BACKLOG.md / BACKLOG-ARCHIVE.md (1,074 archived items). Every finding carries a `dedup` disposition against that corpus.
+Full hashes in [spec/README.md](../../spec/README.md). Dedup corpus: open PRs #242, #246, #247, #248, #249, #250 (full diffs) and issues #240–#245, plus BACKLOG.md / BACKLOG-ARCHIVE.md (1,074 archived items). Every finding carries a `dedup` disposition against that corpus.
 
 ## 1. Layer 1 — operation-level coverage (FINAL)
 
@@ -180,7 +182,7 @@ The remaining 55 modules are clean or carry only MEDIUM/LOW type-drift.
 | Useless code     | full repo       | 1 dead-internal + 1 stale ref + 7 v3-tagged exports                     |
 | Docs             | skill + human   | 13 doc-vs-code mismatches + dashboards table gap                        |
 
-**The single most important finding is the auth-middleware credential-stripping cluster (§5a, PR #246):** OAuth-refresh and Connect-JWT auth modes are non-functional on HEAD. **Second: the 9 Layer-2 CRITICALs** (§4a) where every call to the method fails.
+**At audit time, the single most important finding was the auth-middleware credential-stripping cluster (§5a, PR #246):** OAuth-refresh and Connect-JWT auth modes were broken in the audited snapshot and were fixed by PR #246. **Second were the 9 Layer-2 CRITICALs** (§4a), subsequently tracked and resolved through the referenced backlog items and pull requests.
 
 ### Resolved during this wave (2026-06-13)
 
@@ -191,7 +193,7 @@ Four open PRs the audit reconfirmed were reviewed (independent Opus, each red→
 - **#249** — forge + redact body shapes (2 of the 9 §4a CRITICALs), classification, issuesecurity.
 - **#250** — statuses `bulkCreate`/usages (2 §4a CRITICALs), webhooks/changelog/projects/role/fields return shapes. Deferred: webhooks `refresh()`/`self` → **B1054**. The audit fixed its coverage-gap CI failure (statuses scope guard + webhooks `?? []` fallback).
 
-The four changed typed surfaces → flagged for a future **3.0.0** (**B1062**).
+The four changed typed surfaces were scheduled for **3.0.0** as **B1062** and have since shipped.
 
 **Phase 2 backlog (this wave):** remaining findings are severity-gated into `BACKLOG.md` as **B1037–B1062** — CRITICAL/HIGH and adjudicated F1–F3 as individual items; MEDIUM/LOW + response-type drift as per-module rollups (**B1056** Jira, **B1059** Confluence) referencing this report. The 5 remaining §4a CRITICALs are **B1045–B1048**; the §2 adjudications are **B1057** (F1), **B1058** (F2), **B1060** (F3).
 

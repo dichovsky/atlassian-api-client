@@ -1,5 +1,7 @@
 # Changelog
 
+## [Unreleased](https://github.com/dichovsky/atlassian-api-client/compare/v4.0.0...HEAD)
+
 ## [4.0.0](https://github.com/dichovsky/atlassian-api-client/compare/v3.0.0...v4.0.0) (2026-09-02)
 
 This major release refreshes the public SDK and CLI against the current Atlassian Cloud contracts. It includes breaking contract corrections and removals; review the migration notes below before upgrading from 3.x.

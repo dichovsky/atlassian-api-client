@@ -67,6 +67,7 @@ parallel jobs and keeps the aggregate `CI` check as the required gate.
 - Keep runtime dependencies at zero unless a reviewed feature requires one. Run `npm audit` when dependency metadata changes.
 - Do not publish from a dirty or unvalidated tree. `prepublishOnly` runs `npm run validate`.
 - Keep `SECURITY.md` current when supported versions or security controls change.
+- Follow the [release runbook](docs/RELEASING.md) for every release; only the tag-triggered trusted-publishing workflow may publish to npm.
 
 ## Commit Messages
 

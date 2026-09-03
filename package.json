@@ -60,11 +60,13 @@
     "clean": "rimraf dist coverage",
     "codemap": "node scripts/generate-codemap.js",
     "codemap:check": "node scripts/generate-codemap.js --check",
+    "filemode:check": "node scripts/check-file-modes.js",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "prepublishOnly": "npm run validate",
+    "release:check": "node scripts/validate-release-tag.js",
     "api-coverage": "python3 scripts/api-gap-analysis.py",
     "test": "npm run test:unit && npm run test:api-gap",
     "test:api-gap": "vitest run --config vitest.api-gap.config.ts",
@@ -80,7 +82,7 @@
     "typecheck:ts6": "npm run tsc:6 -- --noEmit --stableTypeOrdering",
     "validate": "npm run clean && npm run validate:quality && npm run test:coverage && npm run test:api-gap && npm run validate:package",
     "validate:package": "npm run build && npm run test:exports",
-    "validate:quality": "npm run toolchain:check && npm run typecheck:ts6 && npm run typecheck && npm run codemap:check && npm run lint && npm run format:check"
+    "validate:quality": "npm run filemode:check && npm run toolchain:check && npm run typecheck:ts6 && npm run typecheck && npm run codemap:check && npm run lint && npm run format:check"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
