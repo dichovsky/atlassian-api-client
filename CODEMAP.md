@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "4.0.0"
   },
-  "sourceHash": "c9b6a8847db5dc2dae7cedb14fce8c61e8d89fdb4a647ea88bc00445f2104afd",
+  "sourceHash": "387ae33329b8fbae2bf528a25e9c5f52f5a69c9e73bd2716c45c86313e002719",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -15487,14 +15487,14 @@
         {
           "name": "computeAuthIdentity",
           "kind": "function",
-          "line": 408,
+          "line": 418,
           "signature": "function computeAuthIdentity(authHeaders: Record<string, string>): string",
           "jsdoc": "Hash the auth provider's `Authorization` header value into the short stable identifier exposed as {@link RequestOptions.authIdentity}. Uses the first 16 hex chars (64 bits) of SHA-256 — wide enough for accidental collisions to vanish in practice, narrow enough to keep cache/batch keys compact, and one-way so a logging/metrics middleware that persists `RequestOptions` never accidentally writes the credential to a log sink."
         },
         {
           "name": "assertOverrideBaseUrl",
           "kind": "function",
-          "line": 427,
+          "line": 437,
           "signature": "function assertOverrideBaseUrl(baseUrl: string, allowedHosts: readonly string[]): void",
           "jsdoc": "Validate a baseUrl override (deprecated constructor overload) against the same `allowedHosts` policy `resolveConfig` already applied to `config.baseUrl`. Without this, an override could silently relocate every relative-path request to a foreign host with the configured `Authorization` header attached. PR review of round 3."
         }

@@ -385,6 +385,16 @@ async function parseBodyWithTimeoutHandling<T>(
     if (error instanceof Error && error.name === 'AbortError' && timeoutSignal.aborted) {
       throw new TimeoutError(timeoutMs);
     }
+    // A connection can die AFTER the response headers arrive, while the body is
+    // still streaming — `fetch` resolves, then the body read rejects. Without
+    // this branch such a failure escaped as a raw `TypeError: terminated`
+    // (cause `UND_ERR_SOCKET`): outside the `AtlassianError` taxonomy, never
+    // retried, and invisible to the circuit breaker — even though the very same
+    // socket reset one moment earlier (before headers) becomes a retried
+    // `NetworkError`. Classify both phases identically.
+    if (isNetworkError(error)) {
+      throw new NetworkError((error as Error).message, { cause: error as Error });
+    }
     throw error;
   }
 }

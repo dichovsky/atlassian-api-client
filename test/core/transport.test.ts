@@ -2399,3 +2399,62 @@ describe('HttpTransport', () => {
     });
   });
 });
+
+// ---------------------------------------------------------------------------
+// Network failures during the body read (after response headers arrive)
+// ---------------------------------------------------------------------------
+describe('HttpTransport body-read network failures', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+  });
+
+  /** The shape undici produces when the socket dies mid-body: `TypeError: terminated`. */
+  function socketResetDuringBody(): Response {
+    const cause = Object.assign(new Error('other side closed'), { code: 'UND_ERR_SOCKET' });
+    return {
+      ok: true,
+      status: 200,
+      headers: new Headers({ 'content-type': 'application/json' }),
+      text: () => Promise.reject(Object.assign(new TypeError('terminated'), { cause })),
+    } as unknown as Response;
+  }
+
+  it('classifies a mid-body socket reset as NetworkError and retries it', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(socketResetDuringBody());
+    vi.stubGlobal('fetch', fetchMock);
+
+    const transport = makeTransport({ ...defaultConfig, retries: 2, retryDelay: 0 });
+
+    const error = await runRequest(transport, { method: 'GET', path: '/pages' }).catch(
+      (e: unknown) => e,
+    );
+
+    expect(error).toBeInstanceOf(NetworkError);
+    // Same treatment as a reset that lands BEFORE the headers: 1 + 2 retries.
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+  });
+
+  it('leaves a non-network body failure untouched', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      headers: new Headers({ 'content-type': 'application/json' }),
+      text: () => Promise.resolve('{ not json'),
+    } as unknown as Response);
+    vi.stubGlobal('fetch', fetchMock);
+
+    const transport = makeTransport({ ...defaultConfig, retries: 2, retryDelay: 0 });
+
+    const error = await runRequest(transport, { method: 'GET', path: '/pages' }).catch(
+      (e: unknown) => e,
+    );
+
+    expect(error).toBeInstanceOf(ValidationError);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+});
