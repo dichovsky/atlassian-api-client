@@ -405,7 +405,17 @@ interface CappedString {
 function extractErrorMessage(body: unknown): string | undefined {
   const raw = extractErrorMessageRaw(body);
   if (raw === undefined) return undefined;
-  return raw.truncated ? raw.value.slice(0, MAX_ERROR_MESSAGE_LENGTH - 1) + '…' : raw.value;
+  const message = raw.truncated
+    ? raw.value.slice(0, MAX_ERROR_MESSAGE_LENGTH - 1) + '…'
+    : raw.value;
+  // A present-but-blank server message must not defeat the status-derived
+  // default. Each subclass applies its fallback with `message ?? 'Authentication
+  // failed'`, and `??` only fires on null/undefined — so a body of
+  // `{ "message": "" }` (or `{ "errorMessages": [""] }`) produced an error whose
+  // `.message` was the EMPTY STRING. That renders as a blank line in logs and an
+  // empty alert in a UI, hiding even the HTTP status. Returning `undefined`
+  // hands the decision back to the fallback.
+  return message.trim() === '' ? undefined : message;
 }
 
 function extractErrorMessageRaw(body: unknown): CappedString | undefined {

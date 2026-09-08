@@ -425,6 +425,24 @@ describe('createHttpError', () => {
       expect(err.message).toBe('Field A is required; Field B is required');
     });
 
+    it('empty-string message → falls back to the status default', () => {
+      // `message ?? default` does not fire for '', so the error surfaced with a
+      // blank message and the status was lost.
+      expect(createHttpError(401, { message: '' }).message).toBe('Authentication failed');
+    });
+
+    it('whitespace-only message → falls back to the status default', () => {
+      expect(createHttpError(403, { message: '   ' }).message).toBe('Access forbidden');
+    });
+
+    it('empty-string errorMessages entry → falls back to the status default', () => {
+      expect(createHttpError(404, { errorMessages: [''] }).message).toBe('Resource not found');
+    });
+
+    it('empty-string body → falls back to the status default', () => {
+      expect(createHttpError(500, '').message).toBe('HTTP error 500');
+    });
+
     it('object with empty errorMessages array → falls through to message field', () => {
       const err = createHttpError(401, { errorMessages: [], message: 'fallback msg' });
       expect(err.message).toBe('fallback msg');
