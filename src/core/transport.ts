@@ -205,7 +205,7 @@ export class HttpTransport implements Transport {
       !('status' in response) ||
       !('headers' in response) ||
       typeof response.status !== 'number' ||
-      !(response.headers instanceof Headers)
+      !isHeadersLike(response.headers)
     ) {
       throw new ValidationError('Invalid ApiResponse structure received from transport');
     }
@@ -352,6 +352,30 @@ export class HttpTransport implements Transport {
       clearTimeout(timeoutId);
     }
   }
+}
+
+/**
+ * Duck-type check for a WHATWG `Headers`-shaped value.
+ *
+ * `instanceof Headers` is realm-bound. The npm `undici` package — which the
+ * README's proxy recipe and {@link ClientConfig.fetch} both recommend injecting
+ * for `ProxyAgent` support — builds responses with ITS OWN `Headers` class, so
+ * an `instanceof` gate rejected every successful response from a documented
+ * configuration with `Invalid ApiResponse structure`. Error responses were
+ * unaffected (they throw before this gate), making the failure look like a
+ * client-side bug rather than a shape mismatch.
+ *
+ * Everything downstream reads headers only via `get()` (request-id capture,
+ * rate-limit parsing) and `entries()` ({@link toJSON}), so those two methods
+ * are the contract worth enforcing.
+ */
+function isHeadersLike(value: unknown): value is Headers {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    typeof (value as Headers).get === 'function' &&
+    typeof (value as Headers).entries === 'function'
+  );
 }
 
 /**

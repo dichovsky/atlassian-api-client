@@ -2399,3 +2399,59 @@ describe('HttpTransport', () => {
     });
   });
 });
+
+// ---------------------------------------------------------------------------
+// Response shape gate (foreign-realm Headers)
+// ---------------------------------------------------------------------------
+describe('HttpTransport response shape validation', () => {
+  /**
+   * Minimal stand-in for a `Headers` implementation from another realm — what
+   * the npm `undici` package (the README's proxy recipe) actually returns.
+   * API-compatible with WHATWG `Headers` but NOT `instanceof globalThis.Headers`.
+   */
+  class ForeignHeaders {
+    private readonly map = new Map<string, string>();
+    constructor(init: Record<string, string> = {}) {
+      for (const [k, v] of Object.entries(init)) this.map.set(k.toLowerCase(), v);
+    }
+    get(name: string): string | null {
+      return this.map.get(name.toLowerCase()) ?? null;
+    }
+    entries(): IterableIterator<[string, string]> {
+      return this.map.entries();
+    }
+  }
+
+  function transportReturning(response: unknown): HttpTransport {
+    const middleware = (() => Promise.resolve(response)) as unknown as NonNullable<
+      ResolvedConfig['middleware']
+    >[number];
+    return new HttpTransport({ ...defaultConfig, retries: 0, middleware: [middleware] });
+  }
+
+  it('accepts a response whose headers come from another realm', async () => {
+    const transport = transportReturning({
+      data: { ok: true },
+      status: 200,
+      headers: new ForeignHeaders({ 'content-type': 'application/json' }),
+    });
+
+    const result = await transport.request<{ ok: boolean }>({ method: 'GET', path: '/pages' });
+
+    expect(result.data).toEqual({ ok: true });
+    expect(result.status).toBe(200);
+  });
+
+  it.each([
+    ['headers is a string', 'not-headers'],
+    ['headers is null', null],
+    ['headers lacks get()', { entries: () => [][Symbol.iterator]() }],
+    ['headers lacks entries()', { get: () => null }],
+  ])('rejects a response where %s', async (_label, headers) => {
+    const transport = transportReturning({ data: null, status: 200, headers });
+
+    await expect(transport.request({ method: 'GET', path: '/pages' })).rejects.toBeInstanceOf(
+      ValidationError,
+    );
+  });
+});
