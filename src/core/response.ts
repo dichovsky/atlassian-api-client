@@ -17,14 +17,19 @@ export interface SerializableApiResponse<T> {
  * serialises to `{}`. This helper materialises the header entries into a plain
  * `Record<string, string>` so the full response can be logged or persisted.
  *
- * Duplicate header names are collapsed by `Headers.prototype.entries()`:
- * standard single-value headers are returned verbatim, and `Set-Cookie` values
- * are combined into a comma-separated string (the WHATWG default).
+ * `Headers.prototype.entries()` yields ONE entry per header name for ordinary
+ * headers, but a SEPARATE entry per `Set-Cookie` — that header is exempt from
+ * the WHATWG combining rule precisely because its values may contain commas.
+ * A plain `headers[key] = value` assignment therefore kept only the LAST cookie
+ * and silently discarded every earlier one, so a response setting a session
+ * cookie plus a CSRF cookie serialised with the session cookie missing.
+ * Duplicate names are joined with `', '` so no value is lost.
  */
 export function toJSON<T>(response: ApiResponse<T>): SerializableApiResponse<T> {
   const headers: Record<string, string> = {};
   for (const [key, value] of response.headers.entries()) {
-    headers[key] = value;
+    const existing = headers[key];
+    headers[key] = existing === undefined ? value : `${existing}, ${value}`;
   }
 
   return {

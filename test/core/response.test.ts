@@ -43,6 +43,29 @@ describe('toJSON', () => {
     expect(json.data).toEqual({ id: '1' });
   });
 
+  it('keeps every Set-Cookie value instead of only the last', () => {
+    // `Headers.entries()` yields one entry PER Set-Cookie (that header is exempt
+    // from the WHATWG combining rule), so a naive assignment loses all but the
+    // last — dropping the session cookie in a session + CSRF pair.
+    const headers = new Headers([
+      ['set-cookie', 'session=abc; Path=/; HttpOnly'],
+      ['set-cookie', 'csrf=xyz; Path=/'],
+    ]);
+    const response: ApiResponse<null> = { data: null, status: 200, headers };
+
+    const json = toJSON(response);
+
+    expect(json.headers['set-cookie']).toContain('session=abc');
+    expect(json.headers['set-cookie']).toContain('csrf=xyz');
+  });
+
+  it('leaves a single-valued header untouched', () => {
+    const headers = new Headers([['set-cookie', 'session=abc']]);
+    const response: ApiResponse<null> = { data: null, status: 200, headers };
+
+    expect(toJSON(response).headers['set-cookie']).toBe('session=abc');
+  });
+
   it('produces a JSON-serialisable object', () => {
     const response: ApiResponse<{ id: string }> = {
       data: { id: '1' },
