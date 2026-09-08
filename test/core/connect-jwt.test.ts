@@ -494,6 +494,53 @@ describe('verifyConnectAsymmetricJwt', () => {
     ).rejects.toThrow(/expired/);
   });
 
+  it('rejects a NaN maxClockSkewSeconds instead of disabling expiry checks', async () => {
+    // Every exp/nbf/iat comparison adds `skew` to one side, so NaN makes all
+    // three false and a long-expired token verifies. NaN arrives the ordinary
+    // way: Number(process.env.JWT_SKEW) with the variable unset.
+    const token = signRs256(validPayload({ exp: nowSeconds - 100_000 }));
+    await expect(
+      verifyConnectAsymmetricJwt(token, {
+        publicKey: publicKeyPem,
+        now: fixedNow,
+        maxClockSkewSeconds: Number.NaN,
+      }),
+    ).rejects.toThrow(/maxClockSkewSeconds/);
+  });
+
+  it('rejects an Infinite maxClockSkewSeconds', async () => {
+    const token = signRs256(validPayload({ exp: nowSeconds - 100_000 }));
+    await expect(
+      verifyConnectAsymmetricJwt(token, {
+        publicKey: publicKeyPem,
+        now: fixedNow,
+        maxClockSkewSeconds: Number.POSITIVE_INFINITY,
+      }),
+    ).rejects.toThrow(/maxClockSkewSeconds/);
+  });
+
+  it('rejects a negative maxClockSkewSeconds', async () => {
+    const token = signRs256(validPayload());
+    await expect(
+      verifyConnectAsymmetricJwt(token, {
+        publicKey: publicKeyPem,
+        now: fixedNow,
+        maxClockSkewSeconds: -1,
+      }),
+    ).rejects.toThrow(/maxClockSkewSeconds/);
+  });
+
+  it('rejects a non-numeric maxClockSkewSeconds', async () => {
+    const token = signRs256(validPayload());
+    await expect(
+      verifyConnectAsymmetricJwt(token, {
+        publicKey: publicKeyPem,
+        now: fixedNow,
+        maxClockSkewSeconds: '30' as unknown as number,
+      }),
+    ).rejects.toThrow(/maxClockSkewSeconds/);
+  });
+
   it('rejects a not-yet-valid token (nbf in the future beyond skew)', async () => {
     const token = signRs256(validPayload({ nbf: nowSeconds + 100 }));
     await expect(

@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "4.0.0"
   },
-  "sourceHash": "c9b6a8847db5dc2dae7cedb14fce8c61e8d89fdb4a647ea88bc00445f2104afd",
+  "sourceHash": "330cd241689ae26ebc297dd173d38185b0b00e2bd51062eccbfda40e652ff8bb",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -13637,30 +13637,37 @@
           "jsdoc": "Validates `exp`, `iat`, and `nbf` with the configured clock-skew tolerance."
         },
         {
+          "name": "resolveClockSkewSeconds",
+          "kind": "function",
+          "line": 505,
+          "signature": "function resolveClockSkewSeconds(value: number | undefined): number",
+          "jsdoc": "Resolve the clock-skew tolerance, rejecting values that would silently disable the time checks entirely."
+        },
+        {
           "name": "readNumericClaim",
           "kind": "function",
-          "line": 493,
+          "line": 514,
           "signature": "function readNumericClaim(payload: Record<string, unknown>, name: string): number | undefined",
           "jsdoc": "Reads a numeric claim, rejecting present-but-non-numeric values."
         },
         {
           "name": "validateIssuer",
           "kind": "function",
-          "line": 503,
+          "line": 524,
           "signature": "function validateIssuer( payload: Record<string, unknown>, options: AsymmetricJwtVerifyOptions, ): void",
           "jsdoc": "Enforces `iss === options.issuer` when an expected issuer is configured."
         },
         {
           "name": "validateAudience",
           "kind": "function",
-          "line": 514,
+          "line": 535,
           "signature": "function validateAudience( payload: Record<string, unknown>, options: AsymmetricJwtVerifyOptions, ): void",
           "jsdoc": "Enforces `options.audience` membership in `aud` (string or string[])."
         },
         {
           "name": "validateQsh",
           "kind": "function",
-          "line": 530,
+          "line": 551,
           "signature": "function validateQsh(payload: Record<string, unknown>, options: AsymmetricJwtVerifyOptions): void",
           "jsdoc": "Enforces the `qsh` claim against the expected hash when configured."
         }

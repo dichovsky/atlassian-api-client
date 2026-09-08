@@ -471,7 +471,7 @@ function validateTimeClaims(
   options: AsymmetricJwtVerifyOptions,
 ): void {
   const nowSeconds = Math.floor((options.now?.() ?? Date.now()) / 1000);
-  const skew = options.maxClockSkewSeconds ?? DEFAULT_MAX_CLOCK_SKEW_SECONDS;
+  const skew = resolveClockSkewSeconds(options.maxClockSkewSeconds);
 
   const exp = readNumericClaim(payload, 'exp');
   if (exp !== undefined && nowSeconds > exp + skew) {
@@ -487,6 +487,27 @@ function validateTimeClaims(
   if (iat !== undefined && nowSeconds + skew < iat) {
     throw new ValidationError('JWT issued-at (iat) is in the future');
   }
+}
+
+/**
+ * Resolve the clock-skew tolerance, rejecting values that would silently
+ * disable the time checks entirely.
+ *
+ * Every `exp`/`nbf`/`iat` comparison adds `skew` to one side, so a `NaN`
+ * tolerance makes ALL THREE comparisons false and a token that expired years
+ * ago verifies successfully — an authentication bypass with no error and no
+ * log line. `NaN` is not exotic: `Number(process.env.JWT_SKEW)` yields it
+ * whenever the variable is unset. `Infinity` disables the checks the same way.
+ *
+ * Mirrors `resolveNonNegFiniteNumber` in oauth.ts, which already guards the
+ * equivalent numeric options there.
+ */
+function resolveClockSkewSeconds(value: number | undefined): number {
+  if (value === undefined) return DEFAULT_MAX_CLOCK_SKEW_SECONDS;
+  if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) {
+    throw new ValidationError('maxClockSkewSeconds must be a non-negative finite number');
+  }
+  return value;
 }
 
 /** Reads a numeric claim, rejecting present-but-non-numeric values. */
