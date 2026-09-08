@@ -365,16 +365,23 @@ export class HttpTransport implements Transport {
  * unaffected (they throw before this gate), making the failure look like a
  * client-side bug rather than a shape mismatch.
  *
- * Everything downstream reads headers only via `get()` (request-id capture,
- * rate-limit parsing) and `entries()` ({@link toJSON}), so those two methods
- * are the contract worth enforcing.
+ * The library itself reads headers only via `get()` (request-id capture,
+ * rate-limit parsing) and `entries()` ({@link toJSON}) — but `ApiResponse.headers`
+ * is DECLARED as `Headers`, and callers may reasonably use the rest of that
+ * interface. Checking a representative spread of the WHATWG surface keeps this
+ * gate close to the declared contract, so a partial stand-in from a custom
+ * middleware still fails fast here rather than as an opaque `TypeError` deep in
+ * caller code. Every real implementation (`undici`, `node-fetch`) provides all
+ * of these, so no genuine foreign-realm `Headers` is rejected.
  */
 function isHeadersLike(value: unknown): value is Headers {
+  if (typeof value !== 'object' || value === null) return false;
+  const candidate = value as Headers;
   return (
-    typeof value === 'object' &&
-    value !== null &&
-    typeof (value as Headers).get === 'function' &&
-    typeof (value as Headers).entries === 'function'
+    typeof candidate.get === 'function' &&
+    typeof candidate.has === 'function' &&
+    typeof candidate.entries === 'function' &&
+    typeof candidate.forEach === 'function'
   );
 }
 

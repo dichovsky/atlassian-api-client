@@ -2417,8 +2417,14 @@ describe('HttpTransport response shape validation', () => {
     get(name: string): string | null {
       return this.map.get(name.toLowerCase()) ?? null;
     }
+    has(name: string): boolean {
+      return this.map.has(name.toLowerCase());
+    }
     entries(): IterableIterator<[string, string]> {
       return this.map.entries();
+    }
+    forEach(cb: (value: string, key: string) => void): void {
+      for (const [k, v] of this.map) cb(v, k);
     }
   }
 
@@ -2445,8 +2451,10 @@ describe('HttpTransport response shape validation', () => {
   it.each([
     ['headers is a string', 'not-headers'],
     ['headers is null', null],
-    ['headers lacks get()', { entries: () => [][Symbol.iterator]() }],
-    ['headers lacks entries()', { get: () => null }],
+    ['headers lacks get()', { has: () => false, entries: () => [], forEach: () => undefined }],
+    ['headers lacks has()', { get: () => null, entries: () => [], forEach: () => undefined }],
+    ['headers lacks entries()', { get: () => null, has: () => false, forEach: () => undefined }],
+    ['headers lacks forEach()', { get: () => null, has: () => false, entries: () => [] }],
   ])('rejects a response where %s', async (_label, headers) => {
     const transport = transportReturning({ data: null, status: 200, headers });
 
