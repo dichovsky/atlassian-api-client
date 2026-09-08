@@ -419,6 +419,20 @@ function extractErrorMessageRaw(body: unknown): CappedString | undefined {
     if (joined !== undefined) return joined;
   }
 
+  // Jira field-level errors: { errors: { summary: 'You must specify a summary.' } }.
+  // The dominant shape for 400s from issue create/update/transition, where
+  // `errorMessages` is an EMPTY array and every diagnostic lives here. Ignoring
+  // it degraded the most common Jira validation failure to a bare
+  // `HTTP error 400` with no indication of which field was rejected.
+  if (isPlainObject(body.errors)) {
+    const fieldErrors = joinWithCap(
+      Object.entries(body.errors)
+        .filter(([, value]) => typeof value === 'string')
+        .map(([field, value]) => `${field}: ${value as string}`),
+    );
+    if (fieldErrors !== undefined) return fieldErrors;
+  }
+
   // Generic: { message: string }
   if (typeof body.message === 'string') {
     return capLength(body.message);
