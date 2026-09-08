@@ -125,7 +125,13 @@ export function computeQsh(
   if (query) {
     for (const key of Object.keys(query)) {
       const value = query[key];
-      if (value !== undefined) add(key, String(value));
+      // REPLACE, don't accumulate. `buildUrl` applies the query map with
+      // `URLSearchParams.set`, which overwrites any same-named parameter
+      // already baked into the path — so the wire carries only the map's
+      // value. Merging both here signed `id=a,b` for a request that actually
+      // sent `id=b`; the server recomputes the hash from what it received and
+      // rejects the JWT with a 401 that points nowhere near the query map.
+      if (value !== undefined) params.set(key, [String(value)]);
     }
   }
 
