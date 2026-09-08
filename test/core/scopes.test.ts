@@ -125,6 +125,19 @@ describe('detectRequiredScopes', () => {
     expect(detectRequiredScopes(['unknown.op', 'another.unknown'])).toEqual([]);
   });
 
+  it.each(['constructor', 'toString', 'valueOf', 'hasOwnProperty', '__proto__'])(
+    'ignores the inherited Object.prototype name %s instead of throwing',
+    (name) => {
+      // A plain index lookup returns the inherited FUNCTION, which survives an
+      // `!== undefined` guard and then throws "scopes is not iterable".
+      expect(detectRequiredScopes([name])).toEqual([]);
+    },
+  );
+
+  it('still resolves real operations when an inherited name is mixed in', () => {
+    expect(detectRequiredScopes(['constructor', 'jira.issues.get'])).toContain('read:issue:jira');
+  });
+
   it('returns the correct granular scopes for a single Jira read operation', () => {
     const scopes = detectRequiredScopes(['jira.issues.get']);
     // x-atlassian-oauth2-scopes Beta on GET /rest/api/3/issue/{issueIdOrKey}
