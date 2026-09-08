@@ -412,6 +412,24 @@ function validateTokenEndpoint(
     );
   }
 
+  // The transport rejects non-default ports on ANY credential-bearing URL
+  // (`assertDefaultPort` in request.ts, and the mirrored check in
+  // `resolveConfig`) because `:8443` on an allow-listed host may be a
+  // completely different service — an admin console, a debug listener, a
+  // developer's tunnel. This check was hostname-only, so
+  // `https://auth.atlassian.com:8443/oauth/token` passed with the DEFAULT
+  // allowlist and shipped the refresh_token + client_secret there. Those are
+  // the highest-value secrets the library handles, so this path should be at
+  // least as strict as the tenant-API path, not looser.
+  if (parsed.port !== '') {
+    throw new ValidationError(
+      `tokenEndpoint must not include a non-default port: ${parsed.protocol}//${parsed.hostname}:${parsed.port}. ` +
+        `A non-default port on an allow-listed host may route to a different service; ` +
+        `refresh_token and client_secret must not be sent there. ` +
+        `Route via the host's normal name and rely on DNS / a proxy if a non-default port is required.`,
+    );
+  }
+
   return parsed.href;
 }
 

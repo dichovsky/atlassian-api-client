@@ -788,6 +788,36 @@ describe('B036: tokenEndpoint host allowlist', () => {
       ).toThrow(/HTTPS/);
     });
 
+    it('rejects a non-default port on the default-allowlisted host', () => {
+      // Hostname matches, but `:8443` on that host may be an entirely
+      // different service — and this URL receives refresh_token + client_secret.
+      expect(() =>
+        createOAuthRefreshMiddleware({
+          ...validBaseConfig,
+          tokenEndpoint: 'https://auth.atlassian.com:8443/oauth/token',
+        }),
+      ).toThrow(/port/);
+    });
+
+    it('rejects a non-default port on an opted-in host', () => {
+      expect(() =>
+        createOAuthRefreshMiddleware({
+          ...validBaseConfig,
+          tokenEndpoint: 'https://idp.internal.example:9443/oauth/token',
+          allowedTokenEndpointHosts: ['idp.internal.example'],
+        }),
+      ).toThrow(/port/);
+    });
+
+    it('accepts an explicit default port (443 is not a port per URL parsing)', () => {
+      expect(() =>
+        createOAuthRefreshMiddleware({
+          ...validBaseConfig,
+          tokenEndpoint: 'https://auth.atlassian.com:443/oauth/token',
+        }),
+      ).not.toThrow();
+    });
+
     it('opt-in: allowedTokenEndpointHosts authorises a self-hosted IdP', () => {
       expect(() =>
         createOAuthRefreshMiddleware({
