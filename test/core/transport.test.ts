@@ -2448,7 +2448,7 @@ describe('HttpTransport response shape validation', () => {
     expect(result.status).toBe(200);
   });
 
-  it.each([
+  it.each<[string, unknown]>([
     ['headers is a string', 'not-headers'],
     ['headers is null', null],
     ['headers lacks get()', { has: () => false, entries: () => [], forEach: () => undefined }],
