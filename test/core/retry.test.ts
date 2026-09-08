@@ -82,9 +82,19 @@ describe('calculateDelay', () => {
 });
 
 describe('isNetworkError', () => {
-  it('returns true for TypeError', () => {
-    const err = new TypeError('Failed to fetch');
+  it('returns true for a fetch TypeError that wraps a network cause', () => {
+    // `fetch` surfaces real network failures as a TypeError wrapping the
+    // underlying socket/DNS error — verified against Node 24 undici for
+    // connection-refused, DNS failure, and mid-body socket reset.
+    const err = new TypeError('fetch failed', { cause: new Error('connect ECONNREFUSED') });
     expect(isNetworkError(err)).toBe(true);
+  });
+
+  it('returns false for a causeless TypeError from fetch argument validation', () => {
+    // An invalid header value / bad method / body-on-GET rejects locally before
+    // any socket is opened, and carries no `cause`. Retrying cannot help.
+    const err = new TypeError('Headers.append: "a\nb" is an invalid header value');
+    expect(isNetworkError(err)).toBe(false);
   });
 
   it('returns false for AbortError', () => {

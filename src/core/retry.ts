@@ -47,8 +47,17 @@ export function isNetworkError(error: unknown): boolean {
   }
 
   if (error instanceof TypeError) {
-    // fetch throws TypeError for network failures (DNS, connection refused, etc.)
-    return true;
+    // `fetch` reports NETWORK failures as a `TypeError` that WRAPS the real
+    // socket/DNS error in `cause` (`TypeError: fetch failed` → cause
+    // `ECONNREFUSED`; `TypeError: terminated` → cause `UND_ERR_SOCKET`).
+    //
+    // It also reports CLIENT-SIDE ARGUMENT errors as a bare `TypeError` with no
+    // `cause` — an invalid header value, a malformed method, a body on GET.
+    // Those never reached the network and will fail identically on every
+    // attempt, so retrying them just multiplies the same local failure and
+    // mislabels it `NetworkError`. The presence of a `cause` is what separates
+    // "the network failed" from "the caller passed something fetch rejected".
+    return error.cause !== undefined;
   }
 
   // Runtime-level failures (Node SystemError, undici-wrapped errors) may surface

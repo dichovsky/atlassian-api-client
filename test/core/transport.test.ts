@@ -790,7 +790,9 @@ describe('HttpTransport', () => {
   // -------------------------------------------------------------------------
   describe('network errors', () => {
     it('throws NetworkError when fetch throws TypeError', async () => {
-      const fetchMock = vi.fn().mockRejectedValue(new TypeError('Failed to fetch'));
+      const fetchMock = vi
+        .fn()
+        .mockRejectedValue(new TypeError('fetch failed', { cause: new Error('ECONNREFUSED') }));
       vi.stubGlobal('fetch', fetchMock);
 
       const noRetryConfig: ResolvedConfig = { ...defaultConfig, retries: 0 };
@@ -802,7 +804,7 @@ describe('HttpTransport', () => {
     });
 
     it('wraps the original TypeError as cause', async () => {
-      const originalError = new TypeError('Failed to fetch');
+      const originalError = new TypeError('fetch failed', { cause: new Error('ECONNREFUSED') });
       const fetchMock = vi.fn().mockRejectedValue(originalError);
       vi.stubGlobal('fetch', fetchMock);
 
@@ -815,7 +817,7 @@ describe('HttpTransport', () => {
       expect(error).toBeInstanceOf(NetworkError);
       const cause = (error as NetworkError).cause as Error;
       expect(cause).toBeDefined();
-      expect(cause.message).toBe('Failed to fetch');
+      expect(cause.message).toBe('fetch failed');
     });
   });
 
@@ -949,7 +951,7 @@ describe('HttpTransport', () => {
     it('retries after network error and succeeds', async () => {
       const fetchMock = vi
         .fn()
-        .mockRejectedValueOnce(new TypeError('Failed to fetch'))
+        .mockRejectedValueOnce(new TypeError('fetch failed', { cause: new Error('ECONNREFUSED') }))
         .mockResolvedValueOnce(makeResponse(200, { recovered: true }));
       vi.stubGlobal('fetch', fetchMock);
 
