@@ -131,16 +131,20 @@ export function computeQsh(
 
   // Sort keys by codepoint (UTF-16 code-unit) order — what the Connect QSH spec
   // and the reference impl (`atlassian-jwt`) require: sort(["a","A"]) => ["A","a"].
-  // A parameter with multiple values has them encoded, sorted, and comma-joined
-  // (the comma separator is literal; commas WITHIN a value are %2C-encoded).
+  // A parameter with multiple values has them SORTED FIRST and then encoded,
+  // matching the reference impl. Encoding before sorting reorders values,
+  // because every percent-escape begins with '%' (0x25) while every character
+  // encodeRfc3986 leaves literal is '-' (0x2D) or above — so an encoded value
+  // always sorts ahead of an unencoded one regardless of the raw characters.
+  // (The comma separator is literal; commas WITHIN a value are %2C-encoded.)
   const canonicalQuery = [...params.entries()]
     // Map keys are unique, so the two keys are never equal — a two-way
     // comparator suffices and matches default codepoint order for distinct keys.
     .sort(([a], [b]) => (a < b ? -1 : 1))
     .map(([key, values]) => {
-      const encodedValues = values
-        .map((v) => encodeRfc3986(v))
+      const encodedValues = [...values]
         .sort()
+        .map((v) => encodeRfc3986(v))
         .join(',');
       return `${encodeRfc3986(key)}=${encodedValues}`;
     })
