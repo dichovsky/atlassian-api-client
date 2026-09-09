@@ -24,6 +24,13 @@ export interface SerializableApiResponse<T> {
  * and silently discarded every earlier one, so a response setting a session
  * cookie plus a CSRF cookie serialised with the session cookie missing.
  * Duplicate names are joined with `', '` so no value is lost.
+ *
+ * That joined string is for LOGGING and PERSISTENCE, not for re-parsing: a
+ * cookie's own `Expires` attribute contains a comma
+ * (`Expires=Mon, 09 Sep 2026 …`), so splitting the result back apart on `', '`
+ * is ambiguous. Callers needing the individual cookies should read
+ * `response.headers.getSetCookie()` from the live `Headers` object rather than
+ * this projection.
  */
 export function toJSON<T>(response: ApiResponse<T>): SerializableApiResponse<T> {
   const headers: Record<string, string> = {};
