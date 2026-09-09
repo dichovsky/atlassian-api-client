@@ -507,8 +507,23 @@ function resolveClockSkewSeconds(value: number | undefined): number {
   if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) {
     throw new ValidationError('maxClockSkewSeconds must be a non-negative finite number');
   }
+  // A large-but-finite skew reproduces the SAME bypass by another route: with
+  // `1e15`, `exp + skew` outruns any real clock and every expired token
+  // verifies. The realistic way to get there is a units mistake — passing
+  // milliseconds into a seconds field — which is the same class of config error
+  // as the NaN case. Clock skew is meant to absorb drift between two servers,
+  // so a day is already far beyond generous.
+  if (value > MAX_CLOCK_SKEW_CEILING_SECONDS) {
+    throw new ValidationError(
+      `maxClockSkewSeconds must not exceed ${MAX_CLOCK_SKEW_CEILING_SECONDS} (one day); ` +
+        `a larger tolerance disables expiry checking. Did you pass milliseconds?`,
+    );
+  }
   return value;
 }
+
+/** One day. Beyond this, `exp + skew` outruns any plausible clock difference. */
+const MAX_CLOCK_SKEW_CEILING_SECONDS = 86_400;
 
 /** Reads a numeric claim, rejecting present-but-non-numeric values. */
 function readNumericClaim(payload: Record<string, unknown>, name: string): number | undefined {

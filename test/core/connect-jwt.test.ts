@@ -508,6 +508,30 @@ describe('verifyConnectAsymmetricJwt', () => {
     ).rejects.toThrow(/maxClockSkewSeconds/);
   });
 
+  it('rejects an absurdly large finite maxClockSkewSeconds', async () => {
+    // Same bypass by another route: 1e15 seconds outruns any real clock, so
+    // every expired token would verify. Realistically a ms-for-seconds mistake.
+    const token = signRs256(validPayload({ exp: nowSeconds - 100_000 }));
+    await expect(
+      verifyConnectAsymmetricJwt(token, {
+        publicKey: publicKeyPem,
+        now: fixedNow,
+        maxClockSkewSeconds: 1e15,
+      }),
+    ).rejects.toThrow(/maxClockSkewSeconds/);
+  });
+
+  it('accepts a skew at the one-day ceiling', async () => {
+    const token = signRs256(validPayload());
+    await expect(
+      verifyConnectAsymmetricJwt(token, {
+        publicKey: publicKeyPem,
+        now: fixedNow,
+        maxClockSkewSeconds: 86_400,
+      }),
+    ).resolves.toBeDefined();
+  });
+
   it('rejects an Infinite maxClockSkewSeconds', async () => {
     const token = signRs256(validPayload({ exp: nowSeconds - 100_000 }));
     await expect(
