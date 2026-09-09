@@ -46,6 +46,11 @@ export interface OAuthRefreshConfig {
    * (B034); the auth host is intentionally a separate allowlist because the
    * threat models differ.
    *
+   * The URL must also use the scheme's default port and carry no userinfo:
+   * `https://auth.atlassian.com:8443/…` and `https://user:pw@auth.atlassian.com/…`
+   * both match the hostname yet send credentials somewhere the allowlist never
+   * authorised, so both are rejected.
+   *
    * @default 'https://auth.atlassian.com/oauth/token'
    */
   readonly tokenEndpoint?: string;
@@ -353,6 +358,8 @@ export async function fetchRefreshedTokens(
  *   - malformed URL
  *   - non-HTTPS scheme
  *   - host not on the allowlist
+ *   - embedded userinfo (`https://user:pw@host/…`)
+ *   - a non-default port (`https://host:8443/…`)
  *   - invalid `allowedTokenEndpointHosts` entries (empty, port-bearing,
  *     whitespace, slashes, control chars, IPv6 brackets)
  *
