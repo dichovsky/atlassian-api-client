@@ -373,6 +373,13 @@ export class HttpTransport implements Transport {
  * middleware still fails fast here rather than as an opaque `TypeError` deep in
  * caller code. Every real implementation (`undici`, `node-fetch`) provides all
  * of these, so no genuine foreign-realm `Headers` is rejected.
+ *
+ * This verifies SURFACE, not behaviour: it cannot check that `get()` is
+ * case-insensitive the way the WHATWG spec requires. A custom middleware
+ * returning a case-SENSITIVE stand-in would pass here and then silently miss
+ * `X-AREQUESTID` / rate-limit lookups. That failure is degraded metadata rather
+ * than a wrong response, and any real `Headers` implementation is compliant, so
+ * the check stays at surface level rather than probing behaviour on every call.
  */
 function isHeadersLike(value: unknown): value is Headers {
   if (typeof value !== 'object' || value === null) return false;
