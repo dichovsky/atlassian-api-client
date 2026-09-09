@@ -413,25 +413,14 @@ function extractErrorMessageRaw(body: unknown): CappedString | undefined {
   if (typeof body === 'string') return capLength(body);
   if (!isPlainObject(body)) return undefined;
 
-  // Jira error format: { errorMessages: string[], errors: Record<string, string> }
-  if (Array.isArray(body.errorMessages)) {
-    const joined = joinWithCap(body.errorMessages);
-    if (joined !== undefined) return joined;
-  }
-
-  // Jira field-level errors: { errors: { summary: 'You must specify a summary.' } }.
-  // The dominant shape for 400s from issue create/update/transition, where
-  // `errorMessages` is an EMPTY array and every diagnostic lives here. Ignoring
-  // it degraded the most common Jira validation failure to a bare
-  // `HTTP error 400` with no indication of which field was rejected.
-  if (isPlainObject(body.errors)) {
-    const fieldErrors = joinWithCap(
-      Object.entries(body.errors)
-        .filter(([, value]) => typeof value === 'string')
-        .map(([field, value]) => `${field}: ${value as string}`),
-    );
-    if (fieldErrors !== undefined) return fieldErrors;
-  }
+  // Jira `ErrorCollection`: { errorMessages: string[], errors: Record<string, string> }.
+  // The two fields are independent and BOTH may be populated, so both are
+  // surfaced. `errors` carries the field-level diagnostics and is the dominant
+  // shape for 400s from issue create/update/transition, where `errorMessages`
+  // comes back EMPTY — ignoring it degraded the most common Jira validation
+  // failure to a bare `HTTP error 400` naming no field at all.
+  const jiraErrors = joinWithCap(jiraErrorParts(body));
+  if (jiraErrors !== undefined) return jiraErrors;
 
   // Generic: { message: string }
   if (typeof body.message === 'string') {
@@ -442,20 +431,48 @@ function extractErrorMessageRaw(body: unknown): CappedString | undefined {
 }
 
 /**
+ * Lazily yield every message an `ErrorCollection` body carries, in the order
+ * Jira documents them: the top-level `errorMessages`, then the field-level
+ * `errors` map rendered as `field: message`.
+ *
+ * A GENERATOR rather than an array so `joinWithCap` can stop reading as soon as
+ * its cap is reached. Materialising `Object.entries(...).map(...)` up front
+ * would rebuild the very allocation pattern the cap exists to prevent (B032):
+ * a hostile body with thousands of field errors would be fully expanded into
+ * `field: message` strings before a single byte was capped.
+ */
+function* jiraErrorParts(body: Record<string, unknown>): Generator<string> {
+  if (Array.isArray(body.errorMessages)) {
+    for (const message of body.errorMessages) {
+      if (typeof message === 'string') yield message;
+    }
+  }
+  if (isPlainObject(body.errors)) {
+    for (const [field, value] of Object.entries(body.errors)) {
+      if (typeof value === 'string') yield `${field}: ${value}`;
+    }
+  }
+}
+
+/**
  * Join string entries with `'; '` while enforcing a running length cap, so a
  * hostile response with thousands of `errorMessages` cannot allocate a
  * multi-megabyte intermediate before truncation (PR-review hardening of B032).
  * The returned `truncated` flag drives the outer `extractErrorMessage`
  * ellipsis so callers can still see at a glance that content was elided.
  *
- * Non-string entries are filtered. Returns `undefined` when no strings remain.
+ * Accepts an iterable so a generator can feed it lazily — the loop breaks as
+ * soon as the cap is hit, so entries beyond it are never even produced.
+ *
+ * Entries are already narrowed to strings by {@link jiraErrorParts}, which is
+ * where non-string values in a hostile body are dropped. Returns `undefined`
+ * when the iterable yields nothing.
  */
-function joinWithCap(messages: readonly unknown[]): CappedString | undefined {
+function joinWithCap(messages: Iterable<string>): CappedString | undefined {
   let out = '';
   let first = true;
   let truncated = false;
   for (const m of messages) {
-    if (typeof m !== 'string') continue;
     if (first) {
       if (m.length > MAX_ERROR_MESSAGE_LENGTH) {
         out = m.slice(0, MAX_ERROR_MESSAGE_LENGTH);

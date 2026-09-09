@@ -442,12 +442,24 @@ describe('createHttpError', () => {
       expect(err.message).toBe('summary: is required; duedate: is invalid');
     });
 
-    it('errorMessages takes precedence over the errors map', () => {
+    it('surfaces BOTH errorMessages and the errors map when both are populated', () => {
+      // Jira's ErrorCollection declares the two fields as independent and
+      // non-exclusive, so dropping either loses real diagnostics.
       const err = createHttpError(400, {
         errorMessages: ['Top-level failure'],
         errors: { summary: 'is required' },
       });
-      expect(err.message).toBe('Top-level failure');
+      expect(err.message).toBe('Top-level failure; summary: is required');
+    });
+
+    it('stops reading field errors once the cap is reached', () => {
+      // The generator must not materialise every entry before capping (B032):
+      // a hostile body with thousands of field errors is bounded by the cap.
+      const errors: Record<string, string> = {};
+      for (let i = 0; i < 5000; i++) errors[`field${i}`] = 'x'.repeat(200);
+      const err = createHttpError(400, { errors });
+      expect(err.message.length).toBeLessThanOrEqual(1024);
+      expect(err.message.endsWith('…')).toBe(true);
     });
 
     it('errors map with non-string values → falls through to message', () => {
