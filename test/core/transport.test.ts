@@ -3,6 +3,7 @@ import { HttpTransport } from '../../src/core/transport.js';
 import {
   AuthenticationError,
   NotFoundError,
+  ForbiddenError,
   RateLimitError,
   HttpError,
   TimeoutError,
@@ -2437,6 +2438,30 @@ describe('HttpTransport body-read network failures', () => {
     expect(error).toBeInstanceOf(NetworkError);
     // Same treatment as a reset that lands BEFORE the headers: 1 + 2 retries.
     expect(fetchMock).toHaveBeenCalledTimes(3);
+  });
+
+  it('keeps the HTTP status when the socket dies reading an ERROR body', async () => {
+    // Deliberate asymmetry: the status already arrived and is authoritative, so
+    // a dead socket during the error-body read must NOT become a NetworkError —
+    // that would discard the server's 403 and invite a pointless retry.
+    const cause = Object.assign(new Error('other side closed'), { code: 'UND_ERR_SOCKET' });
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 403,
+      headers: new Headers({ 'content-type': 'application/json' }),
+      text: () => Promise.reject(Object.assign(new TypeError('terminated'), { cause })),
+    } as unknown as Response);
+    vi.stubGlobal('fetch', fetchMock);
+
+    const transport = makeTransport({ ...defaultConfig, retries: 2, retryDelay: 0 });
+
+    const error = await runRequest(transport, { method: 'GET', path: '/pages' }).catch(
+      (e: unknown) => e,
+    );
+
+    expect(error).toBeInstanceOf(ForbiddenError);
+    expect(error).not.toBeInstanceOf(NetworkError);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
   it('leaves a non-network body failure untouched', async () => {

@@ -314,6 +314,16 @@ export class HttpTransport implements Transport {
         // even classify the failure. `safeParseBody` lets `ResponseTooLargeError`
         // propagate (replacing the would-be `HttpError`); the error carries the
         // original status so the caller can still see the upstream classification.
+        //
+        // Note the deliberate asymmetry with the success path below: if the
+        // socket dies while reading an ERROR body, `safeParseBody` swallows it
+        // and yields `undefined`, so this still throws the HttpError for the
+        // status the server already sent. That status is authoritative — the
+        // response headers arrived — and reclassifying to `NetworkError` would
+        // discard the server's verdict (e.g. a 403) and invite a pointless
+        // retry of a request that was definitively rejected. On the success
+        // path there is no such verdict to preserve, so a dead socket there
+        // IS a network failure.
         const errBody = await parseBodyWithTimeoutHandling(
           () => safeParseBody(response, this.config.maxResponseBytes),
           timeoutController.signal,
