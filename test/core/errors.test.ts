@@ -436,6 +436,13 @@ describe('createHttpError', () => {
       expect(err.message).toBe('Real error');
     });
 
+    it('whitespace-only message LONGER than the cap still falls back', () => {
+      // The truncation ellipsis is non-whitespace, so checking blankness after
+      // truncation would see '…' and let the blank message through.
+      const err = createHttpError(401, { message: ' '.repeat(2000) });
+      expect(err.message).toBe('Authentication failed');
+    });
+
     it('whitespace-only message → falls back to the status default', () => {
       expect(createHttpError(403, { message: '   ' }).message).toBe('Access forbidden');
     });

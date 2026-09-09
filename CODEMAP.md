@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "4.0.0"
   },
-  "sourceHash": "bf03bbd501a49429012b057f5f654afde067bb08689557f6b590178159b81203",
+  "sourceHash": "d8271a6aecf6c56c725085299ca3f20e47a4459c0c582cb95346a405d6f4ba5d",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -13955,26 +13955,26 @@
         {
           "name": "extractErrorMessageRaw",
           "kind": "function",
-          "line": 421,
+          "line": 427,
           "signature": "function extractErrorMessageRaw(body: unknown): CappedString | undefined"
         },
         {
           "name": "joinWithCap",
           "kind": "function",
-          "line": 449,
+          "line": 455,
           "signature": "function joinWithCap(messages: readonly unknown[]): CappedString | undefined",
           "jsdoc": "Join string entries with `'; '` while enforcing a running length cap, so a hostile response with thousands of `errorMessages` cannot allocate a multi-megabyte intermediate before truncation (PR-review hardening of B032). The returned `truncated` flag drives the outer `extractErrorMessage` ellipsis so callers can still see at a glance that content was elided."
         },
         {
           "name": "capLength",
           "kind": "function",
-          "line": 491,
+          "line": 497,
           "signature": "function capLength(value: string): CappedString"
         },
         {
           "name": "isPlainObject",
           "kind": "function",
-          "line": 498,
+          "line": 504,
           "signature": "function isPlainObject(value: unknown): value is Record<string, unknown>"
         }
       ]

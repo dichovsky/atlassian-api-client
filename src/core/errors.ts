@@ -405,6 +405,12 @@ interface CappedString {
 function extractErrorMessage(body: unknown): string | undefined {
   const raw = extractErrorMessageRaw(body);
   if (raw === undefined) return undefined;
+  // Test blankness on the RAW value, BEFORE truncation. The ellipsis appended
+  // below is itself a non-whitespace character, so a whitespace-only message
+  // longer than the cap would trim to '…' rather than '' and slip past the
+  // guard — reinstating the blank-message bug for exactly the oversized bodies
+  // the cap exists to handle.
+  if (raw.value.trim() === '') return undefined;
   const message = raw.truncated
     ? raw.value.slice(0, MAX_ERROR_MESSAGE_LENGTH - 1) + '…'
     : raw.value;
@@ -415,7 +421,7 @@ function extractErrorMessage(body: unknown): string | undefined {
   // `.message` was the EMPTY STRING. That renders as a blank line in logs and an
   // empty alert in a UI, hiding even the HTTP status. Returning `undefined`
   // hands the decision back to the fallback.
-  return message.trim() === '' ? undefined : message;
+  return message;
 }
 
 function extractErrorMessageRaw(body: unknown): CappedString | undefined {
