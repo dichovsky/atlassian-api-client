@@ -101,13 +101,17 @@ export function computeQsh(
     contextPath,
   );
 
-  // Collect ALL request query parameters into key → values. The Connect QSH
-  // spec canonicalizes every query parameter of the request, so two sources
-  // must be merged: (1) params baked into the path's query string — notably
-  // REPEATED array params built by `appendRepeatedParams` (B1037), which the
-  // single-value `query` map cannot represent — and (2) the structured `query`
-  // map. Excluding the path-baked params produced a qsh the server cannot
-  // reproduce → JWT rejected (401).
+  // Collect ALL request query parameters into key → values, from two sources:
+  // (1) params baked into the path's query string — notably REPEATED array
+  // params built by `appendRepeatedParams` (B1037), which the single-value
+  // `query` map cannot represent — and (2) the structured `query` map.
+  // Excluding the path-baked params produced a qsh the server cannot reproduce
+  // → JWT rejected (401).
+  //
+  // The two sources COMBINE across distinct keys but do NOT merge on a shared
+  // key: `buildUrl` applies the map with `URLSearchParams.set`, so for a key
+  // present in both, the map's value REPLACES the path's on the wire. See the
+  // set-vs-add distinction below.
   const params = new Map<string, string[]>();
   const add = (key: string, value: string): void => {
     const existing = params.get(key);
