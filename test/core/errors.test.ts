@@ -431,6 +431,11 @@ describe('createHttpError', () => {
       expect(createHttpError(401, { message: '' }).message).toBe('Authentication failed');
     });
 
+    it('blank errorMessages entries mixed with real content → no dangling separator', () => {
+      const err = createHttpError(400, { errorMessages: ['', 'Real error', '   '] });
+      expect(err.message).toBe('Real error');
+    });
+
     it('whitespace-only message → falls back to the status default', () => {
       expect(createHttpError(403, { message: '   ' }).message).toBe('Access forbidden');
     });

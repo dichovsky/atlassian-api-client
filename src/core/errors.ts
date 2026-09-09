@@ -451,7 +451,11 @@ function joinWithCap(messages: readonly unknown[]): CappedString | undefined {
   let first = true;
   let truncated = false;
   for (const m of messages) {
-    if (typeof m !== 'string') continue;
+    // Skip non-strings AND blank entries. A mixed array like `['', 'Real error']`
+    // would otherwise assemble as "; Real error" — a leading separator dangling
+    // off the blank entry — so filtering here keeps the joined value clean
+    // instead of only catching the all-blank case downstream.
+    if (typeof m !== 'string' || m.trim() === '') continue;
     if (first) {
       if (m.length > MAX_ERROR_MESSAGE_LENGTH) {
         out = m.slice(0, MAX_ERROR_MESSAGE_LENGTH);

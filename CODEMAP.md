@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "4.0.0"
   },
-  "sourceHash": "fbc0d4234e0133eff9b41298430ab670893f8073c1e12d0d96022e1c7eb7eece",
+  "sourceHash": "bf03bbd501a49429012b057f5f654afde067bb08689557f6b590178159b81203",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -13968,13 +13968,13 @@
         {
           "name": "capLength",
           "kind": "function",
-          "line": 487,
+          "line": 491,
           "signature": "function capLength(value: string): CappedString"
         },
         {
           "name": "isPlainObject",
           "kind": "function",
-          "line": 494,
+          "line": 498,
           "signature": "function isPlainObject(value: unknown): value is Record<string, unknown>"
         }
       ]
