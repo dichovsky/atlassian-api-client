@@ -421,6 +421,17 @@ function validateTokenEndpoint(
   // allowlist and shipped the refresh_token + client_secret there. Those are
   // the highest-value secrets the library handles, so this path should be at
   // least as strict as the tenant-API path, not looser.
+  // Userinfo is the same class of smuggling: `https://attacker:pw@auth.atlassian.com/`
+  // matches the hostname check, and every refresh would then also ship a Basic
+  // credential the caller never intended. Atlassian's token endpoint never uses
+  // userinfo, so its presence signals a pasted or tampered URL.
+  if (parsed.username !== '' || parsed.password !== '') {
+    throw new ValidationError(
+      `tokenEndpoint must not embed userinfo credentials: ${parsed.protocol}//${parsed.hostname}. ` +
+        `Pass client credentials via clientId / clientSecret instead.`,
+    );
+  }
+
   if (parsed.port !== '') {
     throw new ValidationError(
       `tokenEndpoint must not include a non-default port: ${parsed.protocol}//${parsed.hostname}:${parsed.port}. ` +

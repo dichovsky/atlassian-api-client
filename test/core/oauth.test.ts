@@ -788,6 +788,40 @@ describe('B036: tokenEndpoint host allowlist', () => {
       ).toThrow(/HTTPS/);
     });
 
+    it('rejects userinfo embedded in the token endpoint', () => {
+      expect(() =>
+        createOAuthRefreshMiddleware({
+          ...validBaseConfig,
+          tokenEndpoint: 'https://attacker:secret@auth.atlassian.com/oauth/token',
+        }),
+      ).toThrow(/userinfo/);
+    });
+
+    it('rejects a username-only userinfo segment', () => {
+      expect(() =>
+        createOAuthRefreshMiddleware({
+          ...validBaseConfig,
+          tokenEndpoint: 'https://attacker@auth.atlassian.com/oauth/token',
+        }),
+      ).toThrow(/userinfo/);
+    });
+
+    it('does not leak the userinfo credential into the error message', () => {
+      const err = (() => {
+        try {
+          createOAuthRefreshMiddleware({
+            ...validBaseConfig,
+            tokenEndpoint: 'https://attacker:hunter2@auth.atlassian.com/oauth/token',
+          });
+          return null;
+        } catch (e) {
+          return e as Error;
+        }
+      })();
+      expect(err?.message).not.toContain('hunter2');
+      expect(err?.message).not.toContain('attacker');
+    });
+
     it('rejects a non-default port on the default-allowlisted host', () => {
       // Hostname matches, but `:8443` on that host may be an entirely
       // different service — and this URL receives refresh_token + client_secret.

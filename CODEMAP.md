@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "4.0.0"
   },
-  "sourceHash": "ec144d4cdd35a852119155734faca8eac812234f105239cb39ea7fd5ef928ec0",
+  "sourceHash": "b4b5fa15980ccda5f56c96d755ecc585a6e315bd53bc2ed886196cc4b4eefbc5",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -14592,14 +14592,14 @@
         {
           "name": "validateAllowedTokenEndpointHosts",
           "kind": "function",
-          "line": 443,
+          "line": 454,
           "signature": "function validateAllowedTokenEndpointHosts(hosts: readonly string[]): readonly string[]",
           "jsdoc": "Validate user-supplied `allowedTokenEndpointHosts`. Same rules as `validateAllowedHosts` in config.ts (non-empty array, non-empty strings, no port, no whitespace/slashes/control chars/IPv6 brackets). The shared character policy lives in `isInvalidBareHostChar` (atlassian-hosts.ts) so both validators stay in sync."
         },
         {
           "name": "formatBodySnippet",
           "kind": "function",
-          "line": 481,
+          "line": 492,
           "signature": "function formatBodySnippet(raw: string): string",
           "jsdoc": "Build a short diagnostic snippet of a token-endpoint response body. Truncates to 200 chars after replacing any token values with `***` so that an accidentally-echoed credential never reaches an error message or log."
         }
