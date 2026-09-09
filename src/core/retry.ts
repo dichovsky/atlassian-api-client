@@ -55,9 +55,23 @@ export function isNetworkError(error: unknown): boolean {
     // `cause` — an invalid header value, a malformed method, a body on GET.
     // Those never reached the network and will fail identically on every
     // attempt, so retrying them just multiplies the same local failure and
-    // mislabels it `NetworkError`. The presence of a `cause` is what separates
-    // "the network failed" from "the caller passed something fetch rejected".
-    return error.cause !== undefined;
+    // mislabels it `NetworkError`.
+    if (error.cause === undefined) return false;
+
+    // A wrapped failure carrying a KNOWN-transient code is retryable.
+    if (hasRetryableCode(error)) return true;
+
+    // A wrapped failure carrying some OTHER named code is a deterministic
+    // failure that will recur identically — TLS/certificate rejections are the
+    // common case (`CERT_HAS_EXPIRED`, `DEPTH_ZERO_SELF_SIGNED_CERT`). Do not
+    // retry those.
+    //
+    // But a codeless wrapper IS retried: `fetch` to a refused port produces
+    // `TypeError: fetch failed` whose cause is a bare `Error` with no `code`
+    // property at all (verified on Node 24). Requiring a known code here would
+    // silently drop retries for connection-refused — the single most common
+    // transient failure — so absence of a code keeps the benefit of the doubt.
+    return !causeHasNamedCode(error);
   }
 
   // Runtime-level failures (Node SystemError, undici-wrapped errors) may surface
@@ -67,6 +81,21 @@ export function isNetworkError(error: unknown): boolean {
   }
 
   return false;
+}
+
+/**
+ * Whether a `fetch` TypeError's immediate `cause` carries a `code` string at
+ * all — regardless of whether that code is retryable. This distinguishes "the
+ * runtime NAMED this failure" (deterministic, e.g. a TLS rejection) from "the
+ * runtime wrapped an unnamed transport failure" (connection refused, which
+ * arrives codeless). `fetch` puts the code on the immediate cause — verified on
+ * Node 24 for ENOTFOUND, UND_ERR_SOCKET, and the CERT_* family — so there is no
+ * chain to walk here.
+ */
+function causeHasNamedCode(error: TypeError): boolean {
+  const cause: unknown = error.cause;
+  if (typeof cause !== 'object' || cause === null) return false;
+  return typeof (cause as { code?: unknown }).code === 'string';
 }
 
 /** Walk the error + `cause` chain looking for a known-retryable system code. */

@@ -90,6 +90,35 @@ describe('isNetworkError', () => {
     expect(isNetworkError(err)).toBe(true);
   });
 
+  it('returns true for a codeless network wrapper (connection refused)', () => {
+    // Verified on Node 24: fetch to a refused port yields
+    // `TypeError: fetch failed` whose cause is a bare Error with NO `code`.
+    const err = new TypeError('fetch failed', { cause: new Error('connect failed') });
+    expect(isNetworkError(err)).toBe(true);
+  });
+
+  it.each(['CERT_HAS_EXPIRED', 'DEPTH_ZERO_SELF_SIGNED_CERT', 'ERR_TLS_CERT_ALTNAME_INVALID'])(
+    'returns false for the deterministic TLS failure %s',
+    (code) => {
+      // A named-but-unknown code means the runtime identified the failure and it
+      // will recur identically — retrying a bad certificate is pointless.
+      const err = new TypeError('fetch failed', {
+        cause: Object.assign(new Error('tls'), { code }),
+      });
+      expect(isNetworkError(err)).toBe(false);
+    },
+  );
+
+  it('returns true for a TypeError whose cause is not an object', () => {
+    const err = new TypeError('fetch failed', { cause: 'boom' });
+    expect(isNetworkError(err)).toBe(true);
+  });
+
+  it('returns true for a TypeError whose cause is null', () => {
+    const err = new TypeError('fetch failed', { cause: null });
+    expect(isNetworkError(err)).toBe(true);
+  });
+
   it('returns false for a causeless TypeError from fetch argument validation', () => {
     // An invalid header value / bad method / body-on-GET rejects locally before
     // any socket is opened, and carries no `cause`. Retrying cannot help.
