@@ -790,9 +790,11 @@ describe('HttpTransport', () => {
   // -------------------------------------------------------------------------
   describe('network errors', () => {
     it('throws NetworkError when fetch throws TypeError', async () => {
-      const fetchMock = vi
-        .fn()
-        .mockRejectedValue(new TypeError('fetch failed', { cause: new Error('ECONNREFUSED') }));
+      const fetchMock = vi.fn().mockRejectedValue(
+        new TypeError('fetch failed', {
+          cause: Object.assign(new Error('connect ECONNREFUSED'), { code: 'ECONNREFUSED' }),
+        }),
+      );
       vi.stubGlobal('fetch', fetchMock);
 
       const noRetryConfig: ResolvedConfig = { ...defaultConfig, retries: 0 };
@@ -804,7 +806,9 @@ describe('HttpTransport', () => {
     });
 
     it('wraps the original TypeError as cause', async () => {
-      const originalError = new TypeError('fetch failed', { cause: new Error('ECONNREFUSED') });
+      const originalError = new TypeError('fetch failed', {
+        cause: Object.assign(new Error('connect ECONNREFUSED'), { code: 'ECONNREFUSED' }),
+      });
       const fetchMock = vi.fn().mockRejectedValue(originalError);
       vi.stubGlobal('fetch', fetchMock);
 
@@ -951,7 +955,11 @@ describe('HttpTransport', () => {
     it('retries after network error and succeeds', async () => {
       const fetchMock = vi
         .fn()
-        .mockRejectedValueOnce(new TypeError('fetch failed', { cause: new Error('ECONNREFUSED') }))
+        .mockRejectedValueOnce(
+          new TypeError('fetch failed', {
+            cause: Object.assign(new Error('connect ECONNREFUSED'), { code: 'ECONNREFUSED' }),
+          }),
+        )
         .mockResolvedValueOnce(makeResponse(200, { recovered: true }));
       vi.stubGlobal('fetch', fetchMock);
 

@@ -46,33 +46,22 @@ export function isNetworkError(error: unknown): boolean {
     return false;
   }
 
-  if (error instanceof TypeError) {
-    // `fetch` reports NETWORK failures as a `TypeError` that WRAPS the real
-    // socket/DNS error in `cause` (`TypeError: fetch failed` → cause
-    // `ECONNREFUSED`; `TypeError: terminated` → cause `UND_ERR_SOCKET`).
-    //
-    // It also reports CLIENT-SIDE ARGUMENT errors as a bare `TypeError` with no
-    // `cause` — an invalid header value, a malformed method, a body on GET.
-    // Those never reached the network and will fail identically on every
-    // attempt, so retrying them just multiplies the same local failure and
-    // mislabels it `NetworkError`.
-    if (error.cause === undefined) return false;
-
-    // A wrapped failure carrying a KNOWN-transient code is retryable.
-    if (hasRetryableCode(error)) return true;
-
-    // A wrapped failure carrying some OTHER named code is a deterministic
-    // failure that will recur identically — TLS/certificate rejections are the
-    // common case (`CERT_HAS_EXPIRED`, `DEPTH_ZERO_SELF_SIGNED_CERT`). Do not
-    // retry those.
-    //
-    // But a codeless wrapper IS retried: `fetch` to a refused port produces
-    // `TypeError: fetch failed` whose cause is a bare `Error` with no `code`
-    // property at all (verified on Node 24). Requiring a known code here would
-    // silently drop retries for connection-refused — the single most common
-    // transient failure — so absence of a code keeps the benefit of the doubt.
-    return !causeHasNamedCode(error);
-  }
+  // NOTE: being a TypeError does NOT identify a network failure. `fetch` throws
+  // TypeError for client-side ARGUMENT errors too — an invalid header value, a
+  // bad method, a body on GET, a blocked port. What identifies a real network
+  // failure is the underlying system code `fetch` wraps in `cause`, which the
+  // check below already walks for. Verified on Node 24:
+  //
+  //   connection refused  TypeError: fetch failed  cause.code ECONNREFUSED
+  //   DNS failure         TypeError: fetch failed  cause.code ENOTFOUND
+  //   mid-body reset      TypeError: terminated    cause.code UND_ERR_SOCKET
+  //   TLS expired cert    TypeError: fetch failed  cause.code CERT_HAS_EXPIRED
+  //   invalid header      TypeError                cause     undefined
+  //   blocked port        TypeError: fetch failed  cause 'bad port', no code
+  //
+  // So the allow-list does exactly the right thing on its own: transient codes
+  // retry; a deterministic TLS rejection does not; and argument errors — which
+  // never reached the network and would fail identically forever — do not.
 
   // Runtime-level failures (Node SystemError, undici-wrapped errors) may surface
   // with a retryable code either directly on the error or in its `cause` chain.
@@ -81,21 +70,6 @@ export function isNetworkError(error: unknown): boolean {
   }
 
   return false;
-}
-
-/**
- * Whether a `fetch` TypeError's immediate `cause` carries a `code` string at
- * all — regardless of whether that code is retryable. This distinguishes "the
- * runtime NAMED this failure" (deterministic, e.g. a TLS rejection) from "the
- * runtime wrapped an unnamed transport failure" (connection refused, which
- * arrives codeless). `fetch` puts the code on the immediate cause — verified on
- * Node 24 for ENOTFOUND, UND_ERR_SOCKET, and the CERT_* family — so there is no
- * chain to walk here.
- */
-function causeHasNamedCode(error: TypeError): boolean {
-  const cause: unknown = error.cause;
-  if (typeof cause !== 'object' || cause === null) return false;
-  return typeof (cause as { code?: unknown }).code === 'string';
 }
 
 /** Walk the error + `cause` chain looking for a known-retryable system code. */

@@ -82,19 +82,24 @@ describe('calculateDelay', () => {
 });
 
 describe('isNetworkError', () => {
-  it('returns true for a fetch TypeError that wraps a network cause', () => {
-    // `fetch` surfaces real network failures as a TypeError wrapping the
-    // underlying socket/DNS error — verified against Node 24 undici for
-    // connection-refused, DNS failure, and mid-body socket reset.
-    const err = new TypeError('fetch failed', { cause: new Error('connect ECONNREFUSED') });
-    expect(isNetworkError(err)).toBe(true);
-  });
+  it.each(['ECONNREFUSED', 'ENOTFOUND', 'UND_ERR_SOCKET'])(
+    'returns true for a fetch TypeError wrapping a %s cause',
+    (code) => {
+      // `fetch` surfaces real network failures as a TypeError wrapping the
+      // underlying socket/DNS error, which carries the system CODE — verified on
+      // Node 24 against a real closed port, a bad hostname, and a mid-body reset.
+      const cause = Object.assign(new Error('connect failed'), { code });
+      expect(isNetworkError(new TypeError('fetch failed', { cause }))).toBe(true);
+    },
+  );
 
-  it('returns true for a codeless network wrapper (connection refused)', () => {
-    // Verified on Node 24: fetch to a refused port yields
-    // `TypeError: fetch failed` whose cause is a bare Error with NO `code`.
-    const err = new TypeError('fetch failed', { cause: new Error('connect failed') });
-    expect(isNetworkError(err)).toBe(true);
+  it('returns false for a codeless cause (Node blocked-port rejection)', () => {
+    // `fetch('http://127.0.0.1:1/')` rejects with `TypeError: fetch failed`
+    // whose cause is a bare Error('bad port') with NO code — the port blocklist
+    // rejects it before any connection attempt, so it is an argument error and
+    // retrying it can never succeed.
+    const err = new TypeError('fetch failed', { cause: new Error('bad port') });
+    expect(isNetworkError(err)).toBe(false);
   });
 
   it.each(['CERT_HAS_EXPIRED', 'DEPTH_ZERO_SELF_SIGNED_CERT', 'ERR_TLS_CERT_ALTNAME_INVALID'])(
@@ -109,14 +114,14 @@ describe('isNetworkError', () => {
     },
   );
 
-  it('returns true for a TypeError whose cause is not an object', () => {
+  it('returns false for a TypeError whose cause is not an object', () => {
     const err = new TypeError('fetch failed', { cause: 'boom' });
-    expect(isNetworkError(err)).toBe(true);
+    expect(isNetworkError(err)).toBe(false);
   });
 
-  it('returns true for a TypeError whose cause is null', () => {
+  it('returns false for a TypeError whose cause is null', () => {
     const err = new TypeError('fetch failed', { cause: null });
-    expect(isNetworkError(err)).toBe(true);
+    expect(isNetworkError(err)).toBe(false);
   });
 
   it('returns false for a causeless TypeError from fetch argument validation', () => {
