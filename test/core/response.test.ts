@@ -55,8 +55,8 @@ describe('toJSON', () => {
 
     const json = toJSON(response);
 
-    expect(json.headers['set-cookie']).toContain('session=abc');
-    expect(json.headers['set-cookie']).toContain('csrf=xyz');
+    // Pin the exact documented ', ' join, not merely that both survived.
+    expect(json.headers['set-cookie']).toBe('session=abc; Path=/; HttpOnly, csrf=xyz; Path=/');
   });
 
   it('preserves a cookie whose own value contains a comma (Expires)', () => {

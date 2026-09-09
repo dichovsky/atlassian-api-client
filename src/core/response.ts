@@ -31,6 +31,13 @@ export interface SerializableApiResponse<T> {
  * is ambiguous. Callers needing the individual cookies should read
  * `response.headers.getSetCookie()` from the live `Headers` object rather than
  * this projection.
+ *
+ * SENSITIVITY: `set-cookie` may carry session or auth-adjacent values, and this
+ * helper exists to make a response easy to log or persist. Before this fix only
+ * the last cookie survived; now every one does, so a sink that previously
+ * captured one value may capture several. Callers writing this output to logs
+ * or storage should redact or drop the `set-cookie` entry — mirroring
+ * {@link HttpError.toJSON}, which omits `responseBody` for the same reason.
  */
 export function toJSON<T>(response: ApiResponse<T>): SerializableApiResponse<T> {
   const headers: Record<string, string> = {};
