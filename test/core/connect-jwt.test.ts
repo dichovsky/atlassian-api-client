@@ -727,10 +727,13 @@ describe('computeQsh repeated-parameter value order (Connect spec)', () => {
     expect(computeQsh('GET', 'https://test.atlassian.net/rest/api/3/x?tag=b&tag=A')).toBe(expected);
   });
 
-  it('does not mutate the caller-visible order of the query map', () => {
-    const query = { id: 'b' } as const;
+  it('leaves the caller-supplied query object untouched', () => {
+    // The sort operates on an internal copy; nothing the caller passed in is
+    // reordered or mutated.
+    const query = { id: 'b', tag: 'a' };
     computeQsh('GET', 'https://test.atlassian.net/rest/api/3/x', query);
-    expect(query).toEqual({ id: 'b' });
+    expect(Object.keys(query)).toEqual(['id', 'tag']);
+    expect(query).toEqual({ id: 'b', tag: 'a' });
   });
 });
 
