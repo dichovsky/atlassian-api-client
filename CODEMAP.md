@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "4.0.0"
   },
-  "sourceHash": "4b7aa1befec0a83496a11bc4bc426b6c2ca89e4eb8370390120a7ab7d2933bc8",
+  "sourceHash": "16e6bad22f68f0701efde9a6a1dd8cf39f0ff1757a23d9ba881d5711579f6c64",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -15099,7 +15099,7 @@
         {
           "name": "safeParseBody",
           "kind": "function",
-          "line": 71,
+          "line": 80,
           "exported": true,
           "signature": "export async function safeParseBody(response: Response, maxBytes?: number): Promise<unknown>",
           "jsdoc": "Parse a response body as JSON, swallowing parse failures."
@@ -15107,13 +15107,13 @@
         {
           "name": "isAbortError",
           "kind": "function",
-          "line": 88,
+          "line": 97,
           "signature": "function isAbortError(error: unknown): boolean"
         },
         {
           "name": "parseResponseBody",
           "kind": "function",
-          "line": 107,
+          "line": 116,
           "exported": true,
           "signature": "export async function parseResponseBody( response: Response, responseType: RequestOptions['responseType'], maxBytes?: nu…",
           "jsdoc": "Parse a successful response body according to the caller-supplied `responseType`."
@@ -15121,14 +15121,14 @@
         {
           "name": "parseJsonOrThrow",
           "kind": "function",
-          "line": 159,
+          "line": 168,
           "signature": "function parseJsonOrThrow(text: string): unknown",
           "jsdoc": "Parse a 2xx body as JSON, wrapping a malformed-JSON failure in the taxonomy {@link ValidationError} (B1041(2))."
         },
         {
           "name": "buildApiResponse",
           "kind": "function",
-          "line": 180,
+          "line": 189,
           "exported": true,
           "signature": "export function buildApiResponse( response: Response, data: unknown, rateLimit: RateLimitInfo, requestId?: string, ): Ap…",
           "jsdoc": "Assemble an {@link ApiResponse} from a successful `fetch` Response and the parsed body."
@@ -15136,28 +15136,28 @@
         {
           "name": "readBodyWithCap",
           "kind": "function",
-          "line": 211,
+          "line": 220,
           "signature": "async function readBodyWithCap(response: Response, maxBytes?: number): Promise<Uint8Array>",
           "jsdoc": "Read the response body as bytes under an optional size cap (B026)."
         },
         {
           "name": "readBodyAsText",
           "kind": "function",
-          "line": 294,
+          "line": 303,
           "signature": "async function readBodyAsText(response: Response, maxBytes?: number): Promise<string>",
           "jsdoc": "Read the response body as a UTF-8 string under an optional size cap."
         },
         {
           "name": "cancelBodyQuietly",
           "kind": "function",
-          "line": 308,
+          "line": 317,
           "signature": "async function cancelBodyQuietly(body: ReadableStream<Uint8Array> | null): Promise<void>",
           "jsdoc": "Best-effort `ReadableStream.cancel()` that never throws. Used by the content-length fast-fail path to release the socket before throwing `ResponseTooLargeError`; rejections from buggy custom streams must not mask the documented overflow contract (PR #21 review)."
         },
         {
           "name": "parseContentLength",
           "kind": "function",
-          "line": 326,
+          "line": 335,
           "signature": "function parseContentLength(value: string | null): number | undefined",
           "jsdoc": "Parse a `Content-Length` header value into a non-negative finite integer."
         }

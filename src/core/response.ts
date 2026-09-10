@@ -40,7 +40,16 @@ export interface SerializableApiResponse<T> {
  * {@link HttpError.toJSON}, which omits `responseBody` for the same reason.
  */
 export function toJSON<T>(response: ApiResponse<T>): SerializableApiResponse<T> {
-  const headers: Record<string, string> = {};
+  // Null-prototype: header names are server-controlled, and a plain `{}` gets
+  // both halves of this wrong. `headers['__proto__'] = v` is silently DISCARDED
+  // (the setter ignores a string), losing the header outright — the very data
+  // loss this function is fixing. And the duplicate check below reads
+  // `headers[key]`, which for an INHERITED name returns the prototype member
+  // rather than `undefined`: a response header named `constructor` (a legal,
+  // already-lowercase name) would find `Object` and serialise as
+  // "function Object() { [native code] }, <value>". A null-prototype object has
+  // no inherited names to collide with and treats `__proto__` as ordinary.
+  const headers: Record<string, string> = Object.create(null) as Record<string, string>;
   for (const [key, value] of response.headers.entries()) {
     const existing = headers[key];
     headers[key] = existing === undefined ? value : `${existing}, ${value}`;

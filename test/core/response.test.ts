@@ -75,6 +75,19 @@ describe('toJSON', () => {
     expect(json.headers['set-cookie']).toContain('b=2');
   });
 
+  it.each(['constructor', '__proto__'])(
+    'serialises a header named %s without prototype interference',
+    (name) => {
+      // On a plain `{}`, `headers['constructor']` returns the Object function
+      // instead of undefined (corrupting the value), and `headers['__proto__']`
+      // assignment is discarded entirely (losing the header).
+      const headers = new Headers([[name, 'real-value']]);
+      const response: ApiResponse<null> = { data: null, status: 200, headers };
+
+      expect(toJSON(response).headers[name]).toBe('real-value');
+    },
+  );
+
   it('leaves a single-valued header untouched', () => {
     const headers = new Headers([['set-cookie', 'session=abc']]);
     const response: ApiResponse<null> = { data: null, status: 200, headers };
