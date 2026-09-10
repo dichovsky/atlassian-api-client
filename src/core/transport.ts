@@ -403,7 +403,13 @@ async function parseBodyWithTimeoutHandling<T>(
     // socket reset one moment earlier (before headers) becomes a retried
     // `NetworkError`. Classify both phases identically.
     if (isNetworkError(error)) {
-      throw new NetworkError((error as Error).message, { cause: error as Error });
+      // `isNetworkError` also matches non-Error shapes — it walks `{ code, cause }`
+      // chains, so a thrown plain object with a retryable code qualifies. Reading
+      // `.message` off one yields `undefined` and produces a `NetworkError` whose
+      // message is the string "undefined". Fall back to the class default, and
+      // pass the original value through as `cause` without claiming it is an Error.
+      const message = error instanceof Error ? error.message : 'Network request failed';
+      throw new NetworkError(message, { cause: error });
     }
     throw error;
   }

@@ -2464,6 +2464,29 @@ describe('HttpTransport body-read network failures', () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
+  it('gives a usable message when a non-Error value carries a retryable code', async () => {
+    // isNetworkError walks `{ code, cause }` chains, so a thrown plain object
+    // qualifies. Reading `.message` off one yields undefined and would render
+    // the NetworkError message as the string "undefined".
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      headers: new Headers({ 'content-type': 'application/json' }),
+      text: () => Promise.reject({ code: 'ECONNRESET' }),
+    } as unknown as Response);
+    vi.stubGlobal('fetch', fetchMock);
+
+    const transport = makeTransport({ ...defaultConfig, retries: 0, retryDelay: 0 });
+
+    const error = await runRequest(transport, { method: 'GET', path: '/pages' }).catch(
+      (e: unknown) => e,
+    );
+
+    expect(error).toBeInstanceOf(NetworkError);
+    expect((error as NetworkError).message).toBe('Network request failed');
+    expect((error as NetworkError).cause).toEqual({ code: 'ECONNRESET' });
+  });
+
   it('leaves a non-network body failure untouched', async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
