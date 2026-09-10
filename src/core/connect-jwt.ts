@@ -281,6 +281,12 @@ export interface AsymmetricJwtVerifyOptions {
     | string;
   /**
    * Clock-skew tolerance in seconds applied to `exp`/`iat`/`nbf`.
+   *
+   * Must be a non-negative finite number no greater than 86,400 (one day);
+   * anything else throws {@link ValidationError}. A `NaN`, infinite, or
+   * very large value makes every time comparison pass and silently disables
+   * expiry checking altogether, so it is rejected rather than honoured.
+   *
    * @default 30
    */
   readonly maxClockSkewSeconds?: number;
