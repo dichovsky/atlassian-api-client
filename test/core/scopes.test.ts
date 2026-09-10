@@ -128,8 +128,10 @@ describe('detectRequiredScopes', () => {
   it.each(['constructor', 'toString', 'valueOf', 'hasOwnProperty', '__proto__'])(
     'ignores the inherited Object.prototype name %s instead of throwing',
     (name) => {
-      // A plain index lookup returns the inherited FUNCTION, which survives an
-      // `!== undefined` guard and then throws "scopes is not iterable".
+      // A plain index lookup returns the inherited value — a function for most
+      // of these, the Object.prototype object itself for '__proto__' — which
+      // survives an `!== undefined` guard and then throws, since neither is
+      // iterable.
       expect(detectRequiredScopes([name])).toEqual([]);
     },
   );

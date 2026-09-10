@@ -1058,8 +1058,9 @@ export function detectRequiredScopes(operations: readonly string[]): AtlassianSc
   for (const op of operations) {
     // `OPERATION_SCOPES` is an object literal, so it inherits from
     // `Object.prototype`. A plain index lookup for an inherited name —
-    // 'constructor', 'toString', 'valueOf', '__proto__' — returns a FUNCTION,
-    // which passes an `!== undefined` guard and then throws
+    // 'constructor', 'toString', 'valueOf', '__proto__' — returns a non-array
+    // inherited value (a function for most of them, the prototype OBJECT itself
+    // for '__proto__'), which passes an `!== undefined` guard and then throws
     // "scopes is not iterable" in the loop below, breaking the documented
     // contract that unknown operation names are silently ignored.
     const scopes = Object.hasOwn(OPERATION_SCOPES, op) ? OPERATION_SCOPES[op] : undefined;
