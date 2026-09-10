@@ -2420,12 +2420,61 @@ describe('HttpTransport response shape validation', () => {
     has(name: string): boolean {
       return this.map.has(name.toLowerCase());
     }
+    set(name: string, value: string): void {
+      this.map.set(name.toLowerCase(), value);
+    }
+    append(name: string, value: string): void {
+      const existing = this.map.get(name.toLowerCase());
+      this.map.set(name.toLowerCase(), existing === undefined ? value : `${existing}, ${value}`);
+    }
+    delete(name: string): void {
+      this.map.delete(name.toLowerCase());
+    }
+    keys(): IterableIterator<string> {
+      return this.map.keys();
+    }
+    values(): IterableIterator<string> {
+      return this.map.values();
+    }
     entries(): IterableIterator<[string, string]> {
       return this.map.entries();
     }
     forEach(cb: (value: string, key: string) => void): void {
       for (const [k, v] of this.map) cb(v, k);
     }
+    [Symbol.iterator](): IterableIterator<[string, string]> {
+      return this.map.entries();
+    }
+  }
+
+  /** Only the four methods this library itself calls — not a full Headers. */
+  function partialHeaders(): Record<string, unknown> {
+    return {
+      get: () => null,
+      has: () => false,
+      entries: () => [],
+      forEach: () => undefined,
+    };
+  }
+
+  /** A complete Headers-shaped stub with one member left out. */
+  function omitFromHeaders(missing: string | symbol): Record<string | symbol, unknown> {
+    const members: [string | symbol, unknown][] = [
+      ['get', () => null],
+      ['has', () => false],
+      ['set', () => undefined],
+      ['append', () => undefined],
+      ['delete', () => undefined],
+      ['keys', () => []],
+      ['values', () => []],
+      ['entries', () => []],
+      ['forEach', () => undefined],
+      [Symbol.iterator, () => [][Symbol.iterator]()],
+    ];
+    return Object.fromEntries(members.filter(([name]) => name !== missing)) as Record<
+      string | symbol,
+      unknown
+    >;
   }
 
   function transportReturning(response: unknown): HttpTransport {
@@ -2451,10 +2500,10 @@ describe('HttpTransport response shape validation', () => {
   it.each<[string, unknown]>([
     ['headers is a string', 'not-headers'],
     ['headers is null', null],
-    ['headers lacks get()', { has: () => false, entries: () => [], forEach: () => undefined }],
-    ['headers lacks has()', { get: () => null, entries: () => [], forEach: () => undefined }],
-    ['headers lacks entries()', { get: () => null, has: () => false, forEach: () => undefined }],
-    ['headers lacks forEach()', { get: () => null, has: () => false, entries: () => [] }],
+    ['headers is a partial stand-in (get/has/entries/forEach only)', partialHeaders()],
+    ['headers lacks get()', omitFromHeaders('get')],
+    ['headers lacks entries()', omitFromHeaders('entries')],
+    ['headers lacks Symbol.iterator', omitFromHeaders(Symbol.iterator)],
   ])('rejects a response where %s', async (_label, headers) => {
     const transport = transportReturning({ data: null, status: 200, headers });
 

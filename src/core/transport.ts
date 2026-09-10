@@ -374,12 +374,19 @@ export class HttpTransport implements Transport {
  * caller code. Every real implementation (`undici`, `node-fetch`) provides all
  * of these, so no genuine foreign-realm `Headers` is rejected.
  *
- * This verifies SURFACE, not behaviour: it cannot check that `get()` is
- * case-insensitive the way the WHATWG spec requires. A custom middleware
- * returning a case-SENSITIVE stand-in would pass here and then silently miss
- * `X-AREQUESTID` / rate-limit lookups. That failure is degraded metadata rather
- * than a wrong response, and any real `Headers` implementation is compliant, so
- * the check stays at surface level rather than probing behaviour on every call.
+ * The check covers the whole `Headers` method surface rather than just the two
+ * methods this library happens to call. `ApiResponse.headers` is DECLARED as
+ * `Headers`, so a caller may legitimately use any of it — iterate the instance,
+ * call `append`/`set`/`delete`. Accepting a partial stand-in here would move
+ * that failure to an opaque `TypeError` in caller code far from the cause.
+ * Every real implementation (`undici`, `node-fetch`) is fully WHATWG-compliant,
+ * so nothing genuine is rejected.
+ *
+ * It verifies SURFACE, not behaviour: it cannot check that `get()` is
+ * case-insensitive as the spec requires. A case-SENSITIVE stand-in would pass
+ * and then silently miss `X-AREQUESTID` / rate-limit lookups. That failure is
+ * degraded metadata rather than a wrong response, so the check stops at surface
+ * level rather than probing behaviour on every request.
  */
 function isHeadersLike(value: unknown): value is Headers {
   if (typeof value !== 'object' || value === null) return false;
@@ -387,8 +394,14 @@ function isHeadersLike(value: unknown): value is Headers {
   return (
     typeof candidate.get === 'function' &&
     typeof candidate.has === 'function' &&
+    typeof candidate.set === 'function' &&
+    typeof candidate.append === 'function' &&
+    typeof candidate.delete === 'function' &&
+    typeof candidate.keys === 'function' &&
+    typeof candidate.values === 'function' &&
     typeof candidate.entries === 'function' &&
-    typeof candidate.forEach === 'function'
+    typeof candidate.forEach === 'function' &&
+    typeof (candidate as unknown as Iterable<unknown>)[Symbol.iterator] === 'function'
   );
 }
 
