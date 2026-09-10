@@ -450,7 +450,8 @@ function extractErrorMessageRaw(body: unknown): CappedString | undefined {
  * The returned `truncated` flag drives the outer `extractErrorMessage`
  * ellipsis so callers can still see at a glance that content was elided.
  *
- * Non-string entries are filtered. Returns `undefined` when no strings remain.
+ * Non-string AND blank (whitespace-only) entries are filtered. Returns
+ * `undefined` when no non-blank strings remain.
  */
 function joinWithCap(messages: readonly unknown[]): CappedString | undefined {
   let out = '';
