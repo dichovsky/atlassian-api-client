@@ -448,7 +448,14 @@ function* jiraErrorParts(body: Record<string, unknown>): Generator<string> {
     }
   }
   if (isPlainObject(body.errors)) {
-    for (const [field, value] of Object.entries(body.errors)) {
+    // `Object.keys`, not `Object.entries`: entries reads EVERY value and builds a
+    // pair array up front, so the generator would already have touched the whole
+    // hostile map before yielding its first item — defeating the laziness the
+    // cap depends on. Keys are enumerated (unavoidable), but each value is read
+    // and formatted only when the consumer actually pulls it.
+    const errors = body.errors;
+    for (const field of Object.keys(errors)) {
+      const value = errors[field];
       if (typeof value === 'string') yield `${field}: ${value}`;
     }
   }
@@ -469,39 +476,42 @@ function* jiraErrorParts(body: Record<string, unknown>): Generator<string> {
  * when the iterable yields nothing.
  */
 function joinWithCap(messages: Iterable<string>): CappedString | undefined {
-  let out = '';
-  let first = true;
+  // Pull with an explicit iterator so the cap can PREEMPT the next `next()`
+  // call. A `for..of` with the cap check at the top of the body reacts one
+  // iteration late: the value beyond the cap has already been produced (and,
+  // for `jiraErrorParts`, its `field: message` string already built) before the
+  // break fires. Bounded and small, but it contradicts this function's own
+  // promise that entries past the cap are never produced.
+  const iterator = messages[Symbol.iterator]();
+  const head = iterator.next();
+  if (head.done === true) return undefined;
+
   let truncated = false;
-  for (const m of messages) {
-    if (first) {
-      if (m.length > MAX_ERROR_MESSAGE_LENGTH) {
-        out = m.slice(0, MAX_ERROR_MESSAGE_LENGTH);
-        truncated = true;
-      } else {
-        out = m;
-      }
-      first = false;
+  let out: string;
+  if (head.value.length > MAX_ERROR_MESSAGE_LENGTH) {
+    out = head.value.slice(0, MAX_ERROR_MESSAGE_LENGTH);
+    truncated = true;
+  } else {
+    out = head.value;
+  }
+
+  while (out.length < MAX_ERROR_MESSAGE_LENGTH) {
+    const next = iterator.next();
+    if (next.done === true) break;
+
+    const remaining = MAX_ERROR_MESSAGE_LENGTH - out.length;
+    const chunk = SEPARATOR + next.value;
+    if (chunk.length > remaining) {
+      out += chunk.slice(0, remaining);
+      truncated = true;
     } else {
-      // Stop once the running total would exceed the cap. When the assembled
-      // value is already full, subsequent messages are silently dropped but the
-      // value itself is complete — do not set `truncated` (#205).
-      if (out.length >= MAX_ERROR_MESSAGE_LENGTH) {
-        break;
-      }
-      const remaining = MAX_ERROR_MESSAGE_LENGTH - out.length;
-      const chunk = SEPARATOR + m;
-      if (chunk.length > remaining) {
-        out += chunk.slice(0, remaining);
-        truncated = true;
-      } else {
-        out += chunk;
-      }
+      out += chunk;
     }
   }
-  if (first) return undefined;
+
   // `truncated` is true only when content characters were removed from the
-  // assembled value; dropping later messages leaves the value complete and
-  // must not trigger the ellipsis slice in extractErrorMessage (#205).
+  // assembled value; stopping early leaves the value itself complete and must
+  // not trigger the ellipsis slice in extractErrorMessage (#205).
   return { value: out, truncated };
 }
 

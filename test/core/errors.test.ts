@@ -452,6 +452,26 @@ describe('createHttpError', () => {
       expect(err.message).toBe('Top-level failure; summary: is required');
     });
 
+    it('never produces a field error beyond the cap', () => {
+      // Strict laziness: the generator must not be advanced past the entry that
+      // fills the cap. A cap check at the top of a for..of body reacts one
+      // iteration late and builds one extra `field: message` string.
+      let produced = 0;
+      const errors: Record<string, string> = {};
+      for (let i = 0; i < 50; i++) errors[`field${i}`] = 'x'.repeat(400);
+      const counted = new Proxy(errors, {
+        get(target, prop: string) {
+          if (typeof prop === 'string' && prop.startsWith('field')) produced++;
+          return target[prop];
+        },
+      });
+
+      createHttpError(400, { errors: counted });
+
+      // 1024-char cap / ~407 chars per entry → 3 entries reach the cap.
+      expect(produced).toBe(3);
+    });
+
     it('stops reading field errors once the cap is reached', () => {
       // The generator must not materialise every entry before capping (B032):
       // a hostile body with thousands of field errors is bounded by the cap.
