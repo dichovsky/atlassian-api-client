@@ -128,6 +128,12 @@ export function computeQsh(
   }
   if (query) {
     for (const key of Object.keys(query)) {
+      // The `jwt` param is never part of its own QSH — the same rule the
+      // path-baked loop above applies. It matters here because Atlassian puts
+      // the token in `?jwt=…` for inbound GET requests that cannot carry an
+      // Authorization header, so a caller verifying such a request naturally
+      // passes the parsed query (e.g. Express `req.query`) straight in.
+      if (key === 'jwt') continue;
       const value = query[key];
       // REPLACE, don't accumulate. `buildUrl` applies the query map with
       // `URLSearchParams.set`, which overwrites any same-named parameter
