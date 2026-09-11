@@ -205,7 +205,7 @@ export class HttpTransport implements Transport {
       !('status' in response) ||
       !('headers' in response) ||
       typeof response.status !== 'number' ||
-      !(response.headers instanceof Headers)
+      !isHeadersLike(response.headers)
     ) {
       throw new ValidationError('Invalid ApiResponse structure received from transport');
     }
@@ -314,6 +314,16 @@ export class HttpTransport implements Transport {
         // even classify the failure. `safeParseBody` lets `ResponseTooLargeError`
         // propagate (replacing the would-be `HttpError`); the error carries the
         // original status so the caller can still see the upstream classification.
+        //
+        // Note the deliberate asymmetry with the success path below: if the
+        // socket dies while reading an ERROR body, `safeParseBody` swallows it
+        // and yields `undefined`, so this still throws the HttpError for the
+        // status the server already sent. That status is authoritative — the
+        // response headers arrived — and reclassifying to `NetworkError` would
+        // discard the server's verdict (e.g. a 403) and invite a pointless
+        // retry of a request that was definitively rejected. On the success
+        // path there is no such verdict to preserve, so a dead socket there
+        // IS a network failure.
         const errBody = await parseBodyWithTimeoutHandling(
           () => safeParseBody(response, this.config.maxResponseBytes),
           timeoutController.signal,
@@ -355,6 +365,57 @@ export class HttpTransport implements Transport {
 }
 
 /**
+ * Duck-type check for a WHATWG `Headers`-shaped value.
+ *
+ * `instanceof Headers` is realm-bound. The npm `undici` package — which the
+ * README's proxy recipe and {@link ClientConfig.fetch} both recommend injecting
+ * for `ProxyAgent` support — builds responses with ITS OWN `Headers` class, so
+ * an `instanceof` gate rejected every successful response from a documented
+ * configuration with `Invalid ApiResponse structure`. Error responses were
+ * unaffected (they throw before this gate), making the failure look like a
+ * client-side bug rather than a shape mismatch.
+ *
+ * The library itself reads headers only via `get()` (request-id capture,
+ * rate-limit parsing) and `entries()` ({@link toJSON}) — but `ApiResponse.headers`
+ * is DECLARED as `Headers`, and callers may reasonably use the rest of that
+ * interface. Checking a representative spread of the WHATWG surface keeps this
+ * gate close to the declared contract, so a partial stand-in from a custom
+ * middleware still fails fast here rather than as an opaque `TypeError` deep in
+ * caller code. Every real implementation (`undici`, `node-fetch`) provides all
+ * of these, so no genuine foreign-realm `Headers` is rejected.
+ *
+ * The check covers the whole `Headers` method surface rather than just the two
+ * methods this library happens to call. `ApiResponse.headers` is DECLARED as
+ * `Headers`, so a caller may legitimately use any of it — iterate the instance,
+ * call `append`/`set`/`delete`. Accepting a partial stand-in here would move
+ * that failure to an opaque `TypeError` in caller code far from the cause.
+ * Every real implementation (`undici`, `node-fetch`) is fully WHATWG-compliant,
+ * so nothing genuine is rejected.
+ *
+ * It verifies SURFACE, not behaviour: it cannot check that `get()` is
+ * case-insensitive as the spec requires. A case-SENSITIVE stand-in would pass
+ * and then silently miss `X-AREQUESTID` / rate-limit lookups. That failure is
+ * degraded metadata rather than a wrong response, so the check stops at surface
+ * level rather than probing behaviour on every request.
+ */
+function isHeadersLike(value: unknown): value is Headers {
+  if (typeof value !== 'object' || value === null) return false;
+  const candidate = value as Headers;
+  return (
+    typeof candidate.get === 'function' &&
+    typeof candidate.has === 'function' &&
+    typeof candidate.set === 'function' &&
+    typeof candidate.append === 'function' &&
+    typeof candidate.delete === 'function' &&
+    typeof candidate.keys === 'function' &&
+    typeof candidate.values === 'function' &&
+    typeof candidate.entries === 'function' &&
+    typeof candidate.forEach === 'function' &&
+    typeof (candidate as unknown as Iterable<unknown>)[Symbol.iterator] === 'function'
+  );
+}
+
+/**
  * Default inbound response headers to check for a server-assigned request id
  * (B011). `X-AREQUESTID` is Atlassian's actual header; `X-Request-Id` is the
  * conventional RFC draft / de-facto standard fallback.
@@ -384,6 +445,22 @@ async function parseBodyWithTimeoutHandling<T>(
   } catch (error) {
     if (error instanceof Error && error.name === 'AbortError' && timeoutSignal.aborted) {
       throw new TimeoutError(timeoutMs);
+    }
+    // A connection can die AFTER the response headers arrive, while the body is
+    // still streaming — `fetch` resolves, then the body read rejects. Without
+    // this branch such a failure escaped as a raw `TypeError: terminated`
+    // (cause `UND_ERR_SOCKET`): outside the `AtlassianError` taxonomy, never
+    // retried, and invisible to the circuit breaker — even though the very same
+    // socket reset one moment earlier (before headers) becomes a retried
+    // `NetworkError`. Classify both phases identically.
+    if (isNetworkError(error)) {
+      // `isNetworkError` also matches non-Error shapes — it walks `{ code, cause }`
+      // chains, so a thrown plain object with a retryable code qualifies. Reading
+      // `.message` off one yields `undefined` and produces a `NetworkError` whose
+      // message is the string "undefined". Fall back to the class default, and
+      // pass the original value through as `cause` without claiming it is an Error.
+      const message = error instanceof Error ? error.message : 'Network request failed';
+      throw new NetworkError(message, { cause: error });
     }
     throw error;
   }

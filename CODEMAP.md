@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "4.0.0"
   },
-  "sourceHash": "a0dd36cececea5cd9daf49f16312dd4fa24c252a051a8237151cab12c21a7415",
+  "sourceHash": "323efa257270e5bbd7fa40210b26a19b68e160289f7f22e060d328c142ad4f7e",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -2944,7 +2944,7 @@
       "name": "RetryConfig",
       "kind": "interface",
       "file": "src/core/retry.ts",
-      "line": 92,
+      "line": 104,
       "signature": "export interface RetryConfig { readonly retries: number; readonly retryDelay: number; readonly maxRetryDelay: number; }",
       "jsdoc": "Configuration consumed by {@link executeWithRetry}. A {@link ResolvedConfig} satisfies this shape structurally, so the transport can pass its own config object without adapting.",
       "typeOnly": true
@@ -3734,7 +3734,7 @@
       "name": "executeWithRetry",
       "kind": "function",
       "file": "src/core/retry.ts",
-      "line": 117,
+      "line": 129,
       "signature": "export async function executeWithRetry<T>( operation: () => Promise<T>, config: RetryConfig, signal?: AbortSignal, ): Pr…",
       "jsdoc": "Run an async operation with retry, exponential backoff, and abort-aware sleep."
     },
@@ -3814,7 +3814,7 @@
       "name": "toJSON",
       "kind": "function",
       "file": "src/core/response.ts",
-      "line": 24,
+      "line": 42,
       "signature": "export function toJSON<T>(response: ApiResponse<T>): SerializableApiResponse<T>",
       "jsdoc": "Convert an {@link ApiResponse} into a plain JSON-serialisable object."
     },
@@ -13973,22 +13973,29 @@
           "signature": "function extractErrorMessageRaw(body: unknown): CappedString | undefined"
         },
         {
+          "name": "jiraErrorParts",
+          "kind": "function",
+          "line": 444,
+          "signature": "function* jiraErrorParts(body: Record<string, unknown>): Generator<string>",
+          "jsdoc": "Lazily yield every message an `ErrorCollection` body carries, in the order Jira documents them: the top-level `errorMessages`, then the field-level `errors` map rendered as `field: message`."
+        },
+        {
           "name": "joinWithCap",
           "kind": "function",
-          "line": 439,
-          "signature": "function joinWithCap(messages: readonly unknown[]): CappedString | undefined",
+          "line": 478,
+          "signature": "function joinWithCap(messages: Iterable<string>): CappedString | undefined",
           "jsdoc": "Join string entries with `'; '` while enforcing a running length cap, so a hostile response with thousands of `errorMessages` cannot allocate a multi-megabyte intermediate before truncation (PR-review hardening of B032). The returned `truncated` flag drives the outer `extractErrorMessage` ellipsis so callers can still see at a glance that content was elided."
         },
         {
           "name": "capLength",
           "kind": "function",
-          "line": 477,
+          "line": 518,
           "signature": "function capLength(value: string): CappedString"
         },
         {
           "name": "isPlainObject",
           "kind": "function",
-          "line": 484,
+          "line": 525,
           "signature": "function isPlainObject(value: unknown): value is Record<string, unknown>"
         }
       ]
@@ -15105,7 +15112,7 @@
         {
           "name": "toJSON",
           "kind": "function",
-          "line": 24,
+          "line": 42,
           "exported": true,
           "signature": "export function toJSON<T>(response: ApiResponse<T>): SerializableApiResponse<T>",
           "jsdoc": "Convert an {@link ApiResponse} into a plain JSON-serialisable object."
@@ -15113,7 +15120,7 @@
         {
           "name": "safeParseBody",
           "kind": "function",
-          "line": 52,
+          "line": 80,
           "exported": true,
           "signature": "export async function safeParseBody(response: Response, maxBytes?: number): Promise<unknown>",
           "jsdoc": "Parse a response body as JSON, swallowing parse failures."
@@ -15121,13 +15128,13 @@
         {
           "name": "isAbortError",
           "kind": "function",
-          "line": 69,
+          "line": 97,
           "signature": "function isAbortError(error: unknown): boolean"
         },
         {
           "name": "parseResponseBody",
           "kind": "function",
-          "line": 88,
+          "line": 116,
           "exported": true,
           "signature": "export async function parseResponseBody( response: Response, responseType: RequestOptions['responseType'], maxBytes?: nu…",
           "jsdoc": "Parse a successful response body according to the caller-supplied `responseType`."
@@ -15135,14 +15142,14 @@
         {
           "name": "parseJsonOrThrow",
           "kind": "function",
-          "line": 140,
+          "line": 168,
           "signature": "function parseJsonOrThrow(text: string): unknown",
           "jsdoc": "Parse a 2xx body as JSON, wrapping a malformed-JSON failure in the taxonomy {@link ValidationError} (B1041(2))."
         },
         {
           "name": "buildApiResponse",
           "kind": "function",
-          "line": 161,
+          "line": 189,
           "exported": true,
           "signature": "export function buildApiResponse( response: Response, data: unknown, rateLimit: RateLimitInfo, requestId?: string, ): Ap…",
           "jsdoc": "Assemble an {@link ApiResponse} from a successful `fetch` Response and the parsed body."
@@ -15150,28 +15157,28 @@
         {
           "name": "readBodyWithCap",
           "kind": "function",
-          "line": 192,
+          "line": 220,
           "signature": "async function readBodyWithCap(response: Response, maxBytes?: number): Promise<Uint8Array>",
           "jsdoc": "Read the response body as bytes under an optional size cap (B026)."
         },
         {
           "name": "readBodyAsText",
           "kind": "function",
-          "line": 275,
+          "line": 303,
           "signature": "async function readBodyAsText(response: Response, maxBytes?: number): Promise<string>",
           "jsdoc": "Read the response body as a UTF-8 string under an optional size cap."
         },
         {
           "name": "cancelBodyQuietly",
           "kind": "function",
-          "line": 289,
+          "line": 317,
           "signature": "async function cancelBodyQuietly(body: ReadableStream<Uint8Array> | null): Promise<void>",
           "jsdoc": "Best-effort `ReadableStream.cancel()` that never throws. Used by the content-length fast-fail path to release the socket before throwing `ResponseTooLargeError`; rejections from buggy custom streams must not mask the documented overflow contract (PR #21 review)."
         },
         {
           "name": "parseContentLength",
           "kind": "function",
-          "line": 307,
+          "line": 335,
           "signature": "function parseContentLength(value: string | null): number | undefined",
           "jsdoc": "Parse a `Content-Length` header value into a non-negative finite integer."
         }
@@ -15224,14 +15231,14 @@
         {
           "name": "hasRetryableCode",
           "kind": "function",
-          "line": 64,
+          "line": 76,
           "signature": "function hasRetryableCode(error: unknown): boolean",
           "jsdoc": "Walk the error + `cause` chain looking for a known-retryable system code."
         },
         {
           "name": "sleep",
           "kind": "function",
-          "line": 81,
+          "line": 93,
           "exported": true,
           "signature": "export function sleep(ms: number): Promise<void>",
           "jsdoc": "Sleep for the given number of milliseconds."
@@ -15239,7 +15246,7 @@
         {
           "name": "RetryConfig",
           "kind": "interface",
-          "line": 92,
+          "line": 104,
           "exported": true,
           "signature": "export interface RetryConfig { readonly retries: number; readonly retryDelay: number; readonly maxRetryDelay: number; }",
           "jsdoc": "Configuration consumed by {@link executeWithRetry}. A {@link ResolvedConfig} satisfies this shape structurally, so the transport can pass its own config object without adapting."
@@ -15247,7 +15254,7 @@
         {
           "name": "executeWithRetry",
           "kind": "function",
-          "line": 117,
+          "line": 129,
           "exported": true,
           "signature": "export async function executeWithRetry<T>( operation: () => Promise<T>, config: RetryConfig, signal?: AbortSignal, ): Pr…",
           "jsdoc": "Run an async operation with retry, exponential backoff, and abort-aware sleep."
@@ -15255,44 +15262,44 @@
         {
           "name": "shouldRetry",
           "kind": "function",
-          "line": 139,
+          "line": 151,
           "signature": "function shouldRetry(error: unknown, attempt: number, retries: number): boolean"
         },
         {
           "name": "RETRY_DELAY_HARD_CEILING",
           "kind": "variable",
-          "line": 167,
+          "line": 179,
           "signature": "const RETRY_DELAY_HARD_CEILING = 60_000;",
           "jsdoc": "Hard ceiling applied when a retry delay is unschedulable. `resolveConfig` rejects invalid values up front — this constant is defence-in-depth for callers that bypass `resolveConfig` (e.g. custom transports building a structural `RetryConfig`). Without it, Node coerces `NaN`, `Infinity`, and values above its timer ceiling to near-immediate timers."
         },
         {
           "name": "MAX_TIMER_DELAY",
           "kind": "variable",
-          "line": 168,
+          "line": 180,
           "signature": "const MAX_TIMER_DELAY = 2_147_483_647;"
         },
         {
           "name": "effectiveMaxDelay",
           "kind": "function",
-          "line": 170,
+          "line": 182,
           "signature": "function effectiveMaxDelay(maxRetryDelay: number): number"
         },
         {
           "name": "effectiveBaseDelay",
           "kind": "function",
-          "line": 176,
+          "line": 188,
           "signature": "function effectiveBaseDelay(retryDelay: number, ceiling: number): number"
         },
         {
           "name": "getRetryDelay",
           "kind": "function",
-          "line": 182,
+          "line": 194,
           "signature": "function getRetryDelay( error: unknown, attempt: number, retryDelay: number, maxRetryDelay: number, ): number"
         },
         {
           "name": "sleepWithAbort",
           "kind": "function",
-          "line": 214,
+          "line": 226,
           "exported": true,
           "signature": "export async function sleepWithAbort(delayMs: number, signal?: AbortSignal): Promise<void>",
           "jsdoc": "Sleep for `delayMs` milliseconds, rejecting with the signal's normalised abort reason if `signal` fires before the timer. Exported so other middleware (e.g. OAuth refresh jitter) can share a single abort-aware sleep implementation rather than duplicating timer + listener cleanup. Listener is registered with `{ once: true }` AND explicitly removed on the resolve path so it never outlives the sleep."
@@ -15300,7 +15307,7 @@
         {
           "name": "getAbortReason",
           "kind": "function",
-          "line": 239,
+          "line": 251,
           "signature": "function getAbortReason(signal: AbortSignal): Error"
         }
       ],
@@ -15479,36 +15486,43 @@
           ]
         },
         {
+          "name": "isHeadersLike",
+          "kind": "function",
+          "line": 401,
+          "signature": "function isHeadersLike(value: unknown): value is Headers",
+          "jsdoc": "Duck-type check for a WHATWG `Headers`-shaped value."
+        },
+        {
           "name": "DEFAULT_INBOUND_HEADERS",
           "kind": "variable",
-          "line": 362,
+          "line": 423,
           "signature": "const DEFAULT_INBOUND_HEADERS: readonly string[] = ['X-AREQUESTID', 'X-Request-Id'];",
           "jsdoc": "Default inbound response headers to check for a server-assigned request id (B011). `X-AREQUESTID` is Atlassian's actual header; `X-Request-Id` is the conventional RFC draft / de-facto standard fallback."
         },
         {
           "name": "captureRequestId",
           "kind": "function",
-          "line": 369,
+          "line": 430,
           "signature": "function captureRequestId(headers: Headers, candidates: readonly string[]): string | undefined",
           "jsdoc": "Read the first matching request-id header from the response. Returns the header value, or `undefined` when none of the candidates are present. `Headers.get()` is case-insensitive per the WHATWG Fetch spec."
         },
         {
           "name": "parseBodyWithTimeoutHandling",
           "kind": "function",
-          "line": 377,
+          "line": 438,
           "signature": "async function parseBodyWithTimeoutHandling<T>( parse: () => Promise<T>, timeoutSignal: AbortSignal, timeoutMs: number, …"
         },
         {
           "name": "computeAuthIdentity",
           "kind": "function",
-          "line": 408,
+          "line": 485,
           "signature": "function computeAuthIdentity(authHeaders: Record<string, string>): string",
           "jsdoc": "Hash the auth provider's `Authorization` header value into the short stable identifier exposed as {@link RequestOptions.authIdentity}. Uses the first 16 hex chars (64 bits) of SHA-256 — wide enough for accidental collisions to vanish in practice, narrow enough to keep cache/batch keys compact, and one-way so a logging/metrics middleware that persists `RequestOptions` never accidentally writes the credential to a log sink."
         },
         {
           "name": "assertOverrideBaseUrl",
           "kind": "function",
-          "line": 427,
+          "line": 504,
           "signature": "function assertOverrideBaseUrl(baseUrl: string, allowedHosts: readonly string[]): void",
           "jsdoc": "Validate a baseUrl override (deprecated constructor overload) against the same `allowedHosts` policy `resolveConfig` already applied to `config.baseUrl`. Without this, an override could silently relocate every relative-path request to a foreign host with the configured `Authorization` header attached. PR review of round 3."
         }
