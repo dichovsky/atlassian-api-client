@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "4.0.0"
   },
-  "sourceHash": "17621e920864c775cecbd873edeb634d5f9d0a83eefc5440307f81a7427534c6",
+  "sourceHash": "75676d47f92b7cc93d6e0ca8bcda65deb7c0fb9936a97a9cd75df5870d00f29f",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -46,7 +46,7 @@
       "name": "AsymmetricJwtVerifyOptions",
       "kind": "interface",
       "file": "src/core/connect-jwt.ts",
-      "line": 264,
+      "line": 268,
       "signature": "export interface AsymmetricJwtVerifyOptions { readonly publicKey?: string | KeyObject; readonly publicKeyResolver?: (kid…",
       "jsdoc": "Options for {@link verifyConnectAsymmetricJwt}.",
       "typeOnly": true
@@ -2553,7 +2553,7 @@
       "name": "OAuthError",
       "kind": "class",
       "file": "src/core/oauth.ts",
-      "line": 119,
+      "line": 124,
       "signature": "export class OAuthError extends HttpError",
       "jsdoc": "Thrown when the token refresh request itself fails."
     },
@@ -2944,7 +2944,7 @@
       "name": "RetryConfig",
       "kind": "interface",
       "file": "src/core/retry.ts",
-      "line": 92,
+      "line": 104,
       "signature": "export interface RetryConfig { readonly retries: number; readonly retryDelay: number; readonly maxRetryDelay: number; }",
       "jsdoc": "Configuration consumed by {@link executeWithRetry}. A {@link ResolvedConfig} satisfies this shape structurally, so the transport can pass its own config object without adapting.",
       "typeOnly": true
@@ -3710,7 +3710,7 @@
       "name": "createOAuthRefreshMiddleware",
       "kind": "function",
       "file": "src/core/oauth.ts",
-      "line": 143,
+      "line": 148,
       "signature": "export function createOAuthRefreshMiddleware(config: OAuthRefreshConfig): Middleware",
       "jsdoc": "Creates middleware that automatically refreshes an OAuth 2.0 access token on 401 responses."
     },
@@ -3734,7 +3734,7 @@
       "name": "executeWithRetry",
       "kind": "function",
       "file": "src/core/retry.ts",
-      "line": 117,
+      "line": 129,
       "signature": "export async function executeWithRetry<T>( operation: () => Promise<T>, config: RetryConfig, signal?: AbortSignal, ): Pr…",
       "jsdoc": "Run an async operation with retry, exponential backoff, and abort-aware sleep."
     },
@@ -3750,7 +3750,7 @@
       "name": "fetchRefreshedTokens",
       "kind": "function",
       "file": "src/core/oauth.ts",
-      "line": 281,
+      "line": 286,
       "signature": "export async function fetchRefreshedTokens( config: Pick< OAuthRefreshConfig, 'clientId' | 'clientSecret' | 'tokenEndpoi…",
       "jsdoc": "Calls the token endpoint with the refresh token and returns new {@link OAuthTokens}. Exported for direct use in advanced scenarios (e.g. proactive token refresh)."
     },
@@ -3766,7 +3766,7 @@
       "name": "listKnownOperations",
       "kind": "function",
       "file": "src/core/scopes.ts",
-      "line": 1074,
+      "line": 1081,
       "signature": "export function listKnownOperations(): readonly string[]",
       "jsdoc": "Returns all registered operation names in alphabetical order. Useful for validation tooling and documentation generation."
     },
@@ -3814,7 +3814,7 @@
       "name": "toJSON",
       "kind": "function",
       "file": "src/core/response.ts",
-      "line": 24,
+      "line": 42,
       "signature": "export function toJSON<T>(response: ApiResponse<T>): SerializableApiResponse<T>",
       "jsdoc": "Convert an {@link ApiResponse} into a plain JSON-serialisable object."
     },
@@ -3822,7 +3822,7 @@
       "name": "verifyConnectAsymmetricJwt",
       "kind": "function",
       "file": "src/core/connect-jwt.ts",
-      "line": 353,
+      "line": 363,
       "signature": "export async function verifyConnectAsymmetricJwt( token: string, options: AsymmetricJwtVerifyOptions, ): Promise<Record<…",
       "jsdoc": "Verifies an inbound Atlassian Connect asymmetric (RS256) JWT and returns its claims. @example ```ts const claims = await verifyConnectAsymmetricJwt(token, { publicKeyResolver…"
     }
@@ -13534,61 +13534,61 @@
         {
           "name": "canonicalizePath",
           "kind": "function",
-          "line": 175,
+          "line": 179,
           "signature": "function canonicalizePath(pathWithoutQuery: string, contextPath?: string): string",
           "jsdoc": "Canonical URI per the Connect spec: discard protocol/server/port (every resource passes an absolute `https://host/rest/...` URL as `path`) and the product context path, strip a trailing `/` unless it is the only character, never emit an empty path, and percent-encode `&`."
         },
         {
           "name": "normalizeContextPath",
           "kind": "function",
-          "line": 190,
+          "line": 194,
           "signature": "function normalizeContextPath(contextPath: string | undefined): string",
           "jsdoc": "`'wiki'` / `'/wiki/'` / `'https://site.atlassian.net/wiki'` → `'/wiki'`; `undefined` / `''` / `'/'` → `''` (nothing to strip)."
         },
         {
           "name": "ABSOLUTE_URL_RE",
           "kind": "variable",
-          "line": 199,
+          "line": 203,
           "signature": "const ABSOLUTE_URL_RE = /^https?:\\/\\"
         },
         {
           "name": "parsePathname",
           "kind": "function",
-          "line": 202,
+          "line": 206,
           "signature": "function parsePathname(url: string, what: 'path' | 'contextPath'): string",
           "jsdoc": "`URL.pathname` of an absolute URL, in the taxonomy; the raw value is never echoed."
         },
         {
           "name": "encodeRfc3986",
           "kind": "function",
-          "line": 222,
+          "line": 226,
           "signature": "function encodeRfc3986(value: string): string",
           "jsdoc": "RFC-3986 percent-encoding for QSH canonicalization."
         },
         {
           "name": "base64UrlEncode",
           "kind": "function",
-          "line": 229,
+          "line": 233,
           "signature": "function base64UrlEncode(input: string): string"
         },
         {
           "name": "ASYMMETRIC_JWT_ALG",
           "kind": "variable",
-          "line": 244,
+          "line": 248,
           "signature": "const ASYMMETRIC_JWT_ALG = 'RS256';",
           "jsdoc": "The only signing algorithm Atlassian uses for asymmetric Connect JWTs."
         },
         {
           "name": "DEFAULT_MAX_CLOCK_SKEW_SECONDS",
           "kind": "variable",
-          "line": 254,
+          "line": 258,
           "signature": "const DEFAULT_MAX_CLOCK_SKEW_SECONDS = 30;",
           "jsdoc": "Default clock-skew tolerance (seconds) for `exp`/`iat`/`nbf` validation."
         },
         {
           "name": "AsymmetricJwtVerifyOptions",
           "kind": "interface",
-          "line": 264,
+          "line": 268,
           "exported": true,
           "signature": "export interface AsymmetricJwtVerifyOptions { readonly publicKey?: string | KeyObject; readonly publicKeyResolver?: (kid…",
           "jsdoc": "Options for {@link verifyConnectAsymmetricJwt}."
@@ -13596,7 +13596,7 @@
         {
           "name": "verifyConnectAsymmetricJwt",
           "kind": "function",
-          "line": 353,
+          "line": 363,
           "exported": true,
           "signature": "export async function verifyConnectAsymmetricJwt( token: string, options: AsymmetricJwtVerifyOptions, ): Promise<Record<…",
           "jsdoc": "Verifies an inbound Atlassian Connect asymmetric (RS256) JWT and returns its claims. @example ```ts const claims = await verifyConnectAsymmetricJwt(token, { publicKeyResolver…"
@@ -13604,63 +13604,77 @@
         {
           "name": "parseJwt",
           "kind": "function",
-          "line": 410,
+          "line": 420,
           "signature": "function parseJwt(token: string): { signingInput: string; header: Record<string, unknown>; payload: Record<string, unkno…",
           "jsdoc": "Splits and decodes a compact JWT, validating structural shape only."
         },
         {
           "name": "decodeJsonSegment",
           "kind": "function",
-          "line": 432,
+          "line": 442,
           "signature": "function decodeJsonSegment(segment: string, name: string): Record<string, unknown>",
           "jsdoc": "Decodes a base64url JSON segment into a plain object."
         },
         {
           "name": "resolvePublicKey",
           "kind": "function",
-          "line": 446,
+          "line": 456,
           "signature": "async function resolvePublicKey( header: Record<string, unknown>, options: AsymmetricJwtVerifyOptions, ): Promise<KeyObj…",
           "jsdoc": "Resolves the verifying key from an injected key or the caller's resolver."
         },
         {
           "name": "toKeyObject",
           "kind": "function",
-          "line": 473,
+          "line": 483,
           "signature": "function toKeyObject(key: string | KeyObject): KeyObject",
           "jsdoc": "Normalises a PEM string or KeyObject into a public KeyObject."
         },
         {
           "name": "validateTimeClaims",
           "kind": "function",
-          "line": 485,
+          "line": 495,
           "signature": "function validateTimeClaims( payload: Record<string, unknown>, options: AsymmetricJwtVerifyOptions, ): void",
           "jsdoc": "Validates `exp`, `iat`, and `nbf` with the configured clock-skew tolerance."
         },
         {
+          "name": "resolveClockSkewSeconds",
+          "kind": "function",
+          "line": 531,
+          "signature": "function resolveClockSkewSeconds(value: number | undefined): number",
+          "jsdoc": "Resolve the clock-skew tolerance, rejecting values that would silently disable the time checks entirely."
+        },
+        {
+          "name": "MAX_CLOCK_SKEW_CEILING_SECONDS",
+          "kind": "variable",
+          "line": 552,
+          "signature": "const MAX_CLOCK_SKEW_CEILING_SECONDS = 86_400;",
+          "jsdoc": "One day. Beyond this, `exp + skew` outruns any plausible clock difference."
+        },
+        {
           "name": "readNumericClaim",
           "kind": "function",
-          "line": 509,
+          "line": 555,
           "signature": "function readNumericClaim(payload: Record<string, unknown>, name: string): number | undefined",
           "jsdoc": "Reads a numeric claim, rejecting present-but-non-numeric values."
         },
         {
           "name": "validateIssuer",
           "kind": "function",
-          "line": 519,
+          "line": 565,
           "signature": "function validateIssuer( payload: Record<string, unknown>, options: AsymmetricJwtVerifyOptions, ): void",
           "jsdoc": "Enforces `iss === options.issuer` when an expected issuer is configured."
         },
         {
           "name": "validateAudience",
           "kind": "function",
-          "line": 530,
+          "line": 576,
           "signature": "function validateAudience( payload: Record<string, unknown>, options: AsymmetricJwtVerifyOptions, ): void",
           "jsdoc": "Enforces `options.audience` membership in `aud` (string or string[])."
         },
         {
           "name": "validateQsh",
           "kind": "function",
-          "line": 546,
+          "line": 592,
           "signature": "function validateQsh(payload: Record<string, unknown>, options: AsymmetricJwtVerifyOptions): void",
           "jsdoc": "Enforces the `qsh` claim against the expected hash when configured."
         }
@@ -13955,26 +13969,33 @@
         {
           "name": "extractErrorMessageRaw",
           "kind": "function",
-          "line": 411,
+          "line": 424,
           "signature": "function extractErrorMessageRaw(body: unknown): CappedString | undefined"
+        },
+        {
+          "name": "jiraErrorParts",
+          "kind": "function",
+          "line": 461,
+          "signature": "function* jiraErrorParts(body: Record<string, unknown>): Generator<string>",
+          "jsdoc": "Lazily yield every message an `ErrorCollection` body carries, in the order Jira documents them: the top-level `errorMessages`, then the field-level `errors` map rendered as `field: message`."
         },
         {
           "name": "joinWithCap",
           "kind": "function",
-          "line": 439,
-          "signature": "function joinWithCap(messages: readonly unknown[]): CappedString | undefined",
+          "line": 495,
+          "signature": "function joinWithCap(messages: Iterable<string>): CappedString | undefined",
           "jsdoc": "Join string entries with `'; '` while enforcing a running length cap, so a hostile response with thousands of `errorMessages` cannot allocate a multi-megabyte intermediate before truncation (PR-review hardening of B032). The returned `truncated` flag drives the outer `extractErrorMessage` ellipsis so callers can still see at a glance that content was elided."
         },
         {
           "name": "capLength",
           "kind": "function",
-          "line": 477,
+          "line": 535,
           "signature": "function capLength(value: string): CappedString"
         },
         {
           "name": "isPlainObject",
           "kind": "function",
-          "line": 484,
+          "line": 542,
           "signature": "function isPlainObject(value: unknown): value is Record<string, unknown>"
         }
       ]
@@ -14536,7 +14557,7 @@
         {
           "name": "OAuthError",
           "kind": "class",
-          "line": 119,
+          "line": 124,
           "exported": true,
           "signature": "export class OAuthError extends HttpError",
           "jsdoc": "Thrown when the token refresh request itself fails.",
@@ -14544,19 +14565,19 @@
             {
               "name": "refreshStatus",
               "kind": "property",
-              "line": 121
+              "line": 126
             },
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 123
+              "line": 128
             }
           ]
         },
         {
           "name": "createOAuthRefreshMiddleware",
           "kind": "function",
-          "line": 143,
+          "line": 148,
           "exported": true,
           "signature": "export function createOAuthRefreshMiddleware(config: OAuthRefreshConfig): Middleware",
           "jsdoc": "Creates middleware that automatically refreshes an OAuth 2.0 access token on 401 responses."
@@ -14564,20 +14585,20 @@
         {
           "name": "resolveNonNegFiniteNumber",
           "kind": "function",
-          "line": 250,
+          "line": 255,
           "signature": "function resolveNonNegFiniteNumber( value: number | undefined, dflt: number, fieldName: string, ): number",
           "jsdoc": "Validate a non-negative finite number field on `OAuthRefreshConfig`. Used for both `retryJitterMs` and `failureCooldownMs`. `0` is accepted and documented to disable the feature; negatives, `NaN`, `Infinity`, and non-number runtime values produce `ValidationError`."
         },
         {
           "name": "injectBearerToken",
           "kind": "function",
-          "line": 262,
+          "line": 267,
           "signature": "function injectBearerToken(options: RequestOptions, token: string): RequestOptions"
         },
         {
           "name": "fetchRefreshedTokens",
           "kind": "function",
-          "line": 281,
+          "line": 286,
           "exported": true,
           "signature": "export async function fetchRefreshedTokens( config: Pick< OAuthRefreshConfig, 'clientId' | 'clientSecret' | 'tokenEndpoi…",
           "jsdoc": "Calls the token endpoint with the refresh token and returns new {@link OAuthTokens}. Exported for direct use in advanced scenarios (e.g. proactive token refresh)."
@@ -14585,21 +14606,21 @@
         {
           "name": "validateTokenEndpoint",
           "kind": "function",
-          "line": 379,
+          "line": 386,
           "signature": "function validateTokenEndpoint( configured: string | undefined, allowedHosts: readonly string[] | undefined, ): string",
-          "jsdoc": "Validate a `tokenEndpoint` URL against the host allowlist and return the normalised endpoint string for downstream `fetch` calls. Throws `ValidationError` on: - malformed URL - non-HTTPS scheme - host not on the allowlist - invalid `allowedTokenEndpointHosts` entries (empty, port-bearing, whitespace, slashes, control chars, IPv6 brackets)"
+          "jsdoc": "Validate a `tokenEndpoint` URL against the host allowlist and return the normalised endpoint string for downstream `fetch` calls. Throws `ValidationError` on: - malformed URL - non-HTTPS scheme - host not on the allowlist - embedded userinfo (`https://user:pw@host/…`) - a non-default port (`https://host:8443/…`) - invalid `allowedTokenEndpointHosts` entries (empty, port-bearing, whitespace, slashes, control chars, IPv6 brackets)"
         },
         {
           "name": "validateAllowedTokenEndpointHosts",
           "kind": "function",
-          "line": 425,
+          "line": 461,
           "signature": "function validateAllowedTokenEndpointHosts(hosts: readonly string[]): readonly string[]",
           "jsdoc": "Validate user-supplied `allowedTokenEndpointHosts`. Same rules as `validateAllowedHosts` in config.ts (non-empty array, non-empty strings, no port, no whitespace/slashes/control chars/IPv6 brackets). The shared character policy lives in `isInvalidBareHostChar` (atlassian-hosts.ts) so both validators stay in sync."
         },
         {
           "name": "formatBodySnippet",
           "kind": "function",
-          "line": 463,
+          "line": 499,
           "signature": "function formatBodySnippet(raw: string): string",
           "jsdoc": "Build a short diagnostic snippet of a token-endpoint response body. Truncates to 200 chars after replacing any token values with `***` so that an accidentally-echoed credential never reaches an error message or log."
         }
@@ -15091,7 +15112,7 @@
         {
           "name": "toJSON",
           "kind": "function",
-          "line": 24,
+          "line": 42,
           "exported": true,
           "signature": "export function toJSON<T>(response: ApiResponse<T>): SerializableApiResponse<T>",
           "jsdoc": "Convert an {@link ApiResponse} into a plain JSON-serialisable object."
@@ -15099,7 +15120,7 @@
         {
           "name": "safeParseBody",
           "kind": "function",
-          "line": 52,
+          "line": 80,
           "exported": true,
           "signature": "export async function safeParseBody(response: Response, maxBytes?: number): Promise<unknown>",
           "jsdoc": "Parse a response body as JSON, swallowing parse failures."
@@ -15107,13 +15128,13 @@
         {
           "name": "isAbortError",
           "kind": "function",
-          "line": 69,
+          "line": 97,
           "signature": "function isAbortError(error: unknown): boolean"
         },
         {
           "name": "parseResponseBody",
           "kind": "function",
-          "line": 88,
+          "line": 116,
           "exported": true,
           "signature": "export async function parseResponseBody( response: Response, responseType: RequestOptions['responseType'], maxBytes?: nu…",
           "jsdoc": "Parse a successful response body according to the caller-supplied `responseType`."
@@ -15121,14 +15142,14 @@
         {
           "name": "parseJsonOrThrow",
           "kind": "function",
-          "line": 140,
+          "line": 168,
           "signature": "function parseJsonOrThrow(text: string): unknown",
           "jsdoc": "Parse a 2xx body as JSON, wrapping a malformed-JSON failure in the taxonomy {@link ValidationError} (B1041(2))."
         },
         {
           "name": "buildApiResponse",
           "kind": "function",
-          "line": 161,
+          "line": 189,
           "exported": true,
           "signature": "export function buildApiResponse( response: Response, data: unknown, rateLimit: RateLimitInfo, requestId?: string, ): Ap…",
           "jsdoc": "Assemble an {@link ApiResponse} from a successful `fetch` Response and the parsed body."
@@ -15136,28 +15157,28 @@
         {
           "name": "readBodyWithCap",
           "kind": "function",
-          "line": 192,
+          "line": 220,
           "signature": "async function readBodyWithCap(response: Response, maxBytes?: number): Promise<Uint8Array>",
           "jsdoc": "Read the response body as bytes under an optional size cap (B026)."
         },
         {
           "name": "readBodyAsText",
           "kind": "function",
-          "line": 275,
+          "line": 303,
           "signature": "async function readBodyAsText(response: Response, maxBytes?: number): Promise<string>",
           "jsdoc": "Read the response body as a UTF-8 string under an optional size cap."
         },
         {
           "name": "cancelBodyQuietly",
           "kind": "function",
-          "line": 289,
+          "line": 317,
           "signature": "async function cancelBodyQuietly(body: ReadableStream<Uint8Array> | null): Promise<void>",
           "jsdoc": "Best-effort `ReadableStream.cancel()` that never throws. Used by the content-length fast-fail path to release the socket before throwing `ResponseTooLargeError`; rejections from buggy custom streams must not mask the documented overflow contract (PR #21 review)."
         },
         {
           "name": "parseContentLength",
           "kind": "function",
-          "line": 307,
+          "line": 335,
           "signature": "function parseContentLength(value: string | null): number | undefined",
           "jsdoc": "Parse a `Content-Length` header value into a non-negative finite integer."
         }
@@ -15210,14 +15231,14 @@
         {
           "name": "hasRetryableCode",
           "kind": "function",
-          "line": 64,
+          "line": 76,
           "signature": "function hasRetryableCode(error: unknown): boolean",
           "jsdoc": "Walk the error + `cause` chain looking for a known-retryable system code."
         },
         {
           "name": "sleep",
           "kind": "function",
-          "line": 81,
+          "line": 93,
           "exported": true,
           "signature": "export function sleep(ms: number): Promise<void>",
           "jsdoc": "Sleep for the given number of milliseconds."
@@ -15225,7 +15246,7 @@
         {
           "name": "RetryConfig",
           "kind": "interface",
-          "line": 92,
+          "line": 104,
           "exported": true,
           "signature": "export interface RetryConfig { readonly retries: number; readonly retryDelay: number; readonly maxRetryDelay: number; }",
           "jsdoc": "Configuration consumed by {@link executeWithRetry}. A {@link ResolvedConfig} satisfies this shape structurally, so the transport can pass its own config object without adapting."
@@ -15233,7 +15254,7 @@
         {
           "name": "executeWithRetry",
           "kind": "function",
-          "line": 117,
+          "line": 129,
           "exported": true,
           "signature": "export async function executeWithRetry<T>( operation: () => Promise<T>, config: RetryConfig, signal?: AbortSignal, ): Pr…",
           "jsdoc": "Run an async operation with retry, exponential backoff, and abort-aware sleep."
@@ -15241,44 +15262,44 @@
         {
           "name": "shouldRetry",
           "kind": "function",
-          "line": 139,
+          "line": 151,
           "signature": "function shouldRetry(error: unknown, attempt: number, retries: number): boolean"
         },
         {
           "name": "RETRY_DELAY_HARD_CEILING",
           "kind": "variable",
-          "line": 167,
+          "line": 179,
           "signature": "const RETRY_DELAY_HARD_CEILING = 60_000;",
           "jsdoc": "Hard ceiling applied when a retry delay is unschedulable. `resolveConfig` rejects invalid values up front — this constant is defence-in-depth for callers that bypass `resolveConfig` (e.g. custom transports building a structural `RetryConfig`). Without it, Node coerces `NaN`, `Infinity`, and values above its timer ceiling to near-immediate timers."
         },
         {
           "name": "MAX_TIMER_DELAY",
           "kind": "variable",
-          "line": 168,
+          "line": 180,
           "signature": "const MAX_TIMER_DELAY = 2_147_483_647;"
         },
         {
           "name": "effectiveMaxDelay",
           "kind": "function",
-          "line": 170,
+          "line": 182,
           "signature": "function effectiveMaxDelay(maxRetryDelay: number): number"
         },
         {
           "name": "effectiveBaseDelay",
           "kind": "function",
-          "line": 176,
+          "line": 188,
           "signature": "function effectiveBaseDelay(retryDelay: number, ceiling: number): number"
         },
         {
           "name": "getRetryDelay",
           "kind": "function",
-          "line": 182,
+          "line": 194,
           "signature": "function getRetryDelay( error: unknown, attempt: number, retryDelay: number, maxRetryDelay: number, ): number"
         },
         {
           "name": "sleepWithAbort",
           "kind": "function",
-          "line": 214,
+          "line": 226,
           "exported": true,
           "signature": "export async function sleepWithAbort(delayMs: number, signal?: AbortSignal): Promise<void>",
           "jsdoc": "Sleep for `delayMs` milliseconds, rejecting with the signal's normalised abort reason if `signal` fires before the timer. Exported so other middleware (e.g. OAuth refresh jitter) can share a single abort-aware sleep implementation rather than duplicating timer + listener cleanup. Listener is registered with `{ once: true }` AND explicitly removed on the resolve path so it never outlives the sleep."
@@ -15286,7 +15307,7 @@
         {
           "name": "getAbortReason",
           "kind": "function",
-          "line": 239,
+          "line": 251,
           "signature": "function getAbortReason(signal: AbortSignal): Error"
         }
       ],
@@ -15351,7 +15372,7 @@
         {
           "name": "listKnownOperations",
           "kind": "function",
-          "line": 1074,
+          "line": 1081,
           "exported": true,
           "signature": "export function listKnownOperations(): readonly string[]",
           "jsdoc": "Returns all registered operation names in alphabetical order. Useful for validation tooling and documentation generation."
@@ -15359,14 +15380,14 @@
         {
           "name": "KNOWN_SCOPES",
           "kind": "variable",
-          "line": 1083,
+          "line": 1090,
           "signature": "const KNOWN_SCOPES: ReadonlySet<AtlassianScope> = new Set([ ...CONFLUENCE_GRANULAR_SCOPES, ...JIRA_SOFTWARE_GRANULAR_SCO…",
           "jsdoc": "Complete validator catalog. The scope type and runtime set share these canonical arrays so a spec-derived scope cannot be added to one without the other."
         },
         {
           "name": "ScopeValidationResult",
           "kind": "interface",
-          "line": 1091,
+          "line": 1098,
           "exported": true,
           "signature": "export interface ScopeValidationResult { readonly valid: readonly AtlassianScope[]; readonly unknown: readonly string[];…",
           "jsdoc": "Result of validating a set of scope strings."
@@ -15374,7 +15395,7 @@
         {
           "name": "validateScopes",
           "kind": "function",
-          "line": 1112,
+          "line": 1119,
           "exported": true,
           "signature": "export function validateScopes(scopes: readonly string[]): ScopeValidationResult",
           "jsdoc": "Validates a list of scope strings against the known Atlassian OAuth 2.0 scope catalog. Returns two partitions: `valid` (recognised) and `unknown` (not in the catalog). Order within each partition follows the input order. @example validateScopes(['read:issue:jira', 'write:made-up']) // → { valid: ['read:issue:…"
@@ -15382,7 +15403,7 @@
         {
           "name": "listKnownScopes",
           "kind": "function",
-          "line": 1129,
+          "line": 1136,
           "exported": true,
           "signature": "export function listKnownScopes(): readonly AtlassianScope[]",
           "jsdoc": "Returns all known Atlassian OAuth 2.0 scope strings in alphabetical order. Useful for listing available scopes in help output and validation tooling."
@@ -15465,36 +15486,43 @@
           ]
         },
         {
+          "name": "isHeadersLike",
+          "kind": "function",
+          "line": 401,
+          "signature": "function isHeadersLike(value: unknown): value is Headers",
+          "jsdoc": "Duck-type check for a WHATWG `Headers`-shaped value."
+        },
+        {
           "name": "DEFAULT_INBOUND_HEADERS",
           "kind": "variable",
-          "line": 362,
+          "line": 423,
           "signature": "const DEFAULT_INBOUND_HEADERS: readonly string[] = ['X-AREQUESTID', 'X-Request-Id'];",
           "jsdoc": "Default inbound response headers to check for a server-assigned request id (B011). `X-AREQUESTID` is Atlassian's actual header; `X-Request-Id` is the conventional RFC draft / de-facto standard fallback."
         },
         {
           "name": "captureRequestId",
           "kind": "function",
-          "line": 369,
+          "line": 430,
           "signature": "function captureRequestId(headers: Headers, candidates: readonly string[]): string | undefined",
           "jsdoc": "Read the first matching request-id header from the response. Returns the header value, or `undefined` when none of the candidates are present. `Headers.get()` is case-insensitive per the WHATWG Fetch spec."
         },
         {
           "name": "parseBodyWithTimeoutHandling",
           "kind": "function",
-          "line": 377,
+          "line": 438,
           "signature": "async function parseBodyWithTimeoutHandling<T>( parse: () => Promise<T>, timeoutSignal: AbortSignal, timeoutMs: number, …"
         },
         {
           "name": "computeAuthIdentity",
           "kind": "function",
-          "line": 408,
+          "line": 485,
           "signature": "function computeAuthIdentity(authHeaders: Record<string, string>): string",
           "jsdoc": "Hash the auth provider's `Authorization` header value into the short stable identifier exposed as {@link RequestOptions.authIdentity}. Uses the first 16 hex chars (64 bits) of SHA-256 — wide enough for accidental collisions to vanish in practice, narrow enough to keep cache/batch keys compact, and one-way so a logging/metrics middleware that persists `RequestOptions` never accidentally writes the credential to a log sink."
         },
         {
           "name": "assertOverrideBaseUrl",
           "kind": "function",
-          "line": 427,
+          "line": 504,
           "signature": "function assertOverrideBaseUrl(baseUrl: string, allowedHosts: readonly string[]): void",
           "jsdoc": "Validate a baseUrl override (deprecated constructor overload) against the same `allowedHosts` policy `resolveConfig` already applied to `config.baseUrl`. Without this, an override could silently relocate every relative-path request to a foreign host with the configured `Authorization` header attached. PR review of round 3."
         }

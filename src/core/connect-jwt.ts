@@ -147,16 +147,20 @@ export function computeQsh(
 
   // Sort keys by codepoint (UTF-16 code-unit) order — what the Connect QSH spec
   // and the reference impl (`atlassian-jwt`) require: sort(["a","A"]) => ["A","a"].
-  // A parameter with multiple values has them encoded, sorted, and comma-joined
-  // (the comma separator is literal; commas WITHIN a value are %2C-encoded).
+  // A parameter with multiple values has them SORTED FIRST and then encoded,
+  // matching the reference impl. Encoding before sorting reorders values,
+  // because every percent-escape begins with '%' (0x25) while every character
+  // encodeRfc3986 leaves literal is '-' (0x2D) or above — so an encoded value
+  // always sorts ahead of an unencoded one regardless of the raw characters.
+  // (The comma separator is literal; commas WITHIN a value are %2C-encoded.)
   const canonicalQuery = [...params.entries()]
     // Map keys are unique, so the two keys are never equal — a two-way
     // comparator suffices and matches default codepoint order for distinct keys.
     .sort(([a], [b]) => (a < b ? -1 : 1))
     .map(([key, values]) => {
-      const encodedValues = values
-        .map((v) => encodeRfc3986(v))
+      const encodedValues = [...values]
         .sort()
+        .map((v) => encodeRfc3986(v))
         .join(',');
       return `${encodeRfc3986(key)}=${encodedValues}`;
     })
@@ -297,6 +301,12 @@ export interface AsymmetricJwtVerifyOptions {
     | string;
   /**
    * Clock-skew tolerance in seconds applied to `exp`/`iat`/`nbf`.
+   *
+   * Must be a non-negative finite number no greater than 86,400 (one day);
+   * anything else throws {@link ValidationError}. A `NaN`, infinite, or
+   * very large value makes every time comparison pass and silently disables
+   * expiry checking altogether, so it is rejected rather than honoured.
+   *
    * @default 30
    */
   readonly maxClockSkewSeconds?: number;
@@ -487,7 +497,7 @@ function validateTimeClaims(
   options: AsymmetricJwtVerifyOptions,
 ): void {
   const nowSeconds = Math.floor((options.now?.() ?? Date.now()) / 1000);
-  const skew = options.maxClockSkewSeconds ?? DEFAULT_MAX_CLOCK_SKEW_SECONDS;
+  const skew = resolveClockSkewSeconds(options.maxClockSkewSeconds);
 
   const exp = readNumericClaim(payload, 'exp');
   if (exp !== undefined && nowSeconds > exp + skew) {
@@ -504,6 +514,42 @@ function validateTimeClaims(
     throw new ValidationError('JWT issued-at (iat) is in the future');
   }
 }
+
+/**
+ * Resolve the clock-skew tolerance, rejecting values that would silently
+ * disable the time checks entirely.
+ *
+ * Every `exp`/`nbf`/`iat` comparison adds `skew` to one side, so a `NaN`
+ * tolerance makes ALL THREE comparisons false and a token that expired years
+ * ago verifies successfully — an authentication bypass with no error and no
+ * log line. `NaN` is not exotic: `Number(process.env.JWT_SKEW)` yields it
+ * whenever the variable is unset. `Infinity` disables the checks the same way.
+ *
+ * Mirrors `resolveNonNegFiniteNumber` in oauth.ts, which already guards the
+ * equivalent numeric options there.
+ */
+function resolveClockSkewSeconds(value: number | undefined): number {
+  if (value === undefined) return DEFAULT_MAX_CLOCK_SKEW_SECONDS;
+  if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) {
+    throw new ValidationError('maxClockSkewSeconds must be a non-negative finite number');
+  }
+  // A large-but-finite skew reproduces the SAME bypass by another route: with
+  // `1e15`, `exp + skew` outruns any real clock and every expired token
+  // verifies. The realistic way to get there is a units mistake — passing
+  // milliseconds into a seconds field — which is the same class of config error
+  // as the NaN case. Clock skew is meant to absorb drift between two servers,
+  // so a day is already far beyond generous.
+  if (value > MAX_CLOCK_SKEW_CEILING_SECONDS) {
+    throw new ValidationError(
+      `maxClockSkewSeconds must not exceed ${MAX_CLOCK_SKEW_CEILING_SECONDS} (one day); ` +
+        `a larger tolerance disables expiry checking. Did you pass milliseconds?`,
+    );
+  }
+  return value;
+}
+
+/** One day. Beyond this, `exp + skew` outruns any plausible clock difference. */
+const MAX_CLOCK_SKEW_CEILING_SECONDS = 86_400;
 
 /** Reads a numeric claim, rejecting present-but-non-numeric values. */
 function readNumericClaim(payload: Record<string, unknown>, name: string): number | undefined {

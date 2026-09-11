@@ -425,6 +425,106 @@ describe('createHttpError', () => {
       expect(err.message).toBe('Field A is required; Field B is required');
     });
 
+    it('empty-string message → falls back to the status default', () => {
+      // `message ?? default` does not fire for '', so the error surfaced with a
+      // blank message and the status was lost.
+      expect(createHttpError(401, { message: '' }).message).toBe('Authentication failed');
+    });
+
+    it('blank errorMessages entries mixed with real content → no dangling separator', () => {
+      const err = createHttpError(400, { errorMessages: ['', 'Real error', '   '] });
+      expect(err.message).toBe('Real error');
+    });
+
+    it('whitespace-only message LONGER than the cap still falls back', () => {
+      // The truncation ellipsis is non-whitespace, so checking blankness after
+      // truncation would see '…' and let the blank message through.
+      const err = createHttpError(401, { message: ' '.repeat(2000) });
+      expect(err.message).toBe('Authentication failed');
+    });
+
+    it('whitespace-only message → falls back to the status default', () => {
+      expect(createHttpError(403, { message: '   ' }).message).toBe('Access forbidden');
+    });
+
+    it('empty-string errorMessages entry → falls back to the status default', () => {
+      expect(createHttpError(404, { errorMessages: [''] }).message).toBe('Resource not found');
+    });
+
+    it('empty-string body → falls back to the status default', () => {
+      expect(createHttpError(500, '').message).toBe('HTTP error 500');
+    });
+
+    it('object with Jira field errors → surfaces field: message pairs', () => {
+      // The real Jira 400 for a create-issue validation failure: errorMessages
+      // is empty and every diagnostic lives in the `errors` map.
+      const err = createHttpError(400, {
+        errorMessages: [],
+        errors: { summary: 'You must specify a summary of the issue.' },
+      });
+      expect(err.message).toBe('summary: You must specify a summary of the issue.');
+    });
+
+    it('object with multiple Jira field errors → joins them', () => {
+      const err = createHttpError(400, {
+        errors: { summary: 'is required', duedate: 'is invalid' },
+      });
+      expect(err.message).toBe('summary: is required; duedate: is invalid');
+    });
+
+    it('surfaces BOTH errorMessages and the errors map when both are populated', () => {
+      // Jira's ErrorCollection declares the two fields as independent and
+      // non-exclusive, so dropping either loses real diagnostics.
+      const err = createHttpError(400, {
+        errorMessages: ['Top-level failure'],
+        errors: { summary: 'is required' },
+      });
+      expect(err.message).toBe('Top-level failure; summary: is required');
+    });
+
+    it('never produces a field error beyond the cap', () => {
+      // Strict laziness: the generator must not be advanced past the entry that
+      // fills the cap. A cap check at the top of a for..of body reacts one
+      // iteration late and builds one extra `field: message` string.
+      let produced = 0;
+      const errors: Record<string, string> = {};
+      for (let i = 0; i < 50; i++) errors[`field${i}`] = 'x'.repeat(400);
+      const counted = new Proxy(errors, {
+        get(target, prop: string) {
+          if (typeof prop === 'string' && prop.startsWith('field')) produced++;
+          return target[prop];
+        },
+      });
+
+      createHttpError(400, { errors: counted });
+
+      // 1024-char cap / ~407 chars per entry → 3 entries reach the cap.
+      expect(produced).toBe(3);
+    });
+
+    it('stops reading field errors once the cap is reached', () => {
+      // The generator must not materialise every entry before capping (B032):
+      // a hostile body with thousands of field errors is bounded by the cap.
+      const errors: Record<string, string> = {};
+      for (let i = 0; i < 5000; i++) errors[`field${i}`] = 'x'.repeat(200);
+      const err = createHttpError(400, { errors });
+      expect(err.message.length).toBeLessThanOrEqual(1024);
+      expect(err.message.endsWith('…')).toBe(true);
+    });
+
+    it('errors map with non-string values → falls through to message', () => {
+      const err = createHttpError(400, {
+        errors: { summary: { nested: true } },
+        message: 'fallback msg',
+      });
+      expect(err.message).toBe('fallback msg');
+    });
+
+    it('empty errors map → falls through to the status default', () => {
+      const err = createHttpError(401, { errors: {} });
+      expect(err.message).toBe('Authentication failed');
+    });
+
     it('object with empty errorMessages array → falls through to message field', () => {
       const err = createHttpError(401, { errorMessages: [], message: 'fallback msg' });
       expect(err.message).toBe('fallback msg');
