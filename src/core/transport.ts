@@ -314,6 +314,16 @@ export class HttpTransport implements Transport {
         // even classify the failure. `safeParseBody` lets `ResponseTooLargeError`
         // propagate (replacing the would-be `HttpError`); the error carries the
         // original status so the caller can still see the upstream classification.
+        //
+        // Note the deliberate asymmetry with the success path below: if the
+        // socket dies while reading an ERROR body, `safeParseBody` swallows it
+        // and yields `undefined`, so this still throws the HttpError for the
+        // status the server already sent. That status is authoritative — the
+        // response headers arrived — and reclassifying to `NetworkError` would
+        // discard the server's verdict (e.g. a 403) and invite a pointless
+        // retry of a request that was definitively rejected. On the success
+        // path there is no such verdict to preserve, so a dead socket there
+        // IS a network failure.
         const errBody = await parseBodyWithTimeoutHandling(
           () => safeParseBody(response, this.config.maxResponseBytes),
           timeoutController.signal,
@@ -435,6 +445,22 @@ async function parseBodyWithTimeoutHandling<T>(
   } catch (error) {
     if (error instanceof Error && error.name === 'AbortError' && timeoutSignal.aborted) {
       throw new TimeoutError(timeoutMs);
+    }
+    // A connection can die AFTER the response headers arrive, while the body is
+    // still streaming — `fetch` resolves, then the body read rejects. Without
+    // this branch such a failure escaped as a raw `TypeError: terminated`
+    // (cause `UND_ERR_SOCKET`): outside the `AtlassianError` taxonomy, never
+    // retried, and invisible to the circuit breaker — even though the very same
+    // socket reset one moment earlier (before headers) becomes a retried
+    // `NetworkError`. Classify both phases identically.
+    if (isNetworkError(error)) {
+      // `isNetworkError` also matches non-Error shapes — it walks `{ code, cause }`
+      // chains, so a thrown plain object with a retryable code qualifies. Reading
+      // `.message` off one yields `undefined` and produces a `NetworkError` whose
+      // message is the string "undefined". Fall back to the class default, and
+      // pass the original value through as `cause` without claiming it is an Error.
+      const message = error instanceof Error ? error.message : 'Network request failed';
+      throw new NetworkError(message, { cause: error });
     }
     throw error;
   }

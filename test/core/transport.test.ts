@@ -3,6 +3,7 @@ import { HttpTransport } from '../../src/core/transport.js';
 import {
   AuthenticationError,
   NotFoundError,
+  ForbiddenError,
   RateLimitError,
   HttpError,
   TimeoutError,
@@ -2397,6 +2398,112 @@ describe('HttpTransport', () => {
         'stable-id-across-retries',
       ]);
     });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Network failures during the body read (after response headers arrive)
+// ---------------------------------------------------------------------------
+describe('HttpTransport body-read network failures', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+  });
+
+  /** The shape undici produces when the socket dies mid-body: `TypeError: terminated`. */
+  function socketResetDuringBody(): Response {
+    const cause = Object.assign(new Error('other side closed'), { code: 'UND_ERR_SOCKET' });
+    return {
+      ok: true,
+      status: 200,
+      headers: new Headers({ 'content-type': 'application/json' }),
+      text: () => Promise.reject(Object.assign(new TypeError('terminated'), { cause })),
+    } as unknown as Response;
+  }
+
+  it('classifies a mid-body socket reset as NetworkError and retries it', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(socketResetDuringBody());
+    vi.stubGlobal('fetch', fetchMock);
+
+    const transport = makeTransport({ ...defaultConfig, retries: 2, retryDelay: 0 });
+
+    const error = await runRequest(transport, { method: 'GET', path: '/pages' }).catch(
+      (e: unknown) => e,
+    );
+
+    expect(error).toBeInstanceOf(NetworkError);
+    // Same treatment as a reset that lands BEFORE the headers: 1 + 2 retries.
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+  });
+
+  it('keeps the HTTP status when the socket dies reading an ERROR body', async () => {
+    // Deliberate asymmetry: the status already arrived and is authoritative, so
+    // a dead socket during the error-body read must NOT become a NetworkError —
+    // that would discard the server's 403 and invite a pointless retry.
+    const cause = Object.assign(new Error('other side closed'), { code: 'UND_ERR_SOCKET' });
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 403,
+      headers: new Headers({ 'content-type': 'application/json' }),
+      text: () => Promise.reject(Object.assign(new TypeError('terminated'), { cause })),
+    } as unknown as Response);
+    vi.stubGlobal('fetch', fetchMock);
+
+    const transport = makeTransport({ ...defaultConfig, retries: 2, retryDelay: 0 });
+
+    const error = await runRequest(transport, { method: 'GET', path: '/pages' }).catch(
+      (e: unknown) => e,
+    );
+
+    expect(error).toBeInstanceOf(ForbiddenError);
+    expect(error).not.toBeInstanceOf(NetworkError);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('gives a usable message when a non-Error value carries a retryable code', async () => {
+    // isNetworkError walks `{ code, cause }` chains, so a thrown plain object
+    // qualifies. Reading `.message` off one yields undefined and would render
+    // the NetworkError message as the string "undefined".
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      headers: new Headers({ 'content-type': 'application/json' }),
+      text: () => Promise.reject({ code: 'ECONNRESET' }),
+    } as unknown as Response);
+    vi.stubGlobal('fetch', fetchMock);
+
+    const transport = makeTransport({ ...defaultConfig, retries: 0, retryDelay: 0 });
+
+    const error = await runRequest(transport, { method: 'GET', path: '/pages' }).catch(
+      (e: unknown) => e,
+    );
+
+    expect(error).toBeInstanceOf(NetworkError);
+    expect((error as NetworkError).message).toBe('Network request failed');
+    expect((error as NetworkError).cause).toEqual({ code: 'ECONNRESET' });
+  });
+
+  it('leaves a non-network body failure untouched', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      headers: new Headers({ 'content-type': 'application/json' }),
+      text: () => Promise.resolve('{ not json'),
+    } as unknown as Response);
+    vi.stubGlobal('fetch', fetchMock);
+
+    const transport = makeTransport({ ...defaultConfig, retries: 2, retryDelay: 0 });
+
+    const error = await runRequest(transport, { method: 'GET', path: '/pages' }).catch(
+      (e: unknown) => e,
+    );
+
+    expect(error).toBeInstanceOf(ValidationError);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 });
 
