@@ -2504,5 +2504,120 @@ describe('HttpTransport body-read network failures', () => {
 
     expect(error).toBeInstanceOf(ValidationError);
     expect(fetchMock).toHaveBeenCalledTimes(1);
+});
+});
+});
+});
+
+// ---------------------------------------------------------------------------
+// Response shape gate (foreign-realm Headers)
+// ---------------------------------------------------------------------------
+describe('HttpTransport response shape validation', () => {
+  /**
+   * Minimal stand-in for a `Headers` implementation from another realm — what
+   * the npm `undici` package (the README's proxy recipe) actually returns.
+   * API-compatible with WHATWG `Headers` but NOT `instanceof globalThis.Headers`.
+   */
+  class ForeignHeaders {
+    private readonly map = new Map<string, string>();
+    constructor(init: Record<string, string> = {}) {
+      for (const [k, v] of Object.entries(init)) this.map.set(k.toLowerCase(), v);
+    }
+    get(name: string): string | null {
+      return this.map.get(name.toLowerCase()) ?? null;
+    }
+    has(name: string): boolean {
+      return this.map.has(name.toLowerCase());
+    }
+    set(name: string, value: string): void {
+      this.map.set(name.toLowerCase(), value);
+    }
+    append(name: string, value: string): void {
+      const existing = this.map.get(name.toLowerCase());
+      this.map.set(name.toLowerCase(), existing === undefined ? value : `${existing}, ${value}`);
+    }
+    delete(name: string): void {
+      this.map.delete(name.toLowerCase());
+    }
+    keys(): IterableIterator<string> {
+      return this.map.keys();
+    }
+    values(): IterableIterator<string> {
+      return this.map.values();
+    }
+    entries(): IterableIterator<[string, string]> {
+      return this.map.entries();
+    }
+    forEach(cb: (value: string, key: string) => void): void {
+      for (const [k, v] of this.map) cb(v, k);
+    }
+    [Symbol.iterator](): IterableIterator<[string, string]> {
+      return this.map.entries();
+    }
+  }
+
+  /** Only the four methods this library itself calls — not a full Headers. */
+  function partialHeaders(): Record<string, unknown> {
+    return {
+      get: () => null,
+      has: () => false,
+      entries: () => [],
+      forEach: () => undefined,
+    };
+  }
+
+  /** A complete Headers-shaped stub with one member left out. */
+  function omitFromHeaders(missing: string | symbol): Record<string | symbol, unknown> {
+    const members: [string | symbol, unknown][] = [
+      ['get', () => null],
+      ['has', () => false],
+      ['set', () => undefined],
+      ['append', () => undefined],
+      ['delete', () => undefined],
+      ['keys', () => []],
+      ['values', () => []],
+      ['entries', () => []],
+      ['forEach', () => undefined],
+      [Symbol.iterator, () => [][Symbol.iterator]()],
+    ];
+    return Object.fromEntries(members.filter(([name]) => name !== missing)) as Record<
+      string | symbol,
+      unknown
+    >;
+  }
+
+  function transportReturning(response: unknown): HttpTransport {
+    const middleware = (() => Promise.resolve(response)) as unknown as NonNullable<
+      ResolvedConfig['middleware']
+    >[number];
+    return new HttpTransport({ ...defaultConfig, retries: 0, middleware: [middleware] });
+  }
+
+  it('accepts a response whose headers come from another realm', async () => {
+    const transport = transportReturning({
+      data: { ok: true },
+      status: 200,
+      headers: new ForeignHeaders({ 'content-type': 'application/json' }),
+    });
+
+    const result = await transport.request<{ ok: boolean }>({ method: 'GET', path: '/pages' });
+
+    expect(result.data).toEqual({ ok: true });
+    expect(result.status).toBe(200);
+  });
+
+  it.each<[string, unknown]>([
+    ['headers is a string', 'not-headers'],
+    ['headers is null', null],
+    ['headers is a partial stand-in (get/has/entries/forEach only)', partialHeaders()],
+    ['headers lacks get()', omitFromHeaders('get')],
+    ['headers lacks entries()', omitFromHeaders('entries')],
+    ['headers lacks Symbol.iterator', omitFromHeaders(Symbol.iterator)],
+  ])('rejects a response where %s', async (_label, headers) => {
+    const transport = transportReturning({ data: null, status: 200, headers });
+
+    await expect(transport.request({ method: 'GET', path: '/pages' })).rejects.toBeInstanceOf(
+      ValidationError,
+    );
   });
 });

@@ -205,7 +205,7 @@ export class HttpTransport implements Transport {
       !('status' in response) ||
       !('headers' in response) ||
       typeof response.status !== 'number' ||
-      !(response.headers instanceof Headers)
+      !isHeadersLike(response.headers)
     ) {
       throw new ValidationError('Invalid ApiResponse structure received from transport');
     }
@@ -362,6 +362,57 @@ export class HttpTransport implements Transport {
       clearTimeout(timeoutId);
     }
   }
+}
+
+/**
+ * Duck-type check for a WHATWG `Headers`-shaped value.
+ *
+ * `instanceof Headers` is realm-bound. The npm `undici` package — which the
+ * README's proxy recipe and {@link ClientConfig.fetch} both recommend injecting
+ * for `ProxyAgent` support — builds responses with ITS OWN `Headers` class, so
+ * an `instanceof` gate rejected every successful response from a documented
+ * configuration with `Invalid ApiResponse structure`. Error responses were
+ * unaffected (they throw before this gate), making the failure look like a
+ * client-side bug rather than a shape mismatch.
+ *
+ * The library itself reads headers only via `get()` (request-id capture,
+ * rate-limit parsing) and `entries()` ({@link toJSON}) — but `ApiResponse.headers`
+ * is DECLARED as `Headers`, and callers may reasonably use the rest of that
+ * interface. Checking a representative spread of the WHATWG surface keeps this
+ * gate close to the declared contract, so a partial stand-in from a custom
+ * middleware still fails fast here rather than as an opaque `TypeError` deep in
+ * caller code. Every real implementation (`undici`, `node-fetch`) provides all
+ * of these, so no genuine foreign-realm `Headers` is rejected.
+ *
+ * The check covers the whole `Headers` method surface rather than just the two
+ * methods this library happens to call. `ApiResponse.headers` is DECLARED as
+ * `Headers`, so a caller may legitimately use any of it — iterate the instance,
+ * call `append`/`set`/`delete`. Accepting a partial stand-in here would move
+ * that failure to an opaque `TypeError` in caller code far from the cause.
+ * Every real implementation (`undici`, `node-fetch`) is fully WHATWG-compliant,
+ * so nothing genuine is rejected.
+ *
+ * It verifies SURFACE, not behaviour: it cannot check that `get()` is
+ * case-insensitive as the spec requires. A case-SENSITIVE stand-in would pass
+ * and then silently miss `X-AREQUESTID` / rate-limit lookups. That failure is
+ * degraded metadata rather than a wrong response, so the check stops at surface
+ * level rather than probing behaviour on every request.
+ */
+function isHeadersLike(value: unknown): value is Headers {
+  if (typeof value !== 'object' || value === null) return false;
+  const candidate = value as Headers;
+  return (
+    typeof candidate.get === 'function' &&
+    typeof candidate.has === 'function' &&
+    typeof candidate.set === 'function' &&
+    typeof candidate.append === 'function' &&
+    typeof candidate.delete === 'function' &&
+    typeof candidate.keys === 'function' &&
+    typeof candidate.values === 'function' &&
+    typeof candidate.entries === 'function' &&
+    typeof candidate.forEach === 'function' &&
+    typeof (candidate as unknown as Iterable<unknown>)[Symbol.iterator] === 'function'
+  );
 }
 
 /**
