@@ -2504,9 +2504,7 @@ describe('HttpTransport body-read network failures', () => {
 
     expect(error).toBeInstanceOf(ValidationError);
     expect(fetchMock).toHaveBeenCalledTimes(1);
-});
-});
-});
+  });
 });
 
 // ---------------------------------------------------------------------------
