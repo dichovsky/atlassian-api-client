@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "4.0.0"
   },
-  "sourceHash": "7d279727157b0e84064d7b422b802cfa3275b6212a32995c8330411205ccf9ed",
+  "sourceHash": "4722ed5f6aace88e0e6416340d7d5df61f78cdf57ed7e519d878be92c1f9f07f",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -13959,22 +13959,29 @@
           "signature": "function extractErrorMessageRaw(body: unknown): CappedString | undefined"
         },
         {
+          "name": "jiraErrorParts",
+          "kind": "function",
+          "line": 444,
+          "signature": "function* jiraErrorParts(body: Record<string, unknown>): Generator<string>",
+          "jsdoc": "Lazily yield every message an `ErrorCollection` body carries, in the order Jira documents them: the top-level `errorMessages`, then the field-level `errors` map rendered as `field: message`."
+        },
+        {
           "name": "joinWithCap",
           "kind": "function",
-          "line": 439,
-          "signature": "function joinWithCap(messages: readonly unknown[]): CappedString | undefined",
+          "line": 478,
+          "signature": "function joinWithCap(messages: Iterable<string>): CappedString | undefined",
           "jsdoc": "Join string entries with `'; '` while enforcing a running length cap, so a hostile response with thousands of `errorMessages` cannot allocate a multi-megabyte intermediate before truncation (PR-review hardening of B032). The returned `truncated` flag drives the outer `extractErrorMessage` ellipsis so callers can still see at a glance that content was elided."
         },
         {
           "name": "capLength",
           "kind": "function",
-          "line": 477,
+          "line": 518,
           "signature": "function capLength(value: string): CappedString"
         },
         {
           "name": "isPlainObject",
           "kind": "function",
-          "line": 484,
+          "line": 525,
           "signature": "function isPlainObject(value: unknown): value is Record<string, unknown>"
         }
       ]
