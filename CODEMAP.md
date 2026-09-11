@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "4.0.0"
   },
-  "sourceHash": "b9de8608c741946978f260a838945168635e014c6ac5bd41c9d37cf24cefe175",
+  "sourceHash": "7d279727157b0e84064d7b422b802cfa3275b6212a32995c8330411205ccf9ed",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -2944,7 +2944,7 @@
       "name": "RetryConfig",
       "kind": "interface",
       "file": "src/core/retry.ts",
-      "line": 92,
+      "line": 104,
       "signature": "export interface RetryConfig { readonly retries: number; readonly retryDelay: number; readonly maxRetryDelay: number; }",
       "jsdoc": "Configuration consumed by {@link executeWithRetry}. A {@link ResolvedConfig} satisfies this shape structurally, so the transport can pass its own config object without adapting.",
       "typeOnly": true
@@ -3734,7 +3734,7 @@
       "name": "executeWithRetry",
       "kind": "function",
       "file": "src/core/retry.ts",
-      "line": 117,
+      "line": 129,
       "signature": "export async function executeWithRetry<T>( operation: () => Promise<T>, config: RetryConfig, signal?: AbortSignal, ): Pr…",
       "jsdoc": "Run an async operation with retry, exponential backoff, and abort-aware sleep."
     },
@@ -15210,14 +15210,14 @@
         {
           "name": "hasRetryableCode",
           "kind": "function",
-          "line": 64,
+          "line": 76,
           "signature": "function hasRetryableCode(error: unknown): boolean",
           "jsdoc": "Walk the error + `cause` chain looking for a known-retryable system code."
         },
         {
           "name": "sleep",
           "kind": "function",
-          "line": 81,
+          "line": 93,
           "exported": true,
           "signature": "export function sleep(ms: number): Promise<void>",
           "jsdoc": "Sleep for the given number of milliseconds."
@@ -15225,7 +15225,7 @@
         {
           "name": "RetryConfig",
           "kind": "interface",
-          "line": 92,
+          "line": 104,
           "exported": true,
           "signature": "export interface RetryConfig { readonly retries: number; readonly retryDelay: number; readonly maxRetryDelay: number; }",
           "jsdoc": "Configuration consumed by {@link executeWithRetry}. A {@link ResolvedConfig} satisfies this shape structurally, so the transport can pass its own config object without adapting."
@@ -15233,7 +15233,7 @@
         {
           "name": "executeWithRetry",
           "kind": "function",
-          "line": 117,
+          "line": 129,
           "exported": true,
           "signature": "export async function executeWithRetry<T>( operation: () => Promise<T>, config: RetryConfig, signal?: AbortSignal, ): Pr…",
           "jsdoc": "Run an async operation with retry, exponential backoff, and abort-aware sleep."
@@ -15241,44 +15241,44 @@
         {
           "name": "shouldRetry",
           "kind": "function",
-          "line": 139,
+          "line": 151,
           "signature": "function shouldRetry(error: unknown, attempt: number, retries: number): boolean"
         },
         {
           "name": "RETRY_DELAY_HARD_CEILING",
           "kind": "variable",
-          "line": 167,
+          "line": 179,
           "signature": "const RETRY_DELAY_HARD_CEILING = 60_000;",
           "jsdoc": "Hard ceiling applied when a retry delay is unschedulable. `resolveConfig` rejects invalid values up front — this constant is defence-in-depth for callers that bypass `resolveConfig` (e.g. custom transports building a structural `RetryConfig`). Without it, Node coerces `NaN`, `Infinity`, and values above its timer ceiling to near-immediate timers."
         },
         {
           "name": "MAX_TIMER_DELAY",
           "kind": "variable",
-          "line": 168,
+          "line": 180,
           "signature": "const MAX_TIMER_DELAY = 2_147_483_647;"
         },
         {
           "name": "effectiveMaxDelay",
           "kind": "function",
-          "line": 170,
+          "line": 182,
           "signature": "function effectiveMaxDelay(maxRetryDelay: number): number"
         },
         {
           "name": "effectiveBaseDelay",
           "kind": "function",
-          "line": 176,
+          "line": 188,
           "signature": "function effectiveBaseDelay(retryDelay: number, ceiling: number): number"
         },
         {
           "name": "getRetryDelay",
           "kind": "function",
-          "line": 182,
+          "line": 194,
           "signature": "function getRetryDelay( error: unknown, attempt: number, retryDelay: number, maxRetryDelay: number, ): number"
         },
         {
           "name": "sleepWithAbort",
           "kind": "function",
-          "line": 214,
+          "line": 226,
           "exported": true,
           "signature": "export async function sleepWithAbort(delayMs: number, signal?: AbortSignal): Promise<void>",
           "jsdoc": "Sleep for `delayMs` milliseconds, rejecting with the signal's normalised abort reason if `signal` fires before the timer. Exported so other middleware (e.g. OAuth refresh jitter) can share a single abort-aware sleep implementation rather than duplicating timer + listener cleanup. Listener is registered with `{ once: true }` AND explicitly removed on the resolve path so it never outlives the sleep."
@@ -15286,7 +15286,7 @@
         {
           "name": "getAbortReason",
           "kind": "function",
-          "line": 239,
+          "line": 251,
           "signature": "function getAbortReason(signal: AbortSignal): Error"
         }
       ],
