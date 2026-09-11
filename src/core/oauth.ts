@@ -46,6 +46,11 @@ export interface OAuthRefreshConfig {
    * (B034); the auth host is intentionally a separate allowlist because the
    * threat models differ.
    *
+   * The URL must also use the scheme's default port and carry no userinfo:
+   * `https://auth.atlassian.com:8443/…` and `https://user:pw@auth.atlassian.com/…`
+   * both match the hostname yet send credentials somewhere the allowlist never
+   * authorised, so both are rejected.
+   *
    * @default 'https://auth.atlassian.com/oauth/token'
    */
   readonly tokenEndpoint?: string;
@@ -353,6 +358,8 @@ export async function fetchRefreshedTokens(
  *   - malformed URL
  *   - non-HTTPS scheme
  *   - host not on the allowlist
+ *   - embedded userinfo (`https://user:pw@host/…`)
+ *   - a non-default port (`https://host:8443/…`)
  *   - invalid `allowedTokenEndpointHosts` entries (empty, port-bearing,
  *     whitespace, slashes, control chars, IPv6 brackets)
  *
@@ -409,6 +416,35 @@ function validateTokenEndpoint(
         `Set OAuthRefreshConfig.allowedTokenEndpointHosts to opt in for self-hosted IdPs or ` +
         `proxied auth endpoints. This guard protects refresh_token + client_secret from ` +
         `leaking to a misconfigured or attacker-controlled host.`,
+    );
+  }
+
+  // The transport rejects non-default ports on ANY credential-bearing URL
+  // (`assertDefaultPort` in request.ts, and the mirrored check in
+  // `resolveConfig`) because `:8443` on an allow-listed host may be a
+  // completely different service — an admin console, a debug listener, a
+  // developer's tunnel. This check was hostname-only, so
+  // `https://auth.atlassian.com:8443/oauth/token` passed with the DEFAULT
+  // allowlist and shipped the refresh_token + client_secret there. Those are
+  // the highest-value secrets the library handles, so this path should be at
+  // least as strict as the tenant-API path, not looser.
+  // Userinfo is the same class of smuggling: `https://attacker:pw@auth.atlassian.com/`
+  // matches the hostname check, and every refresh would then also ship a Basic
+  // credential the caller never intended. Atlassian's token endpoint never uses
+  // userinfo, so its presence signals a pasted or tampered URL.
+  if (parsed.username !== '' || parsed.password !== '') {
+    throw new ValidationError(
+      `tokenEndpoint must not embed userinfo credentials: ${parsed.protocol}//${parsed.hostname}. ` +
+        `Pass client credentials via clientId / clientSecret instead.`,
+    );
+  }
+
+  if (parsed.port !== '') {
+    throw new ValidationError(
+      `tokenEndpoint must not include a non-default port: ${parsed.protocol}//${parsed.hostname}:${parsed.port}. ` +
+        `A non-default port on an allow-listed host may route to a different service; ` +
+        `refresh_token and client_secret must not be sent there. ` +
+        `Route via the host's normal name and rely on DNS / a proxy if a non-default port is required.`,
     );
   }
 
