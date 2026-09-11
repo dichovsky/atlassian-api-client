@@ -46,10 +46,22 @@ export function isNetworkError(error: unknown): boolean {
     return false;
   }
 
-  if (error instanceof TypeError) {
-    // fetch throws TypeError for network failures (DNS, connection refused, etc.)
-    return true;
-  }
+  // NOTE: being a TypeError does NOT identify a network failure. `fetch` throws
+  // TypeError for client-side ARGUMENT errors too — an invalid header value, a
+  // bad method, a body on GET, a blocked port. What identifies a real network
+  // failure is the underlying system code `fetch` wraps in `cause`, which the
+  // check below already walks for. Verified on Node 24:
+  //
+  //   connection refused  TypeError: fetch failed  cause.code ECONNREFUSED
+  //   DNS failure         TypeError: fetch failed  cause.code ENOTFOUND
+  //   mid-body reset      TypeError: terminated    cause.code UND_ERR_SOCKET
+  //   TLS expired cert    TypeError: fetch failed  cause.code CERT_HAS_EXPIRED
+  //   invalid header      TypeError                cause     undefined
+  //   blocked port        TypeError: fetch failed  cause 'bad port', no code
+  //
+  // So the allow-list does exactly the right thing on its own: transient codes
+  // retry; a deterministic TLS rejection does not; and argument errors — which
+  // never reached the network and would fail identically forever — do not.
 
   // Runtime-level failures (Node SystemError, undici-wrapped errors) may surface
   // with a retryable code either directly on the error or in its `cause` chain.

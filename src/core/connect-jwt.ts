@@ -285,6 +285,12 @@ export interface AsymmetricJwtVerifyOptions {
     | string;
   /**
    * Clock-skew tolerance in seconds applied to `exp`/`iat`/`nbf`.
+   *
+   * Must be a non-negative finite number no greater than 86,400 (one day);
+   * anything else throws {@link ValidationError}. A `NaN`, infinite, or
+   * very large value makes every time comparison pass and silently disables
+   * expiry checking altogether, so it is rejected rather than honoured.
+   *
    * @default 30
    */
   readonly maxClockSkewSeconds?: number;
@@ -475,7 +481,7 @@ function validateTimeClaims(
   options: AsymmetricJwtVerifyOptions,
 ): void {
   const nowSeconds = Math.floor((options.now?.() ?? Date.now()) / 1000);
-  const skew = options.maxClockSkewSeconds ?? DEFAULT_MAX_CLOCK_SKEW_SECONDS;
+  const skew = resolveClockSkewSeconds(options.maxClockSkewSeconds);
 
   const exp = readNumericClaim(payload, 'exp');
   if (exp !== undefined && nowSeconds > exp + skew) {
@@ -492,6 +498,42 @@ function validateTimeClaims(
     throw new ValidationError('JWT issued-at (iat) is in the future');
   }
 }
+
+/**
+ * Resolve the clock-skew tolerance, rejecting values that would silently
+ * disable the time checks entirely.
+ *
+ * Every `exp`/`nbf`/`iat` comparison adds `skew` to one side, so a `NaN`
+ * tolerance makes ALL THREE comparisons false and a token that expired years
+ * ago verifies successfully — an authentication bypass with no error and no
+ * log line. `NaN` is not exotic: `Number(process.env.JWT_SKEW)` yields it
+ * whenever the variable is unset. `Infinity` disables the checks the same way.
+ *
+ * Mirrors `resolveNonNegFiniteNumber` in oauth.ts, which already guards the
+ * equivalent numeric options there.
+ */
+function resolveClockSkewSeconds(value: number | undefined): number {
+  if (value === undefined) return DEFAULT_MAX_CLOCK_SKEW_SECONDS;
+  if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) {
+    throw new ValidationError('maxClockSkewSeconds must be a non-negative finite number');
+  }
+  // A large-but-finite skew reproduces the SAME bypass by another route: with
+  // `1e15`, `exp + skew` outruns any real clock and every expired token
+  // verifies. The realistic way to get there is a units mistake — passing
+  // milliseconds into a seconds field — which is the same class of config error
+  // as the NaN case. Clock skew is meant to absorb drift between two servers,
+  // so a day is already far beyond generous.
+  if (value > MAX_CLOCK_SKEW_CEILING_SECONDS) {
+    throw new ValidationError(
+      `maxClockSkewSeconds must not exceed ${MAX_CLOCK_SKEW_CEILING_SECONDS} (one day); ` +
+        `a larger tolerance disables expiry checking. Did you pass milliseconds?`,
+    );
+  }
+  return value;
+}
+
+/** One day. Beyond this, `exp + skew` outruns any plausible clock difference. */
+const MAX_CLOCK_SKEW_CEILING_SECONDS = 86_400;
 
 /** Reads a numeric claim, rejecting present-but-non-numeric values. */
 function readNumericClaim(payload: Record<string, unknown>, name: string): number | undefined {
