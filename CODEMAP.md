@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "4.0.0"
   },
-  "sourceHash": "737b4d428a2a57d01e6e931b4ae3ad03adfdec6d7e60cd3327a6ca45632fa2f1",
+  "sourceHash": "7c2ee5484bfd22ff58c717aa8992974f06b9c839d812e5160681c08d1c517088",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -13969,33 +13969,33 @@
         {
           "name": "extractErrorMessageRaw",
           "kind": "function",
-          "line": 411,
+          "line": 424,
           "signature": "function extractErrorMessageRaw(body: unknown): CappedString | undefined"
         },
         {
           "name": "jiraErrorParts",
           "kind": "function",
-          "line": 444,
+          "line": 461,
           "signature": "function* jiraErrorParts(body: Record<string, unknown>): Generator<string>",
           "jsdoc": "Lazily yield every message an `ErrorCollection` body carries, in the order Jira documents them: the top-level `errorMessages`, then the field-level `errors` map rendered as `field: message`."
         },
         {
           "name": "joinWithCap",
           "kind": "function",
-          "line": 478,
+          "line": 495,
           "signature": "function joinWithCap(messages: Iterable<string>): CappedString | undefined",
           "jsdoc": "Join string entries with `'; '` while enforcing a running length cap, so a hostile response with thousands of `errorMessages` cannot allocate a multi-megabyte intermediate before truncation (PR-review hardening of B032). The returned `truncated` flag drives the outer `extractErrorMessage` ellipsis so callers can still see at a glance that content was elided."
         },
         {
           "name": "capLength",
           "kind": "function",
-          "line": 518,
+          "line": 535,
           "signature": "function capLength(value: string): CappedString"
         },
         {
           "name": "isPlainObject",
           "kind": "function",
-          "line": 525,
+          "line": 542,
           "signature": "function isPlainObject(value: unknown): value is Record<string, unknown>"
         }
       ]

@@ -405,6 +405,19 @@ interface CappedString {
 function extractErrorMessage(body: unknown): string | undefined {
   const raw = extractErrorMessageRaw(body);
   if (raw === undefined) return undefined;
+  // Test blankness on the RAW value, BEFORE truncation. The ellipsis appended
+  // below is itself a non-whitespace character, so a whitespace-only message
+  // longer than the cap would trim to '…' rather than '' and slip past this
+  // guard — reinstating the blank-message bug for exactly the oversized bodies
+  // the cap exists to handle.
+  //
+  // A present-but-blank server message must not defeat the status-derived
+  // default: each subclass applies its fallback with `message ?? 'Authentication
+  // failed'`, and `??` only fires on null/undefined, so a body of
+  // `{ "message": "" }` produced an error whose `.message` was the EMPTY STRING.
+  // That renders as a blank line in logs and an empty alert in a UI, hiding even
+  // the HTTP status. Returning `undefined` hands the decision back to the fallback.
+  if (raw.value.trim() === '') return undefined;
   return raw.truncated ? raw.value.slice(0, MAX_ERROR_MESSAGE_LENGTH - 1) + '…' : raw.value;
 }
 
@@ -435,6 +448,10 @@ function extractErrorMessageRaw(body: unknown): CappedString | undefined {
  * Jira documents them: the top-level `errorMessages`, then the field-level
  * `errors` map rendered as `field: message`.
  *
+ * Non-string AND blank (whitespace-only) entries are skipped here, so a mixed
+ * array like `['', 'Real error']` cannot assemble as "; Real error" with a
+ * separator dangling off the blank entry.
+ *
  * A GENERATOR rather than an array so `joinWithCap` can stop reading as soon as
  * its cap is reached. Materialising `Object.entries(...).map(...)` up front
  * would rebuild the very allocation pattern the cap exists to prevent (B032):
@@ -444,7 +461,7 @@ function extractErrorMessageRaw(body: unknown): CappedString | undefined {
 function* jiraErrorParts(body: Record<string, unknown>): Generator<string> {
   if (Array.isArray(body.errorMessages)) {
     for (const message of body.errorMessages) {
-      if (typeof message === 'string') yield message;
+      if (typeof message === 'string' && message.trim() !== '') yield message;
     }
   }
   if (isPlainObject(body.errors)) {
@@ -456,7 +473,7 @@ function* jiraErrorParts(body: Record<string, unknown>): Generator<string> {
     const errors = body.errors;
     for (const field of Object.keys(errors)) {
       const value = errors[field];
-      if (typeof value === 'string') yield `${field}: ${value}`;
+      if (typeof value === 'string' && value.trim() !== '') yield `${field}: ${value}`;
     }
   }
 }
