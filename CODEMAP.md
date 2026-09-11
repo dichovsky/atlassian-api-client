@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "4.0.0"
   },
-  "sourceHash": "4722ed5f6aace88e0e6416340d7d5df61f78cdf57ed7e519d878be92c1f9f07f",
+  "sourceHash": "29665ebc1814628941c81f03de1075c41ae6b5c4d58d1b0b0240ebdb808b2193",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -3814,7 +3814,7 @@
       "name": "toJSON",
       "kind": "function",
       "file": "src/core/response.ts",
-      "line": 24,
+      "line": 42,
       "signature": "export function toJSON<T>(response: ApiResponse<T>): SerializableApiResponse<T>",
       "jsdoc": "Convert an {@link ApiResponse} into a plain JSON-serialisable object."
     },
@@ -15098,7 +15098,7 @@
         {
           "name": "toJSON",
           "kind": "function",
-          "line": 24,
+          "line": 42,
           "exported": true,
           "signature": "export function toJSON<T>(response: ApiResponse<T>): SerializableApiResponse<T>",
           "jsdoc": "Convert an {@link ApiResponse} into a plain JSON-serialisable object."
@@ -15106,7 +15106,7 @@
         {
           "name": "safeParseBody",
           "kind": "function",
-          "line": 52,
+          "line": 80,
           "exported": true,
           "signature": "export async function safeParseBody(response: Response, maxBytes?: number): Promise<unknown>",
           "jsdoc": "Parse a response body as JSON, swallowing parse failures."
@@ -15114,13 +15114,13 @@
         {
           "name": "isAbortError",
           "kind": "function",
-          "line": 69,
+          "line": 97,
           "signature": "function isAbortError(error: unknown): boolean"
         },
         {
           "name": "parseResponseBody",
           "kind": "function",
-          "line": 88,
+          "line": 116,
           "exported": true,
           "signature": "export async function parseResponseBody( response: Response, responseType: RequestOptions['responseType'], maxBytes?: nu…",
           "jsdoc": "Parse a successful response body according to the caller-supplied `responseType`."
@@ -15128,14 +15128,14 @@
         {
           "name": "parseJsonOrThrow",
           "kind": "function",
-          "line": 140,
+          "line": 168,
           "signature": "function parseJsonOrThrow(text: string): unknown",
           "jsdoc": "Parse a 2xx body as JSON, wrapping a malformed-JSON failure in the taxonomy {@link ValidationError} (B1041(2))."
         },
         {
           "name": "buildApiResponse",
           "kind": "function",
-          "line": 161,
+          "line": 189,
           "exported": true,
           "signature": "export function buildApiResponse( response: Response, data: unknown, rateLimit: RateLimitInfo, requestId?: string, ): Ap…",
           "jsdoc": "Assemble an {@link ApiResponse} from a successful `fetch` Response and the parsed body."
@@ -15143,28 +15143,28 @@
         {
           "name": "readBodyWithCap",
           "kind": "function",
-          "line": 192,
+          "line": 220,
           "signature": "async function readBodyWithCap(response: Response, maxBytes?: number): Promise<Uint8Array>",
           "jsdoc": "Read the response body as bytes under an optional size cap (B026)."
         },
         {
           "name": "readBodyAsText",
           "kind": "function",
-          "line": 275,
+          "line": 303,
           "signature": "async function readBodyAsText(response: Response, maxBytes?: number): Promise<string>",
           "jsdoc": "Read the response body as a UTF-8 string under an optional size cap."
         },
         {
           "name": "cancelBodyQuietly",
           "kind": "function",
-          "line": 289,
+          "line": 317,
           "signature": "async function cancelBodyQuietly(body: ReadableStream<Uint8Array> | null): Promise<void>",
           "jsdoc": "Best-effort `ReadableStream.cancel()` that never throws. Used by the content-length fast-fail path to release the socket before throwing `ResponseTooLargeError`; rejections from buggy custom streams must not mask the documented overflow contract (PR #21 review)."
         },
         {
           "name": "parseContentLength",
           "kind": "function",
-          "line": 307,
+          "line": 335,
           "signature": "function parseContentLength(value: string | null): number | undefined",
           "jsdoc": "Parse a `Content-Length` header value into a non-negative finite integer."
         }

@@ -17,14 +17,42 @@ export interface SerializableApiResponse<T> {
  * serialises to `{}`. This helper materialises the header entries into a plain
  * `Record<string, string>` so the full response can be logged or persisted.
  *
- * Duplicate header names are collapsed by `Headers.prototype.entries()`:
- * standard single-value headers are returned verbatim, and `Set-Cookie` values
- * are combined into a comma-separated string (the WHATWG default).
+ * `Headers.prototype.entries()` yields ONE entry per header name for ordinary
+ * headers, but a SEPARATE entry per `Set-Cookie` — that header is exempt from
+ * the WHATWG combining rule precisely because its values may contain commas.
+ * A plain `headers[key] = value` assignment therefore kept only the LAST cookie
+ * and silently discarded every earlier one, so a response setting a session
+ * cookie plus a CSRF cookie serialised with the session cookie missing.
+ * Duplicate names are joined with `', '` so no value is lost.
+ *
+ * That joined string is for LOGGING and PERSISTENCE, not for re-parsing: a
+ * cookie's own `Expires` attribute contains a comma
+ * (`Expires=Mon, 09 Sep 2026 …`), so splitting the result back apart on `', '`
+ * is ambiguous. Callers needing the individual cookies should read
+ * `response.headers.getSetCookie()` from the live `Headers` object rather than
+ * this projection.
+ *
+ * SENSITIVITY: `set-cookie` may carry session or auth-adjacent values, and this
+ * helper exists to make a response easy to log or persist. Before this fix only
+ * the last cookie survived; now every one does, so a sink that previously
+ * captured one value may capture several. Callers writing this output to logs
+ * or storage should redact or drop the `set-cookie` entry — mirroring
+ * {@link HttpError.toJSON}, which omits `responseBody` for the same reason.
  */
 export function toJSON<T>(response: ApiResponse<T>): SerializableApiResponse<T> {
-  const headers: Record<string, string> = {};
+  // Null-prototype: header names are server-controlled, and a plain `{}` gets
+  // both halves of this wrong. `headers['__proto__'] = v` is silently DISCARDED
+  // (the setter ignores a string), losing the header outright — the very data
+  // loss this function is fixing. And the duplicate check below reads
+  // `headers[key]`, which for an INHERITED name returns the prototype member
+  // rather than `undefined`: a response header named `constructor` (a legal,
+  // already-lowercase name) would find `Object` and serialise as
+  // "function Object() { [native code] }, <value>". A null-prototype object has
+  // no inherited names to collide with and treats `__proto__` as ordinary.
+  const headers: Record<string, string> = Object.create(null) as Record<string, string>;
   for (const [key, value] of response.headers.entries()) {
-    headers[key] = value;
+    const existing = headers[key];
+    headers[key] = existing === undefined ? value : `${existing}, ${value}`;
   }
 
   return {

@@ -43,6 +43,58 @@ describe('toJSON', () => {
     expect(json.data).toEqual({ id: '1' });
   });
 
+  it('keeps every Set-Cookie value instead of only the last', () => {
+    // `Headers.entries()` yields one entry PER Set-Cookie (that header is exempt
+    // from the WHATWG combining rule), so a naive assignment loses all but the
+    // last — dropping the session cookie in a session + CSRF pair.
+    const headers = new Headers([
+      ['set-cookie', 'session=abc; Path=/; HttpOnly'],
+      ['set-cookie', 'csrf=xyz; Path=/'],
+    ]);
+    const response: ApiResponse<null> = { data: null, status: 200, headers };
+
+    const json = toJSON(response);
+
+    // Pin the exact documented ', ' join, not merely that both survived.
+    expect(json.headers['set-cookie']).toBe('session=abc; Path=/; HttpOnly, csrf=xyz; Path=/');
+  });
+
+  it('preserves a cookie whose own value contains a comma (Expires)', () => {
+    // Documents the known limitation: every value survives, but the joined
+    // string is for logging, not for splitting apart again — an Expires date
+    // carries its own comma. `headers.getSetCookie()` is the parseable source.
+    const headers = new Headers([
+      ['set-cookie', 'a=1; Expires=Mon, 09 Sep 2026 10:00:00 GMT'],
+      ['set-cookie', 'b=2'],
+    ]);
+    const response: ApiResponse<null> = { data: null, status: 200, headers };
+
+    const json = toJSON(response);
+
+    expect(json.headers['set-cookie']).toContain('Expires=Mon, 09 Sep 2026 10:00:00 GMT');
+    expect(json.headers['set-cookie']).toContain('b=2');
+  });
+
+  it.each(['constructor', '__proto__'])(
+    'serialises a header named %s without prototype interference',
+    (name) => {
+      // On a plain `{}`, `headers['constructor']` returns the Object function
+      // instead of undefined (corrupting the value), and `headers['__proto__']`
+      // assignment is discarded entirely (losing the header).
+      const headers = new Headers([[name, 'real-value']]);
+      const response: ApiResponse<null> = { data: null, status: 200, headers };
+
+      expect(toJSON(response).headers[name]).toBe('real-value');
+    },
+  );
+
+  it('leaves a single-valued header untouched', () => {
+    const headers = new Headers([['set-cookie', 'session=abc']]);
+    const response: ApiResponse<null> = { data: null, status: 200, headers };
+
+    expect(toJSON(response).headers['set-cookie']).toBe('session=abc');
+  });
+
   it('produces a JSON-serialisable object', () => {
     const response: ApiResponse<{ id: string }> = {
       data: { id: '1' },
