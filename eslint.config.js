@@ -34,6 +34,18 @@ export default tseslint.config(
     },
   },
   {
-    ignores: ['dist/**', 'node_modules/**', 'coverage/**', 'scripts/**', '*.config.*', '*.json'],
+    // `.claude/**` holds gitignored agent scratch space (worktrees, review
+    // artifacts) that is never part of the package. ESLint does not read
+    // `.gitignore`, so without this entry a stray `.ts` file left there by a
+    // local tool fails `eslint .` on an otherwise clean tree.
+    ignores: [
+      'dist/**',
+      'node_modules/**',
+      'coverage/**',
+      'scripts/**',
+      '.claude/**',
+      '*.config.*',
+      '*.json',
+    ],
   },
 );

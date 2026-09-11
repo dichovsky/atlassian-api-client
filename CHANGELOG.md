@@ -1,6 +1,45 @@
 # Changelog
 
-## [Unreleased](https://github.com/dichovsky/atlassian-api-client/compare/v4.0.0...HEAD)
+## [Unreleased](https://github.com/dichovsky/atlassian-api-client/compare/v4.1.0...HEAD)
+
+## [4.1.0](https://github.com/dichovsky/atlassian-api-client/compare/v4.0.0...v4.1.0) (2026-09-11)
+
+A correctness release for the core transport, error, auth, and retry layers. Every change is confined to `src/core`; no resource, client, or CLI signature changed, and no public export was removed. The one new API is additive, so upgrading from 4.0.0 needs no code changes.
+
+Several fixes do change observable runtime behaviour, because the previous behaviour was wrong. Review **Behaviour changes to verify** below if you pin Connect JWT signatures, match on `HttpError.message`, read serialized response headers, or point `tokenEndpoint` at a non-default host.
+
+### Added
+
+- `ConnectJwtConfig.contextPath`, and a matching optional fourth `contextPath` argument on `computeQsh()`, for Connect apps hosted under a base-URL prefix. Confluence's Connect base URL is `https://<site>.atlassian.net/wiki`, so its QSH must be computed against the `/wiki`-relative path; set `contextPath: '/wiki'` on the Confluence middleware. Omitting it preserves the previous no-prefix behaviour.
+
+### Fixed
+
+- **Connect JWT QSH is canonicalized per the Connect spec.** `computeQsh()` now accepts an absolute URL as well as a path, strips the configured `contextPath`, removes a trailing slash, escapes `&` in the path as `%26`, and excludes a `jwt` query parameter from the hash. Resources emit absolute-URL paths, so signing previously hashed the scheme and host and produced a QSH the server rejected.
+- **Repeated QSH query values are sorted before encoding**, matching the reference `atlassian-jwt` implementation. Encoding first reordered values, because every percent-escape starts with `%` (0x25) and therefore sorts ahead of any character `encodeRfc3986` leaves literal.
+- **An explicit query map now replaces a value already baked into the path**, as the wire does, instead of contributing a second occurrence of the parameter.
+- **`maxClockSkewSeconds` is validated instead of silently trusted.** Non-number, non-finite, and negative values, and any value above one day (86,400), now throw `ValidationError`. A millisecond value passed by mistake previously disabled expiry checking outright.
+- **Responses whose `Headers` come from another realm are accepted.** The transport gated on `instanceof Headers`, which is realm-bound, so every successful response from the README's own `undici` `ProxyAgent` recipe failed with `Invalid ApiResponse structure`. The gate is now a duck-type check across the WHATWG `Headers` surface.
+- **A socket failure while the response body is streaming is classified as `NetworkError`** instead of escaping as a raw `TypeError: terminated`. It is now retried and observed by the circuit breaker, like the identical reset one moment earlier. Error responses keep their server-sent status, which remains authoritative.
+- **Client-side `fetch` `TypeError`s are no longer treated as network failures.** An invalid header value, a bad method, or a blocked port never reached the network and would fail identically on every retry. Classification now rests on the system code in the `cause` chain, which already identified real transport failures.
+- **Jira field-level `errors` are surfaced in error messages.** `ErrorCollection` bodies populate `errorMessages` and `errors` independently, and 400s from issue create, update, and transition carry the actionable detail in `errors` while `errorMessages` comes back empty — those failures previously degraded to a bare `HTTP error 400` naming no field. Both fields are now rendered, under the existing length cap.
+- **A present-but-blank server message falls back to the status-derived default.** A body of `{"message": ""}` produced an error whose `.message` was the empty string, hiding even the HTTP status.
+- **`toJSON()` keeps every `Set-Cookie` value.** `Headers.entries()` yields a separate entry per `Set-Cookie`, so a plain assignment kept only the last: a response setting a session cookie plus a CSRF cookie serialized with the session cookie missing. Duplicate names are joined with `', '`.
+- **`detectRequiredScopes()` ignores inherited property names.** Passing `'constructor'`, `'toString'`, or `'__proto__'` returned an inherited non-array value and threw `scopes is not iterable`, breaking the documented contract that unknown operation names are ignored.
+- **The OAuth token endpoint rejects a non-default port and embedded userinfo.** The check was hostname-only, so `https://auth.atlassian.com:8443/oauth/token` passed with the default allowlist and shipped the `refresh_token` and `client_secret` to whatever listens there. This path is now at least as strict as the tenant-API path, which already rejected both.
+
+### Behaviour changes to verify
+
+- **Connect JWT signatures differ from 4.0.0** for any request whose path was absolute, carried a trailing slash, contained `&`, or included a `jwt` query parameter, and for any repeated query parameter. The new values are the spec-correct ones. Confluence Connect apps should now set `contextPath: '/wiki'`.
+- **`HttpError.message` may differ.** Jira validation failures now name the offending fields, and a blank server message now yields the status default rather than an empty string. Recheck any code matching on exact message text.
+- **`toJSON().headers` may carry more data than before.** `set-cookie` can now hold several joined values instead of one. That joined string is for logging and persistence, not re-parsing — a cookie's own `Expires` attribute contains a comma. Read `response.headers.getSetCookie()` for individual cookies, and redact or drop `set-cookie` before writing this projection to a log or store.
+- **Configuration that was previously accepted is now rejected** where it was unsafe or unsound: a `tokenEndpoint` with a non-default port or embedded userinfo, and an out-of-range `maxClockSkewSeconds`. Both throw `ValidationError` at configuration time.
+- **Fewer requests are retried.** Client-side `fetch` argument errors now fail fast instead of consuming the retry budget.
+
+### Changed
+
+- Hardened the release process after v4.0.0. `docs/RELEASING.md` is the runbook of record; `npm run release:check` validates that a tag matches `package.json`, both `package-lock.json` version fields, and the changelog heading; `npm run filemode:check` guards committed file modes. The publish workflow verifies that the signed tag resolves to a commit that is the protected `main` tip with a successful `CI` run.
+- `eslint .` no longer lints `.claude/**`, which is gitignored agent scratch space and never part of the package.
+- Bumped dev-only dependencies (`@types/node` and the dev-dependencies group). No production dependency changed.
 
 ## [4.0.0](https://github.com/dichovsky/atlassian-api-client/compare/v3.0.0...v4.0.0) (2026-09-02)
 
