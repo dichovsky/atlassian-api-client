@@ -779,6 +779,26 @@ describe('verifyConnectAsymmetricJwt', () => {
   });
 });
 
+describe('computeQsh repeated-parameter value order (Connect spec)', () => {
+  // Spec: sort a multi-valued parameter's values, then percent-encode, then
+  // join with ','. Cross-checked against Atlassian's own `atlassian-jwt`
+  // reference implementation, whose canonical request for
+  // `GET /rest/api/3/x?tag=z&tag=%C3%A9` is `GET&/rest/api/3/x&tag=z,%C3%A9`.
+  it('sorts repeated values BEFORE encoding them', () => {
+    // Raw order is ['z', 'é'] (U+007A < U+00E9). Encoding first would yield
+    // ['%C3%A9', 'z'] and sort '%' (0x25) ahead of 'z' — the wrong canonical form.
+    const expected = createHash('sha256').update('GET&/rest/api/3/x&tag=z,%C3%A9').digest('hex');
+    expect(computeQsh('GET', 'https://test.atlassian.net/rest/api/3/x?tag=z&tag=%C3%A9')).toBe(
+      expected,
+    );
+  });
+
+  it('keeps codepoint order for values that need no encoding', () => {
+    const expected = createHash('sha256').update('GET&/rest/api/3/x&tag=A,b').digest('hex');
+    expect(computeQsh('GET', 'https://test.atlassian.net/rest/api/3/x?tag=b&tag=A')).toBe(expected);
+  });
+});
+
 describe('computeQsh canonical URI (Connect spec)', () => {
   // Spec: "Discard the protocol, server, port, context path and query
   // parameters from the full URL" and "Do not suffix with a '/' character
