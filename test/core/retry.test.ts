@@ -82,9 +82,53 @@ describe('calculateDelay', () => {
 });
 
 describe('isNetworkError', () => {
-  it('returns true for TypeError', () => {
-    const err = new TypeError('Failed to fetch');
-    expect(isNetworkError(err)).toBe(true);
+  it.each(['ECONNREFUSED', 'ENOTFOUND', 'UND_ERR_SOCKET'])(
+    'returns true for a fetch TypeError wrapping a %s cause',
+    (code) => {
+      // `fetch` surfaces real network failures as a TypeError wrapping the
+      // underlying socket/DNS error, which carries the system CODE — verified on
+      // Node 24 against a real closed port, a bad hostname, and a mid-body reset.
+      const cause = Object.assign(new Error('connect failed'), { code });
+      expect(isNetworkError(new TypeError('fetch failed', { cause }))).toBe(true);
+    },
+  );
+
+  it('returns false for a codeless cause (Node blocked-port rejection)', () => {
+    // `fetch('http://127.0.0.1:1/')` rejects with `TypeError: fetch failed`
+    // whose cause is a bare Error('bad port') with NO code — the port blocklist
+    // rejects it before any connection attempt, so it is an argument error and
+    // retrying it can never succeed.
+    const err = new TypeError('fetch failed', { cause: new Error('bad port') });
+    expect(isNetworkError(err)).toBe(false);
+  });
+
+  it.each(['CERT_HAS_EXPIRED', 'DEPTH_ZERO_SELF_SIGNED_CERT', 'ERR_TLS_CERT_ALTNAME_INVALID'])(
+    'returns false for the deterministic TLS failure %s',
+    (code) => {
+      // A named-but-unknown code means the runtime identified the failure and it
+      // will recur identically — retrying a bad certificate is pointless.
+      const err = new TypeError('fetch failed', {
+        cause: Object.assign(new Error('tls'), { code }),
+      });
+      expect(isNetworkError(err)).toBe(false);
+    },
+  );
+
+  it('returns false for a TypeError whose cause is not an object', () => {
+    const err = new TypeError('fetch failed', { cause: 'boom' });
+    expect(isNetworkError(err)).toBe(false);
+  });
+
+  it('returns false for a TypeError whose cause is null', () => {
+    const err = new TypeError('fetch failed', { cause: null });
+    expect(isNetworkError(err)).toBe(false);
+  });
+
+  it('returns false for a causeless TypeError from fetch argument validation', () => {
+    // An invalid header value / bad method / body-on-GET rejects locally before
+    // any socket is opened, and carries no `cause`. Retrying cannot help.
+    const err = new TypeError('Headers.append: "a\nb" is an invalid header value');
+    expect(isNetworkError(err)).toBe(false);
   });
 
   it('returns false for AbortError', () => {
