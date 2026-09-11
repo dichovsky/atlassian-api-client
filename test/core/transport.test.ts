@@ -3,6 +3,7 @@ import { HttpTransport } from '../../src/core/transport.js';
 import {
   AuthenticationError,
   NotFoundError,
+  ForbiddenError,
   RateLimitError,
   HttpError,
   TimeoutError,
@@ -2407,5 +2408,224 @@ describe('HttpTransport', () => {
         'stable-id-across-retries',
       ]);
     });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Network failures during the body read (after response headers arrive)
+// ---------------------------------------------------------------------------
+describe('HttpTransport body-read network failures', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+  });
+
+  /** The shape undici produces when the socket dies mid-body: `TypeError: terminated`. */
+  function socketResetDuringBody(): Response {
+    const cause = Object.assign(new Error('other side closed'), { code: 'UND_ERR_SOCKET' });
+    return {
+      ok: true,
+      status: 200,
+      headers: new Headers({ 'content-type': 'application/json' }),
+      text: () => Promise.reject(Object.assign(new TypeError('terminated'), { cause })),
+    } as unknown as Response;
+  }
+
+  it('classifies a mid-body socket reset as NetworkError and retries it', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(socketResetDuringBody());
+    vi.stubGlobal('fetch', fetchMock);
+
+    const transport = makeTransport({ ...defaultConfig, retries: 2, retryDelay: 0 });
+
+    const error = await runRequest(transport, { method: 'GET', path: '/pages' }).catch(
+      (e: unknown) => e,
+    );
+
+    expect(error).toBeInstanceOf(NetworkError);
+    // Same treatment as a reset that lands BEFORE the headers: 1 + 2 retries.
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+  });
+
+  it('keeps the HTTP status when the socket dies reading an ERROR body', async () => {
+    // Deliberate asymmetry: the status already arrived and is authoritative, so
+    // a dead socket during the error-body read must NOT become a NetworkError —
+    // that would discard the server's 403 and invite a pointless retry.
+    const cause = Object.assign(new Error('other side closed'), { code: 'UND_ERR_SOCKET' });
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 403,
+      headers: new Headers({ 'content-type': 'application/json' }),
+      text: () => Promise.reject(Object.assign(new TypeError('terminated'), { cause })),
+    } as unknown as Response);
+    vi.stubGlobal('fetch', fetchMock);
+
+    const transport = makeTransport({ ...defaultConfig, retries: 2, retryDelay: 0 });
+
+    const error = await runRequest(transport, { method: 'GET', path: '/pages' }).catch(
+      (e: unknown) => e,
+    );
+
+    expect(error).toBeInstanceOf(ForbiddenError);
+    expect(error).not.toBeInstanceOf(NetworkError);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('gives a usable message when a non-Error value carries a retryable code', async () => {
+    // isNetworkError walks `{ code, cause }` chains, so a thrown plain object
+    // qualifies. Reading `.message` off one yields undefined and would render
+    // the NetworkError message as the string "undefined".
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      headers: new Headers({ 'content-type': 'application/json' }),
+      text: () => Promise.reject({ code: 'ECONNRESET' }),
+    } as unknown as Response);
+    vi.stubGlobal('fetch', fetchMock);
+
+    const transport = makeTransport({ ...defaultConfig, retries: 0, retryDelay: 0 });
+
+    const error = await runRequest(transport, { method: 'GET', path: '/pages' }).catch(
+      (e: unknown) => e,
+    );
+
+    expect(error).toBeInstanceOf(NetworkError);
+    expect((error as NetworkError).message).toBe('Network request failed');
+    expect((error as NetworkError).cause).toEqual({ code: 'ECONNRESET' });
+  });
+
+  it('leaves a non-network body failure untouched', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      headers: new Headers({ 'content-type': 'application/json' }),
+      text: () => Promise.resolve('{ not json'),
+    } as unknown as Response);
+    vi.stubGlobal('fetch', fetchMock);
+
+    const transport = makeTransport({ ...defaultConfig, retries: 2, retryDelay: 0 });
+
+    const error = await runRequest(transport, { method: 'GET', path: '/pages' }).catch(
+      (e: unknown) => e,
+    );
+
+    expect(error).toBeInstanceOf(ValidationError);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Response shape gate (foreign-realm Headers)
+// ---------------------------------------------------------------------------
+describe('HttpTransport response shape validation', () => {
+  /**
+   * Minimal stand-in for a `Headers` implementation from another realm — what
+   * the npm `undici` package (the README's proxy recipe) actually returns.
+   * API-compatible with WHATWG `Headers` but NOT `instanceof globalThis.Headers`.
+   */
+  class ForeignHeaders {
+    private readonly map = new Map<string, string>();
+    constructor(init: Record<string, string> = {}) {
+      for (const [k, v] of Object.entries(init)) this.map.set(k.toLowerCase(), v);
+    }
+    get(name: string): string | null {
+      return this.map.get(name.toLowerCase()) ?? null;
+    }
+    has(name: string): boolean {
+      return this.map.has(name.toLowerCase());
+    }
+    set(name: string, value: string): void {
+      this.map.set(name.toLowerCase(), value);
+    }
+    append(name: string, value: string): void {
+      const existing = this.map.get(name.toLowerCase());
+      this.map.set(name.toLowerCase(), existing === undefined ? value : `${existing}, ${value}`);
+    }
+    delete(name: string): void {
+      this.map.delete(name.toLowerCase());
+    }
+    keys(): IterableIterator<string> {
+      return this.map.keys();
+    }
+    values(): IterableIterator<string> {
+      return this.map.values();
+    }
+    entries(): IterableIterator<[string, string]> {
+      return this.map.entries();
+    }
+    forEach(cb: (value: string, key: string) => void): void {
+      for (const [k, v] of this.map) cb(v, k);
+    }
+    [Symbol.iterator](): IterableIterator<[string, string]> {
+      return this.map.entries();
+    }
+  }
+
+  /** Only the four methods this library itself calls — not a full Headers. */
+  function partialHeaders(): Record<string, unknown> {
+    return {
+      get: () => null,
+      has: () => false,
+      entries: () => [],
+      forEach: () => undefined,
+    };
+  }
+
+  /** A complete Headers-shaped stub with one member left out. */
+  function omitFromHeaders(missing: string | symbol): Record<string | symbol, unknown> {
+    const members: [string | symbol, unknown][] = [
+      ['get', () => null],
+      ['has', () => false],
+      ['set', () => undefined],
+      ['append', () => undefined],
+      ['delete', () => undefined],
+      ['keys', () => []],
+      ['values', () => []],
+      ['entries', () => []],
+      ['forEach', () => undefined],
+      [Symbol.iterator, () => [][Symbol.iterator]()],
+    ];
+    return Object.fromEntries(members.filter(([name]) => name !== missing)) as Record<
+      string | symbol,
+      unknown
+    >;
+  }
+
+  function transportReturning(response: unknown): HttpTransport {
+    const middleware = (() => Promise.resolve(response)) as unknown as NonNullable<
+      ResolvedConfig['middleware']
+    >[number];
+    return new HttpTransport({ ...defaultConfig, retries: 0, middleware: [middleware] });
+  }
+
+  it('accepts a response whose headers come from another realm', async () => {
+    const transport = transportReturning({
+      data: { ok: true },
+      status: 200,
+      headers: new ForeignHeaders({ 'content-type': 'application/json' }),
+    });
+
+    const result = await transport.request<{ ok: boolean }>({ method: 'GET', path: '/pages' });
+
+    expect(result.data).toEqual({ ok: true });
+    expect(result.status).toBe(200);
+  });
+
+  it.each<[string, unknown]>([
+    ['headers is a string', 'not-headers'],
+    ['headers is null', null],
+    ['headers is a partial stand-in (get/has/entries/forEach only)', partialHeaders()],
+    ['headers lacks get()', omitFromHeaders('get')],
+    ['headers lacks entries()', omitFromHeaders('entries')],
+    ['headers lacks Symbol.iterator', omitFromHeaders(Symbol.iterator)],
+  ])('rejects a response where %s', async (_label, headers) => {
+    const transport = transportReturning({ data: null, status: 200, headers });
+
+    await expect(transport.request({ method: 'GET', path: '/pages' })).rejects.toBeInstanceOf(
+      ValidationError,
+    );
   });
 });
