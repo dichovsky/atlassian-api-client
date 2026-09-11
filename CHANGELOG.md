@@ -4,9 +4,9 @@
 
 ## [4.1.0](https://github.com/dichovsky/atlassian-api-client/compare/v4.0.0...v4.1.0) (2026-09-11)
 
-A correctness release for the core transport, error, auth, and retry layers. Every change is confined to `src/core`; no resource, client, or CLI signature changed, and no public export was removed. The one new API is additive, so upgrading from 4.0.0 needs no code changes.
+A correctness release for the core transport, error, auth, and retry layers. There is no runtime change outside `src/core`; no resource, client, or CLI signature changed, and no public export was removed. The one new API is additive.
 
-Several fixes do change observable runtime behaviour, because the previous behaviour was wrong. Review **Behaviour changes to verify** below if you pin Connect JWT signatures, match on `HttpError.message`, read serialized response headers, or point `tokenEndpoint` at a non-default host.
+Several fixes do change observable runtime behaviour, because the previous behaviour was wrong. Read **Behaviour changes to verify** below before upgrading if you run a Confluence Connect app, pin Connect JWT signatures, verify inbound Connect tokens, match on `HttpError.message`, read serialized response headers, or point `tokenEndpoint` at a non-default host or port. Most consumers need no code changes.
 
 ### Added
 
@@ -14,10 +14,10 @@ Several fixes do change observable runtime behaviour, because the previous behav
 
 ### Fixed
 
-- **Connect JWT QSH is canonicalized per the Connect spec.** `computeQsh()` now accepts an absolute URL as well as a path, strips the configured `contextPath`, removes a trailing slash, escapes `&` in the path as `%26`, and excludes a `jwt` query parameter from the hash. Resources emit absolute-URL paths, so signing previously hashed the scheme and host and produced a QSH the server rejected.
+- **Connect JWT QSH is canonicalized per the Connect spec.** `computeQsh()` now accepts an absolute URL as well as a path, strips the configured `contextPath`, removes a trailing slash, and escapes `&` in the path as `%26`. Resources emit absolute-URL paths, so signing previously hashed the scheme and host and produced a QSH the server rejected. A `jwt` parameter supplied through the query map is now excluded from the hash as well; a `jwt` already present in the path was excluded in 4.0.0.
 - **Repeated QSH query values are sorted before encoding**, matching the reference `atlassian-jwt` implementation. Encoding first reordered values, because every percent-escape starts with `%` (0x25) and therefore sorts ahead of any character `encodeRfc3986` leaves literal.
 - **An explicit query map now replaces a value already baked into the path**, as the wire does, instead of contributing a second occurrence of the parameter.
-- **`maxClockSkewSeconds` is validated instead of silently trusted.** Non-number, non-finite, and negative values, and any value above one day (86,400), now throw `ValidationError`. A millisecond value passed by mistake previously disabled expiry checking outright.
+- **`maxClockSkewSeconds` is validated instead of silently trusted.** Non-number, non-finite, and negative values, and any value above one day (86,400), now throw `ValidationError` from `verifyConnectAsymmetricJwt()`. A millisecond value passed by mistake previously disabled expiry checking outright.
 - **Responses whose `Headers` come from another realm are accepted.** The transport gated on `instanceof Headers`, which is realm-bound, so every successful response from the README's own `undici` `ProxyAgent` recipe failed with `Invalid ApiResponse structure`. The gate is now a duck-type check across the WHATWG `Headers` surface.
 - **A socket failure while the response body is streaming is classified as `NetworkError`** instead of escaping as a raw `TypeError: terminated`. It is now retried and observed by the circuit breaker, like the identical reset one moment earlier. Error responses keep their server-sent status, which remains authoritative.
 - **Client-side `fetch` `TypeError`s are no longer treated as network failures.** An invalid header value, a bad method, or a blocked port never reached the network and would fail identically on every retry. Classification now rests on the system code in the `cause` chain, which already identified real transport failures.
@@ -29,10 +29,12 @@ Several fixes do change observable runtime behaviour, because the previous behav
 
 ### Behaviour changes to verify
 
-- **Connect JWT signatures differ from 4.0.0** for any request whose path was absolute, carried a trailing slash, contained `&`, or included a `jwt` query parameter, and for any repeated query parameter. The new values are the spec-correct ones. Confluence Connect apps should now set `contextPath: '/wiki'`.
+- **Connect JWT signatures differ from 4.0.0** for any request whose path was absolute, carried a trailing slash, or contained `&`; for a `jwt` parameter passed through the query map; and for a repeated query parameter whose values percent-encode. The new values are the spec-correct ones. Every request signed by `createConnectJwtMiddleware` was affected, because resources emit absolute-URL paths — those signatures were rejected before and work now. Confluence Connect apps must additionally set `contextPath: '/wiki'`; this is the one code change the release asks for.
 - **`HttpError.message` may differ.** Jira validation failures now name the offending fields, and a blank server message now yields the status default rather than an empty string. Recheck any code matching on exact message text.
 - **`toJSON().headers` may carry more data than before.** `set-cookie` can now hold several joined values instead of one. That joined string is for logging and persistence, not re-parsing — a cookie's own `Expires` attribute contains a comma. Read `response.headers.getSetCookie()` for individual cookies, and redact or drop `set-cookie` before writing this projection to a log or store.
-- **Configuration that was previously accepted is now rejected** where it was unsafe or unsound: a `tokenEndpoint` with a non-default port or embedded userinfo, and an out-of-range `maxClockSkewSeconds`. Both throw `ValidationError` at configuration time.
+- **`toJSON().headers` is now a null-prototype object** (`Object.create(null)`), so a server header named `constructor` or `__proto__` can no longer collide with an inherited member or be dropped outright. The declared type is still `Record<string, string>` and `JSON.stringify` is unaffected, but `hasOwnProperty`, `toString`, and the other `Object.prototype` methods are not available on it, `console.log` prefixes it with `[Object: null prototype]`, and `assert.deepStrictEqual` / `toStrictEqual` against a plain object literal now fails. Use `Object.hasOwn(headers, name)` and `toEqual`.
+- **A `tokenEndpoint` with a non-default port or embedded userinfo is rejected at construction time**, throwing `ValidationError` from `createOAuthRefreshMiddleware()`. There is no opt-out: `allowedTokenEndpointHosts` gates the host only and cannot re-permit a port. A self-hosted token gateway or local mock on an explicit port that worked in 4.0.0 will now fail to start; route it through the host's normal name and rely on DNS or a proxy.
+- **An out-of-range `maxClockSkewSeconds` throws per call, not at startup.** `AsymmetricJwtVerifyOptions` is a plain argument to `verifyConnectAsymmetricJwt()`, so there is no construction step to fail at: a bad value — `Number(process.env.JWT_SKEW)` yielding `NaN`, say — boots clean and passes health checks, then throws on the first inbound token, after signature verification succeeds. Validate the value yourself at boot if you source it from the environment.
 - **Fewer requests are retried.** Client-side `fetch` argument errors now fail fast instead of consuming the retry budget.
 
 ### Changed
