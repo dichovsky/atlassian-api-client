@@ -407,21 +407,18 @@ function extractErrorMessage(body: unknown): string | undefined {
   if (raw === undefined) return undefined;
   // Test blankness on the RAW value, BEFORE truncation. The ellipsis appended
   // below is itself a non-whitespace character, so a whitespace-only message
-  // longer than the cap would trim to '…' rather than '' and slip past the
+  // longer than the cap would trim to '…' rather than '' and slip past this
   // guard — reinstating the blank-message bug for exactly the oversized bodies
   // the cap exists to handle.
-  if (raw.value.trim() === '') return undefined;
-  const message = raw.truncated
-    ? raw.value.slice(0, MAX_ERROR_MESSAGE_LENGTH - 1) + '…'
-    : raw.value;
+  //
   // A present-but-blank server message must not defeat the status-derived
-  // default. Each subclass applies its fallback with `message ?? 'Authentication
-  // failed'`, and `??` only fires on null/undefined — so a body of
-  // `{ "message": "" }` (or `{ "errorMessages": [""] }`) produced an error whose
-  // `.message` was the EMPTY STRING. That renders as a blank line in logs and an
-  // empty alert in a UI, hiding even the HTTP status. Returning `undefined`
-  // hands the decision back to the fallback.
-  return message;
+  // default: each subclass applies its fallback with `message ?? 'Authentication
+  // failed'`, and `??` only fires on null/undefined, so a body of
+  // `{ "message": "" }` produced an error whose `.message` was the EMPTY STRING.
+  // That renders as a blank line in logs and an empty alert in a UI, hiding even
+  // the HTTP status. Returning `undefined` hands the decision back to the fallback.
+  if (raw.value.trim() === '') return undefined;
+  return raw.truncated ? raw.value.slice(0, MAX_ERROR_MESSAGE_LENGTH - 1) + '…' : raw.value;
 }
 
 function extractErrorMessageRaw(body: unknown): CappedString | undefined {
@@ -429,11 +426,14 @@ function extractErrorMessageRaw(body: unknown): CappedString | undefined {
   if (typeof body === 'string') return capLength(body);
   if (!isPlainObject(body)) return undefined;
 
-  // Jira error format: { errorMessages: string[], errors: Record<string, string> }
-  if (Array.isArray(body.errorMessages)) {
-    const joined = joinWithCap(body.errorMessages);
-    if (joined !== undefined) return joined;
-  }
+  // Jira `ErrorCollection`: { errorMessages: string[], errors: Record<string, string> }.
+  // The two fields are independent and BOTH may be populated, so both are
+  // surfaced. `errors` carries the field-level diagnostics and is the dominant
+  // shape for 400s from issue create/update/transition, where `errorMessages`
+  // comes back EMPTY — ignoring it degraded the most common Jira validation
+  // failure to a bare `HTTP error 400` naming no field at all.
+  const jiraErrors = joinWithCap(jiraErrorParts(body));
+  if (jiraErrors !== undefined) return jiraErrors;
 
   // Generic: { message: string }
   if (typeof body.message === 'string') {
@@ -444,54 +444,91 @@ function extractErrorMessageRaw(body: unknown): CappedString | undefined {
 }
 
 /**
+ * Lazily yield every message an `ErrorCollection` body carries, in the order
+ * Jira documents them: the top-level `errorMessages`, then the field-level
+ * `errors` map rendered as `field: message`.
+ *
+ * Non-string AND blank (whitespace-only) entries are skipped here, so a mixed
+ * array like `['', 'Real error']` cannot assemble as "; Real error" with a
+ * separator dangling off the blank entry.
+ *
+ * A GENERATOR rather than an array so `joinWithCap` can stop reading as soon as
+ * its cap is reached. Materialising `Object.entries(...).map(...)` up front
+ * would rebuild the very allocation pattern the cap exists to prevent (B032):
+ * a hostile body with thousands of field errors would be fully expanded into
+ * `field: message` strings before a single byte was capped.
+ */
+function* jiraErrorParts(body: Record<string, unknown>): Generator<string> {
+  if (Array.isArray(body.errorMessages)) {
+    for (const message of body.errorMessages) {
+      if (typeof message === 'string' && message.trim() !== '') yield message;
+    }
+  }
+  if (isPlainObject(body.errors)) {
+    // `Object.keys`, not `Object.entries`: entries reads EVERY value and builds a
+    // pair array up front, so the generator would already have touched the whole
+    // hostile map before yielding its first item — defeating the laziness the
+    // cap depends on. Keys are enumerated (unavoidable), but each value is read
+    // and formatted only when the consumer actually pulls it.
+    const errors = body.errors;
+    for (const field of Object.keys(errors)) {
+      const value = errors[field];
+      if (typeof value === 'string' && value.trim() !== '') yield `${field}: ${value}`;
+    }
+  }
+}
+
+/**
  * Join string entries with `'; '` while enforcing a running length cap, so a
  * hostile response with thousands of `errorMessages` cannot allocate a
  * multi-megabyte intermediate before truncation (PR-review hardening of B032).
  * The returned `truncated` flag drives the outer `extractErrorMessage`
  * ellipsis so callers can still see at a glance that content was elided.
  *
- * Non-string AND blank (whitespace-only) entries are filtered. Returns
- * `undefined` when no non-blank strings remain.
+ * Accepts an iterable so a generator can feed it lazily — the loop breaks as
+ * soon as the cap is hit, so entries beyond it are never even produced.
+ *
+ * Entries are already narrowed to strings by {@link jiraErrorParts}, which is
+ * where non-string values in a hostile body are dropped. Returns `undefined`
+ * when the iterable yields nothing.
  */
-function joinWithCap(messages: readonly unknown[]): CappedString | undefined {
-  let out = '';
-  let first = true;
+function joinWithCap(messages: Iterable<string>): CappedString | undefined {
+  // Pull with an explicit iterator so the cap can PREEMPT the next `next()`
+  // call. A `for..of` with the cap check at the top of the body reacts one
+  // iteration late: the value beyond the cap has already been produced (and,
+  // for `jiraErrorParts`, its `field: message` string already built) before the
+  // break fires. Bounded and small, but it contradicts this function's own
+  // promise that entries past the cap are never produced.
+  const iterator = messages[Symbol.iterator]();
+  const head = iterator.next();
+  if (head.done === true) return undefined;
+
   let truncated = false;
-  for (const m of messages) {
-    // Skip non-strings AND blank entries. A mixed array like `['', 'Real error']`
-    // would otherwise assemble as "; Real error" — a leading separator dangling
-    // off the blank entry — so filtering here keeps the joined value clean
-    // instead of only catching the all-blank case downstream.
-    if (typeof m !== 'string' || m.trim() === '') continue;
-    if (first) {
-      if (m.length > MAX_ERROR_MESSAGE_LENGTH) {
-        out = m.slice(0, MAX_ERROR_MESSAGE_LENGTH);
-        truncated = true;
-      } else {
-        out = m;
-      }
-      first = false;
+  let out: string;
+  if (head.value.length > MAX_ERROR_MESSAGE_LENGTH) {
+    out = head.value.slice(0, MAX_ERROR_MESSAGE_LENGTH);
+    truncated = true;
+  } else {
+    out = head.value;
+  }
+
+  while (out.length < MAX_ERROR_MESSAGE_LENGTH) {
+    const next = iterator.next();
+    if (next.done === true) break;
+
+    const remaining = MAX_ERROR_MESSAGE_LENGTH - out.length;
+    const chunk = SEPARATOR + next.value;
+    if (chunk.length > remaining) {
+      out += chunk.slice(0, remaining);
+      truncated = true;
     } else {
-      // Stop once the running total would exceed the cap. When the assembled
-      // value is already full, subsequent messages are silently dropped but the
-      // value itself is complete — do not set `truncated` (#205).
-      if (out.length >= MAX_ERROR_MESSAGE_LENGTH) {
-        break;
-      }
-      const remaining = MAX_ERROR_MESSAGE_LENGTH - out.length;
-      const chunk = SEPARATOR + m;
-      if (chunk.length > remaining) {
-        out += chunk.slice(0, remaining);
-        truncated = true;
-      } else {
-        out += chunk;
-      }
+      out += chunk;
     }
   }
-  if (first) return undefined;
+
   // `truncated` is true only when content characters were removed from the
-  // assembled value; dropping later messages leaves the value complete and
-  // must not trigger the ellipsis slice in extractErrorMessage (#205).
+  // assembled value; stopping early leaves the value itself complete and must
+  // not trigger the ellipsis slice in extractErrorMessage (#205).
   return { value: out, truncated };
 }
 
