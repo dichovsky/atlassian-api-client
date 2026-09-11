@@ -6,6 +6,7 @@ import {
   verifyConnectAsymmetricJwt,
 } from '../../src/core/connect-jwt.js';
 import type { RequestOptions, ApiResponse } from '../../src/core/types.js';
+import { buildUrl } from '../../src/core/request.js';
 import {
   createHash,
   createHmac,
@@ -776,6 +777,50 @@ describe('verifyConnectAsymmetricJwt', () => {
       expect(message).not.toContain(publicKeyPem);
       expect(message).not.toContain('BEGIN');
     }
+  });
+});
+
+describe('computeQsh query-map precedence (matches the wire)', () => {
+  /**
+   * Recompute the qsh the SERVER would, from the URL actually sent. Feeding the
+   * whole wire URL back through `computeQsh` is both simpler and more faithful
+   * than rebuilding a query map — a plain object would collapse repeated params.
+   */
+  function qshFromWireUrl(method: 'GET', wireUrl: string): string {
+    return computeQsh(method, wireUrl);
+  }
+
+  it('signs what buildUrl actually puts on the wire when a key appears in both', () => {
+    const basePath = 'https://test.atlassian.net/rest/api/3/search?id=a';
+    const query = { id: 'b' };
+
+    const signed = computeQsh('GET', basePath, query);
+    const wire = buildUrl('https://test.atlassian.net', basePath, query, ['test.atlassian.net']);
+
+    // buildUrl uses URLSearchParams.set → the wire carries `?id=b` only.
+    expect(wire).toBe('https://test.atlassian.net/rest/api/3/search?id=b');
+    expect(signed).toBe(qshFromWireUrl('GET', wire));
+  });
+
+  it('excludes a `jwt` param supplied through the query map', () => {
+    // Atlassian puts the token in `?jwt=…` for inbound GETs, so a verifier
+    // passing the parsed request query would otherwise hash the token itself.
+    const withJwt = computeQsh('GET', 'https://test.atlassian.net/rest/api/3/x', {
+      jwt: 'eyJhbGciOiJIUzI1NiJ9.payload.sig',
+      id: 'a',
+    });
+    const withoutJwt = computeQsh('GET', 'https://test.atlassian.net/rest/api/3/x', { id: 'a' });
+
+    expect(withJwt).toBe(withoutJwt);
+  });
+
+  it('keeps path-baked repeated params when the query map does not collide', () => {
+    const basePath = 'https://test.atlassian.net/rest/api/3/search?id=a&id=b';
+    const expected = createHash('sha256')
+      .update('GET&/rest/api/3/search&id=a,b&maxResults=5')
+      .digest('hex');
+
+    expect(computeQsh('GET', basePath, { maxResults: 5 })).toBe(expected);
   });
 });
 

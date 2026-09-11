@@ -101,13 +101,17 @@ export function computeQsh(
     contextPath,
   );
 
-  // Collect ALL request query parameters into key → values. The Connect QSH
-  // spec canonicalizes every query parameter of the request, so two sources
-  // must be merged: (1) params baked into the path's query string — notably
-  // REPEATED array params built by `appendRepeatedParams` (B1037), which the
-  // single-value `query` map cannot represent — and (2) the structured `query`
-  // map. Excluding the path-baked params produced a qsh the server cannot
-  // reproduce → JWT rejected (401).
+  // Collect ALL request query parameters into key → values, from two sources:
+  // (1) params baked into the path's query string — notably REPEATED array
+  // params built by `appendRepeatedParams` (B1037), which the single-value
+  // `query` map cannot represent — and (2) the structured `query` map.
+  // Excluding the path-baked params produced a qsh the server cannot reproduce
+  // → JWT rejected (401).
+  //
+  // The two sources COMBINE across distinct keys but do NOT merge on a shared
+  // key: `buildUrl` applies the map with `URLSearchParams.set`, so for a key
+  // present in both, the map's value REPLACES the path's on the wire. See the
+  // set-vs-add distinction below.
   const params = new Map<string, string[]>();
   const add = (key: string, value: string): void => {
     const existing = params.get(key);
@@ -124,8 +128,20 @@ export function computeQsh(
   }
   if (query) {
     for (const key of Object.keys(query)) {
+      // The `jwt` param is never part of its own QSH — the same rule the
+      // path-baked loop above applies. It matters here because Atlassian puts
+      // the token in `?jwt=…` for inbound GET requests that cannot carry an
+      // Authorization header, so a caller verifying such a request naturally
+      // passes the parsed query (e.g. Express `req.query`) straight in.
+      if (key === 'jwt') continue;
       const value = query[key];
-      if (value !== undefined) add(key, String(value));
+      // REPLACE, don't accumulate. `buildUrl` applies the query map with
+      // `URLSearchParams.set`, which overwrites any same-named parameter
+      // already baked into the path — so the wire carries only the map's
+      // value. Merging both here signed `id=a,b` for a request that actually
+      // sent `id=b`; the server recomputes the hash from what it received and
+      // rejects the JWT with a 401 that points nowhere near the query map.
+      if (value !== undefined) params.set(key, [String(value)]);
     }
   }
 
