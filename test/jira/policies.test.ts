@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { PoliciesResource } from '../../src/jira/resources/policies.js';
 import { MockTransport } from '../helpers/mock-transport.js';
-import { ValidationError } from '../../src/core/errors.js';
+import { HttpError, ValidationError } from '../../src/core/errors.js';
 
 const BASE_URL = 'https://test.atlassian.net/rest/api/3';
 
@@ -116,12 +116,13 @@ describe('PoliciesResource', () => {
       expect(transport.lastCall?.options.body).toEqual({ policyIds: [] });
     });
 
-    it('propagates a 409 violation error from the transport', async () => {
-      transport.respondWithError(new Error('conflict'));
+    it('surfaces a 409 as an HttpError whose responseBody carries the violations', async () => {
+      const violations = [{ ruleTypeId: 'rt-a' }];
+      transport.respondWithError(new HttpError('conflict', 409, violations));
 
-      await expect(policies.setProjectPolicies('PROJ', { policyIds: ['p-1'] })).rejects.toThrow(
-        'conflict',
-      );
+      await expect(
+        policies.setProjectPolicies('PROJ', { policyIds: ['p-1'] }),
+      ).rejects.toMatchObject({ status: 409, responseBody: violations });
     });
   });
 

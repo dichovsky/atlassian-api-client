@@ -69,11 +69,23 @@ function filterQuery(filter: DatabaseEntryFilter): Query {
         `filter field ID must be non-empty and must not contain "[" or "]", got: "${fieldId}"`,
       );
     }
-    if (typeof condition === 'object' && condition !== null) {
-      for (const [operator, value] of Object.entries(condition)) {
+    if (typeof condition === 'object' && condition !== null && !Array.isArray(condition)) {
+      const range = Object.entries(condition);
+      // An empty range would add no key and silently widen the query to every row.
+      if (range.length === 0) {
+        throw new ValidationError(
+          `filter range for "${fieldId}" must set at least one of gte, lte, gt, lt`,
+        );
+      }
+      for (const [operator, value] of range) {
         if (!FILTER_RANGE_OPERATORS.has(operator)) {
           throw new ValidationError(
             `filter range operator must be one of gte, lte, gt, lt, got: "${operator}"`,
+          );
+        }
+        if (typeof value !== 'string' && typeof value !== 'number') {
+          throw new ValidationError(
+            `filter range value for "${fieldId}" ${operator} must be a string or number`,
           );
         }
         query[`filter[${fieldId}][${operator}]`] = value;

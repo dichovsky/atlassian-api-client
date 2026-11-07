@@ -77,6 +77,15 @@ describe('AgentsResource', () => {
       expect(transport.calls).toHaveLength(0);
     });
 
+    it('throws ValidationError, not TypeError, when invocations is missing (untyped input)', async () => {
+      await expect(
+        agents.startBatch({ clientMutationId: MUTATION_ID } as unknown as Parameters<
+          typeof agents.startBatch
+        >[0]),
+      ).rejects.toThrow(ValidationError);
+      expect(transport.calls).toHaveLength(0);
+    });
+
     it('propagates transport errors', async () => {
       transport.respondWithError(new Error('rate limited'));
 
@@ -123,6 +132,16 @@ describe('AgentsResource', () => {
 
       await expect(
         agents.startUniform({ agentId: AGENT_ID, clientMutationId: MUTATION_ID, issueIds }),
+      ).rejects.toThrow(ValidationError);
+      expect(transport.calls).toHaveLength(0);
+    });
+
+    it('throws ValidationError, not TypeError, when issueIds is missing (untyped input)', async () => {
+      await expect(
+        agents.startUniform({
+          agentId: AGENT_ID,
+          clientMutationId: MUTATION_ID,
+        } as unknown as Parameters<typeof agents.startUniform>[0]),
       ).rejects.toThrow(ValidationError);
       expect(transport.calls).toHaveLength(0);
     });

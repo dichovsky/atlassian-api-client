@@ -780,6 +780,27 @@ describe('DatabasesResource data endpoints', () => {
       ).rejects.toThrow('must be a string, number, boolean, or range object');
       expect(transport.calls).toHaveLength(0);
     });
+
+    it('rejects an array condition as non-scalar instead of reading indices as operators', async () => {
+      await expect(
+        resource.listEntries('42', { filter: { fld1: ['a', 'b'] as unknown as string } }),
+      ).rejects.toThrow('must be a string, number, boolean, or range object');
+      expect(transport.calls).toHaveLength(0);
+    });
+
+    it('rejects an empty range object instead of silently dropping the filter', async () => {
+      await expect(resource.listEntries('42', { filter: { due: {} } })).rejects.toThrow(
+        'must set at least one of gte, lte, gt, lt',
+      );
+      expect(transport.calls).toHaveLength(0);
+    });
+
+    it.each([null, {}, true])('rejects the non-scalar range value %j', async (value) => {
+      await expect(
+        resource.listEntries('42', { filter: { due: { gte: value as unknown as string } } }),
+      ).rejects.toThrow('range value for "due" gte must be a string or number');
+      expect(transport.calls).toHaveLength(0);
+    });
   });
 
   describe.each([

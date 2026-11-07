@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "4.1.0"
   },
-  "sourceHash": "3cd5d7af933176e43a93e263c71049fda98b7ac0eea8208fbae35dff785ce181",
+  "sourceHash": "a75e18f4ec1a813f9dbd729e55db310ae4e8212388d5f4ab67b09de68adb9735",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -9277,21 +9277,21 @@
         {
           "name": "databasePageQuery",
           "kind": "function",
-          "line": 97,
+          "line": 109,
           "signature": "function databasePageQuery(params?: ListDatabaseEntriesParams): Query",
           "jsdoc": "Query shared by the database list endpoints; validates `limit` before any request."
         },
         {
           "name": "ifNoneMatchHeaders",
           "kind": "function",
-          "line": 108,
+          "line": 120,
           "signature": "function ifNoneMatchHeaders( params?: DatabaseConditionalParams, ): Readonly<Record<string, string>> | undefined",
           "jsdoc": "The `If-None-Match` request header, or `undefined` when the caller did not set it."
         },
         {
           "name": "DatabasesResource",
           "kind": "class",
-          "line": 132,
+          "line": 144,
           "exported": true,
           "signature": "export class DatabasesResource",
           "jsdoc": "Resource for Confluence v2 databases.",
@@ -9299,167 +9299,167 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 133
+              "line": 145
             },
             {
               "name": "create",
               "kind": "method",
-              "line": 148
+              "line": 160
             },
             {
               "name": "get",
               "kind": "method",
-              "line": 162
+              "line": 174
             },
             {
               "name": "delete",
               "kind": "method",
-              "line": 193
+              "line": 205
             },
             {
               "name": "listAncestors",
               "kind": "method",
-              "line": 210
+              "line": 222
             },
             {
               "name": "listDescendants",
               "kind": "method",
-              "line": 227
+              "line": 239
             },
             {
               "name": "listDescendantsAll",
               "kind": "method",
-              "line": 246
+              "line": 258
             },
             {
               "name": "listDirectChildren",
               "kind": "method",
-              "line": 262
+              "line": 274
             },
             {
               "name": "listDirectChildrenAll",
               "kind": "method",
-              "line": 281
+              "line": 293
             },
             {
               "name": "listFields",
               "kind": "method",
-              "line": 308
+              "line": 320
             },
             {
               "name": "listFieldsAll",
               "kind": "method",
-              "line": 322
+              "line": 334
             },
             {
               "name": "listViews",
               "kind": "method",
-              "line": 337
+              "line": 349
             },
             {
               "name": "listViewsAll",
               "kind": "method",
-              "line": 348
+              "line": 360
             },
             {
               "name": "listEntries",
               "kind": "method",
-              "line": 366
+              "line": 378
             },
             {
               "name": "listEntriesAll",
               "kind": "method",
-              "line": 384
+              "line": 396
             },
             {
               "name": "getEntry",
               "kind": "method",
-              "line": 396
+              "line": 408
             },
             {
               "name": "getOperations",
               "kind": "method",
-              "line": 412
+              "line": 424
             },
             {
               "name": "getClassificationLevel",
               "kind": "method",
-              "line": 423
+              "line": 435
             },
             {
               "name": "updateClassificationLevel",
               "kind": "method",
-              "line": 437
+              "line": 449
             },
             {
               "name": "resetClassificationLevel",
               "kind": "method",
-              "line": 453
+              "line": 465
             },
             {
               "name": "listProperties",
               "kind": "method",
-              "line": 467
+              "line": 479
             },
             {
               "name": "listPropertiesAll",
               "kind": "method",
-              "line": 487
+              "line": 499
             },
             {
               "name": "createProperty",
               "kind": "method",
-              "line": 504
+              "line": 516
             },
             {
               "name": "getProperty",
               "kind": "method",
-              "line": 514
+              "line": 526
             },
             {
               "name": "updateProperty",
               "kind": "method",
-              "line": 529
+              "line": 541
             },
             {
               "name": "deleteProperty",
               "kind": "method",
-              "line": 543
+              "line": 555
             },
             {
               "name": "getRestrictionState",
               "kind": "method",
-              "line": 556
+              "line": 568
             },
             {
               "name": "setRestrictionState",
               "kind": "method",
-              "line": 570
+              "line": 582
             },
             {
               "name": "listPermissions",
               "kind": "method",
-              "line": 588
+              "line": 600
             },
             {
               "name": "listPermissionsAll",
               "kind": "method",
-              "line": 603
+              "line": 615
             },
             {
               "name": "addPermissions",
               "kind": "method",
-              "line": 619
+              "line": 631
             },
             {
               "name": "setPermissions",
               "kind": "method",
-              "line": 637
+              "line": 649
             },
             {
               "name": "deletePermissions",
               "kind": "method",
-              "line": 658
+              "line": 670
             }
           ]
         }
@@ -25069,7 +25069,7 @@
             {
               "name": "startUniform",
               "kind": "method",
-              "line": 130
+              "line": 131
             }
           ]
         }

@@ -111,7 +111,8 @@ export class AgentsResource {
    * @experimental Atlassian marks this operation as experimental.
    */
   async startBatch(data: StartAgentSessionsBatchData): Promise<BulkAgentSessionsResponse> {
-    assertItemCount(data.invocations.length, 'invocations');
+    // `?.` because CLI `--body` JSON and JS callers reach here unchecked.
+    assertItemCount(data.invocations?.length ?? 0, 'invocations');
     const response = await this.transport.request<BulkAgentSessionsResponse>({
       method: 'POST',
       path: `${this.baseUrl}/agents/bulk/invoke/batch`,
@@ -128,7 +129,7 @@ export class AgentsResource {
    * @experimental Atlassian marks this operation as experimental.
    */
   async startUniform(data: StartAgentSessionsUniformData): Promise<BulkAgentSessionsResponse> {
-    assertItemCount(data.issueIds.length, 'issueIds');
+    assertItemCount(data.issueIds?.length ?? 0, 'issueIds');
     const response = await this.transport.request<BulkAgentSessionsResponse>({
       method: 'POST',
       path: `${this.baseUrl}/agents/bulk/invoke/uniform`,
