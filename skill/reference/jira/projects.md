@@ -112,7 +112,7 @@ atlas jira component related-issue-counts 10000
 - `delete-role-actors` removes actors by `--user` (accountId), `--group-id`, or `--group` (name).
 - `set-email` updates the project email address; `--email-address` is optional (omit to clear).
 - `archive` and `restore` move a project into/out of archived state.
-- `load-avatar` accepts `--value` as the JSON request body for the avatar upload. `--x`, `--y` (top-left corner) and `--size` (side length) set the square crop region as non-negative integer query params; each defaults to 0 on the server.
+- `load-avatar` **cannot upload an image today.** Jira's `POST /project/{projectIdOrKey}/avatar2` needs the raw image bytes (JPEG, GIF or PNG) with `Content-Type: image/<type>` and `X-Atlassian-Token: no-check`. The CLI sends `--value` parsed as JSON, without that header, so Jira rejects it. Upload a project avatar with `curl --data-binary` as in the Jira docs, then select it with `set-avatar --avatar-id`. (`issuetype load-avatar --file` does upload real image bytes.) `--x`, `--y` (top-left corner) and `--size` (side length) are the square crop region, sent as non-negative integer query params; with none of them, Jira crops from the top-left corner to the shorter image side.
 - `set-classification-level` requires `--classification-id`; omit to clear the level.
 - `list-components` is paginated; `list-all-components` returns all components as a flat array.
 - `delete-async` triggers async project deletion (202 Accepted); poll the returned task URL for completion.
