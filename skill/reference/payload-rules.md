@@ -20,7 +20,7 @@
 
 - Truncate long text in summaries; keep source ID for retrieval.
 - Avoid repeating unchanged context between steps.
-- OpenAPI specs are implementation references, not CLI output formats. The pinned Jira snapshot in this package is JSON (`spec/jira-platform-v3.json`). CLI flags use JSON values where structured input is needed (e.g. `--fields '{"description":...}'`).
+- OpenAPI specs are implementation references, not CLI output formats. The pinned Jira snapshot in this package is JSON (`spec/jira-platform-v3.json`). CLI flags use JSON values where structured input is needed (e.g. `--body '{"fields":{"description":...}}'` on `atlas jira issues update`).
 
 ## First-try gotchas (read before constructing a command)
 
@@ -32,16 +32,17 @@ Confluence uses optimistic concurrency. Always pass `--version-number N+1` where
 
 Pass `--body` as raw content (Confluence storage format / plain text / markdown). Do NOT pre-wrap it in `{"storage":{"value":...}}` — the CLI wraps it for you. Double-encoding produces payloads that render as literal text.
 
-### Jira: `issues update` only supports `--summary`
+### Jira: `issues update|create|transition` — other fields go in `--body`
 
-For `atlas jira issues update`, only `--summary` is a top-level flag. All other fields (description, assignee, custom fields) must go through `--fields` JSON:
+The only per-field flags are `--summary` (`create`, `update`), `--project`/`--type`/`--parent` (`create`) and `--resolution` (`transition`). Everything else — description (ADF), assignee, labels, custom fields, `update` operations — goes in `--body` as a JSON object in Jira's `IssueUpdateDetails` shape. `--fields` is NOT a body flag (it is the comma-separated field filter for `issues get`):
 
 ```sh
 atlas jira issues update PROJ-123 --summary "New title"
-atlas jira issues update PROJ-123 --fields '{"description":{"type":"doc","version":1,"content":[]}}'
+atlas jira issues update PROJ-123 --body '{"fields":{"description":{"type":"doc","version":1,"content":[]},"assignee":{"accountId":"5b10..."}}}'
+atlas jira issues transition PROJ-123 --transition-id 31 --resolution Done
 ```
 
-Attempting `--description` or `--assignee` as direct flags will fail; use the TypeScript SDK instead for complex updates.
+There is no `--description` or `--assignee` flag for these actions — `--assignee` fails with `Unknown option` and `--description` is silently ignored, so always put those fields in `--body`. Discrete flags override the same keys inside `--body`.
 
 ### JQL: always single-quote for the shell
 
@@ -59,6 +60,5 @@ Inner double-quotes inside JQL do not need escaping when wrapped in single quote
 Use TypeScript SDK (`import { ConfluenceClient, JiraClient } from 'atlassian-api-client'`) for:
 
 - bulk orchestration across many resources (avoid hundreds of CLI subprocesses),
-- unsupported CLI update fields (description, assignee, custom fields, ADF body authoring),
 - custom transport (proxy, mTLS, logging) or middleware composition,
 - programmatic pagination: `paginateCursor` (Confluence cursor), `paginateOffset` (Jira offset), `paginateSearch` (Jira search-API).

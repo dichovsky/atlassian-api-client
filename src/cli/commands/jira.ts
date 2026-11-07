@@ -272,33 +272,64 @@ async function executeIssues(client: JiraClient, cmd: ParsedCommand): Promise<un
         fields: csvFlag(opts['fields']),
         expand: asString(opts['expand']),
       });
-    case 'create':
+    case 'create': {
+      const { body, fields } = issueWriteBody(opts['body']);
+      const parent = asString(opts['parent']);
       return client.issues.create({
+        ...body,
         fields: {
+          ...fields,
           project: { key: requireOpt(opts['project'], '--project') },
           issuetype: { name: requireOpt(opts['type'], '--type') },
           summary: requireOpt(opts['summary'], '--summary'),
+          ...(parent !== undefined && { parent: { key: parent } }),
         },
       });
+    }
     case 'update': {
-      const fields: Record<string, unknown> = {};
+      const issueKey = requireArg(cmd.positionalArgs[0], 'issue key');
+      const { body, fields } = issueWriteBody(opts['body']);
       const summary = asString(opts['summary']);
-      if (summary) {
-        fields['summary'] = summary;
+      const merged = summary ? { ...fields, summary } : fields;
+      const data = { ...body, ...(Object.keys(merged).length > 0 && { fields: merged }) };
+      if (Object.keys(data).length === 0) {
+        throw new Error('issues update: nothing to update — pass --summary or --body');
       }
-      await client.issues.update(requireArg(cmd.positionalArgs[0], 'issue key'), { fields });
+      await client.issues.update(issueKey, data);
       return { updated: true };
     }
-    case 'delete':
-      await client.issues.delete(requireArg(cmd.positionalArgs[0], 'issue key'));
+    case 'delete': {
+      const issueKey = requireArg(cmd.positionalArgs[0], 'issue key');
+      // Jira returns 400 for an issue with subtasks unless deleteSubtasks=true.
+      if (opts['delete-subtasks'] === true) {
+        await client.issues.delete(issueKey, { deleteSubtasks: 'true' });
+      } else {
+        await client.issues.delete(issueKey);
+      }
       return { deleted: true };
-    case 'transition':
-      await client.issues.transition(requireArg(cmd.positionalArgs[0], 'issue key'), {
+    }
+    case 'transition': {
+      const issueKey = requireArg(cmd.positionalArgs[0], 'issue key');
+      const { body, fields } = issueWriteBody(opts['body']);
+      const resolution = asString(opts['resolution']);
+      // A transition screen with Resolution on it (e.g. closing a subtask)
+      // rejects the transition unless fields.resolution is sent.
+      const merged =
+        resolution !== undefined ? { ...fields, resolution: { name: resolution } } : fields;
+      await client.issues.transition(issueKey, {
+        ...body,
         transition: { id: requireOpt(opts['transition-id'], '--transition-id') },
+        ...(Object.keys(merged).length > 0 && { fields: merged }),
       });
       return { transitioned: true };
-    case 'transitions':
-      return client.issues.getTransitions(requireArg(cmd.positionalArgs[0], 'issue key'));
+    }
+    case 'transitions': {
+      const issueKey = requireArg(cmd.positionalArgs[0], 'issue key');
+      const expand = asString(opts['expand']);
+      return expand !== undefined
+        ? client.issues.getTransitions(issueKey, { expand })
+        : client.issues.getTransitions(issueKey);
+    }
     case 'get-agile':
       return client.issues.getAgile(requireArg(cmd.positionalArgs[0], 'issue key'));
     case 'get-estimation': {
@@ -1189,11 +1220,19 @@ async function executeUsers(client: JiraClient, cmd: ParsedCommand): Promise<unk
       await client.users.deleteUser(requireOpt(opts['account-id'], '--account-id'));
       return { deleted: true };
     }
-    case 'create':
+    case 'create': {
+      const emailAddress = requireOpt(opts['email'], '--email');
+      // `products` is spec-required; `--products ""` sends [] (no product access).
+      const products = opts['products'];
+      if (typeof products !== 'string') {
+        throw new Error('Missing required option: --products');
+      }
       return client.users.createUser({
-        emailAddress: requireOpt(opts['email'], '--email'),
+        emailAddress,
         displayName: asString(opts['display-name']),
+        products: splitCsvIds(products),
       });
+    }
     case 'assignable-multi-project': {
       const projectKeysRaw = asString(opts['project-keys']);
       return client.users.assignableMultiProjectSearch({
@@ -3371,6 +3410,27 @@ function parseJsonObjectFlag(raw: string, flag: string): Record<string, unknown>
     throw new Error(`${flag} must be a JSON object (not array/null/primitive)`);
   }
   return parsed as Record<string, unknown>;
+}
+
+/**
+ * Parse the optional `--body` JSON object (`IssueUpdateDetails`) accepted by
+ * `issues create|update|transition`. Discrete flags (`--summary`,
+ * `--resolution`, `--transition-id`, ...) are merged over it by the caller,
+ * so its `fields` object is returned separately for that merge.
+ */
+function issueWriteBody(raw: string | boolean | undefined): {
+  body: Record<string, unknown>;
+  fields: Record<string, unknown>;
+} {
+  const s = asString(raw);
+  if (s === undefined) return { body: {}, fields: {} };
+  const body = parseJsonObjectFlag(s, '--body');
+  const fields = body['fields'];
+  if (fields === undefined) return { body, fields: {} };
+  if (fields === null || typeof fields !== 'object' || Array.isArray(fields)) {
+    throw new Error('--body "fields" must be a JSON object');
+  }
+  return { body, fields: fields as Record<string, unknown> };
 }
 
 function parseJsonArrayFlag(raw: string, flag: string): unknown[] {

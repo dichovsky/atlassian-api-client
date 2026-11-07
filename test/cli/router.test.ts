@@ -206,6 +206,95 @@ describe('parseCommand', () => {
     expect(result.options['recent']).toBe('20');
   });
 
+  it('parses the issue write-body flags (--resolution, --parent, --delete-subtasks, --products)', () => {
+    const transition = parseCommand([
+      'node',
+      'atlas',
+      'jira',
+      'issues',
+      'transition',
+      'SUB-1',
+      '--transition-id',
+      '31',
+      '--resolution',
+      'Done',
+      '--body',
+      '{"update":{}}',
+    ]);
+    expect(transition.options['resolution']).toBe('Done');
+    expect(transition.options['body']).toBe('{"update":{}}');
+
+    const create = parseCommand([
+      'node',
+      'atlas',
+      'jira',
+      'issues',
+      'create',
+      '--project',
+      'P',
+      '--type',
+      'Sub-task',
+      '--summary',
+      'S',
+      '--parent',
+      'P-1',
+    ]);
+    expect(create.options['parent']).toBe('P-1');
+
+    const del = parseCommand([
+      'node',
+      'atlas',
+      'jira',
+      'issues',
+      'delete',
+      'P-1',
+      '--delete-subtasks',
+    ]);
+    expect(del.options['delete-subtasks']).toBe(true);
+
+    const user = parseCommand([
+      'node',
+      'atlas',
+      'jira',
+      'users',
+      'create',
+      '--email',
+      'a@b.c',
+      '--products',
+      'jira-software',
+    ]);
+    expect(user.options['products']).toBe('jira-software');
+  });
+
+  it('parses the Confluence inline-comment and draft-delete flags', () => {
+    const comment = parseCommand([
+      'node',
+      'atlas',
+      'confluence',
+      'comments',
+      'create',
+      '--comment-type',
+      'inline',
+      '--body',
+      'x',
+      '--parent-comment-id',
+      'c-1',
+      '--text-selection',
+      'hello',
+      '--text-selection-match-count',
+      '2',
+      '--text-selection-match-index',
+      '0',
+    ]);
+    expect(comment.options['parent-comment-id']).toBe('c-1');
+    expect(comment.options['text-selection']).toBe('hello');
+    expect(comment.options['text-selection-match-count']).toBe('2');
+    expect(comment.options['text-selection-match-index']).toBe('0');
+
+    const del = parseCommand(['node', 'atlas', 'confluence', 'pages', 'delete', '100', '--draft']);
+    expect(del.options['draft']).toBe(true);
+  });
+
   it('parses the Jira-only --software-cloud-id global option', () => {
     const result = parseCommand([
       'node',

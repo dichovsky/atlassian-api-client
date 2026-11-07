@@ -6,20 +6,24 @@
 
 ### Standard (v3 API)
 
-| Action        | Positional   | Required flags                     | Optional flags         |
-| ------------- | ------------ | ---------------------------------- | ---------------------- |
-| `get`         | `<issueKey>` | —                                  | `--fields`, `--expand` |
-| `create`      | —            | `--project`, `--type`, `--summary` | —                      |
-| `update`      | `<issueKey>` | —                                  | `--summary`            |
-| `delete`      | `<issueKey>` | —                                  | —                      |
-| `transitions` | `<issueKey>` | —                                  | —                      |
-| `transition`  | `<issueKey>` | `--transition-id`                  | —                      |
+| Action        | Positional   | Required flags                     | Optional flags           |
+| ------------- | ------------ | ---------------------------------- | ------------------------ |
+| `get`         | `<issueKey>` | —                                  | `--fields`, `--expand`   |
+| `create`      | —            | `--project`, `--type`, `--summary` | `--parent`, `--body`     |
+| `update`      | `<issueKey>` | one of `--summary` or `--body`     | —                        |
+| `delete`      | `<issueKey>` | —                                  | `--delete-subtasks`      |
+| `transitions` | `<issueKey>` | —                                  | `--expand`               |
+| `transition`  | `<issueKey>` | `--transition-id`                  | `--resolution`, `--body` |
 
 - `--fields` and `--expand` are **comma-separated**, single flag. Example: `--fields summary,status,assignee --expand changelog,renderedFields`.
 - `--project` takes the project key (e.g. `PROJ`), not the numeric ID.
-- `--type` takes the issue type name (e.g. `Bug`, `Story`, `Task`). Names are case-sensitive and tenant-specific; list with `atlas jira issue-types list`.
-- `update` via the CLI is intentionally narrow — only `--summary` is wired. Use the SDK for description, assignee, custom fields, ADF body content.
-- Transition workflow: call `transitions` to list valid transitions for an issue's current status, then `transition` with the chosen `--transition-id`.
+- `--type` takes the issue type name (e.g. `Bug`, `Story`, `Task`, `Sub-task`). Names are case-sensitive and tenant-specific; list with `atlas jira issue-types list`.
+- `--parent <issueKey>` sets `fields.parent` — required to create a sub-task.
+- `--body` (`create`, `update`, `transition`) is a JSON object in Jira's `IssueUpdateDetails` shape: `{"fields":{...},"update":{...},"properties":[...],"historyMetadata":{...}}`. Use it for description (ADF), assignee, labels, components, custom fields, or any field a create/edit/transition screen requires. Discrete flags (`--summary`, `--project`, `--type`, `--parent`, `--resolution`, `--transition-id`) override the same keys in `--body`.
+- `update` with neither `--summary` nor `--body` is rejected (it would be a no-op). List editable fields with `get-editmeta`.
+- `delete` fails with 400 for an issue that has sub-tasks unless `--delete-subtasks` is passed (deletes them too).
+- Transition workflow: call `transitions <key> --expand transitions.fields` to list valid transitions and the fields each transition screen requires (`required: true`, with `allowedValues`), then `transition` with the chosen `--transition-id` and those fields.
+- `--resolution <name>` sets `fields.resolution` (`{"name":"Done"}`). A transition whose screen shows Resolution — typically closing an issue or sub-task — fails without it. Resolution names are tenant-specific; list with `atlas jira resolutions list`. To pass it by ID, use `--body '{"fields":{"resolution":{"id":"10000"}}}'`.
 
 ### Assignee (B478)
 

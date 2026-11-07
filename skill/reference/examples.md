@@ -15,6 +15,12 @@ atlas jira search --jql "project = PROJ AND status = Open" --max-results 25
 atlas jira issues transitions PROJ-123
 atlas jira issues transition PROJ-123 --transition-id 31
 
+# Jira — sub-tasks: create under a parent, then close (the Done screen requires a resolution)
+atlas jira issues create --project PROJ --type Sub-task --summary "Write tests" --parent PROJ-123
+atlas jira issues transitions PROJ-124 --expand transitions.fields
+atlas jira issues transition PROJ-124 --transition-id 31 --resolution Done
+atlas jira issues update PROJ-124 --body '{"fields":{"labels":["qa"]}}'
+
 # Jira — add a comment to an issue (ADF body)
 atlas jira issue-comments create PROJ-123 --body '{"body":{"type":"doc","version":1,"content":[{"type":"paragraph","content":[{"type":"text","text":"Looking into this."}]}]}}'
 

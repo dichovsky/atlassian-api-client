@@ -2,6 +2,27 @@
 
 ## [Unreleased](https://github.com/dichovsky/atlassian-api-client/compare/v4.1.0...HEAD)
 
+### Added
+
+- `CreateUserData.products` — the spec-required product-access list for `users.createUser()`. It is optional in the type only to avoid a breaking change; Jira rejects a create without it.
+
+### Fixed
+
+CLI write actions that could not send a value Jira requires:
+
+- **`atlas jira issues transition` can now close issues and sub-tasks.** New `--resolution <name>` sets `fields.resolution`, and `--body` accepts the full `IssueUpdateDetails` JSON (`fields`, `update`, ...) for any field a transition screen requires. Previously only the transition ID was sent, so a transition with Resolution on its screen always failed. `issues transitions --expand transitions.fields` now shows which fields each transition requires.
+- **`atlas jira issues create`** gains `--parent` (needed to create a sub-task) and `--body` for any other field.
+- **`atlas jira issues update`** gains `--body` for any field or `update` operation, not just `--summary`. Running it with neither flag now errors instead of sending an empty edit and reporting success.
+- **`atlas jira issues delete`** gains `--delete-subtasks`; without it Jira returns 400 for an issue with sub-tasks.
+- **`atlas jira users create`** now requires `--products` (comma-separated; `--products ""` for no product access).
+- **`atlas confluence pages delete`** gains `--draft` to delete an unpublished draft.
+- **`atlas confluence comments create`** gains `--parent-comment-id` for replies, and `--text-selection`, `--text-selection-match-count` and `--text-selection-match-index` to anchor a top-level inline comment.
+
+### Behaviour changes to verify
+
+- `atlas jira users create` without `--products` now fails before any request is sent.
+- `atlas jira issues update <key>` with neither `--summary` nor `--body` now fails instead of returning `{ "updated": true }`.
+
 ## [4.1.0](https://github.com/dichovsky/atlassian-api-client/compare/v4.0.0...v4.1.0) (2026-09-11)
 
 A correctness release for the core transport, error, auth, and retry layers. There is no runtime change outside `src/core`; no resource, client, or CLI signature changed, and no public export was removed. The one new API is additive.

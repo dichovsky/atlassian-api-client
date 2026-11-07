@@ -39,6 +39,16 @@ const GLOBAL_OPTIONS = {
   type: { type: 'string' as const },
   summary: { type: 'string' as const },
   'transition-id': { type: 'string' as const },
+  // issues transition/create/delete + users create write-body flags
+  resolution: { type: 'string' as const },
+  parent: { type: 'string' as const },
+  'delete-subtasks': { type: 'boolean' as const },
+  products: { type: 'string' as const },
+  // comments create: replies + inline-comment text anchor
+  'parent-comment-id': { type: 'string' as const },
+  'text-selection': { type: 'string' as const },
+  'text-selection-match-count': { type: 'string' as const },
+  'text-selection-match-index': { type: 'string' as const },
   query: { type: 'string' as const },
   'max-results': { type: 'string' as const },
   'start-at': { type: 'string' as const },

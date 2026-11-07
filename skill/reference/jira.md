@@ -141,4 +141,5 @@ const second = await client.search.searchJqlGet({
 - **401 with a known-good token** usually means the token is API-token (basic auth) but `ATLASSIAN_AUTH_TYPE=bearer` is set, or vice versa.
 - **403 on `issues create`** typically means the token lacks "Create Issues" permission in the target project, not a global scope problem.
 - **400 with `"errorMessages":["The value 'X' does not exist for the field 'project'."]`** — `--project` needs the project **key** (e.g. `PROJ`), not name or ID.
-- **400 with custom-field errors** — the CLI can't set custom fields. Use the SDK with `fields: { customfield_10001: ... }`.
+- **400 with custom-field errors** (e.g. a field required on the create/edit/transition screen) — pass it in `--body '{"fields":{"customfield_10001":...}}'`. Discover required fields with `issues get-create-meta-issuetype`, `issues get-editmeta`, or `issues transitions <key> --expand transitions.fields`.
+- **400 `"resolution": "Resolution is required."`** on `issues transition` — add `--resolution <name>` (list names with `atlas jira resolutions list`).
