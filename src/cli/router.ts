@@ -121,6 +121,11 @@ const GLOBAL_OPTIONS = {
   locale: { type: 'string' as const },
   // embeds-specific options
   'embed-url': { type: 'string' as const },
+  // confluence content-permissions + database options
+  operation: { type: 'string' as const },
+  'allow-self-lockout': { type: 'boolean' as const },
+  'entry-id': { type: 'string' as const },
+  'if-none-match': { type: 'string' as const },
   // boards-specific options
   'filter-id': { type: 'string' as const },
   'account-id-location': { type: 'string' as const },
