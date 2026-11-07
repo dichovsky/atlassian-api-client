@@ -13,15 +13,17 @@ CLI write actions that could not send a value Jira requires:
 - **`atlas jira issues transition` can now close issues and sub-tasks.** New `--resolution <name>` sets `fields.resolution`, and `--body` accepts the full `IssueUpdateDetails` JSON (`fields`, `update`, ...) for any field a transition screen requires. Previously only the transition ID was sent, so a transition with Resolution on its screen always failed. `issues transitions --expand transitions.fields` now shows which fields each transition requires.
 - **`atlas jira issues create`** gains `--parent` (needed to create a sub-task) and `--body` for any other field.
 - **`atlas jira issues update`** gains `--body` for any field or `update` operation, not just `--summary`. Running it with neither flag now errors instead of sending an empty edit and reporting success.
+- On `create`, `update` and `transition`, discrete flags (`--summary`, `--resolution`, ...) override the same field in `--body`. Jira rejects a field set in both `fields` and `update`, so `--body` `update` operations on a flag-set field are dropped; other operations are kept.
 - **`atlas jira issues delete`** gains `--delete-subtasks`; without it Jira returns 400 for an issue with sub-tasks.
 - **`atlas jira users create`** now requires `--products` (comma-separated; `--products ""` for no product access).
 - **`atlas confluence pages delete`** gains `--draft` to delete an unpublished draft.
-- **`atlas confluence comments create`** gains `--parent-comment-id` for replies, and `--text-selection`, `--text-selection-match-count` and `--text-selection-match-index` to anchor a top-level inline comment.
+- **`atlas confluence comments create`** gains `--parent-comment-id` for replies, and `--text-selection`, `--text-selection-match-count` and `--text-selection-match-index`, which a top-level inline comment now requires (the spec requires the text anchor in that case).
 
 ### Behaviour changes to verify
 
 - `atlas jira users create` without `--products` now fails before any request is sent.
 - `atlas jira issues update <key>` with neither `--summary` nor `--body` now fails instead of returning `{ "updated": true }`.
+- `atlas confluence comments create --comment-type inline` for a top-level comment (with `--page-id` or `--blog-post-id`) now fails before any request is sent unless all three `--text-selection*` flags are given. Replies (`--parent-comment-id`) need none.
 
 ## [4.1.0](https://github.com/dichovsky/atlassian-api-client/compare/v4.0.0...v4.1.0) (2026-09-11)
 

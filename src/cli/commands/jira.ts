@@ -273,25 +273,20 @@ async function executeIssues(client: JiraClient, cmd: ParsedCommand): Promise<un
         expand: asString(opts['expand']),
       });
     case 'create': {
-      const { body, fields } = issueWriteBody(opts['body']);
       const parent = asString(opts['parent']);
-      return client.issues.create({
-        ...body,
-        fields: {
-          ...fields,
-          project: { key: requireOpt(opts['project'], '--project') },
-          issuetype: { name: requireOpt(opts['type'], '--type') },
-          summary: requireOpt(opts['summary'], '--summary'),
-          ...(parent !== undefined && { parent: { key: parent } }),
-        },
+      const data = issueWriteBody(opts['body'], {
+        project: { key: requireOpt(opts['project'], '--project') },
+        issuetype: { name: requireOpt(opts['type'], '--type') },
+        summary: requireOpt(opts['summary'], '--summary'),
+        ...(parent !== undefined && { parent: { key: parent } }),
       });
+      // The flag fields above are required, so `fields` is always present.
+      return client.issues.create(data as { fields: Record<string, unknown> });
     }
     case 'update': {
       const issueKey = requireArg(cmd.positionalArgs[0], 'issue key');
-      const { body, fields } = issueWriteBody(opts['body']);
       const summary = asString(opts['summary']);
-      const merged = summary ? { ...fields, summary } : fields;
-      const data = { ...body, ...(Object.keys(merged).length > 0 && { fields: merged }) };
+      const data = issueWriteBody(opts['body'], summary ? { summary } : {});
       if (Object.keys(data).length === 0) {
         throw new Error('issues update: nothing to update — pass --summary or --body');
       }
@@ -310,16 +305,16 @@ async function executeIssues(client: JiraClient, cmd: ParsedCommand): Promise<un
     }
     case 'transition': {
       const issueKey = requireArg(cmd.positionalArgs[0], 'issue key');
-      const { body, fields } = issueWriteBody(opts['body']);
       const resolution = asString(opts['resolution']);
       // A transition screen with Resolution on it (e.g. closing a subtask)
       // rejects the transition unless fields.resolution is sent.
-      const merged =
-        resolution !== undefined ? { ...fields, resolution: { name: resolution } } : fields;
+      const data = issueWriteBody(
+        opts['body'],
+        resolution !== undefined ? { resolution: { name: resolution } } : {},
+      );
       await client.issues.transition(issueKey, {
-        ...body,
+        ...data,
         transition: { id: requireOpt(opts['transition-id'], '--transition-id') },
-        ...(Object.keys(merged).length > 0 && { fields: merged }),
       });
       return { transitioned: true };
     }
@@ -3412,25 +3407,42 @@ function parseJsonObjectFlag(raw: string, flag: string): Record<string, unknown>
   return parsed as Record<string, unknown>;
 }
 
+function isJsonObject(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
 /**
- * Parse the optional `--body` JSON object (`IssueUpdateDetails`) accepted by
- * `issues create|update|transition`. Discrete flags (`--summary`,
- * `--resolution`, `--transition-id`, ...) are merged over it by the caller,
- * so its `fields` object is returned separately for that merge.
+ * Build the `IssueUpdateDetails` body for `issues create|update|transition`
+ * from the optional `--body` JSON object and the discrete-flag fields
+ * (`--summary`, `--resolution`, ...), which override the same keys in
+ * `--body` `fields`. Jira rejects a field set in both `fields` and `update`,
+ * so `update` operations on a flag-set field are dropped; others are kept.
+ * Omits `fields`/`update` when they end up empty.
  */
-function issueWriteBody(raw: string | boolean | undefined): {
-  body: Record<string, unknown>;
-  fields: Record<string, unknown>;
-} {
+function issueWriteBody(
+  raw: string | boolean | undefined,
+  flagFields: Record<string, unknown>,
+): Record<string, unknown> {
   const s = asString(raw);
-  if (s === undefined) return { body: {}, fields: {} };
-  const body = parseJsonObjectFlag(s, '--body');
-  const fields = body['fields'];
-  if (fields === undefined) return { body, fields: {} };
-  if (fields === null || typeof fields !== 'object' || Array.isArray(fields)) {
+  const {
+    fields: bodyFields,
+    update,
+    ...rest
+  } = s === undefined ? {} : parseJsonObjectFlag(s, '--body');
+  if (bodyFields !== undefined && !isJsonObject(bodyFields)) {
     throw new Error('--body "fields" must be a JSON object');
   }
-  return { body, fields: fields as Record<string, unknown> };
+  const fields = { ...bodyFields, ...flagFields };
+  let ops = update;
+  if (isJsonObject(update)) {
+    const kept = Object.entries(update).filter(([key]) => !Object.hasOwn(flagFields, key));
+    ops = kept.length > 0 ? Object.fromEntries(kept) : undefined;
+  }
+  return {
+    ...rest,
+    ...(Object.keys(fields).length > 0 && { fields }),
+    ...(ops !== undefined && { update: ops }),
+  };
 }
 
 function parseJsonArrayFlag(raw: string, flag: string): unknown[] {

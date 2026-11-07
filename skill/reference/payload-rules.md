@@ -42,7 +42,7 @@ atlas jira issues update PROJ-123 --body '{"fields":{"description":{"type":"doc"
 atlas jira issues transition PROJ-123 --transition-id 31 --resolution Done
 ```
 
-There is no `--description` or `--assignee` flag for these actions — `--assignee` fails with `Unknown option` and `--description` is silently ignored, so always put those fields in `--body`. Discrete flags override the same keys inside `--body`.
+There is no `--description` or `--assignee` flag for these actions — `--assignee` fails with `Unknown option` and `--description` is silently ignored, so always put those fields in `--body`. Discrete flags override the same keys inside `--body`, and any `update` operations on those fields are dropped (Jira rejects a field in both `fields` and `update`).
 
 ### JQL: always single-quote for the shell
 
