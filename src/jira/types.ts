@@ -398,7 +398,7 @@ export interface AssignableMultiProjectSearchParams {
   readonly startAt?: number;
 }
 
-/** Parameters for searching assignable users for a project (B800). */
+/** Parameters for searching assignable users for a project or an issue (B800). */
 export interface AssignableSearchParams {
   /** Project ID or key. Required unless `issueKey` or `issueId` is given. */
   readonly project?: string;

@@ -4244,6 +4244,16 @@ describe('executeConfluenceCommand', () => {
       expect(confluenceCommentsMock.createInline).not.toHaveBeenCalled();
     });
 
+    it('comments create (inline) without a container names only --page-id / --blog-post-id', async () => {
+      const err = executeConfluenceCommand(
+        cmd('comments', 'create', [], { 'comment-type': 'inline', body: 'x' }),
+        GLOBALS,
+      );
+      await expect(err).rejects.toThrow(
+        'One of --page-id or --blog-post-id (or --parent-comment-id for a reply) is required',
+      );
+    });
+
     it('comments create rejects two containers or a reply with --attachment-id', async () => {
       await expect(
         executeConfluenceCommand(

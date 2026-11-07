@@ -953,7 +953,10 @@ async function executeComments(client: ConfluenceClient, cmd: ParsedCommand): Pr
       const containers = [commentPageId2, commentBlogPostId, attachmentId, customContentId].filter(
         (id) => id !== undefined,
       ).length;
-      const containerFlags = '--page-id, --blog-post-id, --attachment-id or --custom-content-id';
+      const containerFlags =
+        commentType === 'inline'
+          ? '--page-id or --blog-post-id'
+          : '--page-id, --blog-post-id, --attachment-id or --custom-content-id';
       if (isReply && containers > 0) {
         // Spec: a reply's container comes from its parent comment.
         throw new Error(`--parent-comment-id (a reply) cannot be combined with ${containerFlags}`);

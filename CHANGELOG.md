@@ -33,7 +33,6 @@ CLI flags for SDK inputs the CLI could not send:
 - **`atlas jira bulk set-property`** gains `--expression` (a Jira expression) as an alternative to `--value`.
 - **`atlas jira projects load-avatar`** gains `--x`, `--y` and `--size` for the crop region.
 - **`atlas jira app update-field-value`** and **`bulk-update-field-value`** gain `--generate-changelog true|false` and `--generate-app-events true|false`.
-- **`atlas jira configuration select-timetracking`** no longer sends `--url`: the spec marks the provider `url` read-only.
 
 ### Behaviour changes to verify
 
@@ -43,7 +42,7 @@ CLI flags for SDK inputs the CLI could not send:
 - `atlas confluence comments create` now fails when given two container flags (for example `--page-id` with `--attachment-id`), or `--attachment-id` / `--custom-content-id` with `--comment-type inline` or `--parent-comment-id`. Before this, `--custom-content-id` was silently ignored.
 - `atlas jira users viewissue-search` without `--issue-key` or `--project-key` now fails before any request is sent (the spec requires one of them).
 - `atlas jira bulk set-property` with both `--value` and `--expression` fails before any request is sent.
-- `atlas jira configuration select-timetracking --url <url>` still parses, but the value is no longer sent.
+- `atlas jira configuration select-timetracking --url <url>` still parses, but the value is no longer sent: the spec marks the provider `url` read-only.
 
 ## [4.1.0](https://github.com/dichovsky/atlassian-api-client/compare/v4.0.0...v4.1.0) (2026-09-11)
 

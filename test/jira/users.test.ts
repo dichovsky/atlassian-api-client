@@ -256,6 +256,13 @@ describe('UsersResource', () => {
       expect(path).toContain('accountType=atlassian&accountType=app');
       expect(path).toContain('appType=connect');
     });
+
+    it('searches by issue without a project (spec: project required unless issueKey/issueId)', async () => {
+      transport.respondWith([]);
+      await users.assignableSearch({ issueKey: 'PROJ-1' });
+      expect(transport.lastCall?.options.query).toMatchObject({ issueKey: 'PROJ-1' });
+      expect(transport.lastCall?.options.query?.['project']).toBeUndefined();
+    });
   });
 
   // ── bulkGet (B801) ────────────────────────────────────────────────────────
