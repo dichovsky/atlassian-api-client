@@ -11,10 +11,11 @@
  * compares the parameter's top-level properties with the keys the CLI fills
  * in, unioned over every call site of that method. Keys are read from object
  * literals (incl. spreads and conditional spreads), `const` initializers plus
- * later `x.k =` / `x['k'] =` assignments, and the `return`s of same-file
- * helpers. A value parsed from JSON (`--body '{…}'` → `any` / `unknown` /
- * `Record<string, …>`) passes every property; any other untraced value
- * (a declared-type parameter, an imported helper) passes none.
+ * later `x.k =` / `x['k'] =` assignments, object-rest bindings (`...rest`
+ * carries the source minus the keys destructured beside it), and the
+ * `return`s of same-file helpers. A value parsed from JSON (`--body '{…}'` →
+ * `any` / `unknown` / `Record<string, …>`) passes every property; any other
+ * untraced value (a declared-type parameter, an imported helper) passes none.
  *
  * Only key presence is checked, not values. Accepted gaps live in KNOWN_GAPS;
  * the test fails on a new gap and on a stale entry.
@@ -200,12 +201,29 @@ const KNOWN_GAPS: Readonly<
 
 // ─── Analysis ──────────────────────────────────────────────────────────────
 
-/** Marks a value that can carry any key (JSON-parsed / index-signature typed). */
-const ALL = 'all';
-type Keys = ReadonlySet<string> | typeof ALL;
+/**
+ * Keys a value fills in: exactly `named`, or — when `open` (JSON-parsed,
+ * index-signature typed) — any key except `named` (e.g. the siblings an
+ * object-rest binding destructured away).
+ */
+interface Keys {
+  readonly open: boolean;
+  readonly named: ReadonlySet<string>;
+}
+const NONE: Keys = { open: false, named: new Set() };
+const ANY: Keys = { open: true, named: new Set() };
+const just = (...names: string[]): Keys => ({ open: false, named: new Set(names) });
 
 function union(a: Keys, b: Keys): Keys {
-  return a === ALL || b === ALL ? ALL : new Set([...a, ...b]);
+  if (a.open && b.open)
+    return { open: true, named: new Set([...a.named].filter((k) => b.named.has(k))) };
+  const [open, closed] = a.open ? [a, b] : [b, a];
+  if (!open.open) return just(...a.named, ...b.named);
+  return { open: true, named: new Set([...open.named].filter((k) => !closed.named.has(k))) };
+}
+
+function sets(keys: Keys, name: string): boolean {
+  return keys.open !== keys.named.has(name);
 }
 
 function unwrap(expr: ts.Expression): ts.Expression {
@@ -237,13 +255,13 @@ function isOpen(checker: ts.TypeChecker, type: ts.Type): boolean {
 function keysOfType(checker: ts.TypeChecker, type: ts.Type): Keys {
   const t = checker.getNonNullableType(type);
   if (t.isUnion())
-    return t.types.reduce<Keys>((acc, part) => union(acc, keysOfType(checker, part)), new Set());
-  if (isOpen(checker, t)) return ALL;
+    return t.types.reduce<Keys>((acc, part) => union(acc, keysOfType(checker, part)), NONE);
+  if (isOpen(checker, t)) return ANY;
   const objectLiteral =
     (t.flags & ts.TypeFlags.Object) !== 0 &&
     ((t as ts.ObjectType).objectFlags & ts.ObjectFlags.ObjectLiteral) !== 0;
-  if (!objectLiteral) return new Set();
-  return new Set(t.getProperties().map((p) => p.name));
+  if (!objectLiteral) return NONE;
+  return just(...t.getProperties().map((p) => p.name));
 }
 
 /** Keys `expr` fills in. `path` holds the declarations being followed, to break cycles. */
@@ -251,14 +269,14 @@ function keysOf(checker: ts.TypeChecker, expr: ts.Expression, path: Set<ts.Node>
   const e = unwrap(expr);
 
   if (ts.isObjectLiteralExpression(e)) {
-    let keys: Keys = new Set();
+    let keys = NONE;
     for (const prop of e.properties) {
       if (ts.isSpreadAssignment(prop)) {
         keys = union(keys, keysOf(checker, prop.expression, path));
       } else if (ts.isIdentifier(prop.name) || ts.isStringLiteralLike(prop.name)) {
-        keys = union(keys, new Set([prop.name.text]));
+        keys = union(keys, just(prop.name.text));
       } else {
-        return ALL; // computed key
+        return ANY; // computed key
       }
     }
     return keys;
@@ -281,7 +299,7 @@ function keysOf(checker: ts.TypeChecker, expr: ts.Expression, path: Set<ts.Node>
     // A same-file helper: the union of what its `return`s produce.
     if (ts.isCallExpression(e) && ts.isFunctionDeclaration(decl) && decl.body) {
       path.add(decl);
-      let keys: Keys = new Set();
+      let keys = NONE;
       const visit = (node: ts.Node): void => {
         if (ts.isReturnStatement(node) && node.expression) {
           keys = union(keys, keysOf(checker, node.expression, path));
@@ -309,7 +327,7 @@ function keysOf(checker: ts.TypeChecker, expr: ts.Expression, path: Set<ts.Node>
             : ts.isStringLiteralLike(node.left.argumentExpression)
               ? node.left.argumentExpression.text
               : undefined;
-          keys = name === undefined ? ALL : union(keys, new Set([name]));
+          keys = union(keys, name === undefined ? ANY : just(name));
         }
         ts.forEachChild(node, visit);
       };
@@ -318,6 +336,28 @@ function keysOf(checker: ts.TypeChecker, expr: ts.Expression, path: Set<ts.Node>
       visit(scope);
       path.delete(decl);
       return keys;
+    }
+    // `const { a, b, ...rest } = source`: what `source` fills in, minus `a` and `b`.
+    if (
+      ts.isIdentifier(e) &&
+      ts.isBindingElement(decl) &&
+      decl.dotDotDotToken &&
+      ts.isObjectBindingPattern(decl.parent) &&
+      ts.isVariableDeclaration(decl.parent.parent) &&
+      decl.parent.parent.initializer
+    ) {
+      path.add(decl);
+      const source = keysOf(checker, decl.parent.parent.initializer, path);
+      path.delete(decl);
+      const taken = decl.parent.elements.flatMap((el) => {
+        const name = el.propertyName ?? el.name;
+        return el !== decl && (ts.isIdentifier(name) || ts.isStringLiteralLike(name))
+          ? [name.text]
+          : [];
+      });
+      return source.open
+        ? { open: true, named: new Set([...source.named, ...taken]) }
+        : just(...[...source.named].filter((k) => !taken.includes(k)));
     }
   }
 
@@ -396,7 +436,7 @@ function analyzeCliWriteCalls(): Map<string, WriteMethod> {
       signature?.getParameters().forEach((param, i) => {
         const properties = sdkProperties(checker, checker.getTypeOfSymbolAtLocation(param, node));
         if (!properties) return;
-        const slot = method.slots.get(param.name) ?? { properties, keys: new Set<string>() };
+        const slot = method.slots.get(param.name) ?? { properties, keys: NONE };
         method.slots.set(param.name, slot);
         const arg = node.arguments[i];
         if (arg) slot.keys = union(slot.keys, keysOf(checker, arg, new Set()));
@@ -412,7 +452,7 @@ function unreachedProperties(methods: Map<string, WriteMethod>): Map<string, str
   const gaps = new Map<string, string[]>();
   for (const [key, { slots }] of methods) {
     const unset = [...slots.values()].flatMap(({ properties, keys }) =>
-      keys === ALL ? [] : properties.filter((p) => !keys.has(p)),
+      properties.filter((p) => !sets(keys, p)),
     );
     if (unset.length > 0) gaps.set(key, [...new Set(unset)]);
   }
