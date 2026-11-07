@@ -6,14 +6,14 @@
 
 ### Standard (v3 API)
 
-| Action        | Positional   | Required flags                     | Optional flags                                                                                  |
-| ------------- | ------------ | ---------------------------------- | ----------------------------------------------------------------------------------------------- |
-| `get`         | `<issueKey>` | —                                  | `--fields`, `--expand`                                                                          |
-| `create`      | —            | `--project`, `--type`, `--summary` | `--parent`, `--body`                                                                            |
-| `update`      | `<issueKey>` | one of `--summary` or `--body`     | `--notify-users`, `--no-notify-users`, `--override-screen-security`, `--override-editable-flag` |
-| `delete`      | `<issueKey>` | —                                  | `--delete-subtasks`                                                                             |
-| `transitions` | `<issueKey>` | —                                  | `--expand`                                                                                      |
-| `transition`  | `<issueKey>` | `--transition-id`                  | `--resolution`, `--body`                                                                        |
+| Action        | Positional   | Required flags                     | Optional flags                                                                                                                |
+| ------------- | ------------ | ---------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `get`         | `<issueKey>` | —                                  | `--fields`, `--expand`                                                                                                        |
+| `create`      | —            | `--project`, `--type`, `--summary` | `--parent`, `--body`                                                                                                          |
+| `update`      | `<issueKey>` | one of `--summary` or `--body`     | `--notify-users`, `--no-notify-users`, `--override-screen-security`, `--override-editable-flag`, `--return-issue`, `--expand` |
+| `delete`      | `<issueKey>` | —                                  | `--delete-subtasks`                                                                                                           |
+| `transitions` | `<issueKey>` | —                                  | `--expand`                                                                                                                    |
+| `transition`  | `<issueKey>` | `--transition-id`                  | `--resolution`, `--body`                                                                                                      |
 
 - `--fields` and `--expand` are **comma-separated**, single flag. Example: `--fields summary,status,assignee --expand changelog,renderedFields`.
 - `--project` takes the project key (e.g. `PROJ`), not the numeric ID.
@@ -21,7 +21,7 @@
 - `--parent <issueKey>` sets `fields.parent` — required to create a sub-task.
 - `--body` (`create`, `update`, `transition`) is a JSON object in Jira's `IssueUpdateDetails` shape: `{"fields":{...},"update":{...},"properties":[...],"historyMetadata":{...}}`. Use it for description (ADF), assignee, labels, components, custom fields, or any field a create/edit/transition screen requires. Discrete flags (`--summary`, `--project`, `--type`, `--parent`, `--resolution`, `--transition-id`) override the same keys in `--body`; because Jira rejects a field set in both `fields` and `update`, any `--body` `update` operations on a flag-set field are dropped (other operations are kept).
 - `update` with neither `--summary` nor `--body` is rejected (it would be a no-op). List editable fields with `get-editmeta`.
-- `update` sends the watcher notification email by default; `--no-notify-users` suppresses it (`notifyUsers=false`, needs _Administer Jira_ or _Administer project_), `--notify-users` sends `notifyUsers=true`; the two are mutually exclusive. `--override-screen-security` (edit hidden fields) and `--override-editable-flag` (edit uneditable fields) are bare boolean flags for Connect/Forge apps with _Administer Jira_. The spec's `returnIssue`/`expand` query params are not exposed: the CLI returns `{ updated: true }`, not the edited issue.
+- `update` sends the watcher notification email by default; `--no-notify-users` suppresses it (`notifyUsers=false`, needs _Administer Jira_ or _Administer project_), `--notify-users` sends `notifyUsers=true`; the two are mutually exclusive. `--override-screen-security` (edit hidden fields) and `--override-editable-flag` (edit uneditable fields) are bare boolean flags for Connect/Forge apps with _Administer Jira_. It prints `{ "updated": true }`; pass the bare boolean `--return-issue` to print the edited issue instead (same shape as `get`), and `--expand` (comma-separated, as on `get`, e.g. `--expand renderedFields,names`) to expand it. `--expand` without `--return-issue` is rejected before any request.
 - `delete` fails with 400 for an issue that has sub-tasks unless `--delete-subtasks` is passed (deletes them too).
 - Transition workflow: call `transitions <key> --expand transitions.fields` to list valid transitions and the fields each transition screen requires (`required: true`, with `allowedValues`), then `transition` with the chosen `--transition-id` and those fields.
 - `--resolution <name>` sets `fields.resolution` (`{"name":"Done"}`). A transition whose screen shows Resolution — typically closing an issue or sub-task — fails without it. Resolution names are tenant-specific; list with `atlas jira resolutions list`. To pass it by ID, use `--body '{"fields":{"resolution":{"id":"10000"}}}'`.

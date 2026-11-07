@@ -290,11 +290,18 @@ async function executeIssues(client: JiraClient, cmd: ParsedCommand): Promise<un
       if (Object.keys(data).length === 0) {
         throw new Error('issues update: nothing to update — pass --summary or --body');
       }
-      await client.issues.update(issueKey, data, {
+      const params = {
         notifyUsers: notifyUsersFlag(opts),
         overrideScreenSecurity: asBoolFlag(opts['override-screen-security']),
         overrideEditableFlag: asBoolFlag(opts['override-editable-flag']),
-      });
+      };
+      // `expand` only shapes the returned issue (spec), so it needs --return-issue.
+      const expand = asString(opts['expand']);
+      if (opts['return-issue'] === true) {
+        return client.issues.update(issueKey, data, { ...params, returnIssue: true, expand });
+      }
+      if (expand !== undefined) throw new Error('issues update: --expand needs --return-issue');
+      await client.issues.update(issueKey, data, params);
       return { updated: true };
     }
     case 'delete': {

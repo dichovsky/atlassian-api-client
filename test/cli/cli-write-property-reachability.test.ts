@@ -96,10 +96,6 @@ const KNOWN_GAPS: Readonly<
     unset: ['adjustEstimate', 'overrideEditableFlag'],
     reason: 'estimate adjustment and admin override not exposed; defaults apply',
   },
-  'jira.issues.update': {
-    unset: ['returnIssue', 'expand'],
-    reason: 'response-shaping only; the SDK update() resolves void and drops the returned issue',
-  },
   'jira.projects.create': {
     unset: [
       'projectTemplateKey',

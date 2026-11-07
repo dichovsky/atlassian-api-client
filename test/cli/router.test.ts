@@ -206,7 +206,7 @@ describe('parseCommand', () => {
     expect(result.options['recent']).toBe('20');
   });
 
-  it('parses the issue write-body flags (--resolution, --parent, --delete-subtasks, --products)', () => {
+  it('parses the issue write-body flags (--resolution, --parent, --delete-subtasks, --return-issue, --products)', () => {
     const transition = parseCommand([
       'node',
       'atlas',
@@ -251,6 +251,20 @@ describe('parseCommand', () => {
       '--delete-subtasks',
     ]);
     expect(del.options['delete-subtasks']).toBe(true);
+
+    const update = parseCommand([
+      'node',
+      'atlas',
+      'jira',
+      'issues',
+      'update',
+      'P-1',
+      '--return-issue',
+      '--expand',
+      'names',
+    ]);
+    expect(update.options['return-issue']).toBe(true);
+    expect(update.options['expand']).toBe('names');
 
     const user = parseCommand([
       'node',
