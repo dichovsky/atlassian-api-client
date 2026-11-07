@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
+import { describeContentPermissions } from './content-permissions-suite.js';
 import { WhiteboardsResource } from '../../src/confluence/resources/whiteboards.js';
 import { MockTransport } from '../helpers/mock-transport.js';
 import { ValidationError } from '../../src/core/errors.js';
@@ -671,3 +672,9 @@ describe('WhiteboardsResource', () => {
     });
   });
 });
+
+describeContentPermissions(
+  'WhiteboardsResource',
+  'whiteboards',
+  (transport) => new WhiteboardsResource(transport, BASE_URL),
+);

@@ -1,9 +1,38 @@
 import type { Transport } from '../../core/types.js';
 import { encodePathSegment } from '../../core/path.js';
+import { ValidationError } from '../../core/errors.js';
+import {
+  permissionDeleteQuery,
+  permissionListQuery,
+  permissionWriteQuery,
+} from './content-permissions.js';
 import type { CursorPaginatedResponse } from '../../core/pagination.js';
 import { paginateCursor, validatePageSize } from '../../core/pagination.js';
+import type {
+  ContentPermissionOutput,
+  ContentPermissionsRequest,
+  ContentPermissionsResponse,
+  ContentPermissionWriteParams,
+  DeleteContentPermissionsParams,
+  ListContentPermissionsParams,
+  RestrictionStateResponse,
+  SetRestrictionStateData,
+} from '../types/content-permissions.js';
 import type { ClassificationLevel } from '../types/classification-levels.js';
 import type { ContentProperty, CreateContentPropertyData } from '../types/common.js';
+import type {
+  DatabaseConditionalParams,
+  DatabaseEntry,
+  DatabaseEntryFilter,
+  DatabaseEntryListResponse,
+  DatabaseEntrySingleResponse,
+  DatabaseField,
+  DatabaseFieldListResponse,
+  DatabaseView,
+  DatabaseViewListResponse,
+  ListDatabaseEntriesParams,
+  ListDatabasePageParams,
+} from '../types/database-entries.js';
 import type {
   CreateDatabaseData,
   CreateDatabaseParams,
@@ -21,6 +50,66 @@ import type {
   UpdateDatabaseClassificationLevelData,
   UpdateDatabasePropertyData,
 } from '../types/databases.js';
+
+const FILTER_RANGE_OPERATORS: ReadonlySet<string> = new Set(['gte', 'lte', 'gt', 'lt']);
+
+type Query = Record<string, string | number | boolean | undefined>;
+
+/**
+ * Flatten an entry filter into the bracket-scoped query keys the API expects
+ * (`filter[fieldId]=v`, `filter[fieldId][gte]=v`). The query bag has no
+ * deepObject support, so the keys are built here. Field IDs and operators are
+ * validated because they become part of the query-key structure.
+ */
+function filterQuery(filter: DatabaseEntryFilter): Query {
+  const query: Query = {};
+  for (const [fieldId, condition] of Object.entries(filter)) {
+    if (fieldId === '' || fieldId.includes('[') || fieldId.includes(']')) {
+      throw new ValidationError(
+        `filter field ID must be non-empty and must not contain "[" or "]", got: "${fieldId}"`,
+      );
+    }
+    if (typeof condition === 'object' && condition !== null) {
+      for (const [operator, value] of Object.entries(condition)) {
+        if (!FILTER_RANGE_OPERATORS.has(operator)) {
+          throw new ValidationError(
+            `filter range operator must be one of gte, lte, gt, lt, got: "${operator}"`,
+          );
+        }
+        query[`filter[${fieldId}][${operator}]`] = value;
+      }
+    } else if (
+      typeof condition === 'string' ||
+      typeof condition === 'number' ||
+      typeof condition === 'boolean'
+    ) {
+      query[`filter[${fieldId}]`] = condition;
+    } else {
+      throw new ValidationError(
+        `filter for field "${fieldId}" must be a string, number, boolean, or range object`,
+      );
+    }
+  }
+  return query;
+}
+
+/** Query shared by the database list endpoints; validates `limit` before any request. */
+function databasePageQuery(params?: ListDatabaseEntriesParams): Query {
+  if (params?.limit !== undefined) validatePageSize(params.limit, 'limit');
+  const query: Query = {};
+  if (params?.limit !== undefined) query['limit'] = params.limit;
+  if (params?.cursor !== undefined) query['cursor'] = params.cursor;
+  if (params?.sort !== undefined) query['sort'] = params.sort;
+  if (params?.filter !== undefined) Object.assign(query, filterQuery(params.filter));
+  return query;
+}
+
+/** The `If-None-Match` request header, or `undefined` when the caller did not set it. */
+function ifNoneMatchHeaders(
+  params?: DatabaseConditionalParams,
+): Readonly<Record<string, string>> | undefined {
+  return params?.ifNoneMatch !== undefined ? { 'If-None-Match': params.ifNoneMatch } : undefined;
+}
 
 /**
  * Resource for Confluence v2 databases.
@@ -204,6 +293,119 @@ export class DatabasesResource {
     );
   }
 
+  // ── data: fields, views, entries (experimental) ──────────────────────────
+  //
+  // These four endpoints are tagged `x-experimental` in the OpenAPI spec and may
+  // change in backwards-incompatible ways without notice. Each accepts an
+  // `If-None-Match` header (`ifNoneMatch`); a matching tag yields `304`, which
+  // the transport raises as an `HttpError` (the SDK returns response bodies only,
+  // so entity tags are not exposed on the return value).
+
+  /**
+   * List the field definitions of a database, in user-defined column order
+   * (single page). **Experimental.** Spec `getDatabaseFields`.
+   */
+  async listFields(
+    id: string,
+    params?: ListDatabasePageParams,
+  ): Promise<DatabaseFieldListResponse> {
+    const response = await this.transport.request<DatabaseFieldListResponse>({
+      method: 'GET',
+      path: `${this.baseUrl}/databases/${encodePathSegment(id)}/fields`,
+      query: databasePageQuery(params),
+      headers: ifNoneMatchHeaders(params),
+    });
+    return response.data;
+  }
+
+  /** Iterate every field definition of a database across all pages. **Experimental.** */
+  async *listFieldsAll(
+    id: string,
+    params?: Omit<ListDatabasePageParams, 'cursor' | 'ifNoneMatch'>,
+  ): AsyncGenerator<DatabaseField> {
+    yield* paginateCursor<DatabaseField>(
+      this.transport,
+      `${this.baseUrl}/databases/${encodePathSegment(id)}/fields`,
+      databasePageQuery(params),
+    );
+  }
+
+  /**
+   * List the views defined on a database (single page; id, name and type only).
+   * **Experimental.** Spec `getDatabaseViews`.
+   */
+  async listViews(id: string, params?: ListDatabasePageParams): Promise<DatabaseViewListResponse> {
+    const response = await this.transport.request<DatabaseViewListResponse>({
+      method: 'GET',
+      path: `${this.baseUrl}/databases/${encodePathSegment(id)}/views`,
+      query: databasePageQuery(params),
+      headers: ifNoneMatchHeaders(params),
+    });
+    return response.data;
+  }
+
+  /** Iterate every view of a database across all pages. **Experimental.** */
+  async *listViewsAll(
+    id: string,
+    params?: Omit<ListDatabasePageParams, 'cursor' | 'ifNoneMatch'>,
+  ): AsyncGenerator<DatabaseView> {
+    yield* paginateCursor<DatabaseView>(
+      this.transport,
+      `${this.baseUrl}/databases/${encodePathSegment(id)}/views`,
+      databasePageQuery(params),
+    );
+  }
+
+  /**
+   * List the entries (rows) of a database (single page). Entry values are keyed
+   * by field ID; use {@link DatabasesResource.listFields} to map IDs to names.
+   * `params.filter` maps field IDs to conditions (see `DatabaseEntryFilter`);
+   * `params.sort` is one field ID, `-`-prefixed for descending. **Experimental.**
+   * Spec `getDatabaseEntries`.
+   */
+  async listEntries(
+    id: string,
+    params?: ListDatabaseEntriesParams,
+  ): Promise<DatabaseEntryListResponse> {
+    const response = await this.transport.request<DatabaseEntryListResponse>({
+      method: 'GET',
+      path: `${this.baseUrl}/databases/${encodePathSegment(id)}/entries`,
+      query: databasePageQuery(params),
+      headers: ifNoneMatchHeaders(params),
+    });
+    return response.data;
+  }
+
+  /**
+   * Iterate every entry of a database across all pages. Pagination is best
+   * effort while the database is changing: concurrent writes can duplicate or
+   * omit rows. **Experimental.**
+   */
+  async *listEntriesAll(
+    id: string,
+    params?: Omit<ListDatabaseEntriesParams, 'cursor' | 'ifNoneMatch'>,
+  ): AsyncGenerator<DatabaseEntry> {
+    yield* paginateCursor<DatabaseEntry>(
+      this.transport,
+      `${this.baseUrl}/databases/${encodePathSegment(id)}/entries`,
+      databasePageQuery(params),
+    );
+  }
+
+  /** Get a single database entry by ID. **Experimental.** Spec `getDatabaseEntryById`. */
+  async getEntry(
+    id: string,
+    entryId: string,
+    params?: DatabaseConditionalParams,
+  ): Promise<DatabaseEntrySingleResponse> {
+    const response = await this.transport.request<DatabaseEntrySingleResponse>({
+      method: 'GET',
+      path: `${this.baseUrl}/databases/${encodePathSegment(id)}/entries/${encodePathSegment(entryId)}`,
+      headers: ifNoneMatchHeaders(params),
+    });
+    return response.data;
+  }
+
   // ── operations ────────────────────────────────────────────────────────────
 
   /** Get the set of operations the calling user may perform on the database. */
@@ -342,6 +544,122 @@ export class DatabasesResource {
     await this.transport.request<undefined>({
       method: 'DELETE',
       path: `${this.baseUrl}/databases/${encodePathSegment(databaseId)}/properties/${encodePathSegment(propertyId)}`,
+    });
+  }
+
+  // ── restriction state & direct permissions ────────────────────────────────
+
+  /**
+   * Get the direct restriction state of a database (spec `getDatabaseRestrictionState`).
+   * Inherited restrictions are not included.
+   */
+  async getRestrictionState(id: string): Promise<RestrictionStateResponse> {
+    const response = await this.transport.request<RestrictionStateResponse>({
+      method: 'GET',
+      path: `${this.baseUrl}/databases/${encodePathSegment(id)}/restriction-state`,
+    });
+    return response.data;
+  }
+
+  /**
+   * Set the direct restriction state of a database (spec `setDatabaseRestrictionState`).
+   *
+   * `params['allow-self-lockout']` is sent only when explicitly set; without it
+   * the server rejects a change that would remove the caller's own edit access.
+   */
+  async setRestrictionState(
+    id: string,
+    data: SetRestrictionStateData,
+    params?: ContentPermissionWriteParams,
+  ): Promise<RestrictionStateResponse> {
+    const response = await this.transport.request<RestrictionStateResponse>({
+      method: 'PUT',
+      path: `${this.baseUrl}/databases/${encodePathSegment(id)}/restriction-state`,
+      query: permissionWriteQuery(params),
+      body: data,
+    });
+    return response.data;
+  }
+
+  /**
+   * List the direct permissions on a database (single page; spec `getDatabasePermissions`).
+   * `params['principal-id']` must be combined with `params['principal-type']`.
+   */
+  async listPermissions(
+    id: string,
+    params?: ListContentPermissionsParams,
+  ): Promise<CursorPaginatedResponse<ContentPermissionOutput>> {
+    const response = await this.transport.request<CursorPaginatedResponse<ContentPermissionOutput>>(
+      {
+        method: 'GET',
+        path: `${this.baseUrl}/databases/${encodePathSegment(id)}/permissions`,
+        query: permissionListQuery(params),
+      },
+    );
+    return response.data;
+  }
+
+  /** Iterate every direct permission on a database across all pages. */
+  async *listPermissionsAll(
+    id: string,
+    params?: Omit<ListContentPermissionsParams, 'cursor'>,
+  ): AsyncGenerator<ContentPermissionOutput> {
+    yield* paginateCursor<ContentPermissionOutput>(
+      this.transport,
+      `${this.baseUrl}/databases/${encodePathSegment(id)}/permissions`,
+      permissionListQuery(params),
+    );
+  }
+
+  /**
+   * Add or replace direct permissions for the given principals on a database
+   * (spec `addDatabasePermissions`); other principals keep theirs. A principal holds
+   * one `read` or `update` permission; `update` wins within a request.
+   */
+  async addPermissions(
+    id: string,
+    data: ContentPermissionsRequest,
+    params?: ContentPermissionWriteParams,
+  ): Promise<ContentPermissionsResponse> {
+    const response = await this.transport.request<ContentPermissionsResponse>({
+      method: 'POST',
+      path: `${this.baseUrl}/databases/${encodePathSegment(id)}/permissions`,
+      query: permissionWriteQuery(params),
+      body: data,
+    });
+    return response.data;
+  }
+
+  /**
+   * Replace ALL direct permissions on a database with the provided set (spec
+   * `setDatabasePermissions`); permissions absent from `data` are removed.
+   */
+  async setPermissions(
+    id: string,
+    data: ContentPermissionsRequest,
+    params?: ContentPermissionWriteParams,
+  ): Promise<ContentPermissionsResponse> {
+    const response = await this.transport.request<ContentPermissionsResponse>({
+      method: 'PUT',
+      path: `${this.baseUrl}/databases/${encodePathSegment(id)}/permissions`,
+      query: permissionWriteQuery(params),
+      body: data,
+    });
+    return response.data;
+  }
+
+  /**
+   * Delete direct permissions from a database (spec `deleteDatabasePermissions`).
+   *
+   * Destructive: with no filters ALL direct permissions are deleted. Narrow the
+   * scope with `principal-type` + `principal-id` (optionally plus `operation`);
+   * other filter combinations are rejected by the server with a 400.
+   */
+  async deletePermissions(id: string, params?: DeleteContentPermissionsParams): Promise<void> {
+    await this.transport.request<undefined>({
+      method: 'DELETE',
+      path: `${this.baseUrl}/databases/${encodePathSegment(id)}/permissions`,
+      query: permissionDeleteQuery(params),
     });
   }
 }
