@@ -1351,4 +1351,60 @@ describe('parseCommand', () => {
       'retrigger-completed-migration': true,
     });
   });
+
+  // CLI write-property reachability: each flag below is read by a handler, so
+  // parseArgs strict mode must accept it (unregistered → "Unknown option").
+  it('parses the write-reachability flags through real parseArgs', () => {
+    const jira = parseCommand([
+      'node',
+      'atlas',
+      'jira',
+      'users',
+      'assignable',
+      '--session-id',
+      'sess-1',
+      '--action-descriptor-id',
+      '31',
+      '--recommend',
+      '--account-type',
+      'atlassian,app',
+      '--app-type',
+      'forge',
+      '--comment',
+      '{"body":{}}',
+      '--no-notify-users',
+      '--custom-field-replacement-list',
+      '[]',
+      '--generate-changelog',
+      'false',
+      '--generate-app-events',
+      'false',
+    ]);
+    expect(jira.options).toMatchObject({
+      'session-id': 'sess-1',
+      'action-descriptor-id': '31',
+      recommend: true,
+      'account-type': 'atlassian,app',
+      'app-type': 'forge',
+      comment: '{"body":{}}',
+      'no-notify-users': true,
+      'custom-field-replacement-list': '[]',
+      'generate-changelog': 'false',
+      'generate-app-events': 'false',
+    });
+    expect(jira.positionalArgs).toEqual([]);
+
+    const confluence = parseCommand([
+      'node',
+      'atlas',
+      'confluence',
+      'comments',
+      'create',
+      '--attachment-id',
+      'att-1',
+      '--owner-id',
+      'acc-9',
+    ]);
+    expect(confluence.options).toMatchObject({ 'attachment-id': 'att-1', 'owner-id': 'acc-9' });
+  });
 });

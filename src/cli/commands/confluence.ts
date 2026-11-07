@@ -156,6 +156,9 @@ async function executePages(client: ConfluenceClient, cmd: ParsedCommand): Promi
       const versionNum = requirePositiveInt(opts['version-number'], '--version-number');
       // `body` is required by the spec (PageUpdateRequest required array).
       const bodyValue = requireOpt(opts['body'], '--body');
+      // Spec: parentId re-parents within the same space; ownerId transfers ownership.
+      const parentId = asString(opts['parent-id']);
+      const ownerId = asString(opts['owner-id']);
       return client.pages.update(requireArg(cmd.positionalArgs[0], 'page ID'), {
         id: requireArg(cmd.positionalArgs[0], 'page ID'),
         title: requireOpt(opts['title'], '--title'),
@@ -164,6 +167,8 @@ async function executePages(client: ConfluenceClient, cmd: ParsedCommand): Promi
           number: versionNum,
         },
         body: { representation: 'storage' as const, value: bodyValue },
+        ...(parentId !== undefined && { parentId }),
+        ...(ownerId !== undefined && { ownerId }),
       });
     }
     case 'delete':
@@ -934,21 +939,32 @@ async function executeComments(client: ConfluenceClient, cmd: ParsedCommand): Pr
     case 'create': {
       const commentPageId2 = asString(opts['page-id']);
       const commentBlogPostId = asString(opts['blog-post-id']);
+      // Spec: attachmentId/customContentId exist only on the footer-comment body.
+      const attachmentId = asString(opts['attachment-id']);
+      const customContentId = asString(opts['custom-content-id']);
       const parentCommentId = asString(opts['parent-comment-id']);
       const isReply = parentCommentId !== undefined;
-      if (isReply && (commentPageId2 !== undefined || commentBlogPostId !== undefined)) {
-        // Spec: pageId/blogPostId "Do not provide if creating a reply".
+      if (
+        commentType === 'inline' &&
+        (attachmentId !== undefined || customContentId !== undefined)
+      ) {
+        throw new Error('--attachment-id and --custom-content-id apply only to footer comments');
+      }
+      const containers = [commentPageId2, commentBlogPostId, attachmentId, customContentId].filter(
+        (id) => id !== undefined,
+      ).length;
+      const containerFlags = '--page-id, --blog-post-id, --attachment-id or --custom-content-id';
+      if (isReply && containers > 0) {
+        // Spec: a reply's container comes from its parent comment.
+        throw new Error(`--parent-comment-id (a reply) cannot be combined with ${containerFlags}`);
+      }
+      if (!isReply && containers === 0) {
         throw new Error(
-          '--parent-comment-id (a reply) cannot be combined with --page-id or --blog-post-id',
+          `One of ${containerFlags} (or --parent-comment-id for a reply) is required`,
         );
       }
-      if (!isReply && commentPageId2 === undefined && commentBlogPostId === undefined) {
-        throw new Error(
-          'One of --page-id or --blog-post-id (or --parent-comment-id for a reply) is required',
-        );
-      }
-      if (commentPageId2 !== undefined && commentBlogPostId !== undefined) {
-        throw new Error('Specify only one of --page-id or --blog-post-id, not both');
+      if (containers > 1) {
+        throw new Error(`Specify only one of ${containerFlags}`);
       }
       // Spec: inlineCommentProperties is required for a top-level inline
       // comment (it anchors the highlighted text) and only applies there.
@@ -1011,7 +1027,11 @@ async function executeComments(client: ConfluenceClient, cmd: ParsedCommand): Pr
             ...payload,
             ...(inlineCommentProperties !== undefined && { inlineCommentProperties }),
           })
-        : client.comments.createFooter(payload);
+        : client.comments.createFooter({
+            ...payload,
+            ...(attachmentId !== undefined && { attachmentId }),
+            ...(customContentId !== undefined && { customContentId }),
+          });
     }
     case 'delete':
       if (commentType === 'inline') {

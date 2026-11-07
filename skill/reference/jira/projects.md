@@ -62,7 +62,7 @@ atlas jira component related-issue-counts 10000
 | `archive`                     | `<projectIdOrKey>`                 | —                                       | —                                                                                                                                                                                                                      |
 | `set-avatar`                  | `<projectIdOrKey>`                 | `--avatar-id`                           | —                                                                                                                                                                                                                      |
 | `delete-avatar`               | `<projectIdOrKey>` `<avatarId>`    | —                                       | —                                                                                                                                                                                                                      |
-| `load-avatar`                 | `<projectIdOrKey>`                 | `--value` (JSON)                        | —                                                                                                                                                                                                                      |
+| `load-avatar`                 | `<projectIdOrKey>`                 | `--value` (JSON)                        | `--x`, `--y`, `--size`                                                                                                                                                                                                 |
 | `get-avatars`                 | `<projectIdOrKey>`                 | —                                       | —                                                                                                                                                                                                                      |
 | `get-classification-config`   | `<projectIdOrKey>`                 | —                                       | —                                                                                                                                                                                                                      |
 | `delete-classification-level` | `<projectIdOrKey>`                 | —                                       | —                                                                                                                                                                                                                      |
@@ -112,7 +112,7 @@ atlas jira component related-issue-counts 10000
 - `delete-role-actors` removes actors by `--user` (accountId), `--group-id`, or `--group` (name).
 - `set-email` updates the project email address; `--email-address` is optional (omit to clear).
 - `archive` and `restore` move a project into/out of archived state.
-- `load-avatar` accepts `--value` as a JSON object containing the crop coordinates and image data for the avatar upload.
+- `load-avatar` accepts `--value` as the JSON request body for the avatar upload. `--x`, `--y` (top-left corner) and `--size` (side length) set the square crop region as non-negative integer query params; each defaults to 0 on the server.
 - `set-classification-level` requires `--classification-id`; omit to clear the level.
 - `list-components` is paginated; `list-all-components` returns all components as a flat array.
 - `delete-async` triggers async project deletion (202 Accepted); poll the returned task URL for completion.
@@ -315,12 +315,13 @@ Project version management (B820–B831, B933). Covers the full `/rest/api/3/ver
 | `list-related-work`      | `<id>`                          | —                                       | —                                                                                                                                                            |
 | `create-related-work`    | `<id>`                          | `--category`                            | `--title`, `--url`                                                                                                                                           |
 | `update-related-work`    | `<id>`                          | `--category`                            | `--title`, `--url`                                                                                                                                           |
-| `delete-and-replace`     | `<id>`                          | —                                       | `--move-fix-issues-to` (int version ID), `--move-affected-issues-to` (int version ID)                                                                        |
+| `delete-and-replace`     | `<id>`                          | —                                       | `--move-fix-issues-to` (int version ID), `--move-affected-issues-to` (int version ID), `--custom-field-replacement-list` (JSON array)                        |
 | `unresolved-issue-count` | `<id>`                          | —                                       | —                                                                                                                                                            |
 | `delete-related-work`    | `<versionId>` `<relatedWorkId>` | —                                       | —                                                                                                                                                            |
 
 - `--archived` and `--released` are bare boolean flags (e.g. `--archived`, `--released`).
 - `--move-fix-issues-to` and `--move-affected-issues-to` take a version ID as a string on `delete`, or as an integer on `delete-and-replace`.
+- `--custom-field-replacement-list` (`delete-and-replace`) is a JSON array of `{"customFieldId": <int>, "moveTo": <int version ID>}` entries: for each version-picker custom field that holds the deleted version, the version to put in its place.
 - `--position` for `move` accepts `First`, `Last`, `Earlier`, or `Later`.
 
 ```sh
@@ -356,6 +357,7 @@ atlas jira version update-related-work 10000 --category "Design doc" --title "Up
 
 # Delete and replace version
 atlas jira version delete-and-replace 10000 --move-fix-issues-to 10001 --move-affected-issues-to 10001
+atlas jira version delete-and-replace 10000 --custom-field-replacement-list '[{"customFieldId":10050,"moveTo":10001}]'
 
 # Unresolved issue count
 atlas jira version unresolved-issue-count 10000

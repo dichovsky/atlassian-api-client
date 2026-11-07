@@ -36,24 +36,25 @@ App-scoped resource grouping three distinct API surfaces used by Forge and Atlas
 
 Most actions require Forge/Connect-issued credentials (OAuth 2.0 3LO scopes or Connect JWT). Basic auth with an API token will return `401`/`403` on every action.
 
-| Action                               | Positional       | Required flags        | Optional flags                |
-| ------------------------------------ | ---------------- | --------------------- | ----------------------------- |
-| `get-field-context-configuration`    | `<fieldIdOrKey>` | —                     | —                             |
-| `update-field-context-configuration` | `<fieldIdOrKey>` | `--id`                | `--configuration`, `--schema` |
-| `update-field-value`                 | `<fieldIdOrKey>` | `--value`             | —                             |
-| `list-field-context-configurations`  | —                | `--field-ids-or-keys` | `--context-ids`               |
-| `bulk-update-field-value`            | —                | `--value`             | —                             |
-| `get-dynamic-modules`                | —                | —                     | —                             |
-| `register-dynamic-modules`           | —                | `--value`             | —                             |
-| `delete-dynamic-modules`             | —                | —                     | `--module-keys`               |
-| `list-forge-properties`              | —                | —                     | —                             |
-| `get-forge-property`                 | `<propertyKey>`  | —                     | —                             |
-| `set-forge-property`                 | `<propertyKey>`  | `--value`             | —                             |
-| `delete-forge-property`              | `<propertyKey>`  | —                     | —                             |
+| Action                               | Positional       | Required flags        | Optional flags                                  |
+| ------------------------------------ | ---------------- | --------------------- | ----------------------------------------------- |
+| `get-field-context-configuration`    | `<fieldIdOrKey>` | —                     | —                                               |
+| `update-field-context-configuration` | `<fieldIdOrKey>` | `--id`                | `--configuration`, `--schema`                   |
+| `update-field-value`                 | `<fieldIdOrKey>` | `--value`             | `--generate-changelog`, `--generate-app-events` |
+| `list-field-context-configurations`  | —                | `--field-ids-or-keys` | `--context-ids`                                 |
+| `bulk-update-field-value`            | —                | `--value`             | `--generate-changelog`, `--generate-app-events` |
+| `get-dynamic-modules`                | —                | —                     | —                                               |
+| `register-dynamic-modules`           | —                | `--value`             | —                                               |
+| `delete-dynamic-modules`             | —                | —                     | `--module-keys`                                 |
+| `list-forge-properties`              | —                | —                     | —                                               |
+| `get-forge-property`                 | `<propertyKey>`  | —                     | —                                               |
+| `set-forge-property`                 | `<propertyKey>`  | `--value`             | —                                               |
+| `delete-forge-property`              | `<propertyKey>`  | —                     | —                                               |
 
 - `update-field-context-configuration` sends the spec body `{ configurations: [{ id, configuration?, schema? }] }`; `--id` is the required configuration ID. `--configuration` and `--schema` accept opaque JSON (stored verbatim).
 - `--value` for `update-field-value` is a JSON array of `{ issueIds, value }` entries (spec `CustomFieldValueUpdate`; `issueIds` is required).
 - `--value` for `bulk-update-field-value` is a JSON array of flat `{ customField, issueIds, value }` entries (spec `MultipleCustomFieldValuesUpdate`).
+- `--generate-changelog true|false` and `--generate-app-events true|false` (`update-field-value`, `bulk-update-field-value`) are tri-state: both default to `true` on the server, so pass `false` to skip the issue changelog entry or to suppress app events and webhooks (no other app then sees an "issue updated" event); omit for the default. The value is required.
 - `--value` for `register-dynamic-modules` is a JSON array of Connect module descriptors (each `{ key, type, ... }`).
 - `--value` for `set-forge-property` is any JSON value (stored verbatim and returned as-is by `get-forge-property`).
 - `--module-keys` is comma-separated. When omitted, `delete-dynamic-modules` removes every dynamic module registered by the calling app.
@@ -78,6 +79,11 @@ atlas jira app list-field-context-configurations \
 # Bulk-update many fields in one request
 atlas jira app bulk-update-field-value \
   --value '[{"customField":"customfield_10042","issueIds":[10001],"value":"hi"}]'
+
+# Update a field without a changelog entry or app events
+atlas jira app update-field-value customfield_10042 \
+  --value '[{"issueIds":[10001],"value":"quiet"}]' \
+  --generate-changelog false --generate-app-events false
 
 # List dynamic Connect modules registered by the calling app
 atlas jira app get-dynamic-modules
@@ -263,18 +269,18 @@ atlas jira application-properties list-advanced-settings
 
 Global Jira instance configuration and time-tracking settings under `/rest/api/3/configuration` (B382–B387).
 
-| Action                        | Positional | Required flags                                                                          | Optional flags    |
-| ----------------------------- | ---------- | --------------------------------------------------------------------------------------- | ----------------- |
-| `get`                         | —          | —                                                                                       | —                 |
-| `get-timetracking`            | —          | —                                                                                       | —                 |
-| `select-timetracking`         | —          | `--key`                                                                                 | `--name`, `--url` |
-| `list-timetracking-providers` | —          | —                                                                                       | —                 |
-| `get-timetracking-options`    | —          | —                                                                                       | —                 |
-| `update-timetracking-options` | —          | `--working-hours-per-day`, `--working-days-per-week`, `--time-format`, `--default-unit` | —                 |
+| Action                        | Positional | Required flags                                                                          | Optional flags |
+| ----------------------------- | ---------- | --------------------------------------------------------------------------------------- | -------------- |
+| `get`                         | —          | —                                                                                       | —              |
+| `get-timetracking`            | —          | —                                                                                       | —              |
+| `select-timetracking`         | —          | `--key`                                                                                 | `--name`       |
+| `list-timetracking-providers` | —          | —                                                                                       | —              |
+| `get-timetracking-options`    | —          | —                                                                                       | —              |
+| `update-timetracking-options` | —          | `--working-hours-per-day`, `--working-days-per-week`, `--time-format`, `--default-unit` | —              |
 
 - `get` returns the instance-level feature flags (voting, watching, sub-tasks, time tracking, attachments, issue linking) and the embedded `timeTrackingConfiguration` when time tracking is enabled.
 - `get-timetracking` returns the currently selected provider; `list-timetracking-providers` returns every installed provider. The built-in provider key is `JIRA`.
-- `select-timetracking --key <key>` switches the active provider; `--name` and `--url` may be supplied for third-party providers that require them.
+- `select-timetracking --key <key>` switches the active provider; `--name` may be supplied for third-party providers. The provider's `url` is read-only (returned by `get-timetracking`), so it is not sent.
 - `--time-format` accepts: `pretty`, `days`, `hours`.
 - `--default-unit` accepts: `minute`, `hour`, `day`, `week`.
 - `update-timetracking-options` requires ALL FOUR flags (spec mandates every field); the server returns the resulting `TimeTrackingConfiguration`.
@@ -846,7 +852,7 @@ the CLI does NOT auto-poll, callers drive the cadence.
 | `unwatch-issues`           | —               | `--issues`                         | —                                                      |
 | `watch-issues`             | —               | `--issues`                         | —                                                      |
 | `get-status`               | `<taskId>`      | —                                  | —                                                      |
-| `set-property`             | `<propertyKey>` | `--value`                          | `--filter`                                             |
+| `set-property`             | `<propertyKey>` | one of `--value`, `--expression`   | `--filter`                                             |
 | `delete-property`          | `<propertyKey>` | —                                  | `--filter`                                             |
 | `submit-builds`            | —               | `--value`                          | —                                                      |
 | `submit-deployments`       | —               | `--value`                          | —                                                      |
@@ -857,7 +863,7 @@ the CLI does NOT auto-poll, callers drive the cadence.
 | `submit-remote-links`      | —               | `--value`                          | —                                                      |
 | `submit-security`          | —               | `--value`                          | —                                                      |
 
-`--issues` accepts either a JSON array of issue-update objects (for `create-issues`, where each element is `{ fields: {...}, update?: {...} }`) or a comma-separated list of issue IDs/keys (for `delete-issues`, `get-fields`, `unwatch-issues`, `watch-issues`, `get-transitions`). `--actions` is a comma-separated list of bulk-edit actions. `--value` is a JSON string: an object for `edit-fields` (`editedFieldsInput`), `move-issues` (`targetToSourcesMapping`), and `set-property` (the property value); an array for `transition-issues` (`bulkTransitionInputs`); and the raw provider payload for every DevOps `submit-*` variant. `--filter` for `set-property` / `delete-property` is a JSON object restricting which issues are affected (`entityIds`, `currentValue`, `hasProperty`). `--send-notification true|false` (for `delete-issues`, `edit-fields`, `move-issues`, `transition-issues`) controls the bulk-change notification email; the server default is `true`, so pass `--send-notification false` to suppress it, omit for the default. Tri-state — the value is required.
+`--issues` accepts either a JSON array of issue-update objects (for `create-issues`, where each element is `{ fields: {...}, update?: {...} }`) or a comma-separated list of issue IDs/keys (for `delete-issues`, `get-fields`, `unwatch-issues`, `watch-issues`, `get-transitions`). `--actions` is a comma-separated list of bulk-edit actions. `--value` is a JSON string: an object for `edit-fields` (`editedFieldsInput`), `move-issues` (`targetToSourcesMapping`), and `set-property` (the property value); an array for `transition-issues` (`bulkTransitionInputs`); and the raw provider payload for every DevOps `submit-*` variant. `set-property` takes exactly one of `--value` (a constant JSON value) or `--expression` (EXPERIMENTAL: a Jira expression, string, evaluated per issue with `issue` and `user` in context). `--filter` for `set-property` / `delete-property` is a JSON object restricting which issues are affected (`entityIds`, `currentValue`, `hasProperty`). `--send-notification true|false` (for `delete-issues`, `edit-fields`, `move-issues`, `transition-issues`) controls the bulk-change notification email; the server default is `true`, so pass `--send-notification false` to suppress it, omit for the default. Tri-state — the value is required.
 
 DevOps ingest granular scopes follow the entity family: `write:build-info:jira`, `write:deployment-info:jira`, `write:dev-info:jira`, `write:feature-flag-info:jira`, `write:remote-link-info:jira`, and `write:security:jira` for the corresponding `submit-*` actions.
 
@@ -899,6 +905,9 @@ atlas jira bulk get-status 10641
 atlas jira bulk set-property my-flag \
   --value '{"owner":"admin","weight":100}' \
   --filter '{"entityIds":[10100,10002]}'
+
+# Bulk set a property computed per issue by a Jira expression
+atlas jira bulk set-property summary-copy --expression 'issue.summary'
 
 # Bulk delete a property from issues matching a filter (B525)
 atlas jira bulk delete-property my-flag \

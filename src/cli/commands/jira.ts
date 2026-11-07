@@ -290,7 +290,11 @@ async function executeIssues(client: JiraClient, cmd: ParsedCommand): Promise<un
       if (Object.keys(data).length === 0) {
         throw new Error('issues update: nothing to update — pass --summary or --body');
       }
-      await client.issues.update(issueKey, data);
+      await client.issues.update(issueKey, data, {
+        notifyUsers: notifyUsersFlag(opts),
+        overrideScreenSecurity: asBoolFlag(opts['override-screen-security']),
+        overrideEditableFlag: asBoolFlag(opts['override-editable-flag']),
+      });
       return { updated: true };
     }
     case 'delete': {
@@ -511,7 +515,7 @@ async function executeIssues(client: JiraClient, cmd: ParsedCommand): Promise<un
         requireArg(cmd.positionalArgs[0], 'issueIdOrKey'),
         parseJsonObjectFlag(requireOpt(opts['body'], '--body'), '--body') as AddWorklogData,
         {
-          notifyUsers: asBoolFlag(opts['notify-users']),
+          notifyUsers: notifyUsersFlag(opts),
           adjustEstimate: asString(opts['adjust-estimate']),
           newEstimate: asString(opts['new-estimate']),
           reduceBy: asString(opts['reduce-by']),
@@ -524,7 +528,7 @@ async function executeIssues(client: JiraClient, cmd: ParsedCommand): Promise<un
         requireArg(cmd.positionalArgs[0], 'issueIdOrKey'),
         requireArg(cmd.positionalArgs[1], 'worklogId'),
         {
-          notifyUsers: asBoolFlag(opts['notify-users']),
+          notifyUsers: notifyUsersFlag(opts),
           adjustEstimate: asString(opts['adjust-estimate']),
           newEstimate: asString(opts['new-estimate']),
           increaseBy: asString(opts['increase-by']),
@@ -544,7 +548,7 @@ async function executeIssues(client: JiraClient, cmd: ParsedCommand): Promise<un
         requireArg(cmd.positionalArgs[1], 'worklogId'),
         parseJsonObjectFlag(requireOpt(opts['body'], '--body'), '--body') as UpdateWorklogData,
         {
-          notifyUsers: asBoolFlag(opts['notify-users']),
+          notifyUsers: notifyUsersFlag(opts),
           adjustEstimate: asString(opts['adjust-estimate']),
           newEstimate: asString(opts['new-estimate']),
           expand: asString(opts['expand']),
@@ -867,11 +871,21 @@ async function executeProjects(client: JiraClient, cmd: ParsedCommand): Promise<
         requireArg(cmd.positionalArgs[1], 'avatarId'),
       );
       return { deleted: true };
-    case 'load-avatar':
+    case 'load-avatar': {
+      // Spec: x/y/size crop the uploaded image; each defaults to 0.
+      const x = asNonNegativeInt(opts['x'], '--x');
+      const y = asNonNegativeInt(opts['y'], '--y');
+      const size = asNonNegativeInt(opts['size'], '--size');
       return client.projects.loadAvatar(
         requireArg(cmd.positionalArgs[0], 'projectIdOrKey'),
         parseJsonValueFlag(requireOpt(opts['value'], '--value'), '--value'),
+        {
+          ...(x !== undefined && { x }),
+          ...(y !== undefined && { y }),
+          ...(size !== undefined && { size }),
+        },
       );
+    }
     case 'get-avatars':
       return client.projects.getAvatars(requireArg(cmd.positionalArgs[0], 'projectIdOrKey'));
     case 'get-classification-config':
@@ -1241,15 +1255,33 @@ async function executeUsers(client: JiraClient, cmd: ParsedCommand): Promise<unk
         startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
       });
     }
-    case 'assignable':
+    case 'assignable': {
+      const project = asString(opts['project']);
+      const issueKey = asString(opts['issue-key']);
+      const issueId = asString(opts['issue-id']);
+      // Spec: project is required unless issueKey or issueId is given.
+      if (project === undefined && issueKey === undefined && issueId === undefined) {
+        throw new Error('users assignable requires one of --project, --issue-key or --issue-id');
+      }
       return client.users.assignableSearch({
-        project: requireOpt(opts['project'], '--project'),
+        project,
+        issueKey,
+        issueId,
         query: asString(opts['query']),
+        sessionId: asString(opts['session-id']),
         username: asString(opts['user-name']),
         accountId: asString(opts['account-id']),
         startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+        actionDescriptorId: asNonNegativeInt(
+          opts['action-descriptor-id'],
+          '--action-descriptor-id',
+        ),
+        recommend: opts['recommend'] === true ? true : undefined,
+        accountType: parseCsv(opts['account-type']),
+        appType: parseCsv(opts['app-type']),
       });
+    }
     case 'bulk': {
       const accountIdsRaw = requireOpt(opts['account-ids'], '--account-ids');
       const accountIds = accountIdsRaw
@@ -1370,14 +1402,22 @@ async function executeUsers(client: JiraClient, cmd: ParsedCommand): Promise<unk
         startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
       });
-    case 'viewissue-search':
+    case 'viewissue-search': {
+      const issueKey = asString(opts['issue-key']);
+      const projectKey = asString(opts['project-key']);
+      // Spec: issueKey is required unless projectKey is given, and vice versa.
+      if (issueKey === undefined && projectKey === undefined) {
+        throw new Error('users viewissue-search requires --issue-key or --project-key');
+      }
       return client.users.viewIssueSearch({
-        issueKey: asString(opts['issue-key']),
+        issueKey,
+        projectKey,
         query: asString(opts['query']),
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
         accountId: asString(opts['account-id']),
         startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
       });
+    }
     case 'list':
       return client.users.list({
         startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
@@ -1538,7 +1578,8 @@ async function executeStatuses(client: JiraClient, cmd: ParsedCommand): Promise<
     case 'by-names': {
       const namesRaw = requireOpt(opts['names'], '--names');
       const names = splitCsvIds(namesRaw);
-      return client.statuses.byNames({ names });
+      const projectId = asString(opts['project-id']);
+      return client.statuses.byNames({ names, ...(projectId !== undefined && { projectId }) });
     }
     case 'search':
       return client.statuses.search({
@@ -2458,6 +2499,31 @@ function asBoolFlag(value: string | boolean | undefined): boolean | undefined {
   throw new Error(`expected 'true' or 'false', got: ${value}`);
 }
 
+/**
+ * `notifyUsers` defaults to true on the wire, so `--no-notify-users` sends
+ * false; `--notify-users` sends true; omit both for the server default.
+ */
+function notifyUsersFlag(opts: ParsedCommand['options']): boolean | undefined {
+  if (opts['no-notify-users'] !== true) return asBoolFlag(opts['notify-users']);
+  if (opts['notify-users'] !== undefined) {
+    throw new Error('Cannot specify both --notify-users and --no-notify-users');
+  }
+  return false;
+}
+
+/** `--generate-changelog` / `--generate-app-events` (tri-state; both default to true). */
+function fieldValueEventParams(opts: ParsedCommand['options']): {
+  generateChangelog?: boolean;
+  generateAppEvents?: boolean;
+} {
+  const generateChangelog = asBoolFlag(opts['generate-changelog']);
+  const generateAppEvents = asBoolFlag(opts['generate-app-events']);
+  return {
+    ...(generateChangelog !== undefined && { generateChangelog }),
+    ...(generateAppEvents !== undefined && { generateAppEvents }),
+  };
+}
+
 /** Validate the legacy Jira search endpoint's string-valued validation mode. */
 function asLegacySearchValidation(
   value: string | boolean | undefined,
@@ -3246,7 +3312,7 @@ async function executeApp(client: JiraClient, cmd: ParsedCommand): Promise<unkno
           '--value must be valid JSON (array of update objects with issueIds and value)',
         );
       }
-      await client.app.updateFieldValue(fieldIdOrKey, { updates });
+      await client.app.updateFieldValue(fieldIdOrKey, { updates }, fieldValueEventParams(opts));
       return { updated: true };
     }
     case 'list-field-context-configurations': {
@@ -3272,7 +3338,7 @@ async function executeApp(client: JiraClient, cmd: ParsedCommand): Promise<unkno
           '--value must be valid JSON (array of {customField, issueIds, value} objects)',
         );
       }
-      await client.app.bulkUpdateFieldValue({ updates });
+      await client.app.bulkUpdateFieldValue({ updates }, fieldValueEventParams(opts));
       return { updated: true };
     }
     case 'get-dynamic-modules':
@@ -3541,7 +3607,13 @@ async function executeBulk(client: JiraClient, cmd: ParsedCommand): Promise<unkn
     case 'set-property': {
       // B526 PUT /rest/api/3/issue/properties/{propertyKey}
       const propertyKey = requireArg(cmd.positionalArgs[0], 'propertyKey');
-      const value = parseJsonValueFlag(requireOpt(opts['value'], '--value'), '--value');
+      // Spec: the value is a constant (`value`) or a Jira expression (`expression`).
+      const valueRaw = asString(opts['value']);
+      const expression = asString(opts['expression']);
+      if ((valueRaw === undefined) === (expression === undefined)) {
+        throw new Error('bulk set-property requires exactly one of --value or --expression');
+      }
+      const value = valueRaw !== undefined ? parseJsonValueFlag(valueRaw, '--value') : undefined;
       const filterRaw = opts['filter'];
       const filter =
         filterRaw !== undefined
@@ -3552,6 +3624,7 @@ async function executeBulk(client: JiraClient, cmd: ParsedCommand): Promise<unkn
           : undefined;
       await client.bulk.setPropertyBulk(propertyKey, {
         value,
+        ...(expression !== undefined && { expression }),
         ...(filter !== undefined && { filter }),
       });
       return undefined;
@@ -3964,11 +4037,10 @@ async function executeConfiguration(client: JiraClient, cmd: ParsedCommand): Pro
     case 'select-timetracking': {
       const key = requireOpt(opts['key'], '--key');
       const name = asString(opts['name']);
-      const url = asString(opts['url']);
+      // Spec: TimeTrackingProvider.url is readOnly, so it is not sent.
       await client.configuration.selectTimeTracking({
         key,
         ...(name !== undefined && { name }),
-        ...(url !== undefined && { url }),
       });
       return { selected: true };
     }
@@ -5675,9 +5747,16 @@ async function executeVersionResource(client: JiraClient, cmd: ParsedCommand): P
         opts['move-affected-issues-to'],
         '--move-affected-issues-to',
       );
+      // Spec: array of { customFieldId, moveTo } for version-picker custom fields.
+      const replacementsRaw = asString(opts['custom-field-replacement-list']);
+      const customFieldReplacementList =
+        replacementsRaw !== undefined
+          ? parseJsonArrayFlag(replacementsRaw, '--custom-field-replacement-list')
+          : undefined;
       await client.version.deleteAndReplace(id, {
         ...(moveFixIssuesTo !== undefined && { moveFixIssuesTo }),
         ...(moveAffectedIssuesTo !== undefined && { moveAffectedIssuesTo }),
+        ...(customFieldReplacementList !== undefined && { customFieldReplacementList }),
       });
       return { deleted: true };
     }
@@ -8326,10 +8405,15 @@ async function executeIssueLink(client: JiraClient, cmd: ParsedCommand): Promise
       const linkType = requireOpt(opts['link-type'], '--link-type');
       const inwardIssue = requireOpt(opts['inward-issue'], '--inward-issue');
       const outwardIssue = requireOpt(opts['outward-issue'], '--outward-issue');
+      const commentRaw = asString(opts['comment']);
+      // Spec: `comment` is a Comment object (ADF `body`, optional `visibility`).
+      const comment =
+        commentRaw !== undefined ? parseJsonObjectFlag(commentRaw, '--comment') : undefined;
       await client.issueLink.create({
         type: { name: linkType },
         inwardIssue: { key: inwardIssue },
         outwardIssue: { key: outwardIssue },
+        ...(comment !== undefined && { comment }),
       });
       return { created: true };
     }

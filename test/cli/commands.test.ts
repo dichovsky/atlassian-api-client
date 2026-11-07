@@ -1803,6 +1803,24 @@ describe('executeConfluenceCommand', () => {
       );
     });
 
+    it('pages update sends --parent-id and --owner-id', async () => {
+      confluencePagesMock.update.mockResolvedValue({ id: '789' });
+      await executeConfluenceCommand(
+        cmd('pages', 'update', ['789'], {
+          title: 'T',
+          'version-number': '2',
+          body: '<p/>',
+          'parent-id': 'p-2',
+          'owner-id': 'acc-9',
+        }),
+        GLOBALS,
+      );
+      expect(confluencePagesMock.update).toHaveBeenCalledWith(
+        '789',
+        expect.objectContaining({ parentId: 'p-2', ownerId: 'acc-9' }),
+      );
+    });
+
     it('pages update throws when page ID is missing', async () => {
       const parsed = cmd('pages', 'update', [], {
         title: 'T',
@@ -4181,7 +4199,7 @@ describe('executeConfluenceCommand', () => {
     it('comments create throws when neither --page-id nor --blog-post-id given (B1043)', async () => {
       const parsed = cmd('comments', 'create', [], { body: 'text' });
       await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
-        '--page-id or --blog-post-id',
+        'One of --page-id, --blog-post-id, --attachment-id or --custom-content-id',
       );
     });
 
@@ -4192,6 +4210,58 @@ describe('executeConfluenceCommand', () => {
         body: 'text',
       });
       await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow('only one of');
+    });
+
+    it('comments create sends attachmentId / customContentId on a footer comment', async () => {
+      confluenceCommentsMock.createFooter.mockResolvedValue({ id: 'c-new' });
+      await executeConfluenceCommand(
+        cmd('comments', 'create', [], { 'attachment-id': 'att-1', body: 'on file' }),
+        GLOBALS,
+      );
+      expect(confluenceCommentsMock.createFooter).toHaveBeenCalledWith({
+        attachmentId: 'att-1',
+        body: { representation: 'storage', value: 'on file' },
+      });
+      await executeConfluenceCommand(
+        cmd('comments', 'create', [], { 'custom-content-id': 'cc-1', body: 'on cc' }),
+        GLOBALS,
+      );
+      expect(confluenceCommentsMock.createFooter).toHaveBeenLastCalledWith({
+        customContentId: 'cc-1',
+        body: { representation: 'storage', value: 'on cc' },
+      });
+    });
+
+    it('comments create rejects --attachment-id / --custom-content-id on an inline comment', async () => {
+      for (const target of [{ 'attachment-id': 'att-1' }, { 'custom-content-id': 'cc-1' }]) {
+        await expect(
+          executeConfluenceCommand(
+            cmd('comments', 'create', [], { 'comment-type': 'inline', body: 'x', ...target }),
+            GLOBALS,
+          ),
+        ).rejects.toThrow('apply only to footer comments');
+      }
+      expect(confluenceCommentsMock.createInline).not.toHaveBeenCalled();
+    });
+
+    it('comments create rejects two containers or a reply with --attachment-id', async () => {
+      await expect(
+        executeConfluenceCommand(
+          cmd('comments', 'create', [], { 'page-id': 'p-1', 'attachment-id': 'att-1', body: 'x' }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('only one of');
+      await expect(
+        executeConfluenceCommand(
+          cmd('comments', 'create', [], {
+            'parent-comment-id': 'c-1',
+            'custom-content-id': 'cc-1',
+            body: 'x',
+          }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('cannot be combined');
+      expect(confluenceCommentsMock.createFooter).not.toHaveBeenCalled();
     });
 
     it('comments create (inline) sends inlineCommentProperties from --text-selection flags', async () => {
@@ -9315,7 +9385,7 @@ describe('executeJiraCommand', () => {
       const result = await executeJiraCommand(parsed, GLOBALS);
 
       // Assert
-      expect(jiraIssuesMock.update).toHaveBeenCalledWith('PROJ-1', expect.any(Object));
+      expect(jiraIssuesMock.update).toHaveBeenCalledWith('PROJ-1', expect.any(Object), {});
       expect(result).toEqual({ updated: true });
     });
 
@@ -9492,10 +9562,14 @@ describe('executeJiraCommand', () => {
 
       await executeJiraCommand(parsed, GLOBALS);
 
-      expect(jiraIssuesMock.update).toHaveBeenCalledWith('PROJ-1', {
-        fields: { summary: 'Flag', assignee: { accountId: 'abc' } },
-        update: { labels: [{ add: 'x' }] },
-      });
+      expect(jiraIssuesMock.update).toHaveBeenCalledWith(
+        'PROJ-1',
+        {
+          fields: { summary: 'Flag', assignee: { accountId: 'abc' } },
+          update: { labels: [{ add: 'x' }] },
+        },
+        {},
+      );
     });
 
     it('issues update --body with only update ops sends no empty fields object', async () => {
@@ -9504,9 +9578,11 @@ describe('executeJiraCommand', () => {
         cmd('issues', 'update', ['PROJ-1'], { body: '{"update":{"labels":[{"add":"x"}]}}' }),
         GLOBALS,
       );
-      expect(jiraIssuesMock.update).toHaveBeenCalledWith('PROJ-1', {
-        update: { labels: [{ add: 'x' }] },
-      });
+      expect(jiraIssuesMock.update).toHaveBeenCalledWith(
+        'PROJ-1',
+        { update: { labels: [{ add: 'x' }] } },
+        {},
+      );
     });
 
     // Jira: "fields included in here cannot be included in `update`" — a flag
@@ -9522,10 +9598,11 @@ describe('executeJiraCommand', () => {
         }),
         GLOBALS,
       );
-      expect(jiraIssuesMock.update).toHaveBeenCalledWith('PROJ-1', {
-        fields: { summary: 'Flag' },
-        update: { labels: [{ add: 'x' }] },
-      });
+      expect(jiraIssuesMock.update).toHaveBeenCalledWith(
+        'PROJ-1',
+        { fields: { summary: 'Flag' }, update: { labels: [{ add: 'x' }] } },
+        {},
+      );
     });
 
     it('issues update omits update when every op collides with a flag', async () => {
@@ -9537,9 +9614,54 @@ describe('executeJiraCommand', () => {
         }),
         GLOBALS,
       );
-      expect(jiraIssuesMock.update).toHaveBeenCalledWith('PROJ-1', {
-        fields: { summary: 'Flag' },
+      expect(jiraIssuesMock.update).toHaveBeenCalledWith(
+        'PROJ-1',
+        { fields: { summary: 'Flag' } },
+        {},
+      );
+    });
+
+    it('issues update forwards --no-notify-users and the override toggles', async () => {
+      jiraIssuesMock.update.mockResolvedValue(undefined);
+      await executeJiraCommand(
+        cmd('issues', 'update', ['PROJ-1'], {
+          summary: 'S',
+          'no-notify-users': true,
+          'override-screen-security': true,
+          'override-editable-flag': true,
+        }),
+        GLOBALS,
+      );
+      expect(jiraIssuesMock.update).toHaveBeenCalledWith(
+        'PROJ-1',
+        { fields: { summary: 'S' } },
+        { notifyUsers: false, overrideScreenSecurity: true, overrideEditableFlag: true },
+      );
+    });
+
+    it('issues update --notify-users sends notifyUsers true', async () => {
+      jiraIssuesMock.update.mockResolvedValue(undefined);
+      await executeJiraCommand(
+        cmd('issues', 'update', ['PROJ-1'], { summary: 'S', 'notify-users': true }),
+        GLOBALS,
+      );
+      expect(jiraIssuesMock.update).toHaveBeenCalledWith('PROJ-1', expect.any(Object), {
+        notifyUsers: true,
       });
+    });
+
+    it('issues update rejects --notify-users with --no-notify-users', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('issues', 'update', ['PROJ-1'], {
+            summary: 'S',
+            'notify-users': true,
+            'no-notify-users': true,
+          }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('Cannot specify both --notify-users and --no-notify-users');
+      expect(jiraIssuesMock.update).not.toHaveBeenCalled();
     });
 
     it('issues create drops update ops on project/issuetype/summary/parent', async () => {
@@ -10372,6 +10494,22 @@ describe('executeJiraCommand', () => {
         expect.any(Object),
       );
       expect(result).toMatchObject({ id: 'wl-1' });
+    });
+
+    it('issues add-worklog --no-notify-users sends notifyUsers false', async () => {
+      jiraIssuesMock.addWorklog.mockResolvedValue({ id: 'wl-1' });
+      await executeJiraCommand(
+        cmd('issues', 'add-worklog', ['PROJ-1'], {
+          body: '{"timeSpentSeconds":60}',
+          'no-notify-users': true,
+        }),
+        GLOBALS,
+      );
+      expect(jiraIssuesMock.addWorklog).toHaveBeenCalledWith(
+        'PROJ-1',
+        { timeSpentSeconds: 60 },
+        expect.objectContaining({ notifyUsers: false }),
+      );
     });
 
     it('issues update-worklog passes notify-users when provided', async () => {
@@ -11407,8 +11545,30 @@ describe('executeJiraCommand', () => {
         cmd('projects', 'load-avatar', ['PROJ'], { value: '{"data":"base64"}' }),
         GLOBALS,
       );
-      expect(jiraProjectsMock.loadAvatar).toHaveBeenCalledWith('PROJ', { data: 'base64' });
+      expect(jiraProjectsMock.loadAvatar).toHaveBeenCalledWith('PROJ', { data: 'base64' }, {});
       expect(result).toMatchObject({ id: 'av-new' });
+    });
+
+    it('projects load-avatar forwards the --x/--y/--size crop region', async () => {
+      jiraProjectsMock.loadAvatar.mockResolvedValue({ id: 'av-new' });
+      await executeJiraCommand(
+        cmd('projects', 'load-avatar', ['PROJ'], { value: '{}', x: '0', y: '10', size: '64' }),
+        GLOBALS,
+      );
+      expect(jiraProjectsMock.loadAvatar).toHaveBeenCalledWith(
+        'PROJ',
+        {},
+        { x: 0, y: 10, size: 64 },
+      );
+    });
+
+    it('projects load-avatar rejects a negative --x', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('projects', 'load-avatar', ['PROJ'], { value: '{}', x: '-1' }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--x');
     });
 
     it('projects load-avatar throws when --value missing', async () => {
@@ -12483,10 +12643,35 @@ describe('executeJiraCommand', () => {
       expect(result).toEqual([]);
     });
 
-    it('users assignable throws when --project is missing', async () => {
+    it('users assignable throws when none of --project / --issue-key / --issue-id is given', async () => {
       await expect(executeJiraCommand(cmd('users', 'assignable', [], {}), GLOBALS)).rejects.toThrow(
-        '--project',
+        'users assignable requires one of --project, --issue-key or --issue-id',
       );
+    });
+
+    it('users assignable sends the issue-scoped filters without --project', async () => {
+      jiraUsersMock.assignableSearch.mockResolvedValue([]);
+      await executeJiraCommand(
+        cmd('users', 'assignable', [], {
+          'issue-key': 'PROJ-1',
+          'issue-id': '10001',
+          'session-id': 'sess-1',
+          'action-descriptor-id': '31',
+          recommend: true,
+          'account-type': 'atlassian, app',
+          'app-type': 'forge',
+        }),
+        GLOBALS,
+      );
+      expect(jiraUsersMock.assignableSearch).toHaveBeenCalledWith({
+        issueKey: 'PROJ-1',
+        issueId: '10001',
+        sessionId: 'sess-1',
+        actionDescriptorId: 31,
+        recommend: true,
+        accountType: ['atlassian', 'app'],
+        appType: ['forge'],
+      });
     });
 
     it('users bulk calls bulkGet with parsed account IDs', async () => {
@@ -12863,10 +13048,22 @@ describe('executeJiraCommand', () => {
       );
     });
 
-    it('users viewissue-search works without options', async () => {
+    it('users viewissue-search sends --project-key', async () => {
       jiraUsersMock.viewIssueSearch.mockResolvedValue([]);
-      await executeJiraCommand(cmd('users', 'viewissue-search'), GLOBALS);
-      expect(jiraUsersMock.viewIssueSearch).toHaveBeenCalled();
+      await executeJiraCommand(
+        cmd('users', 'viewissue-search', [], { 'project-key': 'PROJ' }),
+        GLOBALS,
+      );
+      expect(jiraUsersMock.viewIssueSearch).toHaveBeenCalledWith(
+        expect.objectContaining({ projectKey: 'PROJ', issueKey: undefined }),
+      );
+    });
+
+    it('users viewissue-search requires --issue-key or --project-key', async () => {
+      await expect(executeJiraCommand(cmd('users', 'viewissue-search'), GLOBALS)).rejects.toThrow(
+        'users viewissue-search requires --issue-key or --project-key',
+      );
+      expect(jiraUsersMock.viewIssueSearch).not.toHaveBeenCalled();
     });
 
     // ── list ──────────────────────────────────────────────────────────────
@@ -18045,9 +18242,40 @@ describe('executeJiraCommand', () => {
       );
 
       expect(result).toEqual({ updated: true });
-      expect(jiraAppMock.updateFieldValue).toHaveBeenCalledWith('customfield_10042', {
-        updates: [{ issueIds: [10001], value: 'hi' }],
-      });
+      expect(jiraAppMock.updateFieldValue).toHaveBeenCalledWith(
+        'customfield_10042',
+        { updates: [{ issueIds: [10001], value: 'hi' }] },
+        {},
+      );
+    });
+
+    it('app update-field-value forwards --generate-changelog / --generate-app-events false', async () => {
+      jiraAppMock.updateFieldValue.mockResolvedValue(undefined);
+      await executeJiraCommand(
+        cmd('app', 'update-field-value', ['customfield_10042'], {
+          value: '[]',
+          'generate-changelog': 'false',
+          'generate-app-events': 'false',
+        }),
+        GLOBALS,
+      );
+      expect(jiraAppMock.updateFieldValue).toHaveBeenCalledWith(
+        'customfield_10042',
+        { updates: [] },
+        { generateChangelog: false, generateAppEvents: false },
+      );
+    });
+
+    it('app update-field-value rejects a non-boolean --generate-changelog', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('app', 'update-field-value', ['customfield_10042'], {
+            value: '[]',
+            'generate-changelog': 'nope',
+          }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow("expected 'true' or 'false', got: nope");
     });
 
     it('app update-field-value requires --value', async () => {
@@ -18145,14 +18373,29 @@ describe('executeJiraCommand', () => {
       );
 
       expect(result).toEqual({ updated: true });
-      expect(jiraAppMock.bulkUpdateFieldValue).toHaveBeenCalledWith({
-        updates: [
-          {
-            fieldIdOrKey: 'customfield_10042',
-            updates: [{ issueIds: [10001], value: 'x' }],
-          },
-        ],
-      });
+      expect(jiraAppMock.bulkUpdateFieldValue).toHaveBeenCalledWith(
+        {
+          updates: [
+            {
+              fieldIdOrKey: 'customfield_10042',
+              updates: [{ issueIds: [10001], value: 'x' }],
+            },
+          ],
+        },
+        {},
+      );
+    });
+
+    it('app bulk-update-field-value forwards --generate-app-events false', async () => {
+      jiraAppMock.bulkUpdateFieldValue.mockResolvedValue(undefined);
+      await executeJiraCommand(
+        cmd('app', 'bulk-update-field-value', [], { value: '[]', 'generate-app-events': 'false' }),
+        GLOBALS,
+      );
+      expect(jiraAppMock.bulkUpdateFieldValue).toHaveBeenCalledWith(
+        { updates: [] },
+        { generateAppEvents: false },
+      );
     });
 
     it('app bulk-update-field-value requires --value', async () => {
@@ -18655,6 +18898,28 @@ describe('executeJiraCommand', () => {
       await expect(
         executeJiraCommand(cmd('bulk', 'set-property', ['my-flag']), GLOBALS),
       ).rejects.toThrow('--value');
+    });
+
+    it('bulk set-property sends --expression instead of a constant --value', async () => {
+      jiraBulkMock.setPropertyBulk.mockResolvedValue(undefined);
+      await executeJiraCommand(
+        cmd('bulk', 'set-property', ['my-flag'], { expression: 'issue.summary' }),
+        GLOBALS,
+      );
+      expect(jiraBulkMock.setPropertyBulk).toHaveBeenCalledWith('my-flag', {
+        value: undefined,
+        expression: 'issue.summary',
+      });
+    });
+
+    it('bulk set-property rejects --value with --expression', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('bulk', 'set-property', ['my-flag'], { value: '1', expression: 'issue.id' }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('exactly one of --value or --expression');
+      expect(jiraBulkMock.setPropertyBulk).not.toHaveBeenCalled();
     });
 
     it('bulk set-property throws when propertyKey positional is missing', async () => {
@@ -19310,7 +19575,7 @@ describe('executeJiraCommand', () => {
       expect(result).toEqual({ selected: true });
     });
 
-    it('configuration select-timetracking passes name and url when supplied', async () => {
+    it('configuration select-timetracking passes name but never the read-only url', async () => {
       // Arrange
       jiraConfigurationMock.selectTimeTracking.mockResolvedValue(undefined);
       const parsed = cmd('configuration', 'select-timetracking', [], {
@@ -19322,12 +19587,12 @@ describe('executeJiraCommand', () => {
       // Act
       await executeJiraCommand(parsed, GLOBALS);
 
-      // Assert
+      // Assert: spec TimeTrackingProvider.url is readOnly.
       expect(jiraConfigurationMock.selectTimeTracking).toHaveBeenCalledWith({
         key: 'com.acme',
         name: 'Acme',
-        url: 'https://acme.example/track',
       });
+      expect(jiraConfigurationMock.selectTimeTracking.mock.calls[0]?.[0]).not.toHaveProperty('url');
     });
 
     it('configuration list-timetracking-providers calls client.configuration.listTimeTrackingProviders()', async () => {
@@ -21196,6 +21461,18 @@ describe('executeJiraCommand', () => {
       );
     });
 
+    it('statuses by-names sends --project-id', async () => {
+      jiraStatusesMock.byNames.mockResolvedValue([]);
+      await executeJiraCommand(
+        cmd('statuses', 'by-names', [], { names: 'Done', 'project-id': '10000' }),
+        GLOBALS,
+      );
+      expect(jiraStatusesMock.byNames).toHaveBeenCalledWith({
+        names: ['Done'],
+        projectId: '10000',
+      });
+    });
+
     it('statuses search calls client.statuses.search with params', async () => {
       const page = { values: [], startAt: 0, maxResults: 50, isLast: true };
       jiraStatusesMock.search.mockResolvedValue(page);
@@ -23025,6 +23302,30 @@ describe('executeJiraCommand', () => {
       await executeJiraCommand(cmd('version', 'delete-and-replace', ['10001']), GLOBALS);
 
       expect(jiraVersionMock.deleteAndReplace).toHaveBeenCalledWith('10001', {});
+    });
+
+    it('version delete-and-replace sends --custom-field-replacement-list', async () => {
+      jiraVersionMock.deleteAndReplace.mockResolvedValue(undefined);
+      await executeJiraCommand(
+        cmd('version', 'delete-and-replace', ['10001'], {
+          'custom-field-replacement-list': '[{"customFieldId":10050,"moveTo":10002}]',
+        }),
+        GLOBALS,
+      );
+      expect(jiraVersionMock.deleteAndReplace).toHaveBeenCalledWith('10001', {
+        customFieldReplacementList: [{ customFieldId: 10050, moveTo: 10002 }],
+      });
+    });
+
+    it('version delete-and-replace rejects a non-array --custom-field-replacement-list', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('version', 'delete-and-replace', ['10001'], {
+            'custom-field-replacement-list': '{"customFieldId":10050}',
+          }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--custom-field-replacement-list must be a JSON array');
     });
 
     it('version unresolved-issue-count calls client.version.unresolvedIssueCount', async () => {
@@ -27875,6 +28176,44 @@ describe('executeJiraCommand', () => {
         outwardIssue: { key: 'MKY-1' },
       });
       expect(result).toEqual({ created: true });
+    });
+
+    it('issue-link create sends --comment as the JSON comment object', async () => {
+      jiraIssueLinkMock.create.mockResolvedValue(undefined);
+      const comment = {
+        body: { type: 'doc', version: 1, content: [] },
+        visibility: { type: 'role', value: 'Developers' },
+      };
+      await executeJiraCommand(
+        cmd('issue-link', 'create', [], {
+          'link-type': 'Blocks',
+          'inward-issue': 'HSP-1',
+          'outward-issue': 'MKY-1',
+          comment: JSON.stringify(comment),
+        }),
+        GLOBALS,
+      );
+      expect(jiraIssueLinkMock.create).toHaveBeenCalledWith({
+        type: { name: 'Blocks' },
+        inwardIssue: { key: 'HSP-1' },
+        outwardIssue: { key: 'MKY-1' },
+        comment,
+      });
+    });
+
+    it('issue-link create rejects a non-object --comment', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('issue-link', 'create', [], {
+            'link-type': 'Blocks',
+            'inward-issue': 'HSP-1',
+            'outward-issue': 'MKY-1',
+            comment: '"plain text"',
+          }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--comment must be a JSON object');
+      expect(jiraIssueLinkMock.create).not.toHaveBeenCalled();
     });
 
     it('issue-link create throws when --link-type is missing', async () => {
