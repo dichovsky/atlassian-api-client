@@ -18,6 +18,17 @@ export interface LabelsResponse {
   readonly self?: string;
 }
 
+/** The `query`/`scope` filters of `getAllLabels`, with only the defined keys present. */
+function labelFilterQuery(params?: Pick<ListLabelsParams, 'query' | 'scope'>): {
+  query?: string;
+  scope?: string;
+} {
+  return {
+    ...(params?.query !== undefined && { query: params.query }),
+    ...(params?.scope !== undefined && { scope: params.scope }),
+  };
+}
+
 /** Jira Labels resource — list all labels defined in the Jira instance. */
 export class LabelsResource {
   constructor(
@@ -34,6 +45,7 @@ export class LabelsResource {
     const query: Record<string, string | number | undefined> = {};
     if (params?.startAt !== undefined) query['startAt'] = params.startAt;
     if (params?.maxResults !== undefined) query['maxResults'] = params.maxResults;
+    Object.assign(query, labelFilterQuery(params));
 
     const response = await this.transport.request<LabelsResponse>({
       method: 'GET',
@@ -48,12 +60,14 @@ export class LabelsResource {
    * Delegates to {@link paginateOffset}.
    *
    * @param params.maxResults Page size hint (passed as `maxResults`).
+   * @param params.query Case-insensitive label prefix filter.
+   * @param params.scope `RECENT_PROJECTS` or `ALL_BROWSEABLE_PROJECTS`.
    */
   async *listAll(params?: Omit<ListLabelsParams, 'startAt'>): AsyncGenerator<JiraLabel> {
     yield* paginateOffset<JiraLabel>(
       this.transport,
       `${this.baseUrl}/label`,
-      undefined,
+      labelFilterQuery(params),
       params?.maxResults,
     );
   }

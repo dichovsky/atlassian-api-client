@@ -1,4 +1,57 @@
 import type { Transport } from '../../core/types.js';
+import { validatePageSize } from '../../core/pagination.js';
+
+// ── GET /invalid-jqls-access-log (experimental) ──────────────────────────────
+
+/** Avatar URLs of the user in an invalid-JQL audit entry. Spec: `AuditUserAvatarUrls`. */
+export interface InvalidJqlAuditUserAvatarUrls {
+  readonly '16x16'?: string;
+  readonly '24x24'?: string;
+  readonly '32x32'?: string;
+  readonly '48x48'?: string;
+}
+
+/** The user who ran an invalid JQL search. Spec: `AuditUser`. */
+export interface InvalidJqlAuditUser {
+  readonly accountId?: string;
+  readonly active?: boolean;
+  readonly avatarUrls?: InvalidJqlAuditUserAvatarUrls;
+  readonly displayName?: string;
+  readonly key?: string;
+  readonly name?: string;
+  readonly self?: string;
+}
+
+/** One invalid JQL search that Jira can no longer support. Spec: `AuditEntry`. */
+export interface InvalidJqlAuditEntry {
+  readonly caller?: string;
+  readonly createdAt?: string;
+  /** Saved filter ID, when the JQL came from a filter. */
+  readonly filterId?: string;
+  readonly jql?: string;
+  readonly requestUrl?: string;
+  readonly user?: InvalidJqlAuditUser;
+  readonly userAgent?: string;
+  readonly validationMessage?: string;
+}
+
+/** Token-paginated page of invalid-JQL audit entries. Spec: `AuditPage`. */
+export interface InvalidJqlAuditPage {
+  readonly entries?: readonly InvalidJqlAuditEntry[];
+  readonly isLast?: boolean;
+  readonly nextPageToken?: string;
+  readonly nextPageURL?: string;
+}
+
+/** Query parameters for GET /rest/api/3/invalid-jqls-access-log. */
+export interface GetInvalidJqlAuditEntriesParams {
+  /** Restrict entries to this external account ID. */
+  readonly userAccountId?: string;
+  /** Token from a previous response's `nextPageToken`. */
+  readonly nextPageToken?: string;
+  /** Entries per page, 1-100 (server default 50). */
+  readonly maxResults?: number;
+}
 
 // ── B588: POST /jql/autocompletedata ─────────────────────────────────────────
 
@@ -382,6 +435,32 @@ export class JqlResource {
       method: 'POST',
       path: `${this.baseUrl}/jql/pdcleaner`,
       body: data,
+    });
+    return response.data;
+  }
+
+  /**
+   * List JQL searches Jira can no longer support, newest first (retained 3 days).
+   * GET /rest/api/3/invalid-jqls-access-log (`getAuditEntries`).
+   *
+   * @remarks
+   * Requires *Administer Jira*. Pass the previous page's `nextPageToken` to page.
+   * `maxResults` must be an integer from 1 to 100 (the server rejects other values).
+   *
+   * @experimental Atlassian marks this operation as experimental.
+   */
+  async getInvalidJqlAuditEntries(
+    params?: GetInvalidJqlAuditEntriesParams,
+  ): Promise<InvalidJqlAuditPage> {
+    if (params?.maxResults !== undefined) validatePageSize(params.maxResults, 'maxResults');
+    const query: Record<string, string | number | undefined> = {};
+    if (params?.userAccountId !== undefined) query['userAccountId'] = params.userAccountId;
+    if (params?.nextPageToken !== undefined) query['nextPageToken'] = params.nextPageToken;
+    if (params?.maxResults !== undefined) query['maxResults'] = params.maxResults;
+    const response = await this.transport.request<InvalidJqlAuditPage>({
+      method: 'GET',
+      path: `${this.baseUrl}/invalid-jqls-access-log`,
+      query,
     });
     return response.data;
   }

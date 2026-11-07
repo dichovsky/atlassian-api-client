@@ -1,4 +1,5 @@
 import type { Transport } from '../../core/types.js';
+import { ValidationError } from '../../core/errors.js';
 import { encodePathSegment } from '../../core/path.js';
 import type { OffsetPaginatedResponse } from '../../core/pagination.js';
 import { validatePageSize } from '../../core/pagination.js';
@@ -272,6 +273,22 @@ export interface FieldContextIssueTypeIdsBody {
   readonly issueTypeIds: readonly string[];
 }
 
+/**
+ * Request body for adding issue types to a context (B419). Spec: `AddIssueTypesToContext`.
+ *
+ * @remarks
+ * At least one of `issueTypeIds` or `isAnyIssueType` must be provided
+ * (`issueTypeIds: []` counts as provided).
+ */
+export interface AddIssueTypesToContextBody {
+  /** The issue type IDs to add. Optional (and nullable) when `isAnyIssueType` is set. */
+  readonly issueTypeIds?: readonly string[] | null;
+  /** Whether to add or retain the any-issue-type mapping. Defaults to false. */
+  readonly isAnyIssueType?: boolean;
+  /** Default value for newly added mappings; if omitted, Jira copies the first existing mapping's default. */
+  readonly defaultValue?: FieldContextDefaultValue;
+}
+
 /** A single mapping of a context to an issue type (B429). */
 export interface FieldContextIssueTypeMapping {
   /** The ID of the context. */
@@ -296,13 +313,13 @@ export interface ListFieldContextIssueTypeMappingParams {
 // ── Default-value polymorphic types (B905, B906) ─────────────────────────────
 //
 // Spec: CustomFieldContextDefaultValue (oneOf, discriminated by `type`)
-// Snapshot date: 2026-05-30
+// Snapshot date: 2026-11-08
 //
-// All 27 spec-defined variants are typed exactly below (no variant is silently
+// All 28 spec-defined variants are typed exactly below (no variant is silently
 // lumped into a fallback). A forward-compat fallback is appended at the end of
 // the union for unknown future variants.
 //
-// Variant inventory (27 typed exactly):
+// Variant inventory (28 typed exactly):
 //   datepicker         → FieldContextDefaultValueDate
 //   datetimepicker     → FieldContextDefaultValueDateTime
 //   float              → FieldContextDefaultValueFloat
@@ -318,6 +335,7 @@ export interface ListFieldContextIssueTypeMappingParams {
 //   grouppicker.multiple → FieldContextDefaultValueMultipleGroupPicker
 //   grouppicker.single → FieldContextDefaultValueSingleGroupPicker
 //   labels             → FieldContextDefaultValueLabels
+//   longtext           → FieldContextDefaultValueLongText
 //   multi.user.select  → FieldContextDefaultValueMultiUserPicker
 //   option.cascading   → FieldContextDefaultValueCascadingOption
 //   option.multiple    → FieldContextDefaultValueMultipleOption
@@ -431,6 +449,13 @@ export interface FieldContextDefaultValueLabels {
   readonly type: 'labels';
   readonly contextId: string;
   readonly labels: readonly string[];
+}
+
+/** type: `longtext` — plain-text paragraph field default (line breaks preserved). */
+export interface FieldContextDefaultValueLongText {
+  readonly type: 'longtext';
+  readonly contextId: string;
+  readonly text?: string;
 }
 
 /** type: `textfield` — text field default (max 254 chars). */
@@ -549,7 +574,7 @@ export interface FieldContextDefaultValueUnknown {
 /**
  * Polymorphic union for CustomFieldContextDefaultValue.
  * Discriminated by the `type` string literal.
- * 27 variants typed exactly per spec snapshot 2026-05-30.
+ * 28 variants typed exactly per spec snapshot 2026-11-08.
  * FieldContextDefaultValueUnknown at the end covers future variants.
  */
 export type FieldContextDefaultValue =
@@ -566,6 +591,7 @@ export type FieldContextDefaultValue =
   | FieldContextDefaultValueProject
   | FieldContextDefaultValueFloat
   | FieldContextDefaultValueLabels
+  | FieldContextDefaultValueLongText
   | FieldContextDefaultValueTextField
   | FieldContextDefaultValueTextArea
   | FieldContextDefaultValueReadOnly
@@ -622,6 +648,26 @@ export interface GetContextDefaultValuesParams {
 /** Request body for bulk-updating field context default values (B906). */
 export interface FieldContextDefaultValueUpdateBody {
   readonly defaultValues?: readonly FieldContextDefaultValue[];
+}
+
+/**
+ * One default-value update for an issue-type scope within a context.
+ * Spec: `IssueTypeDefaultValueUpdate`.
+ */
+export interface IssueTypeDefaultValueUpdate {
+  /** The ID of the context. */
+  readonly contextId: number;
+  /** The issue type this default applies to. Omit when using `isAnyIssueType`. */
+  readonly issueTypeId?: string | null;
+  /** True for the catch-all default for issue types without a specific default. */
+  readonly isAnyIssueType?: boolean | null;
+  /** The new default value; null removes the default for this target. */
+  readonly value?: FieldContextDefaultValue | null;
+}
+
+/** Request body for PUT /field/{fieldId}/context/defaultValues. Spec: `CustomFieldContextDefaultValuesUpdate`. */
+export interface UpdateContextDefaultValuesBody {
+  readonly defaultValues?: readonly IssueTypeDefaultValueUpdate[];
 }
 
 // ── Field-key option types (B433–B440) ─────────────────────────────────────
@@ -1070,12 +1116,24 @@ export class FieldsResource {
     });
   }
 
-  /** Add issue types to a custom field context. B419 */
+  /**
+   * Add issue types to a custom field context. B419
+   *
+   * @throws ValidationError when neither `issueTypeIds` nor `isAnyIssueType` is
+   * provided (both undefined or null); `issueTypeIds: []` counts as provided.
+   */
   async setContextIssueTypes(
     fieldId: string,
     contextId: number,
-    data: FieldContextIssueTypeIdsBody,
+    data: AddIssueTypesToContextBody,
   ): Promise<void> {
+    const hasIssueTypeIds = data.issueTypeIds !== undefined && data.issueTypeIds !== null;
+    const hasAnyIssueType = data.isAnyIssueType !== undefined && data.isAnyIssueType !== null;
+    if (!hasIssueTypeIds && !hasAnyIssueType) {
+      throw new ValidationError(
+        'setContextIssueTypes requires at least one of issueTypeIds or isAnyIssueType',
+      );
+    }
     await this.transport.request<undefined>({
       method: 'PUT',
       path: `${this.baseUrl}/field/${encodePathSegment(fieldId)}/context/${encodePathSegment(String(contextId))}/issuetype`,
@@ -1183,6 +1241,28 @@ export class FieldsResource {
     await this.transport.request<undefined>({
       method: 'PUT',
       path: `${this.baseUrl}/field/${encodePathSegment(fieldId)}/context/defaultValue`,
+      body: data,
+    });
+  }
+
+  /**
+   * Update default values per context and issue type (204).
+   * PUT /rest/api/3/field/{fieldId}/context/defaultValues (`setContextDefaultValues`).
+   *
+   * @remarks
+   * Named `updateContextDefaultValues` because {@link FieldsResource.setContextDefaultValues}
+   * is the deprecated singular `/context/defaultValue` writer. Each entry targets one
+   * issue type (`issueTypeId`) or the catch-all (`isAnyIssueType: true`); a null
+   * `value` removes the default for that target, and unlisted entries are unchanged.
+   * Atlassian currently limits this to tenants in the early access program (CHANGE-3082).
+   */
+  async updateContextDefaultValues(
+    fieldId: string,
+    data: UpdateContextDefaultValuesBody,
+  ): Promise<void> {
+    await this.transport.request<undefined>({
+      method: 'PUT',
+      path: `${this.baseUrl}/field/${encodePathSegment(fieldId)}/context/defaultValues`,
       body: data,
     });
   }

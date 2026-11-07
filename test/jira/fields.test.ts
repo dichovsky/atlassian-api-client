@@ -18,6 +18,7 @@ import type {
   FieldContextDefaultValueForgeStringField,
   FieldContextDefaultValueForgeUserField,
   FieldContextDefaultValueFloat,
+  FieldContextDefaultValueLongText,
   FieldContextProjectMapping,
   FieldContextForProjectAndIssueType,
   IssueFieldOption,
@@ -1003,6 +1004,71 @@ describe('FieldsResource', () => {
       const body = transport.lastCall?.options.body as { issueTypeIds: string[] };
       expect(body).toEqual({ issueTypeIds: ['10001'] });
     });
+
+    it('accepts isAnyIssueType alone and sends it without issueTypeIds', async () => {
+      transport.respondWith(undefined);
+
+      await fields.setContextIssueTypes('customfield_10001', 10025, { isAnyIssueType: true });
+
+      expect(transport.lastCall?.options.body).toEqual({ isAnyIssueType: true });
+    });
+
+    it('treats isAnyIssueType: false as provided', async () => {
+      transport.respondWith(undefined);
+
+      await fields.setContextIssueTypes('customfield_10001', 10025, {
+        issueTypeIds: null,
+        isAnyIssueType: false,
+      });
+
+      expect(transport.lastCall?.options.body).toEqual({
+        issueTypeIds: null,
+        isAnyIssueType: false,
+      });
+    });
+
+    it('treats an empty issueTypeIds array as provided', async () => {
+      transport.respondWith(undefined);
+
+      await fields.setContextIssueTypes('customfield_10001', 10025, { issueTypeIds: [] });
+
+      expect(transport.lastCall?.options.body).toEqual({ issueTypeIds: [] });
+    });
+
+    it('sends a longtext defaultValue together with issueTypeIds and isAnyIssueType', async () => {
+      transport.respondWith(undefined);
+      const data = {
+        issueTypeIds: ['10001'],
+        isAnyIssueType: true,
+        defaultValue: { type: 'longtext' as const, contextId: '10025', text: 'line 1\nline 2' },
+      };
+
+      await fields.setContextIssueTypes('customfield_10001', 10025, data);
+
+      expect(transport.lastCall?.options.body).toEqual(data);
+    });
+
+    it.each([
+      ['neither field is set', {}],
+      ['issueTypeIds is null and isAnyIssueType is unset', { issueTypeIds: null }],
+      ['issueTypeIds is undefined and isAnyIssueType is unset', { issueTypeIds: undefined }],
+    ])('throws ValidationError and sends nothing when %s', async (_label, data) => {
+      await expect(fields.setContextIssueTypes('customfield_10001', 10025, data)).rejects.toThrow(
+        ValidationError,
+      );
+      expect(transport.calls).toHaveLength(0);
+    });
+
+    it('throws ValidationError when isAnyIssueType is null (not a boolean) and issueTypeIds is null', async () => {
+      const data = { issueTypeIds: null, isAnyIssueType: null } as unknown as Parameters<
+        typeof fields.setContextIssueTypes
+      >[2];
+
+      await expect(fields.setContextIssueTypes('customfield_10001', 10025, data)).rejects.toThrow(
+        ValidationError,
+      );
+      expect(transport.calls).toHaveLength(0);
+    });
   });
 
   // ── removeContextIssueTypes (B420) ────────────────────────────────────────
@@ -1425,6 +1491,21 @@ describe('FieldsResource', () => {
       });
     });
 
+    it('sends longtext variant (28th spec variant) with text', async () => {
+      transport.respondWith(undefined);
+      const longText: FieldContextDefaultValueLongText = {
+        type: 'longtext',
+        contextId: '10105',
+        text: 'first line\nsecond line',
+      };
+
+      await fields.setContextDefaultValues('customfield_10001', { defaultValues: [longText] });
+
+      expect(transport.lastCall?.options.body).toEqual({
+        defaultValues: [{ type: 'longtext', contextId: '10105', text: 'first line\nsecond line' }],
+      });
+    });
+
     it('sends multiple variants in a single request', async () => {
       // Arrange
       transport.respondWith(undefined);
@@ -1464,6 +1545,56 @@ describe('FieldsResource', () => {
       expect(transport.lastCall?.options.path).toBe(
         `${BASE_URL}/field/..%2Fadmin/context/defaultValue`,
       );
+    });
+  });
+
+  // ── updateContextDefaultValues (PUT /context/defaultValues, EAP) ──────────
+
+  describe('updateContextDefaultValues()', () => {
+    it('calls PUT /field/{fieldId}/context/defaultValues (plural) with per-issue-type updates', async () => {
+      transport.respondWith(undefined, 204);
+      const defaultValues = [
+        {
+          contextId: 10100,
+          issueTypeId: '10001',
+          value: { type: 'option.single' as const, contextId: '10100', optionId: '10002' },
+        },
+        { contextId: 10100, isAnyIssueType: true, value: null },
+      ];
+
+      await fields.updateContextDefaultValues('customfield_10001', { defaultValues });
+
+      expect(transport.lastCall?.options).toEqual({
+        method: 'PUT',
+        path: `${BASE_URL}/field/customfield_10001/context/defaultValues`,
+        body: { defaultValues },
+      });
+    });
+
+    it('does not hit the deprecated singular /defaultValue endpoint', async () => {
+      transport.respondWith(undefined, 204);
+
+      await fields.updateContextDefaultValues('customfield_10001', { defaultValues: [] });
+
+      expect(transport.lastCall?.options.path).not.toMatch(/\/defaultValue$/);
+    });
+
+    it('encodes fieldId with special characters in the path', async () => {
+      transport.respondWith(undefined, 204);
+
+      await fields.updateContextDefaultValues('../admin', { defaultValues: [] });
+
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/field/..%2Fadmin/context/defaultValues`,
+      );
+    });
+
+    it('propagates transport errors', async () => {
+      transport.respondWithError(new Error('forbidden'));
+
+      await expect(
+        fields.updateContextDefaultValues('customfield_10001', { defaultValues: [] }),
+      ).rejects.toThrow('forbidden');
     });
   });
 

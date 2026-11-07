@@ -290,7 +290,7 @@ RESOURCES:
   auditing               list
   events                 list
   changelog              bulk-fetch
-  forge                  bulk-panel-action
+  forge                  bulk-panel-action, bulk-pin-status
   incidents              get, delete
   post-incident-reviews  get, delete
   vulnerability          get, delete
@@ -336,10 +336,10 @@ RESOURCES:
   screens                list, create, delete, update, list-available-fields, list-tabs, create-tab, delete-tab, update-tab, list-tab-fields, add-field-to-tab, remove-field-from-tab, move-field, move-tab, add-to-default, list-all-tabs
   screenscheme           list, list-all, create, update, delete
   plans                  list, create, get, update, archive, duplicate, list-teams, add-atlassian-team, delete-atlassian-team, get-atlassian-team, update-atlassian-team, create-plan-only-team, delete-plan-only-team, get-plan-only-team, update-plan-only-team, trash
-  workflows              list, get, delete, issue-type-usages, project-usages, workflow-scheme-usages, bulk-get, capabilities, bulk-create, validate-create, default-editor, read-history, list-history, get-rule-config, update-rule-config, delete-rule-config, preview, search, update, validate-update
+  workflows              list, get, delete, issue-type-usages, project-usages, workflow-scheme-usages, bulk-get, capabilities, bulk-create, copy, validate-create, default-editor, read-history, list-history, get-rule-config, update-rule-config, delete-rule-config, preview, search, update, validate-update
   workflowscheme         list, create, delete, get, update, delete-default, get-default, set-default, delete-issuetype, get-issuetype, set-issuetype, delete-workflow, get-workflow, set-workflow, project-usages, list-by-project, assign-project, switch-project, create-draft, delete-draft, get-draft, update-draft, delete-draft-default, get-draft-default, set-draft-default, delete-draft-issuetype, get-draft-issuetype, set-draft-issuetype, publish-draft, delete-draft-workflow, get-draft-workflow, set-draft-workflow, bulk-read, bulk-update, bulk-mappings
-  fields                 field-list, field-list-all, field-create, field-update, field-delete, context-list, context-create, context-update, context-delete, context-option-list, context-option-create, context-option-update, context-option-delete, context-option-replace-issues, context-option-move, context-issuetype-set, context-issuetype-remove, context-issuetype-mapping, context-default-get, context-default-list, context-default-set, context-project-set, context-project-remove, context-mapping, context-project-mapping, field-option-list, field-option-create, field-option-delete, field-option-get, field-option-update, field-option-replace-issues, field-option-suggestions-edit, field-option-suggestions-search, field-project-associations, field-screens, field-restore, field-trash, field-remove-associations, field-create-associations, field-trash-list
-  jql                    autocomplete-data, autocomplete-data-post, autocomplete-suggestions, get-precomputations, update-precomputations, get-precomputations-by-id, match-issues, parse, migrate-queries, sanitize
+  fields                 field-list, field-list-all, field-create, field-update, field-delete, context-list, context-create, context-update, context-delete, context-option-list, context-option-create, context-option-update, context-option-delete, context-option-replace-issues, context-option-move, context-issuetype-set, context-issuetype-remove, context-issuetype-mapping, context-default-get, context-default-list, context-default-set, context-default-update, context-project-set, context-project-remove, context-mapping, context-project-mapping, field-option-list, field-option-create, field-option-delete, field-option-get, field-option-update, field-option-replace-issues, field-option-suggestions-edit, field-option-suggestions-search, field-project-associations, field-screens, field-restore, field-trash, field-remove-associations, field-create-associations, field-trash-list
+  jql                    autocomplete-data, autocomplete-data-post, autocomplete-suggestions, get-precomputations, update-precomputations, get-precomputations-by-id, match-issues, parse, migrate-queries, sanitize, invalid-jqls-access-log
   issuelinktype          list, get, create, update, delete
   issue-link             create, get, delete
   project-template       create, edit-template, live-template, remove-template, save-template
@@ -351,6 +351,8 @@ RESOURCES:
   linked-workspaces      list-operations, bulk-delete-operations, bulk-create-operations, list-security, get-security, bulk-delete-security, bulk-create-security
   bulk-by-properties     delete-builds, delete-deployments, delete-devinfo, delete-devops-components, delete-feature-flags, delete-operations, delete-remote-links, delete-security
   migration              get-task, submit-task, update-fields, update-properties, search-workflow-rules
+  policies               list, get-project-state, get-project-rules, set-project-policies, validate-project, apply, remove
+  agents                 start-batch, start-uniform
 
 DEPRECATED JIRA SOFTWARE ISSUE LISTS:
   boards backlog, get-issues, issues-without-epic, epic-issues, sprint-issues;

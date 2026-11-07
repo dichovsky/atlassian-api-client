@@ -29,7 +29,9 @@ import type {
   BulkUpdateFieldContextOptionData,
   OrderFieldContextOptionsData,
   FieldContextIssueTypeIdsBody,
+  AddIssueTypesToContextBody,
   FieldContextDefaultValue,
+  IssueTypeDefaultValueUpdate,
   FieldContextProjectIdsBody,
   FieldContextMappingBulkBody,
   CreateIssueFieldOptionData,
@@ -258,6 +260,10 @@ export async function executeJiraCommand(
       return executeMigration(client, cmd);
     case 'dashboards':
       return executeDashboards(client, cmd);
+    case 'policies':
+      return executePolicies(client, cmd);
+    case 'agents':
+      return executeAgents(client, cmd);
     default:
       throw new Error(`Unknown Jira resource: ${cmd.resource}. Use --help for usage.`);
   }
@@ -2472,6 +2478,13 @@ function asIntArray(value: string | boolean | undefined, name: string): number[]
   });
 }
 
+/** Like {@link asIntArray}, but the flag is required and must name at least one integer. */
+function requireIntArray(value: string | boolean | undefined, name: string): number[] {
+  const ids = asIntArray(value, name);
+  if (ids === undefined) throw new Error(`Missing required option: ${name}`);
+  return ids;
+}
+
 async function executeApplicationRole(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
   const opts = cmd.options;
 
@@ -2646,8 +2659,91 @@ async function executeForge(client: JiraClient, cmd: ParsedCommand): Promise<unk
       }
       return client.forge.bulkPanelAction({ moduleId, projectList });
     }
+    case 'bulk-pin-status': {
+      const moduleId = requireOpt(opts['module-id'], '--module-id');
+      const projectList = parseJsonArrayFlag(requireOpt(opts['value'], '--value'), '--value');
+      if (!projectList.every((p) => typeof p === 'string')) {
+        throw new Error('--value must be a JSON array of project ID/key strings');
+      }
+      return client.forge.getBulkPinStatus({ moduleId, projectList: projectList as string[] });
+    }
     default:
-      throw new Error(`Unknown forge action: ${cmd.action}. Actions: bulk-panel-action`);
+      throw new Error(
+        `Unknown forge action: ${cmd.action}. Actions: bulk-panel-action, bulk-pin-status`,
+      );
+  }
+}
+
+async function executePolicies(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
+  const opts = cmd.options;
+
+  switch (cmd.action) {
+    case 'list': {
+      const startAt = asNonNegativeInt(opts['start-at'], '--start-at');
+      const maxResults = asPositiveInt(opts['max-results'], '--max-results');
+      const cursor = asString(opts['cursor']);
+      return client.policies.list({
+        ...(startAt !== undefined && { startAt }),
+        ...(maxResults !== undefined && { maxResults }),
+        ...(cursor !== undefined && { cursor }),
+      });
+    }
+    case 'get-project-state':
+      return client.policies.getProjectState(requireArg(cmd.positionalArgs[0], 'projectIdOrKey'));
+    case 'get-project-rules':
+      return client.policies.getProjectRules(
+        requireArg(cmd.positionalArgs[0], 'projectIdOrKey'),
+        parseCsv(opts['rule-type-ids']),
+      );
+    case 'set-project-policies': {
+      const body = parseJsonObjectFlag(requireOpt(opts['body'], '--body'), '--body');
+      await client.policies.setProjectPolicies(
+        requireArg(cmd.positionalArgs[0], 'projectIdOrKey'),
+        body as unknown as Parameters<typeof client.policies.setProjectPolicies>[1],
+      );
+      return { updated: true };
+    }
+    case 'validate-project': {
+      const body = parseJsonObjectFlag(requireOpt(opts['body'], '--body'), '--body');
+      await client.policies.validateProjectPolicies(
+        requireArg(cmd.positionalArgs[0], 'projectIdOrKey'),
+        body as unknown as Parameters<typeof client.policies.validateProjectPolicies>[1],
+      );
+      return { valid: true };
+    }
+    case 'apply':
+      return client.policies.applyToProjects(requireArg(cmd.positionalArgs[0], 'policyId'), {
+        projectIds: requireIntArray(opts['project-ids'], '--project-ids'),
+      });
+    case 'remove':
+      return client.policies.removeFromProjects(requireArg(cmd.positionalArgs[0], 'policyId'), {
+        projectIds: requireIntArray(opts['project-ids'], '--project-ids'),
+      });
+    default:
+      throw new Error(
+        `Unknown policies action: ${cmd.action}. Actions: list, get-project-state, get-project-rules, set-project-policies, validate-project, apply, remove`,
+      );
+  }
+}
+
+async function executeAgents(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
+  const opts = cmd.options;
+
+  switch (cmd.action) {
+    case 'start-batch': {
+      const body = parseJsonObjectFlag(requireOpt(opts['body'], '--body'), '--body');
+      return client.agents.startBatch(
+        body as unknown as Parameters<typeof client.agents.startBatch>[0],
+      );
+    }
+    case 'start-uniform': {
+      const body = parseJsonObjectFlag(requireOpt(opts['body'], '--body'), '--body');
+      return client.agents.startUniform(
+        body as unknown as Parameters<typeof client.agents.startUniform>[0],
+      );
+    }
+    default:
+      throw new Error(`Unknown agents action: ${cmd.action}. Actions: start-batch, start-uniform`);
   }
 }
 
@@ -5015,9 +5111,13 @@ async function executeLabels(client: JiraClient, cmd: ParsedCommand): Promise<un
 
   switch (cmd.action) {
     case 'list': {
+      const query = asString(opts['query']);
+      const scope = asString(opts['scope']);
       return client.labels.list({
         startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+        ...(query !== undefined && { query }),
+        ...(scope !== undefined && { scope }),
       });
     }
     default:
@@ -5714,10 +5814,12 @@ async function executeConfig(client: JiraClient, cmd: ParsedCommand): Promise<un
     case 'list-projects': {
       const id = parsePositiveIntArg(requireArg(cmd.positionalArgs[0], 'id'), 'id');
       const projectIds = parseIntCsv(opts['project-ids'], '--project-ids');
+      const query = asString(opts['query']);
       return client.config.listProjects(id, {
         startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
         ...(projectIds !== undefined && { projectId: projectIds }),
+        ...(query !== undefined && { query }),
       });
     }
     case 'remove-field-associations': {
@@ -6544,6 +6646,7 @@ const WORKFLOWS_ACTIONS = [
   'bulk-get',
   'capabilities',
   'bulk-create',
+  'copy',
   'validate-create',
   'default-editor',
   'read-history',
@@ -6651,6 +6754,16 @@ async function executeWorkflows(client: JiraClient, cmd: ParsedCommand): Promise
       );
     }
 
+    // POST /rest/api/3/workflows/copy
+    case 'copy': {
+      const description = asString(opts['description']);
+      return client.workflows.copyWorkflow({
+        workflowId: requireOpt(opts['workflow-id'], '--workflow-id'),
+        workflowName: requireOpt(opts['workflow-name'], '--workflow-name'),
+        ...(description !== undefined && { description }),
+      });
+    }
+
     // B849: POST /rest/api/3/workflows/create/validation
     case 'validate-create': {
       const bodyRaw = requireOpt(opts['body'], '--body');
@@ -6686,6 +6799,12 @@ async function executeWorkflows(client: JiraClient, cmd: ParsedCommand): Promise
 
     // B843: GET /rest/api/3/workflow/rule/config
     case 'get-rule-config': {
+      rejectRemovedOptions(
+        opts,
+        'workflows get-rule-config',
+        ['draft'],
+        'Atlassian removed the draft parameter on 2026-11-02 (CHANGE-3147) and the API now rejects it; omit --draft',
+      );
       const typesRaw = requireOpt(opts['types'], '--types');
       const types = typesRaw
         .split(',')
@@ -6703,7 +6822,6 @@ async function executeWorkflows(client: JiraClient, cmd: ParsedCommand): Promise
           ? workflowNamesRaw.split(',').map((n) => n.trim())
           : undefined,
         withTags: withTagsRaw ? withTagsRaw.split(',').map((t) => t.trim()) : undefined,
-        draft: asBoolFlag(opts['draft']),
         expand: asString(opts['expand']),
       });
     }
@@ -7114,6 +7232,7 @@ const FIELDS_ACTIONS = [
   'context-default-get',
   'context-default-list',
   'context-default-set',
+  'context-default-update',
   'context-project-set',
   'context-project-remove',
   'context-mapping',
@@ -7342,9 +7461,21 @@ async function executeFields(client: JiraClient, cmd: ParsedCommand): Promise<un
         requireOpt(opts['context-id'], '--context-id'),
         '--context-id',
       );
-      const issueTypeIdsRaw = requireOpt(opts['issue-type-ids'], '--issue-type-ids');
-      const issueTypeIds = issueTypeIdsRaw.split(',').map((s) => s.trim());
-      const data: FieldContextIssueTypeIdsBody = { issueTypeIds };
+      const issueTypeIdsRaw = asString(opts['issue-type-ids']);
+      const isAnyIssueType = asBoolFlag(opts['is-any-issue-type']);
+      const defaultValueRaw = asString(opts['default-value-json']);
+      const data: AddIssueTypesToContextBody = {
+        ...(issueTypeIdsRaw !== undefined && {
+          issueTypeIds: issueTypeIdsRaw.split(',').map((s) => s.trim()),
+        }),
+        ...(isAnyIssueType !== undefined && { isAnyIssueType }),
+        ...(defaultValueRaw !== undefined && {
+          defaultValue: parseJsonObjectFlag(
+            defaultValueRaw,
+            '--default-value-json',
+          ) as unknown as FieldContextDefaultValue,
+        }),
+      };
       await client.fields.setContextIssueTypes(fieldId, contextId, data);
       return { updated: true };
     }
@@ -7403,6 +7534,16 @@ async function executeFields(client: JiraClient, cmd: ParsedCommand): Promise<un
         '--default-values-json',
       ) as FieldContextDefaultValue[];
       await client.fields.setContextDefaultValues(fieldId, { defaultValues });
+      return { updated: true };
+    }
+    case 'context-default-update': {
+      // PUT /field/{fieldId}/context/defaultValues (EAP) — per-context, per-issue-type defaults
+      const fieldId = requireOpt(opts['field-id'], '--field-id');
+      const defaultValues = parseJsonArrayFlag(
+        requireOpt(opts['default-values-json'], '--default-values-json'),
+        '--default-values-json',
+      ) as IssueTypeDefaultValueUpdate[];
+      await client.fields.updateContextDefaultValues(fieldId, { defaultValues });
       return { updated: true };
     }
     case 'context-project-set': {
@@ -7642,6 +7783,7 @@ const JQL_ACTIONS = [
   'parse',
   'migrate-queries',
   'sanitize',
+  'invalid-jqls-access-log',
 ] as const;
 
 async function executeJql(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
@@ -7767,6 +7909,18 @@ async function executeJql(client: JiraClient, cmd: ParsedCommand): Promise<unkno
         accountId?: string;
       }[];
       return client.jql.sanitize({ queries });
+    }
+
+    // GET /invalid-jqls-access-log (experimental)
+    case 'invalid-jqls-access-log': {
+      const userAccountId = asString(opts['user-account-id']);
+      const nextPageToken = asString(opts['next-page-token']);
+      const maxResults = asPositiveInt(opts['max-results'], '--max-results');
+      return client.jql.getInvalidJqlAuditEntries({
+        ...(userAccountId !== undefined && { userAccountId }),
+        ...(nextPageToken !== undefined && { nextPageToken }),
+        ...(maxResults !== undefined && { maxResults }),
+      });
     }
 
     default:

@@ -240,9 +240,12 @@ atlas jira expression eval \
 
 Jira instance-wide label listing (B1013). Exposes all labels defined in the Jira instance via `GET /rest/api/3/label`.
 
-| Action | Positionals | Required flags | Optional flags                |
-| ------ | ----------- | -------------- | ----------------------------- |
-| `list` | —           | —              | `--start-at`, `--max-results` |
+| Action | Positionals | Required flags | Optional flags                                      |
+| ------ | ----------- | -------------- | --------------------------------------------------- |
+| `list` | —           | —              | `--start-at`, `--max-results`, `--query`, `--scope` |
+
+- `--query` — case-insensitive prefix; Jira filters labels by it before pagination.
+- `--scope` — `RECENT_PROJECTS` or `ALL_BROWSEABLE_PROJECTS`. Omit it for the unbounded search; a blank or unrecognised value is treated as `ALL_BROWSEABLE_PROJECTS`.
 
 ```sh
 # List all labels (default page)
@@ -250,4 +253,7 @@ atlas jira labels list
 
 # List with pagination
 atlas jira labels list --start-at 0 --max-results 50
+
+# Labels starting with "bu" in recently used projects
+atlas jira labels list --query bu --scope RECENT_PROJECTS
 ```
