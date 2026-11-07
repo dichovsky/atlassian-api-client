@@ -15,7 +15,8 @@
  * carries the source minus the keys destructured beside it), and the
  * `return`s of same-file helpers. A value parsed from JSON (`--body '{…}'` →
  * `any` / `unknown` / `Record<string, …>`) passes every property; any other
- * untraced value (a declared-type parameter, an imported helper) passes none.
+ * untraced value passes only the keys of an inferred object-literal type —
+ * none for a declared type (a typed parameter or helper return).
  *
  * Only key presence is checked, not values. Accepted gaps live in KNOWN_GAPS;
  * the test fails on a new gap and on a stale entry.
