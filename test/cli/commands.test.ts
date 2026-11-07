@@ -9509,6 +9509,109 @@ describe('executeJiraCommand', () => {
       });
     });
 
+    // Jira: "fields included in here cannot be included in `update`" — a flag
+    // that sets a field must drop --body update ops on that same field.
+    it('issues update --summary drops a colliding update.summary op, keeps others', async () => {
+      jiraIssuesMock.update.mockResolvedValue(undefined);
+      await executeJiraCommand(
+        cmd('issues', 'update', ['PROJ-1'], {
+          summary: 'Flag',
+          body: JSON.stringify({
+            update: { summary: [{ set: 'Body' }], labels: [{ add: 'x' }] },
+          }),
+        }),
+        GLOBALS,
+      );
+      expect(jiraIssuesMock.update).toHaveBeenCalledWith('PROJ-1', {
+        fields: { summary: 'Flag' },
+        update: { labels: [{ add: 'x' }] },
+      });
+    });
+
+    it('issues update omits update when every op collides with a flag', async () => {
+      jiraIssuesMock.update.mockResolvedValue(undefined);
+      await executeJiraCommand(
+        cmd('issues', 'update', ['PROJ-1'], {
+          summary: 'Flag',
+          body: '{"update":{"summary":[{"set":"Body"}]}}',
+        }),
+        GLOBALS,
+      );
+      expect(jiraIssuesMock.update).toHaveBeenCalledWith('PROJ-1', {
+        fields: { summary: 'Flag' },
+      });
+    });
+
+    it('issues create drops update ops on project/issuetype/summary/parent', async () => {
+      jiraIssuesMock.create.mockResolvedValue({ id: '1', key: 'PROJ-2' });
+      await executeJiraCommand(
+        cmd('issues', 'create', [], {
+          project: 'PROJ',
+          type: 'Sub-task',
+          summary: 'Child',
+          parent: 'PROJ-1',
+          body: JSON.stringify({
+            update: {
+              project: [{ set: { key: 'X' } }],
+              issuetype: [{ set: { name: 'Bug' } }],
+              summary: [{ set: 'Body' }],
+              parent: [{ set: { key: 'X-1' } }],
+              labels: [{ add: 'a' }],
+            },
+          }),
+        }),
+        GLOBALS,
+      );
+      expect(jiraIssuesMock.create).toHaveBeenCalledWith({
+        fields: {
+          project: { key: 'PROJ' },
+          issuetype: { name: 'Sub-task' },
+          summary: 'Child',
+          parent: { key: 'PROJ-1' },
+        },
+        update: { labels: [{ add: 'a' }] },
+      });
+    });
+
+    it('issues create keeps an update.parent op when --parent is not given', async () => {
+      jiraIssuesMock.create.mockResolvedValue({ id: '1', key: 'PROJ-2' });
+      await executeJiraCommand(
+        cmd('issues', 'create', [], {
+          project: 'PROJ',
+          type: 'Task',
+          summary: 'S',
+          body: '{"update":{"parent":[{"set":{"key":"X-1"}}]}}',
+        }),
+        GLOBALS,
+      );
+      expect(jiraIssuesMock.create).toHaveBeenCalledWith({
+        fields: { project: { key: 'PROJ' }, issuetype: { name: 'Task' }, summary: 'S' },
+        update: { parent: [{ set: { key: 'X-1' } }] },
+      });
+    });
+
+    it('issues transition --resolution drops a colliding update.resolution op', async () => {
+      jiraIssuesMock.transition.mockResolvedValue(undefined);
+      await executeJiraCommand(
+        cmd('issues', 'transition', ['SUB-1'], {
+          'transition-id': '31',
+          resolution: 'Done',
+          body: JSON.stringify({
+            update: {
+              resolution: [{ set: { name: 'Fixed' } }],
+              comment: [{ add: { body: 'closing' } }],
+            },
+          }),
+        }),
+        GLOBALS,
+      );
+      expect(jiraIssuesMock.transition).toHaveBeenCalledWith('SUB-1', {
+        transition: { id: '31' },
+        fields: { resolution: { name: 'Done' } },
+        update: { comment: [{ add: { body: 'closing' } }] },
+      });
+    });
+
     it('issues update throws instead of sending an empty no-op body', async () => {
       await expect(
         executeJiraCommand(cmd('issues', 'update', ['PROJ-1'], {}), GLOBALS),
