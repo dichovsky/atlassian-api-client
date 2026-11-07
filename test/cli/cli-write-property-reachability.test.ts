@@ -13,7 +13,8 @@
  * literals (incl. spreads and conditional spreads), `const` initializers plus
  * later `x.k =` / `x['k'] =` assignments, and the `return`s of same-file
  * helpers. A value parsed from JSON (`--body '{…}'` → `any` / `unknown` /
- * `Record<string, …>`) passes every property.
+ * `Record<string, …>`) passes every property; any other untraced value
+ * (a declared-type parameter, an imported helper) passes none.
  *
  * Only key presence is checked, not values. Accepted gaps live in KNOWN_GAPS;
  * the test fails on a new gap and on a stale entry.
@@ -47,7 +48,7 @@ const KNOWN_GAPS: Readonly<
   },
   'confluence.blogPosts.update': {
     unset: ['spaceId', 'createdAt'],
-    reason: 'moving a post to another space and backdating are not exposed',
+    reason: 'the API cannot move a post between spaces; backdating is not exposed',
   },
   'confluence.blogPosts.resetClassificationLevel': {
     unset: ['status'],
@@ -63,7 +64,7 @@ const KNOWN_GAPS: Readonly<
   },
   'confluence.comments.createFooter': {
     unset: ['attachmentId', 'customContentId'],
-    reason: 'footer comments target pages and blog posts only',
+    reason: 'attachment and custom-content footer comments are not exposed',
   },
   'confluence.customContent.create': {
     unset: ['status'],
@@ -71,7 +72,7 @@ const KNOWN_GAPS: Readonly<
   },
   'confluence.pages.update': {
     unset: ['spaceId', 'parentId', 'ownerId'],
-    reason: 'move, re-parent and owner change are not exposed on update',
+    reason: 'the API cannot move a page between spaces; re-parent and owner change are not exposed',
   },
   'confluence.spaces.create': {
     unset: ['roleAssignments'],
@@ -228,13 +229,20 @@ function isOpen(checker: ts.TypeChecker, type: ts.Type): boolean {
   );
 }
 
-/** Keys an expression's type carries — exact for inferred object literals, permissive for declared types. */
+/**
+ * Keys an untraced expression's type carries: exact for an inferred object
+ * literal; none for a declared type (`data: CreateXData`), which says what
+ * may be set, not what is — so an untraceable shape fails loudly.
+ */
 function keysOfType(checker: ts.TypeChecker, type: ts.Type): Keys {
   const t = checker.getNonNullableType(type);
   if (t.isUnion())
     return t.types.reduce<Keys>((acc, part) => union(acc, keysOfType(checker, part)), new Set());
   if (isOpen(checker, t)) return ALL;
-  if ((t.flags & (ts.TypeFlags.Object | ts.TypeFlags.Intersection)) === 0) return new Set();
+  const objectLiteral =
+    (t.flags & ts.TypeFlags.Object) !== 0 &&
+    ((t as ts.ObjectType).objectFlags & ts.ObjectFlags.ObjectLiteral) !== 0;
+  if (!objectLiteral) return new Set();
   return new Set(t.getProperties().map((p) => p.name));
 }
 
