@@ -18184,7 +18184,7 @@ describe('executeJiraCommand', () => {
       jiraRepositoryMock.deleteEntity.mockResolvedValue(undefined);
 
       await executeJiraCommand(
-        cmd('repository', 'delete-entity', ['repo-1', 'pullRequest', 'pr-1'], {
+        cmd('repository', 'delete-entity', ['repo-1', 'pull_request', 'pr-1'], {
           'update-sequence-id': '99',
         }),
         GLOBALS,
@@ -18192,7 +18192,7 @@ describe('executeJiraCommand', () => {
 
       expect(jiraRepositoryMock.deleteEntity).toHaveBeenCalledWith(
         'repo-1',
-        'pullRequest',
+        'pull_request',
         'pr-1',
         { updateSequenceId: 99 },
       );

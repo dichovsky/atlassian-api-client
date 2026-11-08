@@ -2450,6 +2450,21 @@ function asPositiveInt(value: string | boolean | undefined, name: string): numbe
   return n;
 }
 
+/**
+ * A positive int64 the SDK sends as a number: decimal digits only (no `0x10`
+ * or `1e3`) and within `Number.MAX_SAFE_INTEGER`, so it reaches the wire exactly.
+ */
+function asExactPositiveInt(value: string | boolean | undefined, name: string): number | undefined {
+  if (typeof value !== 'string') return undefined;
+  const n = Number(value);
+  if (!/^\s*\d+\s*$/.test(value) || !Number.isSafeInteger(n) || n <= 0) {
+    throw new Error(
+      `${name} must be a positive integer up to ${Number.MAX_SAFE_INTEGER}, got: ${value}`,
+    );
+  }
+  return n;
+}
+
 /** Preserve an optional positive decimal integer exactly (notably OpenAPI int64 IDs). */
 function asPositiveDecimalInteger(
   value: string | boolean | undefined,
@@ -3379,10 +3394,12 @@ function devopsPropertiesFlag(raw: string, command: string): Record<string, stri
       if (eqIdx === -1) {
         throw new Error(`${command} --properties: invalid pair "${pair}", expected key=value`);
       }
-      const key = pair.slice(0, eqIdx).trim();
-      if (!key) throw new Error(`${command} --properties: empty key in pair "${pair}"`);
-      pairs.push([key, pair.slice(eqIdx + 1).trim()]);
+      pairs.push([pair.slice(0, eqIdx).trim(), pair.slice(eqIdx + 1).trim()]);
     }
+  }
+  for (const [key, value] of pairs) {
+    if (key.trim() === '') throw new Error(`${command} --properties: empty key`);
+    if (value === '') throw new Error(`${command} --properties: empty value for "${key}"`);
   }
   if (pairs.length === 0) {
     throw new Error(`${command} --properties: at least one property is required`);
@@ -3420,7 +3437,10 @@ async function executeExistsByProperties(client: JiraClient, cmd: ParsedCommand)
           'exists-by-properties get requires --properties (key=value[,key=value] or a JSON object)',
         );
       }
-      const updateSequenceId = asPositiveInt(opts['update-sequence-id'], '--update-sequence-id');
+      const updateSequenceId = asExactPositiveInt(
+        opts['update-sequence-id'],
+        '--update-sequence-id',
+      );
       return client.existsByProperties.get({
         ...devopsPropertiesFlag(raw, 'exists-by-properties'),
         ...(updateSequenceId !== undefined && { _updateSequenceId: updateSequenceId }),
@@ -3550,7 +3570,8 @@ function asIssueTypeKind(value: string | boolean | undefined): 'subtask' | 'stan
 /**
  * Filters and pagination shared by `app get-field-context-configuration` and
  * `list-field-context-configurations`. `id` and `fieldContextId` are spec
- * `type:array` (repeated params); Jira accepts one filter group per request.
+ * `type:array` (repeated params); Jira accepts one filter group per request,
+ * and `projectKeyOrId` only together with `issueTypeId`.
  */
 function appFieldContextConfigurationParams(opts: ParsedCommand['options']): {
   id?: number[];
@@ -3563,11 +3584,20 @@ function appFieldContextConfigurationParams(opts: ParsedCommand['options']): {
 } {
   const id = asIntArray(opts['ids'], '--ids');
   const fieldContextId = asIntArray(opts['context-ids'], '--context-ids');
-  const issueId = asPositiveInt(opts['issue-id'], '--issue-id');
+  const issueId = asExactPositiveInt(opts['issue-id'], '--issue-id');
   const projectKeyOrId = asString(opts['project']);
   const issueTypeId = asString(opts['issue-type-id']);
   const startAt = asNonNegativeInt(opts['start-at'], '--start-at');
   const maxResults = asPositiveInt(opts['max-results'], '--max-results');
+  if ((projectKeyOrId === undefined) !== (issueTypeId === undefined)) {
+    throw new Error('--project and --issue-type-id must be given together');
+  }
+  const groups = [id, fieldContextId, issueId, projectKeyOrId].filter((v) => v !== undefined);
+  if (groups.length > 1) {
+    throw new Error(
+      'Use one filter: --ids, --context-ids, --issue-id, or --project with --issue-type-id',
+    );
+  }
   return {
     ...(id !== undefined && { id }),
     ...(fieldContextId !== undefined && { fieldContextId }),
@@ -4130,20 +4160,26 @@ function avatarMediaType(mediaType: string | undefined, filePath: string): strin
 }
 
 /**
- * Print the image size, or write the image to `--output`. An existing file is
- * refused before the download and never overwritten.
+ * Print the image size, or write the image to `--output`. An existing file or
+ * a missing directory is refused before the download; nothing is overwritten.
  */
 async function avatarImageResult(
   output: string | undefined,
   download: () => Promise<ArrayBuffer>,
 ): Promise<{ bytes: number; path?: string }> {
   if (output === undefined) return { bytes: (await download()).byteLength };
-  const { access, writeFile } = await import('node:fs/promises');
+  const { access, stat, writeFile } = await import('node:fs/promises');
+  const { dirname } = await import('node:path');
   const taken = await access(output).then(
     () => true,
     () => false,
   );
   if (taken) throw new Error(`--output ${output} already exists; choose a new file`);
+  const inDirectory = await stat(dirname(output)).then(
+    (s) => s.isDirectory(),
+    () => false,
+  );
+  if (!inDirectory) throw new Error(`--output ${output}: its directory does not exist`);
   const buffer = await download();
   await writeFile(output, new Uint8Array(buffer), { flag: 'wx' });
   return { bytes: buffer.byteLength, path: output };
@@ -8828,6 +8864,9 @@ async function executePermissions(client: JiraClient, cmd: ParsedCommand): Promi
 
 // ── repository (B964-B966) ───────────────────────────────────────────────────
 
+/** DELETE /rest/devinfo/0.10/repository/{repositoryId}/{entityType}/{entityId} path enum. */
+const REPOSITORY_ENTITY_TYPES = ['commit', 'branch', 'pull_request'] as const;
+
 async function executeRepository(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
   const opts = cmd.options;
 
@@ -8836,7 +8875,10 @@ async function executeRepository(client: JiraClient, cmd: ParsedCommand): Promis
       return client.repository.get(requireArg(cmd.positionalArgs[0], 'repositoryId'));
     case 'delete': {
       const repositoryId = requireArg(cmd.positionalArgs[0], 'repositoryId');
-      const updateSequenceId = asPositiveInt(opts['update-sequence-id'], '--update-sequence-id');
+      const updateSequenceId = asExactPositiveInt(
+        opts['update-sequence-id'],
+        '--update-sequence-id',
+      );
       await client.repository.delete(
         repositoryId,
         updateSequenceId !== undefined ? { updateSequenceId } : undefined,
@@ -8846,8 +8888,16 @@ async function executeRepository(client: JiraClient, cmd: ParsedCommand): Promis
     case 'delete-entity': {
       const repositoryId = requireArg(cmd.positionalArgs[0], 'repositoryId');
       const entityType = requireArg(cmd.positionalArgs[1], 'entityType');
+      if (!(REPOSITORY_ENTITY_TYPES as readonly string[]).includes(entityType)) {
+        throw new Error(
+          `entityType must be one of: ${REPOSITORY_ENTITY_TYPES.join(', ')}, got: ${entityType}`,
+        );
+      }
       const entityId = requireArg(cmd.positionalArgs[2], 'entityId');
-      const updateSequenceId = asPositiveInt(opts['update-sequence-id'], '--update-sequence-id');
+      const updateSequenceId = asExactPositiveInt(
+        opts['update-sequence-id'],
+        '--update-sequence-id',
+      );
       await client.repository.deleteEntity(
         repositoryId,
         entityType,
@@ -9068,7 +9118,10 @@ async function executeBulkByProperties(client: JiraClient, cmd: ParsedCommand): 
       return { deleted: true };
     }
     case 'delete-devinfo': {
-      const updateSequenceId = asPositiveInt(opts['update-sequence-id'], '--update-sequence-id');
+      const updateSequenceId = asExactPositiveInt(
+        opts['update-sequence-id'],
+        '--update-sequence-id',
+      );
       await client.bulkByProperties.deleteDevInfoByProperties({
         ...buildParams(),
         ...(updateSequenceId !== undefined && { _updateSequenceId: updateSequenceId }),

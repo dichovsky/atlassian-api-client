@@ -450,7 +450,9 @@ export class BulkResource {
    * Set a property on a bulk set of issues. Jira runs this as an async task
    * and answers `303 See Other` to `GET /rest/api/3/task/{taskId}`, which the
    * transport follows; with `returnTask: true` this resolves that task's
-   * progress (poll it with `TaskResource.get`), otherwise `void`.
+   * progress (poll it with `TaskResource.get`), otherwise `void`. If Jira
+   * answers without a body (the spec declares only the 303) the call resolves
+   * `undefined` even with `returnTask: true`.
    */
   setPropertyBulk(
     propertyKey: string,
@@ -484,7 +486,8 @@ export class BulkResource {
 
   /**
    * Delete a property from a bulk set of issues. Async like
-   * {@link setPropertyBulk}: `returnTask: true` resolves the task progress.
+   * {@link setPropertyBulk}: `returnTask: true` resolves the task progress
+   * (`undefined` if Jira answers without a body).
    * Spec: requestBody.required = true — body is required (not optional).
    */
   deletePropertyBulk(

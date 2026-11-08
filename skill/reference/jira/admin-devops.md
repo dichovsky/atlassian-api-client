@@ -52,7 +52,7 @@ Most actions require Forge/Connect-issued credentials (OAuth 2.0 3LO scopes or C
 | `delete-forge-property`              | `<propertyKey>`  | —                     | —                                               |
 
 - `update-field-context-configuration` sends the spec body `{ configurations: [{ id, configuration?, schema? }] }`. For one entry pass `--id` (the configuration ID) plus `--configuration` and/or `--schema` (opaque JSON, stored verbatim). For several entries (1–1000) pass the whole body instead: `--body '{"configurations":[{"id":"10000","configuration":{...}},{"id":"10001","schema":{...}}]}'`. `--body` cannot be combined with `--id`/`--configuration`/`--schema`.
-- `get-field-context-configuration` and `list-field-context-configurations` return a page (`{ startAt, maxResults, total, isLast, values }`). Page with `--start-at` (0-based) and `--max-results` (server default 100). Filter with **one** of these groups (Jira rejects mixed groups): `--ids` (configuration IDs, comma-separated), `--context-ids` (field-context IDs, comma-separated), `--issue-id` (one issue ID), or `--project <idOrKey>` together with `--issue-type-id <id>`. `--ids` and `--context-ids` go on the wire as repeated `id=` / `fieldContextId=` params. Without a filter every configuration is returned.
+- `get-field-context-configuration` and `list-field-context-configurations` return a page (`{ startAt, maxResults, total, isLast, values }`). Page with `--start-at` (0-based) and `--max-results` (server default 100). Filter with **one** of these groups (the CLI rejects mixed groups, and `--project` without `--issue-type-id`, before sending): `--ids` (configuration IDs, comma-separated), `--context-ids` (field-context IDs, comma-separated), `--issue-id` (one issue ID), or `--project <idOrKey>` together with `--issue-type-id <id>`. `--ids` and `--context-ids` go on the wire as repeated `id=` / `fieldContextId=` params. Without a filter every configuration is returned.
 - `--value` for `update-field-value` is a JSON array of `{ issueIds, value }` entries (spec `CustomFieldValueUpdate`; `issueIds` is required). Pass the array itself, not `{"updates":[...]}`; any non-array is rejected before the request.
 - `--value` for `bulk-update-field-value` is a JSON array of flat `{ customField, issueIds, value }` entries (spec `MultipleCustomFieldValuesUpdate`); a non-array is rejected.
 - `--generate-changelog true|false` and `--generate-app-events true|false` (`update-field-value`, `bulk-update-field-value`) are tri-state: both default to `true` on the server, so pass `false` to skip the issue changelog entry or to suppress app events and webhooks (no other app then sees an "issue updated" event); omit for the default. The value is required.
@@ -824,7 +824,7 @@ atlas jira addons delete-property my-connect-app my-setting
 | `get`  | —          | `--properties` | `--update-sequence-id` |
 
 - Checks whether any repository (and its dev-info entities) carries **all** of the given properties — the arbitrary `properties` the provider attached when it submitted the data. Returns `{ hasDataMatchingProperties: boolean }`.
-- `--properties` — the properties to match, sent as query params: `key=value[,key=value]` pairs, or a JSON object when a value contains a comma (`--properties '{"tags":"a,b"}'`; values are strings or numbers). At least one property is required (Jira answers 400 without one); a repeated key is rejected.
+- `--properties` — the properties to match, sent as query params: `key=value[,key=value]` pairs, or a JSON object when a value contains a comma (`--properties '{"tags":"a,b"}'`; values are strings or numbers). At least one property is required (Jira answers 400 without one); a repeated key, an empty key or an empty value is rejected.
 - `--update-sequence-id <n>` — positive integer, sent as `_updateSequenceId`: only entities with an `updateSequenceId` less than or equal to it are considered.
 - The former `--entity-type` / `--entity-id` flags are rejected: they are not filters of this endpoint.
 
@@ -847,7 +847,7 @@ atlas jira exists-by-properties get --properties accountId=123 --update-sequence
 | `delete-entity` | `<repositoryId> <entityType> <entityId>` | —              | `--update-sequence-id` |
 
 - OAuth granular scopes: `get` requires `read:dev-info:jira`; both delete actions require `delete:dev-info:jira`.
-- `--update-sequence-id` is a positive integer (sent as `_updateSequenceId`); only data with an `updateSequenceId` less than or equal to it is deleted. An empty or non-numeric value is rejected.
+- `--update-sequence-id` is a positive integer (sent as `_updateSequenceId`); only data with an `updateSequenceId` less than or equal to it is deleted. An empty, non-decimal (`0x10`, `1e3`) or above-2^53−1 value is rejected. `delete-entity`'s `<entityType>` is one of `commit`, `branch`, `pull_request`; anything else is rejected before the request.
 
 ```sh
 # Get a repository and its associated dev-info entities
@@ -859,11 +859,11 @@ atlas jira repository delete my-repo-123
 # Delete with sequential update ordering
 atlas jira repository delete my-repo-123 --update-sequence-id 42
 
-# Delete a specific entity (commit, branch, pullRequest) from a repository
+# Delete a specific entity (commit, branch, pull_request) from a repository
 atlas jira repository delete-entity my-repo-123 commit abc123
 
 # Delete a specific pull request entity with update sequence ID
-atlas jira repository delete-entity my-repo-123 pullRequest pr-1 --update-sequence-id 42
+atlas jira repository delete-entity my-repo-123 pull_request pr-1 --update-sequence-id 42
 ```
 
 ## `dashboards`
@@ -973,7 +973,7 @@ the CLI does NOT auto-poll, callers drive the cadence.
 
 `--issues` accepts either a JSON array of issue-update objects (for `create-issues`, where each element is `{ fields: {...}, update?: {...} }`) or a comma-separated list of issue IDs/keys (for `delete-issues`, `get-fields`, `unwatch-issues`, `watch-issues`, `get-transitions`; spaces around the commas are trimmed). `get-fields` and `get-transitions` are cursor-paginated: pass the previous response's `endingBefore` / `startingAfter` cursor as `--ending-before` / `--starting-after` to page back or forward. `--actions` is a comma-separated list of bulk-edit actions. `--value` is a JSON string: an object for `edit-fields` (`editedFieldsInput`), `move-issues` (`targetToSourcesMapping`), and `set-property` (the property value); an array for `transition-issues` (`bulkTransitionInputs`); and the raw provider payload for every DevOps `submit-*` variant. `set-property` takes exactly one of `--value` (a constant JSON value) or `--expression` (EXPERIMENTAL: a Jira expression, string, evaluated per issue with `issue` and `user` in context). `--filter` for `set-property` / `delete-property` is a JSON object restricting which issues are affected (`entityIds`, `currentValue`, `hasProperty`). `--send-notification true|false` (for `delete-issues`, `edit-fields`, `move-issues`, `transition-issues`) controls the bulk-change notification email; the server default is `true`, so pass `--send-notification false` to suppress it, omit for the default. Tri-state — the value is required.
 
-`set-property` and `delete-property` run as an asynchronous Jira task (transactional: all eligible issues change, or none). Jira answers `303 See Other` to the task, which the CLI follows, and the command prints the task progress (`{ id, status, progress, self, ... }`). Poll it with `atlas jira task get <id>` until `status` is `COMPLETE` or `FAILED` — not `bulk get-status`, which only tracks the `{ taskId }` jobs above.
+`set-property` and `delete-property` run as an asynchronous Jira task (transactional: all eligible issues change, or none). Jira answers `303 See Other` to the task, which the CLI follows, and the command prints the task progress (`{ id, status, progress, self, ... }`). Poll it with `atlas jira task get <id>` until `status` is terminal (`COMPLETE`, `FAILED`, `CANCELLED` or `DEAD`) — not `bulk get-status`, which only tracks the `{ taskId }` jobs above.
 
 **DevOps ingest payloads (`submit-*`).** `--value` is the full request body. Every body may also carry an optional `properties` object (string keys/values that `bulk-by-properties` and `exists-by-properties` can later match) and `providerMetadata: { product }`. The required root key, its item limit and the required fields of each item (Jira Software spec schema title in brackets):
 
@@ -1512,7 +1512,7 @@ All eight actions share the same contract: `DELETE <product-base>/bulkByProperti
 | `delete-remote-links`      | —          | `--properties` | —                      |
 | `delete-security`          | —          | `--properties` | —                      |
 
-- `--properties`: the properties to match, sent as query params with AND logic (all must match): comma-separated `key=value` pairs (`accountId=account-123` or `accountId=acc-1,environment=prod`), or a JSON object when a value contains a comma (`--properties '{"tags":"a,b"}'`; values are strings or numbers). A repeated key is rejected rather than silently replacing the first.
+- `--properties`: the properties to match, sent as query params with AND logic (all must match): comma-separated `key=value` pairs (`accountId=account-123` or `accountId=acc-1,environment=prod`), or a JSON object when a value contains a comma (`--properties '{"tags":"a,b"}'`; values are strings or numbers). A repeated key is rejected rather than silently replacing the first; an empty key or an empty value is rejected too.
 - `--update-sequence-id <n>` (`delete-devinfo` only) — positive integer, sent as `_updateSequenceId`: only dev-info data with an `updateSequenceId` less than or equal to it is deleted. Every other action rejects it: Jira no longer supports the guard on feature flags, builds, deployments and remote links, and the security, operations and DevOps-component deletes never had one.
 - Granular delete scopes match the entity family. In particular, `delete-security` requires `delete:security:jira`; builds, deployments, dev info, feature flags, and remote links use their respective `delete:*` scope.
 

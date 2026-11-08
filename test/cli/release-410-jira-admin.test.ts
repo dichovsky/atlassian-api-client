@@ -4,11 +4,11 @@
  * (`skill/reference/**`) — the text an agent builds commands from — and run
  * through the real argv → router → client → transport path with a fake fetch.
  */
-import { existsSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { describe, expect, it } from 'vitest';
+import { afterAll, describe, expect, it, onTestFinished } from 'vitest';
 import {
   runCliWire,
   type CliWireResult,
@@ -255,6 +255,10 @@ describe('exists-by-properties get (F181)', () => {
     [[], 'requires --properties'],
     [['--properties', '{}'], 'at least one property is required'],
     [['--properties', 'a=1,a=2'], 'duplicate key "a"'],
+    [['--properties', '{"":"x"}'], '--properties: empty key'],
+    [['--properties', ' =x'], '--properties: empty key'],
+    [['--properties', 'accountId='], 'empty value for "accountId"'],
+    [['--properties', '{"accountId":""}'], 'empty value for "accountId"'],
     [
       ['--properties', 'a=1', '--update-sequence-id', ''],
       '--update-sequence-id must be a positive integer',
@@ -375,16 +379,33 @@ describe('repository delete --update-sequence-id (F250b)', () => {
     expect(only(run).query.get('_updateSequenceId')).toBe('42');
   });
 
-  it.each([[''], ['abc'], ['0']])('rejects %j instead of sending 0/NaN', async (value) => {
-    const run = await runCliWire([
-      'jira',
-      'repository',
-      'delete',
-      'r',
-      '--update-sequence-id',
-      value,
-    ]);
+  it.each([[''], ['abc'], ['0'], ['0x10'], ['1e3'], ['9007199254740993']])(
+    'rejects %j instead of sending 0/NaN or an inexact number',
+    async (value) => {
+      const run = await runCliWire([
+        'jira',
+        'repository',
+        'delete',
+        'r',
+        '--update-sequence-id',
+        value,
+      ]);
+      expect(run.exitCode).toBe(1);
+      expect(run.requests).toHaveLength(0);
+    },
+  );
+});
+
+describe('repository delete-entity entityType (spec enum commit | branch | pull_request)', () => {
+  it('sends the documented pull_request entity type', async () => {
+    const run = await runCliWire(example(ADMIN, 'jira repository delete-entity', 'pr-1'));
+    expect(only(run).path).toBe('/rest/devinfo/0.10/repository/my-repo-123/pull_request/pr-1');
+  });
+
+  it('rejects an entity type outside the spec enum before sending', async () => {
+    const run = await runCliWire(['jira', 'repository', 'delete-entity', 'r', 'pullRequest', 'e']);
     expect(run.exitCode).toBe(1);
+    expect(run.stderr).toContain('entityType must be one of: commit, branch, pull_request');
     expect(run.requests).toHaveLength(0);
   });
 });
@@ -469,6 +490,24 @@ describe('app field-context configurations (F182, F189, F192)', () => {
     ],
     [['update-field-value', 'cf', '--value', '{"updates":[]}'], 'must be a JSON array'],
     [['bulk-update-field-value', '--value', '{"updates":[]}'], 'must be a JSON array'],
+    [['get-field-context-configuration', 'cf', '--issue-id', '1e3'], '--issue-id must be'],
+    [['get-field-context-configuration', 'cf', '--project', 'P'], 'must be given together'],
+    [['get-field-context-configuration', 'cf', '--issue-type-id', '1'], 'must be given together'],
+    [['get-field-context-configuration', 'cf', '--ids', '1', '--issue-id', '2'], 'Use one filter'],
+    [
+      [
+        'list-field-context-configurations',
+        '--field-ids-or-keys',
+        'cf',
+        '--context-ids',
+        '1',
+        '--project',
+        'P',
+        '--issue-type-id',
+        '2',
+      ],
+      'Use one filter',
+    ],
   ])('rejects app %j before any request', async (args, message) => {
     const run = await runCliWire(['jira', 'app', ...args]);
     expect(run.exitCode).toBe(1);
@@ -679,6 +718,7 @@ describe('linked-workspaces bulk-delete-* trims --workspace-ids (F250c)', () => 
 
 describe('universal-avatar (F243, F244)', () => {
   const dir = mkdtempSync(join(tmpdir(), 'atlas-avatar-'));
+  afterAll(() => rmSync(dir, { recursive: true, force: true }));
 
   it('store sends Content-Type from the file extension', async () => {
     const args = example(ADMIN, 'jira universal-avatar store project 10001 --file ./icon.png');
@@ -740,6 +780,18 @@ describe('universal-avatar (F243, F244)', () => {
     expect(again.stderr).toContain('already exists');
     expect(again.requests).toHaveLength(0);
     expect(readFileSync(out, 'utf8')).toBe('PNGBYTES');
+  });
+
+  it('view-by-id --output into a missing directory is refused before the download', async () => {
+    const out = join(dir, 'no-such-dir', 'avatar.png');
+    const run = await runCliWire(
+      ['jira', 'universal-avatar', 'view-by-id', 'project', '1010', '--output', out],
+      { respond: { body: 'PNGBYTES' } },
+    );
+    expect(run.exitCode).toBe(1);
+    expect(run.stderr).toContain('its directory does not exist');
+    expect(run.stderr).not.toContain('ENOENT');
+    expect(run.requests).toHaveLength(0);
   });
 
   it.each([
@@ -917,8 +969,8 @@ describe('component list --order-by (F197) and epic --color (F177)', () => {
 /**
  * Table-driven CLI → wire matrix (F173, F198, F246). Every skill example for
  * the resources below runs through the real CLI and must (a) exit 0, (b) send
- * only spec operations (method + path template) with spec-declared query
- * params, and (c) change what the CLI does when any one of its flags is
+ * only spec operations (method + path template, path values inside any
+ * spec enum) with spec-declared query params, and (c) change what the CLI does when any one of its flags is
  * removed — a flag that can be dropped without effect is silently ignored,
  * the defect class behind F167/F181/F182/F184/F186/F187/F247/F284. Every CLI
  * action of these resources must also have at least one skill example.
@@ -972,6 +1024,7 @@ describe('skill example matrix for the admin / DevOps resources', () => {
     readonly $ref?: string;
     readonly in?: string;
     readonly name?: string;
+    readonly schema?: { readonly enum?: readonly string[] };
   }
   interface Spec {
     readonly paths: Record<
@@ -986,6 +1039,8 @@ describe('skill example matrix for the admin / DevOps resources', () => {
     readonly pattern: RegExp;
     readonly params: number;
     readonly query: ReadonlySet<string | undefined>;
+    /** Spec enum of each `{param}` in template order; `undefined` when the param is open. */
+    readonly pathEnums: readonly (readonly string[] | undefined)[];
     readonly description: string;
   }
   const specOps: SpecOp[] = ['jira-platform-v3.json', 'jira-software.json'].flatMap((file) => {
@@ -999,7 +1054,7 @@ describe('skill example matrix for the admin / DevOps resources', () => {
           method: method.toUpperCase(),
           template,
           pattern: new RegExp(
-            `^${template.replace(/[.*+?^$()|[\]\\]/g, '\\$&').replace(/\{[^}]+\}/g, '[^/]+')}$`,
+            `^${template.replace(/[.*+?^$()|[\]\\]/g, '\\$&').replace(/\{[^}]+\}/g, '([^/]+)')}$`,
           ),
           params: (template.match(/\{/g) ?? []).length,
           query: new Set(
@@ -1007,6 +1062,12 @@ describe('skill example matrix for the admin / DevOps resources', () => {
               .map(resolveParam)
               .filter((p) => p?.in === 'query')
               .map((p) => p?.name),
+          ),
+          pathEnums: [...template.matchAll(/\{([^}]+)\}/g)].map(
+            ([, name]) =>
+              (op.parameters ?? [])
+                .map(resolveParam)
+                .find((p) => p?.in === 'path' && p.name === name)?.schema?.enum,
           ),
           description: op.description ?? '',
         })),
@@ -1023,6 +1084,7 @@ describe('skill example matrix for the admin / DevOps resources', () => {
   /** Run one example in a fresh temp dir: `./x` paths live there and `--file` targets exist. */
   async function runExample(argv: readonly string[]): Promise<{ run: CliWireResult; key: string }> {
     const dir = mkdtempSync(join(tmpdir(), 'atlas-matrix-'));
+    onTestFinished(() => rmSync(dir, { recursive: true, force: true }));
     const mapped = argv.map((token, i) => {
       if (!token.startsWith('./')) return token;
       const path = join(dir, token.slice(2));
@@ -1076,7 +1138,14 @@ describe('skill example matrix for the admin / DevOps resources', () => {
           for (const req of run.requests) {
             const op = specOpFor(req);
             expect(op, `${req.method} ${req.path} is a spec operation`).toBeDefined();
-            if (op === undefined || ARBITRARY_QUERY.test(op.template)) continue;
+            if (op === undefined) continue;
+            const segments = (op.pattern.exec(req.path) ?? []).slice(1);
+            for (const [i, allowed] of op.pathEnums.entries()) {
+              if (allowed === undefined) continue;
+              const value = decodeURIComponent(segments[i] as string);
+              expect(allowed, `${op.template} path param #${i} "${value}"`).toContain(value);
+            }
+            if (ARBITRARY_QUERY.test(op.template)) continue;
             // Declared, or (linkedWorkspaces bulk delete) only shown in the description as `?name=`.
             const undeclared = [...req.query.keys()].filter(
               (name) => !op.query.has(name) && !op.description.includes(`?${name}=`),

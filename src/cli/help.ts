@@ -434,7 +434,7 @@ EXAMPLES:
   atlas jira repository delete my-repo-123
   atlas jira repository delete my-repo-123 --update-sequence-id 42
   atlas jira repository delete-entity my-repo-123 commit abc123
-  atlas jira repository delete-entity my-repo-123 pullRequest pr-1 --update-sequence-id 42
+  atlas jira repository delete-entity my-repo-123 pull_request pr-1 --update-sequence-id 42
   atlas jira app get-field-context-configuration customfield_10042
   atlas jira app update-field-context-configuration customfield_10042 --id 10000 --configuration '{"foo":true}'
   atlas jira app update-field-value customfield_10042 --value '[{"issueIds":[10001],"value":"hi"}]'
