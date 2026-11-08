@@ -12591,7 +12591,7 @@ describe('executeJiraCommand', () => {
       const result = await executeJiraCommand(cmd('users', 'get', ['acc-1']), GLOBALS);
 
       // Assert
-      expect(jiraUsersMock.get).toHaveBeenCalledWith('acc-1');
+      expect(jiraUsersMock.get).toHaveBeenCalledWith('acc-1', { expand: undefined });
       expect(result).toMatchObject({ accountId: 'acc-1' });
     });
 
@@ -12925,11 +12925,20 @@ describe('executeJiraCommand', () => {
       );
     });
 
-    it('users permission-search works without optional params', async () => {
+    it('users permission-search works with only the required --permissions', async () => {
       jiraUsersMock.getPermissionUsers.mockResolvedValue([]);
-      await executeJiraCommand(cmd('users', 'permission-search'), GLOBALS);
+      await executeJiraCommand(
+        cmd('users', 'permission-search', [], { permissions: 'BROWSE_PROJECTS' }),
+        GLOBALS,
+      );
       expect(jiraUsersMock.getPermissionUsers).toHaveBeenCalledWith(
         expect.not.objectContaining({ projectKey: expect.anything() }),
+      );
+    });
+
+    it('users permission-search throws without --permissions (spec-required)', async () => {
+      await expect(executeJiraCommand(cmd('users', 'permission-search'), GLOBALS)).rejects.toThrow(
+        'Missing required option: --permissions',
       );
     });
 
@@ -13090,15 +13099,11 @@ describe('executeJiraCommand', () => {
       expect(res).toMatchObject({ total: 0 });
     });
 
-    it('users search-query works without options', async () => {
-      jiraUsersMock.searchQuery.mockResolvedValue({
-        values: [],
-        startAt: 0,
-        maxResults: 50,
-        total: 0,
-      });
-      await executeJiraCommand(cmd('users', 'search-query'), GLOBALS);
-      expect(jiraUsersMock.searchQuery).toHaveBeenCalled();
+    it('users search-query requires --query (spec-required)', async () => {
+      await expect(executeJiraCommand(cmd('users', 'search-query'), GLOBALS)).rejects.toThrow(
+        'Missing required option: --query',
+      );
+      expect(jiraUsersMock.searchQuery).not.toHaveBeenCalled();
     });
 
     // ── search-query-key ───────────────────────────────────────────────────
@@ -13116,15 +13121,11 @@ describe('executeJiraCommand', () => {
       expect(res).toMatchObject({ total: 1 });
     });
 
-    it('users search-query-key works without options', async () => {
-      jiraUsersMock.searchQueryKey.mockResolvedValue({
-        values: [],
-        startAt: 0,
-        maxResults: 50,
-        total: 0,
-      });
-      await executeJiraCommand(cmd('users', 'search-query-key'), GLOBALS);
-      expect(jiraUsersMock.searchQueryKey).toHaveBeenCalled();
+    it('users search-query-key requires --query (spec-required)', async () => {
+      await expect(executeJiraCommand(cmd('users', 'search-query-key'), GLOBALS)).rejects.toThrow(
+        'Missing required option: --query',
+      );
+      expect(jiraUsersMock.searchQueryKey).not.toHaveBeenCalled();
     });
 
     // ── viewissue-search ───────────────────────────────────────────────────
@@ -13181,12 +13182,21 @@ describe('executeJiraCommand', () => {
     it('users list-search calls client.users.listSearch', async () => {
       jiraUsersMock.listSearch.mockResolvedValue([]);
       await executeJiraCommand(
-        cmd('users', 'list-search', [], { query: 'alice', 'start-at': '5' }),
+        cmd('users', 'list-search', [], { 'start-at': '5', expand: 'groups' }),
         GLOBALS,
       );
-      expect(jiraUsersMock.listSearch).toHaveBeenCalledWith(
-        expect.objectContaining({ query: 'alice', startAt: 5 }),
-      );
+      expect(jiraUsersMock.listSearch).toHaveBeenCalledWith({
+        startAt: 5,
+        maxResults: undefined,
+        expand: 'groups',
+      });
+    });
+
+    it('users list-search rejects --query (not a GET /users/search param)', async () => {
+      await expect(
+        executeJiraCommand(cmd('users', 'list-search', [], { query: 'alice' }), GLOBALS),
+      ).rejects.toThrow('--query is not supported by users list-search');
+      expect(jiraUsersMock.listSearch).not.toHaveBeenCalled();
     });
 
     it('users list-search works without options', async () => {
@@ -13501,7 +13511,7 @@ describe('executeJiraCommand', () => {
         cmd('issuetype', 'list-for-project', [], { 'project-id': '10000' }),
         GLOBALS,
       );
-      expect(jiraIssueTypeMock.listForProject).toHaveBeenCalledWith(10000);
+      expect(jiraIssueTypeMock.listForProject).toHaveBeenCalledWith(10000, {});
     });
 
     it('issuetype list-for-project throws when --project-id is missing', async () => {
@@ -13559,14 +13569,22 @@ describe('executeJiraCommand', () => {
       );
     });
 
-    it('priorities create calls client.priorities.create with name', async () => {
+    it('priorities create calls client.priorities.create with the spec-required fields', async () => {
       const priority = { id: '99', name: 'Critical' };
       jiraPrioritiesMock.create.mockResolvedValue(priority);
       const result = await executeJiraCommand(
-        cmd('priorities', 'create', [], { name: 'Critical' }),
+        cmd('priorities', 'create', [], {
+          name: 'Critical',
+          'status-color': '#F00',
+          'avatar-id': '10300',
+        }),
         GLOBALS,
       );
-      expect(jiraPrioritiesMock.create).toHaveBeenCalledWith({ name: 'Critical' });
+      expect(jiraPrioritiesMock.create).toHaveBeenCalledWith({
+        name: 'Critical',
+        statusColor: '#F00',
+        avatarId: 10300,
+      });
       expect(result).toEqual(priority);
     });
 
@@ -13624,26 +13642,24 @@ describe('executeJiraCommand', () => {
       });
     });
 
-    it('priorities update throws when --name is missing', async () => {
+    it('priorities update throws when no field is given', async () => {
       await expect(
         executeJiraCommand(cmd('priorities', 'update', ['10']), GLOBALS),
-      ).rejects.toThrow('--name');
+      ).rejects.toThrow('priorities update requires at least one of --name');
     });
 
     it('priorities delete calls client.priorities.delete', async () => {
       jiraPrioritiesMock.delete.mockResolvedValue(undefined);
-      const result = await executeJiraCommand(
-        cmd('priorities', 'delete', ['10'], { 'replace-with': '1' }),
-        GLOBALS,
-      );
-      expect(jiraPrioritiesMock.delete).toHaveBeenCalledWith('10', { replaceWith: '1' });
+      const result = await executeJiraCommand(cmd('priorities', 'delete', ['10']), GLOBALS);
+      expect(jiraPrioritiesMock.delete).toHaveBeenCalledWith('10');
       expect(result).toEqual({ deleted: true });
     });
 
-    it('priorities delete without --replace-with', async () => {
-      jiraPrioritiesMock.delete.mockResolvedValue(undefined);
-      await executeJiraCommand(cmd('priorities', 'delete', ['10']), GLOBALS);
-      expect(jiraPrioritiesMock.delete).toHaveBeenCalledWith('10', {});
+    it('priorities delete rejects --replace-with (not in the deletePriority spec)', async () => {
+      await expect(
+        executeJiraCommand(cmd('priorities', 'delete', ['10'], { 'replace-with': '1' }), GLOBALS),
+      ).rejects.toThrow('--replace-with is not supported by priorities delete');
+      expect(jiraPrioritiesMock.delete).not.toHaveBeenCalled();
     });
 
     it('priorities set-default calls client.priorities.setDefault', async () => {
@@ -22127,7 +22143,9 @@ describe('executeJiraCommand', () => {
         cmd('issue-comments', 'get', ['PROJ-123', '10001']),
         GLOBALS,
       );
-      expect(jiraIssueCommentsMock.get).toHaveBeenCalledWith('PROJ-123', '10001');
+      expect(jiraIssueCommentsMock.get).toHaveBeenCalledWith('PROJ-123', '10001', {
+        expand: undefined,
+      });
       expect(result).toEqual(comment);
     });
 
@@ -22147,9 +22165,11 @@ describe('executeJiraCommand', () => {
         cmd('issue-comments', 'create', ['PROJ-123'], { body: bodyJson }),
         GLOBALS,
       );
-      expect(jiraIssueCommentsMock.create).toHaveBeenCalledWith('PROJ-123', {
-        body: { type: 'doc', version: 1, content: [] },
-      });
+      expect(jiraIssueCommentsMock.create).toHaveBeenCalledWith(
+        'PROJ-123',
+        { body: { type: 'doc', version: 1, content: [] } },
+        { expand: undefined },
+      );
       expect(result).toEqual(comment);
     });
 
@@ -22175,9 +22195,12 @@ describe('executeJiraCommand', () => {
         cmd('issue-comments', 'update', ['PROJ-123', '10001'], { body: bodyJson }),
         GLOBALS,
       );
-      expect(jiraIssueCommentsMock.update).toHaveBeenCalledWith('PROJ-123', '10001', {
-        body: { type: 'doc', version: 1, content: [] },
-      });
+      expect(jiraIssueCommentsMock.update).toHaveBeenCalledWith(
+        'PROJ-123',
+        '10001',
+        { body: { type: 'doc', version: 1, content: [] } },
+        { notifyUsers: undefined, overrideEditableFlag: undefined, expand: undefined },
+      );
       expect(result).toEqual(comment);
     });
 

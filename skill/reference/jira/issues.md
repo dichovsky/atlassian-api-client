@@ -436,22 +436,25 @@ atlas jira issue-attachments upload PROJ-1 --file ./screenshot.png --media-type 
 
 Full comment CRUD + property surface + bulk fetch (B1012, B356–B360). Wired via `client.issueComments.*`.
 
-| Action            | Positional                   | Required flags    | Optional flags                                          |
-| ----------------- | ---------------------------- | ----------------- | ------------------------------------------------------- |
-| `list`            | `<issueIdOrKey>`             | —                 | `--start-at`, `--max-results`, `--order-by`, `--expand` |
-| `get`             | `<issueIdOrKey> <commentId>` | —                 | —                                                       |
-| `create`          | `<issueIdOrKey>`             | `--body` (JSON)   | —                                                       |
-| `update`          | `<issueIdOrKey> <commentId>` | `--body` (JSON)   | —                                                       |
-| `delete`          | `<issueIdOrKey> <commentId>` | —                 | —                                                       |
-| `list-properties` | `<commentId>`                | —                 | —                                                       |
-| `get-property`    | `<commentId> <propertyKey>`  | —                 | —                                                       |
-| `set-property`    | `<commentId> <propertyKey>`  | `--value` (JSON)  | —                                                       |
-| `delete-property` | `<commentId> <propertyKey>`  | —                 | —                                                       |
-| `bulk-fetch`      | —                            | `--ids` (CSV int) | `--expand`                                              |
+| Action            | Positional                   | Required flags    | Optional flags                                           |
+| ----------------- | ---------------------------- | ----------------- | -------------------------------------------------------- |
+| `list`            | `<issueIdOrKey>`             | —                 | `--start-at`, `--max-results`, `--order-by`, `--expand`  |
+| `get`             | `<issueIdOrKey> <commentId>` | —                 | `--expand`                                               |
+| `create`          | `<issueIdOrKey>`             | `--body` (JSON)   | `--expand`                                               |
+| `update`          | `<issueIdOrKey> <commentId>` | `--body` (JSON)   | `--notify-users`, `--override-editable-flag`, `--expand` |
+| `delete`          | `<issueIdOrKey> <commentId>` | —                 | —                                                        |
+| `list-properties` | `<commentId>`                | —                 | —                                                        |
+| `get-property`    | `<commentId> <propertyKey>`  | —                 | —                                                        |
+| `set-property`    | `<commentId> <propertyKey>`  | `--value` (JSON)  | —                                                        |
+| `delete-property` | `<commentId> <propertyKey>`  | —                 | —                                                        |
+| `bulk-fetch`      | —                            | `--ids` (CSV int) | `--expand`                                               |
 
-- `--body` for `create`/`update` must be a JSON object matching `CreateIssueCommentData` / `UpdateIssueCommentData`: `{ body: <ADF doc>, visibility?: { type, value } }`. The ADF body is Atlassian Document Format.
+- `--body` for `create`/`update` must be a JSON object matching `CreateIssueCommentData` / `UpdateIssueCommentData`: `{ body: <ADF doc>, visibility?: { type: "group"|"role", value }, properties?: [{ key, value }] }`. The ADF body is Atlassian Document Format; `properties` sets comment properties in the same call.
+- `--order-by` (`list`) is `created`, `-created` or `+created`; write the dash forms with `=` (`--order-by=-created`), since a separate `-created` is read as an option.
+- `update` notifies watchers by default: pass `--no-notify-users` (or `--notify-users false`) to suppress it; omit both for the server default. `--override-editable-flag` edits despite screen security (Connect/Forge apps with _Administer Jira_ only).
+- `--expand renderedBody` (`get`, `create`, `update`) returns the body rendered as HTML.
 - `--value` is parsed as JSON; pass any scalar, object, or array (e.g. `--value '{"flag":true}'`, `--value 42`, `--value '"plain"'`).
-- `--ids` is a comma-separated list of integer comment IDs. The Jira API caps the list at 1000 IDs.
+- `--ids` is a comma-separated list of integer comment IDs, each at most 9007199254740991 (2^53 - 1); larger IDs are rejected rather than rounded. The Jira API caps the list at 1000 IDs.
 - `--expand` accepts a comma-separated list (e.g. `renderedBody,properties`).
 
 ```sh
@@ -461,14 +464,14 @@ atlas jira issue-comments list PROJ-123
 # List with pagination and sort order
 atlas jira issue-comments list PROJ-123 --start-at 0 --max-results 20 --order-by=-created
 
-# Get a single comment
-atlas jira issue-comments get PROJ-123 10001
+# Get a single comment, with the body rendered as HTML
+atlas jira issue-comments get PROJ-123 10001 --expand renderedBody
 
 # Create a comment (ADF body)
 atlas jira issue-comments create PROJ-123 --body '{"body":{"type":"doc","version":1,"content":[{"type":"paragraph","content":[{"type":"text","text":"Hello"}]}]}}'
 
-# Update a comment
-atlas jira issue-comments update PROJ-123 10001 --body '{"body":{"type":"doc","version":1,"content":[{"type":"paragraph","content":[{"type":"text","text":"Updated"}]}]}}'
+# Update a comment without notifying watchers
+atlas jira issue-comments update PROJ-123 10001 --no-notify-users --body '{"body":{"type":"doc","version":1,"content":[{"type":"paragraph","content":[{"type":"text","text":"Updated"}]}]}}'
 
 # Delete a comment
 atlas jira issue-comments delete PROJ-123 10001

@@ -567,6 +567,8 @@ const GLOBAL_OPTIONS = {
   'priority-name': { type: 'string' as const },
   // issuetype create option
   'hierarchy-level': { type: 'string' as const },
+  // issuetype list-for-project (hierarchy-level filter)
+  level: { type: 'string' as const },
   // app list-field-context-configurations options
   'field-ids-or-keys': { type: 'string' as const },
   'context-ids': { type: 'string' as const },
@@ -584,6 +586,8 @@ const GLOBAL_OPTIONS = {
   recommend: { type: 'boolean' as const },
   'account-type': { type: 'string' as const },
   'app-type': { type: 'string' as const },
+  // users search (user-property query)
+  property: { type: 'string' as const },
   // issue-link create (JSON comment object)
   comment: { type: 'string' as const },
   // `notifyUsers` defaults to true. Legacy alias: parseCommand reports any

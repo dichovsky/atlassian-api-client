@@ -99,6 +99,10 @@ const KNOWN_GAPS: Readonly<
     unset: ['adjustEstimate', 'overrideEditableFlag'],
     reason: 'estimate adjustment and admin override not exposed; defaults apply',
   },
+  'jira.priorities.delete': {
+    unset: ['replaceWith'],
+    reason: 'deprecated: not in the deletePriority spec; the CLI rejects --replace-with',
+  },
   'jira.projects.create': {
     unset: [
       'projectTemplateKey',

@@ -4,22 +4,42 @@
 
 ## `issue-types` / `priorities` / `statuses`
 
-`issue-types` and `statuses` are read-only lookups. `priorities` supports full CRUD and management. (To list **every** status, use `atlas jira status list`; `statuses list` fetches specific statuses by id via `--ids`.)
+`issue-types` is a read-only lookup (`list`, `get <id>`). `statuses list` fetches specific statuses by id via the required `--ids` (bulk management is in the `statuses` (extended) section below; to list **every** status, use `atlas jira status list`). `priorities` supports full CRUD and management:
+
+| Action        | Positional | Required flags                                                   | Optional flags                                                                                          |
+| ------------- | ---------- | ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `list`        | —          | —                                                                | — (deprecated by Atlassian; prefer `search`)                                                            |
+| `get`         | `<id>`     | —                                                                | —                                                                                                       |
+| `create`      | —          | `--name`, `--status-color`, one of `--icon-url` or `--avatar-id` | `--description`                                                                                         |
+| `update`      | `<id>`     | at least one of the optional flags                               | `--name`, `--description`, `--status-color`, `--icon-url` or `--avatar-id`                              |
+| `delete`      | `<id>`     | —                                                                | —                                                                                                       |
+| `set-default` | —          | `--id`                                                           | —                                                                                                       |
+| `move`        | —          | `--ids`, one of `--after` or `--position`                        | —                                                                                                       |
+| `search`      | —          | —                                                                | `--ids`, `--project-id`, `--priority-name`, `--only-default`, `--expand`, `--start-at`, `--max-results` |
+
+- `--status-color` is a 3- or 6-digit hex color, e.g. `#F00` or `#FF0000`.
+- `--icon-url` is an HTTP(S) URL or a built-in icon path `/images/icons/priorities/<name>.png`, where `<name>` is one of `blocker`, `critical`, `high`, `highest`, `low`, `lowest`, `major`, `medium`, `minor`, `trivial`, or the same with a `_new` suffix (e.g. `high_new`). `--avatar-id` is a positive integer avatar ID. They are mutually exclusive; `create` needs exactly one (Atlassian plans to make `--avatar-id` mandatory once `iconUrl` is deprecated).
+- `update` changes only the fields you pass (the API requires none, but pass at least one).
+- `delete` is asynchronous: Jira accepts it as a task, and the CLI prints `{ "deleted": true }` once Jira accepted it, before the task has necessarily finished. This endpoint takes no replacement priority, so `--replace-with` is rejected; issues are remapped through priority schemes (`priority-schemes`).
+- `move`: `--ids` is comma-separated; place them `--after <id>` or at `--position First|Last` (mutually exclusive).
+- `search`: `--ids` and `--project-id` are comma-separated (sent as repeated `id=` / `projectId=` params); `--project-id` returns the priorities used in those projects. `--priority-name` matches the priority name. `--only-default true|false` returns only the default priority. `--expand schemes` adds the first 15 priority schemes of each priority. Offset-paginated: `--start-at` (0-based), `--max-results`.
 
 ```sh
 atlas jira issue-types list
 atlas jira issue-types get <id>
 atlas jira priorities list
 atlas jira priorities get <id>
-atlas jira priorities create --name "Critical" --description "Highest urgency" --status-color "#FF0000"
+atlas jira priorities create --name "Critical" --description "Highest urgency" --status-color "#FF0000" --icon-url /images/icons/priorities/critical.png
+atlas jira priorities create --name "Blocker" --status-color "#F00" --avatar-id 10300
 atlas jira priorities update <id> --name "Renamed" --description "Updated description"
+atlas jira priorities update <id> --status-color "#00875A"
 atlas jira priorities delete <id>
-atlas jira priorities delete <id> --replace-with <other-id>
 atlas jira priorities set-default --id <id>
 atlas jira priorities move --ids 10001,10002 --after 10000
 atlas jira priorities move --ids 10001,10002 --position First
 atlas jira priorities search --priority-name High
 atlas jira priorities search --ids 10001,10002 --max-results 25
+atlas jira priorities search --project-id 10000,10001 --expand schemes
 atlas jira statuses list --ids 10001,10002
 ```
 
@@ -35,18 +55,18 @@ Single issue-type management (distinct from the read-only `issue-types` plural r
 | `delete`            | `<id>`                          | —                                                        | `--alternative-id`                                                     |
 | `update`            | `<id>`                          | at least one of `--name`, `--description`, `--avatar-id` | —                                                                      |
 | `list-alternatives` | `<id>`                          | —                                                        | —                                                                      |
-| `load-avatar`       | `<id>`                          | `--file`, `--size`                                       | `--x`, `--y`                                                           |
+| `load-avatar`       | `<id>`                          | `--file`, `--size`                                       | `--x`, `--y`, `--media-type`                                           |
 | `list-properties`   | `<issueTypeId>`                 | —                                                        | —                                                                      |
 | `delete-property`   | `<issueTypeId>` `<propertyKey>` | —                                                        | —                                                                      |
 | `get-property`      | `<issueTypeId>` `<propertyKey>` | —                                                        | —                                                                      |
 | `set-property`      | `<issueTypeId>` `<propertyKey>` | `--value` (JSON)                                         | —                                                                      |
-| `list-for-project`  | —                               | `--project-id`                                           | —                                                                      |
+| `list-for-project`  | —                               | `--project-id`                                           | `--level`                                                              |
 
 - `--type` must be `subtask` or `standard` (only relevant when creating; controls hierarchy).
-- `--hierarchy-level` is an integer; omit to use the server default for the chosen type.
+- `--hierarchy-level` is an integer; omit to use the server default for the chosen type. Pass a negative value with `=` (`--hierarchy-level=-1`): a separate `-1` is read as an option.
 - `--alternative-id` on `delete` reassigns issues from the deleted type to the specified alternative type.
-- `load-avatar` reads the image from `--file` (local path), crops to `--size` × `--size` starting at `--x`,`--y` (default 0,0).
-- `list-for-project` requires `--project-id` as a positive integer.
+- `load-avatar` reads the image from `--file` (local path), crops to `--size` × `--size` starting at `--x`,`--y` (default 0,0). Jira accepts PNG, JPEG and GIF and needs the matching `Content-Type`: the CLI takes it from the file extension (`.png`, `.jpg`/`.jpeg`, `.gif`); for other file names pass `--media-type image/png|image/jpeg|image/gif`. Then set the returned avatar ID with `update --avatar-id`.
+- `list-for-project` requires `--project-id` as a positive integer. `--level` filters by hierarchy level: `-1` subtask, `0` base, `1` epic (write `--level=-1`).
 - Properties store arbitrary JSON; `--value` must be valid JSON.
 
 ```sh
@@ -56,7 +76,7 @@ atlas jira issuetype create --name "Feature" --description "A new product featur
 # Create a sub-task type
 atlas jira issuetype create --name "Sub-task" --type subtask
 
-# Get issue type details (use issues get or issue-types list to resolve IDs)
+# Update an issue type (use issue-types list to resolve IDs)
 atlas jira issuetype update 10001 --name "Renamed Feature" --description "Updated description"
 
 # Delete an issue type, reassigning its issues to another type
@@ -65,8 +85,9 @@ atlas jira issuetype delete 10001 --alternative-id 10002
 # List alternative issue types for a given type
 atlas jira issuetype list-alternatives 10001
 
-# Load a custom avatar
+# Load a custom avatar (type from the .png extension), or name the type explicitly
 atlas jira issuetype load-avatar 10001 --file /path/to/avatar.png --size 48
+atlas jira issuetype load-avatar 10001 --file /path/to/avatar --size 48 --x 10 --y 10 --media-type image/jpeg
 
 # Issue type properties
 atlas jira issuetype list-properties 10001
@@ -74,8 +95,9 @@ atlas jira issuetype get-property 10001 myKey
 atlas jira issuetype set-property 10001 myKey --value '"hello"'
 atlas jira issuetype delete-property 10001 myKey
 
-# List issue types for a specific project
+# List issue types for a specific project (all, or only subtask types)
 atlas jira issuetype list-for-project --project-id 10100
+atlas jira issuetype list-for-project --project-id 10100 --level=-1
 ```
 
 ## `status`
@@ -156,7 +178,7 @@ Bulk management, usage queries, and search for the `/rest/api/3/statuses` surfac
 
 | Action                  | Positional                 | Required flags       | Optional flags                                                                                                     |
 | ----------------------- | -------------------------- | -------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| `list`                  | —                          | —                    | —                                                                                                                  |
+| `list`                  | —                          | `--ids`              | —                                                                                                                  |
 | `bulk-delete`           | —                          | `--ids`              | —                                                                                                                  |
 | `bulk-create`           | —                          | `--value`, `--scope` | —                                                                                                                  |
 | `bulk-update`           | —                          | `--value`            | —                                                                                                                  |
@@ -166,10 +188,10 @@ Bulk management, usage queries, and search for the `/rest/api/3/statuses` surfac
 | `by-names`              | —                          | `--names`            | `--project-id`                                                                                                     |
 | `search`                | —                          | —                    | `--project-id`, `--start-at`, `--max-results`, `--search-string`, `--status-category`, `--include-global-statuses` |
 
-- `--ids` for `bulk-delete`: comma-separated status IDs.
+- `--ids` for `list` and `bulk-delete`: comma-separated status IDs (1–50), sent as repeated `id=` params.
 - `--value` for `bulk-create`: JSON array of `{ name, statusCategory, description? }` objects. `statusCategory` must be `TODO`, `IN_PROGRESS`, or `DONE`.
 - `--scope` for `bulk-create` (**required**): JSON object describing the scope of the new statuses. `{"type":"GLOBAL"}` for company-managed projects, or `{"type":"PROJECT","project":{"id":"<projectId>"}}` for a team-managed project. The spec `StatusCreateRequest` requires this top-level scope; omitting it returns 400.
-- `--value` for `bulk-update`: JSON array of `{ id, name?, description?, statusCategory? }` objects.
+- `--value` for `bulk-update`: JSON array of `{ id, name, statusCategory, description? }` objects. `id`, `name` and `statusCategory` (`TODO`, `IN_PROGRESS` or `DONE`) are required on every entry (spec `StatusUpdate`), even when only one of them changes; the client rejects an incomplete entry before sending.
 - `--next-page-token`: opaque token from previous page response (usages endpoints use cursor pagination, not offset).
 - **Usage response shapes are nested DTOs**, not a flat page: `get-project-usages` → `{ statusId, projects: { values: [{id}], nextPageToken? } }`; `get-workflow-usages` → `{ statusId, workflows: { values: [{id}], nextPageToken? } }`; `get-issue-type-usages` → `{ statusId, projectId, issueTypes: { values: [{id}], nextPageToken? } }`. Read items from the nested `.values`, and the cursor from the nested `.nextPageToken`.
 - `--names` for `by-names`: comma-separated status names (1–50). `--project-id` returns the statuses of that project; omit it for global statuses.
@@ -181,7 +203,7 @@ atlas jira statuses list --ids 10001,10002
 atlas jira statuses bulk-delete --ids 10001,10002
 atlas jira statuses bulk-create --scope '{"type":"GLOBAL"}' --value '[{"name":"Blocked","statusCategory":"IN_PROGRESS","description":"Awaiting external input"}]'
 atlas jira statuses bulk-create --scope '{"type":"PROJECT","project":{"id":"10000"}}' --value '[{"name":"Triage","statusCategory":"TODO"}]'
-atlas jira statuses bulk-update --value '[{"id":"10001","name":"Renamed Status"}]'
+atlas jira statuses bulk-update --value '[{"id":"10001","name":"Renamed Status","statusCategory":"IN_PROGRESS"}]'
 atlas jira statuses get-issue-type-usages 10001 10002
 atlas jira statuses get-project-usages 10001 --next-page-token abc123
 atlas jira statuses get-workflow-usages 10001
