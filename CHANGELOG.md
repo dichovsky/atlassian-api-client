@@ -17,7 +17,7 @@ CLI write actions that could not send a value Jira requires:
 - On `create`, `update` and `transition`, discrete flags (`--summary`, `--resolution`, ...) override the same field in `--body`. Jira rejects a field set in both `fields` and `update`, so `--body` `update` operations on a flag-set field are dropped; other operations are kept.
 - **`atlas jira issues delete`** gains `--delete-subtasks`; without it Jira returns 400 for an issue with sub-tasks.
 - **`atlas jira users create`** now requires `--products` (comma-separated; `--products ""` for no product access).
-- **`atlas confluence pages delete`** gains `--draft` to delete an unpublished draft.
+- **`atlas confluence pages delete`** gains `--draft` to delete an unpublished draft. Confluence deletes drafts permanently (they skip the trash), even without `--purge`.
 - **`atlas confluence comments create`** gains `--parent-comment-id` for replies, and `--text-selection`, `--text-selection-match-count` and `--text-selection-match-index`, which a top-level inline comment now requires (the spec requires the text anchor in that case).
 
 CLI flags for SDK inputs the CLI could not send:

@@ -10,24 +10,27 @@
  * call in the CLI command files. For each object-typed SDK parameter it
  * compares the parameter's top-level properties with the keys the CLI fills
  * in, unioned over every call site of that method. Keys are read from object
- * literals (incl. spreads and conditional spreads), `const` initializers plus
- * later `x.k =` / `x['k'] =` assignments, object-rest bindings (`...rest`
- * carries the source minus the keys destructured beside it), and the
- * `return`s of same-file helpers. A value parsed from JSON (`--body '{…}'` →
- * `any` / `unknown` / `Record<string, …>`) passes every property; any other
- * untraced value passes only the keys of an inferred object-literal type —
- * none for a declared type (a typed parameter or helper return).
+ * literals (incl. spreads, conditional spreads and literal/constant computed
+ * keys), `const` initializers plus the `x.k =` / `x['k'] =` writes that run
+ * before the read, object-rest bindings (`...rest` carries the source minus
+ * the keys destructured beside it), and the `return`s of same-file helpers. A
+ * value parsed from JSON (`--body '{…}'` → `any` / `unknown` /
+ * `Record<string, …>`) passes every property; any other untraced value passes
+ * only the keys of an inferred object-literal type — none for a declared type
+ * (a typed parameter or helper return). An unresolvable key adds nothing, so
+ * the analyzer fails closed.
  *
  * Only key presence is checked, not values. Accepted gaps live in KNOWN_GAPS;
- * the test fails on a new gap and on a stale entry.
+ * the test fails on a new gap and on a stale entry. The fixtures at the end
+ * pin the analyzer on shapes it once got wrong.
  */
 import { describe, expect, it } from 'vitest';
-import { dirname, relative, resolve } from 'node:path';
+import path, { dirname, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
-const SRC_DIR = `${resolve(REPO_ROOT, 'src')}/`;
+const SRC_DIR = resolve(REPO_ROOT, 'src');
 const CLI_FILES = {
   jira: resolve(REPO_ROOT, 'src', 'cli', 'commands', 'jira.ts'),
   confluence: resolve(REPO_ROOT, 'src', 'cli', 'commands', 'confluence.ts'),
@@ -177,6 +180,12 @@ function sets(keys: Keys, name: string): boolean {
   return keys.open !== keys.named.has(name);
 }
 
+/** Whether `fileName` (TypeScript reports `/`-separated names on every OS) lies inside `dir`. */
+function isInside(dir: string, fileName: string, p: typeof path = path): boolean {
+  const rel = p.relative(dir, fileName);
+  return rel !== '' && rel !== '..' && !rel.startsWith(`..${p.sep}`) && !p.isAbsolute(rel);
+}
+
 function unwrap(expr: ts.Expression): ts.Expression {
   let e = expr;
   while (
@@ -189,6 +198,20 @@ function unwrap(expr: ts.Expression): ts.Expression {
     e = e.expression;
   }
   return e;
+}
+
+/** The key an expression names when its type is one string/number literal (`'k'`, a `const`); else undefined. */
+function literalKey(checker: ts.TypeChecker, expr: ts.Expression): string | undefined {
+  const type = checker.getTypeAtLocation(expr);
+  return type.isStringLiteral() || type.isNumberLiteral() ? String(type.value) : undefined;
+}
+
+/** A property name's key: plain, quoted, or computed from a literal/constant; else undefined. */
+function propertyKey(checker: ts.TypeChecker, name: ts.PropertyName): string | undefined {
+  if (ts.isIdentifier(name) || ts.isStringLiteralLike(name) || ts.isNumericLiteral(name)) {
+    return name.text;
+  }
+  return ts.isComputedPropertyName(name) ? literalKey(checker, name.expression) : undefined;
 }
 
 function isOpen(checker: ts.TypeChecker, type: ts.Type): boolean {
@@ -215,6 +238,41 @@ function keysOfType(checker: ts.TypeChecker, type: ts.Type): Keys {
   return just(...t.getProperties().map((p) => p.name));
 }
 
+/**
+ * Keys `x.k =` / `x['k'] =` writes give `symbol` before `use` reads it:
+ * textually earlier, and not deferred in a closure that doesn't contain `use`.
+ * A write whose key can't be resolved adds nothing (fails closed).
+ */
+function writesBefore(
+  checker: ts.TypeChecker,
+  symbol: ts.Symbol,
+  scope: ts.Node,
+  use: ts.Node,
+): Keys {
+  const usedAt = use.getStart();
+  let keys = NONE;
+  const visit = (node: ts.Node): void => {
+    if (node.getStart() >= usedAt) return;
+    const containsUse = node.getEnd() >= use.getEnd();
+    if (node !== scope && ts.isFunctionLike(node) && !containsUse) return;
+    if (
+      ts.isBinaryExpression(node) &&
+      node.operatorToken.kind === ts.SyntaxKind.EqualsToken &&
+      node.getEnd() <= usedAt &&
+      (ts.isPropertyAccessExpression(node.left) || ts.isElementAccessExpression(node.left)) &&
+      checker.getSymbolAtLocation(node.left.expression) === symbol
+    ) {
+      const name = ts.isPropertyAccessExpression(node.left)
+        ? node.left.name.text
+        : literalKey(checker, node.left.argumentExpression);
+      if (name !== undefined) keys = union(keys, just(name));
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(scope);
+  return keys;
+}
+
 /** Keys `expr` fills in. `path` holds the declarations being followed, to break cycles. */
 function keysOf(checker: ts.TypeChecker, expr: ts.Expression, path: Set<ts.Node>): Keys {
   const e = unwrap(expr);
@@ -224,10 +282,10 @@ function keysOf(checker: ts.TypeChecker, expr: ts.Expression, path: Set<ts.Node>
     for (const prop of e.properties) {
       if (ts.isSpreadAssignment(prop)) {
         keys = union(keys, keysOf(checker, prop.expression, path));
-      } else if (ts.isIdentifier(prop.name) || ts.isStringLiteralLike(prop.name)) {
-        keys = union(keys, just(prop.name.text));
       } else {
-        return ANY; // computed key
+        // An unresolvable computed key adds nothing (fails closed).
+        const name = propertyKey(checker, prop.name);
+        if (name !== undefined) keys = union(keys, just(name));
       }
     }
     return keys;
@@ -262,29 +320,15 @@ function keysOf(checker: ts.TypeChecker, expr: ts.Expression, path: Set<ts.Node>
       path.delete(decl);
       return keys;
     }
-    // A local variable: its initializer plus later `x.k =` / `x['k'] =` writes.
+    // A local variable: its initializer plus the writes that run before this read.
     if (ts.isIdentifier(e) && ts.isVariableDeclaration(decl) && decl.initializer) {
       path.add(decl);
-      let keys = keysOf(checker, decl.initializer, path);
-      const visit = (node: ts.Node): void => {
-        if (
-          ts.isBinaryExpression(node) &&
-          node.operatorToken.kind === ts.SyntaxKind.EqualsToken &&
-          (ts.isPropertyAccessExpression(node.left) || ts.isElementAccessExpression(node.left)) &&
-          checker.getSymbolAtLocation(node.left.expression) === symbol
-        ) {
-          const name = ts.isPropertyAccessExpression(node.left)
-            ? node.left.name.text
-            : ts.isStringLiteralLike(node.left.argumentExpression)
-              ? node.left.argumentExpression.text
-              : undefined;
-          keys = union(keys, name === undefined ? ANY : just(name));
-        }
-        ts.forEachChild(node, visit);
-      };
       let scope: ts.Node = decl;
       while (!ts.isFunctionLike(scope) && !ts.isSourceFile(scope)) scope = scope.parent;
-      visit(scope);
+      const keys = union(
+        keysOf(checker, decl.initializer, path),
+        writesBefore(checker, symbol, scope, e),
+      );
       path.delete(decl);
       return keys;
     }
@@ -301,10 +345,13 @@ function keysOf(checker: ts.TypeChecker, expr: ts.Expression, path: Set<ts.Node>
       const source = keysOf(checker, decl.parent.parent.initializer, path);
       path.delete(decl);
       const taken = decl.parent.elements.flatMap((el) => {
-        const name = el.propertyName ?? el.name;
-        return el !== decl && (ts.isIdentifier(name) || ts.isStringLiteralLike(name))
-          ? [name.text]
-          : [];
+        if (el === decl) return [];
+        const name = el.propertyName
+          ? propertyKey(checker, el.propertyName)
+          : ts.isIdentifier(el.name)
+            ? el.name.text
+            : undefined;
+        return name === undefined ? [] : [name];
       });
       return source.open
         ? { open: true, named: new Set([...source.named, ...taken]) }
@@ -315,8 +362,12 @@ function keysOf(checker: ts.TypeChecker, expr: ts.Expression, path: Set<ts.Node>
   return keysOfType(checker, checker.getTypeAtLocation(e));
 }
 
-/** Top-level properties of an object-typed SDK parameter declared under src/, else undefined. */
-function sdkProperties(checker: ts.TypeChecker, type: ts.Type): string[] | undefined {
+/** Top-level properties of an object-typed SDK parameter declared under `sdkDir`, else undefined. */
+function sdkProperties(
+  checker: ts.TypeChecker,
+  type: ts.Type,
+  sdkDir: string,
+): string[] | undefined {
   const t = checker.getNonNullableType(type);
   const objects = (t.isUnion() ? t.types : [t]).filter(
     (part) =>
@@ -325,11 +376,11 @@ function sdkProperties(checker: ts.TypeChecker, type: ts.Type): string[] | undef
       !checker.isTupleType(part) &&
       part.getCallSignatures().length === 0,
   );
-  const declaredInSrc = (part: ts.Type): boolean =>
+  const declaredInSdk = (part: ts.Type): boolean =>
     part
       .getProperties()
-      .some((p) => p.declarations?.some((d) => d.getSourceFile().fileName.startsWith(SRC_DIR)));
-  if (objects.length === 0 || objects.some((o) => isOpen(checker, o) || !declaredInSrc(o))) {
+      .some((p) => p.declarations?.some((d) => isInside(sdkDir, d.getSourceFile().fileName)));
+  if (objects.length === 0 || objects.some((o) => isOpen(checker, o) || !declaredInSdk(o))) {
     return undefined;
   }
   return [...new Set(objects.flatMap((o) => o.getProperties().map((p) => p.name)))];
@@ -345,24 +396,16 @@ interface WriteMethod {
   readonly slots: Map<string, Slot>;
 }
 
-/** `api.resource.method` → its write call sites and per-parameter reached keys. */
-function analyzeCliWriteCalls(): Map<string, WriteMethod> {
-  const config = ts.getParsedCommandLineOfConfigFile(
-    resolve(REPO_ROOT, 'tsconfig.json'),
-    {},
-    {
-      ...ts.sys,
-      onUnRecoverableConfigFileDiagnostic: (d) => {
-        throw new Error(ts.flattenDiagnosticMessageText(d.messageText, '\n'));
-      },
-    },
-  );
-  if (!config) throw new Error('tsconfig.json could not be parsed');
-  const program = ts.createProgram(Object.values(CLI_FILES), config.options);
+/** `api.resource.method` → its write call sites in `files` and per-parameter reached keys. */
+function analyzeWriteCalls(
+  program: ts.Program,
+  files: Readonly<Record<string, string>>,
+  sdkDir: string,
+): Map<string, WriteMethod> {
   const checker = program.getTypeChecker();
   const methods = new Map<string, WriteMethod>();
 
-  for (const [api, file] of Object.entries(CLI_FILES)) {
+  for (const [api, file] of Object.entries(files)) {
     const source = program.getSourceFile(file);
     if (!source) throw new Error(`${file} is not in the program`);
     const visit = (node: ts.Node): void => {
@@ -385,7 +428,8 @@ function analyzeCliWriteCalls(): Map<string, WriteMethod> {
 
       const signature = checker.getResolvedSignature(node);
       signature?.getParameters().forEach((param, i) => {
-        const properties = sdkProperties(checker, checker.getTypeOfSymbolAtLocation(param, node));
+        const paramType = checker.getTypeOfSymbolAtLocation(param, node);
+        const properties = sdkProperties(checker, paramType, sdkDir);
         if (!properties) return;
         const slot = method.slots.get(param.name) ?? { properties, keys: NONE };
         method.slots.set(param.name, slot);
@@ -410,9 +454,24 @@ function unreachedProperties(methods: Map<string, WriteMethod>): Map<string, str
   return gaps;
 }
 
+function cliProgram(): ts.Program {
+  const config = ts.getParsedCommandLineOfConfigFile(
+    resolve(REPO_ROOT, 'tsconfig.json'),
+    {},
+    {
+      ...ts.sys,
+      onUnRecoverableConfigFileDiagnostic: (d) => {
+        throw new Error(ts.flattenDiagnosticMessageText(d.messageText, '\n'));
+      },
+    },
+  );
+  if (!config) throw new Error('tsconfig.json could not be parsed');
+  return ts.createProgram(Object.values(CLI_FILES), config.options);
+}
+
 // ─── Tests ─────────────────────────────────────────────────────────────────
 
-const methods = analyzeCliWriteCalls();
+const methods = analyzeWriteCalls(cliProgram(), CLI_FILES, SRC_DIR);
 const gaps = unreachedProperties(methods);
 
 describe('CLI write calls can send every property their SDK method accepts', () => {
@@ -439,5 +498,150 @@ describe('CLI write calls can send every property their SDK method accepts', () 
       unset.filter((p) => !gaps.get(key)?.includes(p)).map((p) => `${key}.${p}`),
     );
     expect(stale, 'these are now reachable (or gone): remove them from KNOWN_GAPS').toEqual([]);
+  });
+});
+
+// ─── Analyzer fixtures ─────────────────────────────────────────────────────
+// Each fixture is a CLI-shaped snippet calling a stand-in SDK through
+// `client`; `gaps` is what the analyzer must report. They pin shapes review
+// proved the analyzer once got wrong.
+
+const FIXTURE_DIR = '/fixture/src';
+const FIXTURE_SDK = `
+interface TransitionData { transition?: { id: string }; fields?: Record<string, unknown>; update?: Record<string, unknown> }
+interface ActorsData { user?: string[]; group?: string[]; groupId?: string[] }
+declare const client: {
+  issues: { transition(key: string, data: TransitionData): Promise<void> };
+  roles: { addActors(roleId: number, data: ActorsData): Promise<void> };
+};
+declare const flag: string;
+export {};
+`;
+
+const FIXTURES: Readonly<
+  Record<string, { readonly code: string; readonly gaps: Record<string, readonly string[]> }>
+> = {
+  'a literal computed key names only that key': {
+    code: `void client.issues.transition('K-1', { ['transition']: { id: '1' } });`,
+    gaps: { 'issues.transition': ['fields', 'update'] },
+  },
+  'a constant computed key resolves to its value': {
+    code: `const FIELDS = 'fields';
+void client.issues.transition('K-1', { transition: { id: '1' }, [FIELDS]: {} });`,
+    gaps: { 'issues.transition': ['update'] },
+  },
+  'an untraceable computed key adds nothing': {
+    code: `void client.issues.transition('K-1', { transition: { id: '1' }, [flag]: {} });`,
+    gaps: { 'issues.transition': ['fields', 'update'] },
+  },
+  'a write after the argument is evaluated does not count': {
+    code: `const data: ActorsData = {};
+data.user = [];
+const sent = client.roles.addActors(1, { ...data });
+data.groupId = [];
+void sent;`,
+    gaps: { 'roles.addActors': ['group', 'groupId'] },
+  },
+  'writes before the read count, by name or constant key': {
+    code: `const GROUP = 'group';
+const data: ActorsData = {};
+data.user = [];
+data[GROUP] = [];
+void client.roles.addActors(1, data);`,
+    gaps: { 'roles.addActors': ['groupId'] },
+  },
+  'a write deferred in a closure does not count': {
+    code: `const data: ActorsData = { user: [] };
+const later = (): void => { data.groupId = []; };
+void client.roles.addActors(1, data);
+later();`,
+    gaps: { 'roles.addActors': ['group', 'groupId'] },
+  },
+  'a write in the closure that makes the call counts': {
+    code: `const data: ActorsData = {};
+[1].forEach(() => {
+  data.user = [];
+  data.group = [];
+  data.groupId = [];
+  void client.roles.addActors(1, data);
+});`,
+    gaps: {},
+  },
+  'a JSON-parsed argument sets every key': {
+    code: `void client.issues.transition('K-1', JSON.parse(flag));`,
+    gaps: {},
+  },
+  'an object rest excludes the keys destructured beside it': {
+    code: `const { fields, update, ...rest } = JSON.parse(flag) as Record<string, unknown>;
+void fields;
+void client.issues.transition('K-1', { ...rest, update: update as Record<string, unknown> });`,
+    gaps: { 'issues.transition': ['fields'] },
+  },
+  'a declared-type parameter sets nothing': {
+    code: `export function send(data: TransitionData): Promise<void> {
+  return client.issues.transition('K-1', data);
+}`,
+    gaps: { 'issues.transition': ['transition', 'fields', 'update'] },
+  },
+};
+
+/** One in-memory program holding every fixture as its own module. */
+function fixtureProgram(files: Readonly<Record<string, string>>): ts.Program {
+  const options: ts.CompilerOptions = {
+    target: ts.ScriptTarget.ES2022,
+    lib: ['lib.es2022.d.ts'],
+    types: [],
+    strict: true,
+    noEmit: true,
+  };
+  const base = ts.createCompilerHost(options);
+  const host: ts.CompilerHost = {
+    ...base,
+    fileExists: (name) => name in files || base.fileExists(name),
+    readFile: (name) => files[name] ?? base.readFile(name),
+    getSourceFile: (name, version, ...rest) => {
+      const text = files[name];
+      return text === undefined
+        ? base.getSourceFile(name, version, ...rest)
+        : ts.createSourceFile(name, text, version);
+    },
+  };
+  return ts.createProgram(Object.keys(files), options, host);
+}
+
+describe('the write-property analyzer', () => {
+  const ids = Object.keys(FIXTURES).map((title, i) => ({ title, id: `f${i}` }));
+  const files = Object.fromEntries(ids.map(({ id }) => [id, `${FIXTURE_DIR}/${id}.ts`]));
+  const sources = Object.fromEntries(
+    ids.map(({ title, id }) => [
+      `${FIXTURE_DIR}/${id}.ts`,
+      `${FIXTURE_SDK}\n${FIXTURES[title]?.code}\n`,
+    ]),
+  );
+  const program = fixtureProgram(sources);
+  const fixtureGaps = unreachedProperties(analyzeWriteCalls(program, files, FIXTURE_DIR));
+
+  it('compiles every fixture', () => {
+    const errors = ts
+      .getPreEmitDiagnostics(program)
+      .map((d) => ts.flattenDiagnosticMessageText(d.messageText, '\n'));
+    expect(errors).toEqual([]);
+  });
+
+  it.each(ids)('$title', ({ title, id }) => {
+    const reported = Object.fromEntries(
+      [...fixtureGaps]
+        .filter(([key]) => key.startsWith(`${id}.`))
+        .map(([key, unset]) => [key.slice(id.length + 1), unset]),
+    );
+    expect(reported).toEqual(FIXTURES[title]?.gaps);
+  });
+
+  it.each([
+    { dir: 'C:\\repo\\src', file: 'C:/repo/src/jira/types.ts', inside: true },
+    { dir: 'C:\\repo\\src', file: 'C:/repo/srcx/types.ts', inside: false },
+    { dir: 'C:\\repo\\src', file: 'C:/repo/test/cli/x.ts', inside: false },
+  ])('matches TypeScript file names against a Windows SDK dir: $file', ({ dir, file, inside }) => {
+    expect(isInside(dir, file, path.win32)).toBe(inside);
   });
 });
