@@ -412,7 +412,7 @@ EXAMPLES:
   atlas jira license get-approximate-count-for-product jira-software
   atlas jira settings get-columns
   atlas jira settings set-columns --columns '[{"label":"Key","value":"issuekey"}]'
-  atlas jira redact start --jql "project = PROJ AND summary ~ secret"
+  atlas jira redact start --value '[{"contentItem":{"entityId":"summary","entityType":"issuefieldvalue","id":"10000"},"externalId":"51101de6-d001-429d-a095-b2b96dd57fcb","reason":"PII","redactionPosition":{"expectedText":"<sha256-base64>","from":0,"to":5}}]'
   atlas jira redact get-status job-abc123
   atlas jira flag get flag-xyz
   atlas jira flag delete flag-xyz
@@ -429,17 +429,17 @@ EXAMPLES:
   atlas jira addons get-property my-connect-app my-setting
   atlas jira addons set-property my-connect-app my-setting --value '{"enabled":true}'
   atlas jira addons delete-property my-connect-app my-setting
-  atlas jira exists-by-properties get --entity-type repository
+  atlas jira exists-by-properties get --properties accountId=123,projectId=ABC
   atlas jira repository get my-repo-123
   atlas jira repository delete my-repo-123
   atlas jira repository delete my-repo-123 --update-sequence-id 42
   atlas jira repository delete-entity my-repo-123 commit abc123
   atlas jira repository delete-entity my-repo-123 pullRequest pr-1 --update-sequence-id 42
   atlas jira app get-field-context-configuration customfield_10042
-  atlas jira app update-field-context-configuration customfield_10042 --configuration '{"foo":true}'
+  atlas jira app update-field-context-configuration customfield_10042 --id 10000 --configuration '{"foo":true}'
   atlas jira app update-field-value customfield_10042 --value '[{"issueIds":[10001],"value":"hi"}]'
   atlas jira app list-field-context-configurations --field-ids-or-keys customfield_10042
-  atlas jira app bulk-update-field-value --value '[{"fieldIdOrKey":"customfield_10042","updates":[{"issueIds":[10001],"value":"hi"}]}]'
+  atlas jira app bulk-update-field-value --value '[{"customField":"customfield_10042","issueIds":[10001],"value":"hi"}]'
   atlas jira app get-dynamic-modules
   atlas jira app register-dynamic-modules --value '[{"key":"my-module","type":"webhook"}]'
   atlas jira app delete-dynamic-modules --module-keys my-module,other-module

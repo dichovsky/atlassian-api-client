@@ -186,25 +186,33 @@ assigned to projects.
 `update-default-mapping`, `remove-mappings`, `get-project`, `list-mapping`,
 `list-project-mappings`, `assign-to-project`
 
-| Action                   | Positional arg            | Key flags                                                      | Returns                    |
-| ------------------------ | ------------------------- | -------------------------------------------------------------- | -------------------------- |
-| `list`                   | —                         | `--ids`, `--query`, `--start-at`, `--max-results`              | paginated schemes          |
-| `create`                 | —                         | `--name` (req), `--mappings` (req JSON array), `--description` | `{ id }`                   |
-| `update`                 | `issueTypeScreenSchemeId` | `--name`, `--description`                                      | `{ updated: true }`        |
-| `delete`                 | `issueTypeScreenSchemeId` | —                                                              | `{ deleted: true }`        |
-| `update-mapping`         | `issueTypeScreenSchemeId` | `--mappings` (req JSON array)                                  | `{ updated: true }`        |
-| `update-default-mapping` | `issueTypeScreenSchemeId` | `--screen-scheme-id` (req)                                     | `{ updated: true }`        |
-| `remove-mappings`        | `issueTypeScreenSchemeId` | `--issue-type-ids` (req, CSV)                                  | `{ removed: true }`        |
-| `get-project`            | `issueTypeScreenSchemeId` | `--start-at`, `--max-results`                                  | paginated projects         |
-| `list-mapping`           | —                         | `--scheme-ids` (CSV), `--start-at`, `--max-results`            | paginated mappings         |
-| `list-project-mappings`  | —                         | `--project-ids` (req, CSV), `--start-at`, `--max-results`      | paginated project mappings |
-| `assign-to-project`      | —                         | `--scheme-id` (req), `--project-id` (req)                      | `{ assigned: true }`       |
+| Action                   | Positional arg            | Key flags                                                                   | Returns                    |
+| ------------------------ | ------------------------- | --------------------------------------------------------------------------- | -------------------------- |
+| `list`                   | —                         | `--ids`, `--query`, `--order-by`, `--expand`, `--start-at`, `--max-results` | paginated schemes          |
+| `create`                 | —                         | `--name` (req), `--mappings` (req JSON array), `--description`              | `{ id }`                   |
+| `update`                 | `issueTypeScreenSchemeId` | `--name`, `--description`                                                   | `{ updated: true }`        |
+| `delete`                 | `issueTypeScreenSchemeId` | —                                                                           | `{ deleted: true }`        |
+| `update-mapping`         | `issueTypeScreenSchemeId` | `--mappings` (req JSON array)                                               | `{ updated: true }`        |
+| `update-default-mapping` | `issueTypeScreenSchemeId` | `--screen-scheme-id` (req)                                                  | `{ updated: true }`        |
+| `remove-mappings`        | `issueTypeScreenSchemeId` | `--issue-type-ids` (req, CSV)                                               | `{ removed: true }`        |
+| `get-project`            | `issueTypeScreenSchemeId` | `--query`, `--start-at`, `--max-results`                                    | paginated projects         |
+| `list-mapping`           | —                         | `--scheme-ids` (CSV), `--start-at`, `--max-results`                         | paginated mappings         |
+| `list-project-mappings`  | —                         | `--project-ids` (req, CSV), `--start-at`, `--max-results`                   | paginated project mappings |
+| `assign-to-project`      | —                         | `--scheme-id` (req), `--project-id` (req)                                   | `{ assigned: true }`       |
 
 The `--mappings` flag accepts a JSON array of `{ issueTypeId, screenSchemeId }` objects.
+
+- `list --query` is a case-insensitive partial match on the scheme name; `--ids` is comma-separated (repeated `id=` params).
+- `list --order-by` is one of `name`, `+name`, `-name`, `id`, `+id`, `-id` (server default `id`); other values are rejected before the request. Write the descending forms with `=`: `--order-by=-name`.
+- `list --expand projects` adds the projects each scheme is assigned to.
+- `get-project --query` filters the returned projects by name.
 
 ```sh
 # List all schemes
 atlas jira issue-type-screen-schemes list --max-results 50
+
+# Schemes named like "scrum", sorted by name descending, with their projects
+atlas jira issue-type-screen-schemes list --query scrum --order-by=-name --expand projects
 
 # Create a scheme
 atlas jira issue-type-screen-schemes create --name "Default" --mappings '[{"issueTypeId":"10000","screenSchemeId":"10001"}]'
@@ -226,6 +234,9 @@ atlas jira issue-type-screen-schemes remove-mappings 10001 --issue-type-ids 1000
 
 # Get projects using a scheme
 atlas jira issue-type-screen-schemes get-project 10001 --max-results 25
+
+# Only the projects whose name matches "mobile"
+atlas jira issue-type-screen-schemes get-project 10001 --query mobile
 
 # List all issue-type-to-screen-scheme mappings
 atlas jira issue-type-screen-schemes list-mapping --scheme-ids 10001,10002
