@@ -41,6 +41,20 @@ describe('release runbook', () => {
     expect(preRelease).not.toContain('until the tag is pushed');
   });
 
+  it("exempts this release's own pull request from the freeze it later merges", () => {
+    const preRelease = section('Pre-release');
+
+    expect(preRelease).toContain('Merge through the protected pull-request path');
+    expect(preRelease).toContain("merge nothing into `main` except this release's pull request");
+  });
+
+  it('folds every Unreleased entry and says release:check cannot see a stale date', () => {
+    const preRelease = section('Pre-release');
+
+    expect(preRelease).toContain('Move all entries out of `Unreleased`');
+    expect(preRelease).toContain('It does not check that the date is current');
+  });
+
   it('repeats the release and registry checks before pushing the tag', () => {
     const release = section('Release');
 

@@ -119,11 +119,16 @@ function assertJobGates(workflow: Workflow): void {
   expect(publish.needs).toBe('preflight');
   expect(publish.environment).toBe('release');
   expect(publish.permissions).toEqual({ contents: 'read', 'id-token': 'write' });
+  // Exactly one publish, and it is the last step, so it runs after both gates.
+  expect(publish.steps.filter((s) => /\bnpm\s+publish\b/.test(s.run ?? ''))).toHaveLength(1);
   expect(publish.steps.at(-1)?.run?.trim().split(/\s+/)).toEqual([
     'npm',
     'publish',
     '--provenance',
   ]);
+  const publishStepNames = publish.steps.map((s) => s.name);
+  expect(publishStepNames).toContain('Recheck the current main tip after approval');
+  expect(publishStepNames).toContain('Require npm trusted-publishing support');
 
   const verify = job(workflow, 'verify');
   expect(verify.needs).toEqual(['preflight', 'publish']);
@@ -192,8 +197,19 @@ describe('publish workflow job gates', () => {
       '    environment: release\n',
       '    environment: release\n    continue-on-error: true\n',
     ],
+    [
+      'an extra publish before the post-approval recheck',
+      '      - name: Recheck the current main tip after approval\n',
+      '      - name: Early publish\n        run: npm publish --provenance\n\n      - name: Recheck the current main tip after approval\n',
+    ],
+    [
+      'the npm version gate removed from the publish job',
+      '      - name: Require npm trusted-publishing support\n',
+      '      - name: Show npm version\n',
+    ],
   ])('fails when the workflow has %s', (_label, from, to) => {
-    expect(() => assertJobGates(mutate(from, to))).toThrow();
+    const mutated = mutate(from, to);
+    expect(() => assertJobGates(mutated)).toThrow();
   });
 });
 
@@ -282,7 +298,8 @@ describe('publish workflow signed-tag preflight', () => {
     ],
     ['the HEAD comparison dropped', 'test "$(git rev-parse HEAD)" = "${release_sha}"', 'true'],
   ])('fails when the step has %s', (_label, from, to) => {
-    expect(() => assertSignatureGate(mutate(from, to))).toThrow();
+    const mutated = mutate(from, to);
+    expect(() => assertSignatureGate(mutated)).toThrow();
   });
 });
 
@@ -368,7 +385,8 @@ describe('publish workflow exact-main preflight and recheck', () => {
       '',
     ],
   ])('fails when the workflow has %s', (_label, from, to) => {
-    expect(() => assertMainTipGates(mutate(from, to))).toThrow();
+    const mutated = mutate(from, to);
+    expect(() => assertMainTipGates(mutated)).toThrow();
   });
 });
 
@@ -441,7 +459,8 @@ describe('publish workflow CI-green preflight', () => {
       '.status == "completed"',
     ],
   ])('fails when the step has %s', (_label, from, to) => {
-    expect(() => assertCiGate(mutate(from, to))).toThrow();
+    const mutated = mutate(from, to);
+    expect(() => assertCiGate(mutated)).toThrow();
   });
 });
 
@@ -530,6 +549,8 @@ describe('publish workflow provenance verification', () => {
           'esac',
         ].join('\n'),
         curl: [
+          // attestations can lag the packument; a 404 must be retried, not fatal
+          'case " $* " in *" --retry-all-errors "*) ;; *) echo "curl must retry HTTP errors" >&2; exit 64 ;; esac',
           'for last; do :; done',
           '[ "$last" = "$FAKE_URL" ] || { echo "unexpected curl $*" >&2; exit 64; }',
           'printf "%s" "$FAKE_BODY"',

@@ -246,7 +246,7 @@ jobs:
           slsa_v1='https://slsa.dev/provenance/v1'
           test "$(npm view "${PACKAGE_NAME}@${VERSION}" dist.attestations.provenance.predicateType)" = "${slsa_v1}"
           attestations_url="$(npm view "${PACKAGE_NAME}@${VERSION}" dist.attestations.url)"
-          curl --fail --silent --show-error --location --retry 5 "${attestations_url}" |
+          curl --fail --silent --show-error --location --retry 5 --retry-all-errors "${attestations_url}" |
             jq -e \
               --arg type "${slsa_v1}" \
               --arg repository "${REPOSITORY_URL}" \

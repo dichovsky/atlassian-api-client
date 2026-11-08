@@ -1,6 +1,7 @@
 // Fail-closed parser for the YAML subset our GitHub workflows use: block
 // mappings and sequences, `|`/`|-` block scalars, quoted and plain scalars,
-// `{}` and flat `[a, b]` flow collections, and comments. Scalars stay strings.
+// `{}` and flat `[a, b]` flow collections whose items hold no comma, and
+// comments. Scalars stay strings.
 // Anything else (anchors, tags, folded scalars, multi-line plain scalars,
 // duplicate keys) throws, so a construct it does not understand can never be
 // read as a weaker value. The repository has no YAML dependency; add one and
@@ -16,6 +17,7 @@ interface Line {
 
 const KEY = /^([A-Za-z0-9_][A-Za-z0-9_.-]*|'[^']*'|"[^"]*"):(?: +(.*))?$/;
 const UNSUPPORTED_START = /^[&*!%@`>?]/;
+const QUOTED = /^('(?:[^']|'')*'|"(?:[^"\\]|\\.)*")/;
 
 export function parseWorkflowYaml(source: string): YamlValue {
   const lines = source.split('\n').map((raw, index) => {
@@ -125,7 +127,7 @@ export function parseWorkflowYaml(source: string): YamlValue {
       return [text.slice(0, end + 1), text.slice(end + 1)];
     }
     if (text.startsWith("'") || text.startsWith('"')) {
-      const quoted = /^('(?:[^']|'')*'|"(?:[^"\\]|\\.)*")/.exec(text);
+      const quoted = QUOTED.exec(text);
       if (!quoted) throw error(line, 'unterminated quoted scalar');
       return [quoted[1]!, text.slice(quoted[1]!.length)];
     }
@@ -134,7 +136,14 @@ export function parseWorkflowYaml(source: string): YamlValue {
   }
 
   function scalar(line: Line, text: string): string {
-    if (text.startsWith("'") || text.startsWith('"')) return unquote(text);
+    if (text.startsWith("'") || text.startsWith('"')) {
+      // Flow items are split on commas, so a quoted comma leaves a fragment
+      // that is not one whole quoted scalar.
+      if (QUOTED.exec(text)?.[1] !== text) {
+        throw error(line, `unsupported scalar ${JSON.stringify(text)}`);
+      }
+      return unquote(text);
+    }
     if (text === '' || UNSUPPORTED_START.test(text) || /^[{[]/.test(text) || /:( |$)/.test(text)) {
       throw error(line, `unsupported scalar ${JSON.stringify(text)}`);
     }

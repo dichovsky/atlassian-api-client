@@ -32,16 +32,16 @@ The `Publish` preflight accepts a tag only when the GitHub API reports its signa
 
 ## Pre-release
 
-1. Freeze the candidate. Fetch `origin`, start from the current protected `main`, and merge nothing into `main` from now until the `Publish` workflow's publish job has completed. The preflight and, again, the publish job after approval require the tag's commit to be the exact `main` tip. A merge while the approval is pending fails the publish permanently for that tag.
+1. Freeze the candidate. Fetch `origin`, start from the current protected `main`, and merge nothing into `main` except this release's pull request (step 8) from now until the `Publish` workflow's publish job has completed. The preflight and, again, the publish job after approval require the tag's commit to be the exact `main` tip. A merge while the approval is pending fails the publish permanently for that tag.
 2. Choose the version from the user-visible compatibility impact. Do not downgrade a breaking change to a minor or patch release.
-3. Update `package.json`, both lockfile version fields, and `CHANGELOG.md`. Move the relevant entries out of `Unreleased`, date the new section, and leave a new empty `Unreleased` comparison link above it.
+3. Update `package.json`, both lockfile version fields, and `CHANGELOG.md`. Move all entries out of `Unreleased`, date the new section with the day you will tag it, and leave a new empty `Unreleased` comparison link above it.
 4. Validate the release metadata before review:
 
    ```bash
    npm run release:check -- vX.Y.Z
    ```
 
-   It fails while `Unreleased` still has entries, and when the `X.Y.Z` section is missing, duplicated, not the newest entry, or not dated `(YYYY-MM-DD)`.
+   It fails while `Unreleased` still has entries, and when the `X.Y.Z` section is missing, duplicated, not the newest entry, or not dated `(YYYY-MM-DD)`. It does not check that the date is current; if the release slips, re-date the section, which makes a new candidate.
 
 5. Install from the lockfile and run the full repository gate:
 
