@@ -72,7 +72,8 @@ export class ApplicationPropertiesResource {
    * optionally filtered by `key`, `permissionLevel`, or a `keyFilter` regex.
    * Always resolves an array: the spec's 200 schema is an array, but its
    * description says a `key` lookup returns the single property as an object,
-   * so a bare object response is wrapped in a one-element array.
+   * so a bare object response is wrapped in a one-element array, and an
+   * empty body resolves `[]`.
    */
   async list(
     params: ListApplicationPropertiesParams = {},
@@ -89,7 +90,8 @@ export class ApplicationPropertiesResource {
       path: `${this.baseUrl}/application-properties`,
       query,
     });
-    const data = response.data;
+    const data = response.data as readonly ApplicationProperty[] | ApplicationProperty | null;
+    if (data === undefined || data === null) return [];
     return Array.isArray(data) ? data : [data as ApplicationProperty];
   }
 

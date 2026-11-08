@@ -105,6 +105,12 @@ describe('ApplicationPropertiesResource', () => {
       expect(result).toEqual([prop]);
     });
 
+    it.each([undefined, null])('resolves [] for an empty (%s) body', async (body) => {
+      transport.respondWith(body);
+
+      expect(await resource.list({ key: 'jira.missing' })).toEqual([]);
+    });
+
     it('propagates transport errors', async () => {
       // Arrange
       transport.respondWithError(new Error('network error'));

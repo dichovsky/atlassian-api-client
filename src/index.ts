@@ -521,6 +521,7 @@ export type {
   BulkCreatedIssues,
   BulkSetIssuePropertyData,
   BulkDeleteIssuePropertyData,
+  BulkIssuePropertyOptions,
   BulkIssueIsWatchingResult,
   // Workflows, field contexts, invalid-JQL audit log, Forge panels
   WorkflowCopyRequest,

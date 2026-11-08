@@ -3392,6 +3392,14 @@ function devopsPropertiesFlag(raw: string, command: string): Record<string, stri
   if (duplicate !== undefined) {
     throw new Error(`${command} --properties: duplicate key "${duplicate}"`);
   }
+  const reserved = keys.find(
+    (key) => key === '_updateSequenceId' || key === '_updateSequenceNumber',
+  );
+  if (reserved !== undefined) {
+    throw new Error(
+      `${command} --properties: "${reserved}" is the update-sequence guard, not a property; use --update-sequence-id where supported`,
+    );
+  }
   return Object.fromEntries(pairs);
 }
 
@@ -4121,13 +4129,22 @@ function avatarMediaType(mediaType: string | undefined, filePath: string): strin
   return type;
 }
 
-/** Print the image size, or write the image to `--output` (never overwriting a file). */
+/**
+ * Print the image size, or write the image to `--output`. An existing file is
+ * refused before the download and never overwritten.
+ */
 async function avatarImageResult(
-  buffer: ArrayBuffer,
   output: string | undefined,
+  download: () => Promise<ArrayBuffer>,
 ): Promise<{ bytes: number; path?: string }> {
-  if (output === undefined) return { bytes: buffer.byteLength };
-  const { writeFile } = await import('node:fs/promises');
+  if (output === undefined) return { bytes: (await download()).byteLength };
+  const { access, writeFile } = await import('node:fs/promises');
+  const taken = await access(output).then(
+    () => true,
+    () => false,
+  );
+  if (taken) throw new Error(`--output ${output} already exists; choose a new file`);
+  const buffer = await download();
   await writeFile(output, new Uint8Array(buffer), { flag: 'wx' });
   return { bytes: buffer.byteLength, path: output };
 }
@@ -4173,11 +4190,12 @@ async function executeUniversalAvatar(client: JiraClient, cmd: ParsedCommand): P
       const type = requireArg(cmd.positionalArgs[0], 'type');
       const size = asString(opts['size']);
       const format = asString(opts['image-format']);
-      const buffer = await client.universalAvatar.getAvatarImageByType(type as AvatarEntityType, {
-        ...(size !== undefined && { size: size as AvatarViewSize }),
-        ...(format !== undefined && { format: format as AvatarViewFormat }),
-      });
-      return avatarImageResult(buffer, asString(opts['output']));
+      return avatarImageResult(asString(opts['output']), () =>
+        client.universalAvatar.getAvatarImageByType(type as AvatarEntityType, {
+          ...(size !== undefined && { size: size as AvatarViewSize }),
+          ...(format !== undefined && { format: format as AvatarViewFormat }),
+        }),
+      );
     }
     case 'view-by-id': {
       const type = requireArg(cmd.positionalArgs[0], 'type');
@@ -4185,26 +4203,24 @@ async function executeUniversalAvatar(client: JiraClient, cmd: ParsedCommand): P
       const id = parsePositiveIntArg(idRaw, 'id');
       const size = asString(opts['size']);
       const format = asString(opts['image-format']);
-      const buffer = await client.universalAvatar.getAvatarImageByID(type as AvatarEntityType, id, {
-        ...(size !== undefined && { size: size as AvatarViewSize }),
-        ...(format !== undefined && { format: format as AvatarViewFormat }),
-      });
-      return avatarImageResult(buffer, asString(opts['output']));
+      return avatarImageResult(asString(opts['output']), () =>
+        client.universalAvatar.getAvatarImageByID(type as AvatarEntityType, id, {
+          ...(size !== undefined && { size: size as AvatarViewSize }),
+          ...(format !== undefined && { format: format as AvatarViewFormat }),
+        }),
+      );
     }
     case 'view-by-owner': {
       const type = requireArg(cmd.positionalArgs[0], 'type');
       const entityId = requireArg(cmd.positionalArgs[1], 'entityId');
       const size = asString(opts['size']);
       const format = asString(opts['image-format']);
-      const buffer = await client.universalAvatar.getAvatarImageByOwner(
-        type as AvatarEntityType,
-        entityId,
-        {
+      return avatarImageResult(asString(opts['output']), () =>
+        client.universalAvatar.getAvatarImageByOwner(type as AvatarEntityType, entityId, {
           ...(size !== undefined && { size: size as AvatarViewSize }),
           ...(format !== undefined && { format: format as AvatarViewFormat }),
-        },
+        }),
       );
-      return avatarImageResult(buffer, asString(opts['output']));
     }
     default:
       throw new Error(

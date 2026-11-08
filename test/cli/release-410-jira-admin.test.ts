@@ -4,7 +4,7 @@
  * (`skill/reference/**`) — the text an agent builds commands from — and run
  * through the real argv → router → client → transport path with a fake fetch.
  */
-import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -260,6 +260,14 @@ describe('exists-by-properties get (F181)', () => {
       '--update-sequence-id must be a positive integer',
     ],
     [['--entity-type', 'repository'], '--entity-type is not supported by exists-by-properties get'],
+    [
+      ['--properties', '_updateSequenceId=abc'],
+      '"_updateSequenceId" is the update-sequence guard, not a property',
+    ],
+    [
+      ['--properties', '{"_updateSequenceNumber":1}'],
+      '"_updateSequenceNumber" is the update-sequence guard, not a property',
+    ],
   ])('rejects %j before any request', async (flags, message) => {
     const run = await runCliWire(['jira', 'exists-by-properties', 'get', ...flags]);
     expect(run.exitCode).toBe(1);
@@ -318,6 +326,10 @@ describe('bulk-by-properties (F247, F249)', () => {
       '--update-sequence-id must be a positive integer',
     ],
     [['delete-builds', '--properties', '{"k":[1]}'], 'value of "k" must be a string or number'],
+    [
+      ['delete-devinfo', '--properties', 'accountId=a,_updateSequenceId=0'],
+      '"_updateSequenceId" is the update-sequence guard, not a property',
+    ],
   ])('rejects %j before any request', async (args, message) => {
     const run = await runCliWire(['jira', 'bulk-by-properties', ...args]);
     expect(run.exitCode).toBe(1);
@@ -725,7 +737,25 @@ describe('universal-avatar (F243, F244)', () => {
 
     const again = await runCliWire(argv, { respond: { body: 'OTHER' } });
     expect(again.exitCode).toBe(1);
+    expect(again.stderr).toContain('already exists');
+    expect(again.requests).toHaveLength(0);
     expect(readFileSync(out, 'utf8')).toBe('PNGBYTES');
+  });
+
+  it.each([
+    ['jira', 'issue-attachments', 'download-content', '10000'],
+    ['jira', 'issue-attachments', 'download-thumbnail', '10000'],
+    ['confluence', 'attachments', 'thumbnail', 'att1'],
+    ['jira', 'universal-avatar', 'list', 'project', '10001'],
+    ['jira', 'universal-avatar', 'store', 'project', '10001'],
+    ['jira', 'universal-avatar', 'delete', 'project', '10001', '1010'],
+  ])('%s %s %s rejects --output instead of silently ignoring it', async (...argv) => {
+    const out = join(dir, `ignored-${argv[2]}.bin`);
+    const run = await runCliWire([...argv, '--output', out]);
+    expect(run.exitCode).toBe(1);
+    expect(run.stderr).toContain('--output is supported only by Jira universal-avatar view-by-');
+    expect(run.requests).toHaveLength(0);
+    expect(existsSync(out)).toBe(false);
   });
 
   it('view-by-owner without --output still prints only the byte count', async () => {

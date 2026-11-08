@@ -1,6 +1,8 @@
 import { describe, it, expect, expectTypeOf, beforeEach } from 'vitest';
 import { BulkResource } from '../../src/jira/resources/bulk.js';
 import type { Task } from '../../src/jira/resources/task.js';
+// Root import: the options type of the public overloads must be importable by consumers.
+import type { BulkIssuePropertyOptions } from '../../src/index.js';
 import { ValidationError } from '../../src/core/errors.js';
 import { MockTransport } from '../helpers/mock-transport.js';
 import type {
@@ -161,6 +163,20 @@ describe('BulkResource', () => {
         Promise<void>
       >();
       expectTypeOf(() => bulk.deletePropertyBulk('p', {})).returns.toEqualTypeOf<Promise<void>>();
+    });
+
+    it('a non-literal options value is typed Task | undefined, matching runtime', async () => {
+      transport.respondWith(task).respondWith(task);
+      const options: BulkIssuePropertyOptions = { returnTask: Math.random() >= 0 };
+
+      expect(await bulk.setPropertyBulk('p', { value: 1 }, options)).toEqual(task);
+      expect(await bulk.deletePropertyBulk('p', {}, options)).toEqual(task);
+      expectTypeOf(() => bulk.setPropertyBulk('p', { value: 1 }, options)).returns.toEqualTypeOf<
+        Promise<Task | undefined>
+      >();
+      expectTypeOf(() => bulk.deletePropertyBulk('p', {}, options)).returns.toEqualTypeOf<
+        Promise<Task | undefined>
+      >();
     });
   });
 

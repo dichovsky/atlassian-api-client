@@ -461,8 +461,14 @@ export class BulkResource {
   setPropertyBulk(
     propertyKey: string,
     data: BulkSetIssuePropertyData,
-    options?: BulkIssuePropertyOptions,
+    options?: BulkIssuePropertyOptions & { readonly returnTask?: false },
   ): Promise<void>;
+  /** Set a property on a bulk set of issues; resolves the task when `returnTask` is true at runtime. */
+  setPropertyBulk(
+    propertyKey: string,
+    data: BulkSetIssuePropertyData,
+    options?: BulkIssuePropertyOptions,
+  ): Promise<Task | undefined>;
   async setPropertyBulk(
     propertyKey: string,
     data: BulkSetIssuePropertyData,
@@ -490,8 +496,14 @@ export class BulkResource {
   deletePropertyBulk(
     propertyKey: string,
     data: BulkDeleteIssuePropertyData,
-    options?: BulkIssuePropertyOptions,
+    options?: BulkIssuePropertyOptions & { readonly returnTask?: false },
   ): Promise<void>;
+  /** Delete a property from a bulk set of issues; resolves the task when `returnTask` is true at runtime. */
+  deletePropertyBulk(
+    propertyKey: string,
+    data: BulkDeleteIssuePropertyData,
+    options?: BulkIssuePropertyOptions,
+  ): Promise<Task | undefined>;
   async deletePropertyBulk(
     propertyKey: string,
     data: BulkDeleteIssuePropertyData,
