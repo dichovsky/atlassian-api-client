@@ -56,6 +56,7 @@ const GLOBAL_OPTIONS = {
   state: { type: 'string' as const },
   fields: { type: 'string' as const },
   expand: { type: 'string' as const },
+  'version-message': { type: 'string' as const },
   'version-number': { type: 'string' as const },
   'comment-type': { type: 'string' as const },
   'duration-minutes': { type: 'string' as const },

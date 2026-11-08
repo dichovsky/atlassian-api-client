@@ -299,8 +299,16 @@ describe('FooterCommentsResource', () => {
       expect(transport.lastCall?.options.query).toEqual({});
     });
 
-    it('throws ValidationError when limit is non-positive', async () => {
-      await expect(resource.listLikeUsers('77777', { limit: 0 })).rejects.toThrow(ValidationError);
+    it('sends limit=0, which the spec allows for this endpoint (F067)', async () => {
+      transport.respondWith({ results: [], _links: {} });
+      await resource.listLikeUsers('77777', { limit: 0 });
+      expect(transport.lastCall?.options.query).toEqual({ limit: 0 });
+    });
+
+    it.each([-1, 1.5])('throws ValidationError when limit is %s', async (limit) => {
+      await expect(resource.listLikeUsers('77777', { limit })).rejects.toThrow(
+        `limit must be a non-negative integer, got: ${limit}`,
+      );
       expect(transport.calls).toHaveLength(0);
     });
   });
@@ -321,6 +329,12 @@ describe('FooterCommentsResource', () => {
 
       expect(ids).toEqual(['a', 'b']);
       expect(transport.calls).toHaveLength(2);
+    });
+
+    it('sends limit=0, which the spec allows for this endpoint (F067)', async () => {
+      transport.respondWith({ results: [], _links: {} });
+      await resource.listLikeUsersAll('77777', { limit: 0 }).next();
+      expect(transport.lastCall?.options.query).toEqual({ limit: 0 });
     });
 
     it('throws ValidationError when limit is invalid before any request', async () => {

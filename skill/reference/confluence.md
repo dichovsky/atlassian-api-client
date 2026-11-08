@@ -839,9 +839,9 @@ atlas confluence space-roles delete role-1
 ## `tasks`
 
 Inline action items embedded in Confluence pages or blog posts. Each task is
-identified by a server-assigned string ID. The CLI exposes the three v2
-`/tasks` endpoints — list with rich filtering, fetch a single task, and toggle
-its `status` between `incomplete` and `complete`.
+identified by a server-assigned numeric (int64) ID, e.g. `123456`. The CLI
+exposes the three v2 `/tasks` endpoints — list with rich filtering, fetch a
+single task, and toggle its `status` between `incomplete` and `complete`.
 
 | Action   | Positional | Required flags | Optional flags                                                                                                                                                                                                                                                                                               |
 | -------- | ---------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -850,12 +850,13 @@ its `status` between `incomplete` and `complete`.
 | `update` | `<taskId>` | `--status`     | `--body-format`                                                                                                                                                                                                                                                                                              |
 
 - `--status` accepts `incomplete` or `complete` (the only two task states v2 surfaces). On `update` it's required and toggles the task. On `list` it filters results.
-- `--task-id` filters to a single numeric platform task ID (distinct from the string task ID positional argument used by `get` / `update`).
-- `--include-blank-tasks` controls tasks whose `body` is empty (e.g. checkboxes without inline text). The server includes them by default; pass `--include-blank-tasks false` (or `--no-include-blank-tasks`) to hide them.
-- `--body-format` accepts `storage` or `atlas_doc_format` and controls the representation of the task body when present.
+- `--task-id`, `--space-id`, `--page-id`, `--blog-post-id` each take one ID or a comma-separated list of up to 250 numeric IDs (`--task-id 5,6`); each value is sent as a repeated query parameter (`task-id=5&task-id=6`). Every token must be a decimal integer up to 9007199254740991: a value such as `abc` or `12abc` is rejected before any request is sent, so a typo can never widen the listing to every task.
+- `--created-by`, `--assigned-to`, `--completed-by` take one Atlassian account ID or a comma-separated list of up to 250 (`--assigned-to acc-1,acc-2`), also sent as repeated parameters.
+- `--space-id`, `--page-id`, `--blog-post-id` scope the listing to tasks in those containers; page and blog-post filters can be used together.
+- `--include-blank-tasks` controls tasks whose `body` is empty (e.g. checkboxes without inline text). The server includes them by default; pass `--include-blank-tasks false` (or `--no-include-blank-tasks`) to send `include-blank-tasks=false` and hide them. `--include-blank-tasks` alone (or `--include-blank-tasks true`) sends `true`; omitting it sends nothing.
+- `--body-format` accepts `storage` or `atlas_doc_format` on `list`, `get` and `update` and controls the representation of the task body when present. Any other value is rejected before the request.
 - All date-range filters (`--created-at-*`, `--due-at-*`, `--completed-at-*`) accept integer Unix epoch milliseconds, not ISO-8601 strings; ranges are inclusive on both ends.
-- `--space-id`, `--page-id`, `--blog-post-id` scope the listing to tasks within that container; combine to narrow further. The user-attribution filters (`--created-by`, `--assigned-to`, `--completed-by`) accept Atlassian account IDs.
-- Pagination is cursor-based — extract `cursor=…` from `_links.next` and pass it as `--cursor` on the follow-up call.
+- Pagination is cursor-based: `--limit` is 1–250 (server default 25). Extract `cursor=…` from `_links.next` and pass it as `--cursor` on the follow-up call; no `_links.next` means the last page.
 - `update` only changes `status`; `--body-format` controls the representation returned in the response. The task body, assignee, due date, and container are immutable through this endpoint.
 
 ```sh
@@ -865,18 +866,24 @@ atlas confluence tasks list --status incomplete --limit 25
 # Tasks assigned to a particular user on a page
 atlas confluence tasks list --page-id 12345 --assigned-to acc-123
 
+# Several IDs per filter (comma-separated, repeated on the wire)
+atlas confluence tasks list --space-id 1,2 --task-id 5,6 --created-by acc-1,acc-2
+
+# Hide tasks with an empty body
+atlas confluence tasks list --space-id 1 --include-blank-tasks false
+
 # Tasks completed in a date window
 atlas confluence tasks list --status complete --completed-by acc-123 \
   --completed-at-from 1767225600000 --completed-at-to 1769904000000
 
 # Read a single task (with rendered body)
-atlas confluence tasks get task-1 --body-format storage
+atlas confluence tasks get 123456 --body-format storage
 
 # Mark a task complete
-atlas confluence tasks update task-1 --status complete --body-format storage
+atlas confluence tasks update 123456 --status complete --body-format storage
 
 # Reopen a task
-atlas confluence tasks update task-1 --status incomplete
+atlas confluence tasks update 123456 --status incomplete
 ```
 
 ## `users`
@@ -948,7 +955,7 @@ atlas confluence users-bulk lookup --account-ids acc-1,acc-2 \
 
 ## `databases`
 
-Databases are first-class v2 content. The CLI exposes the full surface: lifecycle (`create`/`get`/`delete`), hierarchy navigation (`ancestors`/`descendants`/`direct-children`/`operations`), classification level (`get-`/`update-`/`reset-classification-level`), and content properties (`list-properties`, `create-property`, `get-property`, `update-property`, `delete-property`). Pagination is cursor-based for `descendants`, `direct-children`, and `list-properties`; `ancestors` returns a bare `{ results }` and is re-called with the highest ancestor's ID instead of a cursor.
+Databases are first-class v2 content. The CLI exposes the full surface: lifecycle (`create`/`get`/`delete`), hierarchy navigation (`ancestors`/`descendants`/`direct-children`/`operations`), classification level (`get-`/`update-`/`reset-classification-level`), content properties (`list-properties`, `create-property`, `get-property`, `update-property`, `delete-property`), restriction state and direct permissions (`get-`/`set-restriction-state`, `list-`/`add-`/`set-`/`delete-permissions`), and the experimental data endpoints (`fields`, `views`, `entries`, `get-entry`). Pagination is cursor-based for `descendants`, `direct-children`, `list-properties`, `list-permissions`, `fields`, `views`, and `entries`; `ancestors` returns a bare `{ results }` and is re-called with the highest ancestor's ID instead of a cursor.
 
 | Action                        | Positional     | Required flags                                          | Optional flags                                                                                         |
 | ----------------------------- | -------------- | ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
@@ -965,7 +972,7 @@ Databases are first-class v2 content. The CLI exposes the full surface: lifecycl
 | `list-properties`             | `<databaseId>` | —                                                       | `--key`, `--sort`, `--cursor`, `--limit`                                                               |
 | `create-property`             | `<databaseId>` | `--key`, `--value`                                      | —                                                                                                      |
 | `get-property`                | `<databaseId>` | `--property-id`                                         | —                                                                                                      |
-| `update-property`             | `<databaseId>` | `--property-id`, `--key`, `--value`, `--version-number` | —                                                                                                      |
+| `update-property`             | `<databaseId>` | `--property-id`, `--key`, `--value`, `--version-number` | `--version-message`                                                                                    |
 | `delete-property`             | `<databaseId>` | `--property-id`                                         | —                                                                                                      |
 | `get-restriction-state`       | `<databaseId>` | —                                                       | —                                                                                                      |
 | `set-restriction-state`       | `<databaseId>` | `--state`                                               | `--allow-self-lockout`                                                                                 |
@@ -978,13 +985,15 @@ Databases are first-class v2 content. The CLI exposes the full surface: lifecycl
 | `entries`                     | `<databaseId>` | —                                                       | `--limit`, `--cursor`, `--sort`, `--filter`, `--if-none-match`                                         |
 | `get-entry`                   | `<databaseId>` | `--entry-id`                                            | `--if-none-match`                                                                                      |
 
-- `--private` on `create` creates a database visible only to the creator.
-- `--depth` on `descendants` accepts 1–10 (server-validated; default 2).
+- `--private` on `create` creates a database visible only to the creator (sent as `?private=true`).
+- Boolean flags (`--private`, `--include-*`, `--allow-self-lockout`) are on when given alone or as `--flag true`; `--flag false` (or `--no-flag`) and omitting the flag both send nothing, which leaves the server default (off).
+- `--depth` on `descendants` accepts 1–10 (validated client-side before the request; server default 2).
 - `--sort` on `direct-children` accepts the `ContentSortOrder` vocabulary: `created-date`, `id`, `modified-date`, `child-position`, `title`, each optionally prefixed with `-` for descending.
 - `--sort` on `list-properties` accepts `key` or `-key`.
+- A flag value that starts with `-` (a descending sort such as `-key` or `-modified-date`, or a negative JSON `--value` such as `-1`) must be written with `=`: `--sort=-key`, `--value=-1`. The space form `--sort -key` is rejected as an ambiguous option.
 - `--value` on `create-property` / `update-property` is parsed as JSON when possible, falling back to the raw string (same semantics as `app upsert-property`).
-- `--version-number` on `update-property` must be a positive integer one greater than the property's current version (Confluence enforces optimistic concurrency; mismatches return 409).
-- `update-classification-level` always sends `status: "current"` (the only legal server value); the CLI hard-codes it so callers only need `--level-id`.
+- `--version-number` on `update-property` must be a positive integer one greater than the property's current version (Confluence enforces optimistic concurrency; mismatches return 409). `--version-message` adds an optional message to that new version (`version: { number, message }`); without it only `version.number` is sent.
+- `update-classification-level` always sends `status: "current"` (the only legal server value); the CLI hard-codes it so callers only need `--level-id`. Take the level ID from the `id` field of `atlas confluence classification-levels list`.
 - `reset-classification-level` sends `{ status: "current" }` and falls back to the space default classification.
 - `ancestors` returns `{ results }` without `_links.next`; iterate by calling again with the highest ancestor's ID as the new `<databaseId>`.
 - `delete` trashes the database (recoverable from the space trash); there is no purge flag on this endpoint.
@@ -1019,9 +1028,11 @@ atlas confluence databases reset-classification-level db-1
 
 # Content properties
 atlas confluence databases list-properties db-1
+atlas confluence databases list-properties db-1 --sort=-key --limit 50
 atlas confluence databases create-property db-1 --key feature-flags --value '{"beta":true}'
 atlas confluence databases get-property db-1 --property-id prop-1
 atlas confluence databases update-property db-1 --property-id prop-1 --key feature-flags --value '{"beta":false}' --version-number 4
+atlas confluence databases update-property db-1 --property-id prop-1 --key feature-flags --value '{"beta":true}' --version-number 5 --version-message "Re-enable beta"
 atlas confluence databases delete-property db-1 --property-id prop-1
 
 # Restriction state and direct permissions
@@ -1180,12 +1191,16 @@ Top-level (page / blog-post) footer comments exposed through the tenant-wide `/w
 | `versions`    | `<commentId>` | —                            | `--body-format`, `--sort`, `--cursor`, `--limit`                                                                                                  |
 | `version`     | `<commentId>` | `--version-number`           | —                                                                                                                                                 |
 
-- `--body-format` accepts `storage` or `atlas_doc_format` (the v2 `PrimaryBodyRepresentation` enum).
+- `--body-format` on `list`, `children` and `versions` accepts `storage` or `atlas_doc_format` (the v2 `PrimaryBodyRepresentation` enum). On `get` it also accepts the rendered and editor representations: `storage`, `atlas_doc_format`, `view`, `export_view`, `anonymous_export_view`, `styled_view`, `editor` (`PrimaryBodyRepresentationSingle`). Any other value is rejected before the request.
 - `--sort` on `list` and `children` accepts the `CommentSortOrder` vocabulary: `created-date`, `-created-date`, `modified-date`, `-modified-date`.
 - `--sort` on `versions` is the narrower `VersionSortOrder`: only `modified-date` / `-modified-date`.
-- `--include-*` flags on `get` ask the server to inline the corresponding sub-resource (properties, operations, likes, versions, or a single version) so callers can fetch the comment plus context in one round-trip.
+- A descending sort starts with `-`, so write it with `=`: `--sort=-created-date`. The space form `--sort -created-date` is rejected as an ambiguous option.
+- `--include-properties`, `--include-operations`, `--include-likes`, `--include-versions` on `get` ask the server to inline that sub-resource so callers can fetch the comment plus context in one round-trip. They default to off; `--include-likes false` sends nothing.
+- `--include-version` (inline the current version) defaults to **true** on the server. To leave it out, pass `--no-include-version` or `--include-version false`; both send `include-version=false`. `--include-version` alone sends `true`; omitting both sends nothing (server default true). Passing both `--include-version` and `--no-include-version` is rejected.
+- `--version-number <n>` on `get` sends `version=<n>` and returns that historical version of the comment instead of the current one.
 - `update` issues `PUT /footer-comments/{id}` — Confluence enforces optimistic concurrency: `--version-number` must be exactly one greater than the comment's current version (mismatches return 409). `--body` is sent with `representation: "storage"`; SDK callers can opt into `atlas_doc_format` via the underlying `comments.updateFooter()` method.
 - `likes-count` returns the bare `{ count }` envelope and is not paginated.
+- `likes-users --limit` accepts 0–250 (the spec minimum is 0; server default 25). Other list actions take `--limit` 1–250.
 - `version` fetches a single past version by number; the response includes the body and audit metadata.
 - All list endpoints are cursor-paginated — extract `cursor=…` from `_links.next` and pass it back as `--cursor`.
 
@@ -1195,6 +1210,12 @@ atlas confluence footer-comments list --sort=-created-date --limit 25
 
 # Read a single comment with everything inlined
 atlas confluence footer-comments get 77777 --include-likes --include-versions
+
+# Rendered HTML body, without the inlined current version
+atlas confluence footer-comments get 77777 --body-format view --no-include-version
+
+# A historical version of the comment
+atlas confluence footer-comments get 77777 --version-number 2 --include-version false
 
 # Update a footer comment (storage body)
 atlas confluence footer-comments update 77777 --body "Updated reply" --version-number 2
@@ -1225,13 +1246,15 @@ Tenant-wide inline comment surface exposed through `/wiki/api/v2/inline-comments
 | `likes-count` | `<commentId>` | —                  | —                                                |
 | `likes-users` | `<commentId>` | —                  | `--cursor`, `--limit`                            |
 | `operations`  | `<commentId>` | —                  | —                                                |
-| `versions`    | `<commentId>` | —                  | `--sort`, `--cursor`, `--limit`                  |
+| `versions`    | `<commentId>` | —                  | `--body-format`, `--sort`, `--cursor`, `--limit` |
 | `version`     | `<commentId>` | `--version-number` | —                                                |
 
-- `--body-format` accepts `storage` or `atlas_doc_format` (the v2 `PrimaryBodyRepresentation` enum).
+- `--body-format` on `list`, `children` and `versions` accepts `storage` or `atlas_doc_format` (the v2 `PrimaryBodyRepresentation` enum); any other value is rejected before the request.
 - `--sort` on `list` and `children` accepts the `CommentSortOrder` vocabulary: `created-date`, `-created-date`, `modified-date`, `-modified-date`.
 - `--sort` on `versions` is the narrower `VersionSortOrder`: only `modified-date` / `-modified-date`.
+- A descending sort starts with `-`, so write it with `=`: `--sort=-created-date`. The space form `--sort -created-date` is rejected as an ambiguous option.
 - `likes-count` returns the bare `{ count }` envelope and is not paginated.
+- `likes-users --limit` accepts 0–250 (the spec minimum is 0; server default 25). Other list actions take `--limit` 1–250.
 - `version` fetches a single past version by number; the response includes the body and audit metadata.
 - All list endpoints are cursor-paginated — extract `cursor=…` from `_links.next` and pass it back as `--cursor`.
 
@@ -1251,6 +1274,7 @@ atlas confluence inline-comments operations 77777
 
 # Version history
 atlas confluence inline-comments versions 77777 --sort=-modified-date
+atlas confluence inline-comments versions 77777 --body-format atlas_doc_format --limit 10
 atlas confluence inline-comments version 77777 --version-number 3
 ```
 

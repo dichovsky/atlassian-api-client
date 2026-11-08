@@ -1801,7 +1801,7 @@ async function executeDataPolicies(client: ConfluenceClient, cmd: ParsedCommand)
     case 'list-spaces': {
       const sort = asEnum(opts['sort'], DATA_POLICY_SPACE_SORT_ORDERS, 'sort');
       return client.dataPolicies.listSpaces({
-        ids: parseCsvIntList(asString(opts['ids'])),
+        ids: parseCsvIntList(asString(opts['ids']), '--ids'),
         keys: parseCsvList(asString(opts['keys'])),
         ...(sort !== undefined ? { sort } : {}),
         limit: asPositiveInt(opts['limit'], '--limit'),
@@ -1847,15 +1847,24 @@ function parseCsvSpaceIdList(raw: string | undefined): readonly string[] | undef
 }
 
 /**
- * Split a comma-separated CLI flag of integers into a `readonly number[]`.
- * Returns `undefined` when the input is unset. Each item is coerced via
- * `parseInt` with base-10 and non-finite values are filtered out.
+ * Split a comma-separated CLI flag of integer IDs into a `readonly number[]`.
+ * Returns `undefined` when the input is unset. A malformed token (`abc`,
+ * `12abc`) or one beyond `Number.MAX_SAFE_INTEGER` throws: dropping or
+ * rounding it would silently widen or change the filter. Range is left to the
+ * server (B1059), so `-1` passes through like `parseCsvSpaceIdList`.
  */
-function parseCsvIntList(raw: string | undefined): readonly number[] | undefined {
+function parseCsvIntList(raw: string | undefined, flag: string): readonly number[] | undefined {
   const strs = parseCsvList(raw);
   if (strs === undefined) return undefined;
-  const nums = strs.map((s) => parseInt(s, 10)).filter((n) => Number.isFinite(n));
-  return nums.length > 0 ? nums : undefined;
+  return strs.map((s) => {
+    const n = Number(s);
+    if (!/^-?\d+$/.test(s) || !Number.isSafeInteger(n)) {
+      throw new Error(
+        `${flag} must contain only decimal integer IDs up to ${Number.MAX_SAFE_INTEGER}, got: ${s}`,
+      );
+    }
+    return n;
+  });
 }
 
 async function executeSpacePermissions(
@@ -2045,17 +2054,17 @@ async function executeTasks(client: ConfluenceClient, cmd: ParsedCommand): Promi
   switch (cmd.action) {
     case 'list':
       return client.tasks.list({
-        'body-format': asString(opts['body-format']) as 'storage' | 'atlas_doc_format' | undefined,
+        'body-format': asEnum(opts['body-format'], CONTENT_BODY_FORMATS, 'body-format'),
         // Defaults to true on the wire, so an explicit false must be sent.
         includeBlankTasks:
           typeof opts['include-blank-tasks'] === 'boolean'
             ? opts['include-blank-tasks']
             : undefined,
         status: asEnum(opts['status'], TASK_STATUSES, 'status'),
-        taskId: parseCsvIntList(asString(opts['task-id'])),
-        spaceId: parseCsvIntList(asString(opts['space-id'])),
-        pageId: parseCsvIntList(asString(opts['page-id'])),
-        blogPostId: parseCsvIntList(asString(opts['blog-post-id'])),
+        taskId: parseCsvIntList(asString(opts['task-id']), '--task-id'),
+        spaceId: parseCsvIntList(asString(opts['space-id']), '--space-id'),
+        pageId: parseCsvIntList(asString(opts['page-id']), '--page-id'),
+        blogPostId: parseCsvIntList(asString(opts['blog-post-id']), '--blog-post-id'),
         createdBy: parseCsvList(asString(opts['created-by'])),
         assignedTo: parseCsvList(asString(opts['assigned-to'])),
         completedBy: parseCsvList(asString(opts['completed-by'])),
@@ -2070,7 +2079,7 @@ async function executeTasks(client: ConfluenceClient, cmd: ParsedCommand): Promi
       });
     case 'get':
       return client.tasks.get(requireArg(cmd.positionalArgs[0], 'task ID'), {
-        'body-format': asString(opts['body-format']) as 'storage' | 'atlas_doc_format' | undefined,
+        'body-format': asEnum(opts['body-format'], CONTENT_BODY_FORMATS, 'body-format'),
       });
     case 'update': {
       const taskId = requireArg(cmd.positionalArgs[0], 'task ID');
@@ -2227,13 +2236,17 @@ async function executeDatabases(client: ConfluenceClient, cmd: ParsedCommand): P
       );
     case 'update-property': {
       const versionNum = requirePositiveInt(opts['version-number'], '--version-number');
+      const versionMessage = asString(opts['version-message']);
       return client.databases.updateProperty(
         requireArg(cmd.positionalArgs[0], 'database ID'),
         requireOpt(opts['property-id'], '--property-id'),
         {
           key: requireOpt(opts['key'], '--key'),
           value: parseJsonValue(requireOpt(opts['value'], '--value')),
-          version: { number: versionNum },
+          version: {
+            number: versionNum,
+            ...(versionMessage !== undefined ? { message: versionMessage } : {}),
+          },
         },
       );
     }
@@ -2534,7 +2547,8 @@ async function executeFooterComments(
       });
     }
     case 'get': {
-      const bodyFormat = asEnum(opts['body-format'], CONTENT_BODY_FORMATS, 'body-format');
+      // GET /footer-comments/{id} takes the wider PrimaryBodyRepresentationSingle.
+      const bodyFormat = asEnum(opts['body-format'], PAGE_BODY_REPRESENTATIONS, 'body-format');
       return client.footerComments.get(requireArg(cmd.positionalArgs[0], 'comment ID'), {
         ...(bodyFormat !== undefined ? { 'body-format': bodyFormat } : {}),
         version: asPositiveInt(opts['version-number'], '--version-number'),
@@ -2571,7 +2585,7 @@ async function executeFooterComments(
     case 'likes-users':
       return client.footerComments.listLikeUsers(requireArg(cmd.positionalArgs[0], 'comment ID'), {
         cursor: asString(opts['cursor']),
-        limit: asPositiveInt(opts['limit'], '--limit'),
+        limit: asNonNegativeInt(opts['limit'], '--limit'),
       });
     case 'operations':
       return client.footerComments.getOperations(requireArg(cmd.positionalArgs[0], 'comment ID'));
@@ -2631,13 +2645,15 @@ async function executeInlineComments(
     case 'likes-users':
       return client.inlineComments.listLikeUsers(requireArg(cmd.positionalArgs[0], 'comment ID'), {
         cursor: asString(opts['cursor']),
-        limit: asPositiveInt(opts['limit'], '--limit'),
+        limit: asNonNegativeInt(opts['limit'], '--limit'),
       });
     case 'operations':
       return client.inlineComments.getOperations(requireArg(cmd.positionalArgs[0], 'comment ID'));
     case 'versions': {
       const sort = asEnum(opts['sort'], VERSION_SORT_ORDERS, 'sort');
+      const bodyFormat = asEnum(opts['body-format'], CONTENT_BODY_FORMATS, 'body-format');
       return client.inlineComments.listVersions(requireArg(cmd.positionalArgs[0], 'comment ID'), {
+        ...(bodyFormat !== undefined ? { 'body-format': bodyFormat } : {}),
         ...(sort !== undefined ? { sort } : {}),
         cursor: asString(opts['cursor']),
         limit: asPositiveInt(opts['limit'], '--limit'),
