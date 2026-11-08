@@ -28,7 +28,6 @@ import type {
   InlineCommentResolutionStatus,
   LabelPrefix,
   LabelSortOrder,
-  PageContentStatus,
   PageBodyWrite,
   PageBodyWriteRepresentation,
   PageNestedBodyWrite,
@@ -109,15 +108,24 @@ async function executePages(client: ConfluenceClient, cmd: ParsedCommand): Promi
   const opts = cmd.options;
 
   switch (cmd.action) {
-    case 'list':
+    case 'list': {
+      const id = parseCsvIdList(asString(opts['id']), '--id');
+      const status = asEnumArray(opts['status'], SPACE_PAGE_STATUSES, 'status');
+      const sort = asEnum(opts['sort'], PAGE_SORT_ORDERS, 'sort');
+      const subtype = asEnum(opts['subtype'], PAGE_LIST_SUBTYPES, 'subtype');
+      const bodyFormat = asEnum(opts['body-format'], CONTENT_BODY_FORMATS, 'body-format');
       return client.pages.list({
+        ...(id !== undefined ? { id } : {}),
         spaceId: asString(opts['space-id']),
         title: asString(opts['title']),
-        status: asString(opts['status']) as PageContentStatus | undefined,
+        ...(status !== undefined ? { status } : {}),
+        ...(subtype !== undefined ? { subtype } : {}),
+        ...(sort !== undefined ? { sort } : {}),
+        ...(bodyFormat !== undefined ? { 'body-format': bodyFormat } : {}),
         limit: asPositiveInt(opts['limit'], '--limit'),
         cursor: asString(opts['cursor']),
-        'body-format': asString(opts['body-format']) as 'storage' | undefined,
       });
+    }
     case 'get': {
       const pageId = requireArg(cmd.positionalArgs[0], 'page ID');
       const getParams = buildGetPageParams(opts);
@@ -159,20 +167,19 @@ async function executePages(client: ConfluenceClient, cmd: ParsedCommand): Promi
         : client.pages.create(data);
     }
     case 'update': {
+      const pageId = requireArg(cmd.positionalArgs[0], 'page ID');
       const versionNum = requirePositiveInt(opts['version-number'], '--version-number');
       // `body` is required by the spec (PageUpdateRequest required array).
-      const bodyValue = requireOpt(opts['body'], '--body');
+      const body = requireBody(makeWriteBody(opts, PAGE_BODY_WRITE_REPRESENTATIONS));
       // Spec: parentId re-parents within the same space; ownerId transfers ownership.
       const parentId = asString(opts['parent-id']);
       const ownerId = asString(opts['owner-id']);
-      return client.pages.update(requireArg(cmd.positionalArgs[0], 'page ID'), {
-        id: requireArg(cmd.positionalArgs[0], 'page ID'),
+      return client.pages.update(pageId, {
+        id: pageId,
         title: requireOpt(opts['title'], '--title'),
-        status: 'current',
-        version: {
-          number: versionNum,
-        },
-        body: { representation: 'storage' as const, value: bodyValue },
+        status: asEnum(opts['status'], PAGE_CREATE_STATUSES, 'status') ?? 'current',
+        version: versionData(versionNum, opts),
+        body,
         ...(parentId !== undefined && { parentId }),
         ...(ownerId !== undefined && { ownerId }),
       });
@@ -269,8 +276,9 @@ async function executePages(client: ConfluenceClient, cmd: ParsedCommand): Promi
       // Body shape is non-trivial (`RedactPageData`), so the CLI accepts the
       // full payload as a single JSON value through `--value`. Mirrors the
       // blog-posts redact dispatch — convenience overrides `--created-at` /
-      // `--clean-history` merge into the parsed `--value` payload and win
-      // over its matching top-level keys.
+      // `--clean-history` (including an explicit `--clean-history false`)
+      // merge into the parsed `--value` payload and win over its matching
+      // top-level keys.
       const rawPayload = requireOpt(opts['value'], '--value');
       const parsed = parseJsonValue(rawPayload);
       if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
@@ -280,8 +288,8 @@ async function executePages(client: ConfluenceClient, cmd: ParsedCommand): Promi
       if (typeof opts['created-at'] === 'string') {
         payload['createdAt'] = opts['created-at'];
       }
-      if (opts['clean-history'] === true) {
-        payload['cleanHistory'] = true;
+      if (typeof opts['clean-history'] === 'boolean') {
+        payload['cleanHistory'] = opts['clean-history'];
       }
       if (typeof payload['createdAt'] !== 'string' || payload['createdAt'].length === 0) {
         throw new Error(
@@ -329,7 +337,7 @@ async function executePages(client: ConfluenceClient, cmd: ParsedCommand): Promi
         {
           key: requireOpt(opts['key'], '--key'),
           value: parseJsonValue(requireOpt(opts['value'], '--value')),
-          version: { number: propVersionNum },
+          version: versionData(propVersionNum, opts),
         },
       );
     }
@@ -362,7 +370,7 @@ async function executePages(client: ConfluenceClient, cmd: ParsedCommand): Promi
     case 'footer-comments': {
       const fcSort = asEnum(opts['sort'], COMMENT_SORT_ORDERS, 'sort');
       const fcBodyFormat = asEnum(opts['body-format'], CONTENT_BODY_FORMATS, 'body-format');
-      const fcStatus = asEnum(opts['status'], COMMENT_STATUSES, 'status');
+      const fcStatus = asEnumArray(opts['status'], PAGE_COMMENT_STATUSES, 'status');
       return client.pages.listFooterComments(requireArg(cmd.positionalArgs[0], 'page ID'), {
         ...(fcBodyFormat !== undefined ? { 'body-format': fcBodyFormat } : {}),
         ...(fcStatus !== undefined ? { status: fcStatus } : {}),
@@ -374,8 +382,8 @@ async function executePages(client: ConfluenceClient, cmd: ParsedCommand): Promi
     case 'inline-comments': {
       const icSort = asEnum(opts['sort'], COMMENT_SORT_ORDERS, 'sort');
       const icBodyFormat = asEnum(opts['body-format'], CONTENT_BODY_FORMATS, 'body-format');
-      const icStatus = asEnum(opts['status'], COMMENT_STATUSES, 'status');
-      const icResolution = asEnum(
+      const icStatus = asEnumArray(opts['status'], PAGE_COMMENT_STATUSES, 'status');
+      const icResolution = asEnumArray(
         opts['resolution-status'],
         INLINE_COMMENT_RESOLUTION_STATUSES,
         'resolution-status',
@@ -499,6 +507,11 @@ async function executeSpaces(client: ConfluenceClient, cmd: ParsedCommand): Prom
       // representation is currently supported." We surface `--description` as
       // a plain string and fix `representation: 'plain'` here rather than
       // exposing an unsupported knob through the CLI surface.
+      // `--value` carries the optional role-assignment grant set: the same
+      // JSON array as `spaces set-role-assignments --value`.
+      const rawRoleAssignments = asString(opts['value']);
+      const roleAssignments =
+        rawRoleAssignments === undefined ? undefined : parseRoleAssignments(rawRoleAssignments);
       const data: Partial<CreateSpaceData> & { name: string } = {
         name: requireOpt(opts['name'], '--name'),
         ...(typeof opts['key'] === 'string' ? { key: opts['key'] } : {}),
@@ -509,6 +522,9 @@ async function executeSpaces(client: ConfluenceClient, cmd: ParsedCommand): Prom
         ...(opts['private'] === true ? { createPrivateSpace: true } : {}),
         ...(typeof opts['template-key'] === 'string' ? { templateKey: opts['template-key'] } : {}),
         ...(copyFrom !== undefined ? { copySpaceAccessConfiguration: copyFrom } : {}),
+        ...(roleAssignments !== undefined
+          ? { roleAssignments: roleAssignments as CreateSpaceData['roleAssignments'] }
+          : {}),
       };
       return client.spaces.create(data);
     }
@@ -633,13 +649,7 @@ async function executeSpaces(client: ConfluenceClient, cmd: ParsedCommand): Prom
       // envelope — the confirmed, normalised assignment set after the replace.
       // We surface the body verbatim so callers can diff request vs response
       // and detect server-side principal/role canonicalisation.
-      const raw = requireOpt(opts['value'], '--value');
-      const parsed = parseJsonValue(raw);
-      if (!Array.isArray(parsed)) {
-        throw new Error(
-          '--value must be a JSON array of `{ principal: { principalType, principalId }, roleId }` entries',
-        );
-      }
+      const parsed = parseRoleAssignments(requireOpt(opts['value'], '--value'));
       return client.spaces.setRoleAssignments(
         requireArg(cmd.positionalArgs[0], 'space ID'),
         parsed as Parameters<typeof client.spaces.setRoleAssignments>[1],
@@ -648,10 +658,14 @@ async function executeSpaces(client: ConfluenceClient, cmd: ParsedCommand): Prom
 
     // ── space properties (B209-B213) ──────────────────────────────────────
     case 'list-properties': {
-      const propSort = asEnum(opts['sort'], PROPERTY_SORT_ORDERS, 'sort');
+      // GET /spaces/{space-id}/properties defines no `sort` parameter.
+      if (opts['sort'] !== undefined) {
+        throw new Error(
+          '--sort is not supported by spaces list-properties (the API defines no sort for space properties)',
+        );
+      }
       return client.spaces.listProperties(requireArg(cmd.positionalArgs[0], 'space ID'), {
         key: asString(opts['key']),
-        ...(propSort !== undefined ? { sort: propSort } : {}),
         cursor: asString(opts['cursor']),
         limit: asPositiveInt(opts['limit'], '--limit'),
       });
@@ -674,7 +688,7 @@ async function executeSpaces(client: ConfluenceClient, cmd: ParsedCommand): Prom
         {
           key: requireOpt(opts['key'], '--key'),
           value: parseJsonValue(requireOpt(opts['value'], '--value')),
-          version: { number: versionNum },
+          version: versionData(versionNum, opts),
         },
       );
     }
@@ -699,10 +713,13 @@ async function executeBlogPosts(client: ConfluenceClient, cmd: ParsedCommand): P
     case 'list': {
       const bpListSort = asEnum(opts['sort'], BLOG_POST_SORT_ORDERS, 'sort');
       const bpListBodyFormat = asEnum(opts['body-format'], CONTENT_BODY_FORMATS, 'body-format');
+      const bpListStatus = asEnumArray(opts['status'], SPACE_BLOG_POST_STATUSES, 'status');
+      const bpListId = parseCsvIdList(asString(opts['id']), '--id');
       return client.blogPosts.list({
+        ...(bpListId !== undefined ? { id: bpListId } : {}),
         spaceId: asString(opts['space-id']),
         title: asString(opts['title']),
-        status: asString(opts['status']) as 'current' | 'deleted' | 'trashed' | undefined,
+        ...(bpListStatus !== undefined ? { status: bpListStatus } : {}),
         ...(bpListBodyFormat !== undefined ? { 'body-format': bpListBodyFormat } : {}),
         ...(bpListSort !== undefined ? { sort: bpListSort } : {}),
         limit: asPositiveInt(opts['limit'], '--limit'),
@@ -716,27 +733,41 @@ async function executeBlogPosts(client: ConfluenceClient, cmd: ParsedCommand): P
         ? client.blogPosts.get(getBlogId, getParams)
         : client.blogPosts.get(getBlogId);
     }
-    case 'create':
+    case 'create': {
+      // Spec: title is required for a current post, optional for a draft.
+      const status = asEnum(opts['status'], PAGE_CREATE_STATUSES, 'status');
+      const title = asString(opts['title']);
+      const body = makeWriteBody(opts, PAGE_BODY_WRITE_REPRESENTATIONS);
+      const createdAt = asString(opts['created-at']);
+      const common = {
+        spaceId: requireOpt(opts['space-id'], '--space-id'),
+        ...(body !== undefined ? { body } : {}),
+        ...(createdAt !== undefined ? { createdAt } : {}),
+      };
       return client.blogPosts.create(
-        {
-          spaceId: requireOpt(opts['space-id'], '--space-id'),
-          title: requireOpt(opts['title'], '--title'),
-          body: makeBody(asString(opts['body'])),
-        },
+        status === 'draft'
+          ? { ...common, status, ...(title !== undefined ? { title } : {}) }
+          : {
+              ...common,
+              ...(status !== undefined ? { status } : {}),
+              title: requireOpt(title, '--title'),
+            },
         { private: opts['private'] === true ? true : undefined },
       );
+    }
     case 'update': {
+      const blogId = requireArg(cmd.positionalArgs[0], 'blog post ID');
       const blogVersionNum = requirePositiveInt(opts['version-number'], '--version-number');
       // `body` is required by the spec (BlogPostUpdateRequest required array).
-      const blogBodyValue = requireOpt(opts['body'], '--body');
-      return client.blogPosts.update(requireArg(cmd.positionalArgs[0], 'blog post ID'), {
-        id: requireArg(cmd.positionalArgs[0], 'blog post ID'),
+      const blogBody = requireBody(makeWriteBody(opts, PAGE_BODY_WRITE_REPRESENTATIONS));
+      const createdAt = asString(opts['created-at']);
+      return client.blogPosts.update(blogId, {
+        id: blogId,
         title: requireOpt(opts['title'], '--title'),
-        status: 'current',
-        version: {
-          number: blogVersionNum,
-        },
-        body: { representation: 'storage' as const, value: blogBodyValue },
+        status: asEnum(opts['status'], PAGE_CREATE_STATUSES, 'status') ?? 'current',
+        version: versionData(blogVersionNum, opts),
+        body: blogBody,
+        ...(createdAt !== undefined ? { createdAt } : {}),
       });
     }
     case 'delete':
@@ -772,7 +803,7 @@ async function executeBlogPosts(client: ConfluenceClient, cmd: ParsedCommand): P
         {
           key: requireOpt(opts['key'], '--key'),
           value: parseJsonValue(requireOpt(opts['value'], '--value')),
-          version: { number: propVersionNum },
+          version: versionData(propVersionNum, opts),
         },
       );
     }
@@ -808,12 +839,16 @@ async function executeBlogPosts(client: ConfluenceClient, cmd: ParsedCommand): P
     case 'update-classification-level':
       await client.blogPosts.updateClassificationLevel(
         requireArg(cmd.positionalArgs[0], 'blog post ID'),
-        { id: requireOpt(opts['level-id'], '--level-id'), status: 'current' },
+        {
+          id: requireOpt(opts['level-id'], '--level-id'),
+          status: asEnum(opts['status'], PAGE_CLASSIFICATION_STATUSES, 'status') ?? 'current',
+        },
       );
       return { updated: true };
     case 'reset-classification-level':
       await client.blogPosts.resetClassificationLevel(
         requireArg(cmd.positionalArgs[0], 'blog post ID'),
+        { status: asEnum(opts['status'], PAGE_CLASSIFICATION_STATUSES, 'status') ?? 'current' },
       );
       return { reset: true };
 
@@ -834,7 +869,7 @@ async function executeBlogPosts(client: ConfluenceClient, cmd: ParsedCommand): P
     case 'footer-comments': {
       const fcSort = asEnum(opts['sort'], COMMENT_SORT_ORDERS, 'sort');
       const fcBodyFormat = asEnum(opts['body-format'], CONTENT_BODY_FORMATS, 'body-format');
-      const fcStatus = asEnum(opts['status'], COMMENT_STATUSES, 'status');
+      const fcStatus = asEnumArray(opts['status'], COMMENT_STATUSES, 'status');
       return client.blogPosts.listFooterComments(
         requireArg(cmd.positionalArgs[0], 'blog post ID'),
         {
@@ -849,8 +884,8 @@ async function executeBlogPosts(client: ConfluenceClient, cmd: ParsedCommand): P
     case 'inline-comments': {
       const icSort = asEnum(opts['sort'], COMMENT_SORT_ORDERS, 'sort');
       const icBodyFormat = asEnum(opts['body-format'], CONTENT_BODY_FORMATS, 'body-format');
-      const icStatus = asEnum(opts['status'], COMMENT_STATUSES, 'status');
-      const icResolution = asEnum(
+      const icStatus = asEnumArray(opts['status'], COMMENT_STATUSES, 'status');
+      const icResolution = asEnumArray(
         opts['resolution-status'],
         INLINE_COMMENT_RESOLUTION_STATUSES,
         'resolution-status',
@@ -908,13 +943,14 @@ async function executeBlogPosts(client: ConfluenceClient, cmd: ParsedCommand): P
       // user can satisfy `createdAt` via either `--value` or `--created-at`.
       // The router declares both `--clean-history` (boolean) and `--created-at`
       // (string) — overrides win over `--value` when both are present, which
-      // matches CLI norms ("more specific flag wins").
+      // matches CLI norms ("more specific flag wins"); an explicit
+      // `--clean-history false` therefore clears a `cleanHistory: true` body.
       const payload: Record<string, unknown> = { ...(parsed as Record<string, unknown>) };
       if (typeof opts['created-at'] === 'string') {
         payload['createdAt'] = opts['created-at'];
       }
-      if (opts['clean-history'] === true) {
-        payload['cleanHistory'] = true;
+      if (typeof opts['clean-history'] === 'boolean') {
+        payload['cleanHistory'] = opts['clean-history'];
       }
       // `createdAt` is required by the spec; fail fast at the CLI boundary
       // with a clear message instead of round-tripping to the server.
@@ -994,26 +1030,54 @@ async function executeBlogPosts(client: ConfluenceClient, cmd: ParsedCommand): P
 
 async function executeComments(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown> {
   const opts = cmd.options;
-  const commentType = asString(opts['comment-type']) ?? 'footer';
+  const commentType = asEnum(opts['comment-type'], COMMENT_TYPES, 'comment-type') ?? 'footer';
 
   switch (cmd.action) {
     case 'list': {
       const commentPageId = requireOpt(opts['page-id'], '--page-id');
+      const sort = asEnum(opts['sort'], COMMENT_SORT_ORDERS, 'sort');
+      const status = asEnumArray(opts['status'], PAGE_COMMENT_STATUSES, 'status');
+      const resolution = asEnumArray(
+        opts['resolution-status'],
+        INLINE_COMMENT_RESOLUTION_STATUSES,
+        'resolution-status',
+      );
       const commentListParams = {
         limit: asPositiveInt(opts['limit'], '--limit'),
         cursor: asString(opts['cursor']),
         'body-format': asEnum(opts['body-format'], CONTENT_BODY_FORMATS, 'body-format'),
+        ...(sort !== undefined ? { sort } : {}),
+        ...(status !== undefined ? { status } : {}),
       };
       if (commentType === 'inline') {
-        return client.comments.listInline(commentPageId, commentListParams);
+        return client.comments.listInline(commentPageId, {
+          ...commentListParams,
+          ...(resolution !== undefined ? { 'resolution-status': resolution } : {}),
+        });
+      }
+      if (resolution !== undefined) {
+        throw new Error(
+          '--resolution-status applies only to inline comments (--comment-type inline)',
+        );
       }
       return client.comments.listFooter(commentPageId, commentListParams);
     }
-    case 'get':
-      if (commentType === 'inline') {
-        return client.comments.getInline(requireArg(cmd.positionalArgs[0], 'comment ID'));
-      }
-      return client.comments.getFooter(requireArg(cmd.positionalArgs[0], 'comment ID'));
+    case 'get': {
+      const commentId = requireArg(cmd.positionalArgs[0], 'comment ID');
+      const bodyFormat = asEnum(opts['body-format'], PAGE_BODY_REPRESENTATIONS, 'body-format');
+      const getParams = {
+        ...(bodyFormat !== undefined ? { 'body-format': bodyFormat } : {}),
+        version: asPositiveInt(opts['version-number'], '--version-number'),
+        'include-properties': opts['include-properties'] === true ? true : undefined,
+        'include-operations': opts['include-operations'] === true ? true : undefined,
+        'include-likes': opts['include-likes'] === true ? true : undefined,
+        'include-versions': opts['include-versions'] === true ? true : undefined,
+        'include-version': includeVersionFlag(opts),
+      };
+      return commentType === 'inline'
+        ? client.comments.getInline(commentId, getParams)
+        : client.comments.getFooter(commentId, getParams);
+    }
     case 'create': {
       const commentPageId2 = asString(opts['page-id']);
       const commentBlogPostId = asString(opts['blog-post-id']);
@@ -1098,10 +1162,7 @@ async function executeComments(client: ConfluenceClient, cmd: ParsedCommand): Pr
         ...(commentPageId2 !== undefined ? { pageId: commentPageId2 } : {}),
         ...(commentBlogPostId !== undefined ? { blogPostId: commentBlogPostId } : {}),
         ...(parentCommentId !== undefined ? { parentCommentId } : {}),
-        body: {
-          representation: 'storage' as const,
-          value: requireOpt(opts['body'], '--body'),
-        },
+        body: requireBody(makeWriteBody(opts, PAGE_BODY_WRITE_REPRESENTATIONS)),
       };
       return commentType === 'inline'
         ? client.comments.createInline({
@@ -1123,10 +1184,8 @@ async function executeComments(client: ConfluenceClient, cmd: ParsedCommand): Pr
       return { deleted: true };
     case 'update': {
       const versionNum = requirePositiveInt(opts['version-number'], '--version-number');
-      const body = {
-        representation: 'storage' as const,
-        value: requireOpt(opts['body'], '--body'),
-      };
+      const body = requireBody(makeWriteBody(opts, PAGE_BODY_WRITE_REPRESENTATIONS));
+      const version = versionData(versionNum, opts);
       if (commentType === 'inline') {
         if (opts['resolved'] === true && opts['no-resolved'] === true) {
           throw new Error('Cannot specify both --resolved and --no-resolved');
@@ -1134,13 +1193,16 @@ async function executeComments(client: ConfluenceClient, cmd: ParsedCommand): Pr
         const resolved =
           opts['resolved'] === true ? true : opts['no-resolved'] === true ? false : undefined;
         return client.comments.updateInline(requireArg(cmd.positionalArgs[0], 'comment ID'), {
-          version: { number: versionNum },
+          version,
           body,
           ...(resolved !== undefined && { resolved }),
         });
       }
+      if (opts['resolved'] !== undefined || opts['no-resolved'] !== undefined) {
+        throw new Error('--resolved applies only to inline comments (--comment-type inline)');
+      }
       return client.comments.updateFooter(requireArg(cmd.positionalArgs[0], 'comment ID'), {
-        version: { number: versionNum },
+        version,
         body,
       });
     }
@@ -1169,7 +1231,7 @@ async function executeComments(client: ConfluenceClient, cmd: ParsedCommand): Pr
         {
           key: requireOpt(opts['key'], '--key'),
           value: parseJsonValue(requireOpt(opts['value'], '--value')),
-          version: { number: versionNum },
+          version: versionData(versionNum, opts),
         },
       );
     }
@@ -1257,7 +1319,7 @@ async function executeAttachments(client: ConfluenceClient, cmd: ParsedCommand):
         {
           key: requireOpt(opts['key'], '--key'),
           value: parseJsonValue(requireOpt(opts['value'], '--value')),
-          version: { number: versionNum },
+          version: versionData(versionNum, opts),
         },
       );
     }
@@ -1317,11 +1379,23 @@ async function executeAttachments(client: ConfluenceClient, cmd: ParsedCommand):
           height: asPositiveInt(opts['height'], '--height'),
         },
       );
-      // The thumbnail body is binary; expose its byte length so the CLI's
-      // JSON formatter renders a useful confirmation (the bytes themselves
-      // belong on stdout/a file via the SDK, not in the structured CLI
-      // output).
-      return { downloaded: true, byteLength: buffer.byteLength };
+      // The thumbnail body is binary, so it never goes to stdout: `--file`
+      // writes the bytes (refusing to overwrite unless `--force`), and the
+      // JSON confirmation reports the byte length.
+      const file = asString(opts['file']);
+      if (file === undefined) return { downloaded: true, byteLength: buffer.byteLength };
+      const { writeFile } = await import('node:fs/promises');
+      try {
+        await writeFile(file, new Uint8Array(buffer), {
+          flag: opts['force'] === true ? 'w' : 'wx',
+        });
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code === 'EEXIST') {
+          throw new Error(`${file} already exists; pass --force to overwrite`, { cause: error });
+        }
+        throw error;
+      }
+      return { downloaded: true, byteLength: buffer.byteLength, file };
     }
     default:
       throw new Error(
@@ -1391,8 +1465,8 @@ async function executeLabels(client: ConfluenceClient, cmd: ParsedCommand): Prom
     case 'list-all': {
       const sort = asEnum(opts['sort'], LABEL_SORT_ORDERS, 'sort');
       return client.labels.list({
-        'label-id': normalizeOptionalString(asString(opts['label-id'])),
-        prefix: normalizeOptionalString(asString(opts['prefix'])),
+        'label-id': parseCsvList(asString(opts['label-id'])),
+        prefix: parseCsvList(asString(opts['prefix'])),
         ...(sort !== undefined ? { sort } : {}),
         limit: asPositiveInt(opts['limit'], '--limit'),
         cursor: asString(opts['cursor']),
@@ -1410,7 +1484,7 @@ async function executeLabels(client: ConfluenceClient, cmd: ParsedCommand): Prom
       const sort = asEnum(opts['sort'], BLOG_POST_SORT_ORDERS, 'sort');
       const bodyFormat = asEnum(opts['body-format'], CONTENT_BODY_FORMATS, 'body-format');
       return client.labels.listBlogPosts(requireArg(cmd.positionalArgs[0], 'label ID'), {
-        'space-id': normalizeOptionalString(asString(opts['space-id'])),
+        'space-id': parseCsvList(asString(opts['space-id'])),
         ...(bodyFormat !== undefined ? { 'body-format': bodyFormat } : {}),
         ...(sort !== undefined ? { sort } : {}),
         limit: asPositiveInt(opts['limit'], '--limit'),
@@ -1421,7 +1495,7 @@ async function executeLabels(client: ConfluenceClient, cmd: ParsedCommand): Prom
       const sort = asEnum(opts['sort'], PAGE_SORT_ORDERS, 'sort');
       const bodyFormat = asEnum(opts['body-format'], CONTENT_BODY_FORMATS, 'body-format');
       return client.labels.listPages(requireArg(cmd.positionalArgs[0], 'label ID'), {
-        'space-id': normalizeOptionalString(asString(opts['space-id'])),
+        'space-id': parseCsvList(asString(opts['space-id'])),
         ...(bodyFormat !== undefined ? { 'body-format': bodyFormat } : {}),
         ...(sort !== undefined ? { sort } : {}),
         limit: asPositiveInt(opts['limit'], '--limit'),
@@ -1432,7 +1506,8 @@ async function executeLabels(client: ConfluenceClient, cmd: ParsedCommand): Prom
     // ── B1018: list labels FOR a space / blog post ────────────────────────
     case 'list-for-space': {
       const sort = asEnum(opts['sort'], LABEL_SORT_ORDERS, 'sort');
-      const prefix = asEnum(opts['prefix'], LABEL_PREFIXES, 'prefix');
+      // GET /spaces/{id}/labels allows only my|team (unlike the content label lists).
+      const prefix = asEnum(opts['prefix'], SPACE_CONTENT_LABEL_PREFIXES, 'prefix');
       return client.labels.listForSpace(requireArg(cmd.positionalArgs[0], 'space ID'), {
         ...(prefix !== undefined ? { prefix } : {}),
         ...(sort !== undefined ? { sort } : {}),
@@ -1456,19 +1531,6 @@ async function executeLabels(client: ConfluenceClient, cmd: ParsedCommand): Prom
         `Unknown labels action: ${cmd.action}. Actions: list, list-all, attachments, blog-posts, pages, list-for-space, list-for-blog-post`,
       );
   }
-}
-
-/**
- * Normalize an optional CLI string flag: trim whitespace and collapse the
- * empty case to `undefined`. The resource layer accepts the raw (possibly
- * comma-separated) string and forwards it as a single query value, so we
- * deliberately do not split — we only drop empties so callers can treat
- * "unset" and "blank" identically.
- */
-function normalizeOptionalString(value: string | undefined): string | undefined {
-  if (value === undefined) return undefined;
-  const trimmed = value.trim();
-  return trimmed.length === 0 ? undefined : trimmed;
 }
 
 async function executeApp(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown> {
@@ -1583,10 +1645,20 @@ async function executeCustomContent(
     case 'list': {
       const bodyFormat = asEnum(opts['body-format'], CUSTOM_CONTENT_BODY_FORMATS, 'body-format');
       const sort = asEnum(opts['sort'], CUSTOM_CONTENT_SORT_ORDERS, 'sort');
-      const spaceId = asString(opts['space-id']);
+      // Container filters belong to `pages|blog-posts custom-content`; this
+      // collection has none, so reject them instead of returning everything.
+      for (const flag of ['page-id', 'blog-post-id', 'status'] as const) {
+        if (opts[flag] !== undefined) {
+          throw new Error(
+            `--${flag} is not a custom-content list filter; use pages custom-content or blog-posts custom-content`,
+          );
+        }
+      }
+      const id = parseCsvList(asString(opts['id']));
+      const spaceId = parseCsvList(asString(opts['space-id']));
       return client.customContent.list({
-        type: asString(opts['type']),
-        id: asString(opts['id']),
+        type: requireOpt(opts['type'], '--type'),
+        ...(id !== undefined ? { id } : {}),
         ...(spaceId !== undefined ? { 'space-id': spaceId } : {}),
         ...(sort !== undefined ? { sort } : {}),
         ...(bodyFormat !== undefined ? { 'body-format': bodyFormat } : {}),
@@ -1612,11 +1684,13 @@ async function executeCustomContent(
       });
     }
     case 'create': {
-      const body = makeCustomContentBody(requireOpt(opts['body'], '--body'));
+      const status = asEnum(opts['status'], PAGE_CREATE_STATUSES, 'status');
+      const body = requireBody(makeWriteBody(opts, CUSTOM_CONTENT_BODY_FORMATS, true));
       return client.customContent.create({
         type: requireOpt(opts['type'], '--type'),
         title: requireOpt(opts['title'], '--title'),
-        body,
+        body: body as Parameters<typeof client.customContent.create>[0]['body'],
+        ...(status !== undefined ? { status } : {}),
         spaceId: asString(opts['space-id']),
         pageId: asString(opts['page-id']),
         blogPostId: asString(opts['blog-post-id']),
@@ -1626,14 +1700,15 @@ async function executeCustomContent(
     case 'update': {
       const versionNum = requirePositiveInt(opts['version-number'], '--version-number');
       const id = requireArg(cmd.positionalArgs[0], 'custom content ID');
-      const body = makeCustomContentBody(requireOpt(opts['body'], '--body'));
+      const body = requireBody(makeWriteBody(opts, CUSTOM_CONTENT_BODY_FORMATS, true));
       return client.customContent.update(id, {
         id,
         type: requireOpt(opts['type'], '--type'),
-        status: 'current',
+        // The update endpoint accepts only `current` (drafts are create-only).
+        status: asEnum(opts['status'], CUSTOM_CONTENT_UPDATE_STATUSES, 'status') ?? 'current',
         title: requireOpt(opts['title'], '--title'),
-        body,
-        version: { number: versionNum },
+        body: body as Parameters<typeof client.customContent.update>[1]['body'],
+        version: versionData(versionNum, opts),
         spaceId: asString(opts['space-id']),
         pageId: asString(opts['page-id']),
         blogPostId: asString(opts['blog-post-id']),
@@ -1681,7 +1756,7 @@ async function executeCustomContent(
         {
           key: requireOpt(opts['key'], '--key'),
           value: parseJsonValue(requireOpt(opts['value'], '--value')),
-          version: { number: versionNum },
+          version: versionData(versionNum, opts),
         },
       );
     }
@@ -1785,11 +1860,6 @@ async function executeCustomContent(
         `Unknown custom-content action: ${cmd.action}. Actions: list, get, create, update, delete, list-properties, create-property, get-property, update-property, delete-property, versions, version, attachments, children, footer-comments, labels, operations`,
       );
   }
-}
-
-/** Build a custom-content body envelope from a raw storage-format string. */
-function makeCustomContentBody(value: string) {
-  return { representation: 'storage' as const, value };
 }
 
 async function executeDataPolicies(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown> {
@@ -3205,6 +3275,7 @@ const CHILD_CUSTOM_CONTENT_SORT_ORDERS: readonly ChildCustomContentSortOrder[] =
   '-modified-date',
 ];
 
+/** Status filter for blog-post comment listings (spec: no `archived`). */
 const COMMENT_STATUSES: readonly CommentStatus[] = [
   'current',
   'deleted',
@@ -3212,6 +3283,18 @@ const COMMENT_STATUSES: readonly CommentStatus[] = [
   'historical',
   'draft',
 ];
+
+/** Status filter for page comment listings (`GET /pages/{id}/*-comments`). */
+const PAGE_COMMENT_STATUSES: readonly CommentStatus[] = [
+  'current',
+  'archived',
+  'trashed',
+  'deleted',
+  'historical',
+  'draft',
+];
+
+const COMMENT_TYPES = ['footer', 'inline'] as const;
 
 const INLINE_COMMENT_RESOLUTION_STATUSES: readonly InlineCommentResolutionStatus[] = [
   'resolved',
@@ -3236,6 +3319,10 @@ const PAGE_CLASSIFICATION_STATUSES = ['current', 'draft'] as const;
 const PAGE_TITLE_STATUSES = ['current', 'draft'] as const;
 const PAGE_CREATE_STATUSES = ['current', 'draft'] as const;
 const PAGE_CREATE_SUBTYPES = ['live'] as const;
+/** `subtype` filter accepted by `GET /pages`. */
+const PAGE_LIST_SUBTYPES = ['live', 'page'] as const;
+/** `PUT /custom-content/{id}` accepts only `current`. */
+const CUSTOM_CONTENT_UPDATE_STATUSES = ['current'] as const;
 const PAGE_BODY_WRITE_REPRESENTATIONS: readonly PageBodyWriteRepresentation[] = [
   'storage',
   'atlas_doc_format',
@@ -3276,21 +3363,52 @@ const BLOG_POST_BODY_REPRESENTATIONS: readonly BlogPostBodyRepresentation[] = [
   'editor',
 ];
 
-function makeBody(value: string | undefined) {
-  if (!value) return undefined;
-  return { representation: 'storage' as const, value };
-}
-
 function makePageCreateBody(
   opts: Record<string, string | boolean | undefined>,
 ): PageBodyWrite | PageNestedBodyWrite | undefined {
+  return makeWriteBody(opts, PAGE_BODY_WRITE_REPRESENTATIONS, true) as
+    PageBodyWrite | PageNestedBodyWrite | undefined;
+}
+
+/** Flat `{ representation, value }` content write body. */
+interface FlatWriteBody<R extends string> {
+  readonly representation: R;
+  readonly value: string;
+}
+
+/**
+ * Build a content write body from `--body` (may be empty) plus
+ * `--body-representation` (one of `representations`, default `storage`).
+ * With `nested`, `--body-json` supplies an exact flat or nested body object
+ * instead; without it `--body-json` is rejected rather than silently ignored.
+ * Returns `undefined` when no body flag is given.
+ */
+function makeWriteBody<R extends string>(
+  opts: Record<string, string | boolean | undefined>,
+  representations: readonly R[],
+): FlatWriteBody<R> | undefined;
+function makeWriteBody<R extends string>(
+  opts: Record<string, string | boolean | undefined>,
+  representations: readonly R[],
+  nested: true,
+): FlatWriteBody<R> | Record<string, unknown> | undefined;
+function makeWriteBody<R extends string>(
+  opts: Record<string, string | boolean | undefined>,
+  representations: readonly R[],
+  nested = false,
+): FlatWriteBody<R> | Record<string, unknown> | undefined {
   const value = asString(opts['body']);
   const json = asString(opts['body-json']);
   const representation = asEnum(
     opts['body-representation'],
-    PAGE_BODY_WRITE_REPRESENTATIONS,
+    representations,
     'body-representation',
   );
+  if (json !== undefined && !nested) {
+    throw new Error(
+      '--body-json is not supported by this action; use --body with --body-representation',
+    );
+  }
   if (value !== undefined && json !== undefined) {
     throw new Error('--body and --body-json cannot be used together');
   }
@@ -3307,7 +3425,7 @@ function makePageCreateBody(
     if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) {
       throw new Error('--body-json must be a valid JSON object');
     }
-    return parsed as PageBodyWrite | PageNestedBodyWrite;
+    return parsed as Record<string, unknown>;
   }
   if (value === undefined) {
     if (representation !== undefined) {
@@ -3315,7 +3433,45 @@ function makePageCreateBody(
     }
     return undefined;
   }
-  return { representation: representation ?? 'storage', value };
+  // Every caller's representation list includes `storage`.
+  return { representation: representation ?? ('storage' as R), value };
+}
+
+/** Require a body built by {@link makeWriteBody}. */
+function requireBody<B>(body: B | undefined): B {
+  if (body === undefined) throw new Error('Missing required option: --body');
+  return body;
+}
+
+/** `version` write object: `--version-number` plus the optional `--message`. */
+function versionData(
+  number: number,
+  opts: Record<string, string | boolean | undefined>,
+): { readonly number: number; readonly message?: string } {
+  const message = asString(opts['message']);
+  return message === undefined ? { number } : { number, message };
+}
+
+/** Split a comma-separated `--id`-style flag into decimal integer ID strings. */
+function parseCsvIdList(raw: string | undefined, flag: string): readonly string[] | undefined {
+  const ids = parseCsvList(raw);
+  for (const id of ids ?? []) {
+    if (!/^\d+$/.test(id)) {
+      throw new Error(`${flag} must contain only decimal integer IDs, got: ${id}`);
+    }
+  }
+  return ids;
+}
+
+/** Parse `--value` as a JSON array of `{ principal, roleId }` role assignments. */
+function parseRoleAssignments(raw: string): readonly unknown[] {
+  const parsed = parseJsonValue(raw);
+  if (!Array.isArray(parsed)) {
+    throw new Error(
+      '--value must be a JSON array of `{ principal: { principalType, principalId }, roleId }` entries',
+    );
+  }
+  return parsed;
 }
 
 /**

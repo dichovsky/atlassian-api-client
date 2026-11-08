@@ -40,7 +40,7 @@ export interface ListBlogPostsByLabelParams {
   /**
    * Filter by space id(s). Spec `type: array` → repeated params on the wire
    * (single value, or `?space-id=a&space-id=b`) via `appendScalarOrArrayParam`.
-   * Accepts a single string (e.g. the CLI `--space-id`) or an array.
+   * Accepts a single string or an array (the CLI splits `--space-id a,b`).
    */
   readonly 'space-id'?: string | readonly (string | number)[];
   readonly 'body-format'?: 'storage' | 'atlas_doc_format';
@@ -54,7 +54,7 @@ export interface ListPagesByLabelParams {
   /**
    * Filter by space id(s). Spec `type: array` → repeated params on the wire
    * (single value, or `?space-id=a&space-id=b`) via `appendScalarOrArrayParam`.
-   * Accepts a single string (e.g. the CLI `--space-id`) or an array.
+   * Accepts a single string or an array (the CLI splits `--space-id a,b`).
    */
   readonly 'space-id'?: string | readonly (string | number)[];
   readonly 'body-format'?: 'storage' | 'atlas_doc_format';

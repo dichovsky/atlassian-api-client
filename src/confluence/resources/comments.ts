@@ -2,6 +2,7 @@ import type { Transport } from '../../core/types.js';
 import { encodePathSegment } from '../../core/path.js';
 import type { CursorPaginatedResponse } from '../../core/pagination.js';
 import { paginateCursor, validatePageSize } from '../../core/pagination.js';
+import { appendScalarOrArrayParam } from '../../core/query.js';
 import type {
   ContentProperty,
   CreateContentPropertyData,
@@ -21,6 +22,24 @@ import type {
   UpdateInlineCommentData,
 } from '../types/comments.js';
 
+/**
+ * Build the request for a page comment listing. `status` and
+ * `resolution-status` are spec `type: array` params, so they are baked into
+ * the path as repeated pairs (a comma-joined value is one nonexistent token,
+ * B1049); the remaining scalars go in the query bag.
+ */
+function commentListRequest(
+  basePath: string,
+  params: ListFooterCommentsParams | ListInlineCommentsParams | undefined,
+): { path: string; query: Record<string, string | number | undefined> | undefined } {
+  if (params === undefined) return { path: basePath, query: undefined };
+  if (params.limit !== undefined) validatePageSize(params.limit, 'limit');
+  const { status, 'resolution-status': resolution, ...rest } = params as ListInlineCommentsParams;
+  let path = appendScalarOrArrayParam(basePath, 'status', status);
+  path = appendScalarOrArrayParam(path, 'resolution-status', resolution);
+  return { path, query: rest };
+}
+
 export class CommentsResource {
   constructor(
     private readonly transport: Transport,
@@ -34,10 +53,14 @@ export class CommentsResource {
     pageId: string,
     params?: ListFooterCommentsParams,
   ): Promise<CursorPaginatedResponse<FooterComment>> {
+    const { path, query } = commentListRequest(
+      `${this.baseUrl}/pages/${encodePathSegment(pageId)}/footer-comments`,
+      params,
+    );
     const response = await this.transport.request<CursorPaginatedResponse<FooterComment>>({
       method: 'GET',
-      path: `${this.baseUrl}/pages/${encodePathSegment(pageId)}/footer-comments`,
-      query: params as Record<string, string | number | boolean | undefined>,
+      path,
+      query,
     });
     return response.data;
   }
@@ -99,10 +122,14 @@ export class CommentsResource {
     pageId: string,
     params?: ListInlineCommentsParams,
   ): Promise<CursorPaginatedResponse<InlineComment>> {
+    const { path, query } = commentListRequest(
+      `${this.baseUrl}/pages/${encodePathSegment(pageId)}/inline-comments`,
+      params,
+    );
     const response = await this.transport.request<CursorPaginatedResponse<InlineComment>>({
       method: 'GET',
-      path: `${this.baseUrl}/pages/${encodePathSegment(pageId)}/inline-comments`,
-      query: params as Record<string, string | number | boolean | undefined>,
+      path,
+      query,
     });
     return response.data;
   }

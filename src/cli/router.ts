@@ -414,6 +414,11 @@ const GLOBAL_OPTIONS = {
   'email-address': { type: 'string' as const },
   'component-source': { type: 'string' as const },
   'classification-id': { type: 'string' as const },
+  // issues get/get-agile/create/transitions query flags (release 4.1.0)
+  'include-unavailable-transitions': { type: 'boolean' as const },
+  'skip-remote-only-condition': { type: 'boolean' as const },
+  'sort-by-ops-bar-and-status': { type: 'boolean' as const },
+  'update-history': { type: 'boolean' as const },
   // issue sub-resource options (B478-B504)
   'global-id': { type: 'string' as const },
   // worklog options (B505-B515)
