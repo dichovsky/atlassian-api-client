@@ -404,6 +404,7 @@ Custom project template management (B653–B657). Covers the full `/rest/api/3/p
 - `--template-type` must be one of: `LIVE`, `SNAPSHOT`.
 - `--enable-screen-delegated-admin` and `--enable-workflow-delegated-admin` are boolean flags: bare or `true` sends `true`, `false` (or `--no-<flag>`) sends `false`, omitted sends nothing.
 - `--enable-components` is a boolean flag with the same `true`/`false` forms.
+- The `edit-template` and `live-template` selectors are required by Jira, which uses them to find the template. The CLI does not check them: `edit-template` only checks that some flag is set, and `live-template` sends no selector if you pass none. Pass them as in the examples below.
 
 ```sh
 # Create a project with a custom template (async) — B653

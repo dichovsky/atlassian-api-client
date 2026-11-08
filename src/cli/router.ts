@@ -525,6 +525,7 @@ const GLOBAL_OPTIONS = {
   'inward-issue': { type: 'string' as const },
   'outward-issue': { type: 'string' as const },
   'link-type': { type: 'string' as const },
+  'link-type-id': { type: 'string' as const },
   // project-template options (B653-B657)
   template: { type: 'string' as const },
   'template-name': { type: 'string' as const },

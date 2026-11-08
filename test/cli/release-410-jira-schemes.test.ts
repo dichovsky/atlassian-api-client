@@ -859,6 +859,9 @@ describe('project-template selectors and save-template (F241, F237)', () => {
     expect(skillRow('projects.md', 'project-template', 'live-template')[2]).toBe(
       'one of `--project-id`, `--template-key`',
     );
+    expect(skillSection('projects.md', 'project-template')).toContain(
+      'selectors are required by Jira, which uses them to find the template. The CLI does not check them',
+    );
     const { req } = await onlyRequest([
       'jira',
       'project-template',
@@ -917,6 +920,7 @@ describe.each([
   ['projects.md', 'roles'],
   ['projects.md', 'version'],
   ['projects.md', 'project-template'],
+  ['issues.md', 'issue-link'],
 ])('%s `%s` section', (file, resource) => {
   const section = skillSection(file, resource);
 
@@ -935,5 +939,176 @@ describe.each([
       const widths = table.split('\n').map((row) => row.replace(/\\\|/g, '').split('|').length);
       expect(new Set(widths).size, table.split('\n')[0]).toBe(1);
     }
+  });
+});
+
+describe('workflows section links (F344)', () => {
+  it('links payload-rules.md relative to skill/reference/jira', () => {
+    const section = skillSection('schemes.md', 'workflows');
+    const links = [...section.matchAll(/\]\(([^)#:]+\.md)(?:#[^)]*)?\)/g)].map(
+      (m) => m[1] as string,
+    );
+    expect(links).toContain('../payload-rules.md');
+    for (const link of links) {
+      expect(existsSync(resolve(SKILL, link)), link).toBe(true);
+    }
+  });
+});
+
+describe('issue-link (F239, F237)', () => {
+  it('create --comment sends the skill example comment with the link (F237)', async () => {
+    const section = skillSection('issues.md', 'issue-link');
+    const comment = section.match(/--comment '([^']+)'/)?.[1];
+    expect(comment).toBeDefined();
+    const { req, stdout } = await onlyRequest(
+      [
+        'jira',
+        'issue-link',
+        'create',
+        '--link-type',
+        'Blocks',
+        '--inward-issue',
+        'HSP-1',
+        '--outward-issue',
+        'MKY-1',
+        '--comment',
+        comment as string,
+      ],
+      { status: 201, body: null },
+    );
+    expect(req.method).toBe('POST');
+    expect(req.path).toBe(`${JIRA}/issueLink`);
+    expect(req.headers['content-type']).toMatch(/^application\/json/);
+    expect(req.body).toEqual({
+      type: { name: 'Blocks' },
+      inwardIssue: { key: 'HSP-1' },
+      outwardIssue: { key: 'MKY-1' },
+      comment: JSON.parse(comment as string),
+    });
+    expect(JSON.parse(stdout)).toEqual({ created: true });
+  });
+
+  it('create links by issue ID and link-type ID as the skill shows (F239)', async () => {
+    const section = skillSection('issues.md', 'issue-link');
+    expect(section).toContain(
+      'atlas jira issue-link create --link-type-id 10000 --inward-issue 10001 --outward-issue 10002',
+    );
+    const { req } = await onlyRequest(
+      [
+        'jira',
+        'issue-link',
+        'create',
+        '--link-type-id',
+        '10000',
+        '--inward-issue',
+        '10001',
+        '--outward-issue',
+        '10002',
+      ],
+      { status: 201, body: null },
+    );
+    expect(req.body).toEqual({
+      type: { id: '10000' },
+      inwardIssue: { id: '10001' },
+      outwardIssue: { id: '10002' },
+    });
+  });
+
+  it('create mixes an issue key with an issue ID (F239)', async () => {
+    const { req } = await onlyRequest(
+      [
+        'jira',
+        'issue-link',
+        'create',
+        '--link-type',
+        'Duplicate',
+        '--inward-issue',
+        'HSP-1',
+        '--outward-issue',
+        '10002',
+      ],
+      { status: 201, body: null },
+    );
+    expect(req.body).toEqual({
+      type: { name: 'Duplicate' },
+      inwardIssue: { key: 'HSP-1' },
+      outwardIssue: { id: '10002' },
+    });
+  });
+
+  it('create takes exactly one of --link-type / --link-type-id (F239)', async () => {
+    await rejected(
+      ['jira', 'issue-link', 'create', '--inward-issue', 'HSP-1', '--outward-issue', 'MKY-1'],
+      /--link-type or --link-type-id/,
+    );
+    await rejected(
+      [
+        'jira',
+        'issue-link',
+        'create',
+        '--link-type',
+        'Blocks',
+        '--link-type-id',
+        '10000',
+        '--inward-issue',
+        'HSP-1',
+        '--outward-issue',
+        'MKY-1',
+      ],
+      /--link-type or --link-type-id, not both/,
+    );
+  });
+
+  it('skill lists --link-type-id and says all-digit issues are sent as IDs (F239)', () => {
+    const [, , required] = skillRow('issues.md', 'issue-link', 'create');
+    expect(required).toContain('`--link-type-id`');
+    expect(skillSection('issues.md', 'issue-link')).toMatch(/all digits.*\{"id"/);
+  });
+});
+
+describe('workflowscheme set-workflow (F237)', () => {
+  it('sends --workflow-name as the query and --body as the body, as in the skill', async () => {
+    const section = skillSection('schemes.md', 'workflowscheme');
+    const body = '{"issueTypes":["10000"],"defaultMapping":false}';
+    expect(section).toContain(
+      `atlas jira workflowscheme set-workflow 10001 --workflow-name jira --body '${body}'`,
+    );
+    const scheme = { id: 10001, name: 'Example workflow scheme' };
+    const { req, stdout } = await onlyRequest(
+      [
+        'jira',
+        'workflowscheme',
+        'set-workflow',
+        '10001',
+        '--workflow-name',
+        'jira',
+        '--body',
+        body,
+      ],
+      { body: scheme },
+    );
+    expect(req.method).toBe('PUT');
+    expect(req.path).toBe(`${JIRA}/workflowscheme/10001/workflow`);
+    expect(req.query.get('workflowName')).toBe('jira');
+    expect(req.body).toEqual(JSON.parse(body));
+    expect(JSON.parse(stdout)).toEqual(scheme);
+  });
+});
+
+describe('deletes that get no body back print {deleted:true}', () => {
+  it('resolutions delete', async () => {
+    const { stdout } = await onlyRequest(
+      ['jira', 'resolutions', 'delete', '10001', '--replace-with', '10000'],
+      { status: 204 },
+    );
+    expect(JSON.parse(stdout)).toEqual({ deleted: true });
+  });
+
+  it('roles delete-actors', async () => {
+    const { stdout } = await onlyRequest(
+      ['jira', 'roles', 'delete-actors', '10001', '--group-id', 'grp-1'],
+      { status: 204 },
+    );
+    expect(JSON.parse(stdout)).toEqual({ deleted: true });
   });
 });

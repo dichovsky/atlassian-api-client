@@ -74,8 +74,9 @@ export interface AnalyseExpressionsParams {
 }
 
 /**
- * JQL context bean for the `issues` context variable in POST /expression/eval
- * and /expression/evaluate (`JexpJqlIssues` schema).
+ * JQL context bean for the `issues` context variable in deprecated POST
+ * /expression/eval (`JexpJqlIssues` schema). POST /expression/evaluate takes
+ * {@link ExpressionEvaluateJqlContext} instead.
  *
  * These fields appear in the REQUEST context — not in the response JQL metadata.
  */
@@ -108,8 +109,9 @@ export interface CustomContextVariable {
 }
 
 /**
- * Evaluation context for POST /expression/eval and /expression/evaluate
- * (`JiraExpressionEvalContextBean` schema).
+ * Evaluation context for deprecated POST /expression/eval
+ * (`JiraExpressionEvalContextBean` schema). POST /expression/evaluate takes
+ * {@link ExpressionEvaluateContext} instead.
  *
  * Note: `issue.id` and `project.id` are integers (int64) per `IdOrKeyBean`.
  */
@@ -128,7 +130,10 @@ export interface ExpressionEvalContext {
   readonly sprint?: number;
 }
 
-/** Request body for POST /expression/eval and /expression/evaluate. */
+/**
+ * Request body for deprecated POST /expression/eval. POST /expression/evaluate
+ * takes {@link ExpressionEvaluateData} instead.
+ */
 export interface EvaluateExpressionData {
   /** The Jira expression to evaluate. */
   readonly expression: string;

@@ -4238,7 +4238,7 @@ async function executeResolutions(client: JiraClient, cmd: ParsedCommand): Promi
       // `replaceWith` is required by the spec — deleting without it returns 400.
       const replaceWith = requireOpt(opts['replace-with'], '--replace-with');
       // Asynchronous: the deletion task to poll with `atlas jira task get <id>`.
-      return client.resolutions.delete(id, { replaceWith });
+      return (await client.resolutions.delete(id, { replaceWith })) ?? { deleted: true };
     }
     case 'set-default': {
       const id = requireArg(cmd.positionalArgs[0], 'id');
@@ -5110,7 +5110,12 @@ async function executeRoles(client: JiraClient, cmd: ParsedCommand): Promise<unk
         'delete-actors cannot delete a user and a group',
       );
       // The role with its remaining default actors.
-      return client.roles.deleteActors(roleId, Object.keys(params).length > 0 ? params : undefined);
+      return (
+        (await client.roles.deleteActors(
+          roleId,
+          Object.keys(params).length > 0 ? params : undefined,
+        )) ?? { deleted: true }
+      );
     }
     default:
       throw new Error(`Unknown roles action: ${cmd.action}. Actions: ${ROLES_ACTIONS.join(', ')}`);
@@ -8656,12 +8661,23 @@ async function executeRepository(client: JiraClient, cmd: ParsedCommand): Promis
 
 const ISSUE_LINK_ACTIONS = ['create', 'get', 'delete'] as const;
 
+/** An issue key always has a project prefix, so an all-digit value is an issue ID. */
+function linkedIssueRef(value: string): { id: string } | { key: string } {
+  return /^\d+$/.test(value) ? { id: value } : { key: value };
+}
+
 async function executeIssueLink(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
   const opts = cmd.options;
 
   switch (cmd.action) {
     case 'create': {
-      const linkType = requireOpt(opts['link-type'], '--link-type');
+      if (opts['link-type'] !== undefined && opts['link-type-id'] !== undefined) {
+        throw new Error('pass --link-type or --link-type-id, not both');
+      }
+      const type =
+        opts['link-type-id'] !== undefined
+          ? { id: requireOpt(opts['link-type-id'], '--link-type-id') }
+          : { name: requireOpt(opts['link-type'], '--link-type or --link-type-id') };
       const inwardIssue = requireOpt(opts['inward-issue'], '--inward-issue');
       const outwardIssue = requireOpt(opts['outward-issue'], '--outward-issue');
       const commentRaw = asString(opts['comment']);
@@ -8669,9 +8685,9 @@ async function executeIssueLink(client: JiraClient, cmd: ParsedCommand): Promise
       const comment =
         commentRaw !== undefined ? parseJsonObjectFlag(commentRaw, '--comment') : undefined;
       await client.issueLink.create({
-        type: { name: linkType },
-        inwardIssue: { key: inwardIssue },
-        outwardIssue: { key: outwardIssue },
+        type,
+        inwardIssue: linkedIssueRef(inwardIssue),
+        outwardIssue: linkedIssueRef(outwardIssue),
         ...(comment !== undefined && { comment }),
       });
       return { created: true };

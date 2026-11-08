@@ -60,22 +60,32 @@ function markers(doc: string): string[] {
   return ['@experimental', '@deprecated'].filter((tag) => doc.includes(tag));
 }
 
+function routeOf(doc: string): RegExpExecArray | null {
+  return /\b(GET|POST|PUT|DELETE|PATCH) (?:\/rest\/api\/3)?(\/[\w/{}.-]+)/.exec(doc);
+}
+
+/** The method a route-less `*All` generator pages, or `undefined`. */
+function pagedBase(all: readonly Method[], method: Method): Method | undefined {
+  return [method.name.replace(/All$/, ''), method.name.replace('All', '')]
+    .filter((name) => name !== method.name)
+    .map((name) => all.find((m) => m.name === name))
+    .find((m) => m !== undefined);
+}
+
 describe.each(RESOURCES)('%s.ts experimental/deprecated markers match the spec', (file) => {
   const all = methods(file);
 
   it('names a spec operation for every non-generator method', () => {
     expect(all.length).toBeGreaterThan(0);
+    const unrouted = all.filter((m) => routeOf(m.doc) === null && pagedBase(all, m) === undefined);
+    expect(unrouted.map((m) => m.name)).toEqual([]);
   });
 
   it.each(all.map((m) => [m.name, m] as const))('%s', (_name, method) => {
-    const route = /\b(GET|POST|PUT|DELETE|PATCH) (?:\/rest\/api\/3)?(\/[\w/{}.-]+)/.exec(
-      method.doc,
-    );
+    const route = routeOf(method.doc);
     if (route === null) {
       // A generator documents the method it pages instead of a route.
-      const base =
-        all.find((m) => m.name === method.name.replace(/All$/, '')) ??
-        all.find((m) => m.name === method.name.replace('All', ''));
+      const base = pagedBase(all, method);
       expect(base, `${method.name} pages a documented method`).toBeDefined();
       expect(markers(method.doc)).toEqual(markers((base as Method).doc));
       return;

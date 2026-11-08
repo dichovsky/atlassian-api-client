@@ -629,7 +629,7 @@ Classic workflow management — `/rest/api/3/workflow` (B837–B845 + B934), and
 
 **Deprecated classic search:** `list` and `get` call deprecated `GET /rest/api/3/workflow/search`. Prefer `search`, which calls current `GET /rest/api/3/workflows/search` and can filter by `--project-id`.
 
-**Required body endpoints (`--body` JSON):** `bulk-get`, `bulk-create`, `validate-create`, `preview`, `update`, `validate-update`. See [payload-rules.md](payload-rules.md) for JSON-flag tips.
+**Required body endpoints (`--body` JSON):** `bulk-get`, `bulk-create`, `validate-create`, `preview`, `update`, `validate-update`. See [payload-rules.md](../payload-rules.md) for JSON-flag tips.
 
 **`copy`:** `POST /rest/api/3/workflows/copy` clones an existing workflow, and the statuses it uses, into a new workflow created in the **same scope** as the source. `--workflow-id` is the ID of the workflow to copy and `--workflow-name` the name of the new one (each 1-255 characters); `--description` (max 2048 characters) defaults to empty. It prints the new workflow in the `WorkflowCreateResponse` shape (`workflows`, `statuses`). Needs _Administer Jira_, or for a project-scoped workflow the _Edit workflows_ project permission (or _View workflow_ plus _Administer projects_); returns 404 if the source workflow is missing and 409 while another workflow configuration update task is running.
 

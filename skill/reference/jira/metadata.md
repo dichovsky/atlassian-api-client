@@ -209,7 +209,7 @@ Jira expression validation and evaluation at `/rest/api/3/expression/{analyse,ev
 - `--context-variables` (on `analyse`) is a **JSON object** mapping variable names to type strings, e.g. `'{"value":"User","listOfStrings":"List<String>"}'`.
 - `--check` (on `analyse`) enables type-checking; values per Atlassian docs include `syntax` (default), `type`, `complexity`.
 - `--expression` (on `eval`/`evaluate`) is a single Jira expression string.
-- `--context` (on `eval`/`evaluate`) is a **JSON object** matching the `JiraExpressionEvalContextBean` shape (board, custom, customerRequest, issue, issues.jql, project, serviceDesk, sprint).
+- `--context` (on `eval`/`evaluate`) is a **JSON object** with the keys board, custom, customerRequest, issue, issues.jql, project, serviceDesk, sprint: `JiraExpressionEvalContextBean` for `eval`, `JiraExpressionEvaluateContextBean` for `evaluate`.
 - `--expand` (on `eval`/`evaluate`) is a comma-separated list of expansion keys (e.g. `meta.complexity`).
 - `eval` uses the legacy strongly-consistent offset-paginated search and is currently being removed by Atlassian.
 - `evaluate` is the current replacement; it uses enhanced eventually-consistent search with a scrolling `nextPageToken` view. Its `issues.jql` context takes only `query`, `maxResults` and `nextPageToken` (no `startAt` / `validation`).
