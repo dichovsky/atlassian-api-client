@@ -335,8 +335,61 @@ export interface DeleteProjectParams {
 }
 
 export interface RecentProjectsParams {
+  /**
+   * @deprecated `GET /project/recent` has no `maxResults` (Jira returns up to
+   * 20 projects); the value is ignored and not sent.
+   */
   readonly maxResults?: number;
   readonly expand?: string[];
+  /** Project property keys to include, sent as repeated `properties` params. */
+  readonly properties?: readonly string[];
+}
+
+/** Query parameters for `GET /rest/api/3/project/{projectIdOrKey}`. */
+export interface GetProjectParams {
+  /** Expansions such as `description`, `issueTypes`, `lead`, `projectKeys`, `issueTypeHierarchy` (sent as CSV). */
+  readonly expand?: string[];
+  /** Project property keys to return in `properties`, sent as repeated params. */
+  readonly properties?: readonly string[];
+}
+
+/** Crop region for {@link ProjectsResource.loadAvatar}; each value defaults to 0. */
+export interface LoadProjectAvatarParams {
+  /** X coordinate of the top-left corner of the crop region. */
+  readonly x?: number;
+  /** Y coordinate of the top-left corner of the crop region. */
+  readonly y?: number;
+  /** Length of each side of the crop region. */
+  readonly size?: number;
+}
+
+/** Parameters for `GET /rest/api/3/projects/fields` (B706). */
+export interface GetProjectsFieldsParams {
+  /** IDs of the projects to return fields for (at least one); sent as repeated `projectId`. */
+  readonly projectId: readonly (number | string)[];
+  /** IDs of the work types (issue types) to return fields for (at least one); sent as repeated `workTypeId`. */
+  readonly workTypeId: readonly (number | string)[];
+  /** IDs of the fields to return; all fields when omitted. Sent as repeated `fieldId`. */
+  readonly fieldId?: readonly string[];
+  readonly startAt?: number;
+  readonly maxResults?: number;
+}
+
+/** A field of a work type in a project. Spec: `ProjectFieldBean`. */
+export interface ProjectFieldBean {
+  readonly projectId?: number;
+  readonly workTypeId?: number;
+  readonly fieldId?: string;
+  readonly isRequired?: boolean;
+  readonly description?: string;
+}
+
+/** Path segment for a project role ID; rejects anything but a positive safe integer. */
+function roleIdSegment(roleId: number): string {
+  if (!Number.isSafeInteger(roleId) || roleId <= 0) {
+    throw new ValidationError(`roleId must be a positive integer, got: ${String(roleId)}`);
+  }
+  return encodePathSegment(String(roleId));
 }
 
 export class ProjectsResource {
@@ -375,14 +428,23 @@ export class ProjectsResource {
     return response.data;
   }
 
-  /** Get a project by ID or key. */
-  async get(projectIdOrKey: string, expand?: string[]): Promise<Project> {
+  /**
+   * Get a project by ID or key. The second argument is either the `expand`
+   * list (original form) or {@link GetProjectParams}.
+   */
+  async get(projectIdOrKey: string, params?: string[] | GetProjectParams): Promise<Project> {
+    const opts: GetProjectParams | undefined = Array.isArray(params) ? { expand: params } : params;
     const query: Record<string, string | undefined> = {};
-    if (expand) query['expand'] = expand.join(',');
+    if (opts?.expand) query['expand'] = opts.expand.join(',');
 
     const response = await this.transport.request<Project>({
       method: 'GET',
-      path: `${this.baseUrl}/project/${encodePathSegment(projectIdOrKey)}`,
+      // `properties` is `type: array` → repeated params baked into the path.
+      path: appendRepeatedParams(
+        `${this.baseUrl}/project/${encodePathSegment(projectIdOrKey)}`,
+        'properties',
+        opts?.properties,
+      ),
       query,
     });
     return response.data;
@@ -490,8 +552,12 @@ export class ProjectsResource {
     });
   }
 
-  /** Update a project (B662). */
-  async update(projectIdOrKey: string, data: UpdateProjectData): Promise<Project> {
+  /** Update a project (B662). `params.expand` shapes the returned project (sent as CSV). */
+  async update(
+    projectIdOrKey: string,
+    data: UpdateProjectData,
+    params?: { readonly expand?: string[] },
+  ): Promise<Project> {
     const body: Record<string, unknown> = {};
     if (data.key !== undefined) body['key'] = data.key;
     if (data.name !== undefined) body['name'] = data.name;
@@ -508,23 +574,31 @@ export class ProjectsResource {
     if (data.releasedProjectKeys !== undefined)
       body['releasedProjectKeys'] = data.releasedProjectKeys;
 
+    const query: Record<string, string | undefined> = {};
+    if (params?.expand) query['expand'] = params.expand.join(',');
+
     const response = await this.transport.request<Project>({
       method: 'PUT',
       path: `${this.baseUrl}/project/${encodePathSegment(projectIdOrKey)}`,
       body,
+      query,
     });
     return response.data;
   }
 
-  /** List recently viewed projects (B696). */
+  /** List recently viewed projects (B696); Jira returns up to 20. */
   async recent(params?: RecentProjectsParams): Promise<Project[]> {
-    const query: Record<string, string | number | undefined> = {};
-    if (params?.maxResults !== undefined) query['maxResults'] = params.maxResults;
+    const query: Record<string, string | undefined> = {};
     if (params?.expand) query['expand'] = params.expand.join(',');
 
     const response = await this.transport.request<Project[]>({
       method: 'GET',
-      path: `${this.baseUrl}/project/recent`,
+      // `properties` is `type: array` → repeated params baked into the path.
+      path: appendRepeatedParams(
+        `${this.baseUrl}/project/recent`,
+        'properties',
+        params?.properties,
+      ),
       query,
     });
     return response.data;
@@ -620,19 +694,38 @@ export class ProjectsResource {
     });
   }
 
-  /** Load a custom project avatar (B666). Crop region is defined by `x`, `y`, `size` query params. */
+  /**
+   * Upload a custom project avatar (B666).
+   *
+   * `content` is the raw JPEG, GIF or PNG image; its Blob `type` (e.g.
+   * `image/png`) becomes the `Content-Type`. Jira also requires
+   * `X-Atlassian-Token: no-check`, which this method sends. The crop region is
+   * defined by the `x`, `y`, `size` query params.
+   */
+  loadAvatar(
+    projectIdOrKey: string,
+    content: Blob,
+    params?: LoadProjectAvatarParams,
+  ): Promise<ProjectAvatar>;
+  /**
+   * @deprecated Jira needs the raw image bytes: pass a `Blob`. Any other body
+   * throws a {@link ValidationError} before a request is sent.
+   */
+  loadAvatar(
+    projectIdOrKey: string,
+    // Kept separate so 4.0.0 callers still type-check while seeing the deprecation.
+    // eslint-disable-next-line @typescript-eslint/unified-signatures
+    body: unknown,
+    params?: LoadProjectAvatarParams,
+  ): Promise<ProjectAvatar>;
   async loadAvatar(
     projectIdOrKey: string,
-    body: unknown,
-    params?: {
-      /** X coordinate of the top-left corner of the crop region. */
-      x?: number;
-      /** Y coordinate of the top-left corner of the crop region. */
-      y?: number;
-      /** Length of each side of the crop region. */
-      size?: number;
-    },
+    content: unknown,
+    params?: LoadProjectAvatarParams,
   ): Promise<ProjectAvatar> {
+    if (!(content instanceof Blob)) {
+      throw new ValidationError('loadAvatar needs the image (JPEG, GIF or PNG) as a Blob');
+    }
     const query: Record<string, number | undefined> = {};
     if (params?.x !== undefined) query['x'] = params.x;
     if (params?.y !== undefined) query['y'] = params.y;
@@ -640,8 +733,9 @@ export class ProjectsResource {
     const response = await this.transport.request<ProjectAvatar>({
       method: 'POST',
       path: `${this.baseUrl}/project/${encodePathSegment(projectIdOrKey)}/avatar2`,
-      body: body as Record<string, unknown>,
       query,
+      binaryBody: content,
+      headers: { 'X-Atlassian-Token': 'no-check' },
     });
     return response.data;
   }
@@ -745,7 +839,7 @@ export class ProjectsResource {
 
     await this.transport.request<unknown>({
       method: 'DELETE',
-      path: `${this.baseUrl}/project/${encodePathSegment(projectIdOrKey)}/role/${roleId}`,
+      path: `${this.baseUrl}/project/${encodePathSegment(projectIdOrKey)}/role/${roleIdSegment(roleId)}`,
       query,
     });
   }
@@ -762,17 +856,27 @@ export class ProjectsResource {
 
     const response = await this.transport.request<ProjectRole>({
       method: 'GET',
-      path: `${this.baseUrl}/project/${encodePathSegment(projectIdOrKey)}/role/${roleId}`,
+      path: `${this.baseUrl}/project/${encodePathSegment(projectIdOrKey)}/role/${roleIdSegment(roleId)}`,
       query,
     });
     return response.data;
   }
 
-  /** List all project components without pagination (B673). */
-  async listAllComponents(projectIdOrKey: string): Promise<ProjectComponent[]> {
+  /**
+   * List all project components without pagination (B673). `componentSource`
+   * is `jira` (Jira's default), `compass`, or `auto` (Compass components when
+   * the project uses Compass, otherwise Jira components).
+   */
+  async listAllComponents(
+    projectIdOrKey: string,
+    params?: { readonly componentSource?: 'jira' | 'compass' | 'auto' },
+  ): Promise<ProjectComponent[]> {
+    const query: Record<string, string | undefined> = {};
+    if (params?.componentSource !== undefined) query['componentSource'] = params.componentSource;
     const response = await this.transport.request<ProjectComponent[]>({
       method: 'GET',
       path: `${this.baseUrl}/project/${encodePathSegment(projectIdOrKey)}/components`,
+      query,
     });
     return response.data;
   }
@@ -821,7 +925,7 @@ export class ProjectsResource {
     if (data.groupId !== undefined && data.groupId.length > 0) body['groupId'] = data.groupId;
     const response = await this.transport.request<ProjectRole>({
       method: 'POST',
-      path: `${this.baseUrl}/project/${encodePathSegment(projectIdOrKey)}/role/${roleId}`,
+      path: `${this.baseUrl}/project/${encodePathSegment(projectIdOrKey)}/role/${roleIdSegment(roleId)}`,
       body,
     });
     return response.data;
@@ -835,7 +939,7 @@ export class ProjectsResource {
   ): Promise<ProjectRole> {
     const response = await this.transport.request<ProjectRole>({
       method: 'PUT',
-      path: `${this.baseUrl}/project/${encodePathSegment(projectIdOrKey)}/role/${roleId}`,
+      path: `${this.baseUrl}/project/${encodePathSegment(projectIdOrKey)}/role/${roleIdSegment(roleId)}`,
       body: data as unknown as Record<string, unknown>,
     });
     return response.data;
@@ -982,15 +1086,19 @@ export class ProjectsResource {
     return response.data;
   }
 
-  /** Assign a permission scheme to a project (B694). */
+  /** Assign a permission scheme to a project (B694). `params.expand` (CSV) shapes the returned scheme. */
   async setPermissionScheme(
     projectKeyOrId: string,
     data: { id: number },
+    params?: { readonly expand?: string },
   ): Promise<Record<string, unknown>> {
+    const query: Record<string, string | undefined> = {};
+    if (params?.expand !== undefined) query['expand'] = params.expand;
     const response = await this.transport.request<Record<string, unknown>>({
       method: 'PUT',
       path: `${this.baseUrl}/project/${encodePathSegment(projectKeyOrId)}/permissionscheme`,
       body: { id: data.id },
+      query,
     });
     return response.data;
   }
@@ -1073,11 +1181,39 @@ export class ProjectsResource {
 
   // ── B706: projects fields ──────────────────────────────────────────────────
 
-  /** Get all projects fields (B706). */
-  async getProjectsFields(): Promise<unknown[]> {
-    const response = await this.transport.request<unknown[]>({
+  /**
+   * Get the fields of the given work types (issue types) in the given
+   * projects, one page at a time (B706).
+   */
+  getProjectsFields(
+    params: GetProjectsFieldsParams,
+  ): Promise<OffsetPaginatedResponse<ProjectFieldBean>>;
+  /**
+   * @deprecated Jira requires `projectId` and `workTypeId`; this form throws a
+   * {@link ValidationError} before a request is sent.
+   */
+  getProjectsFields(): Promise<unknown[]>;
+  async getProjectsFields(
+    params?: GetProjectsFieldsParams,
+  ): Promise<OffsetPaginatedResponse<ProjectFieldBean> | unknown[]> {
+    if (!params?.projectId?.length || !params.workTypeId?.length) {
+      throw new ValidationError('getProjectsFields requires at least one projectId and workTypeId');
+    }
+    const query: Record<string, number | undefined> = {};
+    if (params.startAt !== undefined) query['startAt'] = params.startAt;
+    if (params.maxResults !== undefined) query['maxResults'] = params.maxResults;
+    // `projectId`/`workTypeId`/`fieldId` are `type: array` → repeated params baked into the path.
+    let path = appendRepeatedParams(
+      `${this.baseUrl}/projects/fields`,
+      'projectId',
+      params.projectId,
+    );
+    path = appendRepeatedParams(path, 'workTypeId', params.workTypeId);
+    path = appendRepeatedParams(path, 'fieldId', params.fieldId);
+    const response = await this.transport.request<OffsetPaginatedResponse<ProjectFieldBean>>({
       method: 'GET',
-      path: `${this.baseUrl}/projects/fields`,
+      path,
+      query,
     });
     return response.data;
   }
