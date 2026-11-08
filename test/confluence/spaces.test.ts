@@ -873,9 +873,9 @@ describe('SpacesResource', () => {
         method: 'GET',
         path: `${BASE_URL}/spaces/SP-1/properties`,
       });
-      expect(transport.lastCall?.options.query).toMatchObject({
+      // The spec defines no sort for space properties, so it is not sent (F005).
+      expect(transport.lastCall?.options.query).toEqual({
         key: 'feature-flags',
-        sort: 'key',
         cursor: 'tok',
         limit: 25,
       });
@@ -1074,14 +1074,14 @@ describe('SpacesResource', () => {
   });
 
   describe('listPropertiesAll() forwards optional sort + limit (B209)', () => {
-    it('emits sort and limit in the query bag', async () => {
+    it('emits limit but never sort in the query bag', async () => {
       transport.respondWith({ results: [{ id: 'p-only' }], _links: {} });
       const out: { id: string }[] = [];
       for await (const p of spaces.listPropertiesAll('SP-1', { sort: '-key', limit: 5 })) {
         out.push(p as { id: string });
       }
       expect(out).toHaveLength(1);
-      expect(transport.lastCall?.options.query).toMatchObject({ sort: '-key', limit: 5 });
+      expect(transport.lastCall?.options.query).toEqual({ limit: 5 });
     });
 
     it('listProperties() called without sort omits it but still forwards limit', async () => {

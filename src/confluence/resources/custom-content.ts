@@ -1,4 +1,5 @@
 import type { Transport } from '../../core/types.js';
+import { ValidationError } from '../../core/errors.js';
 import { encodePathSegment } from '../../core/path.js';
 import type { CursorPaginatedResponse } from '../../core/pagination.js';
 import { paginateCursor, validatePageSize } from '../../core/pagination.js';
@@ -57,13 +58,17 @@ export class CustomContentResource {
 
   // ── lifecycle ─────────────────────────────────────────────────────────────
 
-  /** List custom content with optional filtering. */
+  /**
+   * List custom content of one type. `params.type` is required by the spec
+   * (`getCustomContentByType`); a missing or empty type throws
+   * {@link ValidationError} instead of sending a request the server rejects.
+   */
   async list(params?: ListCustomContentParams): Promise<CursorPaginatedResponse<CustomContent>> {
-    if (params?.limit !== undefined) validatePageSize(params.limit, 'limit');
+    const { path, query } = this.buildListRequest(params);
     const response = await this.transport.request<CursorPaginatedResponse<CustomContent>>({
       method: 'GET',
-      path: `${this.baseUrl}/custom-content`,
-      query: this.buildListQuery(params),
+      path,
+      query,
     });
     return response.data;
   }
@@ -113,14 +118,10 @@ export class CustomContentResource {
     });
   }
 
-  /** Iterate over all custom content items across all result pages. */
+  /** Iterate over all custom content items of one type across all result pages. */
   async *listAll(params?: Omit<ListCustomContentParams, 'cursor'>): AsyncGenerator<CustomContent> {
-    if (params?.limit !== undefined) validatePageSize(params.limit, 'limit');
-    yield* paginateCursor<CustomContent>(
-      this.transport,
-      `${this.baseUrl}/custom-content`,
-      this.buildListQuery(params),
-    );
+    const { path, query } = this.buildListRequest(params);
+    yield* paginateCursor<CustomContent>(this.transport, path, query);
   }
 
   // ── content properties (B094-B098) ────────────────────────────────────────
@@ -292,9 +293,12 @@ export class CustomContentResource {
    * @see https://developer.atlassian.com/cloud/confluence/rest/v2/api-group-custom-content/#api-custom-content-custom-content-id-versions-version-number-get
    */
   async getVersion(customContentId: string, versionNumber: number): Promise<ContentVersion> {
+    if (!Number.isInteger(versionNumber) || versionNumber <= 0) {
+      throw new ValidationError(`versionNumber must be a positive integer, got: ${versionNumber}`);
+    }
     const response = await this.transport.request<ContentVersion>({
       method: 'GET',
-      path: `${this.baseUrl}/custom-content/${encodePathSegment(customContentId)}/versions/${versionNumber}`,
+      path: `${this.baseUrl}/custom-content/${encodePathSegment(customContentId)}/versions/${encodePathSegment(String(versionNumber))}`,
     });
     return response.data;
   }
@@ -486,20 +490,25 @@ export class CustomContentResource {
 
   // ── internals ─────────────────────────────────────────────────────────────
 
-  /** Build the query bag for `GET /custom-content`. */
-  private buildListQuery(
+  /**
+   * Build `GET /custom-content`: `type` is required; `id` / `space-id` are
+   * spec `type: array` params baked into the path as repeated pairs (B1049).
+   */
+  private buildListRequest(
     params: ListCustomContentParams | Omit<ListCustomContentParams, 'cursor'> | undefined,
-  ): Query | undefined {
-    const query: Query = {};
-    if (params === undefined) return undefined;
-    if (params.type !== undefined) query['type'] = params.type;
-    if (params.id !== undefined) query['id'] = params.id;
-    if (params['space-id'] !== undefined) query['space-id'] = params['space-id'];
+  ): { path: string; query: Query | undefined } {
+    if (params?.type === undefined || params.type === '') {
+      throw new ValidationError('type is required to list custom content');
+    }
+    if (params.limit !== undefined) validatePageSize(params.limit, 'limit');
+    let path = appendScalarOrArrayParam(`${this.baseUrl}/custom-content`, 'id', params.id);
+    path = appendScalarOrArrayParam(path, 'space-id', params['space-id']);
+    const query: Query = { type: params.type };
     if (params.sort !== undefined) query['sort'] = params.sort;
     if (params['body-format'] !== undefined) query['body-format'] = params['body-format'];
     if ('cursor' in params && params.cursor !== undefined) query['cursor'] = params.cursor;
     if (params.limit !== undefined) query['limit'] = params.limit;
-    return nonEmptyQuery(query);
+    return { path, query };
   }
 
   /** Build the query bag for `GET /custom-content/{id}`. */

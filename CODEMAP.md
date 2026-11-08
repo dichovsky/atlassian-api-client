@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "4.1.0"
   },
-  "sourceHash": "6218183f788188e015558d45e26848d9ab16a9d4baf43b4b0db7b4d585615eaf",
+  "sourceHash": "edda6d59e0faefa9456e3e228f653131222637d1e0be2a8a1f3533a6260a9cb6",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -521,7 +521,7 @@
       "name": "ChildCustomContentSortOrder",
       "kind": "type",
       "file": "src/confluence/types/custom-content.ts",
-      "line": 206,
+      "line": 209,
       "signature": "export type ChildCustomContentSortOrder = 'id' | '-id' | 'created-date' | '-created-date' | 'modified-date' | '-modified…",
       "jsdoc": "Sort tokens accepted by `GET /custom-content/{id}/children` — mirrors the spec's closed `ChildCustomContentSortOrder` enum.",
       "typeOnly": true
@@ -866,7 +866,7 @@
       "name": "CreateCustomContentData",
       "kind": "interface",
       "file": "src/confluence/types/custom-content.ts",
-      "line": 118,
+      "line": 121,
       "signature": "export interface CreateCustomContentData { readonly type: string; readonly title: string; readonly body: CustomContentBo…",
       "jsdoc": "Request body for `POST /custom-content`. Per the v2 spec, `body`, `title`, and `type` are required. Containers (`spaceId`, `pageId`, `blogPostId`, `customContentId`) are mutually exclusive on the server — pass the one that matches the parent entity.",
       "typeOnly": true
@@ -1091,7 +1091,7 @@
       "name": "CustomContentBodyWrite",
       "kind": "interface",
       "file": "src/confluence/types/custom-content.ts",
-      "line": 152,
+      "line": 155,
       "signature": "export interface CustomContentBodyWrite { readonly representation: CustomContentBodyRepresentation; readonly value: stri…",
       "jsdoc": "Flat body envelope accepted by create/update — the spec's `CustomContentBodyWrite` schema.",
       "typeOnly": true
@@ -1100,7 +1100,7 @@
       "name": "CustomContentChild",
       "kind": "interface",
       "file": "src/confluence/types/custom-content.ts",
-      "line": 222,
+      "line": 225,
       "signature": "export interface CustomContentChild { readonly id?: string; readonly status?: 'current' | 'archived'; readonly title?: s…",
       "jsdoc": "Child custom content entry returned by `GET /custom-content/{id}/children`. Mirrors the `ChildCustomContent` schema in the v2 OpenAPI spec — the server trims the response to the subset listed here (no body / version / authoring metadata).",
       "typeOnly": true
@@ -1109,7 +1109,7 @@
       "name": "CustomContentNestedBodyWrite",
       "kind": "interface",
       "file": "src/confluence/types/custom-content.ts",
-      "line": 162,
+      "line": 165,
       "signature": "export interface CustomContentNestedBodyWrite { readonly storage?: CustomContentBodyWrite; readonly atlas_doc_format?: C…",
       "jsdoc": "Nested body envelope accepted by create/update — the spec's `CustomContentNestedBodyWrite` schema. Exactly one of `storage`, `atlas_doc_format`, or `raw` should be set.",
       "typeOnly": true
@@ -1127,7 +1127,7 @@
       "name": "CustomContentOperation",
       "kind": "interface",
       "file": "src/confluence/types/custom-content.ts",
-      "line": 232,
+      "line": 235,
       "signature": "export interface CustomContentOperation { readonly operation?: string; readonly targetType?: string; }",
       "jsdoc": "Permitted operation entry returned by `GET /custom-content/{id}/operations`.",
       "typeOnly": true
@@ -1136,7 +1136,7 @@
       "name": "CustomContentOperationsResponse",
       "kind": "interface",
       "file": "src/confluence/types/custom-content.ts",
-      "line": 238,
+      "line": 241,
       "signature": "export interface CustomContentOperationsResponse { readonly operations?: readonly CustomContentOperation[]; }",
       "jsdoc": "Response shape for `GET /custom-content/{id}/operations`.",
       "typeOnly": true
@@ -1694,7 +1694,7 @@
       "name": "DeleteCustomContentParams",
       "kind": "interface",
       "file": "src/confluence/types/custom-content.ts",
-      "line": 108,
+      "line": 111,
       "signature": "export interface DeleteCustomContentParams { readonly purge?: boolean; }",
       "jsdoc": "Parameters for `DELETE /custom-content/{id}`. `purge=true` permanently removes a previously-trashed item (the server returns 400 if the item is not in `trashed` status).",
       "typeOnly": true
@@ -2017,7 +2017,7 @@
       "name": "GetCustomContentParams",
       "kind": "interface",
       "file": "src/confluence/types/custom-content.ts",
-      "line": 92,
+      "line": 95,
       "signature": "export interface GetCustomContentParams { readonly 'body-format'?: CustomContentBodyRepresentationSingle; readonly versi…",
       "jsdoc": "Parameters for `GET /custom-content/{id}`. The `include-*` flags expand the response envelope with the matching sub-resource (defaulting to omitted on the wire). `include-version` (singular) inlines a single version object — separate from `include-versions` which inlines the full version list.",
       "typeOnly": true
@@ -2600,7 +2600,7 @@
       "name": "ListCustomContentAttachmentsParams",
       "kind": "interface",
       "file": "src/confluence/types/custom-content.ts",
-      "line": 169,
+      "line": 172,
       "signature": "export interface ListCustomContentAttachmentsParams { readonly sort?: AttachmentSortOrder; readonly cursor?: string; rea…",
       "jsdoc": "Parameters for `GET /custom-content/{id}/attachments`.",
       "typeOnly": true
@@ -2609,7 +2609,7 @@
       "name": "ListCustomContentChildrenParams",
       "kind": "interface",
       "file": "src/confluence/types/custom-content.ts",
-      "line": 210,
+      "line": 213,
       "signature": "export interface ListCustomContentChildrenParams { readonly cursor?: string; readonly limit?: number; readonly sort?: Ch…",
       "jsdoc": "Parameters for `GET /custom-content/{id}/children`.",
       "typeOnly": true
@@ -2618,7 +2618,7 @@
       "name": "ListCustomContentFooterCommentsParams",
       "kind": "interface",
       "file": "src/confluence/types/custom-content.ts",
-      "line": 179,
+      "line": 182,
       "signature": "export interface ListCustomContentFooterCommentsParams { readonly 'body-format'?: 'storage' | 'atlas_doc_format'; readon…",
       "jsdoc": "Parameters for `GET /custom-content/{id}/footer-comments`.",
       "typeOnly": true
@@ -2627,7 +2627,7 @@
       "name": "ListCustomContentLabelsParams",
       "kind": "interface",
       "file": "src/confluence/types/custom-content.ts",
-      "line": 187,
+      "line": 190,
       "signature": "export interface ListCustomContentLabelsParams { readonly prefix?: LabelPrefix; readonly sort?: LabelSortOrder; readonly…",
       "jsdoc": "Parameters for `GET /custom-content/{id}/labels`.",
       "typeOnly": true
@@ -2637,7 +2637,7 @@
       "kind": "interface",
       "file": "src/confluence/types/custom-content.ts",
       "line": 76,
-      "signature": "export interface ListCustomContentParams { readonly type?: string; readonly id?: string; readonly 'space-id'?: string; r…",
+      "signature": "export interface ListCustomContentParams { readonly type?: string; readonly id?: string | readonly (string | number)[]; …",
       "jsdoc": "Parameters for `GET /custom-content`.",
       "typeOnly": true
     },
@@ -2645,7 +2645,7 @@
       "name": "ListCustomContentVersionsParams",
       "kind": "interface",
       "file": "src/confluence/types/custom-content.ts",
-      "line": 195,
+      "line": 198,
       "signature": "export interface ListCustomContentVersionsParams { readonly 'body-format'?: CustomContentBodyRepresentation; readonly cu…",
       "jsdoc": "Parameters for `GET /custom-content/{custom-content-id}/versions`.",
       "typeOnly": true
@@ -4131,7 +4131,7 @@
       "name": "UpdateCustomContentData",
       "kind": "interface",
       "file": "src/confluence/types/custom-content.ts",
-      "line": 135,
+      "line": 138,
       "signature": "export interface UpdateCustomContentData { readonly id: string; readonly type: string; readonly status: 'current'; reado…",
       "jsdoc": "Request body for `PUT /custom-content/{id}`. Per the v2 spec, `id`, `body`, `status`, `title`, `type`, and `version` are required, and `status` is restricted to the literal `'current'` (drafts cannot be updated through this endpoint).",
       "typeOnly": true
@@ -4644,7 +4644,7 @@
         {
           "name": "executeConfluenceCommand",
           "kind": "function",
-          "line": 48,
+          "line": 47,
           "exported": true,
           "signature": "export async function executeConfluenceCommand( cmd: ParsedCommand, globals: GlobalOptions, ): Promise<unknown>",
           "jsdoc": "Execute a Confluence CLI command. Returns the data to be printed."
@@ -4652,650 +4652,712 @@
         {
           "name": "executePages",
           "kind": "function",
-          "line": 108,
+          "line": 107,
           "signature": "async function executePages(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeSpaces",
           "kind": "function",
-          "line": 457,
+          "line": 465,
           "signature": "async function executeSpaces(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeBlogPosts",
           "kind": "function",
-          "line": 695,
+          "line": 709,
           "signature": "async function executeBlogPosts(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeComments",
           "kind": "function",
-          "line": 995,
+          "line": 1031,
           "signature": "async function executeComments(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeAttachments",
           "kind": "function",
-          "line": 1189,
+          "line": 1251,
           "signature": "async function executeAttachments(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "parseAttachmentStatuses",
           "kind": "function",
-          "line": 1340,
+          "line": 1414,
           "signature": "function parseAttachmentStatuses(raw: string | undefined): readonly AttachmentStatus[] | undefined",
           "jsdoc": "Parse the `--status` CLI flag into a non-empty list of {@link AttachmentStatus} values. Accepts a single value (`current`) or comma-separated (`current,archived`); rejects unknown tokens with the standard `must be one of` error to match other enum flags. Duplicate tokens are collapsed so the wire format never carries `status=a,a`."
         },
         {
           "name": "executeAdminKey",
           "kind": "function",
-          "line": 1356,
+          "line": 1430,
           "signature": "async function executeAdminKey(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeLabels",
           "kind": "function",
-          "line": 1377,
+          "line": 1451,
           "signature": "async function executeLabels(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
-        },
-        {
-          "name": "normalizeOptionalString",
-          "kind": "function",
-          "line": 1468,
-          "signature": "function normalizeOptionalString(value: string | undefined): string | undefined",
-          "jsdoc": "Normalize an optional CLI string flag: trim whitespace and collapse the empty case to `undefined`. The resource layer accepts the raw (possibly comma-separated) string and forwards it as a single query value, so we deliberately do not split — we only drop empties so callers can treat \"unset\" and \"blank\" identically."
         },
         {
           "name": "executeApp",
           "kind": "function",
-          "line": 1474,
+          "line": 1536,
           "signature": "async function executeApp(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "parseJsonValue",
           "kind": "function",
-          "line": 1507,
+          "line": 1569,
           "signature": "function parseJsonValue(raw: string): unknown",
           "jsdoc": "Parse `--value` from the CLI as JSON when possible, falling back to the raw string. Confluence app properties accept arbitrary JSON values, so callers should typically pass JSON (e.g. `--value '{\"enabled\":true}'`); a bare unquoted string like `--value hello` is preserved as the string `\"hello\"`."
         },
         {
           "name": "executeClassificationLevels",
           "kind": "function",
-          "line": 1515,
+          "line": 1577,
           "signature": "async function executeClassificationLevels( client: ConfluenceClient, cmd: ParsedCommand, ): Promise<unknown>"
         },
         {
           "name": "executeContent",
           "kind": "function",
-          "line": 1527,
+          "line": 1589,
           "signature": "async function executeContent(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "parseContentIds",
           "kind": "function",
-          "line": 1546,
+          "line": 1608,
           "signature": "function parseContentIds(raw: string): readonly (string | number)[]",
           "jsdoc": "Parse the `--ids` flag into a non-empty array of content ids. Accepts either a JSON array (`'[\"1\",\"2\",3]'`) or a comma-separated string (`\"1,2,3\"`). JSON wins when the raw value parses successfully; otherwise we fall back to splitting on commas. Numeric strings stay strings — the server accepts both forms and we don't want to silently coerce ids that happen to be all-digit."
         },
         {
           "name": "executeCustomContent",
           "kind": "function",
-          "line": 1575,
+          "line": 1637,
           "signature": "async function executeCustomContent( client: ConfluenceClient, cmd: ParsedCommand, ): Promise<unknown>"
-        },
-        {
-          "name": "makeCustomContentBody",
-          "kind": "function",
-          "line": 1791,
-          "signature": "function makeCustomContentBody(value: string)",
-          "jsdoc": "Build a custom-content body envelope from a raw storage-format string."
         },
         {
           "name": "executeDataPolicies",
           "kind": "function",
-          "line": 1795,
+          "line": 1865,
           "signature": "async function executeDataPolicies(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "parseCsvList",
           "kind": "function",
-          "line": 1823,
+          "line": 1893,
           "signature": "function parseCsvList(raw: string | undefined): readonly string[] | undefined",
           "jsdoc": "Split a comma-separated CLI flag into a trimmed, non-empty array. Returns `undefined` when the input is unset so optional query params drop out cleanly via spread-omit on the call site."
         },
         {
           "name": "parseCsvSpaceIdList",
           "kind": "function",
-          "line": 1838,
+          "line": 1908,
           "signature": "function parseCsvSpaceIdList(raw: string | undefined): readonly string[] | undefined",
           "jsdoc": "Split the `spaces list --ids` flag into decimal int64 strings. Space IDs can exceed JavaScript's safe-integer range, so converting them through `Number` or `parseInt` would silently change the requested ID. Reject malformed tokens rather than partially parsing or dropping them."
         },
         {
           "name": "parseCsvIntList",
           "kind": "function",
-          "line": 1856,
+          "line": 1926,
           "signature": "function parseCsvIntList(raw: string | undefined, flag: string): readonly number[] | undefined",
           "jsdoc": "Split a comma-separated CLI flag of integer IDs into a `readonly number[]`. Returns `undefined` when the input is unset. A malformed token (`abc`, `12abc`) or one beyond `Number.MAX_SAFE_INTEGER` throws: dropping or rounding it would silently widen or change the filter. Range is left to the server (B1059), so `-1` passes through like `parseCsvSpaceIdList`."
         },
         {
           "name": "nonEmptyFilter",
           "kind": "function",
-          "line": 1875,
+          "line": 1945,
           "signature": "function nonEmptyFilter(opts: ParsedCommand['options'], flag: string): string | undefined",
           "jsdoc": "The raw value of a list filter flag, refusing one that is present but holds no entries after trimming (`--page-id ,`, an empty shell variable): it would drop out, or go out blank, and widen the listing instead of narrowing it."
         },
         {
           "name": "executeSpacePermissions",
           "kind": "function",
-          "line": 1883,
+          "line": 1953,
           "signature": "async function executeSpacePermissions( client: ConfluenceClient, cmd: ParsedCommand, ): Promise<unknown>"
         },
         {
           "name": "executeSpaceRoleMode",
           "kind": "function",
-          "line": 1941,
+          "line": 2011,
           "signature": "async function executeSpaceRoleMode( client: ConfluenceClient, cmd: ParsedCommand, ): Promise<unknown>"
         },
         {
           "name": "executeSpaceRoles",
           "kind": "function",
-          "line": 1953,
+          "line": 2023,
           "signature": "async function executeSpaceRoles(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "SPACE_ROLE_TYPES",
           "kind": "variable",
-          "line": 2005,
+          "line": 2075,
           "signature": "const SPACE_ROLE_TYPES: readonly SpaceRoleType[] = ['SYSTEM', 'CUSTOM'];"
         },
         {
           "name": "SPACE_ROLE_PRINCIPAL_TYPES",
           "kind": "variable",
-          "line": 2007,
+          "line": 2077,
           "signature": "const SPACE_ROLE_PRINCIPAL_TYPES: readonly SpaceRolePrincipalType[] = [ 'USER', 'GROUP', 'ACCESS_CLASS', ];"
         },
         {
           "name": "SPACE_BLOG_POST_STATUSES",
           "kind": "variable",
-          "line": 2022,
+          "line": 2092,
           "signature": "const SPACE_BLOG_POST_STATUSES = ['current', 'deleted', 'trashed'] as const;"
         },
         {
           "name": "SPACE_CONTENT_LABEL_PREFIXES",
           "kind": "variable",
-          "line": 2024,
+          "line": 2094,
           "signature": "const SPACE_CONTENT_LABEL_PREFIXES = ['my', 'team'] as const;"
         },
         {
           "name": "SPACE_PAGE_DEPTHS",
           "kind": "variable",
-          "line": 2026,
+          "line": 2096,
           "signature": "const SPACE_PAGE_DEPTHS = ['all', 'root'] as const;"
         },
         {
           "name": "SPACE_PAGE_STATUSES",
           "kind": "variable",
-          "line": 2028,
+          "line": 2098,
           "signature": "const SPACE_PAGE_STATUSES = ['current', 'archived', 'deleted', 'trashed'] as const;"
         },
         {
           "name": "SPACE_TYPES",
           "kind": "variable",
-          "line": 2030,
+          "line": 2100,
           "signature": "const SPACE_TYPES: readonly SpaceType[] = [ 'global', 'collaboration', 'knowledge_base', 'personal', 'system', 'onboardi…"
         },
         {
           "name": "SPACE_STATUSES",
           "kind": "variable",
-          "line": 2040,
+          "line": 2110,
           "signature": "const SPACE_STATUSES: readonly SpaceStatus[] = ['current', 'archived', 'trashed'];"
         },
         {
           "name": "SPACE_SORT_ORDERS",
           "kind": "variable",
-          "line": 2042,
+          "line": 2112,
           "signature": "const SPACE_SORT_ORDERS: readonly SpaceSortOrder[] = ['id', '-id', 'key', '-key', 'name', '-name'];"
         },
         {
           "name": "SPACE_DESCRIPTION_FORMATS",
           "kind": "variable",
-          "line": 2044,
+          "line": 2114,
           "signature": "const SPACE_DESCRIPTION_FORMATS: readonly SpaceDescriptionFormat[] = ['plain', 'view'];"
         },
         {
           "name": "parseSpacePermissions",
           "kind": "function",
-          "line": 2053,
+          "line": 2123,
           "signature": "function parseSpacePermissions(raw: string): readonly string[]",
           "jsdoc": "Split `--space-permissions` from the CLI into a non-empty array. Accepts a comma-separated list of permission ids (e.g. `read/space,write/space`); surrounding whitespace per entry is trimmed and empty entries are dropped. Rejects an all-empty payload with a clear error so callers fail fast before the HTTP round trip."
         },
         {
           "name": "executeTasks",
           "kind": "function",
-          "line": 2064,
+          "line": 2134,
           "signature": "async function executeTasks(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "TASK_STATUSES",
           "kind": "variable",
-          "line": 2110,
+          "line": 2180,
           "signature": "const TASK_STATUSES = ['incomplete', 'complete'] as const;"
         },
         {
           "name": "executeUsers",
           "kind": "function",
-          "line": 2112,
+          "line": 2182,
           "signature": "async function executeUsers(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "parseRequiredCsvList",
           "kind": "function",
-          "line": 2137,
+          "line": 2207,
           "signature": "function parseRequiredCsvList(raw: string, emptyError: string): readonly string[]",
           "jsdoc": "Split a required comma-separated CLI flag into a non-empty, trimmed list. Surrounding whitespace per entry is trimmed and empty entries are dropped; an all-empty payload throws `emptyError` so callers fail fast before the HTTP round trip. Shared by `--emails` (users) and `--account-ids` (users-bulk) so both get identical comma-separated batch semantics."
         },
         {
           "name": "parseEmailList",
           "kind": "function",
-          "line": 2154,
+          "line": 2224,
           "signature": "function parseEmailList(raw: string): readonly string[]",
           "jsdoc": "Parse `--emails` from the CLI into a non-empty list. Mirrors the `--account-ids` parsing used by `users-bulk` so callers get consistent comma-separated batch semantics across both user resources: surrounding whitespace per entry is trimmed and empty entries are dropped."
         },
         {
           "name": "executeUsersBulk",
           "kind": "function",
-          "line": 2158,
+          "line": 2228,
           "signature": "async function executeUsersBulk(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "newVersion",
           "kind": "function",
-          "line": 2180,
+          "line": 2250,
           "signature": "function newVersion(opts: ParsedCommand['options']): { number: number; message?: string }",
           "jsdoc": "The `version` of an update body: required `--version-number`, plus `--message` as `version.message` when given (one flag name for the version message across Confluence update actions, not a separate one). Shared by the databases / embeds / folders / whiteboards `update-property` and `footer-comments update` actions."
         },
         {
           "name": "rejectPrivate",
           "kind": "function",
-          "line": 2190,
+          "line": 2260,
           "signature": "function rejectPrivate(opts: ParsedCommand['options'], resource: string): void",
           "jsdoc": "`POST /folders` and `POST /embeds` take no `private` parameter, so a `--private` there would be silently dropped and create visible content."
         },
         {
           "name": "executeDatabases",
           "kind": "function",
-          "line": 2198,
+          "line": 2268,
           "signature": "async function executeDatabases(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeEmbeds",
           "kind": "function",
-          "line": 2365,
+          "line": 2435,
           "signature": "async function executeEmbeds(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeFolders",
           "kind": "function",
-          "line": 2449,
+          "line": 2519,
           "signature": "async function executeFolders(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeFooterComments",
           "kind": "function",
-          "line": 2568,
+          "line": 2638,
           "signature": "async function executeFooterComments( client: ConfluenceClient, cmd: ParsedCommand, ): Promise<unknown>"
         },
         {
           "name": "executeInlineComments",
           "kind": "function",
-          "line": 2652,
+          "line": 2722,
           "signature": "async function executeInlineComments( client: ConfluenceClient, cmd: ParsedCommand, ): Promise<unknown>"
         },
         {
           "name": "executeWhiteboards",
           "kind": "function",
-          "line": 2712,
+          "line": 2782,
           "signature": "async function executeWhiteboards(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "requireArg",
           "kind": "function",
-          "line": 2868,
+          "line": 2938,
           "signature": "function requireArg(value: string | undefined, name: string): string"
         },
         {
           "name": "requireOpt",
           "kind": "function",
-          "line": 2873,
+          "line": 2943,
           "signature": "function requireOpt(value: string | boolean | undefined, name: string): string"
         },
         {
           "name": "asString",
           "kind": "function",
-          "line": 2878,
+          "line": 2948,
           "signature": "function asString(value: string | boolean | undefined): string | undefined"
         },
         {
           "name": "asPositiveInt",
           "kind": "function",
-          "line": 2882,
+          "line": 2952,
           "signature": "function asPositiveInt(value: string | boolean | undefined, name: string): number | undefined"
         },
         {
           "name": "asNonNegativeInt",
           "kind": "function",
-          "line": 2892,
+          "line": 2962,
           "signature": "function asNonNegativeInt(value: string | boolean | undefined, name: string): number | undefined",
           "jsdoc": "Parse an optional epoch-millisecond value (integer, zero included)."
         },
         {
           "name": "requirePositiveInt",
           "kind": "function",
-          "line": 2907,
+          "line": 2977,
           "signature": "function requirePositiveInt(value: string | boolean | undefined, name: string): number",
           "jsdoc": "Like {@link asPositiveInt} but rejects missing values: requires the flag, then validates it is a positive integer. Returns the parsed number. The thrown message matches the hand-rolled sites it replaces (`<name> must be a positive integer, got: <value>`)."
         },
         {
           "name": "asDepth",
           "kind": "function",
-          "line": 2920,
+          "line": 2990,
           "signature": "function asDepth(value: string | boolean | undefined): number | undefined",
           "jsdoc": "Validate depth parameter for descendant/child queries (must be 1–10 per spec). Returns `undefined` when unset, otherwise validates and returns the integer."
         },
         {
           "name": "asEnum",
           "kind": "function",
-          "line": 2934,
+          "line": 3004,
           "signature": "function asEnum<T extends string>( value: string | boolean | undefined, allowed: readonly T[], flagName: string, ): T | …",
           "jsdoc": "Narrow a free-form CLI string to a typed enum, rejecting anything outside the allowlist with a user-facing error. Returns `undefined` when the flag is unset so callers can use spread-omit on optional query keys."
         },
         {
           "name": "asEnumArray",
           "kind": "function",
-          "line": 2952,
+          "line": 3022,
           "signature": "function asEnumArray<T extends string>( value: string | boolean | undefined, allowed: readonly T[], flagName: string, ):…",
           "jsdoc": "Parse a comma-separated CLI value into a typed enum array. Each comma-split token is validated against the allowlist; an empty or missing input returns `undefined` so callers can spread-omit the key. Use for query params that the spec models as `array<enum>` (e.g. attachment `status`)."
         },
         {
           "name": "requireEnum",
           "kind": "function",
-          "line": 2976,
+          "line": 3046,
           "signature": "function requireEnum<T extends string>( value: string | boolean | undefined, allowed: readonly T[], flagName: string, ):…",
           "jsdoc": "Like `asEnum` but rejects missing values. Use when the flag is required and must come from a fixed allowlist (e.g. `tasks update --status`)."
         },
         {
           "name": "CONTENT_RESTRICTION_STATES",
           "kind": "variable",
-          "line": 2990,
+          "line": 3060,
           "signature": "const CONTENT_RESTRICTION_STATES: readonly ContentRestrictionState[] = [ 'OPEN', 'EDIT_RESTRICTED', 'VIEW_RESTRICTED', ]…"
         },
         {
           "name": "PERMISSION_OPERATIONS",
           "kind": "variable",
-          "line": 2996,
+          "line": 3066,
           "signature": "const PERMISSION_OPERATIONS: readonly ContentPermissionOperation[] = ['read', 'update'];"
         },
         {
           "name": "PERMISSION_PRINCIPAL_TYPES",
           "kind": "variable",
-          "line": 2998,
+          "line": 3068,
           "signature": "const PERMISSION_PRINCIPAL_TYPES: readonly ContentPermissionPrincipalType[] = ['user', 'group'];"
         },
         {
           "name": "selfLockoutParams",
           "kind": "function",
-          "line": 3005,
+          "line": 3075,
           "signature": "function selfLockoutParams( opts: ParsedCommand['options'], ): ContentPermissionWriteParams | undefined",
           "jsdoc": "`--allow-self-lockout` is only forwarded when the flag is present: the API default (`false`) protects the caller from removing their own access, so it must never be opted into implicitly."
         },
         {
           "name": "permissionFilterParams",
           "kind": "function",
-          "line": 3012,
+          "line": 3082,
           "signature": "function permissionFilterParams(opts: ParsedCommand['options'])",
           "jsdoc": "`--operation` / `--principal-type` / `--principal-id` filters for list/delete permissions."
         },
         {
           "name": "permissionsRequestBody",
           "kind": "function",
-          "line": 3028,
+          "line": 3098,
           "signature": "function permissionsRequestBody(opts: ParsedCommand['options']): ContentPermissionsRequest",
           "jsdoc": "Parse `--body` as the `{ \"permissions\": [...] }` request for add/set permissions."
         },
         {
           "name": "parseEntryFilter",
           "kind": "function",
-          "line": 3039,
+          "line": 3109,
           "signature": "function parseEntryFilter(raw: string | undefined): DatabaseEntryFilter | undefined",
           "jsdoc": "Parse `--filter` as a JSON object mapping database field IDs to filter conditions."
         },
         {
           "name": "CONTENT_SORT_ORDERS",
           "kind": "variable",
-          "line": 3050,
+          "line": 3120,
           "signature": "const CONTENT_SORT_ORDERS: readonly ContentSortOrder[] = [ 'created-date', '-created-date', 'id', '-id', 'modified-date'…"
         },
         {
           "name": "PROPERTY_SORT_ORDERS",
           "kind": "variable",
-          "line": 3063,
+          "line": 3133,
           "signature": "const PROPERTY_SORT_ORDERS = ['key', '-key'] as const;"
         },
         {
           "name": "COMMENT_SORT_ORDERS",
           "kind": "variable",
-          "line": 3065,
+          "line": 3135,
           "signature": "const COMMENT_SORT_ORDERS: readonly CommentSortOrder[] = [ 'created-date', '-created-date', 'modified-date', '-modified-…"
         },
         {
           "name": "VERSION_SORT_ORDERS",
           "kind": "variable",
-          "line": 3072,
+          "line": 3142,
           "signature": "const VERSION_SORT_ORDERS: readonly VersionSortOrder[] = ['modified-date', '-modified-date'];"
         },
         {
           "name": "DATA_POLICY_SPACE_SORT_ORDERS",
           "kind": "variable",
-          "line": 3074,
+          "line": 3144,
           "signature": "const DATA_POLICY_SPACE_SORT_ORDERS: readonly DataPolicySpaceSortOrder[] = [ 'id', '-id', 'key', '-key', 'name', '-name'…"
         },
         {
           "name": "LABEL_SORT_ORDERS",
           "kind": "variable",
-          "line": 3083,
+          "line": 3153,
           "signature": "const LABEL_SORT_ORDERS: readonly LabelSortOrder[] = [ 'created-date', '-created-date', 'id', '-id', 'name', '-name', ];"
         },
         {
           "name": "ATTACHMENT_SORT_ORDERS",
           "kind": "variable",
-          "line": 3092,
+          "line": 3162,
           "signature": "const ATTACHMENT_SORT_ORDERS: readonly AttachmentSortOrder[] = [ 'created-date', '-created-date', 'modified-date', '-mod…"
         },
         {
           "name": "ATTACHMENT_STATUSES",
           "kind": "variable",
-          "line": 3099,
+          "line": 3169,
           "signature": "const ATTACHMENT_STATUSES: readonly AttachmentStatus[] = ['current', 'archived', 'trashed'];"
         },
         {
           "name": "LABEL_PREFIXES",
           "kind": "variable",
-          "line": 3101,
+          "line": 3171,
           "signature": "const LABEL_PREFIXES: readonly LabelPrefix[] = ['my', 'team', 'global', 'system'];"
         },
         {
           "name": "BLOG_POST_SORT_ORDERS",
           "kind": "variable",
-          "line": 3103,
+          "line": 3173,
           "signature": "const BLOG_POST_SORT_ORDERS: readonly BlogPostSortOrder[] = [ 'id', '-id', 'created-date', '-created-date', 'modified-da…"
         },
         {
           "name": "PAGE_SORT_ORDERS",
           "kind": "variable",
-          "line": 3112,
+          "line": 3182,
           "signature": "const PAGE_SORT_ORDERS: readonly PageSortOrder[] = [ 'id', '-id', 'created-date', '-created-date', 'modified-date', '-mo…"
         },
         {
           "name": "PAGE_LOOKUP_STATUSES",
           "kind": "variable",
-          "line": 3123,
+          "line": 3193,
           "signature": "const PAGE_LOOKUP_STATUSES = [ 'current', 'archived', 'trashed', 'deleted', 'historical', 'draft', ] as const;"
         },
         {
           "name": "PAGE_BODY_REPRESENTATIONS",
           "kind": "variable",
-          "line": 3132,
+          "line": 3202,
           "signature": "const PAGE_BODY_REPRESENTATIONS = [ 'storage', 'atlas_doc_format', 'view', 'export_view', 'anonymous_export_view', 'styl…"
         },
         {
           "name": "CONTENT_BODY_FORMATS",
           "kind": "variable",
-          "line": 3142,
+          "line": 3212,
           "signature": "const CONTENT_BODY_FORMATS = ['storage', 'atlas_doc_format'] as const;"
         },
         {
           "name": "WHITEBOARD_TEMPLATE_KEYS",
           "kind": "variable",
-          "line": 3144,
+          "line": 3214,
           "signature": "const WHITEBOARD_TEMPLATE_KEYS: readonly WhiteboardTemplateKey[] = [ '2x2-prioritization', '4ls-retro', 'annual-calendar…"
         },
         {
           "name": "WHITEBOARD_LOCALES",
           "kind": "variable",
-          "line": 3200,
+          "line": 3270,
           "signature": "const WHITEBOARD_LOCALES: readonly WhiteboardLocale[] = [ 'de-DE', 'cs-CZ', 'ko-KR', 'fr-FR', 'it-IT', 'ja-JP', 'nl-NL',…"
         },
         {
           "name": "CUSTOM_CONTENT_BODY_FORMATS",
           "kind": "variable",
-          "line": 3224,
+          "line": 3294,
           "signature": "const CUSTOM_CONTENT_BODY_FORMATS = ['raw', 'storage', 'atlas_doc_format'] as const;"
         },
         {
           "name": "CUSTOM_CONTENT_BODY_FORMATS_SINGLE",
           "kind": "variable",
-          "line": 3231,
+          "line": 3301,
           "signature": "const CUSTOM_CONTENT_BODY_FORMATS_SINGLE = [ 'raw', 'storage', 'atlas_doc_format', 'view', 'export_view', 'anonymous_exp…",
           "jsdoc": "Extended body-format vocabulary accepted only by `GET /custom-content/{id}` — adds the read-only `view`, `export_view`, and `anonymous_export_view` projections from the spec's `CustomContentBodyRepresentationSingle` enum."
         },
         {
           "name": "CUSTOM_CONTENT_SORT_ORDERS",
           "kind": "variable",
-          "line": 3240,
+          "line": 3310,
           "signature": "const CUSTOM_CONTENT_SORT_ORDERS: readonly CustomContentSortOrder[] = [ 'id', '-id', 'created-date', '-created-date', 'm…"
         },
         {
           "name": "CHILD_CUSTOM_CONTENT_SORT_ORDERS",
           "kind": "variable",
-          "line": 3251,
+          "line": 3321,
           "signature": "const CHILD_CUSTOM_CONTENT_SORT_ORDERS: readonly ChildCustomContentSortOrder[] = [ 'id', '-id', 'created-date', '-create…"
         },
         {
           "name": "COMMENT_STATUSES",
           "kind": "variable",
-          "line": 3260,
-          "signature": "const COMMENT_STATUSES: readonly CommentStatus[] = [ 'current', 'deleted', 'trashed', 'historical', 'draft', ];"
+          "line": 3331,
+          "signature": "const COMMENT_STATUSES: readonly CommentStatus[] = [ 'current', 'deleted', 'trashed', 'historical', 'draft', ];",
+          "jsdoc": "Status filter for blog-post comment listings (spec: no `archived`)."
+        },
+        {
+          "name": "PAGE_COMMENT_STATUSES",
+          "kind": "variable",
+          "line": 3340,
+          "signature": "const PAGE_COMMENT_STATUSES: readonly CommentStatus[] = [ 'current', 'archived', 'trashed', 'deleted', 'historical', 'dr…",
+          "jsdoc": "Status filter for page comment listings (`GET /pages/{id}/*-comments`)."
+        },
+        {
+          "name": "COMMENT_TYPES",
+          "kind": "variable",
+          "line": 3349,
+          "signature": "const COMMENT_TYPES = ['footer', 'inline'] as const;"
         },
         {
           "name": "INLINE_COMMENT_RESOLUTION_STATUSES",
           "kind": "variable",
-          "line": 3268,
+          "line": 3351,
           "signature": "const INLINE_COMMENT_RESOLUTION_STATUSES: readonly InlineCommentResolutionStatus[] = [ 'resolved', 'open', 'dangling', '…"
         },
         {
           "name": "CLASSIFICATION_STATUS",
           "kind": "variable",
-          "line": 3275,
+          "line": 3358,
           "signature": "const CLASSIFICATION_STATUS = ['current', 'draft', 'archived'] as const;"
         },
         {
           "name": "PAGE_CLASSIFICATION_STATUSES",
           "kind": "variable",
-          "line": 3282,
+          "line": 3365,
           "signature": "const PAGE_CLASSIFICATION_STATUSES = ['current', 'draft'] as const;",
           "jsdoc": "Status enum accepted by `PUT /pages/{id}/classification-level` and the matching reset endpoint — page allows both `current` and `draft` (unlike the blog-post variant which is locked to `current`)."
         },
         {
           "name": "PAGE_TITLE_STATUSES",
           "kind": "variable",
-          "line": 3288,
+          "line": 3371,
           "signature": "const PAGE_TITLE_STATUSES = ['current', 'draft'] as const;",
           "jsdoc": "Status enum accepted by `PUT /pages/{id}/title`. The endpoint targets either the published (`current`) revision or the in-flight `draft`."
         },
         {
           "name": "PAGE_CREATE_STATUSES",
           "kind": "variable",
-          "line": 3289,
+          "line": 3372,
           "signature": "const PAGE_CREATE_STATUSES = ['current', 'draft'] as const;"
         },
         {
           "name": "PAGE_CREATE_SUBTYPES",
           "kind": "variable",
-          "line": 3290,
+          "line": 3373,
           "signature": "const PAGE_CREATE_SUBTYPES = ['live'] as const;"
+        },
+        {
+          "name": "PAGE_LIST_SUBTYPES",
+          "kind": "variable",
+          "line": 3375,
+          "signature": "const PAGE_LIST_SUBTYPES = ['live', 'page'] as const;",
+          "jsdoc": "`subtype` filter accepted by `GET /pages`."
+        },
+        {
+          "name": "CUSTOM_CONTENT_UPDATE_STATUSES",
+          "kind": "variable",
+          "line": 3377,
+          "signature": "const CUSTOM_CONTENT_UPDATE_STATUSES = ['current'] as const;",
+          "jsdoc": "`PUT /custom-content/{id}` accepts only `current`."
         },
         {
           "name": "PAGE_BODY_WRITE_REPRESENTATIONS",
           "kind": "variable",
-          "line": 3291,
+          "line": 3378,
           "signature": "const PAGE_BODY_WRITE_REPRESENTATIONS: readonly PageBodyWriteRepresentation[] = [ 'storage', 'atlas_doc_format', 'wiki',…"
         },
         {
           "name": "CHILD_PAGE_SORT_ORDERS",
           "kind": "variable",
-          "line": 3302,
+          "line": 3389,
           "signature": "const CHILD_PAGE_SORT_ORDERS: readonly ChildPageSortOrder[] = [ 'created-date', '-created-date', 'id', '-id', 'child-pos…",
           "jsdoc": "Sort tokens accepted by `GET /pages/{id}/children`. Mirrors the OpenAPI `ChildPageSortOrder` enum — narrower than `ContentSortOrder` (no `title` sort because child-page rows don't reliably carry a title field)."
         },
         {
           "name": "BLOG_POST_LOOKUP_STATUSES",
           "kind": "variable",
-          "line": 3313,
+          "line": 3400,
           "signature": "const BLOG_POST_LOOKUP_STATUSES: readonly BlogPostLookupStatus[] = [ 'current', 'trashed', 'deleted', 'historical', 'dra…"
         },
         {
           "name": "BLOG_POST_BODY_REPRESENTATIONS",
           "kind": "variable",
-          "line": 3321,
+          "line": 3408,
           "signature": "const BLOG_POST_BODY_REPRESENTATIONS: readonly BlogPostBodyRepresentation[] = [ 'storage', 'atlas_doc_format', 'view', '…"
-        },
-        {
-          "name": "makeBody",
-          "kind": "function",
-          "line": 3331,
-          "signature": "function makeBody(value: string | undefined)"
         },
         {
           "name": "makePageCreateBody",
           "kind": "function",
-          "line": 3336,
+          "line": 3418,
           "signature": "function makePageCreateBody( opts: Record<string, string | boolean | undefined>, ): PageBodyWrite | PageNestedBodyWrite …"
+        },
+        {
+          "name": "FlatWriteBody",
+          "kind": "interface",
+          "line": 3426,
+          "signature": "interface FlatWriteBody<R extends string> { readonly representation: R; readonly value: string; }",
+          "jsdoc": "Flat `{ representation, value }` content write body."
+        },
+        {
+          "name": "makeWriteBody",
+          "kind": "function",
+          "line": 3438,
+          "signature": "function makeWriteBody<R extends string>( opts: Record<string, string | boolean | undefined>, representations: readonly …",
+          "jsdoc": "Build a content write body from `--body` (may be empty) plus `--body-representation` (one of `representations`, default `storage`). With `nested`, `--body-json` supplies an exact flat or nested body object instead; without it `--body-json` is rejected rather than silently ignored. Returns `undefined` when no body flag is given."
+        },
+        {
+          "name": "makeWriteBody",
+          "kind": "function",
+          "line": 3442,
+          "signature": "function makeWriteBody<R extends string>( opts: Record<string, string | boolean | undefined>, representations: readonly …"
+        },
+        {
+          "name": "makeWriteBody",
+          "kind": "function",
+          "line": 3447,
+          "signature": "function makeWriteBody<R extends string>( opts: Record<string, string | boolean | undefined>, representations: readonly …"
+        },
+        {
+          "name": "requireBody",
+          "kind": "function",
+          "line": 3493,
+          "signature": "function requireBody<B>(body: B | undefined): B",
+          "jsdoc": "Require a body built by {@link makeWriteBody}."
+        },
+        {
+          "name": "versionData",
+          "kind": "function",
+          "line": 3499,
+          "signature": "function versionData( number: number, opts: Record<string, string | boolean | undefined>, ): { readonly number: number; …",
+          "jsdoc": "`version` write object: `--version-number` plus the optional `--message`."
+        },
+        {
+          "name": "parseCsvIdList",
+          "kind": "function",
+          "line": 3508,
+          "signature": "function parseCsvIdList(raw: string | undefined, flag: string): readonly string[] | undefined",
+          "jsdoc": "Split a comma-separated `--id`-style flag into decimal integer ID strings."
+        },
+        {
+          "name": "parseRoleAssignments",
+          "kind": "function",
+          "line": 3519,
+          "signature": "function parseRoleAssignments(raw: string): readonly unknown[]",
+          "jsdoc": "Parse `--value` as a JSON array of `{ principal, roleId }` role assignments."
         },
         {
           "name": "includeVersionFlag",
           "kind": "function",
-          "line": 3378,
+          "line": 3534,
           "signature": "function includeVersionFlag( opts: Record<string, string | boolean | undefined>, ): boolean | undefined",
           "jsdoc": "`include-version` defaults to true on the wire. The router reports an explicit false (`--no-include-version`, `--include-version false`) as `no-include-version`, which must reach the wire as false."
         },
         {
           "name": "buildGetBlogPostParams",
           "kind": "function",
-          "line": 3396,
+          "line": 3552,
           "signature": "function buildGetBlogPostParams( opts: Record<string, string | boolean | undefined>, ): GetBlogPostParams | undefined",
           "jsdoc": "Project the CLI flag bag onto a `GetBlogPostParams` query bag. Returns `undefined` when no spec-mapped flag is present so the caller can short-circuit to the no-arg `blogPosts.get(id)` overload (avoids sending an empty `query={}` object to the transport)."
         },
         {
           "name": "buildGetPageParams",
           "kind": "function",
-          "line": 3423,
+          "line": 3579,
           "signature": "function buildGetPageParams( opts: Record<string, string | boolean | undefined>, ): GetPageParams | undefined",
           "jsdoc": "Project the current `GET /pages/{id}` flags onto its query contract."
         },
         {
           "name": "buildGetSpaceParams",
           "kind": "function",
-          "line": 3457,
+          "line": 3613,
           "signature": "function buildGetSpaceParams( opts: Record<string, string | boolean | undefined>, ): GetSpaceParams | undefined",
           "jsdoc": "Project `GET /spaces/{id}` flags while preserving the no-params overload."
         }
@@ -6661,13 +6723,13 @@
         {
           "name": "JIRA_HELP",
           "kind": "variable",
-          "line": 285,
+          "line": 287,
           "signature": "const JIRA_HELP = `atlas jira - Jira Cloud Platform v3 + Software/Agile + DevOps APIs\n\nRESOURCES:\n  issues        get, c…"
         },
         {
           "name": "getHelpText",
           "kind": "function",
-          "line": 787,
+          "line": 789,
           "exported": true,
           "signature": "export function getHelpText(api?: string): string",
           "jsdoc": "Get help text for the given level."
@@ -9481,207 +9543,207 @@
             {
               "name": "create",
               "kind": "method",
-              "line": 158
+              "line": 161
             },
             {
               "name": "update",
               "kind": "method",
-              "line": 171
+              "line": 182
             },
             {
               "name": "delete",
               "kind": "method",
-              "line": 181
+              "line": 192
             },
             {
               "name": "listAll",
               "kind": "method",
-              "line": 193
+              "line": 204
             },
             {
               "name": "listProperties",
               "kind": "method",
-              "line": 220
+              "line": 231
             },
             {
               "name": "listPropertiesAll",
               "kind": "method",
-              "line": 244
+              "line": 255
             },
             {
               "name": "createProperty",
               "kind": "method",
-              "line": 265
+              "line": 276
             },
             {
               "name": "getProperty",
               "kind": "method",
-              "line": 282
+              "line": 293
             },
             {
               "name": "updateProperty",
               "kind": "method",
-              "line": 299
+              "line": 310
             },
             {
               "name": "deleteProperty",
               "kind": "method",
-              "line": 317
+              "line": 328
             },
             {
               "name": "listAttachments",
               "kind": "method",
-              "line": 331
+              "line": 342
             },
             {
               "name": "listAttachmentsAll",
               "kind": "method",
-              "line": 353
+              "line": 364
             },
             {
               "name": "getClassificationLevel",
               "kind": "method",
-              "line": 372
+              "line": 383
             },
             {
               "name": "updateClassificationLevel",
               "kind": "method",
-              "line": 394
+              "line": 405
             },
             {
               "name": "resetClassificationLevel",
               "kind": "method",
-              "line": 412
+              "line": 424
             },
             {
               "name": "listCustomContent",
               "kind": "method",
-              "line": 430
+              "line": 442
             },
             {
               "name": "listCustomContentAll",
               "kind": "method",
-              "line": 449
+              "line": 461
             },
             {
               "name": "listFooterComments",
               "kind": "method",
-              "line": 469
+              "line": 481
             },
             {
               "name": "listFooterCommentsAll",
               "kind": "method",
-              "line": 491
+              "line": 503
             },
             {
               "name": "listInlineComments",
               "kind": "method",
-              "line": 510
+              "line": 522
             },
             {
               "name": "listInlineCommentsAll",
               "kind": "method",
-              "line": 532
+              "line": 544
             },
             {
               "name": "getLikeCount",
               "kind": "method",
-              "line": 554
+              "line": 566
             },
             {
               "name": "listLikeUsers",
               "kind": "method",
-              "line": 567
+              "line": 579
             },
             {
               "name": "listLikeUsersAll",
               "kind": "method",
-              "line": 588
+              "line": 600
             },
             {
               "name": "getOperations",
               "kind": "method",
-              "line": 609
+              "line": 621
             },
             {
               "name": "redact",
               "kind": "method",
-              "line": 630
+              "line": 642
             },
             {
               "name": "listLabels",
               "kind": "method",
-              "line": 651
+              "line": 663
             },
             {
               "name": "listLabelsAll",
               "kind": "method",
-              "line": 674
+              "line": 686
             },
             {
               "name": "listVersions",
               "kind": "method",
-              "line": 701
+              "line": 713
             },
             {
               "name": "listVersionsAll",
               "kind": "method",
-              "line": 724
+              "line": 736
             },
             {
               "name": "getRestrictionState",
               "kind": "method",
-              "line": 746
+              "line": 758
             },
             {
               "name": "setRestrictionState",
               "kind": "method",
-              "line": 760
+              "line": 772
             },
             {
               "name": "listPermissions",
               "kind": "method",
-              "line": 778
+              "line": 790
             },
             {
               "name": "listPermissionsAll",
               "kind": "method",
-              "line": 793
+              "line": 805
             },
             {
               "name": "addPermissions",
               "kind": "method",
-              "line": 809
+              "line": 821
             },
             {
               "name": "setPermissions",
               "kind": "method",
-              "line": 827
+              "line": 839
             },
             {
               "name": "deletePermissions",
               "kind": "method",
-              "line": 848
+              "line": 860
             },
             {
               "name": "buildAttachments",
               "kind": "method",
-              "line": 862
+              "line": 874
             },
             {
               "name": "buildComments",
               "kind": "method",
-              "line": 881
+              "line": 893
             },
             {
               "name": "buildInlineComments",
               "kind": "method",
-              "line": 900
+              "line": 912
             },
             {
               "name": "buildCustomContentQuery",
               "kind": "method",
-              "line": 916
+              "line": 928
             }
           ]
         }
@@ -9736,96 +9798,103 @@
       "path": "src/confluence/resources/comments.ts",
       "symbols": [
         {
+          "name": "commentListRequest",
+          "kind": "function",
+          "line": 31,
+          "signature": "function commentListRequest( basePath: string, params: ListFooterCommentsParams | ListInlineCommentsParams | undefined, …",
+          "jsdoc": "Build the request for a page comment listing. `status` and `resolution-status` are spec `type: array` params, so they are baked into the path as repeated pairs (a comma-joined value is one nonexistent token, B1049); the remaining scalars go in the query bag."
+        },
+        {
           "name": "CommentsResource",
           "kind": "class",
-          "line": 24,
+          "line": 43,
           "exported": true,
           "signature": "export class CommentsResource",
           "members": [
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 25
+              "line": 44
             },
             {
               "name": "listFooter",
               "kind": "method",
-              "line": 33
+              "line": 52
             },
             {
               "name": "getFooter",
               "kind": "method",
-              "line": 46
+              "line": 69
             },
             {
               "name": "createFooter",
               "kind": "method",
-              "line": 68
+              "line": 91
             },
             {
               "name": "updateFooter",
               "kind": "method",
-              "line": 78
+              "line": 101
             },
             {
               "name": "deleteFooter",
               "kind": "method",
-              "line": 88
+              "line": 111
             },
             {
               "name": "listInline",
               "kind": "method",
-              "line": 98
+              "line": 121
             },
             {
               "name": "getInline",
               "kind": "method",
-              "line": 111
+              "line": 138
             },
             {
               "name": "createInline",
               "kind": "method",
-              "line": 133
+              "line": 160
             },
             {
               "name": "updateInline",
               "kind": "method",
-              "line": 147
+              "line": 174
             },
             {
               "name": "deleteInline",
               "kind": "method",
-              "line": 157
+              "line": 184
             },
             {
               "name": "listProperties",
               "kind": "method",
-              "line": 176
+              "line": 203
             },
             {
               "name": "listPropertiesAll",
               "kind": "method",
-              "line": 196
+              "line": 223
             },
             {
               "name": "createProperty",
               "kind": "method",
-              "line": 213
+              "line": 240
             },
             {
               "name": "getProperty",
               "kind": "method",
-              "line": 226
+              "line": 253
             },
             {
               "name": "updateProperty",
               "kind": "method",
-              "line": 241
+              "line": 268
             },
             {
               "name": "deleteProperty",
               "kind": "method",
-              "line": 255
+              "line": 282
             }
           ]
         }
@@ -9833,6 +9902,7 @@
       "imports": [
         "../../core/pagination.js",
         "../../core/path.js",
+        "../../core/query.js",
         "../../core/types.js",
         "../types/comments.js",
         "../types/common.js"
@@ -9920,14 +9990,14 @@
         {
           "name": "Query",
           "kind": "type",
-          "line": 34,
+          "line": 35,
           "signature": "type Query = Record<string, string | number | boolean | undefined>;",
           "jsdoc": "Query bag accepted by the underlying transport. Scalars only."
         },
         {
           "name": "CustomContentResource",
           "kind": "class",
-          "line": 52,
+          "line": 53,
           "exported": true,
           "signature": "export class CustomContentResource",
           "jsdoc": "Resource for Confluence v2 custom content.",
@@ -9935,157 +10005,158 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 53
+              "line": 54
             },
             {
               "name": "list",
               "kind": "method",
-              "line": 61
+              "line": 66
             },
             {
               "name": "get",
               "kind": "method",
-              "line": 75
+              "line": 80
             },
             {
               "name": "create",
               "kind": "method",
-              "line": 85
+              "line": 90
             },
             {
               "name": "update",
               "kind": "method",
-              "line": 95
+              "line": 100
             },
             {
               "name": "delete",
               "kind": "method",
-              "line": 108
+              "line": 113
             },
             {
               "name": "listAll",
               "kind": "method",
-              "line": 117
+              "line": 122
             },
             {
               "name": "listProperties",
               "kind": "method",
-              "line": 139
+              "line": 140
             },
             {
               "name": "listPropertiesAll",
               "kind": "method",
-              "line": 163
+              "line": 164
             },
             {
               "name": "createProperty",
               "kind": "method",
-              "line": 184
+              "line": 185
             },
             {
               "name": "getProperty",
               "kind": "method",
-              "line": 201
+              "line": 202
             },
             {
               "name": "updateProperty",
               "kind": "method",
-              "line": 218
+              "line": 219
             },
             {
               "name": "deleteProperty",
               "kind": "method",
-              "line": 236
+              "line": 237
             },
             {
               "name": "listVersions",
               "kind": "method",
-              "line": 250
+              "line": 251
             },
             {
               "name": "listVersionsAll",
               "kind": "method",
-              "line": 273
+              "line": 274
             },
             {
               "name": "getVersion",
               "kind": "method",
-              "line": 294
+              "line": 295
             },
             {
               "name": "listAttachments",
               "kind": "method",
-              "line": 309
+              "line": 313
             },
             {
               "name": "listAttachmentsAll",
               "kind": "method",
-              "line": 331
+              "line": 335
             },
             {
               "name": "listChildren",
               "kind": "method",
-              "line": 350
+              "line": 354
             },
             {
               "name": "listChildrenAll",
               "kind": "method",
-              "line": 372
+              "line": 376
             },
             {
               "name": "listFooterComments",
               "kind": "method",
-              "line": 394
+              "line": 398
             },
             {
               "name": "listFooterCommentsAll",
               "kind": "method",
-              "line": 413
+              "line": 417
             },
             {
               "name": "listLabels",
               "kind": "method",
-              "line": 433
+              "line": 437
             },
             {
               "name": "listLabelsAll",
               "kind": "method",
-              "line": 456
+              "line": 460
             },
             {
               "name": "getOperations",
               "kind": "method",
-              "line": 479
+              "line": 483
             },
             {
-              "name": "buildListQuery",
+              "name": "buildListRequest",
               "kind": "method",
-              "line": 490
+              "line": 497
             },
             {
               "name": "buildGetQuery",
               "kind": "method",
-              "line": 506
+              "line": 515
             },
             {
               "name": "buildDeleteQuery",
               "kind": "method",
-              "line": 531
+              "line": 540
             },
             {
               "name": "buildAttachments",
               "kind": "method",
-              "line": 541
+              "line": 550
             },
             {
               "name": "buildFooterCommentsQuery",
               "kind": "method",
-              "line": 557
+              "line": 566
             }
           ]
         }
       ],
       "imports": [
+        "../../core/errors.js",
         "../../core/pagination.js",
         "../../core/path.js",
         "../../core/query.js",
@@ -10807,98 +10878,98 @@
         {
           "name": "Query",
           "kind": "type",
-          "line": 19,
+          "line": 20,
           "signature": "type Query = Record<string, string | number | boolean | undefined>;",
           "jsdoc": "Query shape accepted by the underlying transport. Scalars only."
         },
         {
           "name": "PathAndQuery",
           "kind": "interface",
-          "line": 24,
+          "line": 25,
           "signature": "interface PathAndQuery { readonly path: string; readonly query: Query; }",
           "jsdoc": "A request target split into its (possibly repeated-param-bearing) path and its scalar query bag. The `type: array` filters are baked into `path` as repeated params; everything else stays in `query` (B1049)."
         },
         {
           "name": "LabelsResource",
           "kind": "class",
-          "line": 29,
+          "line": 30,
           "exported": true,
           "signature": "export class LabelsResource",
           "members": [
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 30
+              "line": 31
             },
             {
               "name": "listForPage",
               "kind": "method",
-              "line": 36
+              "line": 37
             },
             {
               "name": "listForSpace",
               "kind": "method",
-              "line": 49
+              "line": 51
             },
             {
               "name": "listForBlogPost",
               "kind": "method",
-              "line": 62
+              "line": 65
             },
             {
               "name": "list",
               "kind": "method",
-              "line": 81
+              "line": 85
             },
             {
               "name": "listAll",
               "kind": "method",
-              "line": 92
+              "line": 96
             },
             {
               "name": "listAttachments",
               "kind": "method",
-              "line": 98
+              "line": 102
             },
             {
               "name": "listAllAttachments",
               "kind": "method",
-              "line": 111
+              "line": 116
             },
             {
               "name": "listBlogPosts",
               "kind": "method",
-              "line": 123
+              "line": 129
             },
             {
               "name": "listAllBlogPosts",
               "kind": "method",
-              "line": 140
+              "line": 147
             },
             {
               "name": "listPages",
               "kind": "method",
-              "line": 152
+              "line": 160
             },
             {
               "name": "listAllPages",
               "kind": "method",
-              "line": 169
+              "line": 178
             },
             {
               "name": "listAllForPage",
               "kind": "method",
-              "line": 181
+              "line": 191
             },
             {
               "name": "buildList",
               "kind": "method",
-              "line": 199
+              "line": 210
             },
             {
               "name": "buildContentByLabel",
               "kind": "method",
-              "line": 217
+              "line": 229
             }
           ]
         }
@@ -11507,67 +11578,67 @@
             {
               "name": "listProperties",
               "kind": "method",
-              "line": 530
+              "line": 533
             },
             {
               "name": "listPropertiesAll",
               "kind": "method",
-              "line": 554
+              "line": 559
             },
             {
               "name": "createProperty",
               "kind": "method",
-              "line": 575
+              "line": 579
             },
             {
               "name": "getProperty",
               "kind": "method",
-              "line": 589
+              "line": 593
             },
             {
               "name": "updateProperty",
               "kind": "method",
-              "line": 606
+              "line": 610
             },
             {
               "name": "deleteProperty",
               "kind": "method",
-              "line": 624
+              "line": 628
             },
             {
               "name": "buildSpaces",
               "kind": "method",
-              "line": 641
+              "line": 645
             },
             {
               "name": "buildBlogPosts",
               "kind": "method",
-              "line": 670
+              "line": 674
             },
             {
               "name": "buildLabelsQuery",
               "kind": "method",
-              "line": 686
+              "line": 690
             },
             {
               "name": "buildCustomContentQuery",
               "kind": "method",
-              "line": 699
+              "line": 703
             },
             {
               "name": "buildPages",
               "kind": "method",
-              "line": 712
+              "line": 716
             },
             {
               "name": "buildPermissionsQuery",
               "kind": "method",
-              "line": 726
+              "line": 730
             },
             {
               "name": "buildRoleAssignmentsQuery",
               "kind": "method",
-              "line": 735
+              "line": 739
             }
           ]
         }
@@ -13072,13 +13143,13 @@
           "kind": "interface",
           "line": 76,
           "exported": true,
-          "signature": "export interface ListCustomContentParams { readonly type?: string; readonly id?: string; readonly 'space-id'?: string; r…",
+          "signature": "export interface ListCustomContentParams { readonly type?: string; readonly id?: string | readonly (string | number)[]; …",
           "jsdoc": "Parameters for `GET /custom-content`."
         },
         {
           "name": "GetCustomContentParams",
           "kind": "interface",
-          "line": 92,
+          "line": 95,
           "exported": true,
           "signature": "export interface GetCustomContentParams { readonly 'body-format'?: CustomContentBodyRepresentationSingle; readonly versi…",
           "jsdoc": "Parameters for `GET /custom-content/{id}`. The `include-*` flags expand the response envelope with the matching sub-resource (defaulting to omitted on the wire). `include-version` (singular) inlines a single version object — separate from `include-versions` which inlines the full version list."
@@ -13086,7 +13157,7 @@
         {
           "name": "DeleteCustomContentParams",
           "kind": "interface",
-          "line": 108,
+          "line": 111,
           "exported": true,
           "signature": "export interface DeleteCustomContentParams { readonly purge?: boolean; }",
           "jsdoc": "Parameters for `DELETE /custom-content/{id}`. `purge=true` permanently removes a previously-trashed item (the server returns 400 if the item is not in `trashed` status)."
@@ -13094,7 +13165,7 @@
         {
           "name": "CreateCustomContentData",
           "kind": "interface",
-          "line": 118,
+          "line": 121,
           "exported": true,
           "signature": "export interface CreateCustomContentData { readonly type: string; readonly title: string; readonly body: CustomContentBo…",
           "jsdoc": "Request body for `POST /custom-content`. Per the v2 spec, `body`, `title`, and `type` are required. Containers (`spaceId`, `pageId`, `blogPostId`, `customContentId`) are mutually exclusive on the server — pass the one that matches the parent entity."
@@ -13102,7 +13173,7 @@
         {
           "name": "UpdateCustomContentData",
           "kind": "interface",
-          "line": 135,
+          "line": 138,
           "exported": true,
           "signature": "export interface UpdateCustomContentData { readonly id: string; readonly type: string; readonly status: 'current'; reado…",
           "jsdoc": "Request body for `PUT /custom-content/{id}`. Per the v2 spec, `id`, `body`, `status`, `title`, `type`, and `version` are required, and `status` is restricted to the literal `'current'` (drafts cannot be updated through this endpoint)."
@@ -13110,7 +13181,7 @@
         {
           "name": "CustomContentBodyWrite",
           "kind": "interface",
-          "line": 152,
+          "line": 155,
           "exported": true,
           "signature": "export interface CustomContentBodyWrite { readonly representation: CustomContentBodyRepresentation; readonly value: stri…",
           "jsdoc": "Flat body envelope accepted by create/update — the spec's `CustomContentBodyWrite` schema."
@@ -13118,7 +13189,7 @@
         {
           "name": "CustomContentNestedBodyWrite",
           "kind": "interface",
-          "line": 162,
+          "line": 165,
           "exported": true,
           "signature": "export interface CustomContentNestedBodyWrite { readonly storage?: CustomContentBodyWrite; readonly atlas_doc_format?: C…",
           "jsdoc": "Nested body envelope accepted by create/update — the spec's `CustomContentNestedBodyWrite` schema. Exactly one of `storage`, `atlas_doc_format`, or `raw` should be set."
@@ -13126,7 +13197,7 @@
         {
           "name": "ListCustomContentAttachmentsParams",
           "kind": "interface",
-          "line": 169,
+          "line": 172,
           "exported": true,
           "signature": "export interface ListCustomContentAttachmentsParams { readonly sort?: AttachmentSortOrder; readonly cursor?: string; rea…",
           "jsdoc": "Parameters for `GET /custom-content/{id}/attachments`."
@@ -13134,7 +13205,7 @@
         {
           "name": "ListCustomContentFooterCommentsParams",
           "kind": "interface",
-          "line": 179,
+          "line": 182,
           "exported": true,
           "signature": "export interface ListCustomContentFooterCommentsParams { readonly 'body-format'?: 'storage' | 'atlas_doc_format'; readon…",
           "jsdoc": "Parameters for `GET /custom-content/{id}/footer-comments`."
@@ -13142,7 +13213,7 @@
         {
           "name": "ListCustomContentLabelsParams",
           "kind": "interface",
-          "line": 187,
+          "line": 190,
           "exported": true,
           "signature": "export interface ListCustomContentLabelsParams { readonly prefix?: LabelPrefix; readonly sort?: LabelSortOrder; readonly…",
           "jsdoc": "Parameters for `GET /custom-content/{id}/labels`."
@@ -13150,7 +13221,7 @@
         {
           "name": "ListCustomContentVersionsParams",
           "kind": "interface",
-          "line": 195,
+          "line": 198,
           "exported": true,
           "signature": "export interface ListCustomContentVersionsParams { readonly 'body-format'?: CustomContentBodyRepresentation; readonly cu…",
           "jsdoc": "Parameters for `GET /custom-content/{custom-content-id}/versions`."
@@ -13158,7 +13229,7 @@
         {
           "name": "ChildCustomContentSortOrder",
           "kind": "type",
-          "line": 206,
+          "line": 209,
           "exported": true,
           "signature": "export type ChildCustomContentSortOrder = 'id' | '-id' | 'created-date' | '-created-date' | 'modified-date' | '-modified…",
           "jsdoc": "Sort tokens accepted by `GET /custom-content/{id}/children` — mirrors the spec's closed `ChildCustomContentSortOrder` enum."
@@ -13166,7 +13237,7 @@
         {
           "name": "ListCustomContentChildrenParams",
           "kind": "interface",
-          "line": 210,
+          "line": 213,
           "exported": true,
           "signature": "export interface ListCustomContentChildrenParams { readonly cursor?: string; readonly limit?: number; readonly sort?: Ch…",
           "jsdoc": "Parameters for `GET /custom-content/{id}/children`."
@@ -13174,7 +13245,7 @@
         {
           "name": "CustomContentChild",
           "kind": "interface",
-          "line": 222,
+          "line": 225,
           "exported": true,
           "signature": "export interface CustomContentChild { readonly id?: string; readonly status?: 'current' | 'archived'; readonly title?: s…",
           "jsdoc": "Child custom content entry returned by `GET /custom-content/{id}/children`. Mirrors the `ChildCustomContent` schema in the v2 OpenAPI spec — the server trims the response to the subset listed here (no body / version / authoring metadata)."
@@ -13182,7 +13253,7 @@
         {
           "name": "CustomContentOperation",
           "kind": "interface",
-          "line": 232,
+          "line": 235,
           "exported": true,
           "signature": "export interface CustomContentOperation { readonly operation?: string; readonly targetType?: string; }",
           "jsdoc": "Permitted operation entry returned by `GET /custom-content/{id}/operations`."
@@ -13190,7 +13261,7 @@
         {
           "name": "CustomContentOperationsResponse",
           "kind": "interface",
-          "line": 238,
+          "line": 241,
           "exported": true,
           "signature": "export interface CustomContentOperationsResponse { readonly operations?: readonly CustomContentOperation[]; }",
           "jsdoc": "Response shape for `GET /custom-content/{id}/operations`."

@@ -2,6 +2,7 @@ import type { Transport } from '../../core/types.js';
 import { encodePathSegment } from '../../core/path.js';
 import type { CursorPaginatedResponse } from '../../core/pagination.js';
 import { paginateCursor } from '../../core/pagination.js';
+import { validatePageSize } from '../../core/pagination.js';
 import { appendScalarOrArrayParam } from '../../core/query.js';
 import type { Attachment } from '../types/attachments.js';
 import type { BlogPost } from '../types/blog-posts.js';
@@ -37,6 +38,7 @@ export class LabelsResource {
     pageId: string,
     params?: ListLabelsParams,
   ): Promise<CursorPaginatedResponse<Label>> {
+    if (params?.limit !== undefined) validatePageSize(params.limit, 'limit');
     const response = await this.transport.request<CursorPaginatedResponse<Label>>({
       method: 'GET',
       path: `${this.baseUrl}/pages/${encodePathSegment(pageId)}/labels`,
@@ -45,11 +47,12 @@ export class LabelsResource {
     return response.data;
   }
 
-  /** List labels for a space. */
+  /** List labels for a space. The endpoint accepts only `prefix: 'my' | 'team'`. */
   async listForSpace(
     spaceId: string,
     params?: ListLabelsParams,
   ): Promise<CursorPaginatedResponse<Label>> {
+    if (params?.limit !== undefined) validatePageSize(params.limit, 'limit');
     const response = await this.transport.request<CursorPaginatedResponse<Label>>({
       method: 'GET',
       path: `${this.baseUrl}/spaces/${encodePathSegment(spaceId)}/labels`,
@@ -63,6 +66,7 @@ export class LabelsResource {
     blogPostId: string,
     params?: ListLabelsParams,
   ): Promise<CursorPaginatedResponse<Label>> {
+    if (params?.limit !== undefined) validatePageSize(params.limit, 'limit');
     const response = await this.transport.request<CursorPaginatedResponse<Label>>({
       method: 'GET',
       path: `${this.baseUrl}/blogposts/${encodePathSegment(blogPostId)}/labels`,
@@ -99,6 +103,7 @@ export class LabelsResource {
     labelId: string,
     params?: ListAttachmentsByLabelParams,
   ): Promise<CursorPaginatedResponse<Attachment>> {
+    if (params?.limit !== undefined) validatePageSize(params.limit, 'limit');
     const response = await this.transport.request<CursorPaginatedResponse<Attachment>>({
       method: 'GET',
       path: `${this.baseUrl}/labels/${encodePathSegment(labelId)}/attachments`,
@@ -112,6 +117,7 @@ export class LabelsResource {
     labelId: string,
     params?: Omit<ListAttachmentsByLabelParams, 'cursor'>,
   ): AsyncGenerator<Attachment> {
+    if (params?.limit !== undefined) validatePageSize(params.limit, 'limit');
     yield* paginateCursor<Attachment>(
       this.transport,
       `${this.baseUrl}/labels/${encodePathSegment(labelId)}/attachments`,
@@ -124,6 +130,7 @@ export class LabelsResource {
     labelId: string,
     params?: ListBlogPostsByLabelParams,
   ): Promise<CursorPaginatedResponse<BlogPost>> {
+    if (params?.limit !== undefined) validatePageSize(params.limit, 'limit');
     const { path, query } = this.buildContentByLabel(
       `${this.baseUrl}/labels/${encodePathSegment(labelId)}/blogposts`,
       params,
@@ -141,6 +148,7 @@ export class LabelsResource {
     labelId: string,
     params?: Omit<ListBlogPostsByLabelParams, 'cursor'>,
   ): AsyncGenerator<BlogPost> {
+    if (params?.limit !== undefined) validatePageSize(params.limit, 'limit');
     const { path, query } = this.buildContentByLabel(
       `${this.baseUrl}/labels/${encodePathSegment(labelId)}/blogposts`,
       params,
@@ -153,6 +161,7 @@ export class LabelsResource {
     labelId: string,
     params?: ListPagesByLabelParams,
   ): Promise<CursorPaginatedResponse<Page>> {
+    if (params?.limit !== undefined) validatePageSize(params.limit, 'limit');
     const { path, query } = this.buildContentByLabel(
       `${this.baseUrl}/labels/${encodePathSegment(labelId)}/pages`,
       params,
@@ -170,6 +179,7 @@ export class LabelsResource {
     labelId: string,
     params?: Omit<ListPagesByLabelParams, 'cursor'>,
   ): AsyncGenerator<Page> {
+    if (params?.limit !== undefined) validatePageSize(params.limit, 'limit');
     const { path, query } = this.buildContentByLabel(
       `${this.baseUrl}/labels/${encodePathSegment(labelId)}/pages`,
       params,
@@ -182,6 +192,7 @@ export class LabelsResource {
     pageId: string,
     params?: Omit<ListLabelsParams, 'cursor'>,
   ): AsyncGenerator<Label> {
+    if (params?.limit !== undefined) validatePageSize(params.limit, 'limit');
     yield* paginateCursor<Label>(
       this.transport,
       `${this.baseUrl}/pages/${encodePathSegment(pageId)}/labels`,
@@ -200,6 +211,7 @@ export class LabelsResource {
     const basePath = `${this.baseUrl}/labels`;
     const query: Query = {};
     if (params === undefined) return { path: basePath, query };
+    if (params.limit !== undefined) validatePageSize(params.limit, 'limit');
     let path = appendScalarOrArrayParam(basePath, 'label-id', params['label-id']);
     path = appendScalarOrArrayParam(path, 'prefix', params.prefix);
     if (params.sort !== undefined) query.sort = params.sort;

@@ -59,7 +59,7 @@ describe('CommentsResource', () => {
       expect(transport.lastCall?.options.query).toMatchObject(params);
     });
 
-    it('forwards status (array) and sort to the query', async () => {
+    it('sends status as repeated params and sort in the query', async () => {
       // Arrange
       transport.respondWith({ results: [], _links: {} });
       const params = {
@@ -71,7 +71,10 @@ describe('CommentsResource', () => {
       await comments.listFooter('page-1', params);
 
       // Assert
-      expect(transport.lastCall?.options.query).toMatchObject(params);
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/pages/page-1/footer-comments?status=current&status=archived`,
+      );
+      expect(transport.lastCall?.options.query).toEqual({ sort: 'created-date' });
     });
   });
 
@@ -227,7 +230,7 @@ describe('CommentsResource', () => {
       expect(transport.lastCall?.options.query).toMatchObject(params);
     });
 
-    it('forwards status, resolution-status, and sort to the query', async () => {
+    it('sends status and resolution-status as repeated params, sort in the query', async () => {
       // Arrange
       transport.respondWith({ results: [], _links: {} });
       const params = {
@@ -240,7 +243,10 @@ describe('CommentsResource', () => {
       await comments.listInline('page-1', params);
 
       // Assert
-      expect(transport.lastCall?.options.query).toMatchObject(params);
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/pages/page-1/inline-comments?status=current&resolution-status=open&resolution-status=reopened`,
+      );
+      expect(transport.lastCall?.options.query).toEqual({ sort: '-created-date' });
     });
   });
 
