@@ -369,6 +369,7 @@ const GLOBAL_OPTIONS = {
   archived: { type: 'boolean' as const },
   category: { type: 'string' as const },
   driver: { type: 'string' as const },
+  'related-work-id': { type: 'string' as const },
   // config field association schemes options (B367-B381)
   'field-id': { type: 'string' as const },
   // screens options (B746-B761)

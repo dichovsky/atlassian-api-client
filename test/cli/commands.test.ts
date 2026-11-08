@@ -20797,30 +20797,37 @@ describe('executeJiraCommand', () => {
           'holder-type': 'group',
           'holder-parameter': 'dev-team',
           'holder-value': 'gid-1',
+          permission: 'BROWSE_PROJECTS',
           expand: 'all',
         }),
         GLOBALS,
       );
       expect(jiraPermissionSchemesMock.createPermission).toHaveBeenCalledWith(
         10000,
-        { holder: { type: 'group', parameter: 'dev-team', value: 'gid-1' } },
+        {
+          holder: { type: 'group', parameter: 'dev-team', value: 'gid-1' },
+          permission: 'BROWSE_PROJECTS',
+        },
         { expand: 'all' },
       );
     });
 
-    it('permission-schemes create-permission without holder-type sends no holder', async () => {
-      jiraPermissionSchemesMock.createPermission.mockResolvedValue({ id: 3 });
-      await executeJiraCommand(
-        cmd('permission-schemes', 'create-permission', ['10000'], {
-          permission: 'BROWSE_PROJECTS',
-        }),
-        GLOBALS,
-      );
-      expect(jiraPermissionSchemesMock.createPermission).toHaveBeenCalledWith(
-        10000,
-        { permission: 'BROWSE_PROJECTS' },
-        undefined,
-      );
+    it('permission-schemes create-permission requires --holder-type and --permission', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('permission-schemes', 'create-permission', ['10000'], {
+            permission: 'BROWSE_PROJECTS',
+          }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('Missing required option: --holder-type');
+      await expect(
+        executeJiraCommand(
+          cmd('permission-schemes', 'create-permission', ['10000'], { 'holder-type': 'anyone' }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('Missing required option: --permission');
+      expect(jiraPermissionSchemesMock.createPermission).not.toHaveBeenCalled();
     });
 
     it('permission-schemes get-permission calls getPermission', async () => {
@@ -20911,11 +20918,11 @@ describe('executeJiraCommand', () => {
       );
     });
 
-    it('issue-type-schemes list-project calls client.issueTypeSchemes.listProject', async () => {
-      const page = { values: [], startAt: 0, maxResults: 50, total: 0 };
-      jiraIssueTypeSchemesMock.listProject.mockResolvedValue(page);
-      await executeJiraCommand(cmd('issue-type-schemes', 'list-project'), GLOBALS);
-      expect(jiraIssueTypeSchemesMock.listProject).toHaveBeenCalled();
+    it('issue-type-schemes list-project requires --project-ids (spec: projectId required)', async () => {
+      await expect(
+        executeJiraCommand(cmd('issue-type-schemes', 'list-project'), GLOBALS),
+      ).rejects.toThrow('Missing required option: --project-ids');
+      expect(jiraIssueTypeSchemesMock.listProject).not.toHaveBeenCalled();
     });
 
     it('issue-type-schemes list-project passes projectId filter', async () => {
@@ -21243,28 +21250,26 @@ describe('executeJiraCommand', () => {
       jiraRolesMock.update.mockResolvedValue(updated);
 
       const result = await executeJiraCommand(
-        cmd('roles', 'update', ['10001'], { name: 'Updated' }),
+        cmd('roles', 'update', ['10001'], { name: 'Updated', description: 'New desc' }),
         GLOBALS,
       );
 
       expect(result).toEqual(updated);
-      expect(jiraRolesMock.update).toHaveBeenCalledWith(10001, { name: 'Updated' });
+      expect(jiraRolesMock.update).toHaveBeenCalledWith(10001, {
+        name: 'Updated',
+        description: 'New desc',
+      });
     });
 
-    it('roles update sends description only when name is omitted', async () => {
-      jiraRolesMock.update.mockResolvedValue({ id: 10001, name: 'Dev', description: 'desc' });
-
-      await executeJiraCommand(
-        cmd('roles', 'update', ['10001'], { description: 'New desc' }),
-        GLOBALS,
-      );
-
-      expect(jiraRolesMock.update).toHaveBeenCalledWith(10001, { description: 'New desc' });
+    it('roles update (PUT) requires --description as well as --name', async () => {
+      await expect(
+        executeJiraCommand(cmd('roles', 'update', ['10001'], { name: 'Dev' }), GLOBALS),
+      ).rejects.toThrow('Missing required option: --description');
     });
 
     it('roles update throws when no name or description provided', async () => {
       await expect(executeJiraCommand(cmd('roles', 'update', ['10001']), GLOBALS)).rejects.toThrow(
-        'update requires at least one of: --name, --description',
+        'Missing required option: --name',
       );
     });
 
@@ -21382,14 +21387,15 @@ describe('executeJiraCommand', () => {
     });
 
     it('roles delete-actors calls client.roles.deleteActors() with --account-id', async () => {
-      jiraRolesMock.deleteActors.mockResolvedValue(undefined);
+      const role = { id: 10001, name: 'Dev', actors: [] };
+      jiraRolesMock.deleteActors.mockResolvedValue(role);
 
       const result = await executeJiraCommand(
         cmd('roles', 'delete-actors', ['10001'], { 'account-id': 'acc-1' }),
         GLOBALS,
       );
 
-      expect(result).toEqual({ deleted: true });
+      expect(result).toEqual(role);
       expect(jiraRolesMock.deleteActors).toHaveBeenCalledWith(10001, { user: 'acc-1' });
     });
 
@@ -21682,14 +21688,15 @@ describe('executeJiraCommand', () => {
       ).rejects.toThrow('--name');
     });
 
-    it('resolutions delete calls client.resolutions.delete', async () => {
-      jiraResolutionsMock.delete.mockResolvedValue(undefined);
+    it('resolutions delete returns the deletion task from client.resolutions.delete', async () => {
+      const task = { id: '10050', self: 'https://x/rest/api/3/task/10050', status: 'ENQUEUED' };
+      jiraResolutionsMock.delete.mockResolvedValue(task);
       const result = await executeJiraCommand(
         cmd('resolutions', 'delete', ['1'], { 'replace-with': '2' }),
         GLOBALS,
       );
       expect(jiraResolutionsMock.delete).toHaveBeenCalledWith('1', { replaceWith: '2' });
-      expect(result).toEqual({ deleted: true });
+      expect(result).toEqual(task);
     });
 
     it('resolutions delete requires --replace-with (spec-required → 400 without it)', async () => {
@@ -23080,6 +23087,8 @@ describe('executeJiraCommand', () => {
 
       await executeJiraCommand(
         cmd('version', 'create', [], {
+          name: 'v1.0',
+          'project-id': '10100',
           description: 'My version',
           'start-date': '2026-01-01',
           'move-unfixed-issues-to': 'https://test.atlassian.net/rest/api/3/version/10002',
@@ -23346,6 +23355,7 @@ describe('executeJiraCommand', () => {
 
       const result = await executeJiraCommand(
         cmd('version', 'update-related-work', ['10001'], {
+          'related-work-id': 'rw-1',
           category: 'Design',
           title: 'Updated doc',
           url: 'https://example.com',
@@ -23357,6 +23367,7 @@ describe('executeJiraCommand', () => {
       expect(jiraVersionMock.updateRelatedWork).toHaveBeenCalledWith(
         '10001',
         expect.objectContaining({
+          relatedWorkId: 'rw-1',
           category: 'Design',
           title: 'Updated doc',
           url: 'https://example.com',
@@ -23366,7 +23377,10 @@ describe('executeJiraCommand', () => {
 
     it('version update-related-work requires --category', async () => {
       await expect(
-        executeJiraCommand(cmd('version', 'update-related-work', ['10001']), GLOBALS),
+        executeJiraCommand(
+          cmd('version', 'update-related-work', ['10001'], { 'related-work-id': 'rw-1' }),
+          GLOBALS,
+        ),
       ).rejects.toThrow('--category');
     });
 
@@ -23669,9 +23683,10 @@ describe('executeJiraCommand', () => {
         cmd('config', 'remove-field-parameters', [], { body }),
         GLOBALS,
       );
-      expect(jiraConfigMock.removeFieldParameters).toHaveBeenCalledWith({
-        customfield_10001: [{ schemeId: 10001 }],
-      });
+      expect(jiraConfigMock.removeFieldParameters).toHaveBeenCalledWith(
+        { customfield_10001: [{ schemeId: 10001 }] },
+        { returnResults: true },
+      );
       expect(result).toEqual({ deleted: true });
     });
 
@@ -23891,14 +23906,11 @@ describe('executeJiraCommand', () => {
       expect(result).toEqual({ updated: true });
     });
 
-    it('add-levels without --levels calls addLevels with empty object', async () => {
-      jiraIssueSecuritySchemesMock.addLevels.mockResolvedValue(undefined);
-      const result = await executeJiraCommand(
-        cmd('issuesecurityschemes', 'add-levels', ['10001'], {}),
-        GLOBALS,
-      );
-      expect(jiraIssueSecuritySchemesMock.addLevels).toHaveBeenCalledWith('10001', {});
-      expect(result).toEqual({ updated: true });
+    it('add-levels without --levels throws instead of sending an empty body', async () => {
+      await expect(
+        executeJiraCommand(cmd('issuesecurityschemes', 'add-levels', ['10001'], {}), GLOBALS),
+      ).rejects.toThrow('Missing required option: --levels');
+      expect(jiraIssueSecuritySchemesMock.addLevels).not.toHaveBeenCalled();
     });
 
     it('remove-level calls client.issueSecuritySchemes.removeLevel', async () => {
@@ -23979,18 +23991,14 @@ describe('executeJiraCommand', () => {
       expect(result).toEqual({ updated: true });
     });
 
-    it('add-level-members without --members sends empty object', async () => {
-      jiraIssueSecuritySchemesMock.addLevelMembers.mockResolvedValue(undefined);
-      const result = await executeJiraCommand(
-        cmd('issuesecurityschemes', 'add-level-members', ['10001', '10100'], {}),
-        GLOBALS,
-      );
-      expect(jiraIssueSecuritySchemesMock.addLevelMembers).toHaveBeenCalledWith(
-        '10001',
-        '10100',
-        expect.objectContaining({}),
-      );
-      expect(result).toEqual({ updated: true });
+    it('add-level-members without --members throws instead of sending an empty body', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('issuesecurityschemes', 'add-level-members', ['10001', '10100'], {}),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('Missing required option: --members');
+      expect(jiraIssueSecuritySchemesMock.addLevelMembers).not.toHaveBeenCalled();
     });
 
     it('remove-level-member calls client.issueSecuritySchemes.removeLevelMember', async () => {
@@ -24981,7 +24989,7 @@ describe('executeJiraCommand', () => {
       );
       expect(jiraPlansMock.update).toHaveBeenCalledWith(
         101,
-        { op: 'replace', path: '/name', value: 'New' },
+        [{ op: 'replace', path: '/name', value: 'New' }],
         undefined,
       );
       expect(result).toEqual({ updated: true });
@@ -24996,7 +25004,7 @@ describe('executeJiraCommand', () => {
       );
       expect(jiraPlansMock.update).toHaveBeenCalledWith(
         101,
-        { op: 'replace', path: '/name', value: 'New' },
+        [{ op: 'replace', path: '/name', value: 'New' }],
         true,
       );
     });
@@ -25125,11 +25133,9 @@ describe('executeJiraCommand', () => {
         cmd('plans', 'update-atlassian-team', ['101', 'team-abc'], { body: patch }),
         GLOBALS,
       );
-      expect(jiraPlansMock.updateAtlassianTeam).toHaveBeenCalledWith(101, 'team-abc', {
-        op: 'replace',
-        path: '/sprintLength',
-        value: 21,
-      });
+      expect(jiraPlansMock.updateAtlassianTeam).toHaveBeenCalledWith(101, 'team-abc', [
+        { op: 'replace', path: '/sprintLength', value: 21 },
+      ]);
       expect(result).toEqual({ updated: true });
     });
 
@@ -25223,11 +25229,9 @@ describe('executeJiraCommand', () => {
         cmd('plans', 'update-plan-only-team', ['101', '2001'], { body: patch }),
         GLOBALS,
       );
-      expect(jiraPlansMock.updatePlanOnlyTeam).toHaveBeenCalledWith(101, 2001, {
-        op: 'replace',
-        path: '/name',
-        value: 'Renamed',
-      });
+      expect(jiraPlansMock.updatePlanOnlyTeam).toHaveBeenCalledWith(101, 2001, [
+        { op: 'replace', path: '/name', value: 'Renamed' },
+      ]);
       expect(result).toEqual({ updated: true });
     });
 

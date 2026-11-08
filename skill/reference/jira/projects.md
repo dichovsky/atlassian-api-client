@@ -245,21 +245,23 @@ atlas jira projects delete-property PROJ myKey
 
 Global project-role definitions at `/rest/api/3/role`. These are **top-level role definitions**, not per-project role assignments. Per-project assignments at `/rest/api/3/project/{key}/role/*` (B682–B687) are separate and belong to the `projects` resource.
 
-| Action           | Positional | Required flags                                    | Optional flags                               |
-| ---------------- | ---------- | ------------------------------------------------- | -------------------------------------------- |
-| `list`           | —          | —                                                 | —                                            |
-| `get`            | `<roleId>` | —                                                 | —                                            |
-| `create`         | —          | `--name`                                          | `--description`                              |
-| `update`         | `<roleId>` | at least one of `--name`, `--description`         | —                                            |
-| `partial-update` | `<roleId>` | at least one of `--name`, `--description`         | —                                            |
-| `delete`         | `<roleId>` | —                                                 | `--swap` (ID of role to reassign to)         |
-| `get-actors`     | `<roleId>` | —                                                 | —                                            |
-| `add-actors`     | `<roleId>` | at least one of `--user`, `--group`, `--group-id` | —                                            |
-| `delete-actors`  | `<roleId>` | —                                                 | `--account-id`, `--group-name`, `--group-id` |
+| Action           | Positional | Required flags                               | Optional flags                                          |
+| ---------------- | ---------- | -------------------------------------------- | ------------------------------------------------------- |
+| `list`           | —          | —                                            | —                                                       |
+| `get`            | `<roleId>` | —                                            | —                                                       |
+| `create`         | —          | `--name`                                     | `--description`                                         |
+| `update`         | `<roleId>` | `--name`, `--description`                    | —                                                       |
+| `partial-update` | `<roleId>` | exactly one of `--name`, `--description`     | —                                                       |
+| `delete`         | `<roleId>` | —                                            | `--swap` (ID of role to reassign to)                    |
+| `get-actors`     | `<roleId>` | —                                            | —                                                       |
+| `add-actors`     | `<roleId>` | `--user`, or one of `--group-id` / `--group` | —                                                       |
+| `delete-actors`  | `<roleId>` | —                                            | `--account-id`, or one of `--group-id` / `--group-name` |
 
 - `--user` and `--group-id` / `--group` for `add-actors` accept comma-separated values (multiple accounts/groups in one call).
 - `--account-id` / `--group-name` / `--group-id` for `delete-actors` accept a single value each (use `--account-id` instead of `--user` to remove a single user).
-- `update` (PUT) and `partial-update` (POST `/{id}`) are distinct Jira endpoints; Jira differentiates set-actors (POST) from full replace (PUT).
+- `update` (PUT) replaces the role and needs both `--name` and `--description`. `partial-update` (POST `/{id}`) changes exactly one of them per call (Jira ignores the description when both are sent, so the CLI rejects that).
+- Jira cannot add or remove users and groups in the same request: `add-actors` takes `--user` **or** groups, `delete-actors` takes `--account-id` **or** a group. Identify a group by `--group-id` (preferred; names can change) or by name, not both.
+- `add-actors` and `delete-actors` print the role with its resulting default actors.
 - `--swap` for `delete` is a numeric role ID; Jira reassigns permissions to that role before deleting.
 - Returned roles expose the spec's bare `admin` / `default` boolean flags (whether the role is the admin role / default for new projects), not `isAdmin` / `isDefault`.
 
@@ -303,30 +305,35 @@ Project version management (B820–B831, B933). Covers the full `/rest/api/3/ver
 
 `delete` returns `204 No Content`. `merge`, `delete-and-replace`, and `delete-related-work` also return `204`. Path params `id`, `moveIssuesTo`, `versionId`, `relatedWorkId` are positional args (not flags).
 
-| Action                   | Positional                      | Required flags                          | Optional flags                                                                                                                                               |
-| ------------------------ | ------------------------------- | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `create`                 | —                               | —                                       | `--name`, `--description`, `--archived`, `--released`, `--start-date`, `--release-date`, `--project`, `--project-id`, `--move-unfixed-issues-to`, `--driver` |
-| `get`                    | `<id>`                          | —                                       | `--expand`                                                                                                                                                   |
-| `update`                 | `<id>`                          | at least one body flag                  | `--name`, `--description`, `--archived`, `--released`, `--start-date`, `--release-date`, `--project`, `--project-id`, `--move-unfixed-issues-to`, `--driver` |
-| `delete`                 | `<id>`                          | —                                       | `--move-fix-issues-to`, `--move-affected-issues-to`                                                                                                          |
-| `merge`                  | `<id>` `<moveIssuesTo>`         | —                                       | —                                                                                                                                                            |
-| `move`                   | `<id>`                          | at least one of `--after`, `--position` | —                                                                                                                                                            |
-| `related-issue-counts`   | `<id>`                          | —                                       | —                                                                                                                                                            |
-| `list-related-work`      | `<id>`                          | —                                       | —                                                                                                                                                            |
-| `create-related-work`    | `<id>`                          | `--category`                            | `--title`, `--url`                                                                                                                                           |
-| `update-related-work`    | `<id>`                          | `--category`                            | `--title`, `--url`                                                                                                                                           |
-| `delete-and-replace`     | `<id>`                          | —                                       | `--move-fix-issues-to` (int version ID), `--move-affected-issues-to` (int version ID), `--custom-field-replacement-list` (JSON array)                        |
-| `unresolved-issue-count` | `<id>`                          | —                                       | —                                                                                                                                                            |
-| `delete-related-work`    | `<versionId>` `<relatedWorkId>` | —                                       | —                                                                                                                                                            |
+| Action                   | Positional                      | Required flags                                             | Optional flags                                                                                                                                                                                                                   |
+| ------------------------ | ------------------------------- | ---------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `create`                 | —                               | `--name`, `--project-id` (or deprecated `--project <key>`) | `--description`, `--archived true\|false`, `--released true\|false`, `--start-date`, `--release-date`, `--move-unfixed-issues-to` (version self URL), `--driver` (account ID), `--expand`                                        |
+| `get`                    | `<id>`                          | —                                                          | `--expand`                                                                                                                                                                                                                       |
+| `update`                 | `<id>`                          | at least one body flag                                     | `--name`, `--description`, `--archived true\|false`, `--released true\|false`, `--start-date`, `--release-date`, `--move-unfixed-issues-to` (version self URL), `--driver` (account ID), `--expand`, `--project-id`, `--project` |
+| `delete` (deprecated)    | `<id>`                          | —                                                          | `--move-fix-issues-to`, `--move-affected-issues-to`                                                                                                                                                                              |
+| `merge`                  | `<id>` `<moveIssuesTo>`         | —                                                          | —                                                                                                                                                                                                                                |
+| `move`                   | `<id>`                          | one of `--after` (version self URL) or `--position`        | —                                                                                                                                                                                                                                |
+| `related-issue-counts`   | `<id>`                          | —                                                          | —                                                                                                                                                                                                                                |
+| `list-related-work`      | `<id>`                          | —                                                          | —                                                                                                                                                                                                                                |
+| `create-related-work`    | `<id>`                          | `--category`                                               | `--title`, `--url`                                                                                                                                                                                                               |
+| `update-related-work`    | `<id>`                          | `--related-work-id`, `--category`                          | `--title`, `--url`                                                                                                                                                                                                               |
+| `delete-and-replace`     | `<id>`                          | —                                                          | `--move-fix-issues-to` (int version ID), `--move-affected-issues-to` (int version ID), `--custom-field-replacement-list` (JSON array)                                                                                            |
+| `unresolved-issue-count` | `<id>`                          | —                                                          | —                                                                                                                                                                                                                                |
+| `delete-related-work`    | `<versionId>` `<relatedWorkId>` | —                                                          | —                                                                                                                                                                                                                                |
 
-- `--archived` and `--released` are bare boolean flags (e.g. `--archived`, `--released`).
+- `--archived true|false` and `--released true|false` set the flag either way; bare `--archived` / `--released` mean `true`, and `--archived false` (or `--no-archived`) un-archives. Omit to leave unchanged.
+- `create` needs `--name` and the project: `--project-id <numeric id>` (preferred; `--project <key>` is deprecated by Atlassian).
+- `--after` (`move`) and `--move-unfixed-issues-to` (`create` / `update`) take the version's **self link URL**, e.g. `https://your-site.atlassian.net/rest/api/3/version/10001` (the `self` field of `version get`), not a bare ID. `move` takes `--after` or `--position`, not both.
+- `--expand` on `create` / `update` adds response detail (`operations`, `issuesstatus`).
+- `update-related-work` updates the entry named by `--related-work-id` (the `relatedWorkId` from `list-related-work`); only generic link entries can be updated.
+- `delete` is deprecated by Atlassian: use `delete-and-replace`, which also swaps the version in version-picker custom fields.
 - `--move-fix-issues-to` and `--move-affected-issues-to` take a version ID as a string on `delete`, or as an integer on `delete-and-replace`.
 - `--custom-field-replacement-list` (`delete-and-replace`) is a JSON array of `{"customFieldId": <int>, "moveTo": <int version ID>}` entries: for each version-picker custom field that holds the deleted version, the version to put in its place.
 - `--position` for `move` accepts `First`, `Last`, `Earlier`, or `Later`.
 
 ```sh
 # Create a version
-atlas jira version create --name "v1.0" --project PROJ --release-date 2026-06-01
+atlas jira version create --name "v1.0" --project-id 10100 --release-date 2026-06-01
 
 # Get a version
 atlas jira version get 10000 --expand issuesstatus
@@ -334,7 +341,10 @@ atlas jira version get 10000 --expand issuesstatus
 # Update a version
 atlas jira version update 10000 --name "v1.1" --released
 
-# Delete a version (swap issues to another version)
+# Un-release and un-archive a version
+atlas jira version update 10000 --released false --archived false
+
+# Delete a version (deprecated; prefer delete-and-replace)
 atlas jira version delete 10000 --move-fix-issues-to 10001
 
 # Merge two versions
@@ -342,6 +352,9 @@ atlas jira version merge 10000 10001
 
 # Move version to a position
 atlas jira version move 10000 --position Last
+
+# Move version after another version (self link URL)
+atlas jira version move 10000 --after https://your-site.atlassian.net/rest/api/3/version/10001
 
 # Related issue counts
 atlas jira version related-issue-counts 10000
@@ -353,7 +366,7 @@ atlas jira version list-related-work 10000
 atlas jira version create-related-work 10000 --category "Confluence page" --url "https://example.com"
 
 # Update related work
-atlas jira version update-related-work 10000 --category "Design doc" --title "Updated"
+atlas jira version update-related-work 10000 --related-work-id fabcdef6-7878-1234-beaf-43211234abcd --category "Design doc" --title "Updated" --url "https://example.com/design"
 
 # Delete and replace version
 atlas jira version delete-and-replace 10000 --move-fix-issues-to 10001 --move-affected-issues-to 10001
@@ -370,19 +383,21 @@ atlas jira version delete-related-work 10000 rw-abc
 
 Custom project template management (B653–B657). Covers the full `/rest/api/3/project-template` surface: create a project with a custom template, edit/save/remove templates, and retrieve live template details.
 
-`create` is asynchronous (303 redirect); follow the `Location` header with `atlas jira task get <taskId>` to track progress. `edit-template`, `remove-template` return `void` (no JSON body). `live-template` returns `ProjectTemplateModel`. `save-template` returns `{ projectTemplateKey }`.
+`create` is asynchronous: it prints `{ "queued": true, "taskId": "<id>", "taskUrl": "<url>" }`; poll with `atlas jira task get <taskId>` until `status` is `COMPLETE`. `edit-template`, `remove-template` return `void` (no JSON body). `live-template` returns `ProjectTemplateModel`. `save-template` returns `{ projectTemplateKey }`.
 
 **Note: These endpoints are only available on Jira Enterprise edition.**
 
-| Action            | Positional | Required flags                     | Optional flags                                                                                                                                                                                                                                   |
-| ----------------- | ---------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `create`          | —          | `--template` (JSON)                | `--name`, `--key`, `--description`, `--url`, `--language`, `--lead-account-id`, `--access-level`, `--assignee-type`, `--avatar-id` (int), `--category-id` (int), `--enable-components`, `--additional-properties` (JSON `Record<string,string>`) |
-| `edit-template`   | —          | at least one of the optional flags | `--template-key`, `--template-name`, `--template-description`, `--enable-screen-delegated-admin`, `--enable-workflow-delegated-admin`                                                                                                            |
-| `live-template`   | —          | —                                  | `--project-id`, `--template-key`                                                                                                                                                                                                                 |
-| `remove-template` | —          | `--template-key`                   | —                                                                                                                                                                                                                                                |
-| `save-template`   | —          | at least one of the optional flags | `--template-name`, `--template-description`, `--project-id` (int), `--template-type` (`LIVE`\|`SNAPSHOT`), `--enable-screen-delegated-admin`, `--enable-workflow-delegated-admin`                                                                |
+> **Experimental:** Atlassian marks `edit-template`, `live-template`, `remove-template` and `save-template` `x-experimental`; their shapes may change without notice.
 
-- `--template` for `create` is a JSON object with capability keys: `boardFeatures`, `boards`, `field`, `issueType`, `notification`, `permissionScheme`, `project`, `role`, `scope`, `security`, `workflow`.
+| Action            | Positional | Required flags                                                         | Optional flags                                                                                                                                                                                                                                   |
+| ----------------- | ---------- | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `create`          | —          | `--template` (JSON)                                                    | `--name`, `--key`, `--description`, `--url`, `--language`, `--lead-account-id`, `--access-level`, `--assignee-type`, `--avatar-id` (int), `--category-id` (int), `--enable-components`, `--additional-properties` (JSON `Record<string,string>`) |
+| `edit-template`   | —          | `--template-key` (identifies the template) and at least one other flag | `--template-name`, `--template-description`, `--enable-screen-delegated-admin`, `--enable-workflow-delegated-admin`                                                                                                                              |
+| `live-template`   | —          | one of `--project-id`, `--template-key`                                | —                                                                                                                                                                                                                                                |
+| `remove-template` | —          | `--template-key`                                                       | —                                                                                                                                                                                                                                                |
+| `save-template`   | —          | at least one of the optional flags                                     | `--template-name`, `--template-description`, `--project-id` (int), `--template-type` (`LIVE`\|`SNAPSHOT`), `--enable-screen-delegated-admin`, `--enable-workflow-delegated-admin`                                                                |
+
+- `--template` for `create` is a JSON object with capability keys: `boardFeatures`, `boards`, `field`, `issueType`, `notification`, `permissionScheme`, `project`, `role`, `scope`, `security`, `workflow`. Its `project` capability accepts only `projectTypeKey` (`software`, `business`, `service_desk`, `product_discovery`), `pcri`, and the scheme references `fieldLayoutSchemeId`, `issueSecuritySchemeId`, `issueTypeSchemeId`, `issueTypeScreenSchemeId`, `notificationSchemeId`, `permissionSchemeId`, `workflowSchemeId` (each a `pcri:<type>:id:<id>` reference, e.g. `pcri:permissionScheme:id:10001`).
 - Within `workflow.statuses[]`, the optional `scope` field accepts only `"GLOBAL"` to share that status across projects; omit it for Jira's default project-scoped behavior.
 - `--access-level` must be one of: `open`, `limited`, `private`, `free`.
 - `--assignee-type` must be one of: `PROJECT_DEFAULT`, `COMPONENT_LEAD`, `PROJECT_LEAD`, `UNASSIGNED`.
@@ -397,7 +412,13 @@ atlas jira project-template create \
   --key "MP" \
   --description "Created from custom template" \
   --language "en" \
-  --template '{"project":{"projectType":"software"}}'
+  --template '{"project":{"projectTypeKey":"software"}}'
+
+# Create a project that reuses existing schemes — B653
+atlas jira project-template create \
+  --name "Ops" \
+  --key "OPS" \
+  --template '{"project":{"projectTypeKey":"business","permissionSchemeId":"pcri:permissionScheme:id:10001","workflowSchemeId":"pcri:workflowScheme:id:10002"}}'
 
 # Edit an existing custom template — B654
 atlas jira project-template edit-template \
