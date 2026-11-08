@@ -49,6 +49,9 @@ import type {
   SearchParams,
   ListSoftwareIssuesParams,
   ListProjectsParams,
+  CreateProjectData,
+  UpdateProjectData,
+  ActorsMap,
   ListBoardsParams,
   RedactionItem,
   IssueTypeScreenSchemeOrderBy,
@@ -764,7 +767,10 @@ async function executeProjects(client: JiraClient, cmd: ParsedCommand): Promise<
       });
     }
     case 'get':
-      return client.projects.get(requireArg(cmd.positionalArgs[0], 'project key'));
+      return client.projects.get(requireArg(cmd.positionalArgs[0], 'project key'), {
+        expand: csvFlag(opts['expand']),
+        properties: parseCsv(opts['properties']),
+      });
     case 'list-legacy': {
       if (opts['action'] !== undefined) {
         throw new Error(
@@ -788,55 +794,51 @@ async function executeProjects(client: JiraClient, cmd: ParsedCommand): Promise<
       });
     }
     case 'create': {
-      const key = requireOpt(opts['key'], '--key');
-      const name = requireOpt(opts['name'], '--name');
-      const projectTypeKey = requireOpt(opts['project-type-key'], '--project-type-key');
-      const assigneeTypeRaw = asString(opts['assignee-type']);
-      if (
-        assigneeTypeRaw !== undefined &&
-        assigneeTypeRaw !== 'PROJECT_LEAD' &&
-        assigneeTypeRaw !== 'UNASSIGNED'
-      ) {
-        throw new Error(
-          `--assignee-type must be PROJECT_LEAD or UNASSIGNED, got: ${assigneeTypeRaw}`,
-        );
-      }
-      return client.projects.create({
-        key,
-        name,
-        projectTypeKey,
+      const data = projectWriteBody(opts['body'], CREATE_PROJECT_BODY_KEYS, {
+        key: asString(opts['key']),
+        name: asString(opts['name']),
+        projectTypeKey: asString(opts['project-type-key']),
         description: asString(opts['description']),
         leadAccountId: asString(opts['lead-account-id']),
         url: asString(opts['url']),
-        ...(assigneeTypeRaw !== undefined && {
-          assigneeType: assigneeTypeRaw as 'PROJECT_LEAD' | 'UNASSIGNED',
-        }),
+        assigneeType: asProjectAssigneeType(opts['assignee-type']),
         avatarId: asPositiveInt(opts['avatar-id'], '--avatar-id'),
         permissionScheme: asPositiveInt(opts['permission-scheme'], '--permission-scheme'),
         notificationScheme: asPositiveInt(opts['notification-scheme'], '--notification-scheme'),
         categoryId: asPositiveInt(opts['category-id'], '--category-id'),
       });
+      // Spec: `key`/`name` are required and Jira needs a lead (`lead` is deprecated).
+      for (const [key, flag] of CREATE_PROJECT_REQUIRED) {
+        if (data[key] === undefined || data[key] === '') {
+          throw new Error(`Missing required option: ${flag}`);
+        }
+      }
+      return client.projects.create(data as unknown as CreateProjectData);
     }
     case 'update': {
       const projectIdOrKey = requireArg(cmd.positionalArgs[0], 'projectIdOrKey');
-      const assigneeTypeRaw = asString(opts['assignee-type']);
-      if (
-        assigneeTypeRaw !== undefined &&
-        assigneeTypeRaw !== 'PROJECT_LEAD' &&
-        assigneeTypeRaw !== 'UNASSIGNED'
-      ) {
-        throw new Error(
-          `--assignee-type must be PROJECT_LEAD or UNASSIGNED, got: ${assigneeTypeRaw}`,
-        );
-      }
-      return client.projects.update(projectIdOrKey, {
+      const categoryId =
+        opts['category-id'] === '-1' ? -1 : asPositiveInt(opts['category-id'], '--category-id');
+      const data = projectWriteBody(opts['body'], UPDATE_PROJECT_BODY_KEYS, {
+        key: asString(opts['key']),
         name: asString(opts['name']),
         description: asString(opts['description']),
         leadAccountId: asString(opts['lead-account-id']),
         url: asString(opts['url']),
-        ...(assigneeTypeRaw !== undefined && {
-          assigneeType: assigneeTypeRaw as 'PROJECT_LEAD' | 'UNASSIGNED',
-        }),
+        assigneeType: asProjectAssigneeType(opts['assignee-type']),
+        avatarId: asPositiveInt(opts['avatar-id'], '--avatar-id'),
+        categoryId,
+        permissionScheme: asPositiveInt(opts['permission-scheme'], '--permission-scheme'),
+        notificationScheme: asPositiveInt(opts['notification-scheme'], '--notification-scheme'),
+      });
+      if (Object.keys(data).length === 0) {
+        throw new Error(
+          'projects update requires at least one field: a flag such as --name, or a --body key',
+        );
+      }
+      const expand = csvFlag(opts['expand']);
+      return client.projects.update(projectIdOrKey, data as UpdateProjectData, {
+        ...(expand !== undefined && { expand }),
       });
     }
     case 'delete': {
@@ -847,10 +849,17 @@ async function executeProjects(client: JiraClient, cmd: ParsedCommand): Promise<
       return { deleted: true };
     }
     case 'recent': {
-      const expandRaw = asString(opts['expand']);
+      rejectRemovedOptions(
+        opts,
+        'projects recent',
+        ['max-results'],
+        'Jira returns up to 20 recent projects and does not page this list',
+      );
+      const expand = csvFlag(opts['expand']);
+      const properties = parseCsv(opts['properties']);
       return client.projects.recent({
-        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
-        ...(expandRaw !== undefined && { expand: expandRaw.split(',').map((s) => s.trim()) }),
+        ...(expand !== undefined && { expand }),
+        ...(properties !== undefined && { properties }),
       });
     }
     case 'list-types':
@@ -863,11 +872,18 @@ async function executeProjects(client: JiraClient, cmd: ParsedCommand): Promise<
       return client.projects.listAccessibleTypes();
     case 'get-email':
       return client.projects.getEmail(requireArg(cmd.positionalArgs[0], 'projectId'));
-    case 'set-email':
-      await client.projects.setEmail(requireArg(cmd.positionalArgs[0], 'projectId'), {
-        emailAddress: asString(opts['email-address']),
-      });
+    case 'set-email': {
+      const projectId = requireArg(cmd.positionalArgs[0], 'projectId');
+      // An empty string is meaningful: Jira restores the default sender address.
+      const emailAddress = asString(opts['email-address']);
+      if (emailAddress === undefined) {
+        throw new Error(
+          'Missing required option: --email-address (--email-address="" restores the default)',
+        );
+      }
+      await client.projects.setEmail(projectId, { emailAddress });
       return { updated: true };
+    }
     case 'get-hierarchy':
       return client.projects.getHierarchy(requireArg(cmd.positionalArgs[0], 'projectId'));
     case 'archive':
@@ -885,19 +901,26 @@ async function executeProjects(client: JiraClient, cmd: ParsedCommand): Promise<
       );
       return { deleted: true };
     case 'load-avatar': {
+      rejectRemovedOptions(
+        opts,
+        'projects load-avatar',
+        ['value'],
+        'pass the image file with --file <path>',
+      );
+      const projectIdOrKey = requireArg(cmd.positionalArgs[0], 'projectIdOrKey');
+      const filePath = requireOpt(opts['file'], '--file');
+      const type = avatarImageType(filePath);
       // Spec: x/y/size crop the uploaded image; each defaults to 0.
       const x = asNonNegativeInt(opts['x'], '--x');
       const y = asNonNegativeInt(opts['y'], '--y');
       const size = asNonNegativeInt(opts['size'], '--size');
-      return client.projects.loadAvatar(
-        requireArg(cmd.positionalArgs[0], 'projectIdOrKey'),
-        parseJsonValueFlag(requireOpt(opts['value'], '--value'), '--value'),
-        {
-          ...(x !== undefined && { x }),
-          ...(y !== undefined && { y }),
-          ...(size !== undefined && { size }),
-        },
-      );
+      const { readFile } = await import('node:fs/promises');
+      const image = new Blob([new Uint8Array(await readFile(filePath))], { type });
+      return client.projects.loadAvatar(projectIdOrKey, image, {
+        ...(x !== undefined && { x }),
+        ...(y !== undefined && { y }),
+        ...(size !== undefined && { size }),
+      });
     }
     case 'get-avatars':
       return client.projects.getAvatars(requireArg(cmd.positionalArgs[0], 'projectIdOrKey'));
@@ -917,7 +940,7 @@ async function executeProjects(client: JiraClient, cmd: ParsedCommand): Promise<
     case 'set-classification-level':
       await client.projects.setClassificationLevel(
         requireArg(cmd.positionalArgs[0], 'projectIdOrKey'),
-        { id: asString(opts['classification-id']) },
+        { id: requireOpt(opts['classification-id'], '--classification-id') },
       );
       return { updated: true };
     case 'list-components':
@@ -928,8 +951,17 @@ async function executeProjects(client: JiraClient, cmd: ParsedCommand): Promise<
         componentSource: asString(opts['component-source']),
         query: asString(opts['query']),
       });
-    case 'list-all-components':
-      return client.projects.listAllComponents(requireArg(cmd.positionalArgs[0], 'projectIdOrKey'));
+    case 'list-all-components': {
+      const componentSource = asEnum(
+        opts['component-source'],
+        ['jira', 'compass', 'auto'] as const,
+        'component-source',
+      );
+      return client.projects.listAllComponents(
+        requireArg(cmd.positionalArgs[0], 'projectIdOrKey'),
+        { ...(componentSource !== undefined && { componentSource }) },
+      );
+    }
     case 'delete-async':
       return client.projects.deleteAsync(requireArg(cmd.positionalArgs[0], 'projectIdOrKey'));
     case 'get-features':
@@ -961,8 +993,7 @@ async function executeProjects(client: JiraClient, cmd: ParsedCommand): Promise<
       );
       return { updated: true };
     case 'restore':
-      await client.projects.restore(requireArg(cmd.positionalArgs[0], 'projectIdOrKey'));
-      return { restored: true };
+      return client.projects.restore(requireArg(cmd.positionalArgs[0], 'projectIdOrKey'));
     case 'list-roles':
       return client.projects.listRoles(requireArg(cmd.positionalArgs[0], 'projectIdOrKey'));
     case 'delete-role-actors': {
@@ -992,9 +1023,7 @@ async function executeProjects(client: JiraClient, cmd: ParsedCommand): Promise<
       return client.projects.addRoleActors(
         projectIdOrKey,
         roleId,
-        parseJsonObjectFlag(requireOpt(opts['body'], '--body'), '--body') as Parameters<
-          typeof client.projects.addRoleActors
-        >[2],
+        roleActorsBody(parseJsonObjectFlag(requireOpt(opts['body'], '--body'), '--body')),
       );
     }
     case 'set-role-actors': {
@@ -1013,9 +1042,11 @@ async function executeProjects(client: JiraClient, cmd: ParsedCommand): Promise<
       const projectIdOrKey = requireArg(cmd.positionalArgs[0], 'projectIdOrKey');
       const currentMember = asBoolFlag(opts['current-member']);
       const excludeConnectAddons = asBoolFlag(opts['exclude-connect-addons']);
+      const excludeOtherServiceRoles = asBoolFlag(opts['exclude-other-service-roles']);
       return client.projects.getRoleDetails(projectIdOrKey, {
         ...(currentMember !== undefined && { currentMember }),
         ...(excludeConnectAddons !== undefined && { excludeConnectAddons }),
+        ...(excludeOtherServiceRoles !== undefined && { excludeOtherServiceRoles }),
       });
     }
     case 'get-statuses':
@@ -1062,7 +1093,12 @@ async function executeProjects(client: JiraClient, cmd: ParsedCommand): Promise<
       const permSchemeId = asPositiveInt(opts['permission-scheme'], '--permission-scheme');
       if (permSchemeId === undefined)
         throw new Error('Missing required option: --permission-scheme');
-      return client.projects.setPermissionScheme(projectKeyOrId, { id: permSchemeId });
+      const expand = asString(opts['expand']);
+      return client.projects.setPermissionScheme(
+        projectKeyOrId,
+        { id: permSchemeId },
+        { ...(expand !== undefined && { expand }) },
+      );
     }
     case 'get-security-levels':
       return client.projects.getSecurityLevels(requireArg(cmd.positionalArgs[0], 'projectKeyOrId'));
@@ -1084,7 +1120,13 @@ async function executeProjects(client: JiraClient, cmd: ParsedCommand): Promise<
         description: asString(opts['description']),
       });
     case 'get-projects-fields':
-      return client.projects.getProjectsFields();
+      return client.projects.getProjectsFields({
+        projectId: requireIntArray(opts['project-ids'], '--project-ids'),
+        workTypeId: requireIntArray(opts['work-type-ids'], '--work-type-ids'),
+        fieldId: csvFlag(opts['field-ids']),
+        startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
+        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+      });
     case 'validate-project-key':
       return client.projects.validateProjectKey(requireOpt(opts['key'], '--key'));
     case 'get-valid-project-key':
@@ -1096,6 +1138,123 @@ async function executeProjects(client: JiraClient, cmd: ParsedCommand): Promise<
         `Unknown projects action: ${cmd.action}. Actions: list, get, list-legacy, create, update, delete, recent, list-types, get-type, get-accessible-type, list-accessible-types, get-email, set-email, get-hierarchy, archive, set-avatar, delete-avatar, load-avatar, get-avatars, get-classification-config, delete-classification-level, get-classification-level, set-classification-level, list-components, list-all-components, delete-async, get-features, set-feature-state, list-properties, delete-property, get-property, set-property, restore, list-roles, delete-role-actors, get-role, add-role-actors, set-role-actors, get-role-details, get-statuses, list-versions, list-all-versions, get-issue-security-scheme, get-notification-scheme, get-permission-scheme, set-permission-scheme, get-security-levels, list-categories, create-category, delete-category, get-category, update-category, get-projects-fields, validate-project-key, get-valid-project-key, get-valid-project-name`,
       );
   }
+}
+
+/** `CreateProjectDetails` keys `projects create --body` may set (all forwarded by the SDK). */
+const CREATE_PROJECT_BODY_KEYS = [
+  'key',
+  'name',
+  'projectTypeKey',
+  'description',
+  'leadAccountId',
+  'url',
+  'assigneeType',
+  'avatarId',
+  'issueSecurityScheme',
+  'permissionScheme',
+  'notificationScheme',
+  'categoryId',
+  'workflowScheme',
+  'issueTypeScheme',
+  'issueTypeScreenScheme',
+  'fieldScheme',
+  'fieldConfigurationScheme',
+  'projectTemplateKey',
+] as const satisfies readonly (keyof CreateProjectData)[];
+
+/** Required `projects create` values (from a flag or `--body`) and the flag named when missing. */
+const CREATE_PROJECT_REQUIRED = [
+  ['key', '--key'],
+  ['name', '--name'],
+  ['projectTypeKey', '--project-type-key'],
+  ['leadAccountId', '--lead-account-id'],
+] as const;
+
+/** `UpdateProjectDetails` keys `projects update --body` may set (all forwarded by the SDK). */
+const UPDATE_PROJECT_BODY_KEYS = [
+  'key',
+  'name',
+  'description',
+  'leadAccountId',
+  'url',
+  'assigneeType',
+  'avatarId',
+  'issueSecurityScheme',
+  'permissionScheme',
+  'notificationScheme',
+  'categoryId',
+  'releasedProjectKeys',
+] as const satisfies readonly (keyof UpdateProjectData)[];
+
+/**
+ * Build a `projects create|update` body from the optional `--body` JSON
+ * object, limited to `allowed` keys, with the discrete-flag values that are
+ * set taking precedence over the same `--body` keys.
+ */
+function projectWriteBody(
+  raw: string | boolean | undefined,
+  allowed: readonly string[],
+  flags: Readonly<Record<string, unknown>>,
+): Record<string, unknown> {
+  const s = asString(raw);
+  const body = s === undefined ? {} : parseJsonObjectFlag(s, '--body');
+  const unsupported = Object.keys(body).filter((key) => !allowed.includes(key));
+  if (unsupported.length > 0) {
+    throw new Error(
+      `--body has unsupported key(s): ${unsupported.join(', ')}; allowed: ${allowed.join(', ')}`,
+    );
+  }
+  const set = Object.entries(flags).filter(([, value]) => value !== undefined);
+  return { ...body, ...Object.fromEntries(set) };
+}
+
+function asProjectAssigneeType(
+  value: string | boolean | undefined,
+): 'PROJECT_LEAD' | 'UNASSIGNED' | undefined {
+  const raw = asString(value);
+  if (raw !== undefined && raw !== 'PROJECT_LEAD' && raw !== 'UNASSIGNED') {
+    throw new Error(`--assignee-type must be PROJECT_LEAD or UNASSIGNED, got: ${raw}`);
+  }
+  return raw;
+}
+
+/** Avatar image types Jira accepts, by lower-case file extension. */
+const AVATAR_IMAGE_TYPES: ReadonlyMap<string, string> = new Map([
+  ['png', 'image/png'],
+  ['jpg', 'image/jpeg'],
+  ['jpeg', 'image/jpeg'],
+  ['gif', 'image/gif'],
+]);
+
+/** Image MIME type for `projects load-avatar --file`, from the file extension. */
+function avatarImageType(filePath: string): string {
+  const ext = /\.([a-z]+)$/.exec(filePath.toLowerCase())?.[1] ?? '';
+  const type = AVATAR_IMAGE_TYPES.get(ext);
+  if (type === undefined) {
+    throw new Error(`--file must be a .png, .jpg, .jpeg or .gif image, got: ${filePath}`);
+  }
+  return type;
+}
+
+/** Validate `projects add-role-actors --body` as an `ActorsMap` with at least one actor. */
+function roleActorsBody(body: Record<string, unknown>): ActorsMap {
+  const unsupported = Object.keys(body).filter(
+    (key) => !['user', 'group', 'groupId'].includes(key),
+  );
+  if (unsupported.length > 0) {
+    throw new Error(
+      `--body has unsupported key(s): ${unsupported.join(', ')}; allowed: user, group, groupId`,
+    );
+  }
+  for (const [key, value] of Object.entries(body)) {
+    if (!Array.isArray(value) || !value.every((item) => typeof item === 'string')) {
+      throw new Error(`--body "${key}" must be an array of strings`);
+    }
+  }
+  if (!Object.values(body).some((value) => (value as string[]).length > 0)) {
+    throw new Error('--body must name at least one actor in user, group or groupId');
+  }
+  return body as ActorsMap;
 }
 
 async function executeSearch(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
@@ -2317,9 +2476,9 @@ async function executeWebhooks(client: JiraClient, cmd: ParsedCommand): Promise<
   }
 }
 
-function asFeatureState(raw: string): 'ENABLED' | 'DISABLED' {
-  if (raw !== 'ENABLED' && raw !== 'DISABLED') {
-    throw new Error(`--state must be ENABLED or DISABLED, got: ${raw}`);
+function asFeatureState(raw: string): 'ENABLED' | 'DISABLED' | 'COMING_SOON' {
+  if (raw !== 'ENABLED' && raw !== 'DISABLED' && raw !== 'COMING_SOON') {
+    throw new Error(`--state must be one of: ENABLED, DISABLED, COMING_SOON, got: ${raw}`);
   }
   return raw;
 }

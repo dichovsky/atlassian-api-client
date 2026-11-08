@@ -697,10 +697,11 @@ EXAMPLES:
   atlas jira projects get-role PROJ 10001 --exclude-inactive-users
   atlas jira projects delete-role-actors PROJ 10001 --user acc-1
   atlas jira projects delete-role-actors PROJ 10001 --group-id grp-1
-  atlas jira projects add-role-actors PROJ 10001 --body '{"actors":[{"user":["acc-1"]}]}'
+  atlas jira projects add-role-actors PROJ 10001 --body '{"user":["acc-1"]}'
   atlas jira projects set-role-actors PROJ 10001 --body '{"categorisedActors":{"atlassian-user-role-actor":["acc-1"]}}'
   atlas jira projects get-role-details PROJ
   atlas jira projects get-role-details PROJ --current-member --exclude-connect-addons
+  atlas jira projects get-role-details PROJ --exclude-other-service-roles
   atlas jira projects get-statuses PROJ
   atlas jira projects list-versions PROJ --order-by name --status released
   atlas jira projects list-legacy --expand description,lead --recent 10 --properties project.owner,project.region
@@ -716,7 +717,8 @@ EXAMPLES:
   atlas jira projects delete-category 10001
   atlas jira projects get-category 10001
   atlas jira projects update-category 10001 --name "Renamed" --description "Updated"
-  atlas jira projects get-projects-fields
+  atlas jira projects get-projects-fields --project-ids 10000,10001 --work-type-ids 10002
+  atlas jira projects load-avatar PROJ --file ./avatar.png --size 48
   atlas jira projects validate-project-key --key MYPROJ
   atlas jira projects get-valid-project-key --key myproj
   atlas jira projects get-valid-project-name --name "My Project"

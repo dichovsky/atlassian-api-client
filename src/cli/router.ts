@@ -414,6 +414,9 @@ const GLOBAL_OPTIONS = {
   'email-address': { type: 'string' as const },
   'component-source': { type: 'string' as const },
   'classification-id': { type: 'string' as const },
+  // projects get-role-details / get-projects-fields (release 4.1.0)
+  'exclude-other-service-roles': { type: 'boolean' as const },
+  'work-type-ids': { type: 'string' as const },
   // issue sub-resource options (B478-B504)
   'global-id': { type: 'string' as const },
   // worklog options (B505-B515)
