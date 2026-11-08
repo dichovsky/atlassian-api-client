@@ -1801,8 +1801,8 @@ async function executeDataPolicies(client: ConfluenceClient, cmd: ParsedCommand)
     case 'list-spaces': {
       const sort = asEnum(opts['sort'], DATA_POLICY_SPACE_SORT_ORDERS, 'sort');
       return client.dataPolicies.listSpaces({
-        ids: parseCsvIntList(asString(opts['ids']), '--ids'),
-        keys: parseCsvList(asString(opts['keys'])),
+        ids: parseCsvIntList(nonEmptyFilter(opts, 'ids'), '--ids'),
+        keys: parseCsvList(nonEmptyFilter(opts, 'keys')),
         ...(sort !== undefined ? { sort } : {}),
         limit: asPositiveInt(opts['limit'], '--limit'),
         cursor: asString(opts['cursor']),
@@ -1868,9 +1868,9 @@ function parseCsvIntList(raw: string | undefined, flag: string): readonly number
 }
 
 /**
- * The raw value of a `tasks list` filter flag, refusing one that is present
- * but holds no entries after trimming (`--page-id ,`, an empty shell
- * variable): it would drop out and list every task instead of none.
+ * The raw value of a list filter flag, refusing one that is present but holds
+ * no entries after trimming (`--page-id ,`, an empty shell variable): it would
+ * drop out, or go out blank, and widen the listing instead of narrowing it.
  */
 function nonEmptyFilter(opts: ParsedCommand['options'], flag: string): string | undefined {
   const raw = asString(opts[flag]);
@@ -1963,7 +1963,7 @@ async function executeSpaceRoles(client: ConfluenceClient, cmd: ParsedCommand): 
       );
       return client.spaceRoles.list({
         'space-id': asString(opts['space-id']),
-        'role-type': asString(opts['role-type']),
+        'role-type': nonEmptyFilter(opts, 'role-type'),
         'principal-id': asString(opts['principal-id']),
         ...(principalType !== undefined ? { 'principal-type': principalType } : {}),
         limit: asPositiveInt(opts['limit'], '--limit'),

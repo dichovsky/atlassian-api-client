@@ -240,6 +240,17 @@ describe('tasks list numeric ID filters (F043, F044)', () => {
     expect(queryOf(req)).toEqual({ ids: ['1', '2'] });
   });
 
+  it.each([
+    ['--ids', ','],
+    ['--ids', ''],
+    ['--keys', ' , '],
+  ])('data-policies list-spaces rejects an empty %s %j like tasks list', async (flag, value) => {
+    await rejected(
+      ['data-policies', 'list-spaces', `${flag}=${value}`],
+      `${flag} must not be empty`,
+    );
+  });
+
   it('sends each comma-separated ID as a repeated parameter', async () => {
     const req = await sent([
       ...['tasks', 'list', '--space-id', '1,2', '--task-id', '5,6'],
@@ -595,6 +606,10 @@ describe('space-roles list --role-type is an open string (F068)', () => {
       'principal-id': 'all-licensed-users',
     });
   });
+
+  it.each(['', ' '])('rejects an empty --role-type %j instead of sending role-type=', async (v) => {
+    await rejected(['space-roles', 'list', `--role-type=${v}`], '--role-type must not be empty');
+  });
 });
 
 describe('transition-list-combinations documents its body cursor (F066)', () => {
@@ -607,6 +622,18 @@ describe('transition-list-combinations documents its body cursor (F066)', () => 
       ...['--cursor', 'next-page-cursor'],
     ]);
     expect(queryOf(req)).toEqual({ limit: '50', cursor: 'next-page-cursor' });
+  });
+
+  it('says every transition-* action needs a Confluence administrator, as the spec does', () => {
+    const ops = Object.entries(SPEC.paths)
+      .filter(([path]) => path.startsWith('/space-permissions/transition/'))
+      .flatMap(([, item]) => Object.values(item) as { description?: string }[]);
+    expect(ops).toHaveLength(5);
+    for (const op of ops)
+      expect(op.description).toContain('User must be a Confluence administrator');
+    expect(skillSection('`space-permissions`').replace(/\s+/g, ' ')).toContain(
+      'Every `transition-*` action requires the caller to be a **Confluence administrator**',
+    );
   });
 });
 

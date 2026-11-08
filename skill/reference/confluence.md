@@ -627,8 +627,8 @@ app scope); the spaces endpoint additionally needs `read:space:confluence`.
   are returned.
 - `--ids` and `--keys` accept comma-separated lists (e.g. `--ids 1,2,3` or
   `--keys ENG,OPS`). Whitespace per entry is trimmed; empty entries are
-  dropped; an effectively-empty value is omitted from the query rather than
-  sent as a blank filter. The server caps each list at 250 entries. Every
+  dropped; an effectively-empty value (`--ids ,`, `--keys ""`) is rejected
+  before any request. The server caps each list at 250 entries. Every
   `--ids` entry must be a decimal integer up to 9007199254740991 (space IDs
   are int64): `--ids abc` or `--ids 12abc` is rejected before any request, so
   a typo never turns into an unfiltered listing.
@@ -667,9 +667,8 @@ Lists the _available_ space-permission definitions for the Confluence Cloud orga
 The **transition sub-commands** (`transition-*`) implement Atlassian's
 **experimental** async bulk RBAC migration API
 (`/wiki/api/v2/space-permissions/transition/*`). The non-transition `list`
-operation is not experimental. `transition-generate-combinations`,
-`transition-remove-access` and `transition-assign-roles` require the caller to
-be a **Confluence administrator** (otherwise `403`). The async flow is:
+operation is not experimental. Every `transition-*` action requires the caller
+to be a **Confluence administrator** (otherwise `403`). The async flow is:
 
 1. Generate the combinations table (once): `transition-generate-combinations`
 2. Inspect the result: `transition-list-combinations`
@@ -824,7 +823,7 @@ Manages Confluence space roles (`/wiki/api/v2/space-roles`). Available on tenant
 | `update` | `<roleId>` | `--name`, `--description`, `--space-permissions` | `--anonymous-reassignment-role-id`, `--guest-reassignment-role-id`                       |
 | `delete` | `<roleId>` | —                                                | —                                                                                        |
 
-- `--role-type` filters by role type and is sent as given: usually `SYSTEM` (platform-defined, not user-editable) or `CUSTOM` (tenant-created); the spec types it as an open string, so a tenant-defined type also passes through.
+- `--role-type` filters by role type and is sent as given: usually `SYSTEM` (platform-defined, not user-editable) or `CUSTOM` (tenant-created); the spec types it as an open string, so a tenant-defined type also passes through. An empty value (`--role-type ""`) is rejected before any request.
 - `--principal-type` accepts `USER`, `GROUP`, or `ACCESS_CLASS` and restricts the listing to roles available for the named principal class.
 - `--principal-id` and `--principal-type` must be given **together** (the server returns 400 for either alone). With `--principal-type ACCESS_CLASS`, `--principal-id` is one of `anonymous-users`, `jsm-project-admins`, `authenticated-users`, `all-licensed-users`, `all-product-admins`; with `USER` it is an account ID, with `GROUP` a group ID.
 - `--space-permissions` is a comma-separated list of space-permission ids (e.g. `read/space,write/space`). Retrieve valid ids from `atlas confluence space-permissions list`. The CLI trims whitespace per entry and rejects an all-empty payload before issuing the request.

@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "4.1.0"
   },
-  "sourceHash": "54e8a21a071b868178a4bdbebf2f5375e2d53b3d2a328f09317c3a5507311267",
+  "sourceHash": "6218183f788188e015558d45e26848d9ab16a9d4baf43b4b0db7b4d585615eaf",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -4782,7 +4782,7 @@
           "kind": "function",
           "line": 1875,
           "signature": "function nonEmptyFilter(opts: ParsedCommand['options'], flag: string): string | undefined",
-          "jsdoc": "The raw value of a `tasks list` filter flag, refusing one that is present but holds no entries after trimming (`--page-id ,`, an empty shell variable): it would drop out and list every task instead of none."
+          "jsdoc": "The raw value of a list filter flag, refusing one that is present but holds no entries after trimming (`--page-id ,`, an empty shell variable): it would drop out, or go out blank, and widen the listing instead of narrowing it."
         },
         {
           "name": "executeSpacePermissions",

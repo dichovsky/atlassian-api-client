@@ -6422,18 +6422,14 @@ describe('executeConfluenceCommand', () => {
       );
     });
 
-    it('data-policies list-spaces drops --ids that becomes empty after trimming', async () => {
-      // Arrange
-      confluenceDataPoliciesMock.listSpaces.mockResolvedValue({ results: [], _links: {} });
+    it('data-policies list-spaces rejects --ids that becomes empty after trimming', async () => {
+      // Dropping it would send an unfiltered request, like tasks list (nonEmptyFilter).
       const parsed = cmd('data-policies', 'list-spaces', [], { ids: ' , , ' });
 
-      // Act
-      await executeConfluenceCommand(parsed, GLOBALS);
-
-      // Assert
-      expect(confluenceDataPoliciesMock.listSpaces).toHaveBeenCalledWith(
-        expect.objectContaining({ ids: undefined }),
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        '--ids must not be empty',
       );
+      expect(confluenceDataPoliciesMock.listSpaces).not.toHaveBeenCalled();
     });
 
     it('data-policies list-spaces rejects non-numeric --ids instead of dropping the filter (F043)', async () => {
