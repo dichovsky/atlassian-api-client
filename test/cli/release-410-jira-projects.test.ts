@@ -138,6 +138,20 @@ describe('projects get-projects-fields (F088)', () => {
     expect(req.query.has('fieldId')).toBe(false);
   });
 
+  it('sends int64 IDs beyond 2^53 exactly, not rounded through Number', async () => {
+    const req = await onlyRequest([
+      'jira',
+      'projects',
+      'get-projects-fields',
+      '--project-ids',
+      '9007199254740993',
+      '--work-type-ids',
+      '9007199254740995',
+    ]);
+    expect(req.query.getAll('projectId')).toEqual(['9007199254740993']);
+    expect(req.query.getAll('workTypeId')).toEqual(['9007199254740995']);
+  });
+
   it('fails before any request when --project-ids or --work-type-ids is missing or invalid', async () => {
     await rejected(['jira', 'projects', 'get-projects-fields'], /--project-ids/);
     await rejected(
@@ -404,13 +418,38 @@ describe('spec query params on list-all-components, recent, set-permission-schem
     );
   });
 
-  it('recent sends --properties as repeated params and rejects the non-spec --max-results', async () => {
+  it('list-components validates --component-source against the spec enum', async () => {
+    const req = await onlyRequest([
+      'jira',
+      'projects',
+      'list-components',
+      'PROJ',
+      '--component-source',
+      'compass',
+    ]);
+    expect(req.path).toBe(`${JIRA}/project/PROJ/component`);
+    expect(req.query.get('componentSource')).toBe('compass');
+    await rejected(
+      ['jira', 'projects', 'list-components', 'PROJ', '--component-source', 'x'],
+      /--component-source must be one of: jira, compass, auto/,
+    );
+  });
+
+  it('recent sends --properties as repeated params and never sends maxResults', async () => {
     const req = await onlyRequest(example('jira projects recent'));
     expect(req.path).toBe(`${JIRA}/project/recent`);
     expect(req.query.get('expand')).toBe('description,lead');
     expect(req.query.getAll('properties')).toEqual(['project.owner']);
     expect(req.query.has('maxResults')).toBe(false);
-    await rejected(['jira', 'projects', 'recent', '--max-results', '5'], /--max-results/);
+  });
+
+  it('recent still accepts the deprecated 4.0.0 --max-results but does not send it', async () => {
+    // The 4.0.0 skill's own example; it must keep exiting 0 in a minor release.
+    const req = await onlyRequest(['jira', 'projects', 'recent', '--max-results', '10']);
+    expect(req.path).toBe(`${JIRA}/project/recent`);
+    expect(req.query.has('maxResults')).toBe(false);
+    // 4.0.0 validated the value, so a malformed one still fails before any request.
+    await rejected(['jira', 'projects', 'recent', '--max-results', 'abc'], /--max-results/);
   });
 
   it('set-permission-scheme appends --expand', async () => {
@@ -473,6 +512,8 @@ describe('role actors, feature state, restore (F100, F102, F103)', () => {
     await rejected([...add, '{"user":[]}'], /at least one/);
     await rejected([...add, '{"user":"acc-1"}'], /array/);
     await rejected([...add, '{"groupId":[1]}'], /groupId/);
+    // Spec ActorsMap: `group` cannot be used with `groupId`.
+    await rejected([...add, '{"group":["g"],"groupId":["id"]}'], /group.*groupId/);
     const req = await onlyRequest(example('jira projects add-role-actors PROJ 10001'));
     expect(req.body).toEqual({ user: ['acc-1'] });
   });

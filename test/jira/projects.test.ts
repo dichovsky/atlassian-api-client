@@ -1,12 +1,14 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, expectTypeOf, beforeEach } from 'vitest';
 import {
   ProjectsResource,
   type GetProjectsFieldsParams,
   type ListAllProjectVersionsParams,
+  type ProjectFieldBean,
   type ListLegacyProjectsParams,
 } from '../../src/jira/resources/projects.js';
 import { MockTransport } from '../helpers/mock-transport.js';
 import { ValidationError } from '../../src/core/errors.js';
+import type { OffsetPaginatedResponse } from '../../src/core/pagination.js';
 
 const BASE_URL = 'https://test.atlassian.net/rest/api/3';
 
@@ -947,7 +949,25 @@ describe('ProjectsResource', () => {
       await expect(projects.loadAvatar('PROJ', { data: 'base64...' })).rejects.toThrow(
         ValidationError,
       );
+      // Duck-typed but not tagged Blob/File: fetch would not send it as raw bytes.
+      const arrayBuffer = () => Promise.resolve(new ArrayBuffer(0));
+      for (const body of [null, 'png-bytes', { arrayBuffer }, { type: 'image/png', arrayBuffer }]) {
+        await expect(projects.loadAvatar('PROJ', body)).rejects.toThrow(ValidationError);
+      }
       expect(transport.calls).toHaveLength(0);
+    });
+
+    it('accepts a Blob from another realm or polyfill (no instanceof dependency)', async () => {
+      // Same shape fetch's body extraction accepts: arrayBuffer(), type, and a Blob/File tag.
+      transport.respondWith({ id: 'av-foreign' });
+      const foreign = {
+        type: 'image/png',
+        size: 0,
+        arrayBuffer: () => Promise.resolve(new ArrayBuffer(0)),
+        [Symbol.toStringTag]: 'File',
+      };
+      await projects.loadAvatar('PROJ', foreign);
+      expect(transport.lastCall?.options.binaryBody).toBe(foreign);
     });
 
     it('sends x, y, size crop region query params when provided', async () => {
@@ -1131,6 +1151,15 @@ describe('ProjectsResource', () => {
           await expect(call(roleId)).rejects.toThrow(ValidationError);
         }
         expect(transport.calls).toHaveLength(0);
+      },
+    );
+
+    it.each(calls)(
+      '%s still accepts a decimal roleId string from untyped callers (4.0.0 compat)',
+      async (_, call) => {
+        transport.respondWith({});
+        await call('10360' as unknown as number);
+        expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/project/PROJ/role/10360`);
       },
     );
   });
@@ -1778,6 +1807,21 @@ describe('ProjectsResource', () => {
         path: `${BASE_URL}/projects/fields?projectId=1&projectId=2&workTypeId=10&fieldId=summary&fieldId=customfield_1`,
         query: { startAt: 0, maxResults: 50 },
       });
+    });
+
+    it('types the params call as a page and keeps ReturnType/Parameters on that form', () => {
+      // The deprecated zero-arg overload is declared first, so type utilities
+      // (which read the last overload) infer the supported page form.
+      const call = () => projects.getProjectsFields({ projectId: [1], workTypeId: [2] });
+      expectTypeOf(call).returns.toEqualTypeOf<
+        Promise<OffsetPaginatedResponse<ProjectFieldBean>>
+      >();
+      expectTypeOf<ReturnType<ProjectsResource['getProjectsFields']>>().toEqualTypeOf<
+        Promise<OffsetPaginatedResponse<ProjectFieldBean>>
+      >();
+      expectTypeOf<Parameters<ProjectsResource['getProjectsFields']>>().toEqualTypeOf<
+        [params: GetProjectsFieldsParams]
+      >();
     });
 
     it('rejects a call without projectId or workTypeId before sending a request', async () => {

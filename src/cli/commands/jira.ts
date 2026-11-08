@@ -801,7 +801,7 @@ async function executeProjects(client: JiraClient, cmd: ParsedCommand): Promise<
         description: asString(opts['description']),
         leadAccountId: asString(opts['lead-account-id']),
         url: asString(opts['url']),
-        assigneeType: asProjectAssigneeType(opts['assignee-type']),
+        assigneeType: asEnum(opts['assignee-type'], PROJECT_ASSIGNEE_TYPES, 'assignee-type'),
         avatarId: asPositiveInt(opts['avatar-id'], '--avatar-id'),
         permissionScheme: asPositiveInt(opts['permission-scheme'], '--permission-scheme'),
         notificationScheme: asPositiveInt(opts['notification-scheme'], '--notification-scheme'),
@@ -825,7 +825,7 @@ async function executeProjects(client: JiraClient, cmd: ParsedCommand): Promise<
         description: asString(opts['description']),
         leadAccountId: asString(opts['lead-account-id']),
         url: asString(opts['url']),
-        assigneeType: asProjectAssigneeType(opts['assignee-type']),
+        assigneeType: asEnum(opts['assignee-type'], PROJECT_ASSIGNEE_TYPES, 'assignee-type'),
         avatarId: asPositiveInt(opts['avatar-id'], '--avatar-id'),
         categoryId,
         permissionScheme: asPositiveInt(opts['permission-scheme'], '--permission-scheme'),
@@ -849,12 +849,9 @@ async function executeProjects(client: JiraClient, cmd: ParsedCommand): Promise<
       return { deleted: true };
     }
     case 'recent': {
-      rejectRemovedOptions(
-        opts,
-        'projects recent',
-        ['max-results'],
-        'Jira returns up to 20 recent projects and does not page this list',
-      );
+      // Deprecated: the spec has no maxResults here. 4.0.0 accepted and validated
+      // --max-results, so it still parses (and validates) but is not sent.
+      asPositiveInt(opts['max-results'], '--max-results');
       const expand = csvFlag(opts['expand']);
       const properties = parseCsv(opts['properties']);
       return client.projects.recent({
@@ -948,13 +945,13 @@ async function executeProjects(client: JiraClient, cmd: ParsedCommand): Promise<
         startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
         orderBy: asString(opts['order-by']),
-        componentSource: asString(opts['component-source']),
+        componentSource: asEnum(opts['component-source'], COMPONENT_SOURCES, 'component-source'),
         query: asString(opts['query']),
       });
     case 'list-all-components': {
       const componentSource = asEnum(
         opts['component-source'],
-        ['jira', 'compass', 'auto'] as const,
+        COMPONENT_SOURCES,
         'component-source',
       );
       return client.projects.listAllComponents(
@@ -1121,8 +1118,8 @@ async function executeProjects(client: JiraClient, cmd: ParsedCommand): Promise<
       });
     case 'get-projects-fields':
       return client.projects.getProjectsFields({
-        projectId: requireIntArray(opts['project-ids'], '--project-ids'),
-        workTypeId: requireIntArray(opts['work-type-ids'], '--work-type-ids'),
+        projectId: requireInt64Ids(opts['project-ids'], '--project-ids'),
+        workTypeId: requireInt64Ids(opts['work-type-ids'], '--work-type-ids'),
         fieldId: csvFlag(opts['field-ids']),
         startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
@@ -1140,27 +1137,31 @@ async function executeProjects(client: JiraClient, cmd: ParsedCommand): Promise<
   }
 }
 
-/** `CreateProjectDetails` keys `projects create --body` may set (all forwarded by the SDK). */
-const CREATE_PROJECT_BODY_KEYS = [
-  'key',
-  'name',
-  'projectTypeKey',
-  'description',
-  'leadAccountId',
-  'url',
-  'assigneeType',
-  'avatarId',
-  'issueSecurityScheme',
-  'permissionScheme',
-  'notificationScheme',
-  'categoryId',
-  'workflowScheme',
-  'issueTypeScheme',
-  'issueTypeScreenScheme',
-  'fieldScheme',
-  'fieldConfigurationScheme',
-  'projectTemplateKey',
-] as const satisfies readonly (keyof CreateProjectData)[];
+/**
+ * `CreateProjectDetails` keys `projects create --body` may set (all forwarded by
+ * the SDK). `satisfies Record<…>` fails the build when a `CreateProjectData` key
+ * is added without being listed here, or a listed key is not one.
+ */
+const CREATE_PROJECT_BODY_KEYS = Object.keys({
+  key: true,
+  name: true,
+  projectTypeKey: true,
+  description: true,
+  leadAccountId: true,
+  url: true,
+  assigneeType: true,
+  avatarId: true,
+  issueSecurityScheme: true,
+  permissionScheme: true,
+  notificationScheme: true,
+  categoryId: true,
+  workflowScheme: true,
+  issueTypeScheme: true,
+  issueTypeScreenScheme: true,
+  fieldScheme: true,
+  fieldConfigurationScheme: true,
+  projectTemplateKey: true,
+} satisfies Record<keyof CreateProjectData, true>);
 
 /** Required `projects create` values (from a flag or `--body`) and the flag named when missing. */
 const CREATE_PROJECT_REQUIRED = [
@@ -1170,21 +1171,21 @@ const CREATE_PROJECT_REQUIRED = [
   ['leadAccountId', '--lead-account-id'],
 ] as const;
 
-/** `UpdateProjectDetails` keys `projects update --body` may set (all forwarded by the SDK). */
-const UPDATE_PROJECT_BODY_KEYS = [
-  'key',
-  'name',
-  'description',
-  'leadAccountId',
-  'url',
-  'assigneeType',
-  'avatarId',
-  'issueSecurityScheme',
-  'permissionScheme',
-  'notificationScheme',
-  'categoryId',
-  'releasedProjectKeys',
-] as const satisfies readonly (keyof UpdateProjectData)[];
+/** `UpdateProjectDetails` keys `projects update --body` may set; exhaustive like the create list. */
+const UPDATE_PROJECT_BODY_KEYS = Object.keys({
+  key: true,
+  name: true,
+  description: true,
+  leadAccountId: true,
+  url: true,
+  assigneeType: true,
+  avatarId: true,
+  issueSecurityScheme: true,
+  permissionScheme: true,
+  notificationScheme: true,
+  categoryId: true,
+  releasedProjectKeys: true,
+} satisfies Record<keyof UpdateProjectData, true>);
 
 /**
  * Build a `projects create|update` body from the optional `--body` JSON
@@ -1208,15 +1209,21 @@ function projectWriteBody(
   return { ...body, ...Object.fromEntries(set) };
 }
 
-function asProjectAssigneeType(
-  value: string | boolean | undefined,
-): 'PROJECT_LEAD' | 'UNASSIGNED' | undefined {
-  const raw = asString(value);
-  if (raw !== undefined && raw !== 'PROJECT_LEAD' && raw !== 'UNASSIGNED') {
-    throw new Error(`--assignee-type must be PROJECT_LEAD or UNASSIGNED, got: ${raw}`);
-  }
-  return raw;
+/**
+ * Required comma-separated int64 IDs, kept as decimal strings so IDs above
+ * 2^53 are sent exactly (Number() would round them).
+ */
+function requireInt64Ids(value: string | boolean | undefined, name: string): string[] {
+  const ids = parseCsv(value)?.map((id) => parsePositiveDecimalIntegerArg(id, name));
+  if (ids === undefined) throw new Error(`Missing required option: ${name}`);
+  return ids;
 }
+
+/** Spec `componentSource` enum on the project component list endpoints. */
+const COMPONENT_SOURCES = ['jira', 'compass', 'auto'] as const;
+
+/** Spec `assigneeType` enum on `CreateProjectDetails`/`UpdateProjectDetails`. */
+const PROJECT_ASSIGNEE_TYPES = ['PROJECT_LEAD', 'UNASSIGNED'] as const;
 
 /** Avatar image types Jira accepts, by lower-case file extension. */
 const AVATAR_IMAGE_TYPES: ReadonlyMap<string, string> = new Map([
@@ -1253,6 +1260,10 @@ function roleActorsBody(body: Record<string, unknown>): ActorsMap {
   }
   if (!Object.values(body).some((value) => (value as string[]).length > 0)) {
     throw new Error('--body must name at least one actor in user, group or groupId');
+  }
+  // Spec ActorsMap: `group` cannot be used with `groupId`.
+  if ('group' in body && 'groupId' in body) {
+    throw new Error('--body cannot combine group and groupId; use groupId');
   }
   return body as ActorsMap;
 }

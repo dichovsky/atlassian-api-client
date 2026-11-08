@@ -11355,7 +11355,7 @@ describe('executeJiraCommand', () => {
           }),
           GLOBALS,
         ),
-      ).rejects.toThrow('--assignee-type must be PROJECT_LEAD or UNASSIGNED');
+      ).rejects.toThrow('--assignee-type must be one of: PROJECT_LEAD, UNASSIGNED');
     });
 
     it('projects create passes valid --assignee-type', async () => {
@@ -11402,7 +11402,7 @@ describe('executeJiraCommand', () => {
           cmd('projects', 'update', ['PROJ'], { 'assignee-type': 'INVALID' }),
           GLOBALS,
         ),
-      ).rejects.toThrow('--assignee-type must be PROJECT_LEAD or UNASSIGNED');
+      ).rejects.toThrow('--assignee-type must be one of: PROJECT_LEAD, UNASSIGNED');
     });
 
     it('projects update passes valid --assignee-type', async () => {
@@ -12178,8 +12178,8 @@ describe('executeJiraCommand', () => {
         GLOBALS,
       );
       expect(jiraProjectsMock.getProjectsFields).toHaveBeenCalledWith({
-        projectId: [10000, 10001],
-        workTypeId: [10002],
+        projectId: ['10000', '10001'],
+        workTypeId: ['10002'],
         fieldId: undefined,
         startAt: undefined,
         maxResults: undefined,

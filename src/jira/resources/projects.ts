@@ -384,12 +384,30 @@ export interface ProjectFieldBean {
   readonly description?: string;
 }
 
-/** Path segment for a project role ID; rejects anything but a positive safe integer. */
+/**
+ * Path segment for a project role ID; rejects anything but a positive decimal
+ * integer. Untyped callers may still pass the ID as a decimal string, as 4.0.0 allowed.
+ */
 function roleIdSegment(roleId: number): string {
-  if (!Number.isSafeInteger(roleId) || roleId <= 0) {
-    throw new ValidationError(`roleId must be a positive integer, got: ${String(roleId)}`);
+  const id = String(roleId);
+  if (!/^[1-9]\d*$/.test(id)) {
+    throw new ValidationError(`roleId must be a positive integer, got: ${id}`);
   }
-  return encodePathSegment(String(roleId));
+  return encodePathSegment(id);
+}
+
+/**
+ * Realm-independent Blob check, matching what fetch sends as raw bytes: a Blob
+ * from another realm or a polyfill fails `instanceof Blob` but is still a Blob.
+ */
+function isBlobLike(value: unknown): value is Blob {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    typeof (value as Blob).arrayBuffer === 'function' &&
+    typeof (value as Blob).type === 'string' &&
+    /^\[object (Blob|File)\]$/.test(Object.prototype.toString.call(value))
+  );
 }
 
 export class ProjectsResource {
@@ -723,7 +741,7 @@ export class ProjectsResource {
     content: unknown,
     params?: LoadProjectAvatarParams,
   ): Promise<ProjectAvatar> {
-    if (!(content instanceof Blob)) {
+    if (!isBlobLike(content)) {
       throw new ValidationError('loadAvatar needs the image (JPEG, GIF or PNG) as a Blob');
     }
     const query: Record<string, number | undefined> = {};
@@ -1181,6 +1199,12 @@ export class ProjectsResource {
 
   // ── B706: projects fields ──────────────────────────────────────────────────
 
+  // The supported form is declared last so ReturnType/Parameters infer it.
+  /**
+   * @deprecated Jira requires `projectId` and `workTypeId`; this form throws a
+   * {@link ValidationError} before a request is sent.
+   */
+  getProjectsFields(): Promise<unknown[]>;
   /**
    * Get the fields of the given work types (issue types) in the given
    * projects, one page at a time (B706).
@@ -1188,11 +1212,6 @@ export class ProjectsResource {
   getProjectsFields(
     params: GetProjectsFieldsParams,
   ): Promise<OffsetPaginatedResponse<ProjectFieldBean>>;
-  /**
-   * @deprecated Jira requires `projectId` and `workTypeId`; this form throws a
-   * {@link ValidationError} before a request is sent.
-   */
-  getProjectsFields(): Promise<unknown[]>;
   async getProjectsFields(
     params?: GetProjectsFieldsParams,
   ): Promise<OffsetPaginatedResponse<ProjectFieldBean> | unknown[]> {
