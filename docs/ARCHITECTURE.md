@@ -99,7 +99,7 @@ src/
 │   ├── resources/
 │   │   ├── issues.ts            # /rest/api/3/issue
 │   │   ├── projects.ts          # /rest/api/3/project
-│   │   ├── search.ts            # /rest/api/3/search
+│   │   ├── search.ts            # /rest/api/3/search/jql (current) + deprecated /rest/api/3/search
 │   │   ├── users.ts             # /rest/api/3/user, /rest/api/3/myself
 │   │   ├── issue-types.ts       # /rest/api/3/issuetype
 │   │   ├── priorities.ts        # /rest/api/3/priority
@@ -115,7 +115,7 @@ src/
 │   │   ├── fields.ts            # /rest/api/3/field
 │   │   ├── webhooks.ts          # /rest/api/3/webhook
 │   │   ├── jql.ts               # /rest/api/3/jql/*
-│   │   ├── bulk.ts              # /rest/api/3/issue/bulk, issuetype/*/properties/bulk
+│   │   ├── bulk.ts              # /rest/api/3/issue/bulk, issue/properties/{key}, bulk/issues/*, bulk/queue/{id}, and the DevOps */bulk submit routes
 │   │   └── index.ts             # Resources barrel
 │   ├── client.ts                # JiraClient class
 │   └── index.ts                 # Jira barrel export
@@ -224,6 +224,7 @@ interface ClientConfig {
   fetch?: typeof fetch; // Optional transport fetch implementation
   logger?: Logger;
   middleware?: Middleware[];
+  requestId?: RequestIdOptions; // X-Request-Id propagation (inbound capture is always on)
 }
 ```
 
@@ -266,7 +267,7 @@ Each error includes:
 
 Errors never include auth credentials or tokens in their message.
 
-**`HttpError.toJSON()`** omits `responseBody` so raw API payloads are not written to log aggregators via `JSON.stringify(error)`. The serialised form includes only `name`, `code`, `status`, and `message`.
+**`HttpError.toJSON()`** omits `responseBody` so raw API payloads are not written to log aggregators via `JSON.stringify(error)`. The serialised form includes only `name`, `code`, `status`, and `message`, plus `requestId` when the server returned one.
 
 ### Retry (`src/core/retry.ts`)
 
@@ -295,14 +296,19 @@ delay = min(baseDelay * 2^attempt + random_jitter, maxDelay)
 - Timeout errors (already represents a long wait)
 - `OAuthError` with `refreshStatus` in the 4xx range (misconfigured OAuth)
 
-### Rate Limiter (`src/core/rate-limiter.ts`)
+### Rate Limiting (`src/core/retry.ts`, `src/core/rate-limiter.ts`)
 
-Handles 429 responses:
+Two independent mechanisms handle rate limits:
 
-1. Reads `Retry-After` header (seconds)
-2. Waits the specified duration before retry
-3. Falls back to exponential backoff if no header
-4. Exposes rate-limit state from `X-RateLimit-*` headers
+**Reactive (`retry.ts`)** — handles 429 responses after the server returns them:
+
+1. `HttpTransport` reads the `Retry-After` header (seconds) into `RateLimitError.retryAfter`
+2. `executeWithRetry` waits that long (capped at `maxRetryDelay`, jitter included) before the next attempt
+3. Without the header it falls back to exponential backoff
+
+**Proactive (`rate-limiter.ts`)** — `createRateLimiterMiddleware` is an opt-in client-side token bucket that waits for a token (or throws `RateLimiterExhaustedError` after `maxWaitMs`) before a request is dispatched. See [Middleware](#middleware-layer) for ordering.
+
+`rate-limiter.ts` also exports the header parsers `getRetryAfterMs` and `parseRateLimitHeaders`. They are not part of the limiter: they feed the reactive path (`RateLimitError.retryAfter`) and `ApiResponse.rateLimit`.
 
 ### Pagination (`src/core/pagination.ts`)
 
@@ -393,21 +399,21 @@ response:  a ← b ← c ← fetch
 Why order matters:
 
 - **Caching wins _inside_ of auth.** `[oauth, cache, batch]` is correct for most apps: the cache stores the response body only, never the `Authorization` header, so a fresh token is always attached to each request by OAuth before the cached payload short-circuits the fetch. Putting cache outermost (`[cache, oauth, batch]`) risks serving stale responses to requests that _should_ trigger a token refresh.
-- **Batching wins _innermost_.** Placing `batch` last means deduplication happens after auth headers are injected, so two concurrent requests from the same user actually collapse into one `fetch`. If batch were outermost, requests from different auth contexts could alias to the same in-flight call.
+- **Batching wins _innermost_ of the auth and cache layers.** Placing `batch` after them means deduplication happens after auth headers are injected, so two concurrent requests from the same user actually collapse into one `fetch`. If batch were outermost, requests from different auth contexts could alias to the same in-flight call.
 - **Connect JWT replaces OAuth, not stacks with it.** JWT signing depends on the final request URL + method, so the JWT middleware must be the innermost auth layer. Use `[connectJwt, cache, batch]` for Connect apps — do _not_ layer `oauth` and `connectJwt` together.
 
 Recommended orderings:
 
-| Use case               | Middleware array                                                                                                                      |
-| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| OAuth 2.0 + cache      | `[oauthRefresh, cache, batch]`                                                                                                        |
-| Atlassian Connect app  | `[connectJwt, cache, batch]`                                                                                                          |
-| Plain Basic/Bearer app | `[cache, batch]` (no auth layer)                                                                                                      |
-| Custom logging shim    | Place your logger outermost (`[logger, oauthRefresh, cache, batch]`) so it sees the final response — including retries and cache hits |
+| Use case               | Middleware array                                                                                                                                                                                       |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| OAuth 2.0 + cache      | `[oauthRefresh, cache, batch]`                                                                                                                                                                         |
+| Atlassian Connect app  | `[connectJwt, cache, batch]`                                                                                                                                                                           |
+| Plain Basic/Bearer app | `[cache, batch]` (no auth layer)                                                                                                                                                                       |
+| Custom logging shim    | Place your logger outermost (`[logger, oauthRefresh, cache, batch]`) so it sees every cache hit; because the retry loop sits outside the chain, it runs once per attempt, not once per logical request |
 
 ### OAuth Scope Detection (`src/core/scopes.ts`)
 
-`detectRequiredScopes(operations)` maps selected Atlassian operation strings (e.g. `'jira.issues.create'`) to recommended granular Cloud OAuth 2.0 scope strings. `listKnownOperations()` returns the mapped operation names for tooling. Scope validation uses the broader catalog derived from the pinned OpenAPI documents: 247 unique granular scopes referenced by operations, 8 additional granular catalog entries, and 16 classic or Jira Software compatibility scopes, for 271 recognized strings total.
+`detectRequiredScopes(operations)` maps selected Atlassian operation strings (e.g. `'jira.issues.create'`) to recommended granular Cloud OAuth 2.0 scope strings. `listKnownOperations()` returns the mapped operation names for tooling. Scope validation uses the broader catalog derived from the pinned OpenAPI documents: 247 unique granular scopes referenced by operations, 10 additional granular catalog entries (including `read:bulk-job:jira` and `write:bulk-job:jira`, which appear only in the OAuth 2.0 security scheme), and 16 classic or Jira Software compatibility scopes, for 273 recognized strings total.
 
 ### OpenAPI Type Generator (`src/core/openapi.ts`)
 
@@ -521,7 +527,8 @@ Same composition pattern as Confluence, but with offset-based pagination:
 class IssuesResource {
   async get(issueIdOrKey: string, params?: GetIssueParams): Promise<Issue> { ... }
   async create(data: CreateIssueData): Promise<CreatedIssue> { ... }
-  async update(issueIdOrKey: string, data: UpdateIssueData): Promise<void> { ... }
+  // Resolves the edited Issue when params.returnIssue is true (typed overload); otherwise void
+  async update(issueIdOrKey: string, data: UpdateIssueData, params?: UpdateIssueParams): Promise<void> { ... }
   async delete(issueIdOrKey: string): Promise<void> { ... }
   async getTransitions(issueIdOrKey: string): Promise<Transition[]> { ... }
   async transition(issueIdOrKey: string, data: TransitionData): Promise<void> { ... }
@@ -532,7 +539,7 @@ class IssuesResource {
 
 - **ADF format:** Issue descriptions and comments use Atlassian Document Format (JSON). Types reflect this.
 - **Search endpoints:** the resource supports legacy offset-based `GET`/`POST /rest/api/3/search` plus cursor-based `GET`/`POST /rest/api/3/search/jql`. Search responses use `{ issues: [...] }` rather than `{ values: [...] }`.
-- **Expand parameter:** Optional `expand` query parameter for additional data. Typed as string array.
+- **Expand parameter:** Optional `expand` for additional data. It is a comma-separated `string` on most params (for example `GetIssueParams.expand`); a few param types (for example the JQL search params) take a `string[]` and the SDK converts it to the shape the endpoint expects.
 - **Issue keys:** Accept both numeric IDs and string keys (e.g., `PROJ-123`). Typed as `string`.
 
 ---
@@ -651,15 +658,20 @@ The package uses only Node.js built-ins available in the supported runtime (Node
 
 ### Dev Dependencies
 
-| Package               | Purpose                                    |
-| --------------------- | ------------------------------------------ |
-| `typescript`          | TypeScript compiler                        |
-| `vitest`              | Test framework                             |
-| `@vitest/coverage-v8` | V8-based coverage                          |
-| `eslint`              | Linting                                    |
-| `typescript-eslint`   | TypeScript ESLint rules + parser (unified) |
-| `prettier`            | Code formatting                            |
-| `fast-check`          | Property-based testing (B014)              |
+| Package                      | Purpose                                                                                                           |
+| ---------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `@typescript/native`         | TypeScript 7 (aliased from `npm:typescript`) — the build and type-check compiler (`npm run tsc:7`)                |
+| `typescript`                 | TypeScript 6 API bridge (aliased from `npm:@typescript/typescript6`) for `typescript-eslint`, codemap, JSDoc test |
+| `@types/node`                | Node.js type definitions                                                                                          |
+| `vitest`                     | Test framework                                                                                                    |
+| `@vitest/coverage-v8`        | V8-based coverage                                                                                                 |
+| `eslint`, `@eslint/js`       | Linting                                                                                                           |
+| `typescript-eslint`          | TypeScript ESLint rules + parser (unified)                                                                        |
+| `globals`                    | Global-variable definitions for the ESLint config                                                                 |
+| `prettier`                   | Code formatting                                                                                                   |
+| `fast-check`                 | Property-based testing (B014)                                                                                     |
+| `conventional-changelog-cli` | Changelog generation (`npm run changelog`)                                                                        |
+| `rimraf`                     | Cross-platform clean (`npm run clean`)                                                                            |
 
 ---
 
@@ -741,7 +753,7 @@ Default is `basic`. Unknown values fall back to `basic` so existing invocations 
 
 ## Build & Output
 
-**Build tool:** `tsc` (TypeScript compiler, no bundler)
+**Build tool:** `tsc` from TypeScript 7 (`@typescript/native`, run via `npm run build`; no bundler)
 
 **Output:**
 

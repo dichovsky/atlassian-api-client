@@ -98,9 +98,10 @@ const jira = new JiraClient({
 const issue = await jira.issues.get('PROJ-123');
 console.log(issue.fields);
 
-// Search with JQL
-const results = await jira.search.search({
+// Search with JQL (cursor-based `/rest/api/3/search/jql`)
+const results = await jira.search.searchJqlPost({
   jql: 'project = PROJ AND status = "In Progress"',
+  fields: ['summary', 'status'],
 });
 console.log(results.issues);
 ```
@@ -199,11 +200,6 @@ for await (const page of confluence.pages.listAll({ spaceId: '123' })) {
 for await (const project of jira.projects.listAll()) {
   console.log(project.name);
 }
-
-// Jira search
-for await (const issue of jira.search.searchAll({ jql: 'project = PROJ' })) {
-  console.log(issue.key);
-}
 ```
 
 ### Manual Pagination
@@ -218,7 +214,23 @@ console.log(result.results); // current page items
 const projects = await jira.projects.list({ maxResults: 50 });
 console.log(projects.values); // current page items
 console.log(projects.total); // total available
+
+// Jira search - cursor-based; follow nextPageToken until isLast
+let nextPageToken: string | undefined;
+do {
+  const page = await jira.search.searchJqlPost({
+    jql: 'project = PROJ',
+    fields: ['summary'],
+    nextPageToken,
+  });
+  for (const issue of page.issues) {
+    console.log(issue.key);
+  }
+  nextPageToken = page.isLast === true ? undefined : page.nextPageToken;
+} while (nextPageToken !== undefined);
 ```
+
+The current Jira search endpoint (`/rest/api/3/search/jql`) is token-paginated and has no async-iterator helper. The legacy `search`, `searchGet` and `searchAll` methods target `/rest/api/3/search`, which Atlassian is removing, and are marked `@deprecated`.
 
 ## Error Handling
 
@@ -520,7 +532,7 @@ Key behaviours:
 - **Waits, never rejects by default** — when the bucket is empty the middleware sleeps until the next token is available, smoothing traffic rather than failing fast. Set `maxWaitMs` to cap the wait and throw `RateLimiterExhaustedError` instead.
 - **Abort-aware** — the wait honours `RequestOptions.signal`, so caller-initiated cancellations and transport timeouts still work correctly during a wait.
 - **Retry interaction** — each retry attempt re-enters the middleware and consumes a token. This is intentional: retried requests represent real outbound traffic and should be rate-limited just like first attempts.
-- **Recommended ordering** — place this middleware after the circuit breaker (when present) so a tripped circuit short-circuits without burning tokens, and after (outside) cache/batch so cached/deduped hits don't burn a token.
+- **Recommended ordering** — place this middleware after the circuit breaker (when present) so a tripped circuit short-circuits without burning tokens, and after (inside) cache/batch so cached/deduped hits don't burn a token. The first array entry is the outermost wrapper, so for example `[breaker, oauth, cache, batch, rateLimiter]` lets a cache hit return before the limiter runs.
 
 `RateLimiterExhaustedError` (code `'RATE_LIMITER_EXHAUSTED'`) is a client-side error, distinct from the server-side `RateLimitError` (HTTP 429).
 
@@ -541,10 +553,10 @@ const softwareScopes = detectRequiredScopes([
 // → ['read:board-scope:jira-software', 'read:issue-details:jira', 'read:security:jira']
 
 const allOps = listKnownOperations();
-// → ['confluence.pages.create', 'confluence.pages.delete', ...]
+// → sorted operation names: ['confluence.attachments.delete', 'confluence.attachments.get', 'confluence.attachments.list', ...]
 ```
 
-The operation annotations contain 38 Confluence v2 scopes, 33 Jira Software scopes, and 180 Jira Platform Beta scopes (247 unique granular strings after overlap). Validation also recognizes 8 granular catalog entries not referenced by current operations and 16 classic or Jira Software compatibility scopes, for 271 accepted strings in total. `detectRequiredScopes()` continues to recommend granular scopes; the operation registry remains a selected convenience mapping rather than a claim that every SDK method has been mapped. `atlas scopes validate <scope>...` validates scope strings without making a network request.
+The operation annotations contain 38 Confluence v2 scopes, 33 Jira Software scopes, and 180 Jira Platform Beta scopes (247 unique granular strings after overlap). Validation also recognizes 10 granular catalog entries not referenced by current operations (including `read:bulk-job:jira` and `write:bulk-job:jira`, which appear only in the OAuth 2.0 security scheme) and 16 classic or Jira Software compatibility scopes, for 273 accepted strings in total. `detectRequiredScopes()` continues to recommend granular scopes; the operation registry remains a selected convenience mapping rather than a claim that every SDK method has been mapped. `atlas scopes validate <scope>...` validates scope strings without making a network request.
 
 ## OpenAPI Type Generation
 
@@ -572,7 +584,11 @@ const spec = {
 };
 
 const { source, typeNames } = generateTypes(spec);
-// source → 'export interface Issue { id?: string; summary?: string | null; }'
+// source → a two-line "Generated from OpenAPI spec" header comment, then:
+//   export interface Issue {
+//     readonly id?: string;
+//     readonly summary?: string | null;
+//   }
 // typeNames → ['Issue']
 ```
 
@@ -596,9 +612,9 @@ npm run api-coverage
 Example output:
 
 ```
-✓ jiraPlatform: 971 types; contract ecba06ea28d7 (https://developer.atlassian.com/cloud/.../swagger-v3.v3.json)
+✓ jiraPlatform: 1000 types; contract d2bfad62f84c (https://developer.atlassian.com/cloud/.../swagger-v3.v3.json)
 ✓ jiraSoftware: 66 types; contract 1b3a0fd3f68e (https://developer.atlassian.com/cloud/.../swagger.v3.json)
-✓ confluence: 142 types; contract dbd7f3110251 (https://developer.atlassian.com/cloud/.../openapi-v2.v3.json)
+✓ confluence: 221 types; contract ad6d0bc5ad1f (https://developer.atlassian.com/cloud/.../openapi-v2.v3.json)
 ```
 
 `api-coverage` compares executable SDK routes with the pinned snapshots and fails on unresolved
@@ -734,27 +750,27 @@ The clients expose a broad Atlassian API surface. The tables below highlight com
 
 ### JiraClient
 
-| Resource           | Methods                                                                    |
-| ------------------ | -------------------------------------------------------------------------- |
-| `issues`           | `get`, `create`, `update`, `delete`, `getTransitions`, `transition`        |
-| `projects`         | `list`, `get`, `listAll`                                                   |
-| `search`           | `search`, `searchGet`, `searchAll`                                         |
-| `users`            | `get`, `getCurrentUser`, `search`                                          |
-| `issueTypes`       | `list`, `get`                                                              |
-| `priorities`       | `list`, `get`                                                              |
-| `statuses`         | `list`                                                                     |
-| `issueComments`    | `list`, `get`, `create`, `update`, `delete`                                |
-| `issueAttachments` | `list`, `get`, `upload`                                                    |
-| `labels`           | `list`                                                                     |
-| `boards`           | `list`, `get`, `getIssues`                                                 |
-| `sprints`          | `get`, `create`, `update`, `delete`, `getIssues`                           |
-| `workflows`        | `list`, `get`                                                              |
-| `dashboards`       | `list`, `get`, `create`, `update`, `delete`                                |
-| `filters`          | `list`, `get`, `create`, `update`, `delete`                                |
-| `fields`           | `list`, `listAll`, `create`, `update`, `delete`                            |
-| `webhooks`         | `list`, `register`, `delete`                                               |
-| `jql`              | `getAutocompleteData`, `parse`, `sanitize`, `getFieldReferenceSuggestions` |
-| `bulk`             | `createBulk`, `setPropertyBulk`, `deletePropertyBulk`                      |
+| Resource           | Methods                                                                                              |
+| ------------------ | ---------------------------------------------------------------------------------------------------- |
+| `issues`           | `get`, `create`, `update`, `delete`, `getTransitions`, `transition`                                  |
+| `projects`         | `list`, `get`, `listAll`                                                                             |
+| `search`           | `searchJqlGet`, `searchJqlPost`, `approximateCount` (deprecated: `search`, `searchGet`, `searchAll`) |
+| `users`            | `get`, `getCurrentUser`, `search`                                                                    |
+| `issueTypes`       | `list`, `get`                                                                                        |
+| `priorities`       | `list`, `get`                                                                                        |
+| `statuses`         | `list`                                                                                               |
+| `issueComments`    | `list`, `get`, `create`, `update`, `delete`                                                          |
+| `issueAttachments` | `list`, `get`, `upload`                                                                              |
+| `labels`           | `list`                                                                                               |
+| `boards`           | `list`, `get`, `getIssues`                                                                           |
+| `sprints`          | `get`, `create`, `update`, `delete`, `getIssues`                                                     |
+| `workflows`        | `list`, `get`                                                                                        |
+| `dashboards`       | `list`, `get`, `create`, `update`, `delete`                                                          |
+| `filters`          | `list`, `get`, `create`, `update`, `delete`                                                          |
+| `fields`           | `list`, `listAll`, `create`, `update`, `delete`                                                      |
+| `webhooks`         | `list`, `register`, `delete`                                                                         |
+| `jql`              | `getAutocompleteData`, `parse`, `sanitize`, `getFieldReferenceSuggestions`                           |
+| `bulk`             | `createBulk`, `setPropertyBulk`, `deletePropertyBulk`                                                |
 
 ## Recipes
 
@@ -785,12 +801,20 @@ const client = new ConfluenceClient({
 
 ### X-Request-Id propagation
 
-The client always captures the server-assigned request id from response headers (`X-AREQUESTID` first, then `X-Request-Id`) and exposes it as `response.requestId`. On error responses the id is available as `error.requestId` (also serialised by `error.toJSON()` for structured logging).
+The client always captures the server-assigned request id from response headers (`X-AREQUESTID` first, then `X-Request-Id`). On error responses the id is available as `error.requestId` (also serialised by `error.toJSON()` for structured logging). On success it is the `requestId` field of the transport-level `ApiResponse`; resource methods such as `client.pages.get()` return only the unwrapped `data`, so read it from a [middleware](#middleware) that sees the `ApiResponse`.
 
 Outbound id generation is opt-in. Set `requestId: { generate: true }` to attach a UUID to every request. The **same id is reused across all retry attempts** so the server can correlate a logical request regardless of how many tries it took.
 
 ```typescript
-import { ConfluenceClient, HttpError, type RequestIdOptions } from 'atlassian-api-client';
+import { ConfluenceClient, HttpError, type Middleware } from 'atlassian-api-client';
+
+// Success path - resource methods return unwrapped data, so capture the
+// server's id in a middleware, where the full ApiResponse is visible
+const logRequestId: Middleware = async (options, next) => {
+  const response = await next(options);
+  console.log('server request id:', response.requestId); // e.g. 'arq-a1b2c3...'
+  return response;
+};
 
 const client = new ConfluenceClient({
   baseUrl: 'https://yourcompany.atlassian.net',
@@ -801,11 +825,11 @@ const client = new ConfluenceClient({
     // generator: () => myIdGen(), // optional: replace crypto.randomUUID with your own factory
     // readResponseHeaders: ['X-AREQUESTID', 'X-Request-Id'], // default inbound header list
   },
+  middleware: [logRequestId],
 });
 
-// Success path — the server's response id is on the ApiResponse
-const response = await client.pages.get('123456');
-console.log('server request id:', response.requestId); // e.g. 'arq-a1b2c3...'
+const page = await client.pages.get('123456'); // logRequestId prints the id above
+console.log(page.title);
 
 // Error path — same field on HttpError, included in toJSON() for structured loggers
 try {

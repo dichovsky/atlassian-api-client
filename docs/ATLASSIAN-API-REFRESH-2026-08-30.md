@@ -1,5 +1,7 @@
 # Atlassian API interface refresh — 2026-08-30
 
+> **HISTORICAL SNAPSHOT — the 4.0.0 refresh, not current status.** The spec hashes, path and operation counts, and coverage figures below describe the snapshots pinned for 4.0.0. The snapshots were re-pinned on 2026-11-08 (Jira Platform v3 and Confluence v2). For the current SHA-256 values, contract fingerprints, and counts, see [`spec/README.md`](../spec/README.md); for the 2026-11 refresh deltas, see the 4.1.0 release notes in [`CHANGELOG.md`](../CHANGELOG.md); for present coverage, run `npm run api-coverage`.
+
 This report records the implementation refresh against the current official Cloud interfaces:
 
 - Confluence REST API v2
