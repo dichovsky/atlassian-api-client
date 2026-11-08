@@ -24,7 +24,7 @@ for (const project of projects.values) {
 }
 
 // Search issues
-const results = await jira.search.search({
+const results = await jira.search.searchJqlPost({
   jql: 'assignee = currentUser() ORDER BY updated DESC',
   maxResults: 5,
   fields: ['summary', 'status'],

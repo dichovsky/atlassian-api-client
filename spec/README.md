@@ -1,6 +1,6 @@
 # OpenAPI Specs
 
-Pinned snapshots of upstream Atlassian REST API specifications. Used by implementers and reviewers as the single source of truth for endpoint verb/path/body/query shapes during API-coverage work (see `CLAUDE.md` → PR Review HARD).
+Pinned snapshots of upstream Atlassian REST API specifications. Used by implementers and reviewers as the single source of truth for endpoint verb/path/body/query shapes during API-coverage work (see `CLAUDE.md` → Required Workflow (step 6) and Critical Invariants).
 
 ## Files
 
