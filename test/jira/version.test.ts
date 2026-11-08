@@ -478,10 +478,9 @@ describe('VersionResource', () => {
       expect(body['url']).toBe('https://example.com');
     });
 
-    it('does NOT forward readOnly issueId/relatedWorkId even when provided (B1050)', async () => {
+    it('sends relatedWorkId, which names the entry to update, but not readOnly issueId', async () => {
       transport.respondWith(makeRelatedWork());
-      // Cast through unknown bypasses the fixed type; verifies the implementation
-      // strips the readOnly fields regardless of what a caller forces in.
+      // The PUT path names only the version; Jira reads the entry from the body.
       await resource.updateRelatedWork('10001', {
         category: 'Design',
         issueId: 20001,
@@ -489,9 +488,7 @@ describe('VersionResource', () => {
       } as unknown as Parameters<typeof resource.updateRelatedWork>[1]);
 
       const body = transport.lastCall?.options.body as Record<string, unknown>;
-      expect(body['issueId']).toBeUndefined();
-      expect(body['relatedWorkId']).toBeUndefined();
-      expect(body['category']).toBe('Design');
+      expect(body).toEqual({ relatedWorkId: 'rw-1', category: 'Design' });
     });
 
     it('omits undefined optional writable fields', async () => {

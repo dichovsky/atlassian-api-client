@@ -136,6 +136,35 @@ export interface EvaluateExpressionData {
   readonly context?: ExpressionEvalContext;
 }
 
+/**
+ * JQL context bean for the `issues` context variable in POST
+ * /expression/evaluate (`JexpEvaluateCtxJqlIssues` schema). Page through the
+ * issues by passing back the `nextPageToken` from the previous response's
+ * `meta.issues.jql`; there is no `startAt`.
+ */
+export interface ExpressionEvaluateJqlContext {
+  readonly query?: string;
+  readonly maxResults?: number;
+  readonly nextPageToken?: string;
+}
+
+/**
+ * Evaluation context for POST /expression/evaluate
+ * (`JiraExpressionEvaluateContextBean` schema): {@link ExpressionEvalContext}
+ * with the token-paged `issues.jql` of the current endpoint.
+ */
+export interface ExpressionEvaluateContext extends Omit<ExpressionEvalContext, 'issues'> {
+  readonly issues?: { readonly jql?: ExpressionEvaluateJqlContext };
+}
+
+/** Request body for POST /expression/evaluate (`JiraExpressionEvaluateRequestBean`). */
+export interface ExpressionEvaluateData {
+  /** The Jira expression to evaluate. */
+  readonly expression: string;
+  /** Optional evaluation context. */
+  readonly context?: ExpressionEvaluateContext;
+}
+
 /** Query parameters for POST /expression/eval and /expression/evaluate. */
 export interface EvaluateExpressionParams {
   /** Comma-separated expansion keys (e.g. `meta.complexity`). */
@@ -303,7 +332,7 @@ export class ExpressionResource {
    * (required), optional `isLast`. Does NOT return offset-based fields.
    */
   async evaluate(
-    data: EvaluateExpressionData,
+    data: ExpressionEvaluateData,
     params?: EvaluateExpressionParams,
   ): Promise<EvaluateExpressionResponse> {
     const query: Record<string, string | undefined> = {};

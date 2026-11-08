@@ -217,6 +217,10 @@ export interface CreateCustomFieldData {
 
 /** Issue source for plan creation. */
 export interface CreateIssueSourceData {
+  /**
+   * `Board`, `Project` or `Filter`. `Custom` appears only in responses: Jira
+   * rejects it on create (spec `CreateIssueSourceRequest`).
+   */
   readonly type: IssueSourceType;
   readonly value: number;
 }
@@ -307,6 +311,8 @@ export class PlansResource {
   /**
    * B625: List plans with cursor pagination.
    * GET /rest/api/3/plans/plan
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   async list(params?: ListPlansParams): Promise<PlanPage> {
     const query: Record<string, string | number | boolean | undefined> = {};
@@ -324,6 +330,8 @@ export class PlansResource {
 
   /**
    * B625: Iterate every plan across all cursor pages.
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   async *listAll(params?: Omit<ListPlansParams, 'cursor'>): AsyncGenerator<PlanSummary> {
     const baseQuery: Record<string, string | number | boolean | undefined> = {};
@@ -355,6 +363,8 @@ export class PlansResource {
    * B626: Create a plan.
    * POST /rest/api/3/plans/plan
    * Returns the new plan ID (integer).
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   async create(data: CreatePlanData, useGroupId?: boolean): Promise<number> {
     const query: Record<string, boolean | undefined> = {};
@@ -382,6 +392,8 @@ export class PlansResource {
   /**
    * B627: Get a plan by ID.
    * GET /rest/api/3/plans/plan/{planId}
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   async get(planId: number, params?: GetPlanParams): Promise<PlanResponse> {
     const query: Record<string, boolean | undefined> = {};
@@ -402,9 +414,11 @@ export class PlansResource {
    * to JSON and sent as a raw binary blob so the transport sets the correct
    * `Content-Type` header instead of the default `application/json`.
    *
-   * Pass a `JsonPatchOperation[]` array (RFC 6902). Passing a single
-   * `Record<string, unknown>` is accepted for backward compatibility but callers
-   * should migrate to the array form.
+   * Pass a `JsonPatchOperation[]` array (RFC 6902). A single operation object
+   * is still accepted for backward compatibility and is sent wrapped in an
+   * array; callers should migrate to the array form.
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   async update(
     planId: number,
@@ -417,13 +431,15 @@ export class PlansResource {
       method: 'PUT',
       path: `${this.baseUrl}/plans/plan/${encodePathSegment(String(planId))}`,
       query,
-      binaryBody: new Blob([JSON.stringify(patch)], { type: 'application/json-patch+json' }),
+      binaryBody: jsonPatchBlob(patch),
     });
   }
 
   /**
    * B629: Archive a plan.
    * PUT /rest/api/3/plans/plan/{planId}/archive
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   async archive(planId: number): Promise<void> {
     await this.transport.request<undefined>({
@@ -436,6 +452,8 @@ export class PlansResource {
    * B630: Duplicate a plan.
    * POST /rest/api/3/plans/plan/{planId}/duplicate
    * Returns the new plan ID (integer).
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   async duplicate(planId: number, data: DuplicatePlanData): Promise<number> {
     const response = await this.transport.request<number>({
@@ -449,6 +467,8 @@ export class PlansResource {
   /**
    * B631: List teams for a plan with cursor pagination.
    * GET /rest/api/3/plans/plan/{planId}/team
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   async listTeams(planId: number, params?: ListPlanTeamsParams): Promise<PlanTeamPage> {
     const query: Record<string, string | number | undefined> = {};
@@ -464,6 +484,8 @@ export class PlansResource {
 
   /**
    * B631: Iterate every team for a plan across all cursor pages.
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   async *listTeamsAll(
     planId: number,
@@ -497,6 +519,8 @@ export class PlansResource {
   /**
    * B632: Add an Atlassian team to a plan.
    * POST /rest/api/3/plans/plan/{planId}/team/atlassian
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   async addAtlassianTeam(planId: number, data: AddAtlassianTeamData): Promise<void> {
     const body: Record<string, unknown> = {
@@ -516,6 +540,8 @@ export class PlansResource {
   /**
    * B633: Remove an Atlassian team from a plan.
    * DELETE /rest/api/3/plans/plan/{planId}/team/atlassian/{atlassianTeamId}
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   async deleteAtlassianTeam(planId: number, atlassianTeamId: string): Promise<void> {
     await this.transport.request<undefined>({
@@ -527,6 +553,8 @@ export class PlansResource {
   /**
    * B634: Get an Atlassian team from a plan.
    * GET /rest/api/3/plans/plan/{planId}/team/atlassian/{atlassianTeamId}
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   async getAtlassianTeam(planId: number, atlassianTeamId: string): Promise<AtlassianTeamResponse> {
     const response = await this.transport.request<AtlassianTeamResponse>({
@@ -541,8 +569,10 @@ export class PlansResource {
    * PUT /rest/api/3/plans/plan/{planId}/team/atlassian/{atlassianTeamId}
    *
    * Spec media type is `application/json-patch+json`. Pass a `JsonPatchOperation[]`
-   * array (RFC 6902). Passing a single `Record<string, unknown>` is accepted for
-   * backward compatibility but callers should migrate to the array form.
+   * array (RFC 6902). A single operation object is still accepted for backward
+   * compatibility and is sent wrapped in an array.
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   async updateAtlassianTeam(
     planId: number,
@@ -552,7 +582,7 @@ export class PlansResource {
     await this.transport.request<undefined>({
       method: 'PUT',
       path: `${this.baseUrl}/plans/plan/${encodePathSegment(String(planId))}/team/atlassian/${encodePathSegment(atlassianTeamId)}`,
-      binaryBody: new Blob([JSON.stringify(patch)], { type: 'application/json-patch+json' }),
+      binaryBody: jsonPatchBlob(patch),
     });
   }
 
@@ -560,6 +590,8 @@ export class PlansResource {
    * B636: Create a plan-only team in a plan.
    * POST /rest/api/3/plans/plan/{planId}/team/planonly
    * Returns the new team ID (integer).
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   async createPlanOnlyTeam(planId: number, data: CreatePlanOnlyTeamData): Promise<number> {
     const body: Record<string, unknown> = {
@@ -581,6 +613,8 @@ export class PlansResource {
   /**
    * B637: Remove a plan-only team from a plan.
    * DELETE /rest/api/3/plans/plan/{planId}/team/planonly/{planOnlyTeamId}
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   async deletePlanOnlyTeam(planId: number, planOnlyTeamId: number): Promise<void> {
     await this.transport.request<undefined>({
@@ -592,6 +626,8 @@ export class PlansResource {
   /**
    * B638: Get a plan-only team from a plan.
    * GET /rest/api/3/plans/plan/{planId}/team/planonly/{planOnlyTeamId}
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   async getPlanOnlyTeam(planId: number, planOnlyTeamId: number): Promise<PlanOnlyTeamResponse> {
     const response = await this.transport.request<PlanOnlyTeamResponse>({
@@ -606,8 +642,10 @@ export class PlansResource {
    * PUT /rest/api/3/plans/plan/{planId}/team/planonly/{planOnlyTeamId}
    *
    * Spec media type is `application/json-patch+json`. Pass a `JsonPatchOperation[]`
-   * array (RFC 6902). Passing a single `Record<string, unknown>` is accepted for
-   * backward compatibility but callers should migrate to the array form.
+   * array (RFC 6902). A single operation object is still accepted for backward
+   * compatibility and is sent wrapped in an array.
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   async updatePlanOnlyTeam(
     planId: number,
@@ -617,13 +655,15 @@ export class PlansResource {
     await this.transport.request<undefined>({
       method: 'PUT',
       path: `${this.baseUrl}/plans/plan/${encodePathSegment(String(planId))}/team/planonly/${encodePathSegment(String(planOnlyTeamId))}`,
-      binaryBody: new Blob([JSON.stringify(patch)], { type: 'application/json-patch+json' }),
+      binaryBody: jsonPatchBlob(patch),
     });
   }
 
   /**
    * B640: Move a plan to trash.
    * PUT /rest/api/3/plans/plan/{planId}/trash
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   async trash(planId: number): Promise<void> {
     await this.transport.request<undefined>({
@@ -631,4 +671,13 @@ export class PlansResource {
       path: `${this.baseUrl}/plans/plan/${encodePathSegment(String(planId))}/trash`,
     });
   }
+}
+
+/**
+ * Serialise a JSON Patch for an `application/json-patch+json` body. RFC 6902
+ * requires an array, so a single operation object is wrapped in one.
+ */
+function jsonPatchBlob(patch: JsonPatchOperation[] | Record<string, unknown>): Blob {
+  const document = Array.isArray(patch) ? patch : [patch];
+  return new Blob([JSON.stringify(document)], { type: 'application/json-patch+json' });
 }

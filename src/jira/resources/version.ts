@@ -126,6 +126,11 @@ export interface CreateVersionRelatedWorkData {
 
 /** Request body for PUT `/rest/api/3/version/{id}/relatedwork`. */
 export interface UpdateVersionRelatedWorkData {
+  /**
+   * ID of the related work entry to update (from `listRelatedWork`). The path
+   * names only the version, so Jira reads the entry to update from this field.
+   */
+  readonly relatedWorkId?: string;
   /** Required. Category of the related work. */
   readonly category: string;
   readonly title?: string;
@@ -233,6 +238,8 @@ export class VersionResource {
   /**
    * B933: Delete a version.
    * DELETE /rest/api/3/version/{id}
+   *
+   * @deprecated Atlassian deprecates this operation; use {@link deleteAndReplace}, which also swaps the version in custom fields.
    */
   async delete(id: string, params?: DeleteVersionParams): Promise<void> {
     const query: Record<string, string | undefined> = {};
@@ -327,6 +334,7 @@ export class VersionResource {
     data: UpdateVersionRelatedWorkData,
   ): Promise<VersionRelatedWork> {
     const body: Record<string, unknown> = {
+      ...(data.relatedWorkId !== undefined && { relatedWorkId: data.relatedWorkId }),
       category: data.category,
     };
     if (data.title !== undefined) body['title'] = data.title;
