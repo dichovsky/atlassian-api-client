@@ -219,15 +219,24 @@ export class IssueTypeResource {
     });
   }
 
-  /** List the issue types assigned to a project (B565). GET /issuetype/project. */
-  async listForProject(projectId: number): Promise<IssueTypesForProject> {
+  /**
+   * List the issue types assigned to a project (B565). GET /issuetype/project.
+   * `params.level` filters by hierarchy level: `-1` subtask, `0` base, `1` epic.
+   */
+  async listForProject(
+    projectId: number,
+    params?: { readonly level?: number },
+  ): Promise<IssueTypesForProject> {
     if (!Number.isInteger(projectId) || projectId <= 0) {
       throw new ValidationError('projectId must be a positive integer');
+    }
+    if (params?.level !== undefined && !Number.isInteger(params.level)) {
+      throw new ValidationError('level must be an integer');
     }
     const response = await this.transport.request<IssueTypesForProject>({
       method: 'GET',
       path: `${this.baseUrl}/issuetype/project`,
-      query: { projectId },
+      query: { projectId, level: params?.level },
     });
     return response.data;
   }

@@ -121,6 +121,7 @@ export type {
   SearchWarningLimitDetails,
 } from './resources/search.js';
 export { UsersResource } from './resources/users.js';
+export type { GetUserParams } from './resources/users.js';
 export { IssueTypesResource } from './resources/issue-types.js';
 export { IssueTypeResource } from './resources/issuetype.js';
 export type {
@@ -144,6 +145,8 @@ export type {
   BulkFetchIssueCommentsData,
   BulkFetchIssueCommentsParams,
   BulkFetchIssueCommentsResponse,
+  IssueCommentExpandParams,
+  UpdateIssueCommentParams,
 } from './resources/issue-comments.js';
 export { IssueAttachmentsResource } from './resources/issue-attachments.js';
 export type {
