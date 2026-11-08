@@ -107,7 +107,7 @@ export class UsersResource {
     return response.data;
   }
 
-  /** Search for users assignable to issues in a project (B800). */
+  /** Search for users assignable to issues in a project, or to one issue (B800). */
   async assignableSearch(params: AssignableSearchParams): Promise<User[]> {
     const query: Record<string, string | number | boolean | undefined> = {
       project: params.project,

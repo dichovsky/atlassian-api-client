@@ -39,6 +39,17 @@ const GLOBAL_OPTIONS = {
   type: { type: 'string' as const },
   summary: { type: 'string' as const },
   'transition-id': { type: 'string' as const },
+  // issues transition/create/update/delete + users create write-body flags
+  resolution: { type: 'string' as const },
+  parent: { type: 'string' as const },
+  'delete-subtasks': { type: 'boolean' as const },
+  'return-issue': { type: 'boolean' as const },
+  products: { type: 'string' as const },
+  // comments create: replies + inline-comment text anchor
+  'parent-comment-id': { type: 'string' as const },
+  'text-selection': { type: 'string' as const },
+  'text-selection-match-count': { type: 'string' as const },
+  'text-selection-match-index': { type: 'string' as const },
   query: { type: 'string' as const },
   'max-results': { type: 'string' as const },
   'start-at': { type: 'string' as const },
@@ -563,6 +574,27 @@ const GLOBAL_OPTIONS = {
   'module-id': { type: 'string' as const },
   // service-registry options (B1047)
   'service-ids': { type: 'string' as const },
+  // confluence comments create (attachment / custom-content footer target),
+  // pages update (owner transfer)
+  'attachment-id': { type: 'string' as const },
+  'owner-id': { type: 'string' as const },
+  // users assignable (issue-scoped search)
+  'session-id': { type: 'string' as const },
+  'action-descriptor-id': { type: 'string' as const },
+  recommend: { type: 'boolean' as const },
+  'account-type': { type: 'string' as const },
+  'app-type': { type: 'string' as const },
+  // issue-link create (JSON comment object)
+  comment: { type: 'string' as const },
+  // `notifyUsers` defaults to true; `--notify-users` stays a presence-only
+  // boolean (worklogs), so `--no-notify-users` carries the false case.
+  'no-notify-users': { type: 'boolean' as const },
+  // version delete-and-replace (JSON array of {customFieldId, moveTo})
+  'custom-field-replacement-list': { type: 'string' as const },
+  // Tri-state (B1063): app (bulk-)update-field-value; both default to true on
+  // the wire, so registered `string` to carry `--generate-changelog false`.
+  'generate-changelog': { type: 'string' as const },
+  'generate-app-events': { type: 'string' as const },
   // jira 2026-11 refresh options
   'rule-type-ids': { type: 'string' as const },
   'user-account-id': { type: 'string' as const },

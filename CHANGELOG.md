@@ -14,10 +14,51 @@ Covers the operations Atlassian added to the Jira platform v3 and Confluence v2 
 - `fields.setContextIssueTypes` accepts `isAnyIssueType` and `defaultValue`, and `issueTypeIds` is now optional; the `longtext` custom-field context default-value variant; `query` and `scope` on `labels.list` / `listAll`; `query` on `config.listProjects` / `listProjectsAll`.
 - `read:bulk-job:jira` and `write:bulk-job:jira` in the OAuth scope catalog.
 - Every new request and response type above is exported from the package root (`atlassian-api-client`), e.g. `ContentPermissionsRequest`, `DatabaseEntryFilter`, `PolicySummaryResponse`, `StartAgentSessionsBatchData`, `WorkflowCopyRequest`, and `IssueTypeDefaultValueUpdate`.
+- `CreateUserData.products` — the spec-required product-access list for `users.createUser()`. It is optional in the type only to avoid a breaking change; Jira rejects a create without it.
+- `AssignableSearchParams.project` is now optional, matching the spec: `users.assignableSearch()` can search by `issueKey` or `issueId` instead.
+- `issues.update()` resolves the edited `Issue` when called with `returnIssue: true` (Jira answers 200 with the issue, shaped by `expand`). Before, the response was dropped, so `returnIssue` and `expand` did nothing. An overload keeps every other call typed `Promise<void>`.
 
 ### Fixed
 
 - **The removed workflow transition-rule `draft` parameter is rejected before sending.** Atlassian removed it on 2026-11-02 and now answers it with HTTP 400, although the published spec still lists it. `getTransitionRuleConfigs` with `draft`, and `updateTransitionRuleConfigs` / `deleteTransitionRuleConfigs` with a `workflowId.draft`, now throw `ValidationError` without making a request, and `atlas jira workflows get-rule-config --draft` is rejected. The fields stay in the types, marked `@deprecated`.
+
+CLI write actions that could not send a value Jira requires:
+
+- **`atlas jira issues transition` can now close issues and sub-tasks.** New `--resolution <name>` sets `fields.resolution`, and `--body` accepts the full `IssueUpdateDetails` JSON (`fields`, `update`, ...) for any field a transition screen requires. Previously only the transition ID was sent, so a transition with Resolution on its screen always failed. `issues transitions --expand transitions.fields` now shows which fields each transition requires.
+- **`atlas jira issues create`** gains `--parent` (needed to create a sub-task) and `--body` for any other field.
+- **`atlas jira issues update`** gains `--body` for any field or `update` operation, not just `--summary`. Running it with neither flag now errors instead of sending an empty edit and reporting success.
+- On `create`, `update` and `transition`, discrete flags (`--summary`, `--resolution`, ...) override the same field in `--body`. Jira rejects a field set in both `fields` and `update`, so `--body` `update` operations on a flag-set field are dropped; other operations are kept.
+- **`atlas jira issues delete`** gains `--delete-subtasks`; without it Jira returns 400 for an issue with sub-tasks.
+- **`atlas jira users create`** now requires `--products` (comma-separated; `--products ""` for no product access).
+- **`atlas confluence pages delete`** gains `--draft` to delete an unpublished draft. Confluence deletes drafts permanently (they skip the trash), even without `--purge`.
+- **`atlas confluence comments create`** gains `--parent-comment-id` for replies, and `--text-selection`, `--text-selection-match-count` and `--text-selection-match-index`, which a top-level inline comment now requires (the spec requires the text anchor in that case).
+
+CLI flags for SDK inputs the CLI could not send:
+
+- **`atlas confluence comments create`** gains `--attachment-id` and `--custom-content-id` to put a footer comment on an attachment or a custom-content item.
+- **`atlas confluence pages update`** gains `--parent-id` (move under another parent in the same space) and `--owner-id` (transfer ownership).
+- **`atlas jira users assignable`** gains `--issue-key`, `--issue-id`, `--session-id`, `--action-descriptor-id`, `--recommend`, `--account-type` and `--app-type`; `--project` is no longer required when an issue is given.
+- **`atlas jira users viewissue-search`** gains `--project-key`.
+- **`atlas jira statuses by-names`** gains `--project-id`.
+- **`atlas jira issues update`** gains `--return-issue` (print the edited issue instead of `{ "updated": true }`) and `--expand` (with `--return-issue`).
+- **`atlas jira issues update`** gains `--no-notify-users` / `--notify-users`, `--override-screen-security` and `--override-editable-flag`. `add-worklog`, `update-worklog` and `delete-worklog` also accept `--no-notify-users`; before, they could not turn notifications off.
+- **`atlas jira issue-link create`** gains `--comment` (a JSON `Comment` object added to the outward issue).
+- **`atlas jira version delete-and-replace`** gains `--custom-field-replacement-list` (JSON array of `{ customFieldId, moveTo }`).
+- **`atlas jira bulk set-property`** gains `--expression` (a Jira expression) as an alternative to `--value`.
+- **`atlas jira projects load-avatar`** gains `--x`, `--y` and `--size` for the crop region.
+- **`atlas jira app update-field-value`** and **`bulk-update-field-value`** gain `--generate-changelog true|false` and `--generate-app-events true|false`.
+
+### Behaviour changes to verify
+
+- `atlas jira users create` without `--products` now fails before any request is sent.
+- `atlas jira issues update <key>` with neither `--summary` nor `--body` now fails instead of returning `{ "updated": true }`.
+- `atlas confluence comments create --comment-type inline` for a top-level comment (with `--page-id` or `--blog-post-id`) now fails before any request is sent unless all three `--text-selection*` flags are given. Replies (`--parent-comment-id`) need none.
+- `atlas confluence comments create` now fails when given two container flags (for example `--page-id` with `--attachment-id`), or `--attachment-id` / `--custom-content-id` with `--comment-type inline` or `--parent-comment-id`. Before this, `--custom-content-id` was silently ignored.
+- `atlas jira users viewissue-search` without `--issue-key` or `--project-key` now fails before any request is sent (the spec requires one of them).
+- `atlas jira bulk set-property` with both `--value` and `--expression` fails before any request is sent.
+- `atlas jira issues update --expand` without `--return-issue` fails before any request is sent.
+- `issues.update(..., { returnIssue: true })` is now typed `Promise<Issue>`, not `Promise<void>`. Code that already passed a literal `returnIssue: true` and returns or stores that promise as `Promise<void>` no longer compiles, and neither does a subclass or hand-typed fake of `IssuesResource.update` that returns `Promise<void>`. Calls without `returnIssue: true` are unchanged.
+- `atlas jira configuration select-timetracking --url <url>` still parses, but the value is no longer sent: the spec marks the provider `url` read-only.
 
 ## [4.1.0](https://github.com/dichovsky/atlassian-api-client/compare/v4.0.0...v4.1.0) (2026-09-11)
 

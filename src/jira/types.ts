@@ -387,6 +387,12 @@ export interface CreateUserData {
   readonly name?: string;
   readonly password?: string;
   readonly applicationKeys?: string[];
+  /**
+   * Products the new user can access: `jira-core`, `jira-servicedesk`,
+   * `jira-product-discovery`, `jira-software`. Required by the spec — pass
+   * `[]` for no product access. Optional here only to avoid a breaking type change.
+   */
+  readonly products?: string[];
 }
 
 /** Parameters for searching assignable users across multiple projects (B799). */
@@ -399,9 +405,10 @@ export interface AssignableMultiProjectSearchParams {
   readonly startAt?: number;
 }
 
-/** Parameters for searching assignable users for a project (B800). */
+/** Parameters for searching assignable users for a project or an issue (B800). */
 export interface AssignableSearchParams {
-  readonly project: string;
+  /** Project ID or key. Required unless `issueKey` or `issueId` is given. */
+  readonly project?: string;
   readonly query?: string;
   readonly sessionId?: string;
   readonly username?: string;

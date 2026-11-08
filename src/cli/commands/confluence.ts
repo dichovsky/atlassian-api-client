@@ -162,6 +162,9 @@ async function executePages(client: ConfluenceClient, cmd: ParsedCommand): Promi
       const versionNum = requirePositiveInt(opts['version-number'], '--version-number');
       // `body` is required by the spec (PageUpdateRequest required array).
       const bodyValue = requireOpt(opts['body'], '--body');
+      // Spec: parentId re-parents within the same space; ownerId transfers ownership.
+      const parentId = asString(opts['parent-id']);
+      const ownerId = asString(opts['owner-id']);
       return client.pages.update(requireArg(cmd.positionalArgs[0], 'page ID'), {
         id: requireArg(cmd.positionalArgs[0], 'page ID'),
         title: requireOpt(opts['title'], '--title'),
@@ -170,11 +173,14 @@ async function executePages(client: ConfluenceClient, cmd: ParsedCommand): Promi
           number: versionNum,
         },
         body: { representation: 'storage' as const, value: bodyValue },
+        ...(parentId !== undefined && { parentId }),
+        ...(ownerId !== undefined && { ownerId }),
       });
     }
     case 'delete':
       await client.pages.delete(requireArg(cmd.positionalArgs[0], 'page ID'), {
         purge: opts['purge'] === true ? true : undefined,
+        draft: opts['draft'] === true ? true : undefined,
       });
       return { deleted: true };
 
@@ -1011,23 +1017,102 @@ async function executeComments(client: ConfluenceClient, cmd: ParsedCommand): Pr
     case 'create': {
       const commentPageId2 = asString(opts['page-id']);
       const commentBlogPostId = asString(opts['blog-post-id']);
-      if (commentPageId2 === undefined && commentBlogPostId === undefined) {
-        throw new Error('One of --page-id or --blog-post-id is required');
+      // Spec: attachmentId/customContentId exist only on the footer-comment body.
+      const attachmentId = asString(opts['attachment-id']);
+      const customContentId = asString(opts['custom-content-id']);
+      const parentCommentId = asString(opts['parent-comment-id']);
+      const isReply = parentCommentId !== undefined;
+      if (
+        commentType === 'inline' &&
+        (attachmentId !== undefined || customContentId !== undefined)
+      ) {
+        throw new Error('--attachment-id and --custom-content-id apply only to footer comments');
       }
-      if (commentPageId2 !== undefined && commentBlogPostId !== undefined) {
-        throw new Error('Specify only one of --page-id or --blog-post-id, not both');
+      const containers = [commentPageId2, commentBlogPostId, attachmentId, customContentId].filter(
+        (id) => id !== undefined,
+      ).length;
+      const containerFlags =
+        commentType === 'inline'
+          ? '--page-id or --blog-post-id'
+          : '--page-id, --blog-post-id, --attachment-id or --custom-content-id';
+      if (isReply && containers > 0) {
+        // Spec: a reply's container comes from its parent comment.
+        throw new Error(`--parent-comment-id (a reply) cannot be combined with ${containerFlags}`);
+      }
+      if (!isReply && containers === 0) {
+        throw new Error(
+          `One of ${containerFlags} (or --parent-comment-id for a reply) is required`,
+        );
+      }
+      if (containers > 1) {
+        throw new Error(`Specify only one of ${containerFlags}`);
+      }
+      // Spec: inlineCommentProperties is required for a top-level inline
+      // comment (it anchors the highlighted text) and only applies there.
+      const textSelection = asString(opts['text-selection']);
+      const textSelectionMatchCount = asPositiveInt(
+        opts['text-selection-match-count'],
+        '--text-selection-match-count',
+      );
+      const textSelectionMatchIndex = asNonNegativeInt(
+        opts['text-selection-match-index'],
+        '--text-selection-match-index',
+      );
+      let inlineCommentProperties:
+        | {
+            textSelection: string;
+            textSelectionMatchCount: number;
+            textSelectionMatchIndex: number;
+          }
+        | undefined;
+      if (commentType === 'inline' && !isReply) {
+        if (
+          textSelection === undefined ||
+          textSelectionMatchCount === undefined ||
+          textSelectionMatchIndex === undefined
+        ) {
+          throw new Error(
+            'A top-level inline comment requires --text-selection, --text-selection-match-count and --text-selection-match-index',
+          );
+        }
+        if (textSelectionMatchCount <= textSelectionMatchIndex) {
+          throw new Error(
+            '--text-selection-match-count must be greater than --text-selection-match-index',
+          );
+        }
+        inlineCommentProperties = {
+          textSelection,
+          textSelectionMatchCount,
+          textSelectionMatchIndex,
+        };
+      } else if (
+        textSelection !== undefined ||
+        textSelectionMatchCount !== undefined ||
+        textSelectionMatchIndex !== undefined
+      ) {
+        throw new Error(
+          '--text-selection* flags apply only to a top-level inline comment (--comment-type inline without --parent-comment-id)',
+        );
       }
       const payload = {
         ...(commentPageId2 !== undefined ? { pageId: commentPageId2 } : {}),
         ...(commentBlogPostId !== undefined ? { blogPostId: commentBlogPostId } : {}),
+        ...(parentCommentId !== undefined ? { parentCommentId } : {}),
         body: {
           representation: 'storage' as const,
           value: requireOpt(opts['body'], '--body'),
         },
       };
       return commentType === 'inline'
-        ? client.comments.createInline(payload)
-        : client.comments.createFooter(payload);
+        ? client.comments.createInline({
+            ...payload,
+            ...(inlineCommentProperties !== undefined && { inlineCommentProperties }),
+          })
+        : client.comments.createFooter({
+            ...payload,
+            ...(attachmentId !== undefined && { attachmentId }),
+            ...(customContentId !== undefined && { customContentId }),
+          });
     }
     case 'delete':
       if (commentType === 'inline') {

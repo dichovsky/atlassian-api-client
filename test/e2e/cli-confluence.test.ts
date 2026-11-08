@@ -606,6 +606,12 @@ const matrix: readonly MatrixRow[] = [
       'inline hi',
       '--comment-type',
       'inline',
+      '--text-selection',
+      'hello',
+      '--text-selection-match-count',
+      '1',
+      '--text-selection-match-index',
+      '0',
     ],
     routes: [{ method: 'POST', path: `${P}/inline-comments`, status: 201, body: F.inlineComment }],
     expectCall: { method: 'POST', pathname: `${P}/inline-comments` },
@@ -613,6 +619,11 @@ const matrix: readonly MatrixRow[] = [
       expect(body).toMatchObject({
         pageId: '12345',
         body: { representation: 'storage', value: 'inline hi' },
+        inlineCommentProperties: {
+          textSelection: 'hello',
+          textSelectionMatchCount: 1,
+          textSelectionMatchIndex: 0,
+        },
       });
     },
   },
