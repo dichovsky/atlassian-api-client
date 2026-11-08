@@ -140,6 +140,8 @@ API STATUS:
 
 EXAMPLES:
   atlas confluence pages list --space-id 123
+  atlas confluence pages list --space-id 123 --status current,archived --sort=-modified-date
+  atlas confluence pages update 456 --title "Draft" --version-number 3 --body "h1. Hi" --body-representation wiki --status draft
   atlas confluence pages get 456 --body-format view --include-labels
   atlas confluence pages create --space-id 123 --title "Runbook" --body "<p>Ready</p>"
   atlas confluence pages create --space-id 123 --status draft --body-json '{"wiki":{"representation":"wiki","value":"Draft"}}'
@@ -159,7 +161,7 @@ EXAMPLES:
   atlas confluence pages create-property 456 --key reviewed --value true
   atlas confluence pages version 456 --version-number 2
   atlas confluence pages versions 456 --limit 25
-  atlas confluence pages footer-comments 456 --sort -created-date --limit 25
+  atlas confluence pages footer-comments 456 --sort=-created-date --limit 25
   atlas confluence pages inline-comments 456 --body-format storage --resolution-status open
   atlas confluence pages upload-attachment 456 --file ./screenshot.png
   atlas confluence pages get-restriction-state 456
@@ -178,7 +180,7 @@ EXAMPLES:
   atlas confluence custom-content list --type ai.atlassian.collection --space-id 654321
   atlas confluence custom-content get cc-1 --body-format storage
   atlas confluence custom-content create --type ai.atlassian.collection --space-id 654321 --title "AI Notes" --body "<p>hi</p>"
-  atlas confluence custom-content update cc-1 --type ai.atlassian.collection --version-number 2 --title "Renamed"
+  atlas confluence custom-content update cc-1 --type ai.atlassian.collection --version-number 2 --title "Renamed" --body "<p>v2</p>"
   atlas confluence custom-content list-properties cc-1 --sort key
   atlas confluence custom-content create-property cc-1 --key reviewed --value true
   atlas confluence custom-content versions cc-1 --sort=-modified-date
@@ -235,13 +237,13 @@ EXAMPLES:
   atlas confluence spaces get-default-classification-level 654321
   atlas confluence spaces update-default-classification-level 654321 --level-id cl-1
   atlas confluence spaces delete-default-classification-level 654321
-  atlas confluence spaces labels 654321 --prefix team --sort -name
+  atlas confluence spaces labels 654321 --prefix team --sort=-name
   atlas confluence spaces operations 654321
   atlas confluence spaces pages 654321 --depth root --sort=-modified-date
   atlas confluence spaces permissions 654321 --limit 50
   atlas confluence spaces role-assignments 654321 --role-type CUSTOM --principal-type USER
   atlas confluence spaces set-role-assignments 654321 --value '[{"principal":{"principalType":"USER","principalId":"acc-1"},"roleId":"role-1"}]'
-  atlas confluence spaces list-properties 654321 --sort key
+  atlas confluence spaces list-properties 654321 --key feature-flags
   atlas confluence spaces create-property 654321 --key feature-flags --value '{"beta":true}'
   atlas confluence spaces update-property 654321 --property-id prop-1 --key feature-flags --value '{"beta":false}' --version-number 2
   atlas confluence tasks list --status incomplete --limit 25
@@ -249,30 +251,30 @@ EXAMPLES:
   atlas confluence users check-access-by-email --emails a@example.com,b@example.com
   atlas confluence users invite-by-email --emails a@example.com,b@example.com
   atlas confluence users-bulk lookup --account-ids acc-1,acc-2
-  atlas confluence attachments list-all --status current,archived --sort -modified-date
+  atlas confluence attachments list-all --status current,archived --sort=-modified-date
   atlas confluence attachments get att-1 --include-labels --include-properties
   atlas confluence attachments delete att-1 --purge
-  atlas confluence attachments versions att-1 --sort -modified-date
+  atlas confluence attachments versions att-1 --sort=-modified-date
   atlas confluence attachments get-version att-1 --version-number 2
   atlas confluence attachments footer-comments att-1 --body-format storage
   atlas confluence attachments labels att-1 --prefix global
-  atlas confluence attachments thumbnail att-1 --width 200 --height 200
+  atlas confluence attachments thumbnail att-1 --width 200 --height 200 --file ./thumb.png
   atlas confluence attachments list-properties att-1
   atlas confluence attachments create-property att-1 --key reviewed --value true
   atlas confluence labels list-all --prefix global --limit 50
-  atlas confluence labels attachments 12345 --sort -created-date
+  atlas confluence labels attachments 12345 --sort=-created-date
   atlas confluence labels blog-posts 12345 --space-id 100,200 --limit 25
-  atlas confluence labels pages 12345 --sort -modified-date
-  atlas confluence labels list-for-space 654321 --prefix global --sort -name
+  atlas confluence labels pages 12345 --sort=-modified-date
+  atlas confluence labels list-for-space 654321 --prefix team --sort=-name
   atlas confluence labels list-for-blog-post 99999 --prefix team --limit 25
   atlas confluence blog-posts list-properties 99999
   atlas confluence blog-posts create-property 99999 --key reviewed --value true
   atlas confluence blog-posts attachments 99999 --media-type image/png
   atlas confluence blog-posts get-classification-level 99999
   atlas confluence blog-posts custom-content 99999 --type my.custom.type
-  atlas confluence blog-posts footer-comments 99999 --sort -created-date
+  atlas confluence blog-posts footer-comments 99999 --sort=-created-date
   atlas confluence blog-posts likes-count 99999
-  atlas confluence blog-posts versions 99999 --sort -modified-date
+  atlas confluence blog-posts versions 99999 --sort=-modified-date
   atlas confluence blog-posts version 99999 --version-number 2
   atlas confluence whiteboards create --space-id 123 --title "Roadmap" --private
   atlas confluence whiteboards get wb-1 --include-collaborators --include-properties
