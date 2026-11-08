@@ -222,6 +222,7 @@ export type {
   WorkflowCreate,
   WorkflowCreateRequest,
   WorkflowCreateResponse,
+  WorkflowCopyRequest,
   ValidationOptionsForCreate,
   WorkflowCreateValidateRequest,
   WorkflowValidationError,
@@ -340,6 +341,7 @@ export type {
   TaskProgressBeanRemoveOptionFromIssuesResult,
   OrderFieldContextOptionsData,
   FieldContextIssueTypeIdsBody,
+  AddIssueTypesToContextBody,
   FieldContextIssueTypeMapping,
   FieldContextIssueTypeMappingPage,
   ListFieldContextIssueTypeMappingParams,
@@ -357,6 +359,7 @@ export type {
   FieldContextDefaultValueProject,
   FieldContextDefaultValueFloat,
   FieldContextDefaultValueLabels,
+  FieldContextDefaultValueLongText,
   FieldContextDefaultValueTextField,
   FieldContextDefaultValueTextArea,
   FieldContextDefaultValueReadOnly,
@@ -380,6 +383,8 @@ export type {
   GroupedContextDefaultValuesPage,
   GetContextDefaultValuesParams,
   FieldContextDefaultValueUpdateBody,
+  IssueTypeDefaultValueUpdate,
+  UpdateContextDefaultValuesBody,
   FieldContextProjectIdsBody,
   FieldContextProjectMapping,
   FieldContextProjectMappingPage,
@@ -454,6 +459,11 @@ export type {
   JqlPersonalDataMigrationRequest,
   JqlQueryWithUnknownUsers,
   ConvertedJqlQueries,
+  InvalidJqlAuditUserAvatarUrls,
+  InvalidJqlAuditUser,
+  InvalidJqlAuditEntry,
+  InvalidJqlAuditPage,
+  GetInvalidJqlAuditEntriesParams,
 } from './resources/jql.js';
 export { BulkResource } from './resources/bulk.js';
 export type {
@@ -536,8 +546,34 @@ export type {
   ForgeProjectPinAction,
   BulkForgePanelPinData,
   BulkForgeActionResponse,
+  BulkForgePanelPinStatusData,
+  ForgePanelProjectPinStatus,
+  BulkForgePanelPinStatusResponse,
 } from './resources/forge.js';
 export { ForgeResource } from './resources/forge.js';
+export type {
+  PolicySummary,
+  PolicySummaryResponse,
+  StatePolicyRule,
+  StatePolicyDocument,
+  PolicyApplicationViolation,
+  PolicyProjectResult,
+  BulkPolicyOperationResponse,
+  ListPoliciesParams,
+  PolicyIdsData,
+  PolicyProjectIdsData,
+} from './resources/policies.js';
+export { PoliciesResource } from './resources/policies.js';
+export type {
+  BulkAgentSessionInvocation,
+  StartAgentSessionsBatchData,
+  StartAgentSessionsUniformData,
+  BulkAgentSessionResult,
+  BulkAgentSessionItemError,
+  BulkAgentSessionOutcome,
+  BulkAgentSessionsResponse,
+} from './resources/agents.js';
+export { AgentsResource } from './resources/agents.js';
 export type {
   Incident,
   IncidentStatus,

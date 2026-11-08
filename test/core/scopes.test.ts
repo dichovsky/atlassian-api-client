@@ -651,7 +651,7 @@ describe('listKnownScopes', () => {
   });
 
   it('exactly matches every scope recognized by the pinned specs', () => {
-    expect(RECOGNIZED_SPEC_SCOPES).toHaveLength(271);
+    expect(RECOGNIZED_SPEC_SCOPES).toHaveLength(273);
     expect(listKnownScopes()).toEqual(RECOGNIZED_SPEC_SCOPES);
   });
 

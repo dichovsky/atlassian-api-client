@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
+import { describeContentPermissions } from './content-permissions-suite.js';
 import { BlogPostsResource } from '../../src/confluence/resources/blog-posts.js';
 import { MockTransport } from '../helpers/mock-transport.js';
 
@@ -1122,3 +1123,9 @@ describe('BlogPostsResource', () => {
     });
   });
 });
+
+describeContentPermissions(
+  'BlogPostsResource',
+  'blogposts',
+  (transport) => new BlogPostsResource(transport, BASE_URL),
+);

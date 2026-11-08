@@ -94,9 +94,9 @@ EXIT CODES:
 const CONFLUENCE_HELP = `atlas confluence - Confluence Cloud REST API v2
 
 RESOURCES:
-  pages                  list, get, create, update, delete, ancestors, descendants, direct-children, children, get-classification-level, update-classification-level, reset-classification-level, custom-content, likes-count, likes-users, operations, redact, update-title, list-properties, create-property, get-property, update-property, delete-property, version, versions, footer-comments, inline-comments, upload-attachment
+  pages                  list, get, create, update, delete, ancestors, descendants, direct-children, children, get-classification-level, update-classification-level, reset-classification-level, custom-content, likes-count, likes-users, operations, redact, update-title, list-properties, create-property, get-property, update-property, delete-property, version, versions, footer-comments, inline-comments, upload-attachment, get-restriction-state, set-restriction-state, list-permissions, add-permissions, set-permissions, delete-permissions
   spaces                 list, get, create, blog-posts, get-default-classification-level, update-default-classification-level, delete-default-classification-level, content-labels, custom-content, labels, operations, pages, permissions, role-assignments, set-role-assignments, list-properties, create-property, get-property, update-property, delete-property
-  blog-posts             list, get, create, update, delete, list-properties, create-property, get-property, update-property, delete-property, attachments, get-classification-level, update-classification-level, reset-classification-level, custom-content, footer-comments, inline-comments, labels, likes-count, likes-users, operations, redact, versions, version
+  blog-posts             list, get, create, update, delete, list-properties, create-property, get-property, update-property, delete-property, attachments, get-classification-level, update-classification-level, reset-classification-level, custom-content, footer-comments, inline-comments, labels, likes-count, likes-users, operations, redact, versions, version, get-restriction-state, set-restriction-state, list-permissions, add-permissions, set-permissions, delete-permissions
   comments               list, get, create, update, delete, list-properties, create-property, get-property, update-property, delete-property
   attachments            list, list-all, get, delete, list-properties, create-property, get-property, update-property, delete-property, versions, get-version, footer-comments, labels, operations, thumbnail
   labels                 list, list-all, attachments, blog-posts, pages, list-for-space, list-for-blog-post
@@ -106,9 +106,9 @@ RESOURCES:
   content                convert-ids-to-types
   custom-content         list, get, create, update, delete, list-properties, create-property, get-property, update-property, delete-property, versions, version, attachments, children, footer-comments, labels, operations
   data-policies          get-metadata, list-spaces
-  databases              create, get, delete, ancestors, descendants, direct-children, operations, get-classification-level, update-classification-level, reset-classification-level, list-properties, create-property, get-property, update-property, delete-property
+  databases              create, get, delete, ancestors, descendants, direct-children, operations, get-classification-level, update-classification-level, reset-classification-level, list-properties, create-property, get-property, update-property, delete-property, get-restriction-state, set-restriction-state, list-permissions, add-permissions, set-permissions, delete-permissions, fields, views, entries, get-entry
   embeds                 create, get, delete, ancestors, descendants, direct-children, operations, list-properties, create-property, get-property, update-property, delete-property
-  folders                create, get, delete, ancestors, descendants, direct-children, operations, list-properties, create-property, get-property, update-property, delete-property
+  folders                create, get, delete, ancestors, descendants, direct-children, operations, list-properties, create-property, get-property, update-property, delete-property, get-restriction-state, set-restriction-state, list-permissions, add-permissions, set-permissions, delete-permissions
   footer-comments        list, get, update, children, likes-count, likes-users, operations, versions, version
   inline-comments        list, children, likes-count, likes-users, operations, versions, version
   space-permissions      list, transition-remove-access, transition-list-combinations, transition-generate-combinations, transition-assign-roles, transition-task-status
@@ -117,7 +117,7 @@ RESOURCES:
   tasks                  list, get, update
   users                  check-access-by-email, invite-by-email
   users-bulk             lookup
-  whiteboards            create, get, delete, ancestors, descendants, direct-children, operations, get-classification-level, update-classification-level, reset-classification-level, list-properties, create-property, get-property, update-property, delete-property
+  whiteboards            create, get, delete, ancestors, descendants, direct-children, operations, get-classification-level, update-classification-level, reset-classification-level, list-properties, create-property, get-property, update-property, delete-property, get-restriction-state, set-restriction-state, list-permissions, add-permissions, set-permissions, delete-permissions
 
 API STATUS:
   pages children is deprecated by Atlassian; use direct-children or descendants.
@@ -125,6 +125,9 @@ API STATUS:
   basic/bearer auth modes cannot provide that context.
   data-policies, users access actions, and space-permissions transition-*
   operations are experimental.
+  databases fields, views, entries, and get-entry are experimental.
+  delete-permissions with no --operation/--principal-* filters removes ALL
+  direct permissions; --allow-self-lockout is only sent when you pass it.
 
 EXAMPLES:
   atlas confluence pages list --space-id 123
@@ -150,6 +153,11 @@ EXAMPLES:
   atlas confluence pages footer-comments 456 --sort -created-date --limit 25
   atlas confluence pages inline-comments 456 --body-format storage --resolution-status open
   atlas confluence pages upload-attachment 456 --file ./screenshot.png
+  atlas confluence pages get-restriction-state 456
+  atlas confluence pages set-restriction-state 456 --state EDIT_RESTRICTED
+  atlas confluence pages list-permissions 456 --principal-type user --principal-id <accountId>
+  atlas confluence pages add-permissions 456 --body '{"permissions":[{"operation":"read","principals":[{"principalType":"user","principalId":"<accountId>"}]}]}'
+  atlas confluence pages delete-permissions 456 --operation read --principal-type user --principal-id <accountId>
   atlas confluence spaces list --status current --sort=-name --include-icon
   atlas confluence app list-properties --limit 25
   atlas confluence app upsert-property my-flag --value '{"beta":true}'
@@ -176,6 +184,10 @@ EXAMPLES:
   atlas confluence databases get 456 --include-properties
   atlas confluence databases descendants 456 --depth 3 --limit 50
   atlas confluence databases list-properties 456
+  atlas confluence databases fields 456 --limit 50
+  atlas confluence databases views 456
+  atlas confluence databases entries 456 --sort=-<fieldId> --filter '{"<fieldId>":"eq:Done"}'
+  atlas confluence databases get-entry 456 --entry-id <entryId>
   atlas confluence databases update-classification-level 456 --level-id cl-1
   atlas confluence embeds create --space-id 123 --title "Demo" --embed-url https://example.com
   atlas confluence embeds get embed-1 --include-direct-children
@@ -290,7 +302,7 @@ RESOURCES:
   auditing               list
   events                 list
   changelog              bulk-fetch
-  forge                  bulk-panel-action
+  forge                  bulk-panel-action, bulk-pin-status
   incidents              get, delete
   post-incident-reviews  get, delete
   vulnerability          get, delete
@@ -336,10 +348,10 @@ RESOURCES:
   screens                list, create, delete, update, list-available-fields, list-tabs, create-tab, delete-tab, update-tab, list-tab-fields, add-field-to-tab, remove-field-from-tab, move-field, move-tab, add-to-default, list-all-tabs
   screenscheme           list, list-all, create, update, delete
   plans                  list, create, get, update, archive, duplicate, list-teams, add-atlassian-team, delete-atlassian-team, get-atlassian-team, update-atlassian-team, create-plan-only-team, delete-plan-only-team, get-plan-only-team, update-plan-only-team, trash
-  workflows              list, get, delete, issue-type-usages, project-usages, workflow-scheme-usages, bulk-get, capabilities, bulk-create, validate-create, default-editor, read-history, list-history, get-rule-config, update-rule-config, delete-rule-config, preview, search, update, validate-update
+  workflows              list, get, delete, issue-type-usages, project-usages, workflow-scheme-usages, bulk-get, capabilities, bulk-create, copy, validate-create, default-editor, read-history, list-history, get-rule-config, update-rule-config, delete-rule-config, preview, search, update, validate-update
   workflowscheme         list, create, delete, get, update, delete-default, get-default, set-default, delete-issuetype, get-issuetype, set-issuetype, delete-workflow, get-workflow, set-workflow, project-usages, list-by-project, assign-project, switch-project, create-draft, delete-draft, get-draft, update-draft, delete-draft-default, get-draft-default, set-draft-default, delete-draft-issuetype, get-draft-issuetype, set-draft-issuetype, publish-draft, delete-draft-workflow, get-draft-workflow, set-draft-workflow, bulk-read, bulk-update, bulk-mappings
-  fields                 field-list, field-list-all, field-create, field-update, field-delete, context-list, context-create, context-update, context-delete, context-option-list, context-option-create, context-option-update, context-option-delete, context-option-replace-issues, context-option-move, context-issuetype-set, context-issuetype-remove, context-issuetype-mapping, context-default-get, context-default-list, context-default-set, context-project-set, context-project-remove, context-mapping, context-project-mapping, field-option-list, field-option-create, field-option-delete, field-option-get, field-option-update, field-option-replace-issues, field-option-suggestions-edit, field-option-suggestions-search, field-project-associations, field-screens, field-restore, field-trash, field-remove-associations, field-create-associations, field-trash-list
-  jql                    autocomplete-data, autocomplete-data-post, autocomplete-suggestions, get-precomputations, update-precomputations, get-precomputations-by-id, match-issues, parse, migrate-queries, sanitize
+  fields                 field-list, field-list-all, field-create, field-update, field-delete, context-list, context-create, context-update, context-delete, context-option-list, context-option-create, context-option-update, context-option-delete, context-option-replace-issues, context-option-move, context-issuetype-set, context-issuetype-remove, context-issuetype-mapping, context-default-get, context-default-list, context-default-set, context-default-update, context-project-set, context-project-remove, context-mapping, context-project-mapping, field-option-list, field-option-create, field-option-delete, field-option-get, field-option-update, field-option-replace-issues, field-option-suggestions-edit, field-option-suggestions-search, field-project-associations, field-screens, field-restore, field-trash, field-remove-associations, field-create-associations, field-trash-list
+  jql                    autocomplete-data, autocomplete-data-post, autocomplete-suggestions, get-precomputations, update-precomputations, get-precomputations-by-id, match-issues, parse, migrate-queries, sanitize, invalid-jqls-access-log
   issuelinktype          list, get, create, update, delete
   issue-link             create, get, delete
   project-template       create, edit-template, live-template, remove-template, save-template
@@ -351,6 +363,8 @@ RESOURCES:
   linked-workspaces      list-operations, bulk-delete-operations, bulk-create-operations, list-security, get-security, bulk-delete-security, bulk-create-security
   bulk-by-properties     delete-builds, delete-deployments, delete-devinfo, delete-devops-components, delete-feature-flags, delete-operations, delete-remote-links, delete-security
   migration              get-task, submit-task, update-fields, update-properties, search-workflow-rules
+  policies               list, get-project-state, get-project-rules, set-project-policies, validate-project, apply, remove
+  agents                 start-batch, start-uniform
 
 DEPRECATED JIRA SOFTWARE ISSUE LISTS:
   boards backlog, get-issues, issues-without-epic, epic-issues, sprint-issues;

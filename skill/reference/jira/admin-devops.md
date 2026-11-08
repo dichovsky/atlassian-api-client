@@ -470,6 +470,9 @@ atlas jira events list
 | Action              | Positional | Required flags           | Optional flags |
 | ------------------- | ---------- | ------------------------ | -------------- |
 | `bulk-panel-action` | —          | `--module-id`, `--value` | —              |
+| `bulk-pin-status`   | —          | `--module-id`, `--value` | —              |
+
+`bulk-panel-action` details:
 
 - Pins or unpins a Forge issue panel across a batch of projects. This is a **project-level** operation, not a per-issue one.
 - `--module-id` — the moduleId of the Forge panel, in the format `ari:cloud:ecosystem::extension/{app-id}/{environment-id}/static/{module-key}`. Required.
@@ -479,9 +482,82 @@ atlas jira events list
 - Returns a `taskId` that can be used to poll for task completion.
 - The Forge app must be installed on the Jira site before this endpoint is usable.
 
+`bulk-pin-status` details:
+
+- Reads whether a Forge issue panel is pinned to each of up to 1000 projects (`POST /rest/api/3/forge/panel/action/bulk/status`). Read-only and synchronous (no task to poll); needs the **Administer Jira** global permission.
+- `--module-id` — same moduleId format as above. Required.
+- `--value` — JSON array of project IDs or keys, **strings only**: `'["PROJ","10001"]'`. Required.
+- Returns `{ moduleId, statuses: [{ projectIdOrKey, pinned, pinnedAt, error }] }`, one entry per requested project; `pinnedAt` is epoch milliseconds. An unknown or inaccessible project comes back with `pinned: false` and the reason in `error` — the request itself still succeeds.
+
 ```sh
 # Pin a Forge panel to one project and unpin it from another
 atlas jira forge bulk-panel-action --module-id 'ari:cloud:ecosystem::extension/app-id/env-id/static/my-panel' --value '[{"action":"PIN","projectIdOrKey":"PROJ"},{"action":"UNPIN","projectIdOrKey":"OTHER"}]'
+
+# Check whether the panel is pinned to two projects
+atlas jira forge bulk-pin-status --module-id 'ari:cloud:ecosystem::extension/app-id/env-id/static/my-panel' --value '["PROJ","10001"]'
+```
+
+## `policies`
+
+> **Experimental:** every operation is marked `x-experimental` by Atlassian; shapes may change without notice. Mutating actions need the **Administer Jira** global permission.
+
+| Action                 | Positional         | Required flags  | Optional flags                            |
+| ---------------------- | ------------------ | --------------- | ----------------------------------------- |
+| `list`                 | —                  | —               | `--start-at`, `--max-results`, `--cursor` |
+| `get-project-state`    | `<projectIdOrKey>` | —               | —                                         |
+| `get-project-rules`    | `<projectIdOrKey>` | —               | `--rule-type-ids`                         |
+| `set-project-policies` | `<projectIdOrKey>` | `--body`        | —                                         |
+| `validate-project`     | `<projectIdOrKey>` | `--body`        | —                                         |
+| `apply`                | `<policyId>`       | `--project-ids` | —                                         |
+| `remove`               | `<policyId>`       | `--project-ids` | —                                         |
+
+- `list` calls `GET /rest/api/3/policies` and returns `{ values, startAt, maxResults, total, isLast, nextPageCursor }`; each value is a policy summary (`id`, `policyName`, `policyDescription`, `isDefault`, `version`, `appliedProjectIds`). In cursor mode `startAt` and `total` are null: omit `--cursor` for page one, then pass the previous response's `nextPageCursor` as `--cursor`. `--max-results` is capped at 50 in cursor mode.
+- `get-project-state` calls `GET /rest/api/3/policies/project/{projectIdOrKey}` and returns the policies applied to the project, each with `rulesByDomain`.
+- `get-project-rules` calls `GET /rest/api/3/policies/project/{projectIdOrKey}/rules` and returns only the **active** rules of the requested types (`ruleId`, `ruleTypeId`, `domain`, `description`, `properties`). `--rule-type-ids` is a comma-separated list sent as repeated `ruleTypeIds` params.
+- `set-project-policies` calls `PUT /rest/api/3/policies/project/{projectIdOrKey}/policies` and **replaces** the project's complete policy set (a project can hold at most one policy). `--body` is `'{"policyIds":["<policyId>"]}'`; `'{"policyIds":[]}'` clears the set. Prints `{"updated":true}`.
+- `validate-project` calls `POST /rest/api/3/policies/project/{projectIdOrKey}/validate` with the same `--body` shape and checks whether the policies could be applied, without applying them. Prints `{"valid":true}` on success.
+- For both, an HTTP 409 means the policies violate a rule: the command exits with a generic HTTP 409 error. The CLI prints only the error message, not the violation list (`entityId`, `entityName`, `entityType`, `ruleTypeId`, `remediationHint`); the SDK exposes it as `HttpError.responseBody`.
+- `apply` / `remove` call `POST /rest/api/3/policies/{policyId}/apply` and `.../remove`. `--project-ids` is a comma-separated list of numeric project IDs. Each project is processed independently; returns `{ successful: [{ projectId, message, errors }], failed: [...] }`. A 409 means no project succeeded (the CLI prints only the generic HTTP error).
+
+```sh
+# List policies, then the next page
+atlas jira policies list --max-results 50
+atlas jira policies list --cursor '<nextPageCursor>'
+
+# Inspect a project
+atlas jira policies get-project-state PROJ
+atlas jira policies get-project-rules PROJ --rule-type-ids rt-a,rt-b
+
+# Check, then assign a policy to a project (replaces the project's policy set)
+atlas jira policies validate-project PROJ --body '{"policyIds":["policy-1"]}'
+atlas jira policies set-project-policies PROJ --body '{"policyIds":["policy-1"]}'
+
+# Add / remove a policy across several projects
+atlas jira policies apply policy-1 --project-ids 10000,10001
+atlas jira policies remove policy-1 --project-ids 10000
+```
+
+## `agents`
+
+> **Experimental:** both operations are marked `x-experimental` by Atlassian. They need the global **Bulk change** permission plus Browse Projects on every target issue, and can return HTTP 429 when rate limited.
+
+| Action          | Positional | Required flags | Optional flags |
+| --------------- | ---------- | -------------- | -------------- |
+| `start-batch`   | —          | `--body`       | —              |
+| `start-uniform` | —          | `--body`       | —              |
+
+- Both start Rovo agent sessions on issues and return the **start** outcomes inline; the agent's work continues asynchronously. Item-level failures arrive inside an HTTP 200, so inspect `results`.
+- `start-batch` calls `POST /rest/api/3/agents/bulk/invoke/batch`. `--body` is `{"clientMutationId":"<uuid>","invocations":[{"agentId":"<rovo agent id>","issueId":"<numeric issue id>","requestId":"<uuid>","userPrompt":"<optional>"}]}` with 1-50 invocations; each `requestId` must be unique within the request, and the same issue may appear more than once.
+- `start-uniform` calls `POST /rest/api/3/agents/bulk/invoke/uniform`. `--body` is `{"agentId":"<rovo agent id>","clientMutationId":"<uuid>","issueIds":["<numeric issue id>"],"userPrompt":"<optional>"}` with 1-50 unique issue IDs.
+- `issueId` / `issueIds` are numeric ID strings, not issue keys. `clientMutationId` is a caller-supplied UUID. The SDK and CLI reject 0 or more than 50 items before sending the request.
+- Response: `{ startedCount, alreadyStartedCount, failedCount, rateLimitedCount, success, results }`. `success` is true when `startedCount` or `alreadyStartedCount` is above zero; it does not mean every item worked. Each `results[]` entry has `issueId`, `agentId`, `requestId`, `result` (`STARTED`, `ALREADY_STARTED`, `FAILED`, `RATE_LIMITED` or `IN_DOUBT`), `conversationId` (started items only) and `error` (`{ type, statusCode, message }`).
+
+```sh
+# Start one agent on three issues with a shared prompt
+atlas jira agents start-uniform --body '{"agentId":"0010fa86-cd74-46eb-a2ee-229a98250b9c","clientMutationId":"f47ac10b-58cc-4372-a567-0e02b2c3d479","issueIds":["10001","10002","10003"],"userPrompt":"Summarize the next steps for this issue."}'
+
+# Start an agent per issue, each with its own prompt
+atlas jira agents start-batch --body '{"clientMutationId":"f47ac10b-58cc-4372-a567-0e02b2c3d479","invocations":[{"agentId":"0010fa86-cd74-46eb-a2ee-229a98250b9c","issueId":"10001","requestId":"64cbeead-43ee-4de6-a535-281417003efd","userPrompt":"Summarize the next steps."},{"agentId":"0010fa86-cd74-46eb-a2ee-229a98250b9c","issueId":"10002","requestId":"cf399ad9-9835-4fc5-b830-abae6c682f06"}]}'
 ```
 
 ## `license`
@@ -989,7 +1065,7 @@ Config field association scheme management (B367–B381). Covers the `/rest/api/
 
 - `list` — GET /config/fieldschemes
 - `list-fields` — GET /config/fieldschemes/{id}/fields
-- `list-projects` — GET /config/fieldschemes/{id}/projects
+- `list-projects` — GET /config/fieldschemes/{id}/projects (optional `--project-ids` CSV; `--query` keeps only projects whose name, key or ID contains the text, case-insensitive)
 - `get-projects-with-schemes` — GET /config/fieldschemes/projects (requires `--project-ids`)
 
 **Body endpoints** (supply full JSON via `--body`):
@@ -1023,6 +1099,7 @@ atlas jira config get-field-parameters 10001 customfield_10001
 
 # List projects associated with a scheme
 atlas jira config list-projects 10001 --project-ids 10100,10101
+atlas jira config list-projects 10001 --query billing
 
 # Remove fields from schemes (body: fieldId → schemeIds map)
 atlas jira config remove-field-associations --body '{"customfield_10001":{"schemeIds":[10001,10002]}}'

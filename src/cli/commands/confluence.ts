@@ -11,11 +11,17 @@ import type {
   ChildPageSortOrder,
   CommentSortOrder,
   CommentStatus,
+  ContentPermissionOperation,
+  ContentPermissionPrincipalType,
+  ContentPermissionsRequest,
+  ContentPermissionWriteParams,
+  ContentRestrictionState,
   ContentSortOrder,
   CreatePageRequest,
   CreateSpaceData,
   CustomContentSortOrder,
   DataPolicySpaceSortOrder,
+  DatabaseEntryFilter,
   GetBlogPostParams,
   GetPageParams,
   GetSpaceParams,
@@ -401,9 +407,44 @@ async function executePages(client: ConfluenceClient, cmd: ParsedCommand): Promi
       );
     }
 
+    // ── restriction state & direct permissions ──────────────────────────────
+
+    case 'get-restriction-state':
+      return client.pages.getRestrictionState(requireArg(cmd.positionalArgs[0], 'page ID'));
+    case 'set-restriction-state':
+      return client.pages.setRestrictionState(
+        requireArg(cmd.positionalArgs[0], 'page ID'),
+        { state: requireEnum(opts['state'], CONTENT_RESTRICTION_STATES, '--state') },
+        selfLockoutParams(opts),
+      );
+    case 'list-permissions':
+      return client.pages.listPermissions(requireArg(cmd.positionalArgs[0], 'page ID'), {
+        ...permissionFilterParams(opts),
+        cursor: asString(opts['cursor']),
+        limit: asPositiveInt(opts['limit'], '--limit'),
+      });
+    case 'add-permissions':
+      return client.pages.addPermissions(
+        requireArg(cmd.positionalArgs[0], 'page ID'),
+        permissionsRequestBody(opts),
+        selfLockoutParams(opts),
+      );
+    case 'set-permissions':
+      return client.pages.setPermissions(
+        requireArg(cmd.positionalArgs[0], 'page ID'),
+        permissionsRequestBody(opts),
+        selfLockoutParams(opts),
+      );
+    case 'delete-permissions':
+      await client.pages.deletePermissions(requireArg(cmd.positionalArgs[0], 'page ID'), {
+        ...permissionFilterParams(opts),
+        ...selfLockoutParams(opts),
+      });
+      return { deleted: true };
+
     default:
       throw new Error(
-        `Unknown pages action: ${cmd.action}. Actions: list, get, create, update, delete, ancestors, descendants, direct-children, children, get-classification-level, update-classification-level, reset-classification-level, custom-content, likes-count, likes-users, operations, redact, update-title, list-properties, create-property, get-property, update-property, delete-property, version, versions, footer-comments, inline-comments, upload-attachment`,
+        `Unknown pages action: ${cmd.action}. Actions: list, get, create, update, delete, ancestors, descendants, direct-children, children, get-classification-level, update-classification-level, reset-classification-level, custom-content, likes-count, likes-users, operations, redact, update-title, list-properties, create-property, get-property, update-property, delete-property, version, versions, footer-comments, inline-comments, upload-attachment, get-restriction-state, set-restriction-state, list-permissions, add-permissions, set-permissions, delete-permissions`,
       );
   }
 }
@@ -902,9 +943,46 @@ async function executeBlogPosts(client: ConfluenceClient, cmd: ParsedCommand): P
       );
     }
 
+    // ── restriction state & direct permissions ──────────────────────────────
+
+    case 'get-restriction-state':
+      return client.blogPosts.getRestrictionState(
+        requireArg(cmd.positionalArgs[0], 'blog post ID'),
+      );
+    case 'set-restriction-state':
+      return client.blogPosts.setRestrictionState(
+        requireArg(cmd.positionalArgs[0], 'blog post ID'),
+        { state: requireEnum(opts['state'], CONTENT_RESTRICTION_STATES, '--state') },
+        selfLockoutParams(opts),
+      );
+    case 'list-permissions':
+      return client.blogPosts.listPermissions(requireArg(cmd.positionalArgs[0], 'blog post ID'), {
+        ...permissionFilterParams(opts),
+        cursor: asString(opts['cursor']),
+        limit: asPositiveInt(opts['limit'], '--limit'),
+      });
+    case 'add-permissions':
+      return client.blogPosts.addPermissions(
+        requireArg(cmd.positionalArgs[0], 'blog post ID'),
+        permissionsRequestBody(opts),
+        selfLockoutParams(opts),
+      );
+    case 'set-permissions':
+      return client.blogPosts.setPermissions(
+        requireArg(cmd.positionalArgs[0], 'blog post ID'),
+        permissionsRequestBody(opts),
+        selfLockoutParams(opts),
+      );
+    case 'delete-permissions':
+      await client.blogPosts.deletePermissions(requireArg(cmd.positionalArgs[0], 'blog post ID'), {
+        ...permissionFilterParams(opts),
+        ...selfLockoutParams(opts),
+      });
+      return { deleted: true };
+
     default:
       throw new Error(
-        `Unknown blog-posts action: ${cmd.action}. Actions: list, get, create, update, delete, list-properties, create-property, get-property, update-property, delete-property, attachments, get-classification-level, update-classification-level, reset-classification-level, custom-content, footer-comments, inline-comments, labels, likes-count, likes-users, operations, redact, versions, version`,
+        `Unknown blog-posts action: ${cmd.action}. Actions: list, get, create, update, delete, list-properties, create-property, get-property, update-property, delete-property, attachments, get-classification-level, update-classification-level, reset-classification-level, custom-content, footer-comments, inline-comments, labels, likes-count, likes-users, operations, redact, versions, version, get-restriction-state, set-restriction-state, list-permissions, add-permissions, set-permissions, delete-permissions`,
       );
   }
 }
@@ -2138,9 +2216,74 @@ async function executeDatabases(client: ConfluenceClient, cmd: ParsedCommand): P
         requireOpt(opts['property-id'], '--property-id'),
       );
       return { deleted: true };
+
+    // ── restriction state & direct permissions ──────────────────────────────
+
+    case 'get-restriction-state':
+      return client.databases.getRestrictionState(requireArg(cmd.positionalArgs[0], 'database ID'));
+    case 'set-restriction-state':
+      return client.databases.setRestrictionState(
+        requireArg(cmd.positionalArgs[0], 'database ID'),
+        { state: requireEnum(opts['state'], CONTENT_RESTRICTION_STATES, '--state') },
+        selfLockoutParams(opts),
+      );
+    case 'list-permissions':
+      return client.databases.listPermissions(requireArg(cmd.positionalArgs[0], 'database ID'), {
+        ...permissionFilterParams(opts),
+        cursor: asString(opts['cursor']),
+        limit: asPositiveInt(opts['limit'], '--limit'),
+      });
+    case 'add-permissions':
+      return client.databases.addPermissions(
+        requireArg(cmd.positionalArgs[0], 'database ID'),
+        permissionsRequestBody(opts),
+        selfLockoutParams(opts),
+      );
+    case 'set-permissions':
+      return client.databases.setPermissions(
+        requireArg(cmd.positionalArgs[0], 'database ID'),
+        permissionsRequestBody(opts),
+        selfLockoutParams(opts),
+      );
+    case 'delete-permissions':
+      await client.databases.deletePermissions(requireArg(cmd.positionalArgs[0], 'database ID'), {
+        ...permissionFilterParams(opts),
+        ...selfLockoutParams(opts),
+      });
+      return { deleted: true };
+
+    // ── data: fields, views, entries (experimental) ─────────────────────────
+
+    case 'fields':
+      return client.databases.listFields(requireArg(cmd.positionalArgs[0], 'database ID'), {
+        limit: asPositiveInt(opts['limit'], '--limit'),
+        cursor: asString(opts['cursor']),
+        ifNoneMatch: asString(opts['if-none-match']),
+      });
+    case 'views':
+      return client.databases.listViews(requireArg(cmd.positionalArgs[0], 'database ID'), {
+        limit: asPositiveInt(opts['limit'], '--limit'),
+        cursor: asString(opts['cursor']),
+        ifNoneMatch: asString(opts['if-none-match']),
+      });
+    case 'entries':
+      return client.databases.listEntries(requireArg(cmd.positionalArgs[0], 'database ID'), {
+        limit: asPositiveInt(opts['limit'], '--limit'),
+        cursor: asString(opts['cursor']),
+        sort: asString(opts['sort']),
+        filter: parseEntryFilter(asString(opts['filter'])),
+        ifNoneMatch: asString(opts['if-none-match']),
+      });
+    case 'get-entry':
+      return client.databases.getEntry(
+        requireArg(cmd.positionalArgs[0], 'database ID'),
+        requireOpt(opts['entry-id'], '--entry-id'),
+        { ifNoneMatch: asString(opts['if-none-match']) },
+      );
+
     default:
       throw new Error(
-        `Unknown databases action: ${cmd.action}. Actions: create, get, delete, ancestors, descendants, direct-children, operations, get-classification-level, update-classification-level, reset-classification-level, list-properties, create-property, get-property, update-property, delete-property`,
+        `Unknown databases action: ${cmd.action}. Actions: create, get, delete, ancestors, descendants, direct-children, operations, get-classification-level, update-classification-level, reset-classification-level, list-properties, create-property, get-property, update-property, delete-property, get-restriction-state, set-restriction-state, list-permissions, add-permissions, set-permissions, delete-permissions, fields, views, entries, get-entry`,
       );
   }
 }
@@ -2303,9 +2446,45 @@ async function executeFolders(client: ConfluenceClient, cmd: ParsedCommand): Pro
         requireOpt(opts['property-id'], '--property-id'),
       );
       return { deleted: true };
+
+    // ── restriction state & direct permissions ──────────────────────────────
+
+    case 'get-restriction-state':
+      return client.folders.getRestrictionState(requireArg(cmd.positionalArgs[0], 'folder ID'));
+    case 'set-restriction-state':
+      return client.folders.setRestrictionState(
+        requireArg(cmd.positionalArgs[0], 'folder ID'),
+        { state: requireEnum(opts['state'], CONTENT_RESTRICTION_STATES, '--state') },
+        selfLockoutParams(opts),
+      );
+    case 'list-permissions':
+      return client.folders.listPermissions(requireArg(cmd.positionalArgs[0], 'folder ID'), {
+        ...permissionFilterParams(opts),
+        cursor: asString(opts['cursor']),
+        limit: asPositiveInt(opts['limit'], '--limit'),
+      });
+    case 'add-permissions':
+      return client.folders.addPermissions(
+        requireArg(cmd.positionalArgs[0], 'folder ID'),
+        permissionsRequestBody(opts),
+        selfLockoutParams(opts),
+      );
+    case 'set-permissions':
+      return client.folders.setPermissions(
+        requireArg(cmd.positionalArgs[0], 'folder ID'),
+        permissionsRequestBody(opts),
+        selfLockoutParams(opts),
+      );
+    case 'delete-permissions':
+      await client.folders.deletePermissions(requireArg(cmd.positionalArgs[0], 'folder ID'), {
+        ...permissionFilterParams(opts),
+        ...selfLockoutParams(opts),
+      });
+      return { deleted: true };
+
     default:
       throw new Error(
-        `Unknown folders action: ${cmd.action}. Actions: create, get, delete, ancestors, descendants, direct-children, operations, list-properties, create-property, get-property, update-property, delete-property`,
+        `Unknown folders action: ${cmd.action}. Actions: create, get, delete, ancestors, descendants, direct-children, operations, list-properties, create-property, get-property, update-property, delete-property, get-restriction-state, set-restriction-state, list-permissions, add-permissions, set-permissions, delete-permissions`,
       );
   }
 }
@@ -2556,9 +2735,53 @@ async function executeWhiteboards(client: ConfluenceClient, cmd: ParsedCommand):
         requireOpt(opts['property-id'], '--property-id'),
       );
       return { deleted: true };
+
+    // ── restriction state & direct permissions ──────────────────────────────
+
+    case 'get-restriction-state':
+      return client.whiteboards.getRestrictionState(
+        requireArg(cmd.positionalArgs[0], 'whiteboard ID'),
+      );
+    case 'set-restriction-state':
+      return client.whiteboards.setRestrictionState(
+        requireArg(cmd.positionalArgs[0], 'whiteboard ID'),
+        { state: requireEnum(opts['state'], CONTENT_RESTRICTION_STATES, '--state') },
+        selfLockoutParams(opts),
+      );
+    case 'list-permissions':
+      return client.whiteboards.listPermissions(
+        requireArg(cmd.positionalArgs[0], 'whiteboard ID'),
+        {
+          ...permissionFilterParams(opts),
+          cursor: asString(opts['cursor']),
+          limit: asPositiveInt(opts['limit'], '--limit'),
+        },
+      );
+    case 'add-permissions':
+      return client.whiteboards.addPermissions(
+        requireArg(cmd.positionalArgs[0], 'whiteboard ID'),
+        permissionsRequestBody(opts),
+        selfLockoutParams(opts),
+      );
+    case 'set-permissions':
+      return client.whiteboards.setPermissions(
+        requireArg(cmd.positionalArgs[0], 'whiteboard ID'),
+        permissionsRequestBody(opts),
+        selfLockoutParams(opts),
+      );
+    case 'delete-permissions':
+      await client.whiteboards.deletePermissions(
+        requireArg(cmd.positionalArgs[0], 'whiteboard ID'),
+        {
+          ...permissionFilterParams(opts),
+          ...selfLockoutParams(opts),
+        },
+      );
+      return { deleted: true };
+
     default:
       throw new Error(
-        `Unknown whiteboards action: ${cmd.action}. Actions: create, get, delete, ancestors, descendants, direct-children, operations, get-classification-level, update-classification-level, reset-classification-level, list-properties, create-property, get-property, update-property, delete-property`,
+        `Unknown whiteboards action: ${cmd.action}. Actions: create, get, delete, ancestors, descendants, direct-children, operations, get-classification-level, update-classification-level, reset-classification-level, list-properties, create-property, get-property, update-property, delete-property, get-restriction-state, set-restriction-state, list-permissions, add-permissions, set-permissions, delete-permissions`,
       );
   }
 }
@@ -2683,6 +2906,66 @@ function requireEnum<T extends string>(
     throw new Error(`${flagName} must be one of: ${allowed.join(', ')}, got: ${value}`);
   }
   return value as T;
+}
+
+const CONTENT_RESTRICTION_STATES: readonly ContentRestrictionState[] = [
+  'OPEN',
+  'EDIT_RESTRICTED',
+  'VIEW_RESTRICTED',
+];
+
+const PERMISSION_OPERATIONS: readonly ContentPermissionOperation[] = ['read', 'update'];
+
+const PERMISSION_PRINCIPAL_TYPES: readonly ContentPermissionPrincipalType[] = ['user', 'group'];
+
+/**
+ * `--allow-self-lockout` is only forwarded when the flag is present: the API
+ * default (`false`) protects the caller from removing their own access, so it
+ * must never be opted into implicitly.
+ */
+function selfLockoutParams(
+  opts: ParsedCommand['options'],
+): ContentPermissionWriteParams | undefined {
+  return opts['allow-self-lockout'] === true ? { 'allow-self-lockout': true } : undefined;
+}
+
+/** `--operation` / `--principal-type` / `--principal-id` filters for list/delete permissions. */
+function permissionFilterParams(opts: ParsedCommand['options']) {
+  const operation = asEnum(opts['operation'], PERMISSION_OPERATIONS, 'operation');
+  const principalType = asEnum(
+    opts['principal-type'],
+    PERMISSION_PRINCIPAL_TYPES,
+    'principal-type',
+  );
+  const principalId = asString(opts['principal-id']);
+  return {
+    ...(operation !== undefined ? { operation } : {}),
+    ...(principalType !== undefined ? { 'principal-type': principalType } : {}),
+    ...(principalId !== undefined ? { 'principal-id': principalId } : {}),
+  };
+}
+
+/** Parse `--body` as the `{ "permissions": [...] }` request for add/set permissions. */
+function permissionsRequestBody(opts: ParsedCommand['options']): ContentPermissionsRequest {
+  const parsed = parseJsonValue(requireOpt(opts['body'], '--body'));
+  if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+    throw new Error(
+      '--body must be a JSON object (ContentPermissionsRequest), e.g. \'{"permissions":[{"operation":"read","principals":[{"principalType":"user","principalId":"<accountId>"}]}]}\'',
+    );
+  }
+  return parsed as ContentPermissionsRequest;
+}
+
+/** Parse `--filter` as a JSON object mapping database field IDs to filter conditions. */
+function parseEntryFilter(raw: string | undefined): DatabaseEntryFilter | undefined {
+  if (raw === undefined) return undefined;
+  const parsed = parseJsonValue(raw);
+  if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+    throw new Error(
+      '--filter must be a JSON object mapping field IDs to conditions, e.g. \'{"<fieldId>":"eq:foo","<dateFieldId>":{"gte":"2026-01-01"}}\'',
+    );
+  }
+  return parsed as DatabaseEntryFilter;
 }
 
 const CONTENT_SORT_ORDERS: readonly ContentSortOrder[] = [

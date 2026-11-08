@@ -7,12 +7,12 @@ Pinned snapshots of upstream Atlassian REST API specifications. Used by implemen
 ### `jira-platform-v3.json`
 
 - **Source:** https://developer.atlassian.com/cloud/jira/platform/swagger-v3.v3.json
-- **Pinned:** 2026-09-02
+- **Pinned:** 2026-11-08
 - **OpenAPI:** 3.0.1
-- **Upstream version:** `1001.0.0-SNAPSHOT-52c82d8ebf8c89ab7a9eb0805cd63b984e7a1d4e`
-- **Paths:** 421 (617 operations, 29 deprecated)
-- **SHA-256:** `9029bb1c5ebd513494660bf4c7520281701ed0c984f4a3a1bd0505db29ae7b7d`
-- **Contract fingerprint:** `ecba06ea28d7`
+- **Upstream version:** `1001.0.0-SNAPSHOT-30f301faa123fbef7f33006c52a9db372ad7afa7`
+- **Paths:** 433 (630 operations, 29 deprecated)
+- **SHA-256:** `2a7438c5feaa1fab2e64699cf3ed1b45685af3da356dbb987b216cd98adc12d0`
+- **Contract fingerprint:** `d2bfad62f84c`
 
 ### `jira-software.json`
 
@@ -27,12 +27,12 @@ Pinned snapshots of upstream Atlassian REST API specifications. Used by implemen
 ### `confluence-v2.json`
 
 - **Source:** https://developer.atlassian.com/cloud/confluence/openapi-v2.v3.json
-- **Pinned:** 2026-08-29
+- **Pinned:** 2026-11-08
 - **OpenAPI:** 3.0.3
 - **Upstream version:** `2.0.0`
-- **Paths:** 151 (218 operations, 1 deprecated)
-- **SHA-256:** `451377c5a598ee8155acc11b611404f309bed4a4292ea87f88ed3bfed38fa0a8`
-- **Contract fingerprint:** `dbd7f3110251`
+- **Paths:** 165 (252 operations, 1 deprecated)
+- **SHA-256:** `40535e2a2c01547d53d824d68299098c9073e5bf7ed98a71634706759becfa31`
+- **Contract fingerprint:** `ad6d0bc5ad1f`
 
 ## How to use
 

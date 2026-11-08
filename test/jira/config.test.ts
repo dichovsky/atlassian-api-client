@@ -452,6 +452,25 @@ describe('ConfigResource', () => {
 
       expect(transport.lastCall?.options.query).toMatchObject({ startAt: 5, maxResults: 20 });
     });
+
+    it('forwards the query text filter as a scalar query param', async () => {
+      transport.respondWith(makePageOf([]));
+
+      await resource.listProjects(10001, { query: 'billing', projectId: [10100] });
+
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/config/fieldschemes/10001/projects?projectId=10100`,
+      );
+      expect(transport.lastCall?.options.query).toEqual({ query: 'billing' });
+    });
+
+    it('omits query when not provided', async () => {
+      transport.respondWith(makePageOf([]));
+
+      await resource.listProjects(10001);
+
+      expect(transport.lastCall?.options.query).toEqual({});
+    });
   });
 
   // ── B375: listProjectsAll ──────────────────────────────────────────────────
@@ -480,6 +499,38 @@ describe('ConfigResource', () => {
       }
 
       expect(results).toHaveLength(2);
+    });
+
+    it('forwards the query text filter on every page', async () => {
+      transport
+        .respondWith({
+          values: [{ id: '10100' }],
+          startAt: 0,
+          maxResults: 1,
+          total: 2,
+          isLast: false,
+        })
+        .respondWith({
+          values: [{ id: '10101' }],
+          startAt: 1,
+          maxResults: 1,
+          total: 2,
+          isLast: true,
+        });
+
+      const results: unknown[] = [];
+      for await (const item of resource.listProjectsAll(10001, {
+        query: 'billing',
+        maxResults: 1,
+      })) {
+        results.push(item);
+      }
+
+      expect(results).toHaveLength(2);
+      expect(transport.calls.map((c) => c.options.query)).toEqual([
+        { query: 'billing', startAt: 0, maxResults: 1 },
+        { query: 'billing', startAt: 1, maxResults: 1 },
+      ]);
     });
 
     it('throws on invalid maxResults in listProjectsAll', async () => {

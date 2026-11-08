@@ -318,6 +318,8 @@ export interface ListSchemeProjectsParams {
   readonly maxResults?: number;
   /** Filter by project IDs. */
   readonly projectId?: number[];
+  /** Filter to projects whose name, key or ID contains this text (case-insensitive). */
+  readonly query?: string;
 }
 
 /** Query parameters for GET /rest/api/3/config/fieldschemes/projects. */
@@ -751,6 +753,7 @@ function buildSchemeProjectsQuery(
   if (params?.maxResults !== undefined) query['maxResults'] = params.maxResults;
   // `projectId` is `type:array` — emitted as repeated params via `buildSchemeProjectsPath`,
   // not CSV-joined into the scalar query bag.
+  if (params?.query !== undefined) query['query'] = params.query;
   return query;
 }
 

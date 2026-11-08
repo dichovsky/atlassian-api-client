@@ -47,6 +47,7 @@ JQL query and precomputation API (B587–B596). Covers autocomplete, parse, sani
 | `parse`                     | —           | `--queries`             | `--validation`                                                |
 | `migrate-queries`           | —           | —                       | `--query-strings`                                             |
 | `sanitize`                  | —           | `--queries`             | —                                                             |
+| `invalid-jqls-access-log`   | —           | —                       | `--user-account-id`, `--next-page-token`, `--max-results`     |
 
 **Notes:**
 
@@ -60,6 +61,11 @@ JQL query and precomputation API (B587–B596). Covers autocomplete, parse, sani
 - `parse` (B594): `POST /rest/api/3/jql/parse` — parse JQL queries. `--queries` is a JSON array of query strings; `--validation` is `strict`, `warn`, or `none`.
 - `migrate-queries` (B595): `POST /rest/api/3/jql/pdcleaner` — convert user identifiers to account IDs in JQL. `--query-strings` is a JSON array of query strings.
 - `sanitize` (B596): `POST /rest/api/3/jql/sanitize` — sanitize JQL queries. `--queries` is a JSON array of `{query, accountId?}` objects.
+- `invalid-jqls-access-log` (**experimental**, `x-experimental`): `GET /rest/api/3/invalid-jqls-access-log` — lists JQL searches Jira can no longer support, newest first, retained for three days. Use the entries to find the saved filters and the apps, automations, scripts or REST integrations that run them. Needs the **Administer Jira** global permission; returns 403 on the Free plan and 404 until invalid-JQL audit logging is enabled for the site.
+  - `--user-account-id` restricts entries to one external account ID.
+  - `--max-results` is 1-100 (server default 50); other values give HTTP 400.
+  - `--next-page-token` takes the previous response's `nextPageToken` (token pagination; stop when `isLast` is true).
+  - Returns `{ entries: [{ caller, createdAt, filterId, jql, requestUrl, user, userAgent, validationMessage }], isLast, nextPageToken, nextPageURL }`.
 
 ```sh
 # Get JQL autocomplete data (GET) — B587
@@ -97,4 +103,8 @@ atlas jira jql migrate-queries --query-strings '["assignee = mia","reporter = al
 
 # Sanitize JQL queries — B596
 atlas jira jql sanitize --queries '[{"query":"project = TEST AND assignee = currentUser()","accountId":"612345:abc"}]'
+
+# List invalid JQL searches (experimental), then fetch the next page
+atlas jira jql invalid-jqls-access-log --max-results 100
+atlas jira jql invalid-jqls-access-log --user-account-id 5b10ac8d82e05b22cc7d4ef5 --next-page-token '<nextPageToken>'
 ```

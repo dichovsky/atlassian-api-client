@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
+import { describeContentPermissions } from './content-permissions-suite.js';
 import { PagesResource } from '../../src/confluence/resources/pages.js';
 import type { CreatePageData, CreatePageRequest } from '../../src/confluence/types/pages.js';
 import { MockTransport } from '../helpers/mock-transport.js';
@@ -1123,3 +1124,9 @@ describe('PagesResource', () => {
     });
   });
 });
+
+describeContentPermissions(
+  'PagesResource',
+  'pages',
+  (transport) => new PagesResource(transport, BASE_URL),
+);

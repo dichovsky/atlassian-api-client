@@ -1,9 +1,24 @@
 import type { Transport } from '../../core/types.js';
 import { encodePathSegment } from '../../core/path.js';
+import {
+  permissionDeleteQuery,
+  permissionListQuery,
+  permissionWriteQuery,
+} from './content-permissions.js';
 import type { CursorPaginatedResponse } from '../../core/pagination.js';
 import { paginateCursor, validatePageSize } from '../../core/pagination.js';
 import { appendScalarOrArrayParam } from '../../core/query.js';
 import { withSpaceIdParam } from './query.js';
+import type {
+  ContentPermissionOutput,
+  ContentPermissionsRequest,
+  ContentPermissionsResponse,
+  ContentPermissionWriteParams,
+  DeleteContentPermissionsParams,
+  ListContentPermissionsParams,
+  RestrictionStateResponse,
+  SetRestrictionStateData,
+} from '../types/content-permissions.js';
 import type { ClassificationLevel } from '../types/classification-levels.js';
 import type {
   ContentProperty,
@@ -712,6 +727,122 @@ export class PagesResource {
     await this.transport.request<undefined>({
       method: 'DELETE',
       path: `${this.baseUrl}/pages/${encodePathSegment(pageId)}/properties/${encodePathSegment(propertyId)}`,
+    });
+  }
+
+  // ── restriction state & direct permissions ────────────────────────────────
+
+  /**
+   * Get the direct restriction state of a page (spec `getPageRestrictionState`).
+   * Inherited restrictions are not included.
+   */
+  async getRestrictionState(id: string): Promise<RestrictionStateResponse> {
+    const response = await this.transport.request<RestrictionStateResponse>({
+      method: 'GET',
+      path: `${this.baseUrl}/pages/${encodePathSegment(id)}/restriction-state`,
+    });
+    return response.data;
+  }
+
+  /**
+   * Set the direct restriction state of a page (spec `setPageRestrictionState`).
+   *
+   * `params['allow-self-lockout']` is sent only when explicitly set; without it
+   * the server rejects a change that would remove the caller's own edit access.
+   */
+  async setRestrictionState(
+    id: string,
+    data: SetRestrictionStateData,
+    params?: ContentPermissionWriteParams,
+  ): Promise<RestrictionStateResponse> {
+    const response = await this.transport.request<RestrictionStateResponse>({
+      method: 'PUT',
+      path: `${this.baseUrl}/pages/${encodePathSegment(id)}/restriction-state`,
+      query: permissionWriteQuery(params),
+      body: data,
+    });
+    return response.data;
+  }
+
+  /**
+   * List the direct permissions on a page (single page; spec `getPagePermissions`).
+   * `params['principal-id']` must be combined with `params['principal-type']`.
+   */
+  async listPermissions(
+    id: string,
+    params?: ListContentPermissionsParams,
+  ): Promise<CursorPaginatedResponse<ContentPermissionOutput>> {
+    const response = await this.transport.request<CursorPaginatedResponse<ContentPermissionOutput>>(
+      {
+        method: 'GET',
+        path: `${this.baseUrl}/pages/${encodePathSegment(id)}/permissions`,
+        query: permissionListQuery(params),
+      },
+    );
+    return response.data;
+  }
+
+  /** Iterate every direct permission on a page across all pages. */
+  async *listPermissionsAll(
+    id: string,
+    params?: Omit<ListContentPermissionsParams, 'cursor'>,
+  ): AsyncGenerator<ContentPermissionOutput> {
+    yield* paginateCursor<ContentPermissionOutput>(
+      this.transport,
+      `${this.baseUrl}/pages/${encodePathSegment(id)}/permissions`,
+      permissionListQuery(params),
+    );
+  }
+
+  /**
+   * Add or replace direct permissions for the given principals on a page
+   * (spec `addPagePermissions`); other principals keep theirs. A principal holds
+   * one `read` or `update` permission; `update` wins within a request.
+   */
+  async addPermissions(
+    id: string,
+    data: ContentPermissionsRequest,
+    params?: ContentPermissionWriteParams,
+  ): Promise<ContentPermissionsResponse> {
+    const response = await this.transport.request<ContentPermissionsResponse>({
+      method: 'POST',
+      path: `${this.baseUrl}/pages/${encodePathSegment(id)}/permissions`,
+      query: permissionWriteQuery(params),
+      body: data,
+    });
+    return response.data;
+  }
+
+  /**
+   * Replace ALL direct permissions on a page with the provided set (spec
+   * `setPagePermissions`); permissions absent from `data` are removed.
+   */
+  async setPermissions(
+    id: string,
+    data: ContentPermissionsRequest,
+    params?: ContentPermissionWriteParams,
+  ): Promise<ContentPermissionsResponse> {
+    const response = await this.transport.request<ContentPermissionsResponse>({
+      method: 'PUT',
+      path: `${this.baseUrl}/pages/${encodePathSegment(id)}/permissions`,
+      query: permissionWriteQuery(params),
+      body: data,
+    });
+    return response.data;
+  }
+
+  /**
+   * Delete direct permissions from a page (spec `deletePagePermissions`).
+   *
+   * Destructive: with no filters ALL direct permissions are deleted. Narrow the
+   * scope with `principal-type` + `principal-id` (optionally plus `operation`);
+   * other filter combinations are rejected by the server with a 400.
+   */
+  async deletePermissions(id: string, params?: DeleteContentPermissionsParams): Promise<void> {
+    await this.transport.request<undefined>({
+      method: 'DELETE',
+      path: `${this.baseUrl}/pages/${encodePathSegment(id)}/permissions`,
+      query: permissionDeleteQuery(params),
     });
   }
 

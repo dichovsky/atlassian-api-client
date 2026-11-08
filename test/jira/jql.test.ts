@@ -1,7 +1,9 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { JqlResource } from '../../src/jira/resources/jql.js';
 import { MockTransport } from '../helpers/mock-transport.js';
+import { ValidationError } from '../../src/core/errors.js';
 import type {
+  InvalidJqlAuditPage,
   JqlAutocompleteData,
   JqlSuggestions,
   ParsedJqlQueries,
@@ -521,6 +523,71 @@ describe('JqlResource', () => {
 
       // Assert
       expect(transport.lastCall?.options.body).toEqual({});
+    });
+  });
+
+  // ── getInvalidJqlAuditEntries (GET /invalid-jqls-access-log, experimental) ─
+
+  describe('getInvalidJqlAuditEntries()', () => {
+    const page: InvalidJqlAuditPage = {
+      entries: [
+        {
+          caller: 'rest-api',
+          createdAt: '2026-11-07T10:00:00.000Z',
+          filterId: '10001',
+          jql: 'issuetype = Bug AND foo = bar',
+          requestUrl: '/rest/api/3/search/jql',
+          user: { accountId: '5b10ac8d82e05b22cc7d4ef5', displayName: 'Mia' },
+          userAgent: 'curl/8.0',
+          validationMessage: "Field 'foo' does not exist",
+        },
+      ],
+      isLast: false,
+      nextPageToken: 'tok-2',
+      nextPageURL:
+        'https://test.atlassian.net/rest/api/3/invalid-jqls-access-log?nextPageToken=tok-2',
+    };
+
+    it('calls GET /invalid-jqls-access-log with no params', async () => {
+      transport.respondWith(page);
+
+      const result = await jql.getInvalidJqlAuditEntries();
+
+      expect(result).toEqual(page);
+      expect(transport.lastCall?.options).toEqual({
+        method: 'GET',
+        path: `${BASE_URL}/invalid-jqls-access-log`,
+        query: {},
+      });
+    });
+
+    it('forwards userAccountId, nextPageToken and maxResults as scalar query params', async () => {
+      transport.respondWith(page);
+
+      await jql.getInvalidJqlAuditEntries({
+        userAccountId: '5b10ac8d82e05b22cc7d4ef5',
+        nextPageToken: 'tok-2',
+        maxResults: 100,
+      });
+
+      expect(transport.lastCall?.options.query).toEqual({
+        userAccountId: '5b10ac8d82e05b22cc7d4ef5',
+        nextPageToken: 'tok-2',
+        maxResults: 100,
+      });
+    });
+
+    it('rejects a non-positive maxResults before any request', async () => {
+      await expect(jql.getInvalidJqlAuditEntries({ maxResults: 0 })).rejects.toThrow(
+        ValidationError,
+      );
+      expect(transport.calls).toHaveLength(0);
+    });
+
+    it('propagates transport errors', async () => {
+      transport.respondWithError(new Error('not enabled'));
+
+      await expect(jql.getInvalidJqlAuditEntries()).rejects.toThrow('not enabled');
     });
   });
 });
