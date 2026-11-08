@@ -13,6 +13,7 @@ Covers the operations Atlassian added to the Jira platform v3 and Confluence v2 
 - `jql.getInvalidJqlAuditEntries` (experimental), `forge.getBulkPinStatus`, `workflows.copyWorkflow`, and `fields.updateContextDefaultValues` for per-issue-type context defaults, each with a CLI action.
 - `fields.setContextIssueTypes` accepts `isAnyIssueType` and `defaultValue`, and `issueTypeIds` is now optional; the `longtext` custom-field context default-value variant; `query` and `scope` on `labels.list` / `listAll`; `query` on `config.listProjects` / `listProjectsAll`.
 - `read:bulk-job:jira` and `write:bulk-job:jira` in the OAuth scope catalog.
+- Every new request and response type above is exported from the package root (`atlassian-api-client`), e.g. `ContentPermissionsRequest`, `DatabaseEntryFilter`, `PolicySummaryResponse`, `StartAgentSessionsBatchData`, `WorkflowCopyRequest`, and `IssueTypeDefaultValueUpdate`.
 
 ### Fixed
 

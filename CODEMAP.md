@@ -10,11 +10,20 @@
     "name": "atlassian-api-client",
     "version": "4.1.0"
   },
-  "sourceHash": "a75e18f4ec1a813f9dbd729e55db310ae4e8212388d5f4ab67b09de68adb9735",
+  "sourceHash": "d688386a3e4142ced5854333446339e8860983a92b27d17a6e6dc15840fd16ee",
   "entrypoints": [
     "src/index.ts"
   ],
   "publicApi": [
+    {
+      "name": "AddIssueTypesToContextBody",
+      "kind": "interface",
+      "file": "src/jira/resources/fields.ts",
+      "line": 283,
+      "signature": "export interface AddIssueTypesToContextBody { readonly issueTypeIds?: readonly string[] | null; readonly isAnyIssueType?…",
+      "jsdoc": "Request body for adding issue types to a context (B419). Spec: `AddIssueTypesToContext`.",
+      "typeOnly": true
+    },
     {
       "name": "ApiResponse",
       "kind": "interface",
@@ -266,6 +275,51 @@
       "typeOnly": true
     },
     {
+      "name": "BulkAgentSessionInvocation",
+      "kind": "interface",
+      "file": "src/jira/resources/agents.ts",
+      "line": 8,
+      "signature": "export interface BulkAgentSessionInvocation { readonly agentId: string; readonly issueId: string; readonly requestId: st…",
+      "jsdoc": "One agent-session invocation for an issue. Spec: `BulkAgentSessionInvocation`.",
+      "typeOnly": true
+    },
+    {
+      "name": "BulkAgentSessionItemError",
+      "kind": "interface",
+      "file": "src/jira/resources/agents.ts",
+      "line": 44,
+      "signature": "export interface BulkAgentSessionItemError { readonly message?: string; readonly statusCode?: number; readonly type?: st…",
+      "jsdoc": "Item-level error inside an HTTP 200 response. Spec: `BulkAgentSessionItemError`.",
+      "typeOnly": true
+    },
+    {
+      "name": "BulkAgentSessionOutcome",
+      "kind": "interface",
+      "file": "src/jira/resources/agents.ts",
+      "line": 53,
+      "signature": "export interface BulkAgentSessionOutcome { readonly agentId?: string; readonly conversationId?: string | null; readonly …",
+      "jsdoc": "The start outcome for one invocation. Spec: `BulkAgentSessionOutcome`.",
+      "typeOnly": true
+    },
+    {
+      "name": "BulkAgentSessionResult",
+      "kind": "type",
+      "file": "src/jira/resources/agents.ts",
+      "line": 40,
+      "signature": "export type BulkAgentSessionResult = 'STARTED' | 'ALREADY_STARTED' | 'FAILED' | 'RATE_LIMITED' | 'IN_DOUBT';",
+      "jsdoc": "Item-level outcome code. Spec: `BulkAgentSessionOutcome.result`.",
+      "typeOnly": true
+    },
+    {
+      "name": "BulkAgentSessionsResponse",
+      "kind": "interface",
+      "file": "src/jira/resources/agents.ts",
+      "line": 71,
+      "signature": "export interface BulkAgentSessionsResponse { readonly alreadyStartedCount?: number; readonly failedCount?: number; reado…",
+      "jsdoc": "Session-start outcomes (not completion of the agent's work). Spec: `BulkAgentSessionsResponse`.",
+      "typeOnly": true
+    },
+    {
       "name": "BulkAssignRolesRequest",
       "kind": "interface",
       "file": "src/confluence/types/space-permissions.ts",
@@ -302,12 +356,39 @@
       "typeOnly": true
     },
     {
+      "name": "BulkForgePanelPinStatusData",
+      "kind": "interface",
+      "file": "src/jira/resources/forge.ts",
+      "line": 37,
+      "signature": "export interface BulkForgePanelPinStatusData { readonly moduleId: string; readonly projectList: readonly string[]; }",
+      "jsdoc": "Request body for POST /rest/api/3/forge/panel/action/bulk/status. Spec: `ForgePanelProjectPinStatusRequest`.",
+      "typeOnly": true
+    },
+    {
+      "name": "BulkForgePanelPinStatusResponse",
+      "kind": "interface",
+      "file": "src/jira/resources/forge.ts",
+      "line": 60,
+      "signature": "export interface BulkForgePanelPinStatusResponse { readonly moduleId?: string; readonly statuses?: readonly ForgePanelPr…",
+      "jsdoc": "Response from POST /rest/api/3/forge/panel/action/bulk/status. Spec: `ForgePanelProjectPinStatusResponse`.",
+      "typeOnly": true
+    },
+    {
       "name": "BulkIssueIsWatchingResult",
       "kind": "interface",
       "file": "src/jira/resources/issues.ts",
       "line": 272,
       "signature": "export interface BulkIssueIsWatchingResult { readonly issuesIsWatching?: Record<string, boolean>; }",
       "jsdoc": "Result of the bulk \"is watching\" read-check. Spec: POST /rest/api/3/issue/watching (operationId getIsWatchingIssueBulk). Maps each issue ID to `true` if the current user is watching it, `false` otherwise.",
+      "typeOnly": true
+    },
+    {
+      "name": "BulkPolicyOperationResponse",
+      "kind": "interface",
+      "file": "src/jira/resources/policies.ts",
+      "line": 82,
+      "signature": "export interface BulkPolicyOperationResponse { readonly failed?: readonly PolicyProjectResult[]; readonly successful?: r…",
+      "jsdoc": "Result of adding/removing a policy across projects. Spec: `BulkPolicyOperationResponse`.",
       "typeOnly": true
     },
     {
@@ -647,12 +728,84 @@
       "typeOnly": true
     },
     {
+      "name": "ContentPermissionOperation",
+      "kind": "type",
+      "file": "src/confluence/types/content-permissions.ts",
+      "line": 12,
+      "signature": "export type ContentPermissionOperation = 'read' | 'update';",
+      "jsdoc": "Operation a direct content permission grants. Mirrors the spec's `read` / `update` enum.",
+      "typeOnly": true
+    },
+    {
+      "name": "ContentPermissionOutput",
+      "kind": "interface",
+      "file": "src/confluence/types/content-permissions.ts",
+      "line": 45,
+      "signature": "export interface ContentPermissionOutput { readonly operation: ContentPermissionOperation; readonly principal: ContentPe…",
+      "jsdoc": "One direct permission entry on a content item. Mirrors the OpenAPI `ContentPermissionOutput` schema.",
+      "typeOnly": true
+    },
+    {
+      "name": "ContentPermissionPrincipal",
+      "kind": "interface",
+      "file": "src/confluence/types/content-permissions.ts",
+      "line": 38,
+      "signature": "export interface ContentPermissionPrincipal { readonly principalType: ContentPermissionPrincipalType; readonly principal…",
+      "jsdoc": "A user or group on a content permission. Mirrors `ContentPermissionPrincipal` / `ContentPrincipalInput`.",
+      "typeOnly": true
+    },
+    {
+      "name": "ContentPermissionPrincipalType",
+      "kind": "type",
+      "file": "src/confluence/types/content-permissions.ts",
+      "line": 15,
+      "signature": "export type ContentPermissionPrincipalType = 'user' | 'group';",
+      "jsdoc": "Principal kind a direct content permission targets. Mirrors the spec's `user` / `group` enum.",
+      "typeOnly": true
+    },
+    {
+      "name": "ContentPermissionWriteParams",
+      "kind": "interface",
+      "file": "src/confluence/types/content-permissions.ts",
+      "line": 83,
+      "signature": "export interface ContentPermissionWriteParams { readonly 'allow-self-lockout'?: boolean; }",
+      "jsdoc": "Query parameters of the content-permission write calls (`PUT /{content}/{id}/restriction-state`, `POST|PUT /{content}/{id}/permissions`).",
+      "typeOnly": true
+    },
+    {
+      "name": "ContentPermissionsRequest",
+      "kind": "interface",
+      "file": "src/confluence/types/content-permissions.ts",
+      "line": 66,
+      "signature": "export interface ContentPermissionsRequest { readonly permissions: readonly OperationPermissionsInput[]; }",
+      "jsdoc": "Request body of `POST|PUT /{content}/{id}/permissions`. The resulting direct-permission set cannot exceed 500 entries.",
+      "typeOnly": true
+    },
+    {
+      "name": "ContentPermissionsResponse",
+      "kind": "interface",
+      "file": "src/confluence/types/content-permissions.ts",
+      "line": 74,
+      "signature": "export interface ContentPermissionsResponse { readonly results: readonly ContentPermissionOutput[]; readonly _links: { r…",
+      "jsdoc": "Response of `POST|PUT /{content}/{id}/permissions`: the first 250 direct permissions of the resulting set. Use `listPermissions` for the remainder.",
+      "typeOnly": true
+    },
+    {
       "name": "ContentProperty",
       "kind": "interface",
       "file": "src/confluence/types/common.ts",
       "line": 37,
       "signature": "export interface ContentProperty { readonly id?: string; readonly key?: string; readonly value?: unknown; readonly versi…",
       "jsdoc": "Confluence Content Property. Mirrors the OpenAPI `ContentProperty` schema (no required fields in spec).",
+      "typeOnly": true
+    },
+    {
+      "name": "ContentRestrictionState",
+      "kind": "type",
+      "file": "src/confluence/types/content-permissions.ts",
+      "line": 9,
+      "signature": "export type ContentRestrictionState = 'OPEN' | 'EDIT_RESTRICTED' | 'VIEW_RESTRICTED';",
+      "jsdoc": "Direct restriction state of a content item. Mirrors the OpenAPI `ContentRestrictionState` enum; inherited restrictions are not represented.",
       "typeOnly": true
     },
     {
@@ -1061,6 +1214,33 @@
       "typeOnly": true
     },
     {
+      "name": "DatabaseAdfDocument",
+      "kind": "interface",
+      "file": "src/confluence/types/database-entries.ts",
+      "line": 174,
+      "signature": "export interface DatabaseAdfDocument { readonly version: number; readonly type: 'doc'; readonly content?: readonly unkno…",
+      "jsdoc": "Minimal Atlassian Document Format envelope.",
+      "typeOnly": true
+    },
+    {
+      "name": "DatabaseAiSummaryFieldSettings",
+      "kind": "interface",
+      "file": "src/confluence/types/database-entries.ts",
+      "line": 39,
+      "signature": "export interface DatabaseAiSummaryFieldSettings { readonly aiRunMetadata?: { readonly lastAiRunUserAccountId: string | n…",
+      "jsdoc": "Settings of an `aiSummary` field.",
+      "typeOnly": true
+    },
+    {
+      "name": "DatabaseAiSummaryValue",
+      "kind": "interface",
+      "file": "src/confluence/types/database-entries.ts",
+      "line": 188,
+      "signature": "export interface DatabaseAiSummaryValue { readonly type: 'aiSummary'; readonly plain: string | null; readonly rich: Data…",
+      "jsdoc": "Value of an `aiSummary` field.",
+      "typeOnly": true
+    },
+    {
       "name": "DatabaseAncestor",
       "kind": "interface",
       "file": "src/confluence/types/databases.ts",
@@ -1079,6 +1259,33 @@
       "typeOnly": true
     },
     {
+      "name": "DatabaseAttachmentValue",
+      "kind": "interface",
+      "file": "src/confluence/types/database-entries.ts",
+      "line": 242,
+      "signature": "export interface DatabaseAttachmentValue { readonly type: 'attachment'; readonly value: readonly { readonly mediaId: str…",
+      "jsdoc": "Value of an `attachment` field.",
+      "typeOnly": true
+    },
+    {
+      "name": "DatabaseBacklinkFieldSettings",
+      "kind": "interface",
+      "file": "src/confluence/types/database-entries.ts",
+      "line": 94,
+      "signature": "export interface DatabaseBacklinkFieldSettings { readonly sourceDatabaseContentId?: string; }",
+      "jsdoc": "Settings of a `backlink` field.",
+      "typeOnly": true
+    },
+    {
+      "name": "DatabaseCheckboxValue",
+      "kind": "interface",
+      "file": "src/confluence/types/database-entries.ts",
+      "line": 206,
+      "signature": "export interface DatabaseCheckboxValue { readonly type: 'checkbox'; readonly value: boolean | null; }",
+      "jsdoc": "Value of a `checkbox` field.",
+      "typeOnly": true
+    },
+    {
       "name": "DatabaseChild",
       "kind": "interface",
       "file": "src/confluence/types/databases.ts",
@@ -1088,12 +1295,246 @@
       "typeOnly": true
     },
     {
+      "name": "DatabaseConditionalParams",
+      "kind": "interface",
+      "file": "src/confluence/types/database-entries.ts",
+      "line": 356,
+      "signature": "export interface DatabaseConditionalParams { readonly ifNoneMatch?: string; }",
+      "jsdoc": "Conditional-request parameter shared by the four database data endpoints.",
+      "typeOnly": true
+    },
+    {
+      "name": "DatabaseDateFieldSettings",
+      "kind": "interface",
+      "file": "src/confluence/types/database-entries.ts",
+      "line": 72,
+      "signature": "export interface DatabaseDateFieldSettings { readonly includesTime: boolean; }",
+      "jsdoc": "Settings of a `date` field.",
+      "typeOnly": true
+    },
+    {
+      "name": "DatabaseDateValue",
+      "kind": "interface",
+      "file": "src/confluence/types/database-entries.ts",
+      "line": 212,
+      "signature": "export interface DatabaseDateValue { readonly type: 'date'; readonly value: string | null; }",
+      "jsdoc": "Value of a `date` field: `YYYY-MM-DD` or an offset-bearing datetime.",
+      "typeOnly": true
+    },
+    {
       "name": "DatabaseDescendant",
       "kind": "interface",
       "file": "src/confluence/types/databases.ts",
       "line": 70,
       "signature": "export interface DatabaseDescendant { readonly id: string; readonly status?: 'current' | 'archived'; readonly title?: st…",
       "jsdoc": "Descendant entry returned by `GET /databases/{id}/descendants`.",
+      "typeOnly": true
+    },
+    {
+      "name": "DatabaseEmptyFieldSettings",
+      "kind": "type",
+      "file": "src/confluence/types/database-entries.ts",
+      "line": 122,
+      "signature": "export type DatabaseEmptyFieldSettings = Readonly<Record<string, never>>;",
+      "jsdoc": "Settings of field types that have none.",
+      "typeOnly": true
+    },
+    {
+      "name": "DatabaseEntry",
+      "kind": "interface",
+      "file": "src/confluence/types/database-entries.ts",
+      "line": 306,
+      "signature": "export interface DatabaseEntry { readonly id: string; readonly databaseId: string; readonly values: Readonly<Record<stri…",
+      "jsdoc": "A single entry (row) of a database.",
+      "typeOnly": true
+    },
+    {
+      "name": "DatabaseEntryDetailsFieldSettings",
+      "kind": "interface",
+      "file": "src/confluence/types/database-entries.ts",
+      "line": 86,
+      "signature": "export interface DatabaseEntryDetailsFieldSettings { readonly sourceFieldId?: string; readonly lookupFieldId?: string; }",
+      "jsdoc": "Settings of an `entryDetails` lookup field.",
+      "typeOnly": true
+    },
+    {
+      "name": "DatabaseEntryFilter",
+      "kind": "type",
+      "file": "src/confluence/types/database-entries.ts",
+      "line": 383,
+      "signature": "export type DatabaseEntryFilter = Readonly< Record<string, string | number | boolean | DatabaseFilterRange> >;",
+      "jsdoc": "Entry filter: field ID to filter. A scalar is sent as `filter[fieldId]=value` and may carry the server's operator grammar (`eq:x`, `in:a,b`, `$empty`); a range object is sent as `filter[fieldId][gte|lte|gt|lt]=value` (date and number fields only). Multiple filters combine with AND.",
+      "typeOnly": true
+    },
+    {
+      "name": "DatabaseEntryLinkValue",
+      "kind": "interface",
+      "file": "src/confluence/types/database-entries.ts",
+      "line": 266,
+      "signature": "export interface DatabaseEntryLinkValue { readonly type: 'entryLink'; readonly value: | readonly { readonly entryId: str…",
+      "jsdoc": "Value of an `entryLink` field.",
+      "typeOnly": true
+    },
+    {
+      "name": "DatabaseEntryListResponse",
+      "kind": "type",
+      "file": "src/confluence/types/database-entries.ts",
+      "line": 346,
+      "signature": "export type DatabaseEntryListResponse = DatabaseListResponse<DatabaseEntry>;",
+      "jsdoc": "Response of `GET /databases/{id}/entries`.",
+      "typeOnly": true
+    },
+    {
+      "name": "DatabaseEntrySingleResponse",
+      "kind": "interface",
+      "file": "src/confluence/types/database-entries.ts",
+      "line": 349,
+      "signature": "export interface DatabaseEntrySingleResponse extends DatabaseEntry { readonly _links: DatabasesPublicApiLinks; }",
+      "jsdoc": "Response of `GET /databases/{id}/entries/{entryId}`: one entry, not wrapped in `results`.",
+      "typeOnly": true
+    },
+    {
+      "name": "DatabaseField",
+      "kind": "type",
+      "file": "src/confluence/types/database-entries.ts",
+      "line": 140,
+      "signature": "export type DatabaseField = | DatabaseFieldDefinition<'text', DatabaseTextFieldSettings> | DatabaseFieldDefinition<'aiSu…",
+      "jsdoc": "A database field definition, discriminated on `type`. Mirrors the OpenAPI `DatabaseField` `oneOf`.",
+      "typeOnly": true
+    },
+    {
+      "name": "DatabaseFieldDefinition",
+      "kind": "interface",
+      "file": "src/confluence/types/database-entries.ts",
+      "line": 125,
+      "signature": "export interface DatabaseFieldDefinition<T extends DatabaseFieldType, S> { readonly id: string; readonly name: string; r…",
+      "jsdoc": "Properties shared by every field definition.",
+      "typeOnly": true
+    },
+    {
+      "name": "DatabaseFieldListResponse",
+      "kind": "type",
+      "file": "src/confluence/types/database-entries.ts",
+      "line": 340,
+      "signature": "export type DatabaseFieldListResponse = DatabaseListResponse<DatabaseField>;",
+      "jsdoc": "Response of `GET /databases/{id}/fields`.",
+      "typeOnly": true
+    },
+    {
+      "name": "DatabaseFieldType",
+      "kind": "type",
+      "file": "src/confluence/types/database-entries.ts",
+      "line": 10,
+      "signature": "export type DatabaseFieldType = | 'text' | 'aiSummary' | 'number' | 'checkbox' | 'date' | 'select' | 'hyperlink' | 'user…",
+      "jsdoc": "Type of a database field. Mirrors the OpenAPI `DatabaseFieldType` enum.",
+      "typeOnly": true
+    },
+    {
+      "name": "DatabaseFieldValue",
+      "kind": "type",
+      "file": "src/confluence/types/database-entries.ts",
+      "line": 288,
+      "signature": "export type DatabaseFieldValue = | DatabaseTextValue | DatabaseAiSummaryValue | DatabaseNumberValue | DatabaseCheckboxVa…",
+      "jsdoc": "The value of a single field on an entry, discriminated on `type`. Mirrors the OpenAPI `DatabaseFieldValue` `oneOf`.",
+      "typeOnly": true
+    },
+    {
+      "name": "DatabaseFilterRange",
+      "kind": "type",
+      "file": "src/confluence/types/database-entries.ts",
+      "line": 373,
+      "signature": "export type DatabaseFilterRange = Partial< Readonly<Record<'gte' | 'lte' | 'gt' | 'lt', string | number>> >;",
+      "jsdoc": "Range operators accepted by date and number fields.",
+      "typeOnly": true
+    },
+    {
+      "name": "DatabaseHyperlinkItem",
+      "kind": "interface",
+      "file": "src/confluence/types/database-entries.ts",
+      "line": 224,
+      "signature": "export interface DatabaseHyperlinkItem { readonly url: string; readonly label?: string; }",
+      "jsdoc": "One link in a `hyperlink` value.",
+      "typeOnly": true
+    },
+    {
+      "name": "DatabaseHyperlinkValue",
+      "kind": "interface",
+      "file": "src/confluence/types/database-entries.ts",
+      "line": 230,
+      "signature": "export interface DatabaseHyperlinkValue { readonly type: 'hyperlink'; readonly value: readonly DatabaseHyperlinkItem[] |…",
+      "jsdoc": "Value of a `hyperlink` field.",
+      "typeOnly": true
+    },
+    {
+      "name": "DatabaseJiraIssueDetailsFieldSettings",
+      "kind": "interface",
+      "file": "src/confluence/types/database-entries.ts",
+      "line": 108,
+      "signature": "export interface DatabaseJiraIssueDetailsFieldSettings { readonly sourceFieldId?: string; readonly jiraFieldKey?: string…",
+      "jsdoc": "Settings of a `jiraIssueDetails` lookup field.",
+      "typeOnly": true
+    },
+    {
+      "name": "DatabaseJiraIssueFieldSettings",
+      "kind": "interface",
+      "file": "src/confluence/types/database-entries.ts",
+      "line": 78,
+      "signature": "export interface DatabaseJiraIssueFieldSettings { readonly cloudId?: string; readonly serverId?: string; }",
+      "jsdoc": "Settings of a `jiraIssue` field.",
+      "typeOnly": true
+    },
+    {
+      "name": "DatabaseJiraIssueValue",
+      "kind": "interface",
+      "file": "src/confluence/types/database-entries.ts",
+      "line": 248,
+      "signature": "export interface DatabaseJiraIssueValue { readonly type: 'jiraIssue'; readonly value: | readonly { readonly key: string;…",
+      "jsdoc": "Value of a `jiraIssue` field.",
+      "typeOnly": true
+    },
+    {
+      "name": "DatabaseListResponse",
+      "kind": "interface",
+      "file": "src/confluence/types/database-entries.ts",
+      "line": 333,
+      "signature": "export interface DatabaseListResponse<T> { readonly results: readonly T[]; readonly _links: DatabasesPublicApiLinks; rea…",
+      "jsdoc": "Envelope shared by the database list responses.",
+      "typeOnly": true
+    },
+    {
+      "name": "DatabaseNullLookupValue",
+      "kind": "interface",
+      "file": "src/confluence/types/database-entries.ts",
+      "line": 278,
+      "signature": "export interface DatabaseNullLookupValue { readonly type: 'entryDetails' | 'backlink' | 'pageDetails' | 'pageLabels' | '…",
+      "jsdoc": "Value of a lookup-derived field; the API always returns `null` for these.",
+      "typeOnly": true
+    },
+    {
+      "name": "DatabaseNumberFieldSettings",
+      "kind": "interface",
+      "file": "src/confluence/types/database-entries.ts",
+      "line": 55,
+      "signature": "export interface DatabaseNumberFieldSettings { readonly format?: DatabaseNumberFormat; }",
+      "jsdoc": "Settings of a `number` field.",
+      "typeOnly": true
+    },
+    {
+      "name": "DatabaseNumberFormat",
+      "kind": "interface",
+      "file": "src/confluence/types/database-entries.ts",
+      "line": 44,
+      "signature": "export interface DatabaseNumberFormat { readonly type: 'number' | 'percent' | 'currency' | 'custom'; readonly prefix?: s…",
+      "jsdoc": "Display format of a `number` field.",
+      "typeOnly": true
+    },
+    {
+      "name": "DatabaseNumberValue",
+      "kind": "interface",
+      "file": "src/confluence/types/database-entries.ts",
+      "line": 200,
+      "signature": "export interface DatabaseNumberValue { readonly type: 'number'; readonly value: string | null; }",
+      "jsdoc": "Value of a `number` field: a canonical finite decimal string, `null` when unset.",
       "typeOnly": true
     },
     {
@@ -1115,12 +1556,138 @@
       "typeOnly": true
     },
     {
+      "name": "DatabasePageDetailsFieldSettings",
+      "kind": "interface",
+      "file": "src/confluence/types/database-entries.ts",
+      "line": 100,
+      "signature": "export interface DatabasePageDetailsFieldSettings { readonly sourceFieldId?: string; readonly pagePropertyKey?: string; …",
+      "jsdoc": "Settings of a `pageDetails` lookup field.",
+      "typeOnly": true
+    },
+    {
+      "name": "DatabasePageLinkValue",
+      "kind": "interface",
+      "file": "src/confluence/types/database-entries.ts",
+      "line": 260,
+      "signature": "export interface DatabasePageLinkValue { readonly type: 'pageLink'; readonly value: readonly { readonly contentId: strin…",
+      "jsdoc": "Value of a `pageLink` field.",
+      "typeOnly": true
+    },
+    {
+      "name": "DatabasePaginationMeta",
+      "kind": "interface",
+      "file": "src/confluence/types/database-entries.ts",
+      "line": 323,
+      "signature": "export interface DatabasePaginationMeta { readonly pageSize: number; readonly cursor?: string; readonly hasMore: boolean…",
+      "jsdoc": "Pagination metadata on the database list responses.",
+      "typeOnly": true
+    },
+    {
+      "name": "DatabaseSelectFieldSettings",
+      "kind": "interface",
+      "file": "src/confluence/types/database-entries.ts",
+      "line": 66,
+      "signature": "export interface DatabaseSelectFieldSettings { readonly options: readonly DatabaseSelectOption[]; }",
+      "jsdoc": "Settings of a `select` field.",
+      "typeOnly": true
+    },
+    {
+      "name": "DatabaseSelectOption",
+      "kind": "interface",
+      "file": "src/confluence/types/database-entries.ts",
+      "line": 60,
+      "signature": "export interface DatabaseSelectOption { readonly id: string; readonly label: string; }",
+      "jsdoc": "One configured option of a `select` field (also the shape of a selected value).",
+      "typeOnly": true
+    },
+    {
+      "name": "DatabaseSelectValue",
+      "kind": "interface",
+      "file": "src/confluence/types/database-entries.ts",
+      "line": 218,
+      "signature": "export interface DatabaseSelectValue { readonly type: 'select'; readonly value: readonly DatabaseSelectOption[] | null; …",
+      "jsdoc": "Value of a `select` field.",
+      "typeOnly": true
+    },
+    {
+      "name": "DatabaseSourceFieldSettings",
+      "kind": "interface",
+      "file": "src/confluence/types/database-entries.ts",
+      "line": 116,
+      "signature": "export interface DatabaseSourceFieldSettings { readonly sourceFieldId?: string; }",
+      "jsdoc": "Settings of a `pageLabels` / `pageStatus` lookup field.",
+      "typeOnly": true
+    },
+    {
+      "name": "DatabaseTextFieldSettings",
+      "kind": "interface",
+      "file": "src/confluence/types/database-entries.ts",
+      "line": 33,
+      "signature": "export interface DatabaseTextFieldSettings { readonly richText: boolean; }",
+      "jsdoc": "Settings of a `text` field.",
+      "typeOnly": true
+    },
+    {
+      "name": "DatabaseTextValue",
+      "kind": "interface",
+      "file": "src/confluence/types/database-entries.ts",
+      "line": 181,
+      "signature": "export interface DatabaseTextValue { readonly type: 'text'; readonly plain: string | null; readonly rich: DatabaseAdfDoc…",
+      "jsdoc": "Value of a `text` field.",
+      "typeOnly": true
+    },
+    {
+      "name": "DatabaseUserValue",
+      "kind": "interface",
+      "file": "src/confluence/types/database-entries.ts",
+      "line": 236,
+      "signature": "export interface DatabaseUserValue { readonly type: 'user'; readonly value: readonly { readonly accountId: string }[] | …",
+      "jsdoc": "Value of a `user` field.",
+      "typeOnly": true
+    },
+    {
+      "name": "DatabaseView",
+      "kind": "interface",
+      "file": "src/confluence/types/database-entries.ts",
+      "line": 163,
+      "signature": "export interface DatabaseView { readonly id: string; readonly name: string; readonly type: 'table' | 'gallery' | 'board'…",
+      "jsdoc": "Metadata for a named view on a database (configuration is not exposed).",
+      "typeOnly": true
+    },
+    {
+      "name": "DatabaseViewListResponse",
+      "kind": "type",
+      "file": "src/confluence/types/database-entries.ts",
+      "line": 343,
+      "signature": "export type DatabaseViewListResponse = DatabaseListResponse<DatabaseView>;",
+      "jsdoc": "Response of `GET /databases/{id}/views`.",
+      "typeOnly": true
+    },
+    {
+      "name": "DatabasesPublicApiLinks",
+      "kind": "interface",
+      "file": "src/confluence/types/database-entries.ts",
+      "line": 316,
+      "signature": "export interface DatabasesPublicApiLinks { readonly self: string; readonly base: string; readonly next?: string; }",
+      "jsdoc": "Links on a Databases API representation. `self` and `next` are path-only; `base` is absolute.",
+      "typeOnly": true
+    },
+    {
       "name": "DeleteAttachmentParams",
       "kind": "interface",
       "file": "src/confluence/types/attachments.ts",
       "line": 96,
       "signature": "export interface DeleteAttachmentParams { readonly purge?: boolean; }",
       "jsdoc": "Query parameters for `DELETE /attachments/{id}`. `purge=true` permanently deletes a trashed attachment (the default soft-delete only marks it trashed).",
+      "typeOnly": true
+    },
+    {
+      "name": "DeleteContentPermissionsParams",
+      "kind": "interface",
+      "file": "src/confluence/types/content-permissions.ts",
+      "line": 108,
+      "signature": "export interface DeleteContentPermissionsParams extends ContentPermissionWriteParams { readonly operation?: ContentPermi…",
+      "jsdoc": "Query parameters for `DELETE /{content}/{id}/permissions`. With no filters ALL direct permissions are deleted. Supported combinations: none; `principal-type` + `principal-id`; or all three of `operation`, `principal-type` and `principal-id`.",
       "typeOnly": true
     },
     {
@@ -1220,6 +1787,15 @@
       "line": 24,
       "signature": "export interface Field { readonly id: string; readonly name: string; readonly translatedName?: string; readonly schema: …",
       "jsdoc": "A Jira field as returned by the paginated GET /field/search endpoint. Spec: Field schema — required: id, name, schema. Note: does NOT include `custom`, `orderable`, `navigable`, `searchable`, `clauseNames`, or `scope` — those are part of FieldDetails (GET /field).",
+      "typeOnly": true
+    },
+    {
+      "name": "FieldContextDefaultValueLongText",
+      "kind": "interface",
+      "file": "src/jira/resources/fields.ts",
+      "line": 455,
+      "signature": "export interface FieldContextDefaultValueLongText { readonly type: 'longtext'; readonly contextId: string; readonly text…",
+      "jsdoc": "type: `longtext` — plain-text paragraph field default (line breaks preserved).",
       "typeOnly": true
     },
     {
@@ -1384,6 +1960,15 @@
       "jsdoc": "403 Forbidden error."
     },
     {
+      "name": "ForgePanelProjectPinStatus",
+      "kind": "interface",
+      "file": "src/jira/resources/forge.ts",
+      "line": 48,
+      "signature": "export interface ForgePanelProjectPinStatus { readonly error?: string | null; readonly pinned?: boolean; readonly pinned…",
+      "jsdoc": "The pin status of a Forge issue panel for one project. Spec: `ForgePanelProjectPinStatus`.",
+      "typeOnly": true
+    },
+    {
       "name": "GeneratedTypes",
       "kind": "interface",
       "file": "src/core/openapi.ts",
@@ -1471,6 +2056,15 @@
       "line": 207,
       "signature": "export interface GetFooterCommentParams { readonly 'body-format'?: PrimaryBodyRepresentationSingle; readonly version?: n…",
       "jsdoc": "Query parameters for `GET /footer-comments/{comment-id}`. Each `include-*` flag asks the server to inline the corresponding sub-resource so callers can fetch the comment plus context in a single round-trip.",
+      "typeOnly": true
+    },
+    {
+      "name": "GetInvalidJqlAuditEntriesParams",
+      "kind": "interface",
+      "file": "src/jira/resources/jql.ts",
+      "line": 47,
+      "signature": "export interface GetInvalidJqlAuditEntriesParams { readonly userAccountId?: string; readonly nextPageToken?: string; rea…",
+      "jsdoc": "Query parameters for GET /rest/api/3/invalid-jqls-access-log.",
       "typeOnly": true
     },
     {
@@ -1607,6 +2201,42 @@
       "typeOnly": true
     },
     {
+      "name": "InvalidJqlAuditEntry",
+      "kind": "interface",
+      "file": "src/jira/resources/jql.ts",
+      "line": 26,
+      "signature": "export interface InvalidJqlAuditEntry { readonly caller?: string; readonly createdAt?: string; readonly filterId?: strin…",
+      "jsdoc": "One invalid JQL search that Jira can no longer support. Spec: `AuditEntry`.",
+      "typeOnly": true
+    },
+    {
+      "name": "InvalidJqlAuditPage",
+      "kind": "interface",
+      "file": "src/jira/resources/jql.ts",
+      "line": 39,
+      "signature": "export interface InvalidJqlAuditPage { readonly entries?: readonly InvalidJqlAuditEntry[]; readonly isLast?: boolean; re…",
+      "jsdoc": "Token-paginated page of invalid-JQL audit entries. Spec: `AuditPage`.",
+      "typeOnly": true
+    },
+    {
+      "name": "InvalidJqlAuditUser",
+      "kind": "interface",
+      "file": "src/jira/resources/jql.ts",
+      "line": 15,
+      "signature": "export interface InvalidJqlAuditUser { readonly accountId?: string; readonly active?: boolean; readonly avatarUrls?: Inv…",
+      "jsdoc": "The user who ran an invalid JQL search. Spec: `AuditUser`.",
+      "typeOnly": true
+    },
+    {
+      "name": "InvalidJqlAuditUserAvatarUrls",
+      "kind": "interface",
+      "file": "src/jira/resources/jql.ts",
+      "line": 7,
+      "signature": "export interface InvalidJqlAuditUserAvatarUrls { readonly '16x16'?: string; readonly '24x24'?: string; readonly '32x32'?…",
+      "jsdoc": "Avatar URLs of the user in an invalid-JQL audit entry. Spec: `AuditUserAvatarUrls`.",
+      "typeOnly": true
+    },
+    {
       "name": "Issue",
       "kind": "interface",
       "file": "src/jira/types.ts",
@@ -1640,6 +2270,15 @@
       "line": 86,
       "signature": "export interface IssueType { readonly id: string; readonly name: string; readonly self: string; readonly description?: s…",
       "jsdoc": "Jira Issue Type (e.g. Bug, Task, Story).",
+      "typeOnly": true
+    },
+    {
+      "name": "IssueTypeDefaultValueUpdate",
+      "kind": "interface",
+      "file": "src/jira/resources/fields.ts",
+      "line": 657,
+      "signature": "export interface IssueTypeDefaultValueUpdate { readonly contextId: number; readonly issueTypeId?: string | null; readonl…",
+      "jsdoc": "One default-value update for an issue-type scope within a context. Spec: `IssueTypeDefaultValueUpdate`.",
       "typeOnly": true
     },
     {
@@ -1949,6 +2588,15 @@
       "typeOnly": true
     },
     {
+      "name": "ListContentPermissionsParams",
+      "kind": "interface",
+      "file": "src/confluence/types/content-permissions.ts",
+      "line": 92,
+      "signature": "export interface ListContentPermissionsParams { readonly operation?: ContentPermissionOperation; readonly 'principal-typ…",
+      "jsdoc": "Query parameters for `GET /{content}/{id}/permissions`.",
+      "typeOnly": true
+    },
+    {
       "name": "ListCustomContentAttachmentsParams",
       "kind": "interface",
       "file": "src/confluence/types/custom-content.ts",
@@ -2045,6 +2693,24 @@
       "line": 81,
       "signature": "export interface ListDatabaseDescendantsParams { readonly limit?: number; readonly depth?: number; readonly cursor?: str…",
       "jsdoc": "Parameters for listing database descendants.",
+      "typeOnly": true
+    },
+    {
+      "name": "ListDatabaseEntriesParams",
+      "kind": "interface",
+      "file": "src/confluence/types/database-entries.ts",
+      "line": 388,
+      "signature": "export interface ListDatabaseEntriesParams extends ListDatabasePageParams { readonly sort?: string; readonly filter?: Da…",
+      "jsdoc": "Query parameters for `GET /databases/{id}/entries`.",
+      "typeOnly": true
+    },
+    {
+      "name": "ListDatabasePageParams",
+      "kind": "interface",
+      "file": "src/confluence/types/database-entries.ts",
+      "line": 366,
+      "signature": "export interface ListDatabasePageParams extends DatabaseConditionalParams { readonly limit?: number; readonly cursor?: s…",
+      "jsdoc": "Query parameters for `GET /databases/{id}/fields` and `GET /databases/{id}/views`.",
       "typeOnly": true
     },
     {
@@ -2315,6 +2981,15 @@
       "line": 104,
       "signature": "export interface ListPagesParams { readonly id?: readonly string[]; readonly spaceId?: string; readonly title?: string; …",
       "jsdoc": "Parameters for listing Confluence pages (`GET /pages`).",
+      "typeOnly": true
+    },
+    {
+      "name": "ListPoliciesParams",
+      "kind": "interface",
+      "file": "src/jira/resources/policies.ts",
+      "line": 88,
+      "signature": "export interface ListPoliciesParams { readonly startAt?: number; readonly maxResults?: number; readonly cursor?: string;…",
+      "jsdoc": "Query parameters for GET /rest/api/3/policies.",
       "typeOnly": true
     },
     {
@@ -2603,6 +3278,15 @@
       "typeOnly": true
     },
     {
+      "name": "OperationPermissionsInput",
+      "kind": "interface",
+      "file": "src/confluence/types/content-permissions.ts",
+      "line": 57,
+      "signature": "export interface OperationPermissionsInput { readonly operation: ContentPermissionOperation; readonly principals: readon…",
+      "jsdoc": "Principals to grant one operation to. Mirrors the OpenAPI `OperationPermissionsInput` schema.",
+      "typeOnly": true
+    },
+    {
       "name": "Page",
       "kind": "interface",
       "file": "src/confluence/types/pages.ts",
@@ -2752,6 +3436,60 @@
       "line": 212,
       "signature": "export interface ParsedJqlQueries { readonly queries: ParsedJqlQuery[]; }",
       "jsdoc": "Response from the JQL parse endpoint containing parsed query representations.",
+      "typeOnly": true
+    },
+    {
+      "name": "PolicyApplicationViolation",
+      "kind": "interface",
+      "file": "src/jira/resources/policies.ts",
+      "line": 66,
+      "signature": "export interface PolicyApplicationViolation { readonly entityId?: string; readonly entityName?: string; readonly entityT…",
+      "jsdoc": "A reason a policy cannot be applied to a project. Spec: `PolicyApplicationViolation`.",
+      "typeOnly": true
+    },
+    {
+      "name": "PolicyIdsData",
+      "kind": "interface",
+      "file": "src/jira/resources/policies.ts",
+      "line": 98,
+      "signature": "export interface PolicyIdsData { readonly policyIds: readonly string[]; }",
+      "jsdoc": "Request body for PUT /policies/project/{projectIdOrKey}/policies and POST .../validate.",
+      "typeOnly": true
+    },
+    {
+      "name": "PolicyProjectIdsData",
+      "kind": "interface",
+      "file": "src/jira/resources/policies.ts",
+      "line": 104,
+      "signature": "export interface PolicyProjectIdsData { readonly projectIds: readonly number[]; }",
+      "jsdoc": "Request body for POST /policies/{policyId}/apply and /remove.",
+      "typeOnly": true
+    },
+    {
+      "name": "PolicyProjectResult",
+      "kind": "interface",
+      "file": "src/jira/resources/policies.ts",
+      "line": 75,
+      "signature": "export interface PolicyProjectResult { readonly errors?: readonly PolicyApplicationViolation[]; readonly message?: strin…",
+      "jsdoc": "Per-project outcome of a bulk policy operation. Spec: `ProjectResult`.",
+      "typeOnly": true
+    },
+    {
+      "name": "PolicySummary",
+      "kind": "interface",
+      "file": "src/jira/resources/policies.ts",
+      "line": 7,
+      "signature": "export interface PolicySummary { readonly appliedProjectIds?: readonly number[]; readonly id?: string; readonly isDefaul…",
+      "jsdoc": "Summary of one policy. Spec: `PolicySummary`.",
+      "typeOnly": true
+    },
+    {
+      "name": "PolicySummaryResponse",
+      "kind": "interface",
+      "file": "src/jira/resources/policies.ts",
+      "line": 29,
+      "signature": "export interface PolicySummaryResponse { readonly values?: readonly PolicySummary[]; readonly startAt?: number | null; r…",
+      "jsdoc": "Page of policy summaries. Spec: `PolicySummaryResponse`.",
       "typeOnly": true
     },
     {
@@ -2941,6 +3679,15 @@
       "jsdoc": "Response-too-large error (B026)."
     },
     {
+      "name": "RestrictionStateResponse",
+      "kind": "interface",
+      "file": "src/confluence/types/content-permissions.ts",
+      "line": 22,
+      "signature": "export interface RestrictionStateResponse { readonly state: ContentRestrictionState; readonly createdAt?: string; readon…",
+      "jsdoc": "Response of `GET|PUT /{content}/{id}/restriction-state`. Mirrors the OpenAPI `RestrictionStateResponse` schema; `createdAt` / `createdBy` are absent when the state is `OPEN`.",
+      "typeOnly": true
+    },
+    {
       "name": "RetryConfig",
       "kind": "interface",
       "file": "src/core/retry.ts",
@@ -3010,6 +3757,15 @@
       "line": 5,
       "signature": "export interface SerializableApiResponse<T> { readonly data: T; readonly status: number; readonly headers: Record<string…",
       "jsdoc": "JSON-serialisable projection of {@link ApiResponse}.",
+      "typeOnly": true
+    },
+    {
+      "name": "SetRestrictionStateData",
+      "kind": "interface",
+      "file": "src/confluence/types/content-permissions.ts",
+      "line": 33,
+      "signature": "export interface SetRestrictionStateData { readonly state: ContentRestrictionState; }",
+      "jsdoc": "Request body of `PUT /{content}/{id}/restriction-state`.",
       "typeOnly": true
     },
     {
@@ -3256,6 +4012,42 @@
       "typeOnly": true
     },
     {
+      "name": "StartAgentSessionsBatchData",
+      "kind": "interface",
+      "file": "src/jira/resources/agents.ts",
+      "line": 20,
+      "signature": "export interface StartAgentSessionsBatchData { readonly clientMutationId: string; readonly invocations: readonly BulkAge…",
+      "jsdoc": "Request body for POST /agents/bulk/invoke/batch. Spec: `BulkStartAgentSessionsBatchRequest`.",
+      "typeOnly": true
+    },
+    {
+      "name": "StartAgentSessionsUniformData",
+      "kind": "interface",
+      "file": "src/jira/resources/agents.ts",
+      "line": 28,
+      "signature": "export interface StartAgentSessionsUniformData { readonly agentId: string; readonly clientMutationId: string; readonly i…",
+      "jsdoc": "Request body for POST /agents/bulk/invoke/uniform. Spec: `BulkStartUniformAgentSessionsRequest`.",
+      "typeOnly": true
+    },
+    {
+      "name": "StatePolicyDocument",
+      "kind": "interface",
+      "file": "src/jira/resources/policies.ts",
+      "line": 50,
+      "signature": "export interface StatePolicyDocument { readonly id?: string; readonly isDefault?: boolean; readonly policyDescription?: …",
+      "jsdoc": "A policy applied to a project, with its rules by domain. Spec: `StatePolicyDocument`.",
+      "typeOnly": true
+    },
+    {
+      "name": "StatePolicyRule",
+      "kind": "interface",
+      "file": "src/jira/resources/policies.ts",
+      "line": 40,
+      "signature": "export interface StatePolicyRule { readonly description?: string; readonly domain?: string; readonly properties?: Readon…",
+      "jsdoc": "One rule of a policy as applied to a project. Spec: `StatePolicyRule`.",
+      "typeOnly": true
+    },
+    {
       "name": "Status",
       "kind": "interface",
       "file": "src/jira/types.ts",
@@ -3324,6 +4116,15 @@
       "line": 152,
       "signature": "export interface UpdateCommentData { readonly version: { readonly number: number; readonly message?: string }; readonly …",
       "jsdoc": "Request body for updating an existing comment. Mirrors the OpenAPI `UpdateFooterCommentModel` / `CommentBodyWrite` schemas.",
+      "typeOnly": true
+    },
+    {
+      "name": "UpdateContextDefaultValuesBody",
+      "kind": "interface",
+      "file": "src/jira/resources/fields.ts",
+      "line": 669,
+      "signature": "export interface UpdateContextDefaultValuesBody { readonly defaultValues?: readonly IssueTypeDefaultValueUpdate[]; }",
+      "jsdoc": "Request body for PUT /field/{fieldId}/context/defaultValues. Spec: `CustomFieldContextDefaultValuesUpdate`.",
       "typeOnly": true
     },
     {
@@ -3638,6 +4439,15 @@
       "line": 95,
       "signature": "export interface Workflow { readonly id: { readonly name: string; readonly entityId?: string }; readonly description: st…",
       "jsdoc": "A Jira workflow definition including its transitions and statuses.",
+      "typeOnly": true
+    },
+    {
+      "name": "WorkflowCopyRequest",
+      "kind": "interface",
+      "file": "src/jira/resources/workflows.ts",
+      "line": 787,
+      "signature": "export interface WorkflowCopyRequest { readonly workflowId: string; readonly workflowName: string; readonly description?…",
+      "jsdoc": "Request body for POST /rest/api/3/workflows/copy (`copyWorkflow`). Spec: `WorkflowCopyRequest`.",
       "typeOnly": true
     },
     {
@@ -17926,6 +18736,246 @@
             {
               "exported": "UpdateSpaceDefaultClassificationLevelData",
               "original": "UpdateSpaceDefaultClassificationLevelData"
+            },
+            {
+              "exported": "ContentPermissionOperation",
+              "original": "ContentPermissionOperation"
+            },
+            {
+              "exported": "ContentPermissionOutput",
+              "original": "ContentPermissionOutput"
+            },
+            {
+              "exported": "ContentPermissionPrincipal",
+              "original": "ContentPermissionPrincipal"
+            },
+            {
+              "exported": "ContentPermissionPrincipalType",
+              "original": "ContentPermissionPrincipalType"
+            },
+            {
+              "exported": "ContentPermissionsRequest",
+              "original": "ContentPermissionsRequest"
+            },
+            {
+              "exported": "ContentPermissionsResponse",
+              "original": "ContentPermissionsResponse"
+            },
+            {
+              "exported": "ContentPermissionWriteParams",
+              "original": "ContentPermissionWriteParams"
+            },
+            {
+              "exported": "ContentRestrictionState",
+              "original": "ContentRestrictionState"
+            },
+            {
+              "exported": "DeleteContentPermissionsParams",
+              "original": "DeleteContentPermissionsParams"
+            },
+            {
+              "exported": "ListContentPermissionsParams",
+              "original": "ListContentPermissionsParams"
+            },
+            {
+              "exported": "OperationPermissionsInput",
+              "original": "OperationPermissionsInput"
+            },
+            {
+              "exported": "RestrictionStateResponse",
+              "original": "RestrictionStateResponse"
+            },
+            {
+              "exported": "SetRestrictionStateData",
+              "original": "SetRestrictionStateData"
+            },
+            {
+              "exported": "DatabaseAdfDocument",
+              "original": "DatabaseAdfDocument"
+            },
+            {
+              "exported": "DatabaseAiSummaryFieldSettings",
+              "original": "DatabaseAiSummaryFieldSettings"
+            },
+            {
+              "exported": "DatabaseAiSummaryValue",
+              "original": "DatabaseAiSummaryValue"
+            },
+            {
+              "exported": "DatabaseAttachmentValue",
+              "original": "DatabaseAttachmentValue"
+            },
+            {
+              "exported": "DatabaseBacklinkFieldSettings",
+              "original": "DatabaseBacklinkFieldSettings"
+            },
+            {
+              "exported": "DatabaseCheckboxValue",
+              "original": "DatabaseCheckboxValue"
+            },
+            {
+              "exported": "DatabaseConditionalParams",
+              "original": "DatabaseConditionalParams"
+            },
+            {
+              "exported": "DatabaseDateFieldSettings",
+              "original": "DatabaseDateFieldSettings"
+            },
+            {
+              "exported": "DatabaseDateValue",
+              "original": "DatabaseDateValue"
+            },
+            {
+              "exported": "DatabaseEmptyFieldSettings",
+              "original": "DatabaseEmptyFieldSettings"
+            },
+            {
+              "exported": "DatabaseEntry",
+              "original": "DatabaseEntry"
+            },
+            {
+              "exported": "DatabaseEntryDetailsFieldSettings",
+              "original": "DatabaseEntryDetailsFieldSettings"
+            },
+            {
+              "exported": "DatabaseEntryFilter",
+              "original": "DatabaseEntryFilter"
+            },
+            {
+              "exported": "DatabaseEntryLinkValue",
+              "original": "DatabaseEntryLinkValue"
+            },
+            {
+              "exported": "DatabaseEntryListResponse",
+              "original": "DatabaseEntryListResponse"
+            },
+            {
+              "exported": "DatabaseEntrySingleResponse",
+              "original": "DatabaseEntrySingleResponse"
+            },
+            {
+              "exported": "DatabaseField",
+              "original": "DatabaseField"
+            },
+            {
+              "exported": "DatabaseFieldDefinition",
+              "original": "DatabaseFieldDefinition"
+            },
+            {
+              "exported": "DatabaseFieldListResponse",
+              "original": "DatabaseFieldListResponse"
+            },
+            {
+              "exported": "DatabaseFieldType",
+              "original": "DatabaseFieldType"
+            },
+            {
+              "exported": "DatabaseFieldValue",
+              "original": "DatabaseFieldValue"
+            },
+            {
+              "exported": "DatabaseFilterRange",
+              "original": "DatabaseFilterRange"
+            },
+            {
+              "exported": "DatabaseHyperlinkItem",
+              "original": "DatabaseHyperlinkItem"
+            },
+            {
+              "exported": "DatabaseHyperlinkValue",
+              "original": "DatabaseHyperlinkValue"
+            },
+            {
+              "exported": "DatabaseJiraIssueDetailsFieldSettings",
+              "original": "DatabaseJiraIssueDetailsFieldSettings"
+            },
+            {
+              "exported": "DatabaseJiraIssueFieldSettings",
+              "original": "DatabaseJiraIssueFieldSettings"
+            },
+            {
+              "exported": "DatabaseJiraIssueValue",
+              "original": "DatabaseJiraIssueValue"
+            },
+            {
+              "exported": "DatabaseListResponse",
+              "original": "DatabaseListResponse"
+            },
+            {
+              "exported": "DatabaseNullLookupValue",
+              "original": "DatabaseNullLookupValue"
+            },
+            {
+              "exported": "DatabaseNumberFieldSettings",
+              "original": "DatabaseNumberFieldSettings"
+            },
+            {
+              "exported": "DatabaseNumberFormat",
+              "original": "DatabaseNumberFormat"
+            },
+            {
+              "exported": "DatabaseNumberValue",
+              "original": "DatabaseNumberValue"
+            },
+            {
+              "exported": "DatabasePageDetailsFieldSettings",
+              "original": "DatabasePageDetailsFieldSettings"
+            },
+            {
+              "exported": "DatabasePageLinkValue",
+              "original": "DatabasePageLinkValue"
+            },
+            {
+              "exported": "DatabasePaginationMeta",
+              "original": "DatabasePaginationMeta"
+            },
+            {
+              "exported": "DatabaseSelectFieldSettings",
+              "original": "DatabaseSelectFieldSettings"
+            },
+            {
+              "exported": "DatabaseSelectOption",
+              "original": "DatabaseSelectOption"
+            },
+            {
+              "exported": "DatabaseSelectValue",
+              "original": "DatabaseSelectValue"
+            },
+            {
+              "exported": "DatabasesPublicApiLinks",
+              "original": "DatabasesPublicApiLinks"
+            },
+            {
+              "exported": "DatabaseSourceFieldSettings",
+              "original": "DatabaseSourceFieldSettings"
+            },
+            {
+              "exported": "DatabaseTextFieldSettings",
+              "original": "DatabaseTextFieldSettings"
+            },
+            {
+              "exported": "DatabaseTextValue",
+              "original": "DatabaseTextValue"
+            },
+            {
+              "exported": "DatabaseUserValue",
+              "original": "DatabaseUserValue"
+            },
+            {
+              "exported": "DatabaseView",
+              "original": "DatabaseView"
+            },
+            {
+              "exported": "DatabaseViewListResponse",
+              "original": "DatabaseViewListResponse"
+            },
+            {
+              "exported": "ListDatabaseEntriesParams",
+              "original": "ListDatabaseEntriesParams"
+            },
+            {
+              "exported": "ListDatabasePageParams",
+              "original": "ListDatabasePageParams"
             }
           ]
         },
@@ -18671,6 +19721,126 @@
             {
               "exported": "BulkIssueIsWatchingResult",
               "original": "BulkIssueIsWatchingResult"
+            },
+            {
+              "exported": "WorkflowCopyRequest",
+              "original": "WorkflowCopyRequest"
+            },
+            {
+              "exported": "AddIssueTypesToContextBody",
+              "original": "AddIssueTypesToContextBody"
+            },
+            {
+              "exported": "FieldContextDefaultValueLongText",
+              "original": "FieldContextDefaultValueLongText"
+            },
+            {
+              "exported": "IssueTypeDefaultValueUpdate",
+              "original": "IssueTypeDefaultValueUpdate"
+            },
+            {
+              "exported": "UpdateContextDefaultValuesBody",
+              "original": "UpdateContextDefaultValuesBody"
+            },
+            {
+              "exported": "InvalidJqlAuditUserAvatarUrls",
+              "original": "InvalidJqlAuditUserAvatarUrls"
+            },
+            {
+              "exported": "InvalidJqlAuditUser",
+              "original": "InvalidJqlAuditUser"
+            },
+            {
+              "exported": "InvalidJqlAuditEntry",
+              "original": "InvalidJqlAuditEntry"
+            },
+            {
+              "exported": "InvalidJqlAuditPage",
+              "original": "InvalidJqlAuditPage"
+            },
+            {
+              "exported": "GetInvalidJqlAuditEntriesParams",
+              "original": "GetInvalidJqlAuditEntriesParams"
+            },
+            {
+              "exported": "BulkForgePanelPinStatusData",
+              "original": "BulkForgePanelPinStatusData"
+            },
+            {
+              "exported": "ForgePanelProjectPinStatus",
+              "original": "ForgePanelProjectPinStatus"
+            },
+            {
+              "exported": "BulkForgePanelPinStatusResponse",
+              "original": "BulkForgePanelPinStatusResponse"
+            },
+            {
+              "exported": "PolicySummary",
+              "original": "PolicySummary"
+            },
+            {
+              "exported": "PolicySummaryResponse",
+              "original": "PolicySummaryResponse"
+            },
+            {
+              "exported": "StatePolicyRule",
+              "original": "StatePolicyRule"
+            },
+            {
+              "exported": "StatePolicyDocument",
+              "original": "StatePolicyDocument"
+            },
+            {
+              "exported": "PolicyApplicationViolation",
+              "original": "PolicyApplicationViolation"
+            },
+            {
+              "exported": "PolicyProjectResult",
+              "original": "PolicyProjectResult"
+            },
+            {
+              "exported": "BulkPolicyOperationResponse",
+              "original": "BulkPolicyOperationResponse"
+            },
+            {
+              "exported": "ListPoliciesParams",
+              "original": "ListPoliciesParams"
+            },
+            {
+              "exported": "PolicyIdsData",
+              "original": "PolicyIdsData"
+            },
+            {
+              "exported": "PolicyProjectIdsData",
+              "original": "PolicyProjectIdsData"
+            },
+            {
+              "exported": "BulkAgentSessionInvocation",
+              "original": "BulkAgentSessionInvocation"
+            },
+            {
+              "exported": "StartAgentSessionsBatchData",
+              "original": "StartAgentSessionsBatchData"
+            },
+            {
+              "exported": "StartAgentSessionsUniformData",
+              "original": "StartAgentSessionsUniformData"
+            },
+            {
+              "exported": "BulkAgentSessionResult",
+              "original": "BulkAgentSessionResult"
+            },
+            {
+              "exported": "BulkAgentSessionItemError",
+              "original": "BulkAgentSessionItemError"
+            },
+            {
+              "exported": "BulkAgentSessionOutcome",
+              "original": "BulkAgentSessionOutcome"
+            },
+            {
+              "exported": "BulkAgentSessionsResponse",
+              "original": "BulkAgentSessionsResponse"
             }
           ]
         }

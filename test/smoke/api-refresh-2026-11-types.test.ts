@@ -1,0 +1,238 @@
+/**
+ * Consumer-import check for the request/response types added by the 2026-11
+ * API refresh. `package.json` exposes only `.`, so a type missing from
+ * `src/index.ts` cannot be imported by consumers at all. Both typecheck
+ * passes (`npm run typecheck`, `npm run typecheck:ts6`) compile this file
+ * and fail with TS2305 if any of these names stops reaching the root.
+ */
+import { describe, it, expect } from 'vitest';
+import type {
+  // Confluence: content permissions and restriction state
+  ContentPermissionOperation,
+  ContentPermissionOutput,
+  ContentPermissionPrincipal,
+  ContentPermissionPrincipalType,
+  ContentPermissionsRequest,
+  ContentPermissionsResponse,
+  ContentPermissionWriteParams,
+  ContentRestrictionState,
+  DeleteContentPermissionsParams,
+  ListContentPermissionsParams,
+  OperationPermissionsInput,
+  RestrictionStateResponse,
+  SetRestrictionStateData,
+  // Confluence: database fields, views and entries
+  DatabaseAdfDocument,
+  DatabaseAiSummaryFieldSettings,
+  DatabaseAiSummaryValue,
+  DatabaseAttachmentValue,
+  DatabaseBacklinkFieldSettings,
+  DatabaseCheckboxValue,
+  DatabaseConditionalParams,
+  DatabaseDateFieldSettings,
+  DatabaseDateValue,
+  DatabaseEmptyFieldSettings,
+  DatabaseEntry,
+  DatabaseEntryDetailsFieldSettings,
+  DatabaseEntryFilter,
+  DatabaseEntryLinkValue,
+  DatabaseEntryListResponse,
+  DatabaseEntrySingleResponse,
+  DatabaseField,
+  DatabaseFieldDefinition,
+  DatabaseFieldListResponse,
+  DatabaseFieldType,
+  DatabaseFieldValue,
+  DatabaseFilterRange,
+  DatabaseHyperlinkItem,
+  DatabaseHyperlinkValue,
+  DatabaseJiraIssueDetailsFieldSettings,
+  DatabaseJiraIssueFieldSettings,
+  DatabaseJiraIssueValue,
+  DatabaseListResponse,
+  DatabaseNullLookupValue,
+  DatabaseNumberFieldSettings,
+  DatabaseNumberFormat,
+  DatabaseNumberValue,
+  DatabasePageDetailsFieldSettings,
+  DatabasePageLinkValue,
+  DatabasePaginationMeta,
+  DatabaseSelectFieldSettings,
+  DatabaseSelectOption,
+  DatabaseSelectValue,
+  DatabasesPublicApiLinks,
+  DatabaseSourceFieldSettings,
+  DatabaseTextFieldSettings,
+  DatabaseTextValue,
+  DatabaseUserValue,
+  DatabaseView,
+  DatabaseViewListResponse,
+  ListDatabaseEntriesParams,
+  ListDatabasePageParams,
+  // Jira: workflows, field contexts, JQL audit, Forge panels
+  WorkflowCopyRequest,
+  AddIssueTypesToContextBody,
+  FieldContextDefaultValueLongText,
+  IssueTypeDefaultValueUpdate,
+  UpdateContextDefaultValuesBody,
+  InvalidJqlAuditUserAvatarUrls,
+  InvalidJqlAuditUser,
+  InvalidJqlAuditEntry,
+  InvalidJqlAuditPage,
+  GetInvalidJqlAuditEntriesParams,
+  BulkForgePanelPinStatusData,
+  ForgePanelProjectPinStatus,
+  BulkForgePanelPinStatusResponse,
+  // Jira: space policies
+  PolicySummary,
+  PolicySummaryResponse,
+  StatePolicyRule,
+  StatePolicyDocument,
+  PolicyApplicationViolation,
+  PolicyProjectResult,
+  BulkPolicyOperationResponse,
+  ListPoliciesParams,
+  PolicyIdsData,
+  PolicyProjectIdsData,
+  // Jira: agent bulk invocation
+  BulkAgentSessionInvocation,
+  StartAgentSessionsBatchData,
+  StartAgentSessionsUniformData,
+  BulkAgentSessionResult,
+  BulkAgentSessionItemError,
+  BulkAgentSessionOutcome,
+  BulkAgentSessionsResponse,
+} from '../../src/index.js';
+
+/**
+ * Referencing every import keeps `noUnusedLocals`/lint from dropping one
+ * silently: a name removed from the root breaks compilation here.
+ */
+type RootReachable = [
+  ContentPermissionOperation,
+  ContentPermissionOutput,
+  ContentPermissionPrincipal,
+  ContentPermissionPrincipalType,
+  ContentPermissionsRequest,
+  ContentPermissionsResponse,
+  ContentPermissionWriteParams,
+  ContentRestrictionState,
+  DeleteContentPermissionsParams,
+  ListContentPermissionsParams,
+  OperationPermissionsInput,
+  RestrictionStateResponse,
+  SetRestrictionStateData,
+  DatabaseAdfDocument,
+  DatabaseAiSummaryFieldSettings,
+  DatabaseAiSummaryValue,
+  DatabaseAttachmentValue,
+  DatabaseBacklinkFieldSettings,
+  DatabaseCheckboxValue,
+  DatabaseConditionalParams,
+  DatabaseDateFieldSettings,
+  DatabaseDateValue,
+  DatabaseEmptyFieldSettings,
+  DatabaseEntry,
+  DatabaseEntryDetailsFieldSettings,
+  DatabaseEntryFilter,
+  DatabaseEntryLinkValue,
+  DatabaseEntryListResponse,
+  DatabaseEntrySingleResponse,
+  DatabaseField,
+  DatabaseFieldDefinition<'text', DatabaseTextFieldSettings>,
+  DatabaseFieldListResponse,
+  DatabaseFieldType,
+  DatabaseFieldValue,
+  DatabaseFilterRange,
+  DatabaseHyperlinkItem,
+  DatabaseHyperlinkValue,
+  DatabaseJiraIssueDetailsFieldSettings,
+  DatabaseJiraIssueFieldSettings,
+  DatabaseJiraIssueValue,
+  DatabaseListResponse<DatabaseView>,
+  DatabaseNullLookupValue,
+  DatabaseNumberFieldSettings,
+  DatabaseNumberFormat,
+  DatabaseNumberValue,
+  DatabasePageDetailsFieldSettings,
+  DatabasePageLinkValue,
+  DatabasePaginationMeta,
+  DatabaseSelectFieldSettings,
+  DatabaseSelectOption,
+  DatabaseSelectValue,
+  DatabasesPublicApiLinks,
+  DatabaseSourceFieldSettings,
+  DatabaseTextFieldSettings,
+  DatabaseTextValue,
+  DatabaseUserValue,
+  DatabaseView,
+  DatabaseViewListResponse,
+  ListDatabaseEntriesParams,
+  ListDatabasePageParams,
+  WorkflowCopyRequest,
+  AddIssueTypesToContextBody,
+  FieldContextDefaultValueLongText,
+  IssueTypeDefaultValueUpdate,
+  UpdateContextDefaultValuesBody,
+  InvalidJqlAuditUserAvatarUrls,
+  InvalidJqlAuditUser,
+  InvalidJqlAuditEntry,
+  InvalidJqlAuditPage,
+  GetInvalidJqlAuditEntriesParams,
+  BulkForgePanelPinStatusData,
+  ForgePanelProjectPinStatus,
+  BulkForgePanelPinStatusResponse,
+  PolicySummary,
+  PolicySummaryResponse,
+  StatePolicyRule,
+  StatePolicyDocument,
+  PolicyApplicationViolation,
+  PolicyProjectResult,
+  BulkPolicyOperationResponse,
+  ListPoliciesParams,
+  PolicyIdsData,
+  PolicyProjectIdsData,
+  BulkAgentSessionInvocation,
+  StartAgentSessionsBatchData,
+  StartAgentSessionsUniformData,
+  BulkAgentSessionResult,
+  BulkAgentSessionItemError,
+  BulkAgentSessionOutcome,
+  BulkAgentSessionsResponse,
+];
+
+describe('2026-11 API refresh types are importable from the package root', () => {
+  it('covers every new type name (90)', () => {
+    const arity: RootReachable['length'] = 90;
+    expect(arity).toBe(90);
+  });
+
+  it('accepts request bodies built against the root-exported types', () => {
+    const permissions = {
+      permissions: [
+        {
+          operation: 'read',
+          principals: [{ principalType: 'user', principalId: 'acc-1' }],
+        },
+      ],
+    } satisfies ContentPermissionsRequest;
+    const filter = { due: { gte: '2026-01-01' }, status: 'eq:Done' } satisfies DatabaseEntryFilter;
+    const batch = {
+      clientMutationId: '00000000-0000-4000-8000-000000000000',
+      invocations: [
+        {
+          agentId: 'agent-1',
+          issueId: '10001',
+          requestId: '00000000-0000-4000-8000-000000000001',
+        },
+      ],
+    } satisfies StartAgentSessionsBatchData;
+    const copy = { workflowId: 'wf-1', workflowName: 'Copy' } satisfies WorkflowCopyRequest;
+    const defaults = {
+      contextId: 10010,
+      isAnyIssueType: true,
+    } satisfies IssueTypeDefaultValueUpdate;
+
+    expect([permissions, filter, batch, copy, defaults]).toHaveLength(5);
+  });
+});
