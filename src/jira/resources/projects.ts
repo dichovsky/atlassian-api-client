@@ -397,10 +397,11 @@ function roleIdSegment(roleId: number): string {
 }
 
 /**
- * Realm-independent Blob check, matching what fetch sends as raw bytes: a Blob
- * from another realm or a polyfill fails `instanceof Blob` but is still a Blob.
+ * Realm-independent Blob check: a Blob from another realm or a polyfill fails
+ * `instanceof Blob`. Native fetch sends such an object as the text
+ * "[object File]", so callers must copy it into a native Blob before sending.
  */
-function isBlobLike(value: unknown): value is Blob {
+function isBlobLike(value: unknown): value is Pick<Blob, 'arrayBuffer' | 'type'> {
   return (
     typeof value === 'object' &&
     value !== null &&
@@ -712,6 +713,9 @@ export class ProjectsResource {
     });
   }
 
+  // The Blob form is declared first: the deprecated `body: unknown` form also
+  // accepts a Blob, so declared first it would mark every Blob call deprecated.
+  // `Parameters<>` therefore keeps the 4.0.0 `(string, unknown, …)` shape.
   /**
    * Upload a custom project avatar (B666).
    *
@@ -744,6 +748,10 @@ export class ProjectsResource {
     if (!isBlobLike(content)) {
       throw new ValidationError('loadAvatar needs the image (JPEG, GIF or PNG) as a Blob');
     }
+    const image =
+      content instanceof Blob
+        ? content
+        : new Blob([await content.arrayBuffer()], { type: content.type });
     const query: Record<string, number | undefined> = {};
     if (params?.x !== undefined) query['x'] = params.x;
     if (params?.y !== undefined) query['y'] = params.y;
@@ -752,7 +760,7 @@ export class ProjectsResource {
       method: 'POST',
       path: `${this.baseUrl}/project/${encodePathSegment(projectIdOrKey)}/avatar2`,
       query,
-      binaryBody: content,
+      binaryBody: image,
       headers: { 'X-Atlassian-Token': 'no-check' },
     });
     return response.data;

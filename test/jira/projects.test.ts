@@ -957,17 +957,21 @@ describe('ProjectsResource', () => {
       expect(transport.calls).toHaveLength(0);
     });
 
-    it('accepts a Blob from another realm or polyfill (no instanceof dependency)', async () => {
-      // Same shape fetch's body extraction accepts: arrayBuffer(), type, and a Blob/File tag.
+    it('copies a Blob from another realm or polyfill into a native Blob', async () => {
+      // Native fetch sends a non-native Blob as the text "[object File]", so its
+      // bytes and type must be copied into a native Blob before sending.
       transport.respondWith({ id: 'av-foreign' });
       const foreign = {
         type: 'image/png',
-        size: 0,
-        arrayBuffer: () => Promise.resolve(new ArrayBuffer(0)),
+        size: 3,
+        arrayBuffer: () => Promise.resolve(new Uint8Array([1, 2, 3]).buffer),
         [Symbol.toStringTag]: 'File',
       };
       await projects.loadAvatar('PROJ', foreign);
-      expect(transport.lastCall?.options.binaryBody).toBe(foreign);
+      const sent = transport.lastCall?.options.binaryBody;
+      expect(sent).toBeInstanceOf(Blob);
+      expect(sent?.type).toBe('image/png');
+      expect(new Uint8Array(await sent!.arrayBuffer())).toEqual(new Uint8Array([1, 2, 3]));
     });
 
     it('sends x, y, size crop region query params when provided', async () => {
