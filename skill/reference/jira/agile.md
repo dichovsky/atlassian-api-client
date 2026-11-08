@@ -22,7 +22,7 @@ Full Agile board management: list, create, delete, and query board details, issu
 | `get-issues`          | `<boardId>`                 | —                                 | `--jql`, `--fields`, `--start-at`, `--max-results`, `--validate-query`, `--expand`                                                                                                                                                    |
 | `move-issues`         | `<boardId>`                 | `--issues`                        | `--before`, `--after`, `--custom-field`                                                                                                                                                                                               |
 | `list-projects`       | `<boardId>`                 | —                                 | `--start-at`, `--max-results`                                                                                                                                                                                                         |
-| `list-projects-full`  | `<boardId>`                 | —                                 | `--start-at`, `--max-results`                                                                                                                                                                                                         |
+| `list-projects-full`  | `<boardId>`                 | —                                 | — (`--start-at`/`--max-results` are sent but not in the spec)                                                                                                                                                                         |
 | `list-sprints`        | `<boardId>`                 | —                                 | `--state`, `--start-at`, `--max-results`                                                                                                                                                                                              |
 | `list-versions`       | `<boardId>`                 | —                                 | `--released`, `--start-at`, `--max-results`                                                                                                                                                                                           |
 | `sprint-issues`       | `<boardId> <sprintId>`      | —                                 | `--jql`, `--fields`, `--start-at`, `--max-results`, `--validate-query`, `--expand`                                                                                                                                                    |
@@ -60,19 +60,20 @@ Non-deprecated, **token-paginated** replacements for the agile board issue listi
 
 - `boards list --type` accepts `scrum`, `kanban`, or `simple`; `boards create --type` accepts `kanban`, `scrum`, or `agility`. These are different OpenAPI enums.
 - `--include-private true|false` and `--negate-location-filtering true|false` are explicit tri-state filters; omit either flag to use the server default.
-- `--order-by` accepts `name`, `-name`, or `+name`.
+- `--order-by` accepts `name`, `-name`, or `+name`. Write the dash form with `=` (`--order-by=-name`): a separate `-name` is read as an option and rejected.
 - `--project-type-location` accepts comma-separated `software` and `service_desk` values and is serialized as repeated query parameters.
 - Board creation location is optional. To create a project-located board, pass both `--location-type project` and `--location-project-key-or-id <projectKeyOrId>`. For a user-located board, pass `--location-type user` without `--location-project-key-or-id`. A project key/ID without a location type is invalid.
 - `--state` (for `list-sprints`) accepts comma-separated sprint states: `future`, `active`, `closed`.
 - `--enabling` (for `toggle-feature`) accepts `true` or `false` — maps to the spec's boolean `enabling` field.
 - `--feature` is the feature key string (e.g. `SIMPLE_ROADMAP`, `BACKLOG`, `SPRINTS`).
 - `--issues` is comma-separated issue keys, e.g. `--issues PROJ-1,PROJ-2`.
-- For `move-issues`, `--before`/`--after` control relative rank and `--custom-field` is the numeric rank custom-field ID.
+- For `move-issues`, `--issues` takes at most **50** keys per call (the client rejects more before sending); `--before`/`--after` control relative rank and `--custom-field` is the numeric rank custom-field ID.
 - `--fields` is comma-separated field names, e.g. `--fields summary,status,assignee`.
 - `--done true|false` (for `list-epics`) filters to only done or not-done epics; omit for all epics. Tri-state — the value is required.
-- `--released` (boolean flag for `list-versions`) filters to released versions.
+- `--released` (for `list-versions`) is tri-state: `--released` or `--released true` lists released versions, `--released false` (or `--no-released`) lists unreleased ones, and omitting it lists all.
 - `boardId`, `epicId`, `sprintId`, `filterId`, `--filter-id` are all numeric IDs.
 - `--start-at` is the 0-based offset for pagination.
+- `list-projects-full` returns every project of the board in one response: its spec declares no paging parameters, so `--start-at`/`--max-results` are sent but not part of the contract (Jira may ignore them).
 - `--value` accepts **any valid JSON**: objects, arrays, strings, numbers, booleans, and `null`. Examples: `--value '{"beta":true}'`, `--value '"hello"'`, `--value '42'`, `--value 'null'`.
 - `propertyKey` is URL-encoded automatically — keys with spaces or special characters are safe to pass as-is.
 - `get-property` response: `{ key: string, value: unknown }` — the caller must narrow `value` to the expected shape.
@@ -143,8 +144,12 @@ atlas jira boards list-sprints 1 --state active
 # List active and future sprints, page 2
 atlas jira boards list-sprints 1 --state active,future --start-at 50 --max-results 50
 
-# List released versions for a board
+# List released versions for a board, then the unreleased ones
 atlas jira boards list-versions 42 --released
+atlas jira boards list-versions 42 --released false
+
+# List boards sorted by name, descending
+atlas jira boards list --order-by=-name
 
 # List issues in sprint 10 on board 1
 atlas jira boards sprint-issues 1 10
@@ -224,8 +229,9 @@ Manage Agile sprints directly (not board-scoped). Supports full CRUD, partial pa
 
 - `update` uses **PUT** (full replace) — all current fields are overwritten. Supply every field you want to keep.
 - `partial-update` uses **POST** (Atlassian patch semantics) — only the supplied fields are changed. Safe for single-field edits.
-- `--state` accepts `active`, `closed`, or `future` only.
-- `--issues` is **comma-separated** issue keys or IDs, e.g. `--issues PROJ-1,PROJ-2`. Max **50** per call; the client validates this before sending.
+- `--state` accepts `active`, `closed`, or `future` only. Allowed transitions: `future` → `active` needs a start and end date (pass `--start-date`/`--end-date` unless the sprint already has them); `active` → `closed` sets the complete date. On a closed sprint only `--name` and `--goal` change (Jira ignores other fields). Any other state change is not allowed.
+- `id`, `self`, `createdDate`, `completeDate` and `originBoardId` are server-managed and cannot be set from the CLI (`completeDate` is set when the sprint closes).
+- `--issues` is **comma-separated** issue keys or IDs, e.g. `--issues PROJ-1,PROJ-2`. Max **50** per call; the client validates this before sending. Issues can only be moved to future or active sprints.
 - `move-issues --before/--after` controls relative rank; `--custom-field` is the numeric rank custom-field ID.
 - `--fields` is comma-separated, e.g. `--fields summary,status,assignee`.
 - `get-issues` is deprecated. Prefer `get-issues-enhanced`; the deprecated route still supports `--validate-query true|false` and `--expand` for migration compatibility.
