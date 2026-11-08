@@ -250,6 +250,29 @@ describe('printOutput', () => {
       expect(stdoutWrite).toHaveBeenCalledWith('\n');
     });
 
+    // F296/F336: list and search results are envelope objects; minimal must
+    // print one id per record, not one blank line for the envelope.
+    it.each([
+      [{ results: [{ id: '1' }, { id: '2' }], _links: {} }, '1\n2\n'],
+      [{ values: [{ id: '10', key: 'P' }], isLast: true, startAt: 0 }, '10\n'],
+      [{ issues: [{ id: '1', key: 'P-1' }], warningMessages: ['w'], total: 1 }, '1\n'],
+      [{ worklogs: [{ id: 'w1' }, { id: 'w2' }], total: 2 }, 'w1\nw2\n'],
+      [{ results: [], _links: {} }, ''],
+    ])('unwraps the list envelope %j', (data, expected) => {
+      printOutput(data, 'minimal');
+      expect(stdoutWrite.mock.calls.map((c) => c[0] as string).join('')).toBe(expected);
+    });
+
+    it('prints a record id rather than unwrapping its nested arrays', () => {
+      printOutput({ id: '7', labels: [{ id: 'l1' }] }, 'minimal');
+      expect(stdoutWrite.mock.calls.map((c) => c[0] as string).join('')).toBe('7\n');
+    });
+
+    it('prints an empty line for an object with several unknown arrays', () => {
+      printOutput({ a: [{ id: '1' }], b: [{ id: '2' }] }, 'minimal');
+      expect(stdoutWrite.mock.calls.map((c) => c[0] as string).join('')).toBe('\n');
+    });
+
     it('prints numeric id as string', () => {
       // Arrange
       const data = { id: 123 };

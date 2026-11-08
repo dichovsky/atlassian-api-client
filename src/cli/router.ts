@@ -586,8 +586,8 @@ const GLOBAL_OPTIONS = {
   'app-type': { type: 'string' as const },
   // issue-link create (JSON comment object)
   comment: { type: 'string' as const },
-  // `notifyUsers` defaults to true; `--notify-users` stays a presence-only
-  // boolean (worklogs), so `--no-notify-users` carries the false case.
+  // `notifyUsers` defaults to true. Legacy alias: parseCommand reports any
+  // explicit false for `--notify-users` as `'no-notify-users': true`.
   'no-notify-users': { type: 'boolean' as const },
   // version delete-and-replace (JSON array of {customFieldId, moveTo})
   'custom-field-replacement-list': { type: 'string' as const },
@@ -601,27 +601,119 @@ const GLOBAL_OPTIONS = {
   'default-value-json': { type: 'string' as const },
 };
 
+/** Every flag registered as `type: 'boolean'`. */
+export const BOOLEAN_FLAGS: ReadonlySet<string> = new Set(
+  Object.entries(GLOBAL_OPTIONS).flatMap(([name, opt]) => (opt.type === 'boolean' ? [name] : [])),
+);
+
+const BOOLEAN_LITERAL = /^(?:true|false)$/i;
+
+function negatedValueError(rawName: string, flag: string): Error {
+  return new Error(
+    `${rawName} does not take a value; use --${flag} true|false or ${rawName} alone`,
+  );
+}
+
+/**
+ * Rewrite `--flag=value` for a boolean flag into `--flag value` (parseArgs
+ * rejects inline values on booleans). Stops at the `--` terminator.
+ */
+function splitBooleanInlineValues(args: readonly string[]): string[] {
+  const out: string[] = [];
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i] as string;
+    if (arg === '--') {
+      out.push(...args.slice(i));
+      break;
+    }
+    const match = /^--([^=]+)=(.*)$/s.exec(arg);
+    const name = match?.[1] ?? '';
+    const value = match?.[2] ?? '';
+    if (name.startsWith('no-') && BOOLEAN_FLAGS.has(name.slice(3))) {
+      throw negatedValueError(`--${name}`, name.slice(3));
+    }
+    if (!BOOLEAN_FLAGS.has(name)) {
+      out.push(arg);
+    } else if (BOOLEAN_LITERAL.test(value)) {
+      out.push(`--${name}`, value);
+    } else {
+      throw new Error(`--${name} accepts true or false, got: ${value}`);
+    }
+  }
+  return out;
+}
+
+/**
+ * Parse argv into api/resource/action, positionals and options.
+ *
+ * Boolean flags are tri-state: `--flag`, `--flag true` and `--flag=true` give
+ * `true`; `--flag false`, `--flag=false` and `--no-flag` give `false`; an
+ * omitted flag stays `undefined`. A `true`/`false` token right after a boolean
+ * flag is its value, never a positional (put real positionals after `--`).
+ * Conflicting values for one flag are rejected. When a legacy `--no-<flag>`
+ * option is registered (`no-include-version`, `no-resolved`,
+ * `no-notify-users`), an explicit false is reported as `'no-<flag>': true`
+ * instead, which is what those handlers read.
+ */
 export function parseCommand(argv: string[]): ParsedCommand & {
   options: Record<string, string | boolean | undefined>;
 } {
-  const { values, positionals } = parseArgs({
-    args: argv.slice(2),
+  const { values, tokens } = parseArgs({
+    args: splitBooleanInlineValues(argv.slice(2)),
     options: GLOBAL_OPTIONS,
     allowPositionals: true,
+    allowNegative: true,
+    tokens: true,
   });
+
+  const positionals: string[] = [];
+  const booleans = new Map<string, boolean>();
+  for (let i = 0; i < tokens.length; i++) {
+    const token = tokens[i];
+    if (token?.kind === 'positional') {
+      positionals.push(token.value);
+      continue;
+    }
+    if (token?.kind !== 'option' || !BOOLEAN_FLAGS.has(token.name)) continue;
+    const negated = token.rawName === `--no-${token.name}`;
+    let value = !negated;
+    const next = tokens[i + 1];
+    if (next?.kind === 'positional' && BOOLEAN_LITERAL.test(next.value)) {
+      if (negated) throw negatedValueError(token.rawName, token.name);
+      value = next.value.toLowerCase() === 'true';
+      i++;
+    }
+    // `--no-no-resolved` reaches here as a negated legacy alias: fold it back.
+    const isAlias = token.name.startsWith('no-') && BOOLEAN_FLAGS.has(token.name.slice(3));
+    const name = isAlias ? token.name.slice(3) : token.name;
+    if (isAlias) value = !value;
+    if (booleans.get(name) === !value) {
+      throw new Error(`--${name} was given both true and false`);
+    }
+    booleans.set(name, value);
+  }
+
+  const options: Record<string, string | boolean | undefined> = {};
+  for (const [name, value] of Object.entries(values)) {
+    if (!BOOLEAN_FLAGS.has(name)) options[name] = value as string | undefined;
+  }
+  for (const [name, value] of booleans) {
+    if (!value && BOOLEAN_FLAGS.has(`no-${name}`)) options[`no-${name}`] = true;
+    else options[name] = value;
+  }
 
   const api = positionals[0] ?? '';
   const resource = positionals[1] ?? '';
   const action = positionals[2] ?? '';
   const positionalArgs = positionals.slice(3);
 
-  if (api === 'confluence' && values['software-cloud-id'] !== undefined) {
+  if (api === 'confluence' && options['software-cloud-id'] !== undefined) {
     throw new Error('--software-cloud-id is only supported for Jira commands');
   }
 
   const currentJqlSearchAction = ['', 'search', 'query', 'jql-get', 'jql-post'].includes(action);
   if (
-    values['include-archived-projects'] !== undefined &&
+    options['include-archived-projects'] !== undefined &&
     !(api === 'jira' && resource === 'search' && currentJqlSearchAction)
   ) {
     throw new Error(
@@ -637,7 +729,7 @@ export function parseCommand(argv: string[]): ParsedCommand & {
   ].includes(action);
   for (const flag of ['workflow-mode', 'include-reserved-keys'] as const) {
     if (
-      values[flag] !== undefined &&
+      options[flag] !== undefined &&
       !(api === 'jira' && resource === 'workflows' && removedWorkflowAction)
     ) {
       throw new Error(
@@ -651,6 +743,6 @@ export function parseCommand(argv: string[]): ParsedCommand & {
     resource,
     action,
     positionalArgs,
-    options: values as Record<string, string | boolean | undefined>,
+    options,
   };
 }

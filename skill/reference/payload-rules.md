@@ -8,7 +8,7 @@
 
 ## Output parsing
 
-`--format minimal` emits one line per record. Field extraction order is **id → key → name**. Pipe through `awk` / `cut` with this order assumption; do not assume `name` is first. For Jira issues this yields the issue key (e.g. `PROJ-123`); for Confluence pages it yields the page ID.
+`--format minimal` emits one line per record. List and search results are unwrapped, so `pages list`, `projects list` and `jira search` print one line per item (`results`, `values` or `issues`); an empty list prints nothing. Field extraction order is **id → key → name**. Pipe through `awk` / `cut` with this order assumption; do not assume `name` is first. Jira issues carry an `id`, so they yield the numeric issue ID (e.g. `10123`), not the key; for the key use `--format json` and read `.key` (e.g. `| jq -r '.issues[].key'`). Confluence pages yield the page ID.
 
 ## Request policy
 

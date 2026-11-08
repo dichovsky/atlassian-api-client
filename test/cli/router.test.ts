@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseCommand } from '../../src/cli/router.js';
+import { BOOLEAN_FLAGS, parseCommand } from '../../src/cli/router.js';
 
 describe('parseCommand', () => {
   it('rejects the orphaned database-id option', () => {
@@ -1420,5 +1420,116 @@ describe('parseCommand', () => {
       'acc-9',
     ]);
     expect(confluence.options).toMatchObject({ 'attachment-id': 'att-1', 'owner-id': 'acc-9' });
+  });
+});
+
+// Release 4.1.0 cli-infra (F076/F139/F215/F224/F234/F272): every boolean flag
+// is tri-state at the router, so no spelling of `false` can turn into `true`.
+describe('parseCommand boolean flags', () => {
+  // Two flags are action-scoped by the router; parse them on an action that accepts them.
+  const COMMAND_FOR: Record<string, string[]> = {
+    'include-archived-projects': ['jira', 'search', 'query'],
+    'include-reserved-keys': ['jira', 'workflows', 'get-transition-properties'],
+  };
+  const parse = (...flags: string[]) => {
+    const name = /^--(?:no-)?([^=]+)/.exec(flags[0] ?? '')?.[1] ?? '';
+    const command = COMMAND_FOR[name] ?? ['jira', 'issues', 'delete'];
+    return parseCommand(['node', 'atlas', ...command, 'K-1', ...flags]);
+  };
+
+  // Legacy `no-<flag>` registrations are aliases, not flags of their own.
+  const flags = [...BOOLEAN_FLAGS].filter(
+    (name) => !(name.startsWith('no-') && BOOLEAN_FLAGS.has(name.slice(3))),
+  );
+
+  it('covers every registered boolean flag', () => {
+    expect(flags).toEqual(expect.arrayContaining(['delete-subtasks', 'draft', 'notify-users']));
+    expect(flags.length).toBeGreaterThan(70);
+  });
+
+  it.each(flags)('--%s: every spelling of false is false, never a positional', (name) => {
+    const falseKey = BOOLEAN_FLAGS.has(`no-${name}`) ? `no-${name}` : name;
+    const falseValue = falseKey !== name;
+    for (const spelling of [
+      [`--${name}`, 'false'],
+      [`--${name}`, 'FALSE'],
+      [`--${name}=false`],
+      [`--no-${name}`],
+    ]) {
+      const result = parse(...spelling);
+      expect(result.positionalArgs, spelling.join(' ')).toEqual(['K-1']);
+      expect(result.options[falseKey], spelling.join(' ')).toBe(falseValue);
+      if (falseKey !== name) expect(result.options[name]).toBeUndefined();
+    }
+  });
+
+  it.each(flags)('--%s: bare, `true` and `=true` are true; omitted is undefined', (name) => {
+    for (const spelling of [[`--${name}`], [`--${name}`, 'true'], [`--${name}=True`]]) {
+      const result = parse(...spelling);
+      expect(result.positionalArgs, spelling.join(' ')).toEqual(['K-1']);
+      expect(result.options[name], spelling.join(' ')).toBe(true);
+    }
+    expect(parse().options[name]).toBeUndefined();
+  });
+
+  it('keeps a non-boolean token after a bare flag as a positional', () => {
+    const result = parseCommand([
+      'node',
+      'atlas',
+      'confluence',
+      'pages',
+      'delete',
+      '--purge',
+      '123',
+    ]);
+    expect(result.positionalArgs).toEqual(['123']);
+    expect(result.options['purge']).toBe(true);
+  });
+
+  it('treats true/false after `--` as a positional', () => {
+    const result = parse('--purge', '--', 'false');
+    expect(result.options['purge']).toBe(true);
+    expect(result.positionalArgs).toEqual(['K-1', 'false']);
+  });
+
+  it('does not rewrite `--flag=value` after `--`', () => {
+    expect(parse('--', '--purge=false').positionalArgs).toEqual(['K-1', '--purge=false']);
+  });
+
+  it('leaves string-flag values alone', () => {
+    expect(parse('--title', 'false').options['title']).toBe('false');
+    expect(parse('--title=--purge=x').options['title']).toBe('--purge=x');
+  });
+
+  it('handles the short boolean -h with a value', () => {
+    expect(parseCommand(['node', 'atlas', '-h', 'false']).options['help']).toBe(false);
+  });
+
+  it('rejects a value on a negated flag', () => {
+    const message = '--no-purge does not take a value; use --purge true|false or --no-purge alone';
+    expect(() => parse('--no-purge', 'true')).toThrow(message);
+    expect(() => parse('--no-purge=false')).toThrow(message);
+    expect(() => parse('--no-resolved=true')).toThrow('--no-resolved does not take a value');
+  });
+
+  it('rejects a non-boolean inline value', () => {
+    expect(() => parse('--purge=yes')).toThrow('--purge accepts true or false, got: yes');
+    expect(() => parse('--purge=')).toThrow('--purge accepts true or false, got: ');
+  });
+
+  it('rejects conflicting values for one flag', () => {
+    expect(() => parse('--purge', '--no-purge')).toThrow('--purge was given both true and false');
+    expect(() => parse('--resolved', '--resolved', 'false')).toThrow(
+      '--resolved was given both true and false',
+    );
+    expect(parse('--purge', '--purge=true').options['purge']).toBe(true);
+  });
+
+  it('folds a negated legacy alias back onto its flag', () => {
+    expect(parse('--no-no-resolved').options['resolved']).toBe(true);
+  });
+
+  it('still rejects --no- on string flags', () => {
+    expect(() => parse('--no-title')).toThrow(/Unknown option '--no-title'/);
   });
 });
