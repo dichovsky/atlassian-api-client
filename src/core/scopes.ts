@@ -100,7 +100,9 @@ const JIRA_SOFTWARE_GRANULAR_SCOPES = [
 /**
  * Granular Jira Platform scopes from `x-atlassian-oauth2-scopes` entries whose
  * state is `Beta`. Classic scopes also present in `Current` entries are
- * intentionally excluded.
+ * intentionally excluded. `read:bulk-job:jira` and `write:bulk-job:jira` are
+ * the exception: they appear only in `components.securitySchemes.OAuth2`, not
+ * on any operation, and are kept here as catalog-only entries.
  */
 const JIRA_PLATFORM_GRANULAR_SCOPES = [
   'delete:async-task:jira',

@@ -40,16 +40,23 @@ for await (const project of jira.projects.listAll({ maxResults: 50 })) {
 }
 console.log(`Total projects: ${projectCount}`);
 
-// --- Jira: search pagination ---
+// --- Jira: search pagination (cursor-based; no async iterator for /search/jql) ---
 console.log('\n--- All Open Issues ---');
 let issueCount = 0;
-for await (const issue of jira.search.searchAll({
-  jql: 'status != Done ORDER BY created ASC',
-  maxResults: 100,
-})) {
-  issueCount++;
-  if (issueCount <= 5) {
-    console.log(`  ${issue.key}`);
+let nextPageToken: string | undefined;
+do {
+  const page = await jira.search.searchJqlPost({
+    jql: 'status != Done ORDER BY created ASC',
+    fields: ['summary'],
+    maxResults: 100,
+    nextPageToken,
+  });
+  for (const issue of page.issues) {
+    issueCount++;
+    if (issueCount <= 5) {
+      console.log(`  ${issue.key}`);
+    }
   }
-}
+  nextPageToken = page.isLast === true ? undefined : page.nextPageToken;
+} while (nextPageToken !== undefined);
 console.log(`Total open issues: ${issueCount}`);
