@@ -896,6 +896,7 @@ describe('component list --order-by (F197) and epic --color (F177)', () => {
 describe('skill example matrix for the admin / DevOps resources', () => {
   const MATRIX: Readonly<Record<string, readonly string[]>> = {
     [ADMIN]: [
+      'addons',
       'announcement-banner',
       'app',
       'application-properties',
@@ -915,6 +916,7 @@ describe('skill example matrix for the admin / DevOps resources', () => {
       'linked-workspaces',
       'migration',
       'mypermissions',
+      'permissions',
       'pipelines',
       'policies',
       'redact',
