@@ -1169,13 +1169,19 @@ export class IssuesResource {
    * Jira answers 204 (every worklog deleted) or 200 (partial success with a message). Pass
    * `returnOutcome: true` to resolve a {@link WorklogBulkOutcome} that tells them apart;
    * otherwise this resolves `void` either way.
+   *
+   * Only a literal `returnOutcome: true` (or an `as const` object) selects this
+   * `Promise<WorklogBulkOutcome>` overload. A `boolean` variable or a widened object such
+   * as `const p = { returnOutcome: true }` is typed `Promise<void>`, although the outcome is
+   * still resolved at runtime when the value is `true`. A subclass or hand-typed fake must
+   * implement both overloads (a lone `Promise<void>` signature no longer type-checks).
    */
   deleteAllWorklogs(
     issueIdOrKey: string,
     ids: number[],
     params: DeleteAllWorklogsParams & { readonly returnOutcome: true },
   ): Promise<WorklogBulkOutcome>;
-  /** Bulk delete worklogs for an issue (B505); resolves `void` even on partial success. */
+  /** Bulk delete worklogs for an issue (B505); resolves `void` unless `returnOutcome` is `true`. */
   deleteAllWorklogs(
     issueIdOrKey: string,
     ids: number[],
@@ -1381,13 +1387,19 @@ export class IssuesResource {
    * issueIdOrKey = SOURCE issue (path). data.issueIdOrKey = DESTINATION issue (body).
    * Jira answers 204 (every worklog moved) or 200 (partial success, spec bulkMoveWorklogs);
    * pass `returnOutcome: true` to resolve a {@link WorklogBulkOutcome} that tells them apart.
+   *
+   * Only a literal `returnOutcome: true` (or an `as const` object) selects this
+   * `Promise<WorklogBulkOutcome>` overload. A `boolean` variable or a widened object such
+   * as `const p = { returnOutcome: true }` is typed `Promise<void>`, although the outcome is
+   * still resolved at runtime when the value is `true`. A subclass or hand-typed fake must
+   * implement both overloads (a lone `Promise<void>` signature no longer type-checks).
    */
   moveWorklog(
     issueIdOrKey: string,
     data: WorklogMoveData,
     params: MoveWorklogParams & { readonly returnOutcome: true },
   ): Promise<WorklogBulkOutcome>;
-  /** Move worklogs to another issue (B515); resolves `void` even on partial success. */
+  /** Move worklogs to another issue (B515); resolves `void` unless `returnOutcome` is `true`. */
   moveWorklog(
     issueIdOrKey: string,
     data: WorklogMoveData,

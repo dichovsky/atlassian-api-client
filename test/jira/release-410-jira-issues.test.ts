@@ -114,6 +114,20 @@ describe('IssuesResource (release 4.1.0 jira-issues)', () => {
       expectTypeOf(plain).toEqualTypeOf<Promise<void>>();
       await expect(plain).resolves.toBeUndefined();
     });
+
+    it('an `as const` params object selects the outcome; a boolean variable is typed void yet resolves it', async () => {
+      transport.respondWith(undefined, 204).respondWith(undefined, 204);
+      const params = { returnOutcome: true } as const;
+      const typed = issues.deleteAllWorklogs('PROJ-1', [1], params);
+      expectTypeOf(typed).toEqualTypeOf<Promise<WorklogBulkOutcome>>();
+      await expect(typed).resolves.toEqual({ partial: false });
+      // Documented in the JSDoc: a widened boolean takes the void overload, yet
+      // the outcome is still resolved at runtime when the value is true.
+      const flag: boolean = true as boolean;
+      const widened = issues.moveWorklog('PROJ-1', { ids: [1] }, { returnOutcome: flag });
+      expectTypeOf(widened).toEqualTypeOf<Promise<void>>();
+      await expect(widened).resolves.toEqual({ partial: false });
+    });
   });
 
   describe('F276: update() overload selection', () => {

@@ -6,14 +6,14 @@
 
 ### Standard (v3 API)
 
-| Action        | Positional   | Required flags                     | Optional flags                                                                                                                     |
-| ------------- | ------------ | ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| `get`         | `<issueKey>` | —                                  | `--fields`, `--expand`, `--properties`, `--fields-by-keys`, `--update-history`, `--fail-fast`                                      |
-| `create`      | —            | `--summary`, `--project`, `--type` | `--parent`, `--body`, `--update-history`                                                                                           |
-| `update`      | `<issueKey>` | one of `--summary` or `--body`     | `--notify-users`, `--no-notify-users`, `--override-screen-security`, `--override-editable-flag`, `--return-issue`, `--expand`      |
-| `delete`      | `<issueKey>` | —                                  | `--delete-subtasks`                                                                                                                |
-| `transitions` | `<issueKey>` | —                                  | `--expand`, `--transition-id`, `--include-unavailable-transitions`, `--skip-remote-only-condition`, `--sort-by-ops-bar-and-status` |
-| `transition`  | `<issueKey>` | `--transition-id`                  | `--resolution`, `--body`                                                                                                           |
+| Action        | Positional   | Required flags                                                                                  | Optional flags                                                                                                                     |
+| ------------- | ------------ | ----------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `get`         | `<issueKey>` | —                                                                                               | `--fields`, `--expand`, `--properties`, `--fields-by-keys`, `--update-history`, `--fail-fast`                                      |
+| `create`      | —            | `--summary`, `--project`, `--type` (unless `--body` sets `fields.project` / `fields.issuetype`) | `--parent`, `--body`, `--update-history`                                                                                           |
+| `update`      | `<issueKey>` | one of `--summary` or `--body`                                                                  | `--notify-users`, `--no-notify-users`, `--override-screen-security`, `--override-editable-flag`, `--return-issue`, `--expand`      |
+| `delete`      | `<issueKey>` | —                                                                                               | `--delete-subtasks`                                                                                                                |
+| `transitions` | `<issueKey>` | —                                                                                               | `--expand`, `--transition-id`, `--include-unavailable-transitions`, `--skip-remote-only-condition`, `--sort-by-ops-bar-and-status` |
+| `transition`  | `<issueKey>` | `--transition-id`                                                                               | `--resolution`, `--body`                                                                                                           |
 
 - `--fields` and `--expand` are **comma-separated**, single flag. Example: `--fields summary,status,assignee --expand changelog,renderedFields`.
 - `get --properties` is a **comma-separated** list of issue property keys to return with the issue (`*all` for every property; prefix a key with `-` to exclude it). `--fields-by-keys` says the `--fields` entries are field keys rather than IDs (Connect app fields). `--update-history` adds the issue's project to your _Recently viewed_ list. `--fail-fast` makes the request fail if any field fails to load (by default Jira returns the issue with that field missing).
@@ -283,14 +283,14 @@ atlas jira issues rank --issues PROJ-1 --after PROJ-5
   - `properties` — `[{"key":"…","value":…}]`.
 - `--adjust-estimate` sets how the issue's remaining estimate changes. Values per action (anything else is rejected before any request):
 
-  | Action                                | Values                                     | Companion flag                                             |
-  | ------------------------------------- | ------------------------------------------ | ---------------------------------------------------------- |
-  | `add-worklog`                         | `auto` (default), `leave`, `new`, `manual` | `new` → `--new-estimate 2d`; `manual` → `--reduce-by 1h`   |
-  | `update-worklog`                      | `auto` (default), `leave`, `new`, `manual` | `new` → `--new-estimate 2d`                                |
-  | `delete-worklog`                      | `auto` (default), `leave`, `new`, `manual` | `new` → `--new-estimate 2d`; `manual` → `--increase-by 1h` |
-  | `delete-all-worklogs`, `move-worklog` | `auto` (default), `leave`                  | —                                                          |
+  | Action                                | Values                                     | Companion flag                                                       |
+  | ------------------------------------- | ------------------------------------------ | -------------------------------------------------------------------- |
+  | `add-worklog`                         | `auto` (default), `leave`, `new`, `manual` | `new` → `--new-estimate 2d`; `manual` → `--reduce-by 1h`             |
+  | `update-worklog`                      | `auto` (default), `leave`, `new`, `manual` | `new` → `--new-estimate 2d`; Jira defines no `manual` behaviour here |
+  | `delete-worklog`                      | `auto` (default), `leave`, `new`, `manual` | `new` → `--new-estimate 2d`; `manual` → `--increase-by 1h`           |
+  | `delete-all-worklogs`, `move-worklog` | `auto` (default), `leave`                  | —                                                                    |
 
-  `auto` adjusts by the time logged, `leave` keeps the estimate, `new` replaces it with `--new-estimate`, `manual` changes it by `--reduce-by` / `--increase-by`. Estimates use `#d`, `#h` or `#m`. Jira returns 400 when `new`/`manual` lack their companion flag.
+  `auto` adjusts by the time logged, `leave` keeps the estimate, `new` replaces it with `--new-estimate`, `manual` changes it by `--reduce-by` (`add-worklog`) / `--increase-by` (`delete-worklog`). Estimates use `#d`, `#h` or `#m`. Jira returns 400 when `new`/`manual` lack their companion flag.
 
 - `--notify-users`, `--override-editable-flag` are bare boolean flags. `notifyUsers` defaults to true on the wire, so pass `--no-notify-users` to suppress the notification (mutually exclusive with `--notify-users`). `--override-editable-flag` (Connect/Forge apps with _Administer Jira_) changes worklogs on an issue that is not editable, for example a closed one.
 - `move-worklog`: `<issueIdOrKey>` = SOURCE issue (path); `--ids` = comma-separated worklog IDs (integers); `--target-issue` = DESTINATION issue key (body).

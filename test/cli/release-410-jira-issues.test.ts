@@ -470,6 +470,8 @@ describe('F082/F281: create by ID and transition keep --body objects the flags d
   it.each([
     [['--type', 'Task', '--summary', 'S'], '--project'],
     [['--project', 'P', '--summary', 'S', '--body', '{"fields":{"project":{"id":"1"}}}'], '--type'],
+    [['--type', 'T', '--summary', 'S', '--body', '{"fields":{"project":null}}'], '--project'],
+    [['--project', 'P', '--summary', 'S', '--body', '{"fields":{"issuetype":null}}'], '--type'],
   ])('create %j without project/issue type anywhere is rejected', async (rest, flag) => {
     await rejected(['jira', 'issues', 'create', ...rest], `Missing required option: ${flag}`);
   });

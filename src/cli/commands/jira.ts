@@ -296,9 +296,14 @@ async function executeIssues(client: JiraClient, cmd: ParsedCommand): Promise<un
       });
       // `--summary` is required, so `fields` is always present.
       const fields = data['fields'] as Record<string, unknown>;
-      // Either the flag or `--body` fields.project / fields.issuetype (by ID) will do.
-      if (fields['project'] === undefined) throw new Error('Missing required option: --project');
-      if (fields['issuetype'] === undefined) throw new Error('Missing required option: --type');
+      // Either the flag or `--body` fields.project / fields.issuetype (by ID) will do;
+      // a JSON `null` counts as missing (Jira answers 400).
+      if ((fields['project'] ?? null) === null) {
+        throw new Error('Missing required option: --project');
+      }
+      if ((fields['issuetype'] ?? null) === null) {
+        throw new Error('Missing required option: --type');
+      }
       return client.issues.create(data as { fields: Record<string, unknown> }, {
         updateHistory: asBoolFlag(opts['update-history']),
       });
