@@ -58,7 +58,9 @@ import type {
   AddWorklogData,
   UpdateWorklogData,
   MultiIssueProperties,
+  WorklogBulkOutcome,
 } from '../../jira/resources/issues.js';
+import type { Issue } from '../../jira/types.js';
 import type { WebhookRegistration } from '../../jira/resources/webhooks.js';
 import type { ApplicationKey } from '../../jira/resources/license.js';
 import type {
@@ -277,22 +279,34 @@ async function executeIssues(client: JiraClient, cmd: ParsedCommand): Promise<un
       return client.issues.get(requireArg(cmd.positionalArgs[0], 'issue key'), {
         fields: csvFlag(opts['fields']),
         expand: asString(opts['expand']),
+        properties: csvFlag(opts['properties']),
+        fieldsByKeys: asBoolFlag(opts['fields-by-keys']),
+        updateHistory: asBoolFlag(opts['update-history']),
+        failFast: asBoolFlag(opts['fail-fast']),
       });
     case 'create': {
-      const parent = asString(opts['parent']);
+      const project = asNonEmptyString(opts['project'], '--project');
+      const type = asNonEmptyString(opts['type'], '--type');
+      const parent = asNonEmptyString(opts['parent'], '--parent');
       const data = issueWriteBody(opts['body'], {
-        project: { key: requireOpt(opts['project'], '--project') },
-        issuetype: { name: requireOpt(opts['type'], '--type') },
+        ...(project !== undefined && { project: { key: project } }),
+        ...(type !== undefined && { issuetype: { name: type } }),
         summary: requireOpt(opts['summary'], '--summary'),
         ...(parent !== undefined && { parent: { key: parent } }),
       });
-      // The flag fields above are required, so `fields` is always present.
-      return client.issues.create(data as { fields: Record<string, unknown> });
+      // `--summary` is required, so `fields` is always present.
+      const fields = data['fields'] as Record<string, unknown>;
+      // Either the flag or `--body` fields.project / fields.issuetype (by ID) will do.
+      if (fields['project'] === undefined) throw new Error('Missing required option: --project');
+      if (fields['issuetype'] === undefined) throw new Error('Missing required option: --type');
+      return client.issues.create(data as { fields: Record<string, unknown> }, {
+        updateHistory: asBoolFlag(opts['update-history']),
+      });
     }
     case 'update': {
       const issueKey = requireArg(cmd.positionalArgs[0], 'issue key');
-      const summary = asString(opts['summary']);
-      const data = issueWriteBody(opts['body'], summary ? { summary } : {});
+      const summary = asNonEmptyString(opts['summary'], '--summary');
+      const data = issueWriteBody(opts['body'], summary !== undefined ? { summary } : {});
       if (Object.keys(data).length === 0) {
         throw new Error('issues update: nothing to update — pass --summary or --body');
       }
@@ -304,7 +318,13 @@ async function executeIssues(client: JiraClient, cmd: ParsedCommand): Promise<un
       // `expand` only shapes the returned issue (spec), so it needs --return-issue.
       const expand = asString(opts['expand']);
       if (opts['return-issue'] === true) {
-        return client.issues.update(issueKey, data, { ...params, returnIssue: true, expand });
+        // A non-conforming 204 resolves undefined; still confirm the edit.
+        const issue: Issue | undefined = await client.issues.update(issueKey, data, {
+          ...params,
+          returnIssue: true,
+          expand,
+        });
+        return issue ?? { updated: true };
       }
       if (expand !== undefined) throw new Error('issues update: --expand needs --return-issue');
       await client.issues.update(issueKey, data, params);
@@ -322,28 +342,38 @@ async function executeIssues(client: JiraClient, cmd: ParsedCommand): Promise<un
     }
     case 'transition': {
       const issueKey = requireArg(cmd.positionalArgs[0], 'issue key');
-      const resolution = asString(opts['resolution']);
+      const resolution = asNonEmptyString(opts['resolution'], '--resolution');
       // A transition screen with Resolution on it (e.g. closing a subtask)
       // rejects the transition unless fields.resolution is sent.
       const data = issueWriteBody(
         opts['body'],
         resolution !== undefined ? { resolution: { name: resolution } } : {},
       );
+      const { transition, ...rest } = data;
       await client.issues.transition(issueKey, {
-        ...data,
-        transition: { id: requireOpt(opts['transition-id'], '--transition-id') },
+        ...rest,
+        // --transition-id sets the id; other --body transition keys (looped) stay.
+        transition: {
+          ...(transition as Record<string, unknown> | undefined),
+          id: requireOpt(opts['transition-id'], '--transition-id'),
+        },
       });
       return { transitioned: true };
     }
-    case 'transitions': {
-      const issueKey = requireArg(cmd.positionalArgs[0], 'issue key');
-      const expand = asString(opts['expand']);
-      return expand !== undefined
-        ? client.issues.getTransitions(issueKey, { expand })
-        : client.issues.getTransitions(issueKey);
-    }
+    case 'transitions':
+      return client.issues.getTransitions(requireArg(cmd.positionalArgs[0], 'issue key'), {
+        expand: asString(opts['expand']),
+        transitionId: asString(opts['transition-id']),
+        skipRemoteOnlyCondition: asBoolFlag(opts['skip-remote-only-condition']),
+        includeUnavailableTransitions: asBoolFlag(opts['include-unavailable-transitions']),
+        sortByOpsBarAndStatus: asBoolFlag(opts['sort-by-ops-bar-and-status']),
+      });
     case 'get-agile':
-      return client.issues.getAgile(requireArg(cmd.positionalArgs[0], 'issue key'));
+      return client.issues.getAgile(requireArg(cmd.positionalArgs[0], 'issue key'), {
+        fields: csvFlag(opts['fields']),
+        expand: asString(opts['expand']),
+        updateHistory: asBoolFlag(opts['update-history']),
+      });
     case 'get-estimation': {
       const boardId = asPositiveInt(opts['board-id'], '--board-id');
       return client.issues.getEstimation(requireArg(cmd.positionalArgs[0], 'issue key'), {
@@ -407,7 +437,10 @@ async function executeIssues(client: JiraClient, cmd: ParsedCommand): Promise<un
       );
     }
     case 'get-editmeta':
-      return client.issues.getEditMeta(requireArg(cmd.positionalArgs[0], 'issue key'));
+      return client.issues.getEditMeta(requireArg(cmd.positionalArgs[0], 'issue key'), {
+        overrideScreenSecurity: asBoolFlag(opts['override-screen-security']),
+        overrideEditableFlag: asBoolFlag(opts['override-editable-flag']),
+      });
     case 'notify': {
       await client.issues.notify(
         requireArg(cmd.positionalArgs[0], 'issue key'),
@@ -440,8 +473,9 @@ async function executeIssues(client: JiraClient, cmd: ParsedCommand): Promise<un
       return { updated: true };
     }
     case 'delete-all-remotelinks': {
+      // Spec deleteRemoteIssueLinkByGlobalId: globalId is required (no delete-all exists).
       await client.issues.deleteAllRemoteLinks(requireArg(cmd.positionalArgs[0], 'issue key'), {
-        globalId: asString(opts['global-id']),
+        globalId: requireOpt(opts['global-id'], '--global-id'),
       });
       return { deleted: true };
     }
@@ -492,7 +526,7 @@ async function executeIssues(client: JiraClient, cmd: ParsedCommand): Promise<un
     }
     case 'remove-watcher': {
       await client.issues.removeWatcher(requireArg(cmd.positionalArgs[0], 'issue key'), {
-        accountId: asString(opts['account-id']),
+        accountId: requireOpt(opts['account-id'], '--account-id'),
       });
       return { removed: true };
     }
@@ -509,11 +543,20 @@ async function executeIssues(client: JiraClient, cmd: ParsedCommand): Promise<un
       const worklogIds = splitCsvIds(requireOpt(opts['ids'], '--ids')).map((s) =>
         parsePositiveIntArg(s, '--ids'),
       );
-      await client.issues.deleteAllWorklogs(
+      const outcome = await client.issues.deleteAllWorklogs(
         requireArg(cmd.positionalArgs[0], 'issueIdOrKey'),
         worklogIds,
+        {
+          adjustEstimate: asEnum(
+            opts['adjust-estimate'],
+            BULK_WORKLOG_ADJUST_ESTIMATE,
+            'adjust-estimate',
+          ),
+          overrideEditableFlag: asBoolFlag(opts['override-editable-flag']),
+          returnOutcome: true,
+        },
       );
-      return { deleted: true };
+      return worklogBulkResult('deleted', outcome);
     }
     case 'list-worklogs':
       return client.issues.listWorklogs(requireArg(cmd.positionalArgs[0], 'issueIdOrKey'), {
@@ -529,7 +572,11 @@ async function executeIssues(client: JiraClient, cmd: ParsedCommand): Promise<un
         parseJsonObjectFlag(requireOpt(opts['body'], '--body'), '--body') as AddWorklogData,
         {
           notifyUsers: notifyUsersFlag(opts),
-          adjustEstimate: asString(opts['adjust-estimate']),
+          adjustEstimate: asEnum(
+            opts['adjust-estimate'],
+            WORKLOG_ADJUST_ESTIMATE,
+            'adjust-estimate',
+          ),
           newEstimate: asString(opts['new-estimate']),
           reduceBy: asString(opts['reduce-by']),
           expand: asString(opts['expand']),
@@ -542,7 +589,11 @@ async function executeIssues(client: JiraClient, cmd: ParsedCommand): Promise<un
         requireArg(cmd.positionalArgs[1], 'worklogId'),
         {
           notifyUsers: notifyUsersFlag(opts),
-          adjustEstimate: asString(opts['adjust-estimate']),
+          adjustEstimate: asEnum(
+            opts['adjust-estimate'],
+            WORKLOG_ADJUST_ESTIMATE,
+            'adjust-estimate',
+          ),
           newEstimate: asString(opts['new-estimate']),
           increaseBy: asString(opts['increase-by']),
           overrideEditableFlag: asBoolFlag(opts['override-editable-flag']),
@@ -562,7 +613,11 @@ async function executeIssues(client: JiraClient, cmd: ParsedCommand): Promise<un
         parseJsonObjectFlag(requireOpt(opts['body'], '--body'), '--body') as UpdateWorklogData,
         {
           notifyUsers: notifyUsersFlag(opts),
-          adjustEstimate: asString(opts['adjust-estimate']),
+          adjustEstimate: asEnum(
+            opts['adjust-estimate'],
+            WORKLOG_ADJUST_ESTIMATE,
+            'adjust-estimate',
+          ),
           newEstimate: asString(opts['new-estimate']),
           expand: asString(opts['expand']),
           overrideEditableFlag: asBoolFlag(opts['override-editable-flag']),
@@ -597,7 +652,7 @@ async function executeIssues(client: JiraClient, cmd: ParsedCommand): Promise<un
     case 'move-worklog': {
       const rawMoveIds = requireOpt(opts['ids'], '--ids');
       const moveIds = splitCsvIds(rawMoveIds).map((s) => parsePositiveIntArg(s, '--ids'));
-      await client.issues.moveWorklog(
+      const outcome = await client.issues.moveWorklog(
         requireArg(cmd.positionalArgs[0], 'issueIdOrKey'),
         {
           ids: moveIds,
@@ -606,11 +661,16 @@ async function executeIssues(client: JiraClient, cmd: ParsedCommand): Promise<un
           }),
         },
         {
-          adjustEstimate: asString(opts['adjust-estimate']),
+          adjustEstimate: asEnum(
+            opts['adjust-estimate'],
+            BULK_WORKLOG_ADJUST_ESTIMATE,
+            'adjust-estimate',
+          ),
           overrideEditableFlag: asBoolFlag(opts['override-editable-flag']),
+          returnOutcome: true,
         },
       );
-      return { moved: true };
+      return worklogBulkResult('moved', outcome);
     }
     case 'archive-issues':
       return client.issues.archiveIssues(splitCsvIds(requireOpt(opts['ids'], '--ids')));
@@ -730,6 +790,26 @@ async function executeIssues(client: JiraClient, cmd: ParsedCommand): Promise<un
         `Unknown issues action: ${cmd.action}. Actions: get, create, update, delete, transition, transitions, get-agile, get-estimation, set-estimation, rank, assign, get-changelog, filter-changelog, get-editmeta, notify, list-properties, delete-property, get-property, set-property, delete-all-remotelinks, list-remotelinks, create-remotelink, delete-remotelink, get-remotelink, update-remotelink, remove-vote, get-votes, add-vote, remove-watcher, get-watchers, add-watcher, delete-all-worklogs, list-worklogs, add-worklog, delete-worklog, get-worklog, update-worklog, list-worklog-properties, delete-worklog-property, get-worklog-property, set-worklog-property, move-worklog, archive-issues, archive-issues-jql, bulk-fetch, get-create-meta, get-create-meta-issuetypes, get-create-meta-issuetype, get-limit-report, get-adf-limit-report, picker, set-properties-by-entity-ids, set-properties-multi, unarchive-issues, watch-issues-bulk, is-watching-bulk, export-archived`,
       );
   }
+}
+
+/** `adjustEstimate` values of add-, update- and delete-worklog (spec enum). */
+const WORKLOG_ADJUST_ESTIMATE = ['auto', 'leave', 'new', 'manual'] as const;
+/** `adjustEstimate` values of bulkDeleteWorklogs / bulkMoveWorklogs (spec enum). */
+const BULK_WORKLOG_ADJUST_ESTIMATE = ['auto', 'leave'] as const;
+
+/** A string flag that may be omitted but not given empty (`--summary ''` is a mistake). */
+function asNonEmptyString(value: string | boolean | undefined, name: string): string | undefined {
+  const s = asString(value);
+  if (s === '') throw new Error(`Missing value for ${name}`);
+  return s;
+}
+
+/** `{ deleted|moved: true }`, plus `partial` and Jira's body when only some worklogs were. */
+function worklogBulkResult(verb: 'deleted' | 'moved', outcome: WorklogBulkOutcome): object {
+  if (!outcome.partial) return { [verb]: true };
+  return outcome.details === undefined
+    ? { [verb]: true, partial: true }
+    : { [verb]: true, partial: true, details: outcome.details };
 }
 
 async function executeProjects(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
@@ -3602,25 +3682,27 @@ function isJsonObject(value: unknown): value is Record<string, unknown> {
  * (`--summary`, `--resolution`, ...), which override the same keys in
  * `--body` `fields`. Jira rejects a field set in both `fields` and `update`,
  * so `update` operations on a flag-set field are dropped; others are kept.
- * Omits `fields`/`update` when they end up empty.
+ * Omits `fields`/`update` when they end up empty. `fields`, `update` and
+ * `transition` must be JSON objects when present.
  */
 function issueWriteBody(
   raw: string | boolean | undefined,
   flagFields: Record<string, unknown>,
 ): Record<string, unknown> {
   const s = asString(raw);
-  const {
-    fields: bodyFields,
-    update,
-    ...rest
-  } = s === undefined ? {} : parseJsonObjectFlag(s, '--body');
-  if (bodyFields !== undefined && !isJsonObject(bodyFields)) {
-    throw new Error('--body "fields" must be a JSON object');
+  const body = s === undefined ? {} : parseJsonObjectFlag(s, '--body');
+  for (const key of ['fields', 'update', 'transition']) {
+    if (body[key] !== undefined && !isJsonObject(body[key])) {
+      throw new Error(`--body "${key}" must be a JSON object`);
+    }
   }
-  const fields = { ...bodyFields, ...flagFields };
-  let ops = update;
-  if (isJsonObject(update)) {
-    const kept = Object.entries(update).filter(([key]) => !Object.hasOwn(flagFields, key));
+  const { fields: bodyFields, update, ...rest } = body;
+  const fields = { ...(bodyFields as Record<string, unknown> | undefined), ...flagFields };
+  let ops: Record<string, unknown> | undefined;
+  if (update !== undefined) {
+    const kept = Object.entries(update as Record<string, unknown>).filter(
+      ([key]) => !Object.hasOwn(flagFields, key),
+    );
     ops = kept.length > 0 ? Object.fromEntries(kept) : undefined;
   }
   return {

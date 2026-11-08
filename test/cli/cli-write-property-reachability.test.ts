@@ -95,10 +95,6 @@ const KNOWN_GAPS: Readonly<
     unset: ['expand', 'overrideSharePermissions'],
     reason: 'response expansion and the admin share-permission override are not exposed',
   },
-  'jira.issues.deleteAllWorklogs': {
-    unset: ['adjustEstimate', 'overrideEditableFlag'],
-    reason: 'estimate adjustment and admin override not exposed; defaults apply',
-  },
   'jira.projects.create': {
     unset: [
       'projectTemplateKey',
