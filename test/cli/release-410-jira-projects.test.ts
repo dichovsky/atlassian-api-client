@@ -313,6 +313,39 @@ describe('projects create (F090, F099)', () => {
     await rejected([...base, '--lead-account-id', LEAD], /--project-type-key/);
     await rejected([...withLead.slice(0, 6), '', ...withLead.slice(7)], /--name/);
   });
+
+  it('needs no --project-type-key when --body sets projectTemplateKey (spec)', async () => {
+    const req = await onlyRequest(example('jira projects create --key KAN'));
+    expect(req.method).toBe('POST');
+    expect(req.path).toBe(`${JIRA}/project`);
+    expect(req.body).toEqual({
+      key: 'KAN',
+      name: 'Kanban',
+      leadAccountId: LEAD,
+      projectTemplateKey: 'com.pyxis.greenhopper.jira:gh-simplified-kanban-classic',
+    });
+    const base = ['jira', 'projects', 'create', '--key', 'EX', '--name', 'N'];
+    await rejected(
+      [...base, '--lead-account-id', LEAD, '--body', '{"projectTemplateKey":""}'],
+      /Missing required option: --project-type-key/,
+    );
+  });
+
+  it('validates --project-type-key against the spec enum', async () => {
+    const base = ['jira', 'projects', 'create', '--key', 'EX', '--name', 'N'];
+    const req = await onlyRequest([
+      ...base,
+      '--lead-account-id',
+      LEAD,
+      '--project-type-key',
+      'customer_service',
+    ]);
+    expect(req.body).toMatchObject({ projectTypeKey: 'customer_service' });
+    await rejected(
+      [...base, '--lead-account-id', LEAD, '--project-type-key', 'Software'],
+      /--project-type-key must be one of: software, service_desk, business, customer_service/,
+    );
+  });
 });
 
 // ── F091 / F094 update ──────────────────────────────────────────────────────
@@ -435,6 +468,24 @@ describe('spec query params on list-all-components, recent, set-permission-schem
     );
   });
 
+  it('list-components validates --order-by against the spec enum', async () => {
+    const documented = await onlyRequest(example('jira projects list-components PROJ'));
+    expect(documented.path).toBe(`${JIRA}/project/PROJ/component`);
+    expect(documented.query.get('orderBy')).toBe('name');
+    const desc = await onlyRequest([
+      'jira',
+      'projects',
+      'list-components',
+      'PROJ',
+      '--order-by=-issueCount',
+    ]);
+    expect(desc.query.get('orderBy')).toBe('-issueCount');
+    await rejected(
+      ['jira', 'projects', 'list-components', 'PROJ', '--order-by', 'key'],
+      /--order-by must be one of: description, -description, \+description, issueCount/,
+    );
+  });
+
   it('recent sends --properties as repeated params and never sends maxResults', async () => {
     const req = await onlyRequest(example('jira projects recent'));
     expect(req.path).toBe(`${JIRA}/project/recent`);
@@ -514,6 +565,9 @@ describe('role actors, feature state, restore (F100, F102, F103)', () => {
     await rejected([...add, '{"groupId":[1]}'], /groupId/);
     // Spec ActorsMap: `group` cannot be used with `groupId`.
     await rejected([...add, '{"group":["g"],"groupId":["id"]}'], /group.*groupId/);
+    // An empty `group` is dropped by the SDK, so it does not conflict with groupId.
+    const groupId = await onlyRequest([...add, '{"group":[],"groupId":["g"]}']);
+    expect(groupId.body).toEqual({ groupId: ['g'] });
     const req = await onlyRequest(example('jira projects add-role-actors PROJ 10001'));
     expect(req.body).toEqual({ user: ['acc-1'] });
   });

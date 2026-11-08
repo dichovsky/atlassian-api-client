@@ -797,7 +797,7 @@ async function executeProjects(client: JiraClient, cmd: ParsedCommand): Promise<
       const data = projectWriteBody(opts['body'], CREATE_PROJECT_BODY_KEYS, {
         key: asString(opts['key']),
         name: asString(opts['name']),
-        projectTypeKey: asString(opts['project-type-key']),
+        projectTypeKey: asEnum(opts['project-type-key'], PROJECT_TYPE_KEYS, 'project-type-key'),
         description: asString(opts['description']),
         leadAccountId: asString(opts['lead-account-id']),
         url: asString(opts['url']),
@@ -807,9 +807,11 @@ async function executeProjects(client: JiraClient, cmd: ParsedCommand): Promise<
         notificationScheme: asPositiveInt(opts['notification-scheme'], '--notification-scheme'),
         categoryId: asPositiveInt(opts['category-id'], '--category-id'),
       });
-      // Spec: `key`/`name` are required and Jira needs a lead (`lead` is deprecated).
+      // Spec: `key`/`name` are required, Jira needs a lead (`lead` is deprecated),
+      // and the project type is needed only when no template is given.
+      const missing = (key: string) => data[key] === undefined || data[key] === '';
       for (const [key, flag] of CREATE_PROJECT_REQUIRED) {
-        if (data[key] === undefined || data[key] === '') {
+        if (missing(key) && !(key === 'projectTypeKey' && !missing('projectTemplateKey'))) {
           throw new Error(`Missing required option: ${flag}`);
         }
       }
@@ -944,7 +946,7 @@ async function executeProjects(client: JiraClient, cmd: ParsedCommand): Promise<
       return client.projects.listComponents(requireArg(cmd.positionalArgs[0], 'projectIdOrKey'), {
         startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
-        orderBy: asString(opts['order-by']),
+        orderBy: asEnum(opts['order-by'], PROJECT_COMPONENT_ORDER_BY_VALUES, 'order-by'),
         componentSource: asEnum(opts['component-source'], COMPONENT_SOURCES, 'component-source'),
         query: asString(opts['query']),
       });
@@ -1222,6 +1224,14 @@ function requireInt64Ids(value: string | boolean | undefined, name: string): str
 /** Spec `componentSource` enum on the project component list endpoints. */
 const COMPONENT_SOURCES = ['jira', 'compass', 'auto'] as const;
 
+/** Spec `orderBy` enum on `GET /project/{projectIdOrKey}/component`. */
+const PROJECT_COMPONENT_ORDER_BY_VALUES = ['description', 'issueCount', 'lead', 'name'].flatMap(
+  (field) => [field, `-${field}`, `+${field}`],
+);
+
+/** Spec `projectTypeKey` enum on `CreateProjectDetails`. */
+const PROJECT_TYPE_KEYS = ['software', 'service_desk', 'business', 'customer_service'] as const;
+
 /** Spec `assigneeType` enum on `CreateProjectDetails`/`UpdateProjectDetails`. */
 const PROJECT_ASSIGNEE_TYPES = ['PROJECT_LEAD', 'UNASSIGNED'] as const;
 
@@ -1262,7 +1272,8 @@ function roleActorsBody(body: Record<string, unknown>): ActorsMap {
     throw new Error('--body must name at least one actor in user, group or groupId');
   }
   // Spec ActorsMap: `group` cannot be used with `groupId`.
-  if ('group' in body && 'groupId' in body) {
+  const named = (key: string) => ((body[key] ?? []) as string[]).length > 0;
+  if (named('group') && named('groupId')) {
     throw new Error('--body cannot combine group and groupId; use groupId');
   }
   return body as ActorsMap;
