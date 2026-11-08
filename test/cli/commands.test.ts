@@ -10522,6 +10522,57 @@ describe('executeJiraCommand', () => {
       );
     });
 
+    it('issues update-worklog --no-notify-users sends notifyUsers false', async () => {
+      jiraIssuesMock.updateWorklog.mockResolvedValue({ id: 'wl-1' });
+      await executeJiraCommand(
+        cmd('issues', 'update-worklog', ['PROJ-1', 'wl-1'], {
+          body: '{"timeSpentSeconds":60}',
+          'no-notify-users': true,
+        }),
+        GLOBALS,
+      );
+      expect(jiraIssuesMock.updateWorklog).toHaveBeenCalledWith(
+        'PROJ-1',
+        'wl-1',
+        { timeSpentSeconds: 60 },
+        expect.objectContaining({ notifyUsers: false }),
+      );
+    });
+
+    it('issues delete-worklog --no-notify-users sends notifyUsers false', async () => {
+      jiraIssuesMock.deleteWorklog.mockResolvedValue(undefined);
+      await executeJiraCommand(
+        cmd('issues', 'delete-worklog', ['PROJ-1', 'wl-1'], { 'no-notify-users': true }),
+        GLOBALS,
+      );
+      expect(jiraIssuesMock.deleteWorklog).toHaveBeenCalledWith(
+        'PROJ-1',
+        'wl-1',
+        expect.objectContaining({ notifyUsers: false }),
+      );
+    });
+
+    it.each([
+      ['add-worklog', ['PROJ-1'], 'addWorklog'],
+      ['update-worklog', ['PROJ-1', 'wl-1'], 'updateWorklog'],
+      ['delete-worklog', ['PROJ-1', 'wl-1'], 'deleteWorklog'],
+    ] as const)(
+      'issues %s rejects --notify-users with --no-notify-users',
+      async (action, args, method) => {
+        await expect(
+          executeJiraCommand(
+            cmd('issues', action, [...args], {
+              body: '{"timeSpentSeconds":60}',
+              'notify-users': true,
+              'no-notify-users': true,
+            }),
+            GLOBALS,
+          ),
+        ).rejects.toThrow('Cannot specify both --notify-users and --no-notify-users');
+        expect(jiraIssuesMock[method]).not.toHaveBeenCalled();
+      },
+    );
+
     it('issues update-worklog passes notify-users when provided', async () => {
       jiraIssuesMock.updateWorklog.mockResolvedValue({ id: 'wl-1' });
       await executeJiraCommand(

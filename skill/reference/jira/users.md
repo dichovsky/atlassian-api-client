@@ -38,6 +38,7 @@
 - `users create` requires `--email` and `--products` (spec-required). `--products` is comma-separated: `jira-core`, `jira-servicedesk`, `jira-product-discovery`, `jira-software`; pass `--products ""` to create a user with no product access. `--display-name` is optional.
 - `users assignable-multi-project` accepts `--project-keys` as a comma-separated list.
 - `users assignable` needs one of `--project` (ID or case-sensitive key), `--issue-key` or `--issue-id`; the issue-scoped form returns users assignable to that issue. `--action-descriptor-id` is a transition ID (non-negative integer), to find users assignable during that transition. `--session-id` stays the same until the assignee is set. `--recommend` (bare boolean) asks Jira to recommend assignees. `--account-type` and `--app-type` are comma-separated filters, sent as repeated query params.
+- `users assignable` and `viewissue-search` also need a user selector: the spec requires `--query` (matched against display name and email prefixes) or `--account-id` (exact match) on top of the issue/project scope. The CLI does not check this; pass one of them, as in the examples below.
 - `users bulk` and `users bulk-emails` accept `--account-ids` as a comma-separated list. `bulk-emails` returns a **single** `{ accountId, email }` object (spec `UnrestrictedUserEmail`), not a `{ values: [...] }` wrapper.
 - `users bulk-migration` accepts `--user-name` and `--key` as comma-separated lists to translate legacy identifiers to account IDs.
 - `users set-columns` accepts `--columns` as a comma-separated list of column names; `--account-id` scopes the update to a specific user (admin only).
@@ -67,13 +68,13 @@ atlas jira users search-query --query jsmith
 atlas jira users search-query-key --query jsmith
 
 # Find users who can view an issue
-atlas jira users viewissue-search --issue-key PROJ-42
+atlas jira users viewissue-search --issue-key PROJ-42 --query jane
 
 # Find users who can browse a project
-atlas jira users viewissue-search --project-key PROJ
+atlas jira users viewissue-search --project-key PROJ --query jane
 
 # Find users assignable to an issue during a transition
-atlas jira users assignable --issue-key PROJ-42 --action-descriptor-id 31 --account-type atlassian
+atlas jira users assignable --issue-key PROJ-42 --query jane --action-descriptor-id 31 --account-type atlassian
 
 # List all users (admin)
 atlas jira users list --start-at 0 --max-results 50
