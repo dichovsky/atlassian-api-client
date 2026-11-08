@@ -14,7 +14,17 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       include: ['src/**/*.ts'],
-      exclude: ['src/**/__tests__/**', 'src/**/types.ts', 'src/**/index.ts'],
+      // Only pure re-export barrels are excluded; logic-bearing index.ts files
+      // (src/cli/index.ts, src/skill-installer/index.ts) count toward 100%.
+      exclude: [
+        'src/**/__tests__/**',
+        'src/**/types.ts',
+        'src/index.ts',
+        'src/core/index.ts',
+        'src/jira/index.ts',
+        'src/jira/resources/index.ts',
+        'src/confluence/index.ts',
+      ],
       thresholds: {
         statements: 100,
         branches: 100,

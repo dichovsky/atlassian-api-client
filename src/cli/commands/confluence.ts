@@ -1221,7 +1221,7 @@ async function executeAttachments(client: ConfluenceClient, cmd: ParsedCommand):
         'include-properties': opts['include-properties'] === true ? true : undefined,
         'include-operations': opts['include-operations'] === true ? true : undefined,
         'include-versions': opts['include-versions'] === true ? true : undefined,
-        'include-version': opts['include-version'] === true ? true : undefined,
+        'include-version': includeVersionFlag(opts),
         'include-collaborators': opts['include-collaborators'] === true ? true : undefined,
       });
     case 'delete': {
@@ -1607,7 +1607,7 @@ async function executeCustomContent(
         'include-properties': opts['include-properties'] === true ? true : undefined,
         'include-operations': opts['include-operations'] === true ? true : undefined,
         'include-versions': opts['include-versions'] === true ? true : undefined,
-        'include-version': opts['include-version'] === true ? true : undefined,
+        'include-version': includeVersionFlag(opts),
         'include-collaborators': opts['include-collaborators'] === true ? true : undefined,
       });
     }
@@ -2046,7 +2046,11 @@ async function executeTasks(client: ConfluenceClient, cmd: ParsedCommand): Promi
     case 'list':
       return client.tasks.list({
         'body-format': asString(opts['body-format']) as 'storage' | 'atlas_doc_format' | undefined,
-        includeBlankTasks: opts['include-blank-tasks'] === true ? true : undefined,
+        // Defaults to true on the wire, so an explicit false must be sent.
+        includeBlankTasks:
+          typeof opts['include-blank-tasks'] === 'boolean'
+            ? opts['include-blank-tasks']
+            : undefined,
         status: asEnum(opts['status'], TASK_STATUSES, 'status'),
         taskId: parseCsvIntList(asString(opts['task-id'])),
         spaceId: parseCsvIntList(asString(opts['space-id'])),
@@ -2538,7 +2542,7 @@ async function executeFooterComments(
         'include-operations': opts['include-operations'] === true ? true : undefined,
         'include-likes': opts['include-likes'] === true ? true : undefined,
         'include-versions': opts['include-versions'] === true ? true : undefined,
-        'include-version': opts['include-version'] === true ? true : undefined,
+        'include-version': includeVersionFlag(opts),
       });
     }
     case 'update': {
@@ -3315,6 +3319,18 @@ function makePageCreateBody(
 }
 
 /**
+ * `include-version` defaults to true on the wire. The router reports an
+ * explicit false (`--no-include-version`, `--include-version false`) as
+ * `no-include-version`, which must reach the wire as false.
+ */
+function includeVersionFlag(
+  opts: Record<string, string | boolean | undefined>,
+): boolean | undefined {
+  if (opts['include-version'] === true) return true;
+  return opts['no-include-version'] === true ? false : undefined;
+}
+
+/**
  * Project the CLI flag bag onto a `GetBlogPostParams` query bag. Returns
  * `undefined` when no spec-mapped flag is present so the caller can short-circuit
  * to the no-arg `blogPosts.get(id)` overload (avoids sending an empty `query={}`
@@ -3341,7 +3357,8 @@ function buildGetBlogPostParams(
   if (opts['include-operations'] === true) params['include-operations'] = true;
   if (opts['include-likes'] === true) params['include-likes'] = true;
   if (opts['include-versions'] === true) params['include-versions'] = true;
-  if (opts['include-version'] === true) params['include-version'] = true;
+  const includeVersion = includeVersionFlag(opts);
+  if (includeVersion !== undefined) params['include-version'] = includeVersion;
   if (opts['include-favorited-by-current-user-status'] === true) {
     params['include-favorited-by-current-user-status'] = true;
   }

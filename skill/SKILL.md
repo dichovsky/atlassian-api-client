@@ -27,9 +27,9 @@ source: atlassian-api-client npm package
 ## Always-on rules
 
 - Use env-var auth only (`ATLASSIAN_BASE_URL`, `ATLASSIAN_API_TOKEN`, and `ATLASSIAN_EMAIL` for basic auth).
-- Never place secrets in CLI flags. Specifically avoid `--token <secret>` or `--email <addr>` in shell history, transcripts, CI logs, or chat. Use environment variables (`ATLASSIAN_API_TOKEN`, `ATLASSIAN_EMAIL`) or a config file with restricted permissions.
+- Never place secrets in CLI flags. Specifically avoid `--token <secret>` or `--email <addr>` in shell history, transcripts, CI logs, or chat. Use environment variables (`ATLASSIAN_API_TOKEN`, `ATLASSIAN_EMAIL`) or a config file with restricted permissions. `--email` is always the basic-auth login, never a payload field: give a new Jira user's address with `atlas jira users create --email-address <addr>`.
 - Ask user for missing auth env; do not guess.
-- Return minimal output first (`--format minimal` when IDs/keys are sufficient).
+- Return minimal output first (`--format minimal` when IDs are sufficient: one ID per record, list/search envelopes unwrapped; Jira issues print the numeric ID, not the key).
 - Prefer pagination limits and cursors over bulk dumps.
 - Use JSON-valued flags (e.g. `--body '{...}'`) for complex payloads; all resource operations are CLI-reachable.
 
@@ -47,7 +47,7 @@ help: atlas --help | atlas <api> --help
 ```sh
 atlas confluence pages list --space-id 123456 --limit 25 --format minimal
 atlas confluence pages get 789012
-atlas jira issues get PROJ-123 --fields summary,status,assignee --format minimal
+atlas jira issues get PROJ-123 --fields summary,status,assignee
 atlas jira search --jql "project = PROJ AND status = 'In Progress'" --max-results 25 --format minimal
 atlas install-skill --local
 atlas install-skill --print

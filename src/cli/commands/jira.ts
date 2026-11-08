@@ -93,7 +93,7 @@ export async function executeJiraCommand(
     case 'search':
       return executeSearch(client, cmd);
     case 'users':
-      return executeUsers(client, cmd);
+      return executeUsers(client, cmd, globals);
     case 'issue-types':
       return executeIssueTypes(client, cmd);
     case 'issuetype':
@@ -1226,7 +1226,11 @@ async function executeSearch(client: JiraClient, cmd: ParsedCommand): Promise<un
   }
 }
 
-async function executeUsers(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
+async function executeUsers(
+  client: JiraClient,
+  cmd: ParsedCommand,
+  globals: GlobalOptions,
+): Promise<unknown> {
   const opts = cmd.options;
   switch (cmd.action) {
     case 'get':
@@ -1243,7 +1247,19 @@ async function executeUsers(client: JiraClient, cmd: ParsedCommand): Promise<unk
       return { deleted: true };
     }
     case 'create': {
-      const emailAddress = requireOpt(opts['email'], '--email');
+      // `--email` is the global basic-auth login; the new user's address is
+      // `--email-address`. Under bearer auth `--email` is unused, so it still works.
+      const loginEmail = globals.authType === 'basic' ? globals.email : undefined;
+      if (
+        opts['email-address'] === undefined &&
+        opts['email'] !== undefined &&
+        opts['email'] === loginEmail
+      ) {
+        throw new Error(
+          "users create: --email is the basic-auth login email; pass the new user's address with --email-address",
+        );
+      }
+      const emailAddress = requireOpt(opts['email-address'] ?? opts['email'], '--email-address');
       // `products` is spec-required; `--products ""` sends [] (no product access).
       const products = opts['products'];
       if (typeof products !== 'string') {
