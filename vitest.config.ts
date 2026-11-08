@@ -13,7 +13,9 @@ export default defineConfig({
     ],
     coverage: {
       provider: 'v8',
-      include: ['src/**/*.ts'],
+      // The release-gate scripts decide whether a tag publishes, so they are
+      // held to the same 100% as the library.
+      include: ['src/**/*.ts', 'scripts/validate-release-tag.js', 'scripts/check-file-modes.js'],
       // Only pure re-export barrels are excluded; logic-bearing index.ts files
       // (src/cli/index.ts, src/skill-installer/index.ts) count toward 100%.
       exclude: [
