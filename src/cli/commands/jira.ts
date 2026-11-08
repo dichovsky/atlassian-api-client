@@ -2985,13 +2985,7 @@ async function executeGroups(client: JiraClient, cmd: ParsedCommand): Promise<un
         ['user-name'],
         'Atlassian removed the userName filter (the server ignores it); exclude groups with --exclude-id',
       );
-      const excludeRaw = asString(opts['exclude']);
-      const exclude = excludeRaw
-        ? excludeRaw
-            .split(',')
-            .map((s) => s.trim())
-            .filter((s) => s.length > 0)
-        : undefined;
+      const exclude = parseCsv(opts['exclude']);
       const excludeId = parseCsv(opts['exclude-id']);
       if (exclude !== undefined && excludeId !== undefined) {
         throw new Error('groups picker accepts --exclude or --exclude-id, not both');
@@ -3275,10 +3269,12 @@ async function executeClassificationLevels(
 ): Promise<unknown> {
   switch (cmd.action) {
     case 'list': {
-      const status = csvFlag(cmd.options['status'])?.map(
+      const statuses = csvFlag(cmd.options['status'])?.map(
         (s) =>
           asEnum(s, CLASSIFICATION_STATUSES, 'status') as (typeof CLASSIFICATION_STATUSES)[number],
       );
+      // Spec `uniqueItems`: send each status once.
+      const status = statuses && [...new Set(statuses)];
       const orderBy = asEnum(cmd.options['order-by'], CLASSIFICATION_ORDER_BY, 'order-by');
       return client.classificationLevels.list({
         ...(status !== undefined && { status }),
@@ -3567,6 +3563,12 @@ function asIssueTypeKind(value: string | boolean | undefined): 'subtask' | 'stan
   throw new Error(`--type must be one of: subtask, standard. Got: ${s}`);
 }
 
+/** A CSV of int64 ids, each exact like `--issue-id`, sent once each (spec `uniqueItems`). */
+function exactUniqueIds(value: string | boolean | undefined, name: string): number[] | undefined {
+  const ids = parseCsv(value)?.map((s) => asExactPositiveInt(s, name) as number);
+  return ids && [...new Set(ids)];
+}
+
 /**
  * Filters and pagination shared by `app get-field-context-configuration` and
  * `list-field-context-configurations`. `id` and `fieldContextId` are spec
@@ -3582,8 +3584,8 @@ function appFieldContextConfigurationParams(opts: ParsedCommand['options']): {
   startAt?: number;
   maxResults?: number;
 } {
-  const id = asIntArray(opts['ids'], '--ids');
-  const fieldContextId = asIntArray(opts['context-ids'], '--context-ids');
+  const id = exactUniqueIds(opts['ids'], '--ids');
+  const fieldContextId = exactUniqueIds(opts['context-ids'], '--context-ids');
   const issueId = asExactPositiveInt(opts['issue-id'], '--issue-id');
   const projectKeyOrId = asString(opts['project']);
   const issueTypeId = asString(opts['issue-type-id']);
@@ -3891,6 +3893,16 @@ function bulkIssuesCsv(opts: ParsedCommand['options']): string {
   return ids.join(',');
 }
 
+/** A `bulk get-*` page cursor; an empty one is a caller mistake, not the first page. */
+function bulkCursor(
+  opts: ParsedCommand['options'],
+  flag: 'ending-before' | 'starting-after',
+): string | undefined {
+  const cursor = asString(opts[flag]);
+  if (cursor?.trim() === '') throw new Error(`--${flag} must not be empty`);
+  return cursor;
+}
+
 async function executeBulk(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
   const opts = cmd.options;
 
@@ -3920,8 +3932,8 @@ async function executeBulk(client: JiraClient, cmd: ParsedCommand): Promise<unkn
       return client.bulk.getIssueFieldsBulk({
         issueIdsOrKeys,
         searchText: asString(opts['search-text']),
-        endingBefore: asString(opts['ending-before']),
-        startingAfter: asString(opts['starting-after']),
+        endingBefore: bulkCursor(opts, 'ending-before'),
+        startingAfter: bulkCursor(opts, 'starting-after'),
       });
     }
     case 'edit-fields': {
@@ -3951,8 +3963,8 @@ async function executeBulk(client: JiraClient, cmd: ParsedCommand): Promise<unkn
       });
     }
     case 'get-transitions': {
-      const endingBefore = asString(opts['ending-before']);
-      const startingAfter = asString(opts['starting-after']);
+      const endingBefore = bulkCursor(opts, 'ending-before');
+      const startingAfter = bulkCursor(opts, 'starting-after');
       return client.bulk.getAvailableTransitionsBulk({
         issueIdsOrKeys: bulkIssuesCsv(opts),
         ...(endingBefore !== undefined && { endingBefore }),

@@ -147,9 +147,22 @@ describe('BulkResource', () => {
 
       expect(set).toEqual(task);
       expect(del).toEqual(task);
+      // Typed `Task | undefined`: Jira may answer without a body (see below).
       expectTypeOf(() =>
         bulk.setPropertyBulk('p', { value: 1 }, { returnTask: true }),
-      ).returns.resolves.toEqualTypeOf<Task>();
+      ).returns.resolves.toEqualTypeOf<Task | undefined>();
+      expectTypeOf(() =>
+        bulk.deletePropertyBulk('p', {}, { returnTask: true }),
+      ).returns.resolves.toEqualTypeOf<Task | undefined>();
+    });
+
+    it('resolves undefined with returnTask: true when Jira answers without a body', async () => {
+      transport.respondWith(undefined, 204).respondWith(undefined, 204);
+
+      await expect(
+        bulk.setPropertyBulk('p', { value: 1 }, { returnTask: true }),
+      ).resolves.toBeUndefined();
+      await expect(bulk.deletePropertyBulk('p', {}, { returnTask: true })).resolves.toBeUndefined();
     });
 
     it('stays void without it', async () => {

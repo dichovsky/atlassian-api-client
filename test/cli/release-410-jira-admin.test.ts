@@ -157,6 +157,61 @@ describe('bulk (F167, F176, F180, F169)', () => {
     expect(empty.requests).toHaveLength(0);
   });
 
+  it.each([
+    ['get-fields', '--starting-after'],
+    ['get-fields', '--ending-before'],
+    ['get-transitions', '--starting-after'],
+    ['get-transitions', '--ending-before'],
+  ])('%s rejects an empty %s cursor before any request', async (action, flag) => {
+    for (const cursor of ['', ' ']) {
+      const run = await runCliWire(['jira', 'bulk', action, '--issues', 'A-1', flag, cursor]);
+      expect(run.exitCode).toBe(1);
+      expect(run.stderr).toContain(`${flag} must not be empty`);
+      expect(run.requests).toHaveLength(0);
+    }
+  });
+
+  it('the submit-operations payload row lists the spec status enum of incidents and of reviews', () => {
+    const row = readFileSync(join(SKILL_DIR, ADMIN), 'utf8')
+      .split('\n')
+      .find((line) => line.startsWith('| `submit-operations`') && line.includes('incidents:'));
+    const [incidents, reviews] = (row ?? '').split('reviews:');
+    interface Variant {
+      readonly properties: Record<
+        string,
+        { readonly items?: { readonly properties: Record<string, { readonly enum?: string[] }> } }
+      >;
+    }
+    const spec = JSON.parse(
+      readFileSync(resolve(SKILL_DIR, '..', '..', 'spec', 'jira-software.json'), 'utf8'),
+    ) as {
+      readonly paths: Record<
+        string,
+        Record<
+          string,
+          { requestBody: { content: Record<string, { schema: { anyOf: Variant[] } }> } }
+        >
+      >;
+    };
+    const variants =
+      spec.paths['/rest/operations/1.0/bulk']?.['post']?.requestBody.content['application/json']
+        ?.schema.anyOf ?? [];
+    const specStatus = (root: string): string[] =>
+      variants.flatMap((v) => v.properties[root]?.items?.properties['status']?.enum ?? []);
+    const listedStatus = (cell = ''): string[] =>
+      [...(/`status` \(([^)]*)\)/.exec(cell)?.[1] ?? '').matchAll(/`([^`]+)`/g)].map(
+        (m) => m[1] as string,
+      );
+    expect(specStatus('reviews')).toEqual([
+      'in progress',
+      'outstanding actions',
+      'completed',
+      'unknown',
+    ]);
+    expect(listedStatus(incidents)).toEqual(specStatus('incidents'));
+    expect(listedStatus(reviews)).toEqual(specStatus('reviews'));
+  });
+
   /** Jira answers the async property change with 303 → task; the transport follows it. */
   const asyncTask = (req: WireRequest): WireResponse =>
     req.method === 'GET'
@@ -453,6 +508,51 @@ describe('app field-context configurations (F182, F189, F192)', () => {
     expect(only(byContext).query.getAll('fieldContextId')).toEqual(['10100', '10101']);
   });
 
+  it.each(['--ids', '--context-ids'])(
+    '%s rejects an id beyond 2^53-1 instead of rounding it',
+    async (flag) => {
+      for (const action of [
+        'get-field-context-configuration cf',
+        'list-field-context-configurations',
+      ]) {
+        const run = await runCliWire([
+          'jira',
+          'app',
+          ...action.split(' '),
+          '--field-ids-or-keys',
+          'cf',
+          flag,
+          '10000,9007199254740993',
+        ]);
+        expect(run.exitCode).toBe(1);
+        expect(run.stderr).toContain(`${flag} must be a positive integer up to 9007199254740991`);
+        expect(run.requests).toHaveLength(0);
+      }
+    },
+  );
+
+  it('--ids and --context-ids send each id once (spec uniqueItems)', async () => {
+    const ids = await runCliWire([
+      'jira',
+      'app',
+      'get-field-context-configuration',
+      'cf',
+      '--ids',
+      '10000, 10001,10000',
+    ]);
+    expect(only(ids).query.getAll('id')).toEqual(['10000', '10001']);
+    const contexts = await runCliWire([
+      'jira',
+      'app',
+      'list-field-context-configurations',
+      '--field-ids-or-keys',
+      'cf',
+      '--context-ids',
+      '7,7',
+    ]);
+    expect(only(contexts).query.getAll('fieldContextId')).toEqual(['7']);
+  });
+
   it('update-field-context-configuration --body sends every entry', async () => {
     const run = await runCliWire(
       example(ADMIN, 'jira app update-field-context-configuration', '--body'),
@@ -634,6 +734,14 @@ describe('classification-levels list (F186)', () => {
     expect(req.path).toBe('/rest/api/3/classification-levels');
     expect(req.query.getAll('status')).toEqual(['PUBLISHED', 'DRAFT']);
     expect(req.query.get('orderBy')).toBe('-rank');
+  });
+
+  it('sends each --status once (spec uniqueItems)', async () => {
+    const run = await runCliWire(
+      ['jira', 'classification-levels', 'list', '--status', 'PUBLISHED,DRAFT,PUBLISHED'],
+      { respond: { body: { classifications: [] } } },
+    );
+    expect(only(run).query.getAll('status')).toEqual(['PUBLISHED', 'DRAFT']);
   });
 
   it.each([[['--status', 'LIVE']], [['--order-by', 'name']]])('rejects %j', async (flags) => {
@@ -859,6 +967,23 @@ describe('groups picker (F187, F188)', () => {
     expect(run.exitCode).toBe(1);
     expect(run.stderr).toContain(message);
     expect(run.requests).toHaveLength(0);
+  });
+
+  it('an --exclude that names no group does not conflict with --exclude-id', async () => {
+    const run = await runCliWire([
+      'jira',
+      'groups',
+      'picker',
+      '--query',
+      'dev',
+      '--exclude',
+      ' , ',
+      '--exclude-id',
+      'b',
+    ]);
+    expect(run.exitCode).toBe(0);
+    expect(only(run).query.getAll('excludeId')).toEqual(['b']);
+    expect(only(run).query.has('exclude')).toBe(false);
   });
 
   it('list-members --include-inactive-users false sends false (F193)', async () => {

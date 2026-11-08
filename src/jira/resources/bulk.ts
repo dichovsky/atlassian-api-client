@@ -446,26 +446,20 @@ export class BulkResource {
     return response.data;
   }
 
-  /**
-   * Set a property on a bulk set of issues. Jira runs this as an async task
-   * and answers `303 See Other` to `GET /rest/api/3/task/{taskId}`, which the
-   * transport follows; with `returnTask: true` this resolves that task's
-   * progress (poll it with `TaskResource.get`), otherwise `void`. If Jira
-   * answers without a body (the spec declares only the 303) the call resolves
-   * `undefined` even with `returnTask: true`.
-   */
-  setPropertyBulk(
-    propertyKey: string,
-    data: BulkSetIssuePropertyData,
-    options: BulkIssuePropertyOptions & { readonly returnTask: true },
-  ): Promise<Task>;
   /** Set a property on a bulk set of issues. */
   setPropertyBulk(
     propertyKey: string,
     data: BulkSetIssuePropertyData,
     options?: BulkIssuePropertyOptions & { readonly returnTask?: false },
   ): Promise<void>;
-  /** Set a property on a bulk set of issues; resolves the task when `returnTask` is true at runtime. */
+  /**
+   * Set a property on a bulk set of issues. Jira runs this as an async task
+   * and answers `303 See Other` to `GET /rest/api/3/task/{taskId}`, which the
+   * transport follows; with `returnTask: true` this resolves that task's
+   * progress (poll it with `TaskResource.get`), otherwise `undefined`. If Jira
+   * answers without a body (the spec declares only the 303) the call resolves
+   * `undefined` even with `returnTask: true`.
+   */
   setPropertyBulk(
     propertyKey: string,
     data: BulkSetIssuePropertyData,
@@ -484,24 +478,18 @@ export class BulkResource {
     return options?.returnTask === true ? response.data : undefined;
   }
 
-  /**
-   * Delete a property from a bulk set of issues. Async like
-   * {@link setPropertyBulk}: `returnTask: true` resolves the task progress
-   * (`undefined` if Jira answers without a body).
-   * Spec: requestBody.required = true — body is required (not optional).
-   */
-  deletePropertyBulk(
-    propertyKey: string,
-    data: BulkDeleteIssuePropertyData,
-    options: BulkIssuePropertyOptions & { readonly returnTask: true },
-  ): Promise<Task>;
   /** Delete a property from a bulk set of issues. */
   deletePropertyBulk(
     propertyKey: string,
     data: BulkDeleteIssuePropertyData,
     options?: BulkIssuePropertyOptions & { readonly returnTask?: false },
   ): Promise<void>;
-  /** Delete a property from a bulk set of issues; resolves the task when `returnTask` is true at runtime. */
+  /**
+   * Delete a property from a bulk set of issues. Async like
+   * {@link setPropertyBulk}: `returnTask: true` resolves the task progress
+   * (`undefined` if Jira answers without a body).
+   * Spec: requestBody.required = true — body is required (not optional).
+   */
   deletePropertyBulk(
     propertyKey: string,
     data: BulkDeleteIssuePropertyData,
