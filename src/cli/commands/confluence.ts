@@ -1871,8 +1871,8 @@ async function executeDataPolicies(client: ConfluenceClient, cmd: ParsedCommand)
     case 'list-spaces': {
       const sort = asEnum(opts['sort'], DATA_POLICY_SPACE_SORT_ORDERS, 'sort');
       return client.dataPolicies.listSpaces({
-        ids: parseCsvIntList(asString(opts['ids'])),
-        keys: parseCsvList(asString(opts['keys'])),
+        ids: parseCsvIntList(nonEmptyFilter(opts, 'ids'), '--ids'),
+        keys: parseCsvList(nonEmptyFilter(opts, 'keys')),
         ...(sort !== undefined ? { sort } : {}),
         limit: asPositiveInt(opts['limit'], '--limit'),
         cursor: asString(opts['cursor']),
@@ -1917,15 +1917,37 @@ function parseCsvSpaceIdList(raw: string | undefined): readonly string[] | undef
 }
 
 /**
- * Split a comma-separated CLI flag of integers into a `readonly number[]`.
- * Returns `undefined` when the input is unset. Each item is coerced via
- * `parseInt` with base-10 and non-finite values are filtered out.
+ * Split a comma-separated CLI flag of integer IDs into a `readonly number[]`.
+ * Returns `undefined` when the input is unset. A malformed token (`abc`,
+ * `12abc`) or one beyond `Number.MAX_SAFE_INTEGER` throws: dropping or
+ * rounding it would silently widen or change the filter. Range is left to the
+ * server (B1059), so `-1` passes through like `parseCsvSpaceIdList`.
  */
-function parseCsvIntList(raw: string | undefined): readonly number[] | undefined {
+function parseCsvIntList(raw: string | undefined, flag: string): readonly number[] | undefined {
   const strs = parseCsvList(raw);
   if (strs === undefined) return undefined;
-  const nums = strs.map((s) => parseInt(s, 10)).filter((n) => Number.isFinite(n));
-  return nums.length > 0 ? nums : undefined;
+  return strs.map((s) => {
+    const n = Number(s);
+    if (!/^-?\d+$/.test(s) || !Number.isSafeInteger(n)) {
+      throw new Error(
+        `${flag} must contain only decimal integer IDs up to ${Number.MAX_SAFE_INTEGER}, got: ${s}`,
+      );
+    }
+    return n;
+  });
+}
+
+/**
+ * The raw value of a list filter flag, refusing one that is present but holds
+ * no entries after trimming (`--page-id ,`, an empty shell variable): it would
+ * drop out, or go out blank, and widen the listing instead of narrowing it.
+ */
+function nonEmptyFilter(opts: ParsedCommand['options'], flag: string): string | undefined {
+  const raw = asString(opts[flag]);
+  if (raw !== undefined && parseCsvList(raw) === undefined) {
+    throw new Error(`--${flag} must not be empty`);
+  }
+  return raw;
 }
 
 async function executeSpacePermissions(
@@ -2003,7 +2025,7 @@ async function executeSpaceRoles(client: ConfluenceClient, cmd: ParsedCommand): 
 
   switch (cmd.action) {
     case 'list': {
-      const roleType = asEnum(opts['role-type'], SPACE_ROLE_TYPES, 'role-type');
+      // `role-type` is an open string in the spec (SYSTEM, CUSTOM or tenant-defined).
       const principalType = asEnum(
         opts['principal-type'],
         SPACE_ROLE_PRINCIPAL_TYPES,
@@ -2011,7 +2033,7 @@ async function executeSpaceRoles(client: ConfluenceClient, cmd: ParsedCommand): 
       );
       return client.spaceRoles.list({
         'space-id': asString(opts['space-id']),
-        ...(roleType !== undefined ? { 'role-type': roleType } : {}),
+        'role-type': nonEmptyFilter(opts, 'role-type'),
         'principal-id': asString(opts['principal-id']),
         ...(principalType !== undefined ? { 'principal-type': principalType } : {}),
         limit: asPositiveInt(opts['limit'], '--limit'),
@@ -2115,20 +2137,20 @@ async function executeTasks(client: ConfluenceClient, cmd: ParsedCommand): Promi
   switch (cmd.action) {
     case 'list':
       return client.tasks.list({
-        'body-format': asString(opts['body-format']) as 'storage' | 'atlas_doc_format' | undefined,
+        'body-format': asEnum(opts['body-format'], CONTENT_BODY_FORMATS, 'body-format'),
         // Defaults to true on the wire, so an explicit false must be sent.
         includeBlankTasks:
           typeof opts['include-blank-tasks'] === 'boolean'
             ? opts['include-blank-tasks']
             : undefined,
         status: asEnum(opts['status'], TASK_STATUSES, 'status'),
-        taskId: parseCsvIntList(asString(opts['task-id'])),
-        spaceId: parseCsvIntList(asString(opts['space-id'])),
-        pageId: parseCsvIntList(asString(opts['page-id'])),
-        blogPostId: parseCsvIntList(asString(opts['blog-post-id'])),
-        createdBy: parseCsvList(asString(opts['created-by'])),
-        assignedTo: parseCsvList(asString(opts['assigned-to'])),
-        completedBy: parseCsvList(asString(opts['completed-by'])),
+        taskId: parseCsvIntList(nonEmptyFilter(opts, 'task-id'), '--task-id'),
+        spaceId: parseCsvIntList(nonEmptyFilter(opts, 'space-id'), '--space-id'),
+        pageId: parseCsvIntList(nonEmptyFilter(opts, 'page-id'), '--page-id'),
+        blogPostId: parseCsvIntList(nonEmptyFilter(opts, 'blog-post-id'), '--blog-post-id'),
+        createdBy: parseCsvList(nonEmptyFilter(opts, 'created-by')),
+        assignedTo: parseCsvList(nonEmptyFilter(opts, 'assigned-to')),
+        completedBy: parseCsvList(nonEmptyFilter(opts, 'completed-by')),
         createdAtFrom: asPositiveInt(opts['created-at-from'], '--created-at-from'),
         createdAtTo: asPositiveInt(opts['created-at-to'], '--created-at-to'),
         dueAtFrom: asPositiveInt(opts['due-at-from'], '--due-at-from'),
@@ -2140,7 +2162,7 @@ async function executeTasks(client: ConfluenceClient, cmd: ParsedCommand): Promi
       });
     case 'get':
       return client.tasks.get(requireArg(cmd.positionalArgs[0], 'task ID'), {
-        'body-format': asString(opts['body-format']) as 'storage' | 'atlas_doc_format' | undefined,
+        'body-format': asEnum(opts['body-format'], CONTENT_BODY_FORMATS, 'body-format'),
       });
     case 'update': {
       const taskId = requireArg(cmd.positionalArgs[0], 'task ID');
@@ -2215,6 +2237,31 @@ async function executeUsersBulk(client: ConfluenceClient, cmd: ParsedCommand): P
     }
     default:
       throw new Error(`Unknown users-bulk action: ${cmd.action}. Actions: lookup`);
+  }
+}
+
+/**
+ * The `version` of an update body: required `--version-number`, plus
+ * `--message` as `version.message` when given (one flag name for the version
+ * message across Confluence update actions, not a separate one). Shared by the
+ * databases / embeds / folders / whiteboards `update-property` and
+ * `footer-comments update` actions.
+ */
+function newVersion(opts: ParsedCommand['options']): { number: number; message?: string } {
+  const number = requirePositiveInt(opts['version-number'], '--version-number');
+  const message = asString(opts['message']);
+  return message !== undefined ? { number, message } : { number };
+}
+
+/**
+ * `POST /folders` and `POST /embeds` take no `private` parameter, so a
+ * `--private` there would be silently dropped and create visible content.
+ */
+function rejectPrivate(opts: ParsedCommand['options'], resource: string): void {
+  if (opts['private'] === true) {
+    throw new Error(
+      `--private is not supported by ${resource} create (POST /${resource} has no private parameter)`,
+    );
   }
 }
 
@@ -2296,14 +2343,14 @@ async function executeDatabases(client: ConfluenceClient, cmd: ParsedCommand): P
         requireOpt(opts['property-id'], '--property-id'),
       );
     case 'update-property': {
-      const versionNum = requirePositiveInt(opts['version-number'], '--version-number');
+      const version = newVersion(opts);
       return client.databases.updateProperty(
         requireArg(cmd.positionalArgs[0], 'database ID'),
         requireOpt(opts['property-id'], '--property-id'),
         {
           key: requireOpt(opts['key'], '--key'),
           value: parseJsonValue(requireOpt(opts['value'], '--value')),
-          version: { number: versionNum },
+          version,
         },
       );
     }
@@ -2390,6 +2437,7 @@ async function executeEmbeds(client: ConfluenceClient, cmd: ParsedCommand): Prom
 
   switch (cmd.action) {
     case 'create':
+      rejectPrivate(opts, 'embeds');
       return client.embeds.create({
         spaceId: requireOpt(opts['space-id'], '--space-id'),
         title: asString(opts['title']),
@@ -2413,7 +2461,7 @@ async function executeEmbeds(client: ConfluenceClient, cmd: ParsedCommand): Prom
     case 'descendants':
       return client.embeds.listDescendants(requireArg(cmd.positionalArgs[0], 'embed ID'), {
         limit: asPositiveInt(opts['limit'], '--limit'),
-        depth: asPositiveInt(opts['depth'], '--depth'),
+        depth: asDepth(opts['depth']),
         cursor: asString(opts['cursor']),
       });
     case 'direct-children': {
@@ -2444,14 +2492,14 @@ async function executeEmbeds(client: ConfluenceClient, cmd: ParsedCommand): Prom
         requireOpt(opts['property-id'], '--property-id'),
       );
     case 'update-property': {
-      const versionNum = requirePositiveInt(opts['version-number'], '--version-number');
+      const version = newVersion(opts);
       return client.embeds.updateProperty(
         requireArg(cmd.positionalArgs[0], 'embed ID'),
         requireOpt(opts['property-id'], '--property-id'),
         {
           key: requireOpt(opts['key'], '--key'),
           value: parseJsonValue(requireOpt(opts['value'], '--value')),
-          version: { number: versionNum },
+          version,
         },
       );
     }
@@ -2473,6 +2521,7 @@ async function executeFolders(client: ConfluenceClient, cmd: ParsedCommand): Pro
 
   switch (cmd.action) {
     case 'create':
+      rejectPrivate(opts, 'folders');
       return client.folders.create({
         spaceId: requireOpt(opts['space-id'], '--space-id'),
         title: asString(opts['title']),
@@ -2495,7 +2544,7 @@ async function executeFolders(client: ConfluenceClient, cmd: ParsedCommand): Pro
     case 'descendants':
       return client.folders.listDescendants(requireArg(cmd.positionalArgs[0], 'folder ID'), {
         limit: asPositiveInt(opts['limit'], '--limit'),
-        depth: asPositiveInt(opts['depth'], '--depth'),
+        depth: asDepth(opts['depth']),
         cursor: asString(opts['cursor']),
       });
     case 'direct-children': {
@@ -2526,14 +2575,14 @@ async function executeFolders(client: ConfluenceClient, cmd: ParsedCommand): Pro
         requireOpt(opts['property-id'], '--property-id'),
       );
     case 'update-property': {
-      const versionNum = requirePositiveInt(opts['version-number'], '--version-number');
+      const version = newVersion(opts);
       return client.folders.updateProperty(
         requireArg(cmd.positionalArgs[0], 'folder ID'),
         requireOpt(opts['property-id'], '--property-id'),
         {
           key: requireOpt(opts['key'], '--key'),
           value: parseJsonValue(requireOpt(opts['value'], '--value')),
-          version: { number: versionNum },
+          version,
         },
       );
     }
@@ -2604,7 +2653,8 @@ async function executeFooterComments(
       });
     }
     case 'get': {
-      const bodyFormat = asEnum(opts['body-format'], CONTENT_BODY_FORMATS, 'body-format');
+      // GET /footer-comments/{id} takes the wider PrimaryBodyRepresentationSingle.
+      const bodyFormat = asEnum(opts['body-format'], PAGE_BODY_REPRESENTATIONS, 'body-format');
       return client.footerComments.get(requireArg(cmd.positionalArgs[0], 'comment ID'), {
         ...(bodyFormat !== undefined ? { 'body-format': bodyFormat } : {}),
         version: asPositiveInt(opts['version-number'], '--version-number'),
@@ -2616,10 +2666,10 @@ async function executeFooterComments(
       });
     }
     case 'update': {
-      const versionNum = requirePositiveInt(opts['version-number'], '--version-number');
+      const version = newVersion(opts);
       // NOTE: deliberate cross-resource call — see CommentsResource.updateFooter for single source of truth
       return client.comments.updateFooter(requireArg(cmd.positionalArgs[0], 'comment ID'), {
-        version: { number: versionNum },
+        version,
         body: {
           representation: 'storage',
           value: requireOpt(opts['body'], '--body'),
@@ -2641,7 +2691,7 @@ async function executeFooterComments(
     case 'likes-users':
       return client.footerComments.listLikeUsers(requireArg(cmd.positionalArgs[0], 'comment ID'), {
         cursor: asString(opts['cursor']),
-        limit: asPositiveInt(opts['limit'], '--limit'),
+        limit: asNonNegativeInt(opts['limit'], '--limit'),
       });
     case 'operations':
       return client.footerComments.getOperations(requireArg(cmd.positionalArgs[0], 'comment ID'));
@@ -2701,13 +2751,15 @@ async function executeInlineComments(
     case 'likes-users':
       return client.inlineComments.listLikeUsers(requireArg(cmd.positionalArgs[0], 'comment ID'), {
         cursor: asString(opts['cursor']),
-        limit: asPositiveInt(opts['limit'], '--limit'),
+        limit: asNonNegativeInt(opts['limit'], '--limit'),
       });
     case 'operations':
       return client.inlineComments.getOperations(requireArg(cmd.positionalArgs[0], 'comment ID'));
     case 'versions': {
       const sort = asEnum(opts['sort'], VERSION_SORT_ORDERS, 'sort');
+      const bodyFormat = asEnum(opts['body-format'], CONTENT_BODY_FORMATS, 'body-format');
       return client.inlineComments.listVersions(requireArg(cmd.positionalArgs[0], 'comment ID'), {
+        ...(bodyFormat !== undefined ? { 'body-format': bodyFormat } : {}),
         ...(sort !== undefined ? { sort } : {}),
         cursor: asString(opts['cursor']),
         limit: asPositiveInt(opts['limit'], '--limit'),
@@ -2815,14 +2867,14 @@ async function executeWhiteboards(client: ConfluenceClient, cmd: ParsedCommand):
         requireOpt(opts['property-id'], '--property-id'),
       );
     case 'update-property': {
-      const versionNum = requirePositiveInt(opts['version-number'], '--version-number');
+      const version = newVersion(opts);
       return client.whiteboards.updateProperty(
         requireArg(cmd.positionalArgs[0], 'whiteboard ID'),
         requireOpt(opts['property-id'], '--property-id'),
         {
           key: requireOpt(opts['key'], '--key'),
           value: parseJsonValue(requireOpt(opts['value'], '--value')),
-          version: { number: versionNum },
+          version,
         },
       );
     }
