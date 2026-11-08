@@ -1867,6 +1867,19 @@ function parseCsvIntList(raw: string | undefined, flag: string): readonly number
   });
 }
 
+/**
+ * The raw value of a `tasks list` filter flag, refusing one that is present
+ * but holds no entries after trimming (`--page-id ,`, an empty shell
+ * variable): it would drop out and list every task instead of none.
+ */
+function nonEmptyFilter(opts: ParsedCommand['options'], flag: string): string | undefined {
+  const raw = asString(opts[flag]);
+  if (raw !== undefined && parseCsvList(raw) === undefined) {
+    throw new Error(`--${flag} must not be empty`);
+  }
+  return raw;
+}
+
 async function executeSpacePermissions(
   client: ConfluenceClient,
   cmd: ParsedCommand,
@@ -2061,13 +2074,13 @@ async function executeTasks(client: ConfluenceClient, cmd: ParsedCommand): Promi
             ? opts['include-blank-tasks']
             : undefined,
         status: asEnum(opts['status'], TASK_STATUSES, 'status'),
-        taskId: parseCsvIntList(asString(opts['task-id']), '--task-id'),
-        spaceId: parseCsvIntList(asString(opts['space-id']), '--space-id'),
-        pageId: parseCsvIntList(asString(opts['page-id']), '--page-id'),
-        blogPostId: parseCsvIntList(asString(opts['blog-post-id']), '--blog-post-id'),
-        createdBy: parseCsvList(asString(opts['created-by'])),
-        assignedTo: parseCsvList(asString(opts['assigned-to'])),
-        completedBy: parseCsvList(asString(opts['completed-by'])),
+        taskId: parseCsvIntList(nonEmptyFilter(opts, 'task-id'), '--task-id'),
+        spaceId: parseCsvIntList(nonEmptyFilter(opts, 'space-id'), '--space-id'),
+        pageId: parseCsvIntList(nonEmptyFilter(opts, 'page-id'), '--page-id'),
+        blogPostId: parseCsvIntList(nonEmptyFilter(opts, 'blog-post-id'), '--blog-post-id'),
+        createdBy: parseCsvList(nonEmptyFilter(opts, 'created-by')),
+        assignedTo: parseCsvList(nonEmptyFilter(opts, 'assigned-to')),
+        completedBy: parseCsvList(nonEmptyFilter(opts, 'completed-by')),
         createdAtFrom: asPositiveInt(opts['created-at-from'], '--created-at-from'),
         createdAtTo: asPositiveInt(opts['created-at-to'], '--created-at-to'),
         dueAtFrom: asPositiveInt(opts['due-at-from'], '--due-at-from'),
@@ -2159,13 +2172,14 @@ async function executeUsersBulk(client: ConfluenceClient, cmd: ParsedCommand): P
 
 /**
  * The `version` of an update body: required `--version-number`, plus
- * `--version-message` as `version.message` when given. Shared by the
+ * `--message` as `version.message` when given (one flag name for the version
+ * message across Confluence update actions, not a separate one). Shared by the
  * databases / embeds / folders / whiteboards `update-property` and
  * `footer-comments update` actions.
  */
 function newVersion(opts: ParsedCommand['options']): { number: number; message?: string } {
   const number = requirePositiveInt(opts['version-number'], '--version-number');
-  const message = asString(opts['version-message']);
+  const message = asString(opts['message']);
   return message !== undefined ? { number, message } : { number };
 }
 
@@ -2176,7 +2190,7 @@ function newVersion(opts: ParsedCommand['options']): { number: number; message?:
 function rejectPrivate(opts: ParsedCommand['options'], resource: string): void {
   if (opts['private'] === true) {
     throw new Error(
-      `--private is not supported by ${resource} create (only databases and whiteboards create take it)`,
+      `--private is not supported by ${resource} create (POST /${resource} has no private parameter)`,
     );
   }
 }

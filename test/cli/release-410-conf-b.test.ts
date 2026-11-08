@@ -221,6 +221,19 @@ describe('tasks list numeric ID filters (F043, F044)', () => {
     await rejected(['tasks', 'list', flag, value], `${flag} ${message}${bad}`);
   });
 
+  it.each([
+    ['--page-id', ','],
+    ['--page-id', ''],
+    ['--task-id', ' , '],
+    ['--space-id', ''],
+    ['--blog-post-id', ','],
+    ['--created-by', ''],
+    ['--assigned-to', ','],
+    ['--completed-by', ' '],
+  ])('rejects an empty %s %j instead of listing every task', async (flag, value) => {
+    await rejected(['tasks', 'list', `${flag}=${value}`], `${flag} must not be empty`);
+  });
+
   it('data-policies list-spaces --ids shares the guard', async () => {
     await rejected(['data-policies', 'list-spaces', '--ids', 'abc'], `--ids ${message}abc`);
     const req = await sent(['data-policies', 'list-spaces', '--ids', '1,2']);
@@ -398,7 +411,7 @@ describe('likes-users --limit accepts the spec minimum 0 (F067)', () => {
 
 // ─── databases ──────────────────────────────────────────────────────────────
 
-describe('update-property --version-message (F046, F054)', () => {
+describe('update-property --message (F046, F054)', () => {
   it.each(['databases', 'embeds', 'folders', 'whiteboards'])(
     '%s update-property sends version.message when given',
     async (resource) => {
@@ -413,7 +426,7 @@ describe('update-property --version-message (F046, F054)', () => {
           'feature-flags',
         ],
         ...['--value', '{"beta":true}', '--version-number', '5'],
-        ...['--version-message', 'Re-enable beta'],
+        ...['--message', 'Re-enable beta'],
       ]);
       expect(req.method).toBe('PUT');
       expect(req.path).toBe(`${V2}/${resource}/456/properties/prop%2F1`);
@@ -440,7 +453,7 @@ describe('update-property --version-message (F046, F054)', () => {
   it('footer-comments update sends version.message with the storage body', async () => {
     const req = await sent([
       ...['footer-comments', 'update', '77777', '--body', 'Fixed typo', '--version-number', '3'],
-      ...['--version-message', 'Typo fix'],
+      ...['--message', 'Typo fix'],
     ]);
     expect(req.method).toBe('PUT');
     expect(req.path).toBe(`${V2}/footer-comments/77777`);
@@ -448,6 +461,18 @@ describe('update-property --version-message (F046, F054)', () => {
       version: { number: 3, message: 'Typo fix' },
       body: { representation: 'storage', value: 'Fixed typo' },
     });
+  });
+
+  // One flag name for `version.message` across every Confluence update action
+  // (pages / blog-posts / comments / attachments use `--message` too).
+  it('has no separate --version-message flag', async () => {
+    await rejected(
+      [
+        ...['footer-comments', 'update', '77777', '--body', 'b', '--version-number', '3'],
+        ...['--version-message', 'm'],
+      ],
+      "Unknown option '--version-message'",
+    );
   });
 
   it('still requires --version-number, and checks it before the ID', async () => {
@@ -466,7 +491,7 @@ describe('update-property --version-message (F046, F054)', () => {
         'k',
         '--value',
         '1',
-      ].concat(['--version-number', '0', '--version-message', 'm']),
+      ].concat(['--version-number', '0', '--message', 'm']),
       '--version-number must be a positive integer, got: 0',
     );
   });
@@ -500,7 +525,7 @@ describe('--private on folders / embeds create is rejected, not dropped (F057)',
     async (resource) => {
       await rejected(
         [resource, 'create', '--space-id', '654321', '--private'],
-        `--private is not supported by ${resource} create (only databases and whiteboards create take it)`,
+        `--private is not supported by ${resource} create (POST /${resource} has no private parameter)`,
       );
     },
   );

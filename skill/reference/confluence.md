@@ -868,8 +868,8 @@ single task, and toggle its `status` between `incomplete` and `complete`.
 | `update` | `<taskId>` | `--status`     | `--body-format`                                                                                                                                                                                                                                                                                              |
 
 - `--status` accepts `incomplete` or `complete` (the only two task states v2 surfaces). On `update` it's required and toggles the task. On `list` it filters results.
-- `--task-id`, `--space-id`, `--page-id`, `--blog-post-id` each take one ID or a comma-separated list of up to 250 numeric IDs (`--task-id 5,6`); each value is sent as a repeated query parameter (`task-id=5&task-id=6`). Every token must be a decimal integer up to 9007199254740991: a value such as `abc` or `12abc` is rejected before any request is sent, so a typo can never widen the listing to every task.
-- `--created-by`, `--assigned-to`, `--completed-by` take one Atlassian account ID or a comma-separated list of up to 250 (`--assigned-to acc-1,acc-2`), also sent as repeated parameters.
+- `--task-id`, `--space-id`, `--page-id`, `--blog-post-id` each take one ID or a comma-separated list of up to 250 numeric IDs (`--task-id 5,6`); each value is sent as a repeated query parameter (`task-id=5&task-id=6`). Every token must be a decimal integer up to 9007199254740991: a value such as `abc` or `12abc` is rejected before any request is sent, and so is an empty value (`--page-id ,`, or `--page-id ""` from an unset shell variable), so a typo can never widen the listing to every task.
+- `--created-by`, `--assigned-to`, `--completed-by` take one Atlassian account ID or a comma-separated list of up to 250 (`--assigned-to acc-1,acc-2`), also sent as repeated parameters. An empty value is rejected the same way.
 - `--space-id`, `--page-id`, `--blog-post-id` scope the listing to tasks in those containers; page and blog-post filters can be used together.
 - `--include-blank-tasks` controls tasks whose `body` is empty (e.g. checkboxes without inline text). The server includes them by default; pass `--include-blank-tasks false` (or `--no-include-blank-tasks`) to send `include-blank-tasks=false` and hide them. `--include-blank-tasks` alone (or `--include-blank-tasks true`) sends `true`; omitting it sends nothing.
 - `--body-format` accepts `storage` or `atlas_doc_format` on `list`, `get` and `update` and controls the representation of the task body when present. Any other value is rejected before the request.
@@ -990,7 +990,7 @@ Databases are first-class v2 content. The CLI exposes the full surface: lifecycl
 | `list-properties`             | `<databaseId>` | —                                                       | `--key`, `--sort`, `--cursor`, `--limit`                                                               |
 | `create-property`             | `<databaseId>` | `--key`, `--value`                                      | —                                                                                                      |
 | `get-property`                | `<databaseId>` | `--property-id`                                         | —                                                                                                      |
-| `update-property`             | `<databaseId>` | `--property-id`, `--key`, `--value`, `--version-number` | `--version-message`                                                                                    |
+| `update-property`             | `<databaseId>` | `--property-id`, `--key`, `--value`, `--version-number` | `--message`                                                                                            |
 | `delete-property`             | `<databaseId>` | `--property-id`                                         | —                                                                                                      |
 | `get-restriction-state`       | `<databaseId>` | —                                                       | —                                                                                                      |
 | `set-restriction-state`       | `<databaseId>` | `--state`                                               | `--allow-self-lockout`                                                                                 |
@@ -1010,7 +1010,7 @@ Databases are first-class v2 content. The CLI exposes the full surface: lifecycl
 - `--sort` on `list-properties` accepts `key` or `-key`.
 - A flag value that starts with `-` (a descending sort such as `-key` or `-modified-date`, or a negative JSON `--value` such as `-1`) must be written with `=`: `--sort=-key`, `--value=-1`. The space form `--sort -key` is rejected as an ambiguous option.
 - `--value` on `create-property` / `update-property` is parsed as JSON when possible, falling back to the raw string (same semantics as `app upsert-property`).
-- `--version-number` on `update-property` must be a positive integer one greater than the property's current version (Confluence enforces optimistic concurrency; mismatches return 409). `--version-message` adds an optional message to that new version (`version: { number, message }`); without it only `version.number` is sent.
+- `--version-number` on `update-property` must be a positive integer one greater than the property's current version (Confluence enforces optimistic concurrency; mismatches return 409). `--message` adds an optional message to that new version (`version: { number, message }`); without it only `version.number` is sent.
 - `update-classification-level` always sends `status: "current"` (the only legal server value); the CLI hard-codes it so callers only need `--level-id`. Take the level ID from the `id` field of `atlas confluence classification-levels list`.
 - `reset-classification-level` sends `{ status: "current" }` and falls back to the space default classification.
 - `ancestors` returns `{ results }` without `_links.next`; iterate by calling again with the highest ancestor's ID as the new `<databaseId>`.
@@ -1050,7 +1050,7 @@ atlas confluence databases list-properties db-1 --sort=-key --limit 50
 atlas confluence databases create-property db-1 --key feature-flags --value '{"beta":true}'
 atlas confluence databases get-property db-1 --property-id prop-1
 atlas confluence databases update-property db-1 --property-id prop-1 --key feature-flags --value '{"beta":false}' --version-number 4
-atlas confluence databases update-property db-1 --property-id prop-1 --key feature-flags --value '{"beta":true}' --version-number 5 --version-message "Re-enable beta"
+atlas confluence databases update-property db-1 --property-id prop-1 --key feature-flags --value '{"beta":true}' --version-number 5 --message "Re-enable beta"
 atlas confluence databases delete-property db-1 --property-id prop-1
 
 # Restriction state and direct permissions
@@ -1083,7 +1083,7 @@ Embeds (Smart Links in the content tree) wrap an external URL as a first-class v
 | `list-properties` | `<embedId>` | —                                                       | `--key`, `--sort`, `--cursor`, `--limit`                                                               |
 | `create-property` | `<embedId>` | `--key`, `--value`                                      | —                                                                                                      |
 | `get-property`    | `<embedId>` | `--property-id`                                         | —                                                                                                      |
-| `update-property` | `<embedId>` | `--property-id`, `--key`, `--value`, `--version-number` | `--version-message`                                                                                    |
+| `update-property` | `<embedId>` | `--property-id`, `--key`, `--value`, `--version-number` | `--message`                                                                                            |
 | `delete-property` | `<embedId>` | `--property-id`                                         | —                                                                                                      |
 
 - `--embed-url` on `create` is optional; omit it to create an embed without an attached URL. The v2 API has no embed update endpoint, so the URL cannot be added or changed after creation — set it on `create`.
@@ -1093,7 +1093,7 @@ Embeds (Smart Links in the content tree) wrap an external URL as a first-class v
 - `--sort` on `list-properties` accepts `key` or `-key`.
 - A flag value that starts with `-` (a descending sort such as `-key` or `-modified-date`, or a negative JSON `--value` such as `-1`) must be written with `=`: `--sort=-key`, `--value=-1`. The space form `--sort -key` is rejected as an ambiguous option.
 - `--value` on `create-property` / `update-property` is parsed as JSON when possible, falling back to the raw string (same semantics as `app upsert-property`, `databases create-property`, and `folders create-property`).
-- `--version-number` on `update-property` must be a positive integer one greater than the property's current version (Confluence enforces optimistic concurrency; mismatches return 409). `--version-message` adds an optional message to that new version (`version: { number, message }`); without it only `version.number` is sent.
+- `--version-number` on `update-property` must be a positive integer one greater than the property's current version (Confluence enforces optimistic concurrency; mismatches return 409). `--message` adds an optional message to that new version (`version: { number, message }`); without it only `version.number` is sent.
 - `ancestors` returns `{ results }` without `_links.next`; iterate by calling again with the highest ancestor's ID as the new `<embedId>`.
 - Embeds have no classification-level endpoints — unlike `databases` / `whiteboards`, the `/embeds` surface does not expose `get`/`update`/`reset-classification-level` (matches `folders`).
 - `delete` removes the embed (recoverable from the space trash via standard Confluence recovery flow); there is no purge flag on this endpoint.
@@ -1122,7 +1122,7 @@ atlas confluence embeds list-properties embed-1
 atlas confluence embeds create-property embed-1 --key feature-flags --value '{"beta":true}'
 atlas confluence embeds get-property embed-1 --property-id prop-1
 atlas confluence embeds update-property embed-1 --property-id prop-1 --key feature-flags --value '{"beta":false}' --version-number 4
-atlas confluence embeds update-property embed-1 --property-id prop-1 --key feature-flags --value '{"beta":true}' --version-number 5 --version-message "Re-enable beta"
+atlas confluence embeds update-property embed-1 --property-id prop-1 --key feature-flags --value '{"beta":true}' --version-number 5 --message "Re-enable beta"
 atlas confluence embeds list-properties embed-1 --sort=-key --limit 50
 atlas confluence embeds delete-property embed-1 --property-id prop-1
 ```
@@ -1143,7 +1143,7 @@ Folders are first-class v2 content for grouping pages, whiteboards, databases, a
 | `list-properties`       | `<folderId>` | —                                                       | `--key`, `--sort`, `--cursor`, `--limit`                                                               |
 | `create-property`       | `<folderId>` | `--key`, `--value`                                      | —                                                                                                      |
 | `get-property`          | `<folderId>` | `--property-id`                                         | —                                                                                                      |
-| `update-property`       | `<folderId>` | `--property-id`, `--key`, `--value`, `--version-number` | `--version-message`                                                                                    |
+| `update-property`       | `<folderId>` | `--property-id`, `--key`, `--value`, `--version-number` | `--message`                                                                                            |
 | `delete-property`       | `<folderId>` | `--property-id`                                         | —                                                                                                      |
 | `get-restriction-state` | `<folderId>` | —                                                       | —                                                                                                      |
 | `set-restriction-state` | `<folderId>` | `--state`                                               | `--allow-self-lockout`                                                                                 |
@@ -1158,7 +1158,7 @@ Folders are first-class v2 content for grouping pages, whiteboards, databases, a
 - `--sort` on `list-properties` accepts `key` or `-key`.
 - A flag value that starts with `-` (a descending sort such as `-key` or `-modified-date`, or a negative JSON `--value` such as `-1`) must be written with `=`: `--sort=-key`, `--value=-1`. The space form `--sort -key` is rejected as an ambiguous option.
 - `--value` on `create-property` / `update-property` is parsed as JSON when possible, falling back to the raw string (same semantics as `app upsert-property` and `databases create-property`).
-- `--version-number` on `update-property` must be a positive integer one greater than the property's current version (Confluence enforces optimistic concurrency; mismatches return 409). `--version-message` adds an optional message to that new version (`version: { number, message }`); without it only `version.number` is sent.
+- `--version-number` on `update-property` must be a positive integer one greater than the property's current version (Confluence enforces optimistic concurrency; mismatches return 409). `--message` adds an optional message to that new version (`version: { number, message }`); without it only `version.number` is sent.
 - `ancestors` returns `{ results }` without `_links.next`; iterate by calling again with the highest ancestor's ID as the new `<folderId>`.
 - Folders have no classification-level endpoints — unlike `databases`, the `/folders` surface does not expose `get`/`update`/`reset-classification-level`.
 - `delete` removes the folder (recoverable from the space trash via standard Confluence recovery flow); there is no purge flag on this endpoint.
@@ -1189,7 +1189,7 @@ atlas confluence folders list-properties folder-1
 atlas confluence folders create-property folder-1 --key feature-flags --value '{"beta":true}'
 atlas confluence folders get-property folder-1 --property-id prop-1
 atlas confluence folders update-property folder-1 --property-id prop-1 --key feature-flags --value '{"beta":false}' --version-number 4
-atlas confluence folders update-property folder-1 --property-id prop-1 --key feature-flags --value '{"beta":true}' --version-number 5 --version-message "Re-enable beta"
+atlas confluence folders update-property folder-1 --property-id prop-1 --key feature-flags --value '{"beta":true}' --version-number 5 --message "Re-enable beta"
 atlas confluence folders list-properties folder-1 --sort=-key --limit 50
 atlas confluence folders delete-property folder-1 --property-id prop-1
 
@@ -1209,7 +1209,7 @@ Top-level (page / blog-post) footer comments exposed through the tenant-wide `/w
 | ------------- | ------------- | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `list`        | —             | —                            | `--body-format`, `--sort`, `--cursor`, `--limit`                                                                                                  |
 | `get`         | `<commentId>` | —                            | `--body-format`, `--version-number`, `--include-properties`, `--include-operations`, `--include-likes`, `--include-versions`, `--include-version` |
-| `update`      | `<commentId>` | `--body`, `--version-number` | `--version-message`                                                                                                                               |
+| `update`      | `<commentId>` | `--body`, `--version-number` | `--message`                                                                                                                                       |
 | `children`    | `<commentId>` | —                            | `--body-format`, `--sort`, `--cursor`, `--limit`                                                                                                  |
 | `likes-count` | `<commentId>` | —                            | —                                                                                                                                                 |
 | `likes-users` | `<commentId>` | —                            | `--cursor`, `--limit`                                                                                                                             |
@@ -1224,9 +1224,9 @@ Top-level (page / blog-post) footer comments exposed through the tenant-wide `/w
 - `--include-properties`, `--include-operations`, `--include-likes`, `--include-versions` on `get` ask the server to inline that sub-resource so callers can fetch the comment plus context in one round-trip. They default to off; `--include-likes false` sends nothing.
 - `--include-version` (inline the current version) defaults to **true** on the server. To leave it out, pass `--no-include-version` or `--include-version false`; both send `include-version=false`. `--include-version` alone sends `true`; omitting both sends nothing (server default true). Passing both `--include-version` and `--no-include-version` is rejected.
 - `--version-number <n>` on `get` sends `version=<n>` and returns that historical version of the comment instead of the current one.
-- `update` issues `PUT /footer-comments/{id}` — Confluence enforces optimistic concurrency: `--version-number` must be exactly one greater than the comment's current version (mismatches return 409). `--body` is sent with `representation: "storage"`; SDK callers can opt into `atlas_doc_format` via the underlying `comments.updateFooter()` method. `--version-message` stores an optional message with the new version (`version: { number, message }`); without it only `version.number` is sent.
+- `update` issues `PUT /footer-comments/{id}` — Confluence enforces optimistic concurrency: `--version-number` must be exactly one greater than the comment's current version (mismatches return 409). `--body` is sent with `representation: "storage"`; SDK callers can opt into `atlas_doc_format` via the underlying `comments.updateFooter()` method. `--message` stores an optional message with the new version (`version: { number, message }`); without it only `version.number` is sent.
 - `likes-count` returns the bare `{ count }` envelope and is not paginated.
-- `likes-users --limit` accepts 0–250 (the spec minimum is 0; server default 25). Other list actions take `--limit` 1–250.
+- `likes-users --limit` takes a non-negative integer; 0 is the spec minimum, and the 250 maximum (server default 25) is enforced by the server, not the CLI. Other list actions require `--limit` of at least 1 (server max 250).
 - `version` fetches a single past version by number; the response includes the body and audit metadata.
 - All list endpoints are cursor-paginated — extract `cursor=…` from `_links.next` and pass it back as `--cursor`.
 
@@ -1245,7 +1245,7 @@ atlas confluence footer-comments get 77777 --version-number 2 --include-version 
 
 # Update a footer comment (storage body)
 atlas confluence footer-comments update 77777 --body "Updated reply" --version-number 2
-atlas confluence footer-comments update 77777 --body "Fixed typo" --version-number 3 --version-message "Typo fix"
+atlas confluence footer-comments update 77777 --body "Fixed typo" --version-number 3 --message "Typo fix"
 
 # Walk child replies
 atlas confluence footer-comments children 77777 --sort created-date
@@ -1281,7 +1281,7 @@ Tenant-wide inline comment surface exposed through `/wiki/api/v2/inline-comments
 - `--sort` on `versions` is the narrower `VersionSortOrder`: only `modified-date` / `-modified-date`.
 - A descending sort starts with `-`, so write it with `=`: `--sort=-created-date`. The space form `--sort -created-date` is rejected as an ambiguous option.
 - `likes-count` returns the bare `{ count }` envelope and is not paginated.
-- `likes-users --limit` accepts 0–250 (the spec minimum is 0; server default 25). Other list actions take `--limit` 1–250.
+- `likes-users --limit` takes a non-negative integer; 0 is the spec minimum, and the 250 maximum (server default 25) is enforced by the server, not the CLI. Other list actions require `--limit` of at least 1 (server max 250).
 - `version` fetches a single past version by number; the response includes the body and audit metadata.
 - All list endpoints are cursor-paginated — extract `cursor=…` from `_links.next` and pass it back as `--cursor`.
 
@@ -1324,7 +1324,7 @@ Whiteboards are first-class v2 content (drawings / Confluence whiteboards UI). T
 | `list-properties`             | `<whiteboardId>` | —                                                       | `--key`, `--sort`, `--cursor`, `--limit`                                                               |
 | `create-property`             | `<whiteboardId>` | `--key`, `--value`                                      | —                                                                                                      |
 | `get-property`                | `<whiteboardId>` | `--property-id`                                         | —                                                                                                      |
-| `update-property`             | `<whiteboardId>` | `--property-id`, `--key`, `--value`, `--version-number` | `--version-message`                                                                                    |
+| `update-property`             | `<whiteboardId>` | `--property-id`, `--key`, `--value`, `--version-number` | `--message`                                                                                            |
 | `delete-property`             | `<whiteboardId>` | `--property-id`                                         | —                                                                                                      |
 | `get-restriction-state`       | `<whiteboardId>` | —                                                       | —                                                                                                      |
 | `set-restriction-state`       | `<whiteboardId>` | `--state`                                               | `--allow-self-lockout`                                                                                 |
@@ -1343,7 +1343,7 @@ Whiteboards are first-class v2 content (drawings / Confluence whiteboards UI). T
 - `--sort` on `list-properties` accepts `key` or `-key`.
 - A flag value that starts with `-` (a descending sort such as `-key` or `-modified-date`, or a negative JSON `--value` such as `-1`) must be written with `=`: `--sort=-key`, `--value=-1`. The space form `--sort -key` is rejected as an ambiguous option.
 - `--value` on `create-property` / `update-property` is parsed as JSON when possible, falling back to the raw string (same semantics as `app upsert-property` and `databases create-property`).
-- `--version-number` on `update-property` must be a positive integer one greater than the property's current version (Confluence enforces optimistic concurrency; mismatches return 409). `--version-message` adds an optional message to that new version (`version: { number, message }`); without it only `version.number` is sent.
+- `--version-number` on `update-property` must be a positive integer one greater than the property's current version (Confluence enforces optimistic concurrency; mismatches return 409). `--message` adds an optional message to that new version (`version: { number, message }`); without it only `version.number` is sent.
 - `update-classification-level` always sends `status: "current"` (the only legal server value); the CLI hard-codes it so callers only need `--level-id`. Take the level ID from the `id` field of `atlas confluence classification-levels list`.
 - `reset-classification-level` sends `{ status: "current" }` and falls back to the space default classification.
 - `ancestors` returns `{ results }` without `_links.next`; iterate by calling again with the highest ancestor's ID as the new `<whiteboardId>`.
@@ -1383,7 +1383,7 @@ atlas confluence whiteboards list-properties wb-1
 atlas confluence whiteboards create-property wb-1 --key feature-flags --value '{"beta":true}'
 atlas confluence whiteboards get-property wb-1 --property-id prop-1
 atlas confluence whiteboards update-property wb-1 --property-id prop-1 --key feature-flags --value '{"beta":false}' --version-number 4
-atlas confluence whiteboards update-property wb-1 --property-id prop-1 --key feature-flags --value '{"beta":true}' --version-number 5 --version-message "Re-enable beta"
+atlas confluence whiteboards update-property wb-1 --property-id prop-1 --key feature-flags --value '{"beta":true}' --version-number 5 --message "Re-enable beta"
 atlas confluence whiteboards list-properties wb-1 --sort=-key --limit 50
 atlas confluence whiteboards delete-property wb-1 --property-id prop-1
 
