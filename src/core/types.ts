@@ -225,6 +225,11 @@ export interface ClientConfig {
    * Use this to plug in `undici.fetch` with a custom `Dispatcher` for proxy
    * support, keep-alive tuning, or mTLS. Ignored when a custom `transport` is
    * supplied.
+   *
+   * It must honour `RequestInit.redirect`. The transport sends every non-GET
+   * request with `redirect: 'manual'` and follows a redirect only to a target
+   * on {@link allowedHosts}; a GET is left to the implementation, which must
+   * drop `Authorization` on a cross-origin hop as the built-in `fetch` does.
    */
   readonly fetch?: typeof fetch;
   /** Optional logger for request/response observability. */

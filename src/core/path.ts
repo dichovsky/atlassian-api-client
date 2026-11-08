@@ -13,6 +13,17 @@ export function encodePathSegment(value: string, paramName = 'path parameter'): 
   return encodeURIComponent(value);
 }
 
+/**
+ * Strip every trailing `/` in linear time. Replaces `value.replace(/\/+$/, '')`,
+ * which backtracks quadratically on a long run of `/` followed by any other
+ * character (CodeQL js/polynomial-redos): 80,000 slashes took 12 s.
+ */
+export function trimTrailingSlashes(value: string): string {
+  let end = value.length;
+  while (end > 0 && value[end - 1] === '/') end--;
+  return value.slice(0, end);
+}
+
 function isDotSegment(value: string): boolean {
   if (DOT_SEGMENT_VALUES.has(value)) {
     return true;

@@ -184,9 +184,18 @@ export class TimeoutError extends AtlassianError {
  * Thrown when the underlying `fetch` call fails due to a network issue rather than an HTTP response.
  */
 export class NetworkError extends AtlassianError {
-  constructor(message: string, options?: ErrorOptions) {
+  /**
+   * Whether {@link executeWithRetry} may send the request again. `false` when
+   * a retry cannot help (an expired TLS certificate, a closed dispatcher) or
+   * could duplicate a write (the socket died after the server had already
+   * answered a non-GET request with a success status). Defaults to `true`.
+   */
+  readonly retryable: boolean;
+
+  constructor(message: string, options?: ErrorOptions & { readonly retryable?: boolean }) {
     super(message, 'NETWORK_ERROR', options);
     this.name = 'NetworkError';
+    this.retryable = options?.retryable ?? true;
   }
 }
 

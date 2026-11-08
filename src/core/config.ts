@@ -1,5 +1,6 @@
 import type { ClientConfig, ResolvedConfig } from './types.js';
 import { ValidationError } from './errors.js';
+import { trimTrailingSlashes } from './path.js';
 import {
   DEFAULT_ATLASSIAN_API_HOST_SUFFIXES,
   hostMatchesSuffix,
@@ -50,7 +51,7 @@ function resolveAllowedHosts(
 export function resolveConfig(config: ClientConfig): ResolvedConfig {
   validateConfig(config);
 
-  const baseUrl = config.baseUrl.replace(/\/+$/, '');
+  const baseUrl = trimTrailingSlashes(config.baseUrl);
   const baseUrlHostname = new URL(baseUrl).hostname;
   const allowedHosts = resolveAllowedHosts(baseUrlHostname, config.allowedHosts);
 

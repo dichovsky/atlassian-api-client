@@ -309,14 +309,13 @@ async function readBodyAsText(response: Response, maxBytes?: number): Promise<st
 }
 
 /**
- * Best-effort `ReadableStream.cancel()` that never throws. Used by the
- * content-length fast-fail path to release the socket before throwing
- * `ResponseTooLargeError`; rejections from buggy custom streams must not
- * mask the documented overflow contract (PR #21 review).
+ * Best-effort `ReadableStream.cancel()` that never throws. Used to release the
+ * socket of a body nobody will read: the content-length fast-fail path before
+ * throwing `ResponseTooLargeError`, and the transport when it follows a
+ * redirect itself. Rejections from buggy custom streams must not mask the
+ * documented overflow contract (PR #21 review).
  */
-async function cancelBodyQuietly(body: ReadableStream<Uint8Array> | null): Promise<void> {
-  /* c8 ignore next — fetch populates `body` for any non-204 response that
-     has a `content-length` header; defensive guard for custom transports. */
+export async function cancelBodyQuietly(body: ReadableStream<Uint8Array> | null): Promise<void> {
   if (body === null) return;
   try {
     await body.cancel();

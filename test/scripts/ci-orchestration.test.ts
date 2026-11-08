@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import apiGapVitestConfig from '../../vitest.api-gap.config.js';
 import unitVitestConfig from '../../vitest.config.js';
+import { parseWorkflowYaml } from './workflow-yaml.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(HERE, '../..');
@@ -64,12 +65,38 @@ describe('CI orchestration', () => {
     expect(workflow).toContain('run: npm run test:coverage');
     expect(workflow).toContain('run: npm run test:api-gap');
     expect(workflow).toContain('run: npm run validate:package');
-    expect(workflow).toContain('needs: [quality, coverage, api_gap, package]');
+    expect(workflow).toContain('needs: [quality, coverage, api_gap, package, node_floor]');
     expect(workflow).toContain('  ci:\n    name: CI\n    if: always()');
     expect(workflow).toContain('test "$QUALITY_RESULT" = success');
     expect(workflow).toContain('test "$COVERAGE_RESULT" = success');
     expect(workflow).toContain('test "$API_GAP_RESULT" = success');
     expect(workflow).toContain('test "$PACKAGE_RESULT" = success');
+    expect(workflow).toContain('test "$NODE_FLOOR_RESULT" = success');
+  });
+
+  it('tests the oldest Node.js release that engines.node promises, and gates CI on it', async () => {
+    const [packageJsonText, workflowText] = await Promise.all([
+      readFile(resolve(REPO_ROOT, 'package.json'), 'utf8'),
+      readFile(resolve(REPO_ROOT, '.github/workflows/ci.yml'), 'utf8'),
+    ]);
+    const { engines } = JSON.parse(packageJsonText) as { engines: { node: string } };
+    const workflow = parseWorkflowYaml(workflowText) as {
+      jobs: Record<
+        string,
+        {
+          needs?: string[];
+          steps: { uses?: string; with?: Record<string, string>; run?: string }[];
+        }
+      >;
+    };
+    const floor = workflow.jobs.node_floor!;
+    const setupNode = floor.steps.find((step) => step.uses?.startsWith('actions/setup-node@'));
+
+    expect(engines.node).toMatch(/^>=\d+\.\d+\.\d+$/);
+    expect(setupNode?.with?.['node-version']).toBe(engines.node.slice('>='.length));
+    expect(floor.steps.map((step) => step.run)).toContain('npm run build && npm run test:unit');
+    const otherJobs = Object.keys(workflow.jobs).filter((name) => name !== 'ci');
+    expect(workflow.jobs.ci!.needs).toEqual(otherJobs);
   });
 
   it('publishes only after a signed, exact-main, CI-green release preflight', async () => {
