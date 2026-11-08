@@ -3,6 +3,7 @@ import {
   StatusesResource,
   type StatusScope,
   type BulkJiraStatus,
+  type UpdateStatusData,
 } from '../../src/jira/resources/statuses.js';
 import { MockTransport } from '../helpers/mock-transport.js';
 import { ValidationError } from '../../src/core/errors.js';
@@ -189,6 +190,37 @@ describe('StatusesResource', () => {
     it('throws ValidationError when statuses array is empty', async () => {
       await expect(statuses.bulkUpdate({ statuses: [] })).rejects.toBeInstanceOf(ValidationError);
     });
+
+    it.each([
+      [{ name: 'N', statusCategory: 'DONE' }, 'id'],
+      [{ id: '1', statusCategory: 'DONE' }, 'name'],
+      [{ id: '1', name: 'N' }, 'statusCategory'],
+      [{ id: '1', name: '', statusCategory: 'DONE' }, 'name'],
+      [null, 'id'],
+    ])('rejects an entry %j missing %s before sending (spec StatusUpdate)', async (entry, key) => {
+      await expect(
+        statuses.bulkUpdate({
+          statuses: [
+            { id: '9', name: 'OK', statusCategory: 'TODO' },
+            entry as unknown as UpdateStatusData,
+          ],
+        }),
+      ).rejects.toThrow(`bulkUpdate statuses[1] requires ${key}`);
+      expect(transport.calls).toHaveLength(0);
+    });
+
+    it('rejects a statusCategory outside the spec enum before sending', async () => {
+      await expect(
+        statuses.bulkUpdate({
+          statuses: [
+            { id: '1', name: 'N', statusCategory: 'BOGUS' } as unknown as UpdateStatusData,
+          ],
+        }),
+      ).rejects.toThrow(
+        'bulkUpdate statuses[0].statusCategory must be one of TODO, IN_PROGRESS, DONE',
+      );
+      expect(transport.calls).toHaveLength(0);
+    });
   });
 
   // ── getIssueTypeUsages (B780) ─────────────────────────────────────────────
@@ -338,7 +370,14 @@ describe('StatusesResource', () => {
         method: 'GET',
         path: `${BASE_URL}/statuses/byNames?name=In%20Progress&name=Done`,
       });
-      expect(transport.lastCall?.options.query).toBeUndefined();
+      expect(transport.lastCall?.options.query?.['projectId']).toBeUndefined();
+    });
+
+    it('rejects an empty names list instead of sending GET /statuses/byNames', async () => {
+      await expect(statuses.byNames({ names: [], projectId: '1' })).rejects.toBeInstanceOf(
+        ValidationError,
+      );
+      expect(transport.calls).toHaveLength(0);
     });
 
     it('emits a single repeated name', async () => {
@@ -355,7 +394,8 @@ describe('StatusesResource', () => {
 
       await statuses.byNames({ names: ['Done'], projectId: '10042' });
 
-      expect(transport.lastCall?.options.path).toContain('projectId=10042');
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/statuses/byNames?name=Done`);
+      expect(transport.lastCall?.options.query).toEqual({ projectId: '10042' });
     });
 
     it('omits projectId when not provided', async () => {

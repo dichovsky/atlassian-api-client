@@ -79,6 +79,10 @@ const KNOWN_GAPS: Readonly<
     unset: ['expand', 'overrideSharePermissions'],
     reason: 'response expansion and the admin share-permission override are not exposed',
   },
+  'jira.priorities.delete': {
+    unset: ['replaceWith'],
+    reason: 'deprecated: not in the deletePriority spec; the CLI rejects --replace-with',
+  },
   'jira.projects.create': {
     unset: [
       'projectTemplateKey',

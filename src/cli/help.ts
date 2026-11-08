@@ -538,8 +538,8 @@ EXAMPLES:
   atlas jira resolutions move --ids 10001,10002 --after 10000
   atlas jira resolutions search --query-string "Won't" --max-results 10
   atlas jira statuses bulk-delete --ids 10001,10002
-  atlas jira statuses bulk-create --value '[{"name":"Blocked","statusCategory":"IN_PROGRESS"}]'
-  atlas jira statuses bulk-update --value '[{"id":"10001","name":"Renamed"}]'
+  atlas jira statuses bulk-create --scope '{"type":"GLOBAL"}' --value '[{"name":"Blocked","statusCategory":"IN_PROGRESS"}]'
+  atlas jira statuses bulk-update --value '[{"id":"10001","name":"Renamed","statusCategory":"IN_PROGRESS"}]'
   atlas jira statuses get-issue-type-usages 10001 10002
   atlas jira statuses get-project-usages 10001
   atlas jira statuses get-workflow-usages 10001

@@ -1311,6 +1311,13 @@ async function executeSearch(client: JiraClient, cmd: ParsedCommand): Promise<un
   }
 }
 
+/** A required CSV flag with at least one non-empty entry. */
+function requireCsv(value: string | boolean | undefined, name: string): string[] {
+  const values = csvFlag(value);
+  if (values === undefined) throw new Error(`Missing required option: ${name}`);
+  return values;
+}
+
 async function executeUsers(
   client: JiraClient,
   cmd: ParsedCommand,
@@ -1319,14 +1326,27 @@ async function executeUsers(
   const opts = cmd.options;
   switch (cmd.action) {
     case 'get':
-      return client.users.get(requireArg(cmd.positionalArgs[0], 'account ID'));
+      return client.users.get(requireArg(cmd.positionalArgs[0], 'account ID'), {
+        expand: asString(opts['expand']),
+      });
     case 'me':
-      return client.users.getCurrentUser();
-    case 'search':
+      return client.users.getCurrentUser({ expand: asString(opts['expand']) });
+    case 'search': {
+      const query = asString(opts['query']);
+      const accountId = asString(opts['account-id']);
+      const property = asString(opts['property']);
+      // Spec findUsers: accountId is required unless query or property is given.
+      if (!query && !accountId && !property) {
+        throw new Error('users search requires one of --query, --account-id or --property');
+      }
       return client.users.search({
-        query: requireOpt(opts['query'], '--query'),
+        query,
+        accountId,
+        property,
+        startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
       });
+    }
     case 'delete': {
       await client.users.deleteUser(requireOpt(opts['account-id'], '--account-id'));
       return { deleted: true };
@@ -1357,14 +1377,13 @@ async function executeUsers(
       });
     }
     case 'assignable-multi-project': {
-      const projectKeysRaw = asString(opts['project-keys']);
+      // Spec findBulkAssignableUsers: projectKeys is required.
+      const projectKeys = requireCsv(opts['project-keys'], '--project-keys');
       return client.users.assignableMultiProjectSearch({
         query: asString(opts['query']),
         username: asString(opts['user-name']),
         accountId: asString(opts['account-id']),
-        ...(projectKeysRaw !== undefined && {
-          projectKeys: projectKeysRaw.split(',').map((s) => s.trim()),
-        }),
+        projectKeys,
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
         startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
       });
@@ -1458,7 +1477,8 @@ async function executeUsers(
         projectKey: asString(opts['project-key']),
         issueKey: asString(opts['issue-key']),
         query: asString(opts['query']),
-        permissions: parseCsv(opts['permissions']),
+        // Spec findUsersWithAllPermissions: permissions is required.
+        permissions: requireCsv(opts['permissions'], '--permissions'),
         accountId: asString(opts['account-id']),
         startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
@@ -1504,15 +1524,16 @@ async function executeUsers(
       });
       return undefined;
     }
+    // Spec findUsersByQuery / findUserKeysByQuery: query is required.
     case 'search-query':
       return client.users.searchQuery({
-        query: asString(opts['query']),
+        query: requireOpt(opts['query'], '--query'),
         startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
       });
     case 'search-query-key':
       return client.users.searchQueryKey({
-        query: asString(opts['query']),
+        query: requireOpt(opts['query'], '--query'),
         startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
       });
@@ -1536,12 +1557,21 @@ async function executeUsers(
       return client.users.list({
         startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+        expand: asString(opts['expand']),
       });
     case 'list-search':
+      // GET /users/search declares no filter: `query` was sent but never applied,
+      // and `username` has no spec param either.
+      rejectRemovedOptions(
+        opts,
+        'users list-search',
+        ['query', 'user-name'],
+        'it lists all users; search by name or email with `users search --query`',
+      );
       return client.users.listSearch({
-        query: asString(opts['query']),
         startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+        expand: asString(opts['expand']),
       });
     default:
       throw new Error(
@@ -1561,6 +1591,31 @@ async function executeIssueTypes(client: JiraClient, cmd: ParsedCommand): Promis
   }
 }
 
+/** Optional priority body fields shared by `priorities create` and `update`. */
+function priorityFields(opts: ParsedCommand['options']): {
+  name?: string;
+  description?: string;
+  iconUrl?: string;
+  statusColor?: string;
+  avatarId?: number;
+} {
+  const name = asString(opts['name']);
+  const description = asString(opts['description']);
+  const iconUrl = asString(opts['icon-url']);
+  const statusColor = asString(opts['status-color']);
+  const avatarId = asPositiveInt(opts['avatar-id'], '--avatar-id');
+  if (iconUrl !== undefined && avatarId !== undefined) {
+    throw new Error('priorities accepts --icon-url or --avatar-id, not both');
+  }
+  return {
+    ...(name !== undefined && { name }),
+    ...(description !== undefined && { description }),
+    ...(iconUrl !== undefined && { iconUrl }),
+    ...(statusColor !== undefined && { statusColor }),
+    ...(avatarId !== undefined && { avatarId }),
+  };
+}
+
 async function executePriorities(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
   const opts = cmd.options;
 
@@ -1570,37 +1625,35 @@ async function executePriorities(client: JiraClient, cmd: ParsedCommand): Promis
     case 'get':
       return client.priorities.get(requireArg(cmd.positionalArgs[0], 'priority ID'));
     case 'create': {
+      // Spec CreatePriorityDetails: name and statusColor, plus iconUrl xor avatarId.
       const name = requireOpt(opts['name'], '--name');
-      const description = asString(opts['description']);
-      const iconUrl = asString(opts['icon-url']);
-      const statusColor = asString(opts['status-color']);
-      return client.priorities.create({
-        name,
-        ...(description !== undefined && { description }),
-        ...(iconUrl !== undefined && { iconUrl }),
-        ...(statusColor !== undefined && { statusColor }),
-      });
+      const statusColor = requireOpt(opts['status-color'], '--status-color');
+      const fields = priorityFields(opts);
+      if (fields.iconUrl === undefined && fields.avatarId === undefined) {
+        throw new Error('priorities create requires one of --icon-url or --avatar-id');
+      }
+      return client.priorities.create({ ...fields, name, statusColor });
     }
     case 'delete': {
       const id = requireArg(cmd.positionalArgs[0], 'priority ID');
-      const replaceWith = asString(opts['replace-with']);
-      await client.priorities.delete(id, {
-        ...(replaceWith !== undefined && { replaceWith }),
-      });
+      rejectRemovedOptions(
+        opts,
+        'priorities delete',
+        ['replace-with'],
+        'Jira deletePriority takes no replacement; issues are remapped through priority schemes',
+      );
+      await client.priorities.delete(id);
       return { deleted: true };
     }
     case 'update': {
       const id = requireArg(cmd.positionalArgs[0], 'priority ID');
-      const name = requireOpt(opts['name'], '--name');
-      const description = asString(opts['description']);
-      const iconUrl = asString(opts['icon-url']);
-      const statusColor = asString(opts['status-color']);
-      await client.priorities.update(id, {
-        name,
-        ...(description !== undefined && { description }),
-        ...(iconUrl !== undefined && { iconUrl }),
-        ...(statusColor !== undefined && { statusColor }),
-      });
+      const fields = priorityFields(opts);
+      if (Object.keys(fields).length === 0) {
+        throw new Error(
+          'priorities update requires at least one of --name, --description, --icon-url, --status-color, --avatar-id',
+        );
+      }
+      await client.priorities.update(id, fields);
       return { updated: true };
     }
     case 'set-default': {
@@ -1630,6 +1683,7 @@ async function executePriorities(client: JiraClient, cmd: ParsedCommand): Promis
         startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
         ...(id !== undefined && { id }),
+        projectId: csvFlag(opts['project-id']),
         onlyDefault: asBoolFlag(opts['only-default']),
         priorityName: asString(opts['priority-name']),
         expand: asString(opts['expand']),
@@ -3413,9 +3467,10 @@ async function executeIssueType(client: JiraClient, cmd: ParsedCommand): Promise
       const yRaw = asString(opts['y']);
       const x = xRaw !== undefined ? parseNonNegativeIntArg(xRaw, '--x') : undefined;
       const y = yRaw !== undefined ? parseNonNegativeIntArg(yRaw, '--y') : undefined;
+      const type = avatarImageType(filePath, opts['media-type']);
       const { readFile } = await import('node:fs/promises');
       const buffer = await readFile(filePath);
-      const blob = new Blob([new Uint8Array(buffer)]);
+      const blob = new Blob([new Uint8Array(buffer)], { type });
       return client.issueType.loadAvatar(id, blob, {
         size,
         ...(x !== undefined && { x }),
@@ -3455,13 +3510,44 @@ async function executeIssueType(client: JiraClient, cmd: ParsedCommand): Promise
         requireOpt(opts['project-id'], '--project-id'),
         '--project-id',
       );
-      return client.issueType.listForProject(projectId);
+      const level = asString(opts['level']);
+      return client.issueType.listForProject(projectId, {
+        ...(level !== undefined && { level: parseIntArg(level, '--level') }),
+      });
     }
     default:
       throw new Error(
         `Unknown issuetype action: ${cmd.action}. Actions: create, delete, update, list-alternatives, load-avatar, list-properties, delete-property, get-property, set-property, list-for-project`,
       );
   }
+}
+
+const AVATAR_IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/gif'] as const;
+const AVATAR_IMAGE_EXTENSIONS: Readonly<Record<string, (typeof AVATAR_IMAGE_TYPES)[number]>> = {
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.gif': 'image/gif',
+};
+
+/**
+ * Avatar uploads must carry `Content-Type: image/<type>` (JPEG, GIF or PNG):
+ * `--media-type`, else the file extension.
+ */
+function avatarImageType(
+  filePath: string,
+  mediaType: string | boolean | undefined,
+): (typeof AVATAR_IMAGE_TYPES)[number] {
+  const explicit = asEnum(mediaType, AVATAR_IMAGE_TYPES, 'media-type');
+  if (explicit !== undefined) return explicit;
+  const ext = /\.[^./\\]+$/.exec(filePath)?.[0].toLowerCase() ?? '';
+  const type = AVATAR_IMAGE_EXTENSIONS[ext];
+  if (type === undefined) {
+    throw new Error(
+      `cannot tell the image type of ${filePath}; use a .png, .jpg, .jpeg or .gif file or pass --media-type`,
+    );
+  }
+  return type;
 }
 
 function asIssueTypeKind(value: string | boolean | undefined): 'subtask' | 'standard' | undefined {
@@ -5275,6 +5361,8 @@ const ISSUE_COMMENTS_ACTIONS = [
   'bulk-fetch',
 ] as const;
 
+const COMMENT_ORDER_BY_VALUES = ['created', '-created', '+created'] as const;
+
 async function executeIssueComments(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
   const opts = cmd.options;
 
@@ -5284,14 +5372,16 @@ async function executeIssueComments(client: JiraClient, cmd: ParsedCommand): Pro
       return client.issueComments.list(issueIdOrKey, {
         startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
-        orderBy: asString(opts['order-by']) as 'created' | '-created' | '+created' | undefined,
+        orderBy: asEnum(opts['order-by'], COMMENT_ORDER_BY_VALUES, 'order-by'),
         expand: asString(opts['expand']),
       });
     }
     case 'get': {
       const issueIdOrKey = requireArg(cmd.positionalArgs[0], 'issueIdOrKey');
       const commentId = requireArg(cmd.positionalArgs[1], 'commentId');
-      return client.issueComments.get(issueIdOrKey, commentId);
+      return client.issueComments.get(issueIdOrKey, commentId, {
+        expand: asString(opts['expand']),
+      });
     }
     case 'create': {
       const issueIdOrKey = requireArg(cmd.positionalArgs[0], 'issueIdOrKey');
@@ -5299,6 +5389,7 @@ async function executeIssueComments(client: JiraClient, cmd: ParsedCommand): Pro
       return client.issueComments.create(
         issueIdOrKey,
         data as unknown as Parameters<typeof client.issueComments.create>[1],
+        { expand: asString(opts['expand']) },
       );
     }
     case 'update': {
@@ -5309,6 +5400,11 @@ async function executeIssueComments(client: JiraClient, cmd: ParsedCommand): Pro
         issueIdOrKey,
         commentId,
         data as unknown as Parameters<typeof client.issueComments.update>[2],
+        {
+          notifyUsers: notifyUsersFlag(opts),
+          overrideEditableFlag: asBoolFlag(opts['override-editable-flag']),
+          expand: asString(opts['expand']),
+        },
       );
     }
     case 'delete': {

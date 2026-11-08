@@ -54,6 +54,9 @@ export interface UpdateStatusData {
   readonly statusCategory: 'TODO' | 'IN_PROGRESS' | 'DONE';
 }
 
+/** Spec `StatusUpdate.statusCategory` enum. */
+const STATUS_UPDATE_CATEGORIES: readonly string[] = ['TODO', 'IN_PROGRESS', 'DONE'];
+
 /**
  * A nested page of usage entries inside the usage-listing DTOs
  * (B780 issueTypeUsages, B781 projectUsages, B782 workflowUsages).
@@ -229,6 +232,21 @@ export class StatusesResource {
     if (data.statuses === undefined || data.statuses.length === 0) {
       throw new ValidationError('bulkUpdate requires at least one status entry (--value)');
     }
+    // Spec `StatusUpdate` requires id, name and statusCategory on every entry.
+    data.statuses.forEach((status, i) => {
+      for (const key of ['id', 'name', 'statusCategory'] as const) {
+        if (typeof status?.[key] !== 'string' || status[key] === '') {
+          throw new ValidationError(
+            `bulkUpdate statuses[${i}] requires ${key} (spec StatusUpdate)`,
+          );
+        }
+      }
+      if (!STATUS_UPDATE_CATEGORIES.includes(status.statusCategory)) {
+        throw new ValidationError(
+          `bulkUpdate statuses[${i}].statusCategory must be one of ${STATUS_UPDATE_CATEGORIES.join(', ')}`,
+        );
+      }
+    });
     await this.transport.request<undefined>({
       method: 'PUT',
       path: `${this.baseUrl}/statuses`,
@@ -314,17 +332,15 @@ export class StatusesResource {
    * @param params.projectId Optional project ID to scope the search (spec: optional query param).
    */
   async byNames(params: { names: string[]; projectId?: string }): Promise<BulkJiraStatus[]> {
-    // The spec parameter is `name` (NOT `statusName`) and is `type: array`:
-    // emit repeated `name=a&name=b` built into the path. The previous code sent
-    // a single CSV value under the wrong key, so the filter was ignored by the
-    // server even for a single name.
-    let path = appendRepeatedParams(`${this.baseUrl}/statuses/byNames`, 'name', params.names);
-    if (params.projectId !== undefined) {
-      path += `&projectId=${encodeURIComponent(params.projectId)}`;
+    // The spec parameter is `name` (NOT `statusName`), required, 1–50 items and
+    // `type: array`: emit repeated `name=a&name=b` built into the path.
+    if (params.names.length === 0) {
+      throw new ValidationError('byNames requires at least one status name');
     }
     const response = await this.transport.request<BulkJiraStatus[]>({
       method: 'GET',
-      path,
+      path: appendRepeatedParams(`${this.baseUrl}/statuses/byNames`, 'name', params.names),
+      query: { projectId: params.projectId },
     });
     return response.data;
   }
