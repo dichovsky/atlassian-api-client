@@ -3,6 +3,7 @@ import {
   isRetryableStatus,
   calculateDelay,
   isNetworkError,
+  isTransportFailure,
   sleep,
   executeWithRetry,
 } from '../../src/core/retry.js';
@@ -216,6 +217,53 @@ describe('isNetworkError', () => {
     // depth 0=g, 1=f, 2=e, 3=d, 4=c, 5=b -> stops before reaching a at depth 6
     expect(isNetworkError(g)).toBe(false);
   });
+
+  it.each([
+    'ECONNABORTED',
+    'EHOSTUNREACH',
+    'EHOSTDOWN',
+    'ENETUNREACH',
+    'ENETDOWN',
+    'UND_ERR_HEADERS_TIMEOUT',
+    'UND_ERR_BODY_TIMEOUT',
+  ])('returns true for a fetch TypeError wrapping the transient %s', (code) => {
+    expect(isNetworkError(new TypeError('fetch failed', { cause: { code } }))).toBe(true);
+  });
+
+  it.each(['UND_ERR_CLOSED', 'UND_ERR_DESTROYED'])(
+    'returns false for %s: the dispatcher was closed, so every attempt fails',
+    (code) => {
+      expect(isNetworkError(new TypeError('fetch failed', { cause: { code } }))).toBe(false);
+    },
+  );
+});
+
+describe('isTransportFailure', () => {
+  it.each(['ECONNREFUSED', 'EHOSTUNREACH', 'CERT_HAS_EXPIRED', 'UND_ERR_CLOSED'])(
+    'returns true for a fetch TypeError wrapping a %s cause, retryable or not',
+    (code) => {
+      expect(isTransportFailure(new TypeError('fetch failed', { cause: { code } }))).toBe(true);
+    },
+  );
+
+  it('returns true for a non-Error value carrying a retryable code', () => {
+    expect(isTransportFailure({ code: 'ECONNRESET' })).toBe(true);
+  });
+
+  it.each<[string, unknown]>([
+    ['a causeless TypeError (invalid header)', new TypeError('invalid header value')],
+    ['a codeless cause (blocked port)', new TypeError('fetch failed', { cause: new Error('x') })],
+    ['an Error with an unlisted code', Object.assign(new Error('x'), { code: 'CERT_HAS_EXPIRED' })],
+    ['a non-Error value with an unlisted code', { code: 'VALIDATION_ERROR' }],
+  ])('returns false for %s', (_, error) => {
+    expect(isTransportFailure(error)).toBe(false);
+  });
+
+  it('returns false for an abort tagged as TypeError, whatever its cause', () => {
+    const abort = new TypeError('aborted', { cause: { code: 'CERT_HAS_EXPIRED' } });
+    abort.name = 'AbortError';
+    expect(isTransportFailure(abort)).toBe(false);
+  });
 });
 
 describe('sleep', () => {
@@ -306,6 +354,14 @@ describe('executeWithRetry', () => {
 
     await expect(executeWithRetry(operation, config)).rejects.toBe(err);
     expect(operation).toHaveBeenCalledTimes(4);
+  });
+
+  it('does not retry a NetworkError marked not retryable', async () => {
+    const err = new NetworkError('response cut after 201', { retryable: false });
+    const operation = vi.fn().mockRejectedValue(err);
+
+    await expect(executeWithRetry(operation, config)).rejects.toBe(err);
+    expect(operation).toHaveBeenCalledTimes(1);
   });
 
   it('succeeds on a later attempt after retryable failures', async () => {

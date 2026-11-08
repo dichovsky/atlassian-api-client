@@ -96,6 +96,36 @@ export function buildUrl(
   return url.toString();
 }
 
+/**
+ * Resolve a redirect `Location` against the URL that received it and hold the
+ * target to the policy {@link buildUrl} applies to the original request: HTTPS,
+ * a host on `allowedHosts`, the default port.
+ *
+ * @returns The absolute target URL.
+ * @throws {ValidationError} when `location` does not parse or the target fails
+ *   any of those checks. The raw `location` is never echoed.
+ */
+export function resolveRedirectTarget(
+  location: string,
+  from: string,
+  allowedHosts: readonly string[],
+): string {
+  let url: URL;
+  try {
+    url = new URL(location, from);
+  } catch {
+    throw new ValidationError('Refusing to follow a redirect: Location is not a valid URL');
+  }
+  if (url.protocol !== 'https:') {
+    throw new ValidationError(
+      `Refusing to follow a redirect to ${url.protocol}//${url.hostname}: only https:// targets are accepted.`,
+    );
+  }
+  assertHostAllowed(url.hostname, allowedHosts);
+  assertDefaultPort(url);
+  return url.href;
+}
+
 function assertHostAllowed(hostname: string, allowedHosts: readonly string[]): void {
   if (hostMatchesExact(hostname, allowedHosts)) return;
   throw new ValidationError(

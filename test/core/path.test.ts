@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { ValidationError } from '../../src/core/errors.js';
-import { encodePathSegment } from '../../src/core/path.js';
+import { encodePathSegment, trimTrailingSlashes } from '../../src/core/path.js';
 
 describe('encodePathSegment()', () => {
   it('encodes regular path-segment values', () => {
@@ -21,5 +21,18 @@ describe('encodePathSegment()', () => {
   it('still encodes values when percent-decoding fails', () => {
     const malformed = '%E0%A4%A';
     expect(encodePathSegment(malformed)).toBe('%25E0%25A4%25A');
+  });
+});
+
+describe('trimTrailingSlashes()', () => {
+  it.each([
+    ['https://x.atlassian.net///', 'https://x.atlassian.net'],
+    ['/wiki/', '/wiki'],
+    ['/a/b', '/a/b'],
+    ['///', ''],
+    ['', ''],
+  ])('trims %j to %j, as /\\/+$/ did', (input, expected) => {
+    expect(trimTrailingSlashes(input)).toBe(expected);
+    expect(trimTrailingSlashes(input)).toBe(input.replace(/\/+$/, ''));
   });
 });
