@@ -472,6 +472,8 @@ describe('F082/F281: create by ID and transition keep --body objects the flags d
     [['--project', 'P', '--summary', 'S', '--body', '{"fields":{"project":{"id":"1"}}}'], '--type'],
     [['--type', 'T', '--summary', 'S', '--body', '{"fields":{"project":null}}'], '--project'],
     [['--project', 'P', '--summary', 'S', '--body', '{"fields":{"issuetype":null}}'], '--type'],
+    [['--type', 'T', '--summary', 'S', '--body', '{"fields":{"project":""}}'], '--project'],
+    [['--project', 'P', '--summary', 'S', '--body', '{"fields":{"issuetype":""}}'], '--type'],
   ])('create %j without project/issue type anywhere is rejected', async (rest, flag) => {
     await rejected(['jira', 'issues', 'create', ...rest], `Missing required option: ${flag}`);
   });
@@ -506,6 +508,7 @@ describe('F279: empty discrete flags are rejected, not ignored or sent', () => {
     [['create', '--project', 'P', '--type', 'T', '--summary', 'S', '--parent', ''], '--parent'],
     [['create', '--project', '', '--type', 'T', '--summary', 'S'], '--project'],
     [['create', '--project', 'P', '--type', '', '--summary', 'S'], '--type'],
+    [['transitions', 'K-1', '--transition-id', ''], '--transition-id'],
   ])('%j', async (rest, flag) => {
     await rejected(['jira', 'issues', ...rest], `Missing value for ${flag}`);
   });

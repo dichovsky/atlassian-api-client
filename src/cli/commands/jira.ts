@@ -297,11 +297,11 @@ async function executeIssues(client: JiraClient, cmd: ParsedCommand): Promise<un
       // `--summary` is required, so `fields` is always present.
       const fields = data['fields'] as Record<string, unknown>;
       // Either the flag or `--body` fields.project / fields.issuetype (by ID) will do;
-      // a JSON `null` counts as missing (Jira answers 400).
-      if ((fields['project'] ?? null) === null) {
+      // a JSON `null` or `""` counts as missing (Jira answers 400).
+      if (!fields['project']) {
         throw new Error('Missing required option: --project');
       }
-      if ((fields['issuetype'] ?? null) === null) {
+      if (!fields['issuetype']) {
         throw new Error('Missing required option: --type');
       }
       return client.issues.create(data as { fields: Record<string, unknown> }, {
@@ -368,7 +368,7 @@ async function executeIssues(client: JiraClient, cmd: ParsedCommand): Promise<un
     case 'transitions':
       return client.issues.getTransitions(requireArg(cmd.positionalArgs[0], 'issue key'), {
         expand: asString(opts['expand']),
-        transitionId: asString(opts['transition-id']),
+        transitionId: asNonEmptyString(opts['transition-id'], '--transition-id'),
         skipRemoteOnlyCondition: asBoolFlag(opts['skip-remote-only-condition']),
         includeUnavailableTransitions: asBoolFlag(opts['include-unavailable-transitions']),
         sortByOpsBarAndStatus: asBoolFlag(opts['sort-by-ops-bar-and-status']),
