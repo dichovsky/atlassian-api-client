@@ -24,62 +24,76 @@ export function calculateDelay(attempt: number, baseDelay: number, maxDelay: num
 
 /**
  * System-level error codes that represent transient network failures eligible
- * for retry. Covers both libuv (`ECONN*`, `ENOTFOUND`, `EAI_AGAIN`) and
- * undici-specific (`UND_ERR_*`) causes.
+ * for retry. Covers both libuv (`ECONN*`, `EHOST*`, `ENET*`, `ENOTFOUND`,
+ * `EAI_AGAIN`) and undici-specific (`UND_ERR_*`) causes. Deliberately absent:
+ * TLS rejections (`CERT_*`, `ERR_TLS_*`) and `UND_ERR_CLOSED` / `UND_ERR_DESTROYED`
+ * ("trying to use a closed client"), which fail the same way on every attempt.
  */
 const RETRYABLE_CAUSE_CODES = new Set([
   'ECONNRESET',
   'ECONNREFUSED',
+  'ECONNABORTED',
+  'EHOSTUNREACH',
+  'EHOSTDOWN',
+  'ENETUNREACH',
+  'ENETDOWN',
   'ENOTFOUND',
   'EAI_AGAIN',
   'ETIMEDOUT',
   'EPIPE',
   'UND_ERR_SOCKET',
   'UND_ERR_CONNECT_TIMEOUT',
+  'UND_ERR_HEADERS_TIMEOUT',
+  'UND_ERR_BODY_TIMEOUT',
 ]);
 
 /** Check whether a caught error represents a retryable network failure. */
 export function isNetworkError(error: unknown): boolean {
   if (error instanceof Error && error.name === 'AbortError') {
-    // Abort errors are NOT retryable (user-initiated cancellation or timeout).
-    // Checked before TypeError because some runtimes tag aborts as TypeError.
+    // Abort errors are NOT retryable (user-initiated cancellation or timeout),
+    // even when the abort reason carries a retryable code.
     return false;
   }
 
-  // NOTE: being a TypeError does NOT identify a network failure. `fetch` throws
-  // TypeError for client-side ARGUMENT errors too — an invalid header value, a
-  // bad method, a body on GET, a blocked port. What identifies a real network
-  // failure is the underlying system code `fetch` wraps in `cause`, which the
-  // check below already walks for. Verified on Node 24:
-  //
-  //   connection refused  TypeError: fetch failed  cause.code ECONNREFUSED
-  //   DNS failure         TypeError: fetch failed  cause.code ENOTFOUND
-  //   mid-body reset      TypeError: terminated    cause.code UND_ERR_SOCKET
-  //   TLS expired cert    TypeError: fetch failed  cause.code CERT_HAS_EXPIRED
-  //   invalid header      TypeError                cause     undefined
-  //   blocked port        TypeError: fetch failed  cause 'bad port', no code
-  //
-  // So the allow-list does exactly the right thing on its own: transient codes
-  // retry; a deterministic TLS rejection does not; and argument errors — which
-  // never reached the network and would fail identically forever — do not.
-
   // Runtime-level failures (Node SystemError, undici-wrapped errors) may surface
   // with a retryable code either directly on the error or in its `cause` chain.
-  if (hasRetryableCode(error)) {
-    return true;
-  }
-
-  return false;
+  return hasCode(error, (code) => RETRYABLE_CAUSE_CODES.has(code));
 }
 
-/** Walk the error + `cause` chain looking for a known-retryable system code. */
-function hasRetryableCode(error: unknown): boolean {
+/**
+ * Check whether a value `fetch` rejected with is a failure of the network or
+ * the transport, which the transport reports as a {@link NetworkError}.
+ *
+ * Broader than {@link isNetworkError}, which decides only whether a retry can
+ * help. Being a TypeError does NOT identify a network failure: `fetch` throws
+ * TypeError for client-side ARGUMENT errors too. What identifies one is the
+ * system code `fetch` wraps in `cause`. Verified on Node 24:
+ *
+ *   connection refused  TypeError: fetch failed  cause.code ECONNREFUSED
+ *   no route to host    TypeError: fetch failed  cause.code EHOSTUNREACH
+ *   mid-body reset      TypeError: terminated    cause.code UND_ERR_SOCKET
+ *   TLS expired cert    TypeError: fetch failed  cause.code CERT_HAS_EXPIRED
+ *   invalid header      TypeError                cause     undefined
+ *   blocked port        TypeError: fetch failed  cause 'bad port', no code
+ *
+ * So any coded cause is a transport failure (an expired certificate included,
+ * though retrying it is pointless), and an argument error, which never reached
+ * the network, stays a raw TypeError.
+ */
+export function isTransportFailure(error: unknown): boolean {
+  if (isNetworkError(error)) return true;
+  if (!(error instanceof TypeError) || error.name === 'AbortError') return false;
+  return hasCode(error.cause, () => true);
+}
+
+/** Walk the error + `cause` chain for a string system `code` that `accept` matches. */
+function hasCode(error: unknown, accept: (code: string) => boolean): boolean {
   let curr = error;
   for (let i = 0; i <= 5; i++) {
     if (curr === null || typeof curr !== 'object') break;
 
     const code = (curr as { code?: unknown }).code;
-    if (typeof code === 'string' && RETRYABLE_CAUSE_CODES.has(code)) {
+    if (typeof code === 'string' && accept(code)) {
       return true;
     }
 
@@ -113,7 +127,9 @@ export interface RetryConfig {
  * Retry policy:
  * - {@link RateLimitError} (429) is always retried up to `retries` attempts;
  *   delay honours the server-advertised `retry-after` value with bounded jitter.
- * - {@link NetworkError} is retried (transient socket / DNS failures).
+ * - {@link NetworkError} is retried when its `retryable` flag is set (transient
+ *   socket / DNS failures; not a TLS rejection, and not a write the server had
+ *   already answered with a success status).
  * - {@link HttpError} is retried only when {@link isRetryableStatus} matches.
  * - {@link TimeoutError} and all other errors are not retried.
  *
@@ -160,7 +176,7 @@ function shouldRetry(error: unknown, attempt: number, retries: number): boolean 
 
   if (error instanceof TimeoutError) return false;
 
-  if (error instanceof NetworkError) return true;
+  if (error instanceof NetworkError) return error.retryable;
 
   if (error instanceof HttpError) {
     return isRetryableStatus(error.status);

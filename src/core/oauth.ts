@@ -68,6 +68,7 @@ export interface OAuthRefreshConfig {
   /**
    * Injectable `fetch` for calling the token endpoint. Defaults to global `fetch`.
    * Supply this to route token-endpoint traffic through a proxy or custom dispatcher.
+   * It must honour `redirect: 'manual'`: the refresh never follows a redirect.
    */
   readonly fetch?: typeof fetch;
   /** Invoked after a successful token refresh so callers can persist the new tokens. */
@@ -295,6 +296,10 @@ export async function fetchRefreshedTokens(
   const doFetch = config.fetch ?? fetch;
   const response = await doFetch(endpoint, {
     method: 'POST',
+    // A 307/308 would replay client_secret and refresh_token to whatever host
+    // `Location` names, past the allowlist checked above. Never follow: a 3xx
+    // is not `ok`, so it fails below as an OAuthError carrying its status.
+    redirect: 'manual',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       grant_type: 'refresh_token',

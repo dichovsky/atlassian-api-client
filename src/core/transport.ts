@@ -4,11 +4,22 @@ import { hashAuthValue } from './auth-identity.js';
 import type { AuthProvider } from './auth.js';
 import { createAuthProvider } from './auth.js';
 import { createHttpError, TimeoutError, NetworkError, ValidationError } from './errors.js';
-import { executeWithRetry, isNetworkError } from './retry.js';
+import { executeWithRetry, isNetworkError, isTransportFailure } from './retry.js';
 import { createMiddlewareChain } from './middleware.js';
 import { getRetryAfterMs, parseRateLimitHeaders } from './rate-limiter.js';
-import { buildFetchBody, buildHeaders, buildUrl, sanitizePathForLogging } from './request.js';
-import { buildApiResponse, parseResponseBody, safeParseBody } from './response.js';
+import {
+  buildFetchBody,
+  buildHeaders,
+  buildUrl,
+  resolveRedirectTarget,
+  sanitizePathForLogging,
+} from './request.js';
+import {
+  buildApiResponse,
+  cancelBodyQuietly,
+  parseResponseBody,
+  safeParseBody,
+} from './response.js';
 
 /**
  * Drop a caller-supplied `authorizationOverride` at the request boundary.
@@ -279,15 +290,20 @@ export class HttpTransport implements Transport {
 
     let response: Response;
     const doFetch = this.config.fetch ?? fetch;
+    // Once a status line has arrived, only a GET may be sent again: a write the
+    // server answered with a success has committed, and resending it duplicates
+    // it (an issue, a comment, a page). PUT/DELETE are idempotent on paper, but
+    // a replay meets a version conflict or a 404 for work that already succeeded.
+    const replayable = options.method === 'GET';
 
     try {
       try {
-        response = await doFetch(url, {
-          method: options.method,
-          headers,
-          body,
-          signal: fetchSignal,
-        });
+        response = await fetchWithCheckedRedirects(
+          doFetch,
+          url,
+          { method: options.method, headers, body, signal: fetchSignal },
+          this.config.allowedHosts,
+        );
       } catch (error) {
         if (error instanceof Error && error.name === 'AbortError') {
           if (timeoutController.signal.aborted) {
@@ -295,8 +311,8 @@ export class HttpTransport implements Transport {
           }
           throw error;
         }
-        if (isNetworkError(error)) {
-          throw new NetworkError((error as Error).message, { cause: error as Error });
+        if (isTransportFailure(error)) {
+          throw toNetworkError(error, isNetworkError(error));
         }
         throw error;
       }
@@ -328,6 +344,7 @@ export class HttpTransport implements Transport {
           () => safeParseBody(response, this.config.maxResponseBytes),
           timeoutController.signal,
           this.config.timeout,
+          replayable,
         );
         const retryAfterMs = getRetryAfterMs(response.headers);
         const retryAfterSeconds = retryAfterMs !== undefined ? retryAfterMs / 1000 : undefined;
@@ -338,6 +355,7 @@ export class HttpTransport implements Transport {
         () => parseResponseBody(response, options.responseType, this.config.maxResponseBytes),
         timeoutController.signal,
         this.config.timeout,
+        replayable,
       );
 
       this.config.logger?.debug('HTTP response', {
@@ -439,6 +457,7 @@ async function parseBodyWithTimeoutHandling<T>(
   parse: () => Promise<T>,
   timeoutSignal: AbortSignal,
   timeoutMs: number,
+  replayable: boolean,
 ): Promise<T> {
   try {
     return await parse();
@@ -449,20 +468,88 @@ async function parseBodyWithTimeoutHandling<T>(
     // A connection can die AFTER the response headers arrive, while the body is
     // still streaming — `fetch` resolves, then the body read rejects. Without
     // this branch such a failure escaped as a raw `TypeError: terminated`
-    // (cause `UND_ERR_SOCKET`): outside the `AtlassianError` taxonomy, never
-    // retried, and invisible to the circuit breaker — even though the very same
-    // socket reset one moment earlier (before headers) becomes a retried
-    // `NetworkError`. Classify both phases identically.
-    if (isNetworkError(error)) {
-      // `isNetworkError` also matches non-Error shapes — it walks `{ code, cause }`
-      // chains, so a thrown plain object with a retryable code qualifies. Reading
-      // `.message` off one yields `undefined` and produces a `NetworkError` whose
-      // message is the string "undefined". Fall back to the class default, and
-      // pass the original value through as `cause` without claiming it is an Error.
-      const message = error instanceof Error ? error.message : 'Network request failed';
-      throw new NetworkError(message, { cause: error });
+    // (cause `UND_ERR_SOCKET`): outside the `AtlassianError` taxonomy and
+    // invisible to the circuit breaker. It is a NetworkError like a reset
+    // before the headers, but unlike that one the server's outcome is known, so
+    // it is retried only when the request is safe to repeat.
+    if (isTransportFailure(error)) {
+      throw toNetworkError(error, replayable && isNetworkError(error));
     }
     throw error;
+  }
+}
+
+/**
+ * Wrap a transport failure in the taxonomy. {@link isTransportFailure} also
+ * matches non-Error shapes (a thrown `{ code }` object), whose `.message` is
+ * `undefined`, so fall back to the class default and keep the original value
+ * as `cause` without claiming it is an Error.
+ */
+function toNetworkError(error: unknown, retryable: boolean): NetworkError {
+  const message = error instanceof Error ? error.message : 'Network request failed';
+  return new NetworkError(message, { cause: error, retryable });
+}
+
+/** Statuses `fetch` treats as redirects (WHATWG Fetch "redirect status"). */
+const REDIRECT_STATUSES: ReadonlySet<number> = new Set([301, 302, 303, 307, 308]);
+
+/** The hop limit `fetch` applies when it follows redirects itself. */
+const MAX_REDIRECTS = 20;
+
+interface OutgoingRequest {
+  readonly method: string;
+  readonly headers: Record<string, string>;
+  readonly body: FormData | Blob | string | undefined;
+  readonly signal: AbortSignal | undefined;
+}
+
+/**
+ * Send a request, following a redirect only to a target the request could
+ * have been sent to directly.
+ *
+ * `fetch` follows redirects without consulting `allowedHosts`: a 307/308 (or a
+ * 301/302 on a write other than POST) replays the method AND body to whatever
+ * host `Location` names, on any port, even over plain http. Node's `fetch`
+ * drops `Authorization` on a cross-origin hop, but the payload still leaves,
+ * and a custom `config.fetch` may forward the credential too.
+ *
+ * A GET carries no body, so `fetch` keeps following it: Atlassian answers an
+ * attachment download with a 303 to its media host, which is not on
+ * `allowedHosts`. Any other method is sent with `redirect: 'manual'`, and each
+ * hop is followed here only after {@link resolveRedirectTarget} accepts it,
+ * applying the Fetch rule that a 303, or a 301/302 on POST, continues as a
+ * body-less GET. That GET is then left to `fetch`. A redirect that keeps going
+ * past the hop limit, or that has no `Location`, is returned as the response,
+ * so the caller sees it as an `HttpError`.
+ */
+async function fetchWithCheckedRedirects(
+  doFetch: typeof fetch,
+  url: string,
+  request: OutgoingRequest,
+  allowedHosts: readonly string[],
+): Promise<Response> {
+  let target = url;
+  let current = request;
+  for (let hops = 0; ; hops++) {
+    if (current.method === 'GET') {
+      return doFetch(target, { ...current, redirect: 'follow' });
+    }
+    const response = await doFetch(target, { ...current, redirect: 'manual' });
+    const location = response.headers.get('location');
+    if (!REDIRECT_STATUSES.has(response.status) || location === null || hops === MAX_REDIRECTS) {
+      return response;
+    }
+    target = resolveRedirectTarget(location, target, allowedHosts);
+    await cancelBodyQuietly(response.body);
+    const becomesGet =
+      response.status === 303 ||
+      ((response.status === 301 || response.status === 302) && current.method === 'POST');
+    if (becomesGet) {
+      const headers = Object.fromEntries(
+        Object.entries(current.headers).filter(([name]) => name.toLowerCase() !== 'content-type'),
+      );
+      current = { ...current, method: 'GET', body: undefined, headers };
+    }
   }
 }
 

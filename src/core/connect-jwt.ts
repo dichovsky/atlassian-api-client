@@ -8,6 +8,7 @@ import {
 import type { KeyObject } from 'node:crypto';
 import type { Middleware, RequestOptions, HttpMethod } from './types.js';
 import { ValidationError } from './errors.js';
+import { trimTrailingSlashes } from './path.js';
 
 /** Configuration for the Atlassian Connect JWT middleware. */
 export interface ConnectJwtConfig {
@@ -36,6 +37,12 @@ export interface ConnectJwtConfig {
  * - Algorithm: HS256 (HMAC-SHA256)
  * - Claims: `iss`, `iat`, `exp`, `qsh`
  * - Sets `Authorization: JWT <token>` on every request
+ *
+ * The QSH is computed from `RequestOptions.path` before the transport resolves
+ * it against `baseUrl`. Every library resource passes an absolute URL, so this
+ * only matters when calling `transport.request()` directly: pass an absolute
+ * URL there too. A relative path such as `'/pages'` is hashed as-is, not as the
+ * `/api/v2/pages` the request is sent to, and Atlassian answers it with a 401.
  *
  * @see https://developer.atlassian.com/cloud/jira/platform/understanding-jwt-for-connect-apps/
  */
@@ -197,7 +204,7 @@ function normalizeContextPath(contextPath: string | undefined): string {
     ? parsePathname(contextPath, 'contextPath')
     : contextPath;
   const withSlash = path.startsWith('/') ? path : `/${path}`;
-  return withSlash.replace(/\/+$/, '');
+  return trimTrailingSlashes(withSlash);
 }
 
 const ABSOLUTE_URL_RE = /^https?:\/\//i;
