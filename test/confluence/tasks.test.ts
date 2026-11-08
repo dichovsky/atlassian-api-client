@@ -199,6 +199,15 @@ describe('TasksResource', () => {
   // ── listAll ───────────────────────────────────────────────────────────────
 
   describe('listAll()', () => {
+    it.each([0, -1, 1.5])(
+      'throws ValidationError for limit %s before any request (F051)',
+      async (limit) => {
+        const iter = resource.listAll({ limit });
+        await expect(iter.next()).rejects.toThrow(ValidationError);
+        expect(transport.calls).toHaveLength(0);
+      },
+    );
+
     it('iterates across multiple pages and yields all items', async () => {
       transport
         .respondWith({

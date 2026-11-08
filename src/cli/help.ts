@@ -208,20 +208,20 @@ EXAMPLES:
   atlas confluence folders create --space-id 123 --title "Drafts" --parent-id 456
   atlas confluence folders get 789 --include-direct-children
   atlas confluence folders descendants 789 --depth 3 --limit 50
-  atlas confluence folders direct-children 789 --sort -modified-date
+  atlas confluence folders direct-children 789 --sort=-modified-date
   atlas confluence folders list-properties 789
-  atlas confluence footer-comments list --sort -created-date --limit 25
+  atlas confluence footer-comments list --sort=-created-date --limit 25
   atlas confluence footer-comments get 77777 --include-likes --include-versions
   atlas confluence footer-comments update 77777 --body "Updated" --version-number 2
   atlas confluence footer-comments children 77777
   atlas confluence footer-comments likes-count 77777
-  atlas confluence footer-comments versions 77777 --sort -modified-date
+  atlas confluence footer-comments versions 77777 --sort=-modified-date
   atlas confluence comments update 77777 --body "Updated body" --version-number 2
   atlas confluence comments update 77777 --body "Updated inline body" --version-number 2 --comment-type inline
-  atlas confluence inline-comments list --sort -created-date --limit 25
+  atlas confluence inline-comments list --sort=-created-date --limit 25
   atlas confluence inline-comments children 77777 --sort created-date
   atlas confluence inline-comments likes-count 77777
-  atlas confluence inline-comments versions 77777 --sort -modified-date
+  atlas confluence inline-comments versions 77777 --sort=-modified-date
   atlas confluence inline-comments version 77777 --version-number 3
   atlas confluence space-permissions list --limit 25
   atlas confluence space-role-mode get
@@ -247,7 +247,7 @@ EXAMPLES:
   atlas confluence spaces create-property 654321 --key feature-flags --value '{"beta":true}'
   atlas confluence spaces update-property 654321 --property-id prop-1 --key feature-flags --value '{"beta":false}' --version-number 2
   atlas confluence tasks list --status incomplete --limit 25
-  atlas confluence tasks update task-1 --status complete --body-format storage
+  atlas confluence tasks update 123456 --status complete --body-format storage
   atlas confluence users check-access-by-email --emails a@example.com,b@example.com
   atlas confluence users invite-by-email --emails a@example.com,b@example.com
   atlas confluence users-bulk lookup --account-ids acc-1,acc-2

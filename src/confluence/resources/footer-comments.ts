@@ -159,12 +159,19 @@ export class FooterCommentsResource {
     return response.data;
   }
 
-  /** List the users who liked a footer comment (single page). */
+  /**
+   * List the users who liked a footer comment (single page).
+   *
+   * The spec allows `limit=0` for this endpoint (minimum=0), matching
+   * `InlineCommentsResource.listLikeUsers`.
+   */
   async listLikeUsers(
     commentId: string,
     params?: ListFooterCommentLikeUsersParams,
   ): Promise<CursorPaginatedResponse<FooterCommentLike>> {
-    if (params?.limit !== undefined) validatePageSize(params.limit, 'limit');
+    if (params?.limit !== undefined && (!Number.isInteger(params.limit) || params.limit < 0)) {
+      throw new ValidationError(`limit must be a non-negative integer, got: ${params.limit}`);
+    }
     const query: Record<string, string | number | undefined> = {};
     if (params?.cursor !== undefined) query['cursor'] = params.cursor;
     if (params?.limit !== undefined) query['limit'] = params.limit;
@@ -177,12 +184,18 @@ export class FooterCommentsResource {
     return response.data;
   }
 
-  /** Iterate every like author across all pages. */
+  /**
+   * Iterate every like author across all pages.
+   *
+   * The spec allows `limit=0` for this endpoint (minimum=0).
+   */
   async *listLikeUsersAll(
     commentId: string,
     params?: Omit<ListFooterCommentLikeUsersParams, 'cursor'>,
   ): AsyncGenerator<FooterCommentLike> {
-    if (params?.limit !== undefined) validatePageSize(params.limit, 'limit');
+    if (params?.limit !== undefined && (!Number.isInteger(params.limit) || params.limit < 0)) {
+      throw new ValidationError(`limit must be a non-negative integer, got: ${params.limit}`);
+    }
     const query: Record<string, string | number | boolean | undefined> = {};
     if (params?.limit !== undefined) query['limit'] = params.limit;
     yield* paginateCursor<FooterCommentLike>(

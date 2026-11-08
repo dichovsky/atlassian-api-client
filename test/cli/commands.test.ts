@@ -6434,31 +6434,24 @@ describe('executeConfluenceCommand', () => {
       );
     });
 
-    it('data-policies list-spaces drops --ids that becomes empty after trimming', async () => {
-      // Arrange
-      confluenceDataPoliciesMock.listSpaces.mockResolvedValue({ results: [], _links: {} });
+    it('data-policies list-spaces rejects --ids that becomes empty after trimming', async () => {
+      // Dropping it would send an unfiltered request, like tasks list (nonEmptyFilter).
       const parsed = cmd('data-policies', 'list-spaces', [], { ids: ' , , ' });
 
-      // Act
-      await executeConfluenceCommand(parsed, GLOBALS);
-
-      // Assert
-      expect(confluenceDataPoliciesMock.listSpaces).toHaveBeenCalledWith(
-        expect.objectContaining({ ids: undefined }),
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        '--ids must not be empty',
       );
+      expect(confluenceDataPoliciesMock.listSpaces).not.toHaveBeenCalled();
     });
 
-    it('data-policies list-spaces drops non-numeric --ids and returns undefined', async () => {
-      // parseCsvIntList filters non-finite values; if all entries fail parseInt
-      // the result is undefined (empty-array guard in parseCsvIntList).
-      confluenceDataPoliciesMock.listSpaces.mockResolvedValue({ results: [], _links: {} });
+    it('data-policies list-spaces rejects non-numeric --ids instead of dropping the filter (F043)', async () => {
+      // Dropping `abc` used to send an unfiltered request; it must fail instead.
       const parsed = cmd('data-policies', 'list-spaces', [], { ids: 'abc,def' });
 
-      await executeConfluenceCommand(parsed, GLOBALS);
-
-      expect(confluenceDataPoliciesMock.listSpaces).toHaveBeenCalledWith(
-        expect.objectContaining({ ids: undefined }),
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        '--ids must contain only decimal integer IDs up to 9007199254740991, got: abc',
       );
+      expect(confluenceDataPoliciesMock.listSpaces).not.toHaveBeenCalled();
     });
 
     it('data-policies list-spaces forwards --sort, --limit, and --cursor', async () => {
@@ -6764,10 +6757,12 @@ describe('executeConfluenceCommand', () => {
       });
     });
 
-    it('space-roles list rejects invalid --role-type', async () => {
-      const parsed = cmd('space-roles', 'list', [], { 'role-type': 'bogus' });
-      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
-        '--role-type must be one of: SYSTEM, CUSTOM',
+    it('space-roles list forwards a tenant-defined --role-type (open string in the spec, F068)', async () => {
+      confluenceSpaceRolesMock.list.mockResolvedValue({ results: [], _links: {} });
+      const parsed = cmd('space-roles', 'list', [], { 'role-type': 'TENANT_DEFINED' });
+      await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluenceSpaceRolesMock.list).toHaveBeenCalledWith(
+        expect.objectContaining({ 'role-type': 'TENANT_DEFINED' }),
       );
     });
 
