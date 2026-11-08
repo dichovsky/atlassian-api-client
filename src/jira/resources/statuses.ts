@@ -54,6 +54,9 @@ export interface UpdateStatusData {
   readonly statusCategory: 'TODO' | 'IN_PROGRESS' | 'DONE';
 }
 
+/** Spec `StatusUpdate.statusCategory` enum. */
+const STATUS_UPDATE_CATEGORIES: readonly string[] = ['TODO', 'IN_PROGRESS', 'DONE'];
+
 /**
  * A nested page of usage entries inside the usage-listing DTOs
  * (B780 issueTypeUsages, B781 projectUsages, B782 workflowUsages).
@@ -237,6 +240,11 @@ export class StatusesResource {
             `bulkUpdate statuses[${i}] requires ${key} (spec StatusUpdate)`,
           );
         }
+      }
+      if (!STATUS_UPDATE_CATEGORIES.includes(status.statusCategory)) {
+        throw new ValidationError(
+          `bulkUpdate statuses[${i}].statusCategory must be one of ${STATUS_UPDATE_CATEGORIES.join(', ')}`,
+        );
       }
     });
     await this.transport.request<undefined>({

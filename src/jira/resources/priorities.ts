@@ -8,16 +8,21 @@ import type { Priority } from '../types.js';
 
 /**
  * Request body for POST /rest/api/3/priority. Spec `CreatePriorityDetails`
- * requires `name` and `statusColor`, plus exactly one of `iconUrl` or `avatarId`.
+ * requires `name` and `statusColor`, plus exactly one of `avatarId` or `iconUrl`.
+ * Prefer `avatarId`: Atlassian sunset `iconUrl` on 16 Mar 2025 (CHANGE-1525).
  */
 export interface CreatePriorityData {
   readonly name: string;
   readonly description?: string;
-  /** HTTP(S) icon URL or a built-in path such as `/images/icons/priorities/high.png`. */
+  /**
+   * HTTP(S) icon URL or a built-in path such as `/images/icons/priorities/high.png`.
+   * Sunset on 16 Mar 2025 and replaced by `avatarId` (CHANGE-1525); kept
+   * because the spec schema still accepts it.
+   */
   readonly iconUrl?: string;
   /** Status color in 3- or 6-digit hex, e.g. `#FF0000`. */
   readonly statusColor?: string;
-  /** Avatar ID for the priority; mutually exclusive with `iconUrl`. */
+  /** Avatar ID for the priority (replaces the sunset `iconUrl`); mutually exclusive with it. */
   readonly avatarId?: number;
 }
 
@@ -29,6 +34,7 @@ export interface CreatePriorityData {
 export interface UpdatePriorityData {
   readonly name?: string;
   readonly description?: string;
+  /** Sunset on 16 Mar 2025 and replaced by `avatarId` (CHANGE-1525); prefer `avatarId`. */
   readonly iconUrl?: string;
   readonly statusColor?: string;
   readonly avatarId?: number;
@@ -72,7 +78,10 @@ export interface SearchPrioritiesParams {
   readonly id?: string[];
   /** Filter to priorities used by these project IDs (repeated `projectId=` params). */
   readonly projectId?: string[];
-  /** When true, only the default priority is returned. */
+  /**
+   * When true, only the default priority is returned. Deprecated by Atlassian
+   * and due for removal (CHANGE-1655).
+   */
   readonly onlyDefault?: boolean;
   /** Text to match against priority name. */
   readonly priorityName?: string;

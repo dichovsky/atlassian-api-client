@@ -208,6 +208,19 @@ describe('StatusesResource', () => {
       ).rejects.toThrow(`bulkUpdate statuses[1] requires ${key}`);
       expect(transport.calls).toHaveLength(0);
     });
+
+    it('rejects a statusCategory outside the spec enum before sending', async () => {
+      await expect(
+        statuses.bulkUpdate({
+          statuses: [
+            { id: '1', name: 'N', statusCategory: 'BOGUS' } as unknown as UpdateStatusData,
+          ],
+        }),
+      ).rejects.toThrow(
+        'bulkUpdate statuses[0].statusCategory must be one of TODO, IN_PROGRESS, DONE',
+      );
+      expect(transport.calls).toHaveLength(0);
+    });
   });
 
   // ── getIssueTypeUsages (B780) ─────────────────────────────────────────────

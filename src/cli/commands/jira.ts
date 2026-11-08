@@ -1475,11 +1475,12 @@ async function executeUsers(
         expand: asString(opts['expand']),
       });
     case 'list-search':
-      // GET /users/search declares no filter: `query` was sent but never applied.
+      // GET /users/search declares no filter: `query` was sent but never applied,
+      // and `username` has no spec param either.
       rejectRemovedOptions(
         opts,
         'users list-search',
-        ['query'],
+        ['query', 'user-name'],
         'it lists all users; search by name or email with `users search --query`',
       );
       return client.users.listSearch({

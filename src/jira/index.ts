@@ -133,6 +133,7 @@ export type {
   IssueTypePropertyKeys,
   IssueTypeProperty,
   IssueTypesForProject,
+  ListIssueTypesForProjectParams,
 } from './resources/issuetype.js';
 export { PrioritiesResource } from './resources/priorities.js';
 export { StatusesResource } from './resources/statuses.js';

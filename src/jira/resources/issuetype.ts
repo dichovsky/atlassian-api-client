@@ -70,6 +70,12 @@ export interface IssueTypeProperty {
 /** Mapping of issue types to a single project, as returned by GET /issuetype/project. */
 export type IssueTypesForProject = readonly IssueType[];
 
+/** Query parameters for GET /issuetype/project. */
+export interface ListIssueTypesForProjectParams {
+  /** Hierarchy level filter: `-1` subtask, `0` base, `1` epic. */
+  readonly level?: number;
+}
+
 /** Validate that `value` is a non-empty string; throws `ValidationError` otherwise. */
 function requireNonEmpty(name: string, value: string): void {
   if (typeof value !== 'string' || value.length === 0) {
@@ -225,7 +231,7 @@ export class IssueTypeResource {
    */
   async listForProject(
     projectId: number,
-    params?: { readonly level?: number },
+    params?: ListIssueTypesForProjectParams,
   ): Promise<IssueTypesForProject> {
     if (!Number.isInteger(projectId) || projectId <= 0) {
       throw new ValidationError('projectId must be a positive integer');

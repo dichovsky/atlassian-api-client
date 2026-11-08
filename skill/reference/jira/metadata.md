@@ -10,27 +10,26 @@
 | ------------- | ---------- | ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
 | `list`        | —          | —                                                                | — (deprecated by Atlassian; prefer `search`)                                                            |
 | `get`         | `<id>`     | —                                                                | —                                                                                                       |
-| `create`      | —          | `--name`, `--status-color`, one of `--icon-url` or `--avatar-id` | `--description`                                                                                         |
-| `update`      | `<id>`     | at least one of the optional flags                               | `--name`, `--description`, `--status-color`, `--icon-url` or `--avatar-id`                              |
+| `create`      | —          | `--name`, `--status-color`, one of `--avatar-id` or `--icon-url` | `--description`                                                                                         |
+| `update`      | `<id>`     | at least one of the optional flags                               | `--name`, `--description`, `--status-color`, `--avatar-id` or `--icon-url`                              |
 | `delete`      | `<id>`     | —                                                                | —                                                                                                       |
 | `set-default` | —          | `--id`                                                           | —                                                                                                       |
 | `move`        | —          | `--ids`, one of `--after` or `--position`                        | —                                                                                                       |
 | `search`      | —          | —                                                                | `--ids`, `--project-id`, `--priority-name`, `--only-default`, `--expand`, `--start-at`, `--max-results` |
 
 - `--status-color` is a 3- or 6-digit hex color, e.g. `#F00` or `#FF0000`.
-- `--icon-url` is an HTTP(S) URL or a built-in icon path `/images/icons/priorities/<name>.png`, where `<name>` is one of `blocker`, `critical`, `high`, `highest`, `low`, `lowest`, `major`, `medium`, `minor`, `trivial`, or the same with a `_new` suffix (e.g. `high_new`). `--avatar-id` is a positive integer avatar ID. They are mutually exclusive; `create` needs exactly one (Atlassian plans to make `--avatar-id` mandatory once `iconUrl` is deprecated).
+- Set the icon with `--avatar-id`, a positive integer avatar ID. `--icon-url` was sunset by Atlassian on 16 Mar 2025 and replaced by `avatarId` ([CHANGE-1525](https://developer.atlassian.com/changelog/#CHANGE-1525)); the CLI still sends it because the API schema accepts it, but do not rely on it. Its values are an HTTP(S) URL or `/images/icons/priorities/<name>.png` (`<name>`: `blocker`, `critical`, `high`, `highest`, `low`, `lowest`, `major`, `medium`, `minor`, `trivial`, or the same with `_new`). The two are mutually exclusive; `create` needs exactly one.
 - `update` changes only the fields you pass (the API requires none, but pass at least one).
 - `delete` is asynchronous: Jira accepts it as a task, and the CLI prints `{ "deleted": true }` once Jira accepted it, before the task has necessarily finished. This endpoint takes no replacement priority, so `--replace-with` is rejected; issues are remapped through priority schemes (`priority-schemes`).
 - `move`: `--ids` is comma-separated; place them `--after <id>` or at `--position First|Last` (mutually exclusive).
-- `search`: `--ids` and `--project-id` are comma-separated (sent as repeated `id=` / `projectId=` params); `--project-id` returns the priorities used in those projects. `--priority-name` matches the priority name. `--only-default true|false` returns only the default priority. `--expand schemes` adds the first 15 priority schemes of each priority. Offset-paginated: `--start-at` (0-based), `--max-results`.
+- `search`: `--ids` and `--project-id` are comma-separated (sent as repeated `id=` / `projectId=` params); `--project-id` returns the priorities used in those projects. `--priority-name` matches the priority name. `--only-default true|false` returns only the default priority; Atlassian deprecated it and will remove it ([CHANGE-1655](https://developer.atlassian.com/cloud/jira/platform/changelog/#CHANGE-1655)). `--expand schemes` adds the first 15 priority schemes of each priority. Offset-paginated: `--start-at` (0-based), `--max-results`.
 
 ```sh
 atlas jira issue-types list
 atlas jira issue-types get <id>
 atlas jira priorities list
 atlas jira priorities get <id>
-atlas jira priorities create --name "Critical" --description "Highest urgency" --status-color "#FF0000" --icon-url /images/icons/priorities/critical.png
-atlas jira priorities create --name "Blocker" --status-color "#F00" --avatar-id 10300
+atlas jira priorities create --name "Critical" --description "Highest urgency" --status-color "#FF0000" --avatar-id 10300
 atlas jira priorities update <id> --name "Renamed" --description "Updated description"
 atlas jira priorities update <id> --status-color "#00875A"
 atlas jira priorities delete <id>

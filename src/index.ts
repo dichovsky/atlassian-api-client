@@ -477,6 +477,7 @@ export type {
   UpdateIssueCommentData,
   IssueCommentExpandParams,
   UpdateIssueCommentParams,
+  ListIssueTypesForProjectParams,
   ListLabelsParams as JiraListLabelsParams,
   Board,
   BoardIssue,

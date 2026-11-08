@@ -15,6 +15,7 @@ import type {
   GetUserParams,
   IssueCommentExpandParams,
   JiraClient,
+  ListIssueTypesForProjectParams,
   UpdateIssueCommentParams,
 } from '../../src/index.js';
 import { runCliWire, type CliWireResult, type WireRequest } from '../helpers/cli-wire.js';
@@ -218,6 +219,17 @@ describe('F111 statuses bulk-update entries need id, name and statusCategory', (
     ]);
     expect(run.stderr).toContain('statusCategory');
   });
+
+  it('rejects a statusCategory outside TODO/IN_PROGRESS/DONE before sending', async () => {
+    const run = await rejected([
+      'jira',
+      'statuses',
+      'bulk-update',
+      '--value',
+      '[{"id":"10001","name":"Renamed Status","statusCategory":"BOGUS"}]',
+    ]);
+    expect(run.stderr).toContain('statusCategory must be one of TODO, IN_PROGRESS, DONE');
+  });
 });
 
 describe('F112 priorities create sends a spec-valid body', () => {
@@ -417,6 +429,11 @@ describe('F116/F117 users list / list-search send only spec params', () => {
   it('list-search rejects --query (GET /users/search has no filter)', async () => {
     const run = await rejected(['jira', 'users', 'list-search', '--query', 'Jane']);
     expect(run.stderr).toContain('--query is not supported by users list-search');
+  });
+
+  it('list-search rejects --user-name too (no username param either)', async () => {
+    const run = await rejected(['jira', 'users', 'list-search', '--user-name', 'jane']);
+    expect(run.stderr).toContain('--user-name is not supported by users list-search');
   });
 });
 
@@ -701,6 +718,14 @@ describe('skill examples for these resources run as written', () => {
     expect(rows.length).toBeGreaterThan(100);
   });
 
+  // Spec createPriority / updatePriority: `iconUrl` was sunset on 16 Mar 2025
+  // (CHANGE-1525), so an agent copying the first example must get --avatar-id.
+  it('leads priorities create with --avatar-id, not the sunset --icon-url', () => {
+    const create = rows.find(([label]) => label.startsWith('atlas jira priorities create'));
+    expect(create?.[0]).toContain('--avatar-id');
+    expect(create?.[0]).not.toContain('--icon-url');
+  });
+
   it.each(rows)('%s', async (_label, argv) => {
     const run = await runCliWire(argv.slice(1));
     expect(run.stderr).toBe('');
@@ -721,6 +746,9 @@ describe('new parameter types are exported from the package root', () => {
     >();
     expectTypeOf<UpdateIssueCommentParams>().toEqualTypeOf<
       NonNullable<Parameters<JiraClient['issueComments']['update']>[3]>
+    >();
+    expectTypeOf<ListIssueTypesForProjectParams>().toEqualTypeOf<
+      NonNullable<Parameters<JiraClient['issueType']['listForProject']>[1]>
     >();
   });
 });
