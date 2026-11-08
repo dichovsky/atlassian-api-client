@@ -2460,7 +2460,7 @@ describe('executeConfluenceCommand', () => {
       await executeConfluenceCommand(parsed, GLOBALS);
       expect(confluencePagesMock.listFooterComments).toHaveBeenCalledWith('p-1', {
         'body-format': 'storage',
-        status: 'current',
+        status: ['current'],
         sort: '-created-date',
         cursor: 'c1',
         limit: 20,
@@ -2511,8 +2511,8 @@ describe('executeConfluenceCommand', () => {
       await executeConfluenceCommand(parsed, GLOBALS);
       expect(confluencePagesMock.listInlineComments).toHaveBeenCalledWith('p-1', {
         'body-format': 'storage',
-        status: 'current',
-        'resolution-status': 'open',
+        status: ['current'],
+        'resolution-status': ['open'],
         sort: '-created-date',
         cursor: 'c2',
         limit: 15,
@@ -3002,16 +3002,26 @@ describe('executeConfluenceCommand', () => {
     });
 
     // ── space properties (B209-B213) ────────────────────────────────────────
-    it('spaces list-properties passes key + sort', async () => {
+    it('spaces list-properties passes key + limit', async () => {
       confluenceSpacesMock.listProperties.mockResolvedValue({ results: [] });
       await executeConfluenceCommand(
-        cmd('spaces', 'list-properties', ['SP-1'], { key: 'k', sort: 'key', limit: '5' }),
+        cmd('spaces', 'list-properties', ['SP-1'], { key: 'k', limit: '5' }),
         GLOBALS,
       );
       expect(confluenceSpacesMock.listProperties).toHaveBeenCalledWith(
         'SP-1',
-        expect.objectContaining({ key: 'k', sort: 'key', limit: 5 }),
+        expect.objectContaining({ key: 'k', limit: 5 }),
       );
+    });
+
+    it('spaces list-properties rejects --sort (not defined by the spec)', async () => {
+      await expect(
+        executeConfluenceCommand(
+          cmd('spaces', 'list-properties', ['SP-1'], { sort: 'key' }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--sort is not supported by spaces list-properties');
+      expect(confluenceSpacesMock.listProperties).not.toHaveBeenCalled();
     });
 
     it('spaces create-property parses JSON --value', async () => {
@@ -3198,7 +3208,7 @@ describe('executeConfluenceCommand', () => {
         expect.objectContaining({
           cursor: 'tok-next',
           title: 'My Post',
-          status: 'current',
+          status: ['current'],
           sort: '-created-date',
           'body-format': 'storage',
         }),
@@ -3639,7 +3649,9 @@ describe('executeConfluenceCommand', () => {
         cmd('blog-posts', 'reset-classification-level', ['bp-1']),
         GLOBALS,
       );
-      expect(confluenceBlogPostsMock.resetClassificationLevel).toHaveBeenCalledWith('bp-1');
+      expect(confluenceBlogPostsMock.resetClassificationLevel).toHaveBeenCalledWith('bp-1', {
+        status: 'current',
+      });
       expect(result).toEqual({ reset: true });
     });
 
@@ -3677,7 +3689,7 @@ describe('executeConfluenceCommand', () => {
       await executeConfluenceCommand(parsed, GLOBALS);
       expect(confluenceBlogPostsMock.listFooterComments).toHaveBeenCalledWith(
         'bp-1',
-        expect.objectContaining({ status: 'current', sort: '-created-date' }),
+        expect.objectContaining({ status: ['current'], sort: '-created-date' }),
       );
     });
 
@@ -3689,7 +3701,7 @@ describe('executeConfluenceCommand', () => {
       await executeConfluenceCommand(parsed, GLOBALS);
       expect(confluenceBlogPostsMock.listInlineComments).toHaveBeenCalledWith(
         'bp-1',
-        expect.objectContaining({ 'resolution-status': 'open' }),
+        expect.objectContaining({ 'resolution-status': ['open'] }),
       );
     });
 
@@ -3939,7 +3951,7 @@ describe('executeConfluenceCommand', () => {
       >;
       expect(arg).toMatchObject({
         'body-format': 'atlas_doc_format',
-        status: 'current',
+        status: ['current'],
         sort: '-modified-date',
       });
     });
@@ -4000,7 +4012,7 @@ describe('executeConfluenceCommand', () => {
       const result = await executeConfluenceCommand(cmd('comments', 'get', ['c-1']), GLOBALS);
 
       // Assert
-      expect(confluenceCommentsMock.getFooter).toHaveBeenCalledWith('c-1');
+      expect(confluenceCommentsMock.getFooter).toHaveBeenCalledWith('c-1', expect.any(Object));
       expect(result).toEqual({ id: 'c-1' });
     });
 
@@ -4013,7 +4025,7 @@ describe('executeConfluenceCommand', () => {
       await executeConfluenceCommand(parsed, GLOBALS);
 
       // Assert
-      expect(confluenceCommentsMock.getInline).toHaveBeenCalledWith('c-1');
+      expect(confluenceCommentsMock.getInline).toHaveBeenCalledWith('c-1', expect.any(Object));
     });
 
     it('comments get throws when comment ID is missing', async () => {
@@ -5196,8 +5208,8 @@ describe('executeConfluenceCommand', () => {
       });
       await executeConfluenceCommand(parsed, GLOBALS);
       expect(confluenceLabelsMock.list).toHaveBeenCalledWith({
-        'label-id': '10,20',
-        prefix: 'global,team',
+        'label-id': ['10', '20'],
+        prefix: ['global', 'team'],
         sort: '-name',
         limit: 40,
         cursor: 'tok',
@@ -5272,7 +5284,7 @@ describe('executeConfluenceCommand', () => {
       });
       await executeConfluenceCommand(parsed, GLOBALS);
       expect(confluenceLabelsMock.listBlogPosts).toHaveBeenCalledWith('lbl-1', {
-        'space-id': '100,200',
+        'space-id': ['100', '200'],
         'body-format': 'atlas_doc_format',
         sort: '-id',
         limit: 15,
@@ -5317,7 +5329,7 @@ describe('executeConfluenceCommand', () => {
       });
       await executeConfluenceCommand(parsed, GLOBALS);
       expect(confluenceLabelsMock.listPages).toHaveBeenCalledWith('lbl-1', {
-        'space-id': '100',
+        'space-id': ['100'],
         sort: '-title',
         limit: 25,
         cursor: 'cur',
@@ -5370,14 +5382,14 @@ describe('executeConfluenceCommand', () => {
     it('labels list-for-space forwards prefix, sort, limit, cursor', async () => {
       confluenceLabelsMock.listForSpace.mockResolvedValue({ results: [] });
       const parsed = cmd('labels', 'list-for-space', ['sp-1'], {
-        prefix: 'global',
+        prefix: 'team',
         sort: '-name',
         limit: '30',
         cursor: 'c1',
       });
       await executeConfluenceCommand(parsed, GLOBALS);
       expect(confluenceLabelsMock.listForSpace).toHaveBeenCalledWith('sp-1', {
-        prefix: 'global',
+        prefix: 'team',
         sort: '-name',
         limit: 30,
         cursor: 'c1',
@@ -5792,7 +5804,7 @@ describe('executeConfluenceCommand', () => {
       >;
       expect(args).toMatchObject({
         type: 'ai.atlassian.collection',
-        'space-id': 'sp-1',
+        'space-id': ['sp-1'],
         sort: 'created-date',
         limit: 25,
       });
@@ -5821,7 +5833,7 @@ describe('executeConfluenceCommand', () => {
     it('custom-content list with --body-format forwards the flag', async () => {
       confluenceCustomContentMock.list.mockResolvedValue({ results: [], _links: {} });
       await executeConfluenceCommand(
-        cmd('custom-content', 'list', [], { 'body-format': 'storage' }),
+        cmd('custom-content', 'list', [], { type: 'ai.x', 'body-format': 'storage' }),
         GLOBALS,
       );
       const args = confluenceCustomContentMock.list.mock.calls.at(-1)?.[0] as Record<
