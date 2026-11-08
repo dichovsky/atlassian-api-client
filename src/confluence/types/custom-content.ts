@@ -74,9 +74,12 @@ export interface CustomContent {
  * from the spec produces empty results instead of an error.
  */
 export interface ListCustomContentParams {
+  /** Custom-content type key. Required by the spec; `list`/`listAll` throw without it. */
   readonly type?: string;
-  readonly id?: string;
-  readonly 'space-id'?: string;
+  /** Filter by id(s). Spec `type: array` — sent as repeated `id` params. */
+  readonly id?: string | readonly (string | number)[];
+  /** Filter by space id(s). Spec `type: array` — sent as repeated `space-id` params. */
+  readonly 'space-id'?: string | readonly (string | number)[];
   readonly sort?: CustomContentSortOrder;
   readonly 'body-format'?: CustomContentBodyRepresentation;
   readonly cursor?: string;
