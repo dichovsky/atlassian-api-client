@@ -28382,7 +28382,7 @@ describe('executeJiraCommand', () => {
     describe('create', () => {
       it('calls createWithCustomTemplate with template JSON and scalar flags', async () => {
         jiraProjectTemplateMock.createWithCustomTemplate.mockResolvedValue(undefined);
-        const template = JSON.stringify({ project: { projectType: 'software' } });
+        const template = JSON.stringify({ project: { projectTypeKey: 'software' } });
         await executeJiraCommand(
           cmd('project-template', 'create', [], {
             template,
@@ -28416,7 +28416,7 @@ describe('executeJiraCommand', () => {
             enableComponents: true,
             additionalProperties: { foo: 'bar' },
           },
-          template: { project: { projectType: 'software' } },
+          template: { project: { projectTypeKey: 'software' } },
         });
       });
 

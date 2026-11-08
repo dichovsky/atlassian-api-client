@@ -2,9 +2,10 @@
  * Release 4.1.0, unit jira-schemes: CLI → wire regressions for
  * issue-type-schemes, notification-schemes, resolutions, roles, expression,
  * version, config, issuesecurityschemes, screens, screenscheme, plans and
- * project-template. Every command is built from the skill text in
- * `skill/reference/jira/*.md` and driven through real argv with
- * {@link runCliWire}, so parsing, the client and the transport all run.
+ * project-template. Commands follow the documented shapes in
+ * `skill/reference/jira/*.md` (some tests also check that the example appears
+ * in the skill) and run through real argv with {@link runCliWire}, so parsing,
+ * the client and the transport all run.
  */
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -495,6 +496,31 @@ describe('issuesecurityschemes', () => {
     const section = skillSection('schemes.md', 'issuesecurityschemes');
     expect(section).toContain('projectrole');
     expect(section).toContain('applicationRole');
+  });
+
+  it('add-levels and create --levels send the skill example levels (F219)', async () => {
+    const section = skillSection('schemes.md', 'issuesecurityschemes');
+    const addLevels = '[{"name":"Public","isDefault":true}]';
+    const createLevels =
+      '[{"name":"Staff","isDefault":true,"members":[{"type":"reporter"},{"type":"group","parameter":"jira-administrators"}]}]';
+    expect(section).toContain(`add-levels 10001 --levels '${addLevels}'`);
+    expect(section).toContain(`create --name "Restricted" --levels '${createLevels}'`);
+
+    const add = await onlyRequest(
+      ['jira', 'issuesecurityschemes', 'add-levels', '10001', '--levels', addLevels],
+      { status: 204 },
+    );
+    expect(add.req.method).toBe('PUT');
+    expect(add.req.path).toBe(`${JIRA}/issuesecurityschemes/10001/level`);
+    expect(add.req.body).toEqual({ levels: JSON.parse(addLevels) });
+
+    const create = await onlyRequest(
+      ['jira', 'issuesecurityschemes', 'create', '--name', 'Restricted', '--levels', createLevels],
+      { status: 201, body: { id: '10002' } },
+    );
+    expect(create.req.method).toBe('POST');
+    expect(create.req.path).toBe(`${JIRA}/issuesecurityschemes`);
+    expect(create.req.body).toEqual({ name: 'Restricted', levels: JSON.parse(createLevels) });
   });
 
   it('associate-to-project --scheme-id null clears the association (F229)', async () => {
