@@ -89,7 +89,7 @@ export function isNetworkError(error: unknown): boolean {
  *   blocked port        TypeError: fetch failed  cause 'bad port', no code
  *   Expect header       TypeError: fetch failed  cause.code UND_ERR_NOT_SUPPORTED
  *   Upgrade header      TypeError: fetch failed  cause.code UND_ERR_INVALID_ARG
- *   wrong Content-Length TypeError: fetch failed cause.code UND_ERR_REQ_CONTENT_LENGTH_MISMATCH
+ *   bad Content-Length  TypeError: fetch failed  cause.code UND_ERR_REQ_CONTENT_LENGTH_MISMATCH
  *
  * So a coded cause is a transport failure (an expired certificate included,
  * though retrying it is pointless). An argument error, which never reached the

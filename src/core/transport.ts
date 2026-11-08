@@ -301,6 +301,11 @@ export class HttpTransport implements Transport {
     // it (an issue, a comment, a page). PUT/DELETE are idempotent on paper, but
     // a replay meets a version conflict or a 404 for work that already succeeded.
     const replayable = options.method === 'GET';
+    // B011: the server-assigned request id is read from these response headers.
+    // Always-on with no config required. Prefer X-AREQUESTID (Atlassian's
+    // actual header), then fall back to X-Request-Id. The list is configurable
+    // via config.requestId.readResponseHeaders.
+    const readHeaders = this.config.requestId?.readResponseHeaders ?? DEFAULT_INBOUND_HEADERS;
 
     try {
       try {
@@ -309,6 +314,7 @@ export class HttpTransport implements Transport {
           url,
           { method: options.method, headers, body, signal: fetchSignal },
           this.config.allowedHosts,
+          readHeaders,
         );
       } catch (error) {
         if (error instanceof Error && error.name === 'AbortError') {
@@ -317,6 +323,8 @@ export class HttpTransport implements Transport {
           }
           throw error;
         }
+        // Already classified by fetchWithCheckedRedirects (the GET after a write).
+        if (error instanceof NetworkError) throw error;
         if (isTransportFailure(error)) {
           // A headers timeout fires after the whole request was sent, so the
           // server may be applying a write: only a GET is sent again.
@@ -328,11 +336,6 @@ export class HttpTransport implements Transport {
         throw error;
       }
 
-      // B011: capture the server-assigned request id from the response headers.
-      // Always-on with no config required. Prefer X-AREQUESTID (Atlassian's
-      // actual header), then fall back to X-Request-Id. The list is configurable
-      // via config.requestId.readResponseHeaders.
-      const readHeaders = this.config.requestId?.readResponseHeaders ?? DEFAULT_INBOUND_HEADERS;
       const serverRequestId = captureRequestId(response.headers, readHeaders);
 
       if (!response.ok) {
@@ -533,24 +536,35 @@ interface OutgoingRequest {
  * past the hop limit, or that has no `Location`, is returned as the response,
  * so the caller sees it as an `HttpError`.
  *
- * A refused redirect that would have replayed the body (307/308) throws the
- * {@link ValidationError} from {@link resolveRedirectTarget}: the server asked
- * for the request again, so nothing was applied. A refused redirect that drops
- * the body throws an `HttpError` with the 3xx status instead, because by then
- * the server has accepted the write and a resend could apply it twice. Nothing
- * is sent to the refused target in either case.
+ * A refused redirect that would have replayed the body (a 307/308, or a
+ * 301/302 on a method other than POST) throws the {@link ValidationError} from
+ * {@link resolveRedirectTarget}: the server asked for the request again, so
+ * nothing was applied. A refused redirect that drops the body throws an
+ * `HttpError` with the 3xx status and its request id instead, because the
+ * server may already have applied the write and a resend could apply it twice.
+ * Nothing is sent to the refused target in either case. For the same reason a
+ * transport failure on the GET that follows an accepted body-dropping redirect
+ * is a {@link NetworkError} that is not retried.
  */
 async function fetchWithCheckedRedirects(
   doFetch: typeof fetch,
   url: string,
   request: OutgoingRequest,
   allowedHosts: readonly string[],
+  requestIdHeaders: readonly string[],
 ): Promise<Response> {
   let target = url;
   let current = request;
   for (let hops = 0; ; hops++) {
     if (current.method === 'GET') {
-      return doFetch(target, { ...current, redirect: 'follow' });
+      if (current === request) return doFetch(target, { ...current, redirect: 'follow' });
+      try {
+        return await doFetch(target, { ...current, redirect: 'follow' });
+      } catch (error) {
+        // This GET follows a write the server may already have applied, so a
+        // transport failure here must not send the write again.
+        throw isTransportFailure(error) ? toNetworkError(error, false) : error;
+      }
     }
     const response = await doFetch(target, { ...current, redirect: 'manual' });
     const location = response.headers.get('location');
@@ -567,12 +581,14 @@ async function fetchWithCheckedRedirects(
     } catch (error) {
       if (!becomesGet) throw error;
       throw new HttpError(
-        `The server accepted the ${current.method} request and answered ${response.status} with ` +
-          `a redirect this client will not follow, so do not send it again: ` +
-          `${(error as Error).message}`,
+        `The server answered the ${current.method} request with a ${response.status} redirect ` +
+          `this client will not follow. It may already have applied it, so do not send it ` +
+          `again: ${(error as Error).message}`,
         response.status,
         undefined,
         { cause: error },
+        undefined,
+        captureRequestId(response.headers, requestIdHeaders),
       );
     }
     if (becomesGet) {

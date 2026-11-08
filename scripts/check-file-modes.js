@@ -2,7 +2,9 @@
 
 import { execFileSync } from 'node:child_process';
 import { realpathSync } from 'node:fs';
-import { pathToFileURL } from 'node:url';
+import { createRequire } from 'node:module';
+import { resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const EXECUTABLE_ALLOWLIST = new Set([]);
 
@@ -74,8 +76,10 @@ export function main(readListing, io) {
 
 /**
  * Whether node is running `scriptPath` as this module, rather than a test
- * importing it. Compares real paths, so a symlinked checkout still runs the
- * check instead of exiting 0 without doing anything.
+ * importing it. `scriptPath` is resolved the way node resolves its entry point,
+ * so `node scripts/name` finds `name.js`, and both sides are compared by real
+ * path, so neither a symlinked checkout nor `--preserve-symlinks-main` makes
+ * the check exit 0 without running.
  *
  * @param {string} moduleUrl - `import.meta.url` of the module.
  * @param {string | undefined} scriptPath - `process.argv[1]`.
@@ -83,7 +87,8 @@ export function main(readListing, io) {
  */
 export function isEntryPoint(moduleUrl, scriptPath) {
   try {
-    return moduleUrl === pathToFileURL(realpathSync(scriptPath)).href;
+    const entry = createRequire(moduleUrl).resolve(resolve(scriptPath));
+    return realpathSync(entry) === realpathSync(fileURLToPath(moduleUrl));
   } catch {
     return false;
   }

@@ -3,7 +3,7 @@
  * in-process so coverage and lint see them. The subprocess tests in
  * validate-release-tag.test.ts and check-file-modes.test.ts still pin the CLI.
  */
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import { mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
@@ -343,5 +343,48 @@ describe.each([
     expect(isEntryPoint(url, VALIDATOR === script ? CHECKER : VALIDATOR)).toBe(false);
     expect(isEntryPoint(url, join(tmpdir(), 'does-not-exist.js'))).toBe(false);
     expect(isEntryPoint(url, undefined)).toBe(false);
+    // `node scripts/x` (node adds the .js) and --preserve-symlinks-main (the
+    // module keeps the symlink's URL) both run the script.
+    expect(isEntryPoint(url, script.replace(/\.js$/, ''))).toBe(true);
+    expect(isEntryPoint(pathToFileURL(link).href, link)).toBe(true);
+    expect(isEntryPoint(pathToFileURL(link).href, script)).toBe(true);
+  });
+
+  /** A git repo with a tracked executable and no manifests: both scripts must fail in it. */
+  function failingRepo(): string {
+    const repo = mkdtempSync(join(tmpdir(), 'entry-run-'));
+    tempDirs.push(repo);
+    execFileSync('git', ['init', '--quiet'], { cwd: repo });
+    writeFileSync(join(repo, 'run.sh'), '#!/bin/sh\n');
+    execFileSync('git', ['add', 'run.sh'], { cwd: repo });
+    execFileSync('git', ['update-index', '--chmod=+x', '--', 'run.sh'], { cwd: repo });
+    return repo;
+  }
+
+  it.each<[string, (link: string) => string[], NodeJS.ProcessEnv]>([
+    ['without its .js extension', () => [script.replace(/\.js$/, '')], {}],
+    [
+      'through a symlink under --preserve-symlinks-main',
+      (link) => ['--preserve-symlinks-main', link],
+      {},
+    ],
+    [
+      'through a symlink with --preserve-symlinks-main in NODE_OPTIONS',
+      (link) => [link],
+      { NODE_OPTIONS: `${process.env.NODE_OPTIONS ?? ''} --preserve-symlinks-main` },
+    ],
+  ])('still runs the check when node is given the script %s', (_label, nodeArgs, env) => {
+    const repo = failingRepo();
+    const link = join(repo, 'linked.js');
+    symlinkSync(script, link);
+
+    const result = spawnSync(process.execPath, [...nodeArgs(link), 'v9.9.9'], {
+      cwd: repo,
+      encoding: 'utf8',
+      env: { ...process.env, ...env },
+    });
+
+    expect(result.stderr).toMatch(/^(Release validation|File mode check) failed: /);
+    expect(result.status).toBe(1);
   });
 });

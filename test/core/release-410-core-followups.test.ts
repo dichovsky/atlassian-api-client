@@ -159,7 +159,8 @@ describe('a write answered with a body-dropping redirect the client will not fol
     expect(error).toBeInstanceOf(HttpError);
     expect(error).not.toBeInstanceOf(ValidationError);
     expect((error as HttpError).status).toBe(303);
-    expect((error as HttpError).message).toMatch(/accepted the DELETE/);
+    expect((error as HttpError).message).toMatch(/answered the DELETE request/);
+    expect((error as HttpError).message).toMatch(/may already have applied it/);
     expect((error as HttpError).message).toMatch(/do not send it again/);
     expect((error as HttpError).message).toContain('foreign.example');
     expect(((error as HttpError).cause as Error).name).toBe('ValidationError');
@@ -174,7 +175,7 @@ describe('a write answered with a body-dropping redirect the client will not fol
 
     expect(error).toBeInstanceOf(HttpError);
     expect((error as HttpError).status).toBe(302);
-    expect((error as HttpError).message).toMatch(/accepted the POST/);
+    expect((error as HttpError).message).toMatch(/answered the POST request/);
     expect(tenant.hits).toHaveLength(1);
     expect(tenant.hits[0]?.body).toContain('confidential');
     expect(foreign.hits).toHaveLength(0);
@@ -195,8 +196,26 @@ describe('a write answered with a body-dropping redirect the client will not fol
 
     expect(error).toBeInstanceOf(HttpError);
     expect((error as HttpError).status).toBe(303);
-    expect((error as HttpError).message).toMatch(/accepted the PUT/);
+    expect((error as HttpError).message).toMatch(/answered the PUT request/);
     expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('carries the request id of the refused redirect, so the caller can ask whether the write applied', async () => {
+    const fetchMock = vi.fn(() =>
+      Promise.resolve(
+        new Response(null, {
+          status: 303,
+          headers: { location: `${FOREIGN}/x`, 'x-arequestid': 'req-303' },
+        }),
+      ),
+    );
+
+    const error = await transport(fetchMock as typeof fetch)
+      .request({ method: 'POST', path: '/rest/api/3/x', body: { a: 1 } })
+      .catch((e: unknown) => e);
+
+    expect(error).toBeInstanceOf(HttpError);
+    expect((error as HttpError).requestId).toBe('req-303');
   });
 
   it('still refuses a 307 off-host with a ValidationError: nothing was applied, the body would be replayed', async () => {
@@ -210,6 +229,82 @@ describe('a write answered with a body-dropping redirect the client will not fol
 
     expect(error).toBeInstanceOf(ValidationError);
     expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// A write redirected to a GET that then fails at the transport (#375 review)
+// ---------------------------------------------------------------------------
+
+describe('a write whose followed body-dropping redirect fails at the transport', () => {
+  let tenant: TestServer;
+
+  beforeAll(async () => {
+    tenant = await startServer((hit, res) => {
+      if (hit.method === 'GET') {
+        res.socket?.destroy();
+        return;
+      }
+      res.writeHead(303, { location: `${TENANT}/rest/api/3/task/1` });
+      res.end();
+    });
+  });
+  afterAll(() => tenant.close());
+  beforeEach(() => {
+    tenant.hits.splice(0);
+  });
+
+  it('sends the write once when the socket dies on the follow-up GET', async () => {
+    const error = await jira(routeTo({ [TENANT]: tenant.port }), 2)
+      .issues.create({ fields: { summary: 'once' } })
+      .catch((e: unknown) => e);
+
+    expect(error).toBeInstanceOf(NetworkError);
+    expect((error as NetworkError).retryable).toBe(false);
+    expect(tenant.hits.map((h) => h.method)).toEqual(['POST', 'GET']);
+  });
+
+  it.each<[number, string, string]>([
+    [303, 'POST', 'ECONNRESET'],
+    [303, 'PUT', 'ECONNREFUSED'],
+    [303, 'DELETE', 'UND_ERR_SOCKET'],
+    [301, 'POST', 'UND_ERR_CONNECT_TIMEOUT'],
+    [302, 'POST', 'UND_ERR_HEADERS_TIMEOUT'],
+  ])('does not resend a %i-redirected %s whose GET fails with %s', async (status, method, code) => {
+    const fetchMock = vi.fn((_url: string, init: RequestInit) =>
+      init.method === 'GET'
+        ? Promise.reject(new TypeError('fetch failed', { cause: { code } }))
+        : Promise.resolve(
+            new Response(null, { status, headers: { location: `${TENANT}/rest/api/3/task/1` } }),
+          ),
+    );
+
+    const error = await transport(fetchMock as unknown as typeof fetch)
+      .request({ method: method as 'POST', path: '/rest/api/3/x', body: { a: 1 } })
+      .catch((e: unknown) => e);
+
+    expect(error).toBeInstanceOf(NetworkError);
+    expect((error as NetworkError).retryable).toBe(false);
+    expect(((error as NetworkError).cause as TypeError).message).toBe('fetch failed');
+    expect(fetchMock.mock.calls.map(([, init]) => init.method)).toEqual([method, 'GET']);
+  });
+
+  it('leaves an argument error on the follow-up GET a raw TypeError', async () => {
+    const bug = new TypeError('fetch failed', { cause: { code: 'UND_ERR_INVALID_ARG' } });
+    const fetchMock = vi.fn((_url: string, init: RequestInit) =>
+      init.method === 'GET'
+        ? Promise.reject(bug)
+        : Promise.resolve(
+            new Response(null, { status: 303, headers: { location: `${TENANT}/t` } }),
+          ),
+    );
+
+    const error = await transport(fetchMock as unknown as typeof fetch)
+      .request({ method: 'POST', path: '/x', body: {} })
+      .catch((e: unknown) => e);
+
+    expect(error).toBe(bug);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 });
 
