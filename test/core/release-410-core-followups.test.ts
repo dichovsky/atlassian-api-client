@@ -309,6 +309,80 @@ describe('a write whose followed body-dropping redirect fails at the transport',
 });
 
 // ---------------------------------------------------------------------------
+// A write redirected to a GET that then answers 5xx or 429 (#375 review, round 2)
+// ---------------------------------------------------------------------------
+
+describe('a write whose followed body-dropping redirect answers a retryable status', () => {
+  let tenant: TestServer;
+
+  beforeAll(async () => {
+    tenant = await startServer((hit, res) => {
+      if (hit.method === 'GET') {
+        res.writeHead(503, { 'content-type': 'application/json' });
+        res.end('{"errorMessages":["busy"]}');
+        return;
+      }
+      res.writeHead(303, { location: `${TENANT}/rest/api/3/task/1` });
+      res.end();
+    });
+  });
+  afterAll(() => tenant.close());
+  beforeEach(() => {
+    tenant.hits.splice(0);
+  });
+
+  it('sends an async project delete once when its task GET answers 503', async () => {
+    const error = await jira(routeTo({ [TENANT]: tenant.port }), 2)
+      .projects.deleteAsync('PROJ')
+      .catch((e: unknown) => e);
+
+    expect(error).toBeInstanceOf(HttpError);
+    expect((error as HttpError).status).toBe(503);
+    expect(tenant.hits.map((h) => `${h.method} ${h.url}`)).toEqual([
+      'POST /rest/api/3/project/PROJ/delete',
+      'GET /rest/api/3/task/1',
+    ]);
+  });
+
+  it.each<[number, string, number]>([
+    [303, 'POST', 503],
+    [303, 'PUT', 500],
+    [303, 'DELETE', 502],
+    [301, 'POST', 504],
+    [302, 'POST', 429],
+  ])(
+    'does not resend a %i-redirected %s whose GET answers %i',
+    async (status, method, getStatus) => {
+      const fetchMock = vi.fn((_url: string, init: RequestInit) =>
+        Promise.resolve(
+          init.method === 'GET'
+            ? new Response(null, { status: getStatus, headers: { 'retry-after': '0' } })
+            : new Response(null, { status, headers: { location: `${TENANT}/rest/api/3/task/1` } }),
+        ),
+      );
+
+      const error = await transport(fetchMock as unknown as typeof fetch)
+        .request({ method: method as 'POST', path: '/rest/api/3/x', body: { a: 1 } })
+        .catch((e: unknown) => e);
+
+      expect(error).toBeInstanceOf(HttpError);
+      expect((error as HttpError).status).toBe(getStatus);
+      expect(fetchMock.mock.calls.map(([, init]) => init.method)).toEqual([method, 'GET']);
+    },
+  );
+
+  it('still retries a plain GET that answers 503', async () => {
+    const fetchMock = vi.fn(() => Promise.resolve(new Response(null, { status: 503 })));
+
+    await transport(fetchMock as typeof fetch)
+      .request({ method: 'GET', path: '/rest/api/3/x' })
+      .catch((e: unknown) => e);
+
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+  });
+});
+
+// ---------------------------------------------------------------------------
 // F352 — undici's argument errors are caller bugs, not an unhealthy upstream
 // ---------------------------------------------------------------------------
 

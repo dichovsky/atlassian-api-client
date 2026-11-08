@@ -112,6 +112,19 @@ export function isHeadersTimeout(error: unknown): boolean {
   return hasCode(error, (code) => code === 'UND_ERR_HEADERS_TIMEOUT');
 }
 
+/** Errors {@link executeWithRetry} must not retry whatever their type or status. */
+const NOT_RETRYABLE = new WeakSet<object>();
+
+/**
+ * Mark `error` so {@link executeWithRetry} throws it instead of running the
+ * operation again: the transport uses this for an error status on the GET a
+ * write was redirected to, because a retry would send the write again.
+ */
+export function notRetryable<T extends object>(error: T): T {
+  NOT_RETRYABLE.add(error);
+  return error;
+}
+
 /** Walk the error + `cause` chain for a string system `code` that `accept` matches. */
 function hasCode(error: unknown, accept: (code: string) => boolean): boolean {
   let curr = error;
@@ -159,6 +172,9 @@ export interface RetryConfig {
  *   timed out after it was sent in full).
  * - {@link HttpError} is retried only when {@link isRetryableStatus} matches.
  * - {@link TimeoutError} and all other errors are not retried.
+ * - None of these is retried when the transport answers a write that was
+ *   redirected to a GET (a 303, or a 301/302 on POST) and that GET fails: the
+ *   server may already have applied the write, and a retry would send it again.
  *
  * The retry loop sits OUTSIDE the middleware chain in {@link HttpTransport}, so
  * retryable errors thrown by middleware (e.g. OAuth refresh failures returning
@@ -193,6 +209,8 @@ export async function executeWithRetry<T>(
 
 function shouldRetry(error: unknown, attempt: number, retries: number): boolean {
   if (attempt >= retries) return false;
+
+  if (typeof error === 'object' && error !== null && NOT_RETRYABLE.has(error)) return false;
 
   // An open circuit breaker should never be retried — the downstream is
   // presumed unhealthy. Spinning through retry attempts would only delay the

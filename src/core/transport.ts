@@ -10,7 +10,13 @@ import {
   NetworkError,
   ValidationError,
 } from './errors.js';
-import { executeWithRetry, isHeadersTimeout, isNetworkError, isTransportFailure } from './retry.js';
+import {
+  executeWithRetry,
+  isHeadersTimeout,
+  isNetworkError,
+  isTransportFailure,
+  notRetryable,
+} from './retry.js';
 import { createMiddlewareChain } from './middleware.js';
 import { getRetryAfterMs, parseRateLimitHeaders } from './rate-limiter.js';
 import {
@@ -295,6 +301,7 @@ export class HttpTransport implements Transport {
     const fetchSignal = signals.length === 1 ? signals[0] : AbortSignal.any(signals);
 
     let response: Response;
+    let redirectedWrite: boolean;
     const doFetch = this.config.fetch ?? fetch;
     // Once a status line has arrived, only a GET may be sent again: a write the
     // server answered with a success has committed, and resending it duplicates
@@ -309,13 +316,13 @@ export class HttpTransport implements Transport {
 
     try {
       try {
-        response = await fetchWithCheckedRedirects(
+        ({ response, redirectedWrite } = await fetchWithCheckedRedirects(
           doFetch,
           url,
           { method: options.method, headers, body, signal: fetchSignal },
           this.config.allowedHosts,
           readHeaders,
-        );
+        ));
       } catch (error) {
         if (error instanceof Error && error.name === 'AbortError') {
           if (timeoutController.signal.aborted) {
@@ -362,7 +369,10 @@ export class HttpTransport implements Transport {
         );
         const retryAfterMs = getRetryAfterMs(response.headers);
         const retryAfterSeconds = retryAfterMs !== undefined ? retryAfterMs / 1000 : undefined;
-        throw createHttpError(response.status, errBody, retryAfterSeconds, serverRequestId);
+        const error = createHttpError(response.status, errBody, retryAfterSeconds, serverRequestId);
+        // This status answers the GET a write was redirected to, not the write:
+        // the server may have applied it, so a retry must not send it again.
+        throw redirectedWrite ? notRetryable(error) : error;
       }
 
       const data: unknown = await parseBodyWithTimeoutHandling(
@@ -544,7 +554,9 @@ interface OutgoingRequest {
  * server may already have applied the write and a resend could apply it twice.
  * Nothing is sent to the refused target in either case. For the same reason a
  * transport failure on the GET that follows an accepted body-dropping redirect
- * is a {@link NetworkError} that is not retried.
+ * is a {@link NetworkError} that is not retried, and `redirectedWrite` tells the
+ * caller that the response answers that GET, so its error status is not
+ * retried either.
  */
 async function fetchWithCheckedRedirects(
   doFetch: typeof fetch,
@@ -552,14 +564,22 @@ async function fetchWithCheckedRedirects(
   request: OutgoingRequest,
   allowedHosts: readonly string[],
   requestIdHeaders: readonly string[],
-): Promise<Response> {
+): Promise<{ readonly response: Response; readonly redirectedWrite: boolean }> {
   let target = url;
   let current = request;
   for (let hops = 0; ; hops++) {
     if (current.method === 'GET') {
-      if (current === request) return doFetch(target, { ...current, redirect: 'follow' });
+      if (current === request) {
+        return {
+          response: await doFetch(target, { ...current, redirect: 'follow' }),
+          redirectedWrite: false,
+        };
+      }
       try {
-        return await doFetch(target, { ...current, redirect: 'follow' });
+        return {
+          response: await doFetch(target, { ...current, redirect: 'follow' }),
+          redirectedWrite: true,
+        };
       } catch (error) {
         // This GET follows a write the server may already have applied, so a
         // transport failure here must not send the write again.
@@ -569,7 +589,7 @@ async function fetchWithCheckedRedirects(
     const response = await doFetch(target, { ...current, redirect: 'manual' });
     const location = response.headers.get('location');
     if (!REDIRECT_STATUSES.has(response.status) || location === null || hops === MAX_REDIRECTS) {
-      return response;
+      return { response, redirectedWrite: false };
     }
     // Release the connection before the target check, which may throw.
     await cancelBodyQuietly(response.body);
