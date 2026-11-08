@@ -62,6 +62,22 @@ describe('F295: Jira search guidance targets the current /search/jql endpoint', 
     }
   });
 
+  it('every documented searchJqlPost call requests `fields` (the endpoint returns ids only by default)', () => {
+    const sources: [string, string][] = [
+      ['README.md', README],
+      ['examples/jira-basic.ts', read('examples', 'jira-basic.ts')],
+      ['examples/pagination.ts', read('examples', 'pagination.ts')],
+    ];
+    let calls = 0;
+    for (const [name, text] of sources) {
+      for (const call of text.match(/searchJqlPost\(\{[\s\S]*?\}\);/g) ?? []) {
+        calls++;
+        expect(call, `${name}: ${call}`).toMatch(/\bfields:/);
+      }
+    }
+    expect(calls).toBeGreaterThanOrEqual(3);
+  });
+
   it('README Quick Start, pagination, and Resource Map name the current methods', () => {
     expect(README).toContain('jira.search.searchJqlPost(');
     expect(README).toContain('nextPageToken');
@@ -160,6 +176,16 @@ describe('F300 / F306: CONTRIBUTING matches the real gate and parity rule', () =
     expect(adding).toContain('src/confluence/types/');
     expect(adding).toContain('skill/reference/jira/');
     expect(adding).not.toContain('drift check fails otherwise');
+  });
+
+  it('describes skill-content.test.ts as covering the reference docs, not only SKILL.md and examples.md', () => {
+    expect(adding).not.toMatch(/skill-content\.test\.ts`? only/);
+    const claim = /`skill-content\.test\.ts` ([^\n]*)/.exec(adding)?.[1] ?? '';
+    expect(claim).toContain('skill/reference/**/*.md');
+    expect(claim).toContain('parse-validates');
+    // The claim is only true while the test really parses every reference file.
+    const skillContentTest = read('test', 'cli', 'skill-content.test.ts');
+    expect(skillContentTest).toContain('ALL_REFERENCE_DOCS.flatMap(extractAtlasCommands)');
   });
 
   it('every concrete repository path named in the steps exists', () => {
@@ -294,6 +320,21 @@ describe('F304 / F305: ARCHITECTURE core-layer descriptions match the code', () 
     expect(limiting).toContain('createRateLimiterMiddleware');
     expect(limiting).toContain('token bucket');
     expect(ARCHITECTURE).not.toContain('Handles 429 responses:');
+  });
+
+  it('keeps jitter inside the maxRetryDelay cap and the header parsers outside the proactive limiter', () => {
+    const limiting = section(ARCHITECTURE, '### Rate Limiting');
+    expect(limiting).not.toContain('plus jitter');
+    expect(limiting).toContain('jitter included');
+    const proactive = /\*\*Proactive[^\n]*\n/.exec(limiting)?.[0] ?? '';
+    expect(proactive).toContain('createRateLimiterMiddleware');
+    expect(proactive).not.toContain('getRetryAfterMs');
+    expect(proactive).not.toContain('parseRateLimitHeaders');
+    expect(limiting).toMatch(/`getRetryAfterMs`[^\n]*`parseRateLimitHeaders`[^\n]*reactive path/);
+  });
+
+  it('scopes "batching wins innermost" to the auth and cache layers', () => {
+    expect(ARCHITECTURE).toContain('Batching wins _innermost_ of the auth and cache layers');
   });
 
   it('describes bulk.ts by its real routes', () => {

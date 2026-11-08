@@ -47,6 +47,7 @@ let nextPageToken: string | undefined;
 do {
   const page = await jira.search.searchJqlPost({
     jql: 'status != Done ORDER BY created ASC',
+    fields: ['summary'],
     maxResults: 100,
     nextPageToken,
   });

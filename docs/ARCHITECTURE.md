@@ -303,10 +303,12 @@ Two independent mechanisms handle rate limits:
 **Reactive (`retry.ts`)** — handles 429 responses after the server returns them:
 
 1. `HttpTransport` reads the `Retry-After` header (seconds) into `RateLimitError.retryAfter`
-2. `executeWithRetry` waits that long (capped at `maxRetryDelay`, plus jitter) before the next attempt
+2. `executeWithRetry` waits that long (capped at `maxRetryDelay`, jitter included) before the next attempt
 3. Without the header it falls back to exponential backoff
 
-**Proactive (`rate-limiter.ts`)** — `rate-limiter.ts` exports `getRetryAfterMs` and `parseRateLimitHeaders` (the header parsers behind `RateLimitError.retryAfter` and `ApiResponse.rateLimit`) and `createRateLimiterMiddleware`, an opt-in client-side token bucket that waits for a token (or throws `RateLimiterExhaustedError` after `maxWaitMs`) before a request is dispatched. See [Middleware](#middleware-layer) for ordering.
+**Proactive (`rate-limiter.ts`)** — `createRateLimiterMiddleware` is an opt-in client-side token bucket that waits for a token (or throws `RateLimiterExhaustedError` after `maxWaitMs`) before a request is dispatched. See [Middleware](#middleware-layer) for ordering.
+
+`rate-limiter.ts` also exports the header parsers `getRetryAfterMs` and `parseRateLimitHeaders`. They are not part of the limiter: they feed the reactive path (`RateLimitError.retryAfter`) and `ApiResponse.rateLimit`.
 
 ### Pagination (`src/core/pagination.ts`)
 
@@ -397,7 +399,7 @@ response:  a ← b ← c ← fetch
 Why order matters:
 
 - **Caching wins _inside_ of auth.** `[oauth, cache, batch]` is correct for most apps: the cache stores the response body only, never the `Authorization` header, so a fresh token is always attached to each request by OAuth before the cached payload short-circuits the fetch. Putting cache outermost (`[cache, oauth, batch]`) risks serving stale responses to requests that _should_ trigger a token refresh.
-- **Batching wins _innermost_.** Placing `batch` last means deduplication happens after auth headers are injected, so two concurrent requests from the same user actually collapse into one `fetch`. If batch were outermost, requests from different auth contexts could alias to the same in-flight call.
+- **Batching wins _innermost_ of the auth and cache layers.** Placing `batch` after them means deduplication happens after auth headers are injected, so two concurrent requests from the same user actually collapse into one `fetch`. If batch were outermost, requests from different auth contexts could alias to the same in-flight call.
 - **Connect JWT replaces OAuth, not stacks with it.** JWT signing depends on the final request URL + method, so the JWT middleware must be the innermost auth layer. Use `[connectJwt, cache, batch]` for Connect apps — do _not_ layer `oauth` and `connectJwt` together.
 
 Recommended orderings:
