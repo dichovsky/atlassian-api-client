@@ -251,6 +251,7 @@ function extractId(obj: unknown): string {
     return String(record['id']);
   if (typeof record['key'] === 'string') return record['key'];
   if (typeof record['name'] === 'string') return record['name'];
+  if (typeof record['accountId'] === 'string') return record['accountId'];
   return '';
 }
 

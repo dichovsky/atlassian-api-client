@@ -1,5 +1,5 @@
 /**
- * Release 4.1.0, unit cli-infra (F286): src/cli/index.ts now counts toward the
+ * F286: src/cli/index.ts counts toward the
  * 100% coverage gate, so the bin entry `main()` and runCli's non-Error catch
  * path are driven directly here.
  */

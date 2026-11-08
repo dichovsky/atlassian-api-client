@@ -31,11 +31,12 @@ GLOBAL OPTIONS:
   --help, -h       Show help
   --version        Show version
 
-BOOLEAN FLAGS:
+BOOLEAN FLAGS (flags that work bare, with no value):
   --flag, --flag true and --flag=true mean true; --flag false, --flag=false
-  and --no-flag mean false; omit the flag to keep the server default. A
-  true/false word right after a boolean flag is its value (put a positional
-  true/false after --).
+  and --no-flag mean false; omit the flag to keep the server default. Only
+  true/false are accepted (--flag no is an error). A true/false word right
+  after such a flag is its value (put a positional true/false after --).
+  Flags documented with values (e.g. --validate-query) always need one.
 
 EXAMPLES:
   atlas confluence pages list --base-url https://myco.atlassian.net -e user@co.com -t TOKEN

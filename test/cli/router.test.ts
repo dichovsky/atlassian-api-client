@@ -1517,6 +1517,24 @@ describe('parseCommand boolean flags', () => {
     expect(() => parse('--purge=')).toThrow('--purge accepts true or false, got: ');
   });
 
+  it.each(['yes', 'no', 'y', 'n', 'on', 'off', 'NO', 'Off'])(
+    'rejects the yes/no-style word %s right after a bare or negated flag',
+    (word) => {
+      expect(() => parse('--purge', word)).toThrow(
+        `--purge accepts true or false, got: ${word} (a positional ${word} goes after --)`,
+      );
+      expect(() => parse('--no-purge', word)).toThrow('--no-purge does not take a value');
+      expect(() => parse('--no-resolved', word)).toThrow('--no-resolved does not take a value');
+      expect(parse('--purge', '--', word).positionalArgs).toEqual(['K-1', word]);
+      expect(parse(word, '--purge').positionalArgs).toEqual(['K-1', word]);
+    },
+  );
+
+  it('keeps 0/1 after a bare flag as a positional (they can be IDs)', () => {
+    expect(parse('--purge', '1').positionalArgs).toEqual(['K-1', '1']);
+    expect(parse('--purge', '0').options['purge']).toBe(true);
+  });
+
   it('rejects conflicting values for one flag', () => {
     expect(() => parse('--purge', '--no-purge')).toThrow('--purge was given both true and false');
     expect(() => parse('--resolved', '--resolved', 'false')).toThrow(

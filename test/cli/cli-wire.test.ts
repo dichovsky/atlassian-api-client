@@ -1,5 +1,5 @@
 /**
- * Release 4.1.0, unit cli-infra: CLI → wire regressions for router-level
+ * CLI → wire regressions for router-level
  * boolean parsing (F076, F139, F215, F224, F234, F272), `users create`
  * email handling (F273, F335) and `--format minimal` envelopes (F296, F336).
  * Every case drives real argv through {@link runCliWire}.
@@ -288,6 +288,21 @@ describe('destructive boolean flags given false do not take effect (F272)', () =
     const run = await runCliWire(['jira', 'issues', 'delete', 'K-1', '--delete-subtasks=no']);
     expect(run.exitCode).toBe(1);
     expect(run.stderr).toContain('--delete-subtasks accepts true or false, got: no');
+    expect(run.requests).toEqual([]);
+  });
+
+  it.each([
+    [['confluence', 'pages', 'delete', '123', '--purge', 'no'], '--purge'],
+    [['confluence', 'pages', 'delete', '123', '--draft', 'off'], '--draft'],
+    [['jira', 'issues', 'delete', 'K-1', '--delete-subtasks', 'no'], '--delete-subtasks'],
+    [
+      ['jira', 'issues', 'update', 'K-1', '--summary', 'x', '--notify-users', 'no'],
+      '--notify-users',
+    ],
+  ] as const)('%j is rejected before any request', async (argv, flag) => {
+    const run = await runCliWire(argv);
+    expect(run.exitCode).toBe(1);
+    expect(run.stderr).toContain(`${flag} accepts true or false, got: ${argv.at(-1)}`);
     expect(run.requests).toEqual([]);
   });
 });

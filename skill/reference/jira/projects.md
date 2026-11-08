@@ -387,8 +387,8 @@ Custom project template management (B653–B657). Covers the full `/rest/api/3/p
 - `--access-level` must be one of: `open`, `limited`, `private`, `free`.
 - `--assignee-type` must be one of: `PROJECT_DEFAULT`, `COMPONENT_LEAD`, `PROJECT_LEAD`, `UNASSIGNED`.
 - `--template-type` must be one of: `LIVE`, `SNAPSHOT`.
-- `--enable-screen-delegated-admin` and `--enable-workflow-delegated-admin` are boolean flags (bare, no value).
-- `--enable-components` is a boolean flag (bare, no value).
+- `--enable-screen-delegated-admin` and `--enable-workflow-delegated-admin` are boolean flags: bare or `true` sends `true`, `false` (or `--no-<flag>`) sends `false`, omitted sends nothing.
+- `--enable-components` is a boolean flag with the same `true`/`false` forms.
 
 ```sh
 # Create a project with a custom template (async) — B653

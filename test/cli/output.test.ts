@@ -268,6 +268,18 @@ describe('printOutput', () => {
       expect(stdoutWrite.mock.calls.map((c) => c[0] as string).join('')).toBe('7\n');
     });
 
+    // Jira users carry no id/key/name: fall back to accountId, so `users search`
+    // and `issues get-votes` (voters) print one account per line, not blanks.
+    it.each([
+      [[{ accountId: 'a1', displayName: 'A' }], 'a1\n'],
+      [{ self: 'u', votes: 1, hasVoted: false, voters: [{ accountId: 'a2' }] }, 'a2\n'],
+      [{ accountId: 'a3', groups: { items: [] }, applicationRoles: { items: [] } }, 'a3\n'],
+      [{ id: '1', accountId: 'a4' }, '1\n'],
+    ])('falls back to accountId for %j', (data, expected) => {
+      printOutput(data, 'minimal');
+      expect(stdoutWrite.mock.calls.map((c) => c[0] as string).join('')).toBe(expected);
+    });
+
     it('prints an empty line for an object with several unknown arrays', () => {
       printOutput({ a: [{ id: '1' }], b: [{ id: '2' }] }, 'minimal');
       expect(stdoutWrite.mock.calls.map((c) => c[0] as string).join('')).toBe('\n');
