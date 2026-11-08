@@ -206,7 +206,7 @@ describe('parseCommand', () => {
     expect(result.options['recent']).toBe('20');
   });
 
-  it('parses the issue write-body flags (--resolution, --parent, --delete-subtasks, --products)', () => {
+  it('parses the issue write-body flags (--resolution, --parent, --delete-subtasks, --return-issue, --products)', () => {
     const transition = parseCommand([
       'node',
       'atlas',
@@ -251,6 +251,20 @@ describe('parseCommand', () => {
       '--delete-subtasks',
     ]);
     expect(del.options['delete-subtasks']).toBe(true);
+
+    const update = parseCommand([
+      'node',
+      'atlas',
+      'jira',
+      'issues',
+      'update',
+      'P-1',
+      '--return-issue',
+      '--expand',
+      'names',
+    ]);
+    expect(update.options['return-issue']).toBe(true);
+    expect(update.options['expand']).toBe('names');
 
     const user = parseCommand([
       'node',
@@ -1350,5 +1364,61 @@ describe('parseCommand', () => {
       'include-global-statuses': true,
       'retrigger-completed-migration': true,
     });
+  });
+
+  // CLI write-property reachability: each flag below is read by a handler, so
+  // parseArgs strict mode must accept it (unregistered → "Unknown option").
+  it('parses the write-reachability flags through real parseArgs', () => {
+    const jira = parseCommand([
+      'node',
+      'atlas',
+      'jira',
+      'users',
+      'assignable',
+      '--session-id',
+      'sess-1',
+      '--action-descriptor-id',
+      '31',
+      '--recommend',
+      '--account-type',
+      'atlassian,app',
+      '--app-type',
+      'forge',
+      '--comment',
+      '{"body":{}}',
+      '--no-notify-users',
+      '--custom-field-replacement-list',
+      '[]',
+      '--generate-changelog',
+      'false',
+      '--generate-app-events',
+      'false',
+    ]);
+    expect(jira.options).toMatchObject({
+      'session-id': 'sess-1',
+      'action-descriptor-id': '31',
+      recommend: true,
+      'account-type': 'atlassian,app',
+      'app-type': 'forge',
+      comment: '{"body":{}}',
+      'no-notify-users': true,
+      'custom-field-replacement-list': '[]',
+      'generate-changelog': 'false',
+      'generate-app-events': 'false',
+    });
+    expect(jira.positionalArgs).toEqual([]);
+
+    const confluence = parseCommand([
+      'node',
+      'atlas',
+      'confluence',
+      'comments',
+      'create',
+      '--attachment-id',
+      'att-1',
+      '--owner-id',
+      'acc-9',
+    ]);
+    expect(confluence.options).toMatchObject({ 'attachment-id': 'att-1', 'owner-id': 'acc-9' });
   });
 });

@@ -67,33 +67,17 @@ const KNOWN_GAPS: Readonly<
     unset: ['status'],
     reason: 'resets the current version; the draft-status body is not exposed',
   },
-  'confluence.comments.createFooter': {
-    unset: ['attachmentId', 'customContentId'],
-    reason: 'attachment and custom-content footer comments are not exposed',
-  },
   'confluence.customContent.create': {
     unset: ['status'],
     reason: 'creates current content; draft status is not exposed',
   },
   'confluence.pages.update': {
-    unset: ['spaceId', 'parentId', 'ownerId'],
-    reason: 'the API cannot move a page between spaces; re-parent and owner change are not exposed',
+    unset: ['spaceId'],
+    reason: 'the API cannot move a page between spaces',
   },
   'confluence.spaces.create': {
     unset: ['roleAssignments'],
     reason: 'role assignment at create is not exposed',
-  },
-  'jira.app.updateFieldValue': {
-    unset: ['generateChangelog', 'generateAppEvents'],
-    reason: 'query toggles not exposed; server defaults apply',
-  },
-  'jira.app.bulkUpdateFieldValue': {
-    unset: ['generateChangelog', 'generateAppEvents'],
-    reason: 'query toggles not exposed; server defaults apply',
-  },
-  'jira.bulk.setPropertyBulk': {
-    unset: ['expression'],
-    reason: 'Jira-expression value not exposed; --value and --filter are',
   },
   'jira.bulkByProperties.deleteDevInfoByProperties': {
     unset: ['_updateSequenceId'],
@@ -111,23 +95,9 @@ const KNOWN_GAPS: Readonly<
     unset: ['expand', 'overrideSharePermissions'],
     reason: 'response expansion and the admin share-permission override are not exposed',
   },
-  'jira.issueLink.create': {
-    unset: ['comment'],
-    reason: 'link-time comment not exposed; comment the issue separately',
-  },
   'jira.issues.deleteAllWorklogs': {
     unset: ['adjustEstimate', 'overrideEditableFlag'],
     reason: 'estimate adjustment and admin override not exposed; defaults apply',
-  },
-  'jira.issues.update': {
-    unset: [
-      'notifyUsers',
-      'overrideScreenSecurity',
-      'overrideEditableFlag',
-      'returnIssue',
-      'expand',
-    ],
-    reason: 'query toggles not exposed; defaults apply',
   },
   'jira.projects.create': {
     unset: [
@@ -153,10 +123,6 @@ const KNOWN_GAPS: Readonly<
     ],
     reason: 'key, category, avatar and scheme changes are not exposed on update',
   },
-  'jira.projects.loadAvatar': {
-    unset: ['x', 'y', 'size'],
-    reason: 'crop region not exposed; the server default crop applies',
-  },
   'jira.sprints.update': {
     unset: ['id', 'self', 'createdDate', 'originBoardId', 'completeDate'],
     reason: 'server-managed: identity fields, and completeDate is set on close',
@@ -165,24 +131,8 @@ const KNOWN_GAPS: Readonly<
     unset: ['id', 'self', 'createdDate', 'originBoardId', 'completeDate'],
     reason: 'server-managed: identity fields, and completeDate is set on close',
   },
-  'jira.statuses.byNames': {
-    unset: ['projectId'],
-    reason: 'read (GET, name not read-prefixed); project-scoped lookup not exposed',
-  },
-  'jira.users.assignableSearch': {
-    unset: [
-      'sessionId',
-      'issueKey',
-      'issueId',
-      'actionDescriptorId',
-      'recommend',
-      'accountType',
-      'appType',
-    ],
-    reason: 'read (GET, name not read-prefixed); only project-scoped search is exposed',
-  },
   'jira.users.viewIssueSearch': {
-    unset: ['projectKey', 'username'],
+    unset: ['username'],
     reason: 'read (GET, name not read-prefixed); username is removed upstream',
   },
   'jira.users.createUser': {
@@ -196,10 +146,6 @@ const KNOWN_GAPS: Readonly<
   'jira.version.update': {
     unset: ['expand'],
     reason: 'response expansion only',
-  },
-  'jira.version.deleteAndReplace': {
-    unset: ['customFieldReplacementList'],
-    reason: 'custom-field version replacement not exposed; fix/affects moves are',
   },
 };
 

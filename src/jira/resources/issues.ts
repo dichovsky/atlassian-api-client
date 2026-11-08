@@ -621,12 +621,22 @@ export class IssuesResource {
     return response.data;
   }
 
+  /**
+   * Update an issue. With `returnIssue: true` Jira answers 200 with the edited
+   * issue (shaped by `expand`) and this resolves it; otherwise 204 and `void`.
+   */
+  update(
+    issueIdOrKey: string,
+    data: UpdateIssueData,
+    params: UpdateIssueParams & { readonly returnIssue: true },
+  ): Promise<Issue>;
   /** Update an issue. */
+  update(issueIdOrKey: string, data: UpdateIssueData, params?: UpdateIssueParams): Promise<void>;
   async update(
     issueIdOrKey: string,
     data: UpdateIssueData,
     params?: UpdateIssueParams,
-  ): Promise<void> {
+  ): Promise<Issue | void> {
     const query: Record<string, string | boolean | undefined> = {};
     if (params?.notifyUsers !== undefined) query['notifyUsers'] = params.notifyUsers;
     if (params?.overrideScreenSecurity !== undefined)
@@ -635,12 +645,13 @@ export class IssuesResource {
       query['overrideEditableFlag'] = params.overrideEditableFlag;
     if (params?.returnIssue !== undefined) query['returnIssue'] = params.returnIssue;
     if (params?.expand !== undefined) query['expand'] = params.expand;
-    await this.transport.request<undefined>({
+    const response = await this.transport.request<Issue | undefined>({
       method: 'PUT',
       path: `${this.baseUrl}/issue/${encodePathSegment(issueIdOrKey)}`,
       query,
       body: data,
     });
+    return params?.returnIssue === true ? response.data : undefined;
   }
 
   /** Delete an issue. */

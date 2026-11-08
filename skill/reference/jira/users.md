@@ -4,39 +4,41 @@
 
 ## `users`
 
-| Action                     | Positional      | Required flags          | Optional flags                                                                                                     |
-| -------------------------- | --------------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| `get`                      | `<accountId>`   | —                       | —                                                                                                                  |
-| `me`                       | —               | —                       | —                                                                                                                  |
-| `search`                   | —               | `--query`               | `--max-results`                                                                                                    |
-| `delete`                   | —               | `--account-id`          | —                                                                                                                  |
-| `create`                   | —               | `--email`, `--products` | `--display-name`                                                                                                   |
-| `assignable-multi-project` | —               | —                       | `--query`, `--user-name`, `--account-id`, `--project-keys`, `--max-results`, `--start-at`                          |
-| `assignable`               | —               | `--project`             | `--query`, `--user-name`, `--account-id`, `--start-at`, `--max-results`                                            |
-| `bulk`                     | —               | `--account-ids`         | `--start-at`, `--max-results`                                                                                      |
-| `bulk-migration`           | —               | —                       | `--user-name`, `--key`, `--start-at`, `--max-results`                                                              |
-| `reset-columns`            | —               | —                       | `--account-id`                                                                                                     |
-| `get-columns`              | —               | —                       | `--account-id`                                                                                                     |
-| `set-columns`              | —               | `--columns`             | `--account-id`                                                                                                     |
-| `email`                    | —               | `--account-id`          | —                                                                                                                  |
-| `bulk-emails`              | —               | `--account-ids`         | —                                                                                                                  |
-| `groups`                   | —               | `--account-id`          | `--user-name`, `--key`                                                                                             |
-| `permission-search`        | —               | —                       | `--project-key`, `--issue-key`, `--query`, `--permissions`, `--account-id`, `--start-at`, `--max-results`          |
-| `picker`                   | —               | `--query`               | `--max-results`, `--show-avatar`, `--exclude`, `--exclude-account-ids`, `--avatar-size`, `--exclude-connect-users` |
-| `list-properties`          | —               | —                       | `--user-key`, `--account-id`                                                                                       |
-| `delete-property`          | `<propertyKey>` | —                       | `--user-key`, `--account-id`                                                                                       |
-| `get-property`             | `<propertyKey>` | —                       | `--user-key`, `--account-id`                                                                                       |
-| `set-property`             | `<propertyKey>` | `--value` (JSON)        | `--user-key`, `--account-id`                                                                                       |
-| `search-query`             | —               | —                       | `--query`, `--start-at`, `--max-results`                                                                           |
-| `search-query-key`         | —               | —                       | `--query`, `--start-at`, `--max-results`                                                                           |
-| `viewissue-search`         | —               | —                       | `--issue-key`, `--query`, `--max-results`, `--account-id`, `--start-at`                                            |
-| `list`                     | —               | —                       | `--start-at`, `--max-results`                                                                                      |
-| `list-search`              | —               | —                       | `--query`, `--start-at`, `--max-results`                                                                           |
+| Action                     | Positional      | Required flags                                  | Optional flags                                                                                                                                                   |
+| -------------------------- | --------------- | ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `get`                      | `<accountId>`   | —                                               | —                                                                                                                                                                |
+| `me`                       | —               | —                                               | —                                                                                                                                                                |
+| `search`                   | —               | `--query`                                       | `--max-results`                                                                                                                                                  |
+| `delete`                   | —               | `--account-id`                                  | —                                                                                                                                                                |
+| `create`                   | —               | `--email`, `--products`                         | `--display-name`                                                                                                                                                 |
+| `assignable-multi-project` | —               | —                                               | `--query`, `--user-name`, `--account-id`, `--project-keys`, `--max-results`, `--start-at`                                                                        |
+| `assignable`               | —               | one of `--project`, `--issue-key`, `--issue-id` | `--query`, `--user-name`, `--account-id`, `--start-at`, `--max-results`, `--session-id`, `--action-descriptor-id`, `--recommend`, `--account-type`, `--app-type` |
+| `bulk`                     | —               | `--account-ids`                                 | `--start-at`, `--max-results`                                                                                                                                    |
+| `bulk-migration`           | —               | —                                               | `--user-name`, `--key`, `--start-at`, `--max-results`                                                                                                            |
+| `reset-columns`            | —               | —                                               | `--account-id`                                                                                                                                                   |
+| `get-columns`              | —               | —                                               | `--account-id`                                                                                                                                                   |
+| `set-columns`              | —               | `--columns`                                     | `--account-id`                                                                                                                                                   |
+| `email`                    | —               | `--account-id`                                  | —                                                                                                                                                                |
+| `bulk-emails`              | —               | `--account-ids`                                 | —                                                                                                                                                                |
+| `groups`                   | —               | `--account-id`                                  | `--user-name`, `--key`                                                                                                                                           |
+| `permission-search`        | —               | —                                               | `--project-key`, `--issue-key`, `--query`, `--permissions`, `--account-id`, `--start-at`, `--max-results`                                                        |
+| `picker`                   | —               | `--query`                                       | `--max-results`, `--show-avatar`, `--exclude`, `--exclude-account-ids`, `--avatar-size`, `--exclude-connect-users`                                               |
+| `list-properties`          | —               | —                                               | `--user-key`, `--account-id`                                                                                                                                     |
+| `delete-property`          | `<propertyKey>` | —                                               | `--user-key`, `--account-id`                                                                                                                                     |
+| `get-property`             | `<propertyKey>` | —                                               | `--user-key`, `--account-id`                                                                                                                                     |
+| `set-property`             | `<propertyKey>` | `--value` (JSON)                                | `--user-key`, `--account-id`                                                                                                                                     |
+| `search-query`             | —               | —                                               | `--query`, `--start-at`, `--max-results`                                                                                                                         |
+| `search-query-key`         | —               | —                                               | `--query`, `--start-at`, `--max-results`                                                                                                                         |
+| `viewissue-search`         | —               | one of `--issue-key`, `--project-key`           | `--query`, `--max-results`, `--account-id`, `--start-at`                                                                                                         |
+| `list`                     | —               | —                                               | `--start-at`, `--max-results`                                                                                                                                    |
+| `list-search`              | —               | —                                               | `--query`, `--start-at`, `--max-results`                                                                                                                         |
 
 - `users me` returns the caller's profile — a fast way to verify auth env vars are working without touching tenant data.
 - `users delete` requires `--account-id`. Returns `{ deleted: true }` on success.
 - `users create` requires `--email` and `--products` (spec-required). `--products` is comma-separated: `jira-core`, `jira-servicedesk`, `jira-product-discovery`, `jira-software`; pass `--products ""` to create a user with no product access. `--display-name` is optional.
 - `users assignable-multi-project` accepts `--project-keys` as a comma-separated list.
+- `users assignable` needs one of `--project` (ID or case-sensitive key), `--issue-key` or `--issue-id`; the issue-scoped form returns users assignable to that issue. `--action-descriptor-id` is a transition ID (non-negative integer), to find users assignable during that transition. `--session-id` stays the same until the assignee is set. `--recommend` (bare boolean) asks Jira to recommend assignees. `--account-type` and `--app-type` are comma-separated filters, sent as repeated query params.
+- `users assignable` and `viewissue-search` also need a user selector: the spec requires `--query` (matched against display name and email prefixes) or `--account-id` (exact match) on top of the issue/project scope. The CLI does not check this; pass one of them, as in the examples below.
 - `users bulk` and `users bulk-emails` accept `--account-ids` as a comma-separated list. `bulk-emails` returns a **single** `{ accountId, email }` object (spec `UnrestrictedUserEmail`), not a `{ values: [...] }` wrapper.
 - `users bulk-migration` accepts `--user-name` and `--key` as comma-separated lists to translate legacy identifiers to account IDs.
 - `users set-columns` accepts `--columns` as a comma-separated list of column names; `--account-id` scopes the update to a specific user (admin only).
@@ -44,7 +46,7 @@
 - `picker` is a typeahead search for user selection UIs; `--exclude` and `--exclude-account-ids` are comma-separated.
 - `list-properties`, `get-property`, `delete-property`, `set-property` manage arbitrary key-value data stored on a user; scope with `--account-id` or `--user-key`.
 - `search-query` and `search-query-key` translate a legacy username/key query to account IDs.
-- `viewissue-search` returns users who can view a given issue (scoped by `--issue-key`).
+- `viewissue-search` returns users with browse permission for an issue (`--issue-key`) or a project (`--project-key`, case-sensitive); one of the two is required.
 - `list` returns all users (admin only, paginated).
 - `list-search` searches users by display name substring (paginated).
 
@@ -66,7 +68,13 @@ atlas jira users search-query --query jsmith
 atlas jira users search-query-key --query jsmith
 
 # Find users who can view an issue
-atlas jira users viewissue-search --issue-key PROJ-42
+atlas jira users viewissue-search --issue-key PROJ-42 --query jane
+
+# Find users who can browse a project
+atlas jira users viewissue-search --project-key PROJ --query jane
+
+# Find users assignable to an issue during a transition
+atlas jira users assignable --issue-key PROJ-42 --query jane --action-descriptor-id 31 --account-type atlassian
 
 # List all users (admin)
 atlas jira users list --start-at 0 --max-results 50

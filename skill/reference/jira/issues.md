@@ -6,14 +6,14 @@
 
 ### Standard (v3 API)
 
-| Action        | Positional   | Required flags                     | Optional flags           |
-| ------------- | ------------ | ---------------------------------- | ------------------------ |
-| `get`         | `<issueKey>` | —                                  | `--fields`, `--expand`   |
-| `create`      | —            | `--project`, `--type`, `--summary` | `--parent`, `--body`     |
-| `update`      | `<issueKey>` | one of `--summary` or `--body`     | —                        |
-| `delete`      | `<issueKey>` | —                                  | `--delete-subtasks`      |
-| `transitions` | `<issueKey>` | —                                  | `--expand`               |
-| `transition`  | `<issueKey>` | `--transition-id`                  | `--resolution`, `--body` |
+| Action        | Positional   | Required flags                     | Optional flags                                                                                                                |
+| ------------- | ------------ | ---------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `get`         | `<issueKey>` | —                                  | `--fields`, `--expand`                                                                                                        |
+| `create`      | —            | `--project`, `--type`, `--summary` | `--parent`, `--body`                                                                                                          |
+| `update`      | `<issueKey>` | one of `--summary` or `--body`     | `--notify-users`, `--no-notify-users`, `--override-screen-security`, `--override-editable-flag`, `--return-issue`, `--expand` |
+| `delete`      | `<issueKey>` | —                                  | `--delete-subtasks`                                                                                                           |
+| `transitions` | `<issueKey>` | —                                  | `--expand`                                                                                                                    |
+| `transition`  | `<issueKey>` | `--transition-id`                  | `--resolution`, `--body`                                                                                                      |
 
 - `--fields` and `--expand` are **comma-separated**, single flag. Example: `--fields summary,status,assignee --expand changelog,renderedFields`.
 - `--project` takes the project key (e.g. `PROJ`), not the numeric ID.
@@ -21,6 +21,7 @@
 - `--parent <issueKey>` sets `fields.parent` — required to create a sub-task.
 - `--body` (`create`, `update`, `transition`) is a JSON object in Jira's `IssueUpdateDetails` shape: `{"fields":{...},"update":{...},"properties":[...],"historyMetadata":{...}}`. Use it for description (ADF), assignee, labels, components, custom fields, or any field a create/edit/transition screen requires. Discrete flags (`--summary`, `--project`, `--type`, `--parent`, `--resolution`, `--transition-id`) override the same keys in `--body`; because Jira rejects a field set in both `fields` and `update`, any `--body` `update` operations on a flag-set field are dropped (other operations are kept).
 - `update` with neither `--summary` nor `--body` is rejected (it would be a no-op). List editable fields with `get-editmeta`.
+- `update` sends the watcher notification email by default; `--no-notify-users` suppresses it (`notifyUsers=false`, needs _Administer Jira_ or _Administer project_), `--notify-users` sends `notifyUsers=true`; the two are mutually exclusive. `--override-screen-security` (edit hidden fields) and `--override-editable-flag` (edit uneditable fields) are bare boolean flags for Connect/Forge apps with _Administer Jira_. It prints `{ "updated": true }`; pass the bare boolean `--return-issue` to print the edited issue instead (same shape as `get`), and `--expand` (comma-separated, as on `get`, e.g. `--expand renderedFields,names`) to expand it. `--expand` without `--return-issue` is rejected before any request.
 - `delete` fails with 400 for an issue that has sub-tasks unless `--delete-subtasks` is passed (deletes them too).
 - Transition workflow: call `transitions <key> --expand transitions.fields` to list valid transitions and the fields each transition screen requires (`required: true`, with `allowedValues`), then `transition` with the chosen `--transition-id` and those fields.
 - `--resolution <name>` sets `fields.resolution` (`{"name":"Done"}`). A transition whose screen shows Resolution — typically closing an issue or sub-task — fails without it. Resolution names are tenant-specific; list with `atlas jira resolutions list`. To pass it by ID, use `--body '{"fields":{"resolution":{"id":"10000"}}}'`.
@@ -201,24 +202,24 @@ atlas jira issues rank --issues PROJ-1 --after PROJ-5
 
 ### Worklog (B505–B515)
 
-| Action                    | Positional                                 | Required flags | Optional flags                                                                                                 |
-| ------------------------- | ------------------------------------------ | -------------- | -------------------------------------------------------------------------------------------------------------- |
-| `delete-all-worklogs`     | `<issueIdOrKey>`                           | `--ids`        | —                                                                                                              |
-| `list-worklogs`           | `<issueIdOrKey>`                           | —              | `--start-at`, `--max-results`, `--started-after`, `--started-before`, `--expand`                               |
-| `add-worklog`             | `<issueIdOrKey>`                           | `--body`       | `--notify-users`, `--adjust-estimate`, `--new-estimate`, `--reduce-by`, `--expand`, `--override-editable-flag` |
-| `delete-worklog`          | `<issueIdOrKey>` `<worklogId>`             | —              | `--notify-users`, `--adjust-estimate`, `--new-estimate`, `--increase-by`, `--override-editable-flag`           |
-| `get-worklog`             | `<issueIdOrKey>` `<worklogId>`             | —              | `--expand`                                                                                                     |
-| `update-worklog`          | `<issueIdOrKey>` `<worklogId>`             | `--body`       | `--notify-users`, `--adjust-estimate`, `--new-estimate`, `--expand`, `--override-editable-flag`                |
-| `list-worklog-properties` | `<issueIdOrKey>` `<worklogId>`             | —              | —                                                                                                              |
-| `delete-worklog-property` | `<issueIdOrKey>` `<worklogId>` `<propKey>` | —              | —                                                                                                              |
-| `get-worklog-property`    | `<issueIdOrKey>` `<worklogId>` `<propKey>` | —              | —                                                                                                              |
-| `set-worklog-property`    | `<issueIdOrKey>` `<worklogId>` `<propKey>` | `--value`      | —                                                                                                              |
-| `move-worklog`            | `<issueIdOrKey>`                           | `--ids`        | `--target-issue`, `--adjust-estimate`, `--override-editable-flag`                                              |
+| Action                    | Positional                                 | Required flags | Optional flags                                                                                                                      |
+| ------------------------- | ------------------------------------------ | -------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `delete-all-worklogs`     | `<issueIdOrKey>`                           | `--ids`        | —                                                                                                                                   |
+| `list-worklogs`           | `<issueIdOrKey>`                           | —              | `--start-at`, `--max-results`, `--started-after`, `--started-before`, `--expand`                                                    |
+| `add-worklog`             | `<issueIdOrKey>`                           | `--body`       | `--notify-users`, `--no-notify-users`, `--adjust-estimate`, `--new-estimate`, `--reduce-by`, `--expand`, `--override-editable-flag` |
+| `delete-worklog`          | `<issueIdOrKey>` `<worklogId>`             | —              | `--notify-users`, `--no-notify-users`, `--adjust-estimate`, `--new-estimate`, `--increase-by`, `--override-editable-flag`           |
+| `get-worklog`             | `<issueIdOrKey>` `<worklogId>`             | —              | `--expand`                                                                                                                          |
+| `update-worklog`          | `<issueIdOrKey>` `<worklogId>`             | `--body`       | `--notify-users`, `--no-notify-users`, `--adjust-estimate`, `--new-estimate`, `--expand`, `--override-editable-flag`                |
+| `list-worklog-properties` | `<issueIdOrKey>` `<worklogId>`             | —              | —                                                                                                                                   |
+| `delete-worklog-property` | `<issueIdOrKey>` `<worklogId>` `<propKey>` | —              | —                                                                                                                                   |
+| `get-worklog-property`    | `<issueIdOrKey>` `<worklogId>` `<propKey>` | —              | —                                                                                                                                   |
+| `set-worklog-property`    | `<issueIdOrKey>` `<worklogId>` `<propKey>` | `--value`      | —                                                                                                                                   |
+| `move-worklog`            | `<issueIdOrKey>`                           | `--ids`        | `--target-issue`, `--adjust-estimate`, `--override-editable-flag`                                                                   |
 
 - `delete-all-worklogs`: `--ids` is a comma-separated list of worklog IDs (integers) to delete in bulk (spec: `bulkDeleteWorklogs` requires `WorklogIdsRequestBean { ids }`).
 - `--body` is a JSON object string, e.g. `--body '{"timeSpentSeconds":3600,"started":"2024-01-01T09:00:00.000+0000"}'`.
 - `--adjust-estimate` accepts: `new`, `leave`, `manual`, `auto`.
-- `--notify-users`, `--override-editable-flag` are bare boolean flags.
+- `--notify-users`, `--override-editable-flag` are bare boolean flags. `notifyUsers` defaults to true on the wire, so pass `--no-notify-users` to suppress the notification (mutually exclusive with `--notify-users`).
 - `move-worklog`: `<issueIdOrKey>` = SOURCE issue (path); `--ids` = comma-separated worklog IDs (integers); `--target-issue` = DESTINATION issue key (body).
 
 ### Issue Archive/Unarchive (B516, B517, B528)
@@ -531,19 +532,24 @@ Issue link instance management (B530-B532). Covers create/get/delete of link ins
 
 | Action   | Positional | Required flags                                     | Optional flags |
 | -------- | ---------- | -------------------------------------------------- | -------------- |
-| `create` | —          | `--link-type`, `--inward-issue`, `--outward-issue` | —              |
+| `create` | —          | `--link-type`, `--inward-issue`, `--outward-issue` | `--comment`    |
 | `get`    | `<linkId>` | —                                                  | —              |
 | `delete` | `<linkId>` | —                                                  | —              |
 
 - `--link-type`: name of the link type (e.g. "Blocks", "Duplicate").
 - `--inward-issue`: key of the inward issue (e.g. "HSP-1").
 - `--outward-issue`: key of the outward issue (e.g. "MKY-1").
+- `--comment`: JSON object added as a comment on the outward issue, in Jira's `Comment` shape: `{"body": <ADF doc>, "visibility"?: {"type": "group"|"role", "value"|"identifier": ...}}`.
 - `create` returns `{ created: true }` — the spec 201 response has an empty body.
 - `delete` returns `{ deleted: true }` (spec 204).
 
 ```sh
 # Create an issue link — B530
 atlas jira issue-link create --link-type "Blocks" --inward-issue "HSP-1" --outward-issue "MKY-1"
+
+# Create a link and comment on the outward issue in the same call
+atlas jira issue-link create --link-type "Blocks" --inward-issue "HSP-1" --outward-issue "MKY-1" \
+  --comment '{"body":{"type":"doc","version":1,"content":[{"type":"paragraph","content":[{"type":"text","text":"Blocked by HSP-1"}]}]}}'
 
 # Get an issue link by ID — B532
 atlas jira issue-link get 10001

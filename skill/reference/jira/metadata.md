@@ -163,7 +163,7 @@ Bulk management, usage queries, and search for the `/rest/api/3/statuses` surfac
 | `get-issue-type-usages` | `<statusId>` `<projectId>` | —                    | `--next-page-token`, `--max-results`                                                                               |
 | `get-project-usages`    | `<statusId>`               | —                    | `--next-page-token`, `--max-results`                                                                               |
 | `get-workflow-usages`   | `<statusId>`               | —                    | `--next-page-token`, `--max-results`                                                                               |
-| `by-names`              | —                          | `--names`            | —                                                                                                                  |
+| `by-names`              | —                          | `--names`            | `--project-id`                                                                                                     |
 | `search`                | —                          | —                    | `--project-id`, `--start-at`, `--max-results`, `--search-string`, `--status-category`, `--include-global-statuses` |
 
 - `--ids` for `bulk-delete`: comma-separated status IDs.
@@ -172,7 +172,7 @@ Bulk management, usage queries, and search for the `/rest/api/3/statuses` surfac
 - `--value` for `bulk-update`: JSON array of `{ id, name?, description?, statusCategory? }` objects.
 - `--next-page-token`: opaque token from previous page response (usages endpoints use cursor pagination, not offset).
 - **Usage response shapes are nested DTOs**, not a flat page: `get-project-usages` → `{ statusId, projects: { values: [{id}], nextPageToken? } }`; `get-workflow-usages` → `{ statusId, workflows: { values: [{id}], nextPageToken? } }`; `get-issue-type-usages` → `{ statusId, projectId, issueTypes: { values: [{id}], nextPageToken? } }`. Read items from the nested `.values`, and the cursor from the nested `.nextPageToken`.
-- `--names` for `by-names`: comma-separated status names.
+- `--names` for `by-names`: comma-separated status names (1–50). `--project-id` returns the statuses of that project; omit it for global statuses.
 - `--status-category`: one of `TODO`, `IN_PROGRESS`, `DONE`.
 - `--include-global-statuses`: when filtering by `--project-id`, also include statuses whose scope is global.
 

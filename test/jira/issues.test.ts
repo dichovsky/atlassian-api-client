@@ -1,5 +1,10 @@
-import { describe, it, expect, beforeEach } from 'vitest';
-import { IssuesResource, type CreateRemoteLinkData } from '../../src/jira/resources/issues.js';
+import { describe, it, expect, expectTypeOf, beforeEach } from 'vitest';
+import {
+  IssuesResource,
+  type CreateRemoteLinkData,
+  type UpdateIssueParams,
+} from '../../src/jira/resources/issues.js';
+import type { Issue } from '../../src/jira/types.js';
 import { MockTransport } from '../helpers/mock-transport.js';
 
 const BASE_URL = 'https://test.atlassian.net/rest/api/3';
@@ -176,6 +181,34 @@ describe('IssuesResource', () => {
       const query = transport.lastCall?.options.query ?? {};
       expect(query['notifyUsers']).toBeUndefined();
       expect(query['returnIssue']).toBeUndefined();
+    });
+
+    it('resolves the edited issue when returnIssue is true (spec 200)', async () => {
+      const edited = makeIssue('10001', 'PROJ-1');
+      transport.respondWith(edited);
+      const promise = issues.update(
+        'PROJ-1',
+        { fields: { summary: 'S' } },
+        { returnIssue: true, expand: 'names' },
+      );
+      expectTypeOf(promise).resolves.toEqualTypeOf<Issue>();
+      await expect(promise).resolves.toEqual(edited);
+    });
+
+    it('resolves undefined without returnIssue, keeping the Promise<void> type', async () => {
+      // Guards the overload: callers that never opt in keep `Promise<void>`
+      // (a widened return type would break `return client.issues.update(...)`
+      // inside `Promise<void>` functions).
+      transport.respondWith(makeIssue('10001', 'PROJ-1'));
+      const promise = issues.update('PROJ-1', { fields: {} }, { returnIssue: false });
+      expectTypeOf(promise).toEqualTypeOf<Promise<void>>();
+      const bare = () => issues.update('PROJ-1', { fields: {} });
+      expectTypeOf(bare).returns.toEqualTypeOf<Promise<void>>();
+      // A params variable (runtime `boolean` returnIssue) takes the fallback too.
+      const viaVariable = (params: UpdateIssueParams) =>
+        issues.update('PROJ-1', { fields: {} }, params);
+      expectTypeOf(viaVariable).returns.toEqualTypeOf<Promise<void>>();
+      await expect(promise).resolves.toBeUndefined();
     });
   });
 
