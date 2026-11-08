@@ -39,10 +39,11 @@ const GLOBAL_OPTIONS = {
   type: { type: 'string' as const },
   summary: { type: 'string' as const },
   'transition-id': { type: 'string' as const },
-  // issues transition/create/delete + users create write-body flags
+  // issues transition/create/update/delete + users create write-body flags
   resolution: { type: 'string' as const },
   parent: { type: 'string' as const },
   'delete-subtasks': { type: 'boolean' as const },
+  'return-issue': { type: 'boolean' as const },
   products: { type: 'string' as const },
   // comments create: replies + inline-comment text anchor
   'parent-comment-id': { type: 'string' as const },

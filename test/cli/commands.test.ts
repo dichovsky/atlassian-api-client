@@ -9674,6 +9674,37 @@ describe('executeJiraCommand', () => {
       expect(jiraIssuesMock.update).not.toHaveBeenCalled();
     });
 
+    it('issues update --return-issue --expand prints the edited issue, keeping other params', async () => {
+      const edited = { id: '10001', key: 'PROJ-1', fields: { summary: 'S' } };
+      jiraIssuesMock.update.mockResolvedValue(edited);
+      const result = await executeJiraCommand(
+        cmd('issues', 'update', ['PROJ-1'], {
+          summary: 'S',
+          'return-issue': true,
+          expand: 'names',
+          'no-notify-users': true,
+        }),
+        GLOBALS,
+      );
+      // The other update params must still reach the returnIssue call.
+      expect(jiraIssuesMock.update).toHaveBeenCalledWith(
+        'PROJ-1',
+        { fields: { summary: 'S' } },
+        { notifyUsers: false, returnIssue: true, expand: 'names' },
+      );
+      expect(result).toEqual(edited);
+    });
+
+    it('issues update rejects --expand without --return-issue', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('issues', 'update', ['PROJ-1'], { summary: 'S', expand: 'names' }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('issues update: --expand needs --return-issue');
+      expect(jiraIssuesMock.update).not.toHaveBeenCalled();
+    });
+
     it('issues create drops update ops on project/issuetype/summary/parent', async () => {
       jiraIssuesMock.create.mockResolvedValue({ id: '1', key: 'PROJ-2' });
       await executeJiraCommand(
