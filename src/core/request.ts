@@ -268,8 +268,25 @@ export function sanitizePathForLogging(path: string): string {
     return redactSensitiveSegments(parsedUrl.pathname);
   } catch {
     const noUserinfo = path.replace(USERINFO_REGEX, '//');
-    return redactSensitiveSegments(noUserinfo.replace(/[?#].*$/, ''));
+    return redactSensitiveSegments(stripQueryAndFragment(noUserinfo));
   }
+}
+
+/**
+ * Cut `value` at its query or fragment exactly as `value.replace(/[?#].*$/, '')`
+ * did, in linear time: that regex backtracks quadratically on a long run of `?`
+ * that ends in a line break. Because `.` stops at a line terminator and `$` only
+ * matches at the end, the cut is the first `?` or `#` after the last line
+ * terminator, and nothing is cut if none follows it.
+ */
+function stripQueryAndFragment(value: string): string {
+  let cut = -1;
+  for (let i = value.length - 1; i >= 0; i--) {
+    const char = value[i];
+    if (char === '\n' || char === '\r' || char === '\u2028' || char === '\u2029') break;
+    if (char === '?' || char === '#') cut = i;
+  }
+  return cut === -1 ? value : value.slice(0, cut);
 }
 
 /**

@@ -3,8 +3,14 @@ import type { Transport, RequestOptions, ApiResponse, ResolvedConfig } from './t
 import { hashAuthValue } from './auth-identity.js';
 import type { AuthProvider } from './auth.js';
 import { createAuthProvider } from './auth.js';
-import { createHttpError, TimeoutError, NetworkError, ValidationError } from './errors.js';
-import { executeWithRetry, isNetworkError, isTransportFailure } from './retry.js';
+import {
+  createHttpError,
+  HttpError,
+  TimeoutError,
+  NetworkError,
+  ValidationError,
+} from './errors.js';
+import { executeWithRetry, isHeadersTimeout, isNetworkError, isTransportFailure } from './retry.js';
 import { createMiddlewareChain } from './middleware.js';
 import { getRetryAfterMs, parseRateLimitHeaders } from './rate-limiter.js';
 import {
@@ -312,7 +318,12 @@ export class HttpTransport implements Transport {
           throw error;
         }
         if (isTransportFailure(error)) {
-          throw toNetworkError(error, isNetworkError(error));
+          // A headers timeout fires after the whole request was sent, so the
+          // server may be applying a write: only a GET is sent again.
+          throw toNetworkError(
+            error,
+            isNetworkError(error) && (replayable || !isHeadersTimeout(error)),
+          );
         }
         throw error;
       }
@@ -521,6 +532,13 @@ interface OutgoingRequest {
  * body-less GET. That GET is then left to `fetch`. A redirect that keeps going
  * past the hop limit, or that has no `Location`, is returned as the response,
  * so the caller sees it as an `HttpError`.
+ *
+ * A refused redirect that would have replayed the body (307/308) throws the
+ * {@link ValidationError} from {@link resolveRedirectTarget}: the server asked
+ * for the request again, so nothing was applied. A refused redirect that drops
+ * the body throws an `HttpError` with the 3xx status instead, because by then
+ * the server has accepted the write and a resend could apply it twice. Nothing
+ * is sent to the refused target in either case.
  */
 async function fetchWithCheckedRedirects(
   doFetch: typeof fetch,
@@ -539,11 +557,24 @@ async function fetchWithCheckedRedirects(
     if (!REDIRECT_STATUSES.has(response.status) || location === null || hops === MAX_REDIRECTS) {
       return response;
     }
-    target = resolveRedirectTarget(location, target, allowedHosts);
+    // Release the connection before the target check, which may throw.
     await cancelBodyQuietly(response.body);
     const becomesGet =
       response.status === 303 ||
       ((response.status === 301 || response.status === 302) && current.method === 'POST');
+    try {
+      target = resolveRedirectTarget(location, target, allowedHosts);
+    } catch (error) {
+      if (!becomesGet) throw error;
+      throw new HttpError(
+        `The server accepted the ${current.method} request and answered ${response.status} with ` +
+          `a redirect this client will not follow, so do not send it again: ` +
+          `${(error as Error).message}`,
+        response.status,
+        undefined,
+        { cause: error },
+      );
+    }
     if (becomesGet) {
       const headers = Object.fromEntries(
         Object.entries(current.headers).filter(([name]) => name.toLowerCase() !== 'content-type'),

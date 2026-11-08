@@ -188,7 +188,8 @@ export class NetworkError extends AtlassianError {
    * Whether {@link executeWithRetry} may send the request again. `false` when
    * a retry cannot help (an expired TLS certificate, a closed dispatcher) or
    * could duplicate a write (the socket died after the server had already
-   * answered a non-GET request with a success status). Defaults to `true`.
+   * answered a non-GET request with a success status, or a non-GET request was
+   * sent in full and its response headers timed out). Defaults to `true`.
    */
   readonly retryable: boolean;
 

@@ -47,6 +47,18 @@ const RETRYABLE_CAUSE_CODES = new Set([
   'UND_ERR_BODY_TIMEOUT',
 ]);
 
+/**
+ * Undici codes for a request it refused to build: a header it does not support
+ * (`Expect`), one it reserves (`Upgrade`, `Transfer-Encoding`, `Keep-Alive`),
+ * or a body whose length disagrees with `Content-Length`. They arrive as a
+ * coded `cause` like a network failure, but nothing reached the network.
+ */
+const ARGUMENT_CAUSE_CODES: ReadonlySet<string> = new Set([
+  'UND_ERR_INVALID_ARG',
+  'UND_ERR_NOT_SUPPORTED',
+  'UND_ERR_REQ_CONTENT_LENGTH_MISMATCH',
+]);
+
 /** Check whether a caught error represents a retryable network failure. */
 export function isNetworkError(error: unknown): boolean {
   if (error instanceof Error && error.name === 'AbortError') {
@@ -75,15 +87,29 @@ export function isNetworkError(error: unknown): boolean {
  *   TLS expired cert    TypeError: fetch failed  cause.code CERT_HAS_EXPIRED
  *   invalid header      TypeError                cause     undefined
  *   blocked port        TypeError: fetch failed  cause 'bad port', no code
+ *   Expect header       TypeError: fetch failed  cause.code UND_ERR_NOT_SUPPORTED
+ *   Upgrade header      TypeError: fetch failed  cause.code UND_ERR_INVALID_ARG
+ *   wrong Content-Length TypeError: fetch failed cause.code UND_ERR_REQ_CONTENT_LENGTH_MISMATCH
  *
- * So any coded cause is a transport failure (an expired certificate included,
- * though retrying it is pointless), and an argument error, which never reached
- * the network, stays a raw TypeError.
+ * So a coded cause is a transport failure (an expired certificate included,
+ * though retrying it is pointless). An argument error, which never reached the
+ * network, stays a raw TypeError, including the three undici codes in
+ * {@link ARGUMENT_CAUSE_CODES}: counted as a NetworkError, a caller's bad header
+ * would open the circuit breaker for every healthy request after it.
  */
 export function isTransportFailure(error: unknown): boolean {
   if (isNetworkError(error)) return true;
   if (!(error instanceof TypeError) || error.name === 'AbortError') return false;
-  return hasCode(error.cause, () => true);
+  return hasCode(error.cause, (code) => !ARGUMENT_CAUSE_CODES.has(code));
+}
+
+/**
+ * Whether `error` is undici's headers timeout: the whole request was sent and
+ * the server has not started its answer. The server may still be applying it,
+ * so the transport retries it only for a GET.
+ */
+export function isHeadersTimeout(error: unknown): boolean {
+  return hasCode(error, (code) => code === 'UND_ERR_HEADERS_TIMEOUT');
 }
 
 /** Walk the error + `cause` chain for a string system `code` that `accept` matches. */
@@ -128,8 +154,9 @@ export interface RetryConfig {
  * - {@link RateLimitError} (429) is always retried up to `retries` attempts;
  *   delay honours the server-advertised `retry-after` value with bounded jitter.
  * - {@link NetworkError} is retried when its `retryable` flag is set (transient
- *   socket / DNS failures; not a TLS rejection, and not a write the server had
- *   already answered with a success status).
+ *   socket / DNS failures; not a TLS rejection, not a write the server had
+ *   already answered with a success status, and not a write whose response
+ *   timed out after it was sent in full).
  * - {@link HttpError} is retried only when {@link isRetryableStatus} matches.
  * - {@link TimeoutError} and all other errors are not retried.
  *
