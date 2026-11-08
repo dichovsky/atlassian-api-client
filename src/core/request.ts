@@ -216,8 +216,12 @@ const SENSITIVE_MARKER_REGEX =
  * Catches bearer JWTs accidentally embedded in path even when no `name=`
  * marker is present. False-positive risk is vanishingly small because Atlassian
  * opaque IDs are not base64-shaped and never start with `eyJ`.
+ *
+ * Matched as maximal dot-separated runs, then searched in {@link redactJwtShapes}:
+ * the direct `/eyJ[A-Za-z0-9_-]+\.…/g` rescanned the rest of a run from every
+ * `eyJ` in it, which is quadratic on a long run of `eyJ`.
  */
-const JWT_SHAPE_REGEX = /eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/g;
+const DOT_CHAIN_REGEX = /[A-Za-z0-9_-]+(?:\.[A-Za-z0-9_-]+)*/g;
 
 /**
  * B035: `user:pass@host` userinfo embedded in an absolute URL. The happy
@@ -231,8 +235,28 @@ function redactSensitiveMarkers(value: string): string {
   return value.replace(SENSITIVE_MARKER_REGEX, '$1=***');
 }
 
+/**
+ * Replace each `eyJ<run>.<run>.<run>` with `***.jwt.***`, with the same output as
+ * `value.replace(/eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/g, …)` in
+ * linear time. A match starts at the first `eyJ` of a run that has a character
+ * after it, takes that run and the next two whole, and the scan resumes after them.
+ */
 function redactJwtShapes(value: string): string {
-  return value.replace(JWT_SHAPE_REGEX, '***.jwt.***');
+  return value.replace(DOT_CHAIN_REGEX, (chain) => {
+    const runs = chain.split('.');
+    const out: string[] = [];
+    for (let i = 0; i < runs.length; i++) {
+      const run = runs[i] as string;
+      const at = run.indexOf('eyJ');
+      if (i + 2 < runs.length && at !== -1 && at + 3 < run.length) {
+        out.push(`${run.slice(0, at)}***.jwt.***`);
+        i += 2;
+      } else {
+        out.push(run);
+      }
+    }
+    return out.join('.');
+  });
 }
 
 function redactSensitiveSegments(pathname: string): string {

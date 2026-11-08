@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "4.1.0"
   },
-  "sourceHash": "1f49a1b85c7d4fe925d1e9e149c02c42d26ca288a0c9e00aa10e26f995a08536",
+  "sourceHash": "025119e40f6851a676ab3ded76949887e3fb1daf30de7c08398d6f553398d05c",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -3691,7 +3691,7 @@
       "name": "RetryConfig",
       "kind": "interface",
       "file": "src/core/retry.ts",
-      "line": 157,
+      "line": 166,
       "signature": "export interface RetryConfig { readonly retries: number; readonly retryDelay: number; readonly maxRetryDelay: number; }",
       "jsdoc": "Configuration consumed by {@link executeWithRetry}. A {@link ResolvedConfig} satisfies this shape structurally, so the transport can pass its own config object without adapting.",
       "typeOnly": true
@@ -4544,7 +4544,7 @@
       "name": "executeWithRetry",
       "kind": "function",
       "file": "src/core/retry.ts",
-      "line": 188,
+      "line": 197,
       "signature": "export async function executeWithRetry<T>( operation: () => Promise<T>, config: RetryConfig, signal?: AbortSignal, ): Pr…",
       "jsdoc": "Run an async operation with retry, exponential backoff, and abort-aware sleep."
     },
@@ -4560,7 +4560,7 @@
       "name": "fetchRefreshedTokens",
       "kind": "function",
       "file": "src/core/oauth.ts",
-      "line": 287,
+      "line": 290,
       "signature": "export async function fetchRefreshedTokens( config: Pick< OAuthRefreshConfig, 'clientId' | 'clientSecret' | 'tokenEndpoi…",
       "jsdoc": "Calls the token endpoint with the refresh token and returns new {@link OAuthTokens}. Exported for direct use in advanced scenarios (e.g. proactive token refresh)."
     },
@@ -16596,20 +16596,20 @@
         {
           "name": "resolveNonNegFiniteNumber",
           "kind": "function",
-          "line": 256,
+          "line": 259,
           "signature": "function resolveNonNegFiniteNumber( value: number | undefined, dflt: number, fieldName: string, ): number",
           "jsdoc": "Validate a non-negative finite number field on `OAuthRefreshConfig`. Used for both `retryJitterMs` and `failureCooldownMs`. `0` is accepted and documented to disable the feature; negatives, `NaN`, `Infinity`, and non-number runtime values produce `ValidationError`."
         },
         {
           "name": "injectBearerToken",
           "kind": "function",
-          "line": 268,
+          "line": 271,
           "signature": "function injectBearerToken(options: RequestOptions, token: string): RequestOptions"
         },
         {
           "name": "fetchRefreshedTokens",
           "kind": "function",
-          "line": 287,
+          "line": 290,
           "exported": true,
           "signature": "export async function fetchRefreshedTokens( config: Pick< OAuthRefreshConfig, 'clientId' | 'clientSecret' | 'tokenEndpoi…",
           "jsdoc": "Calls the token endpoint with the refresh token and returns new {@link OAuthTokens}. Exported for direct use in advanced scenarios (e.g. proactive token refresh)."
@@ -16617,21 +16617,21 @@
         {
           "name": "validateTokenEndpoint",
           "kind": "function",
-          "line": 391,
+          "line": 394,
           "signature": "function validateTokenEndpoint( configured: string | undefined, allowedHosts: readonly string[] | undefined, ): string",
           "jsdoc": "Validate a `tokenEndpoint` URL against the host allowlist and return the normalised endpoint string for downstream `fetch` calls. Throws `ValidationError` on: - malformed URL - non-HTTPS scheme - host not on the allowlist - embedded userinfo (`https://user:pw@host/…`) - a non-default port (`https://host:8443/…`) - invalid `allowedTokenEndpointHosts` entries (empty, port-bearing, whitespace, slashes, control chars, IPv6 brackets)"
         },
         {
           "name": "validateAllowedTokenEndpointHosts",
           "kind": "function",
-          "line": 466,
+          "line": 469,
           "signature": "function validateAllowedTokenEndpointHosts(hosts: readonly string[]): readonly string[]",
           "jsdoc": "Validate user-supplied `allowedTokenEndpointHosts`. Same rules as `validateAllowedHosts` in config.ts (non-empty array, non-empty strings, no port, no whitespace/slashes/control chars/IPv6 brackets). The shared character policy lives in `isInvalidBareHostChar` (atlassian-hosts.ts) so both validators stay in sync."
         },
         {
           "name": "formatBodySnippet",
           "kind": "function",
-          "line": 504,
+          "line": 507,
           "signature": "function formatBodySnippet(raw: string): string",
           "jsdoc": "Build a short diagnostic snippet of a token-endpoint response body. Truncates to 200 chars after replacing any token values with `***` so that an accidentally-echoed credential never reaches an error message or log."
         }
@@ -17048,41 +17048,42 @@
           "jsdoc": "B035: Marker names redacted in `name=VALUE` form anywhere inside a path segment. Covers query-style markers smuggled into the path AND matrix params (`;jsessionid=ABC`) since the regex matches `name=` regardless of preceding separator."
         },
         {
-          "name": "JWT_SHAPE_REGEX",
+          "name": "DOT_CHAIN_REGEX",
           "kind": "variable",
-          "line": 220,
-          "signature": "const JWT_SHAPE_REGEX = /eyJ[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+/g;",
+          "line": 224,
+          "signature": "const DOT_CHAIN_REGEX = /[A-Za-z0-9_-]+(?:\\.[A-Za-z0-9_-]+)*/g;",
           "jsdoc": "B035: JWT compact-serialization shape — three base64url segments joined by dots, starting with `eyJ` (base64 of `{\"`, the canonical JWT header start). Catches bearer JWTs accidentally embedded in path even when no `name=` marker is present. False-positive risk is vanishingly small because Atlassian opaque IDs are not base64-shaped and never start with `eyJ`."
         },
         {
           "name": "USERINFO_REGEX",
           "kind": "variable",
-          "line": 228,
+          "line": 232,
           "signature": "const USERINFO_REGEX = /\\/\\/[^/@\\s]+@/g;",
           "jsdoc": "B035: `user:pass@host` userinfo embedded in an absolute URL. The happy path resolves via `new URL(...).pathname` which already drops userinfo; this regex protects the fallback branch used when URL parsing throws on malformed input, so a logged broken URL containing creds is still scrubbed."
         },
         {
           "name": "redactSensitiveMarkers",
           "kind": "function",
-          "line": 230,
+          "line": 234,
           "signature": "function redactSensitiveMarkers(value: string): string"
         },
         {
           "name": "redactJwtShapes",
           "kind": "function",
-          "line": 234,
-          "signature": "function redactJwtShapes(value: string): string"
+          "line": 244,
+          "signature": "function redactJwtShapes(value: string): string",
+          "jsdoc": "Replace each `eyJ<run>.<run>.<run>` with `***.jwt.***`, with the same output as `value.replace(/eyJ[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+/g, …)` in linear time. A match starts at the first `eyJ` of a run that has a character after it, takes that run and the next two whole, and the scan resumes after them."
         },
         {
           "name": "redactSensitiveSegments",
           "kind": "function",
-          "line": 238,
+          "line": 262,
           "signature": "function redactSensitiveSegments(pathname: string): string"
         },
         {
           "name": "sanitizePathForLogging",
           "kind": "function",
-          "line": 265,
+          "line": 289,
           "exported": true,
           "signature": "export function sanitizePathForLogging(path: string): string",
           "jsdoc": "Produce a logging-safe rendering of `path`."
@@ -17090,21 +17091,21 @@
         {
           "name": "stripQueryAndFragment",
           "kind": "function",
-          "line": 282,
+          "line": 306,
           "signature": "function stripQueryAndFragment(value: string): string",
           "jsdoc": "Cut `value` at its query or fragment exactly as `value.replace(/[?#].*$/, '')` did, in linear time: that regex backtracks quadratically on a long run of `?` that ends in a line break. Because `.` stops at a line terminator and `$` only matches at the end, the cut is the first `?` or `#` after the last line terminator, and nothing is cut if none follows it."
         },
         {
           "name": "FORBIDDEN_CALLER_HEADERS",
           "kind": "variable",
-          "line": 304,
+          "line": 328,
           "signature": "const FORBIDDEN_CALLER_HEADERS: ReadonlySet<string> = new Set([ 'authorization', 'proxy-authorization', 'cookie', 'set-c…",
           "jsdoc": "Header names (lower-cased) that callers MUST NOT supply via `RequestOptions.headers`. The transport authenticates exclusively via `config.auth`; any header in this list could either override that identity or smuggle a different one (B029):"
         },
         {
           "name": "buildHeaders",
           "kind": "function",
-          "line": 344,
+          "line": 368,
           "exported": true,
           "signature": "export function buildHeaders( callerHeaders: Readonly<Record<string, string>> | undefined, authHeaders: Readonly<Record<…",
           "jsdoc": "Merge caller-supplied headers with the auth provider's headers."
@@ -17112,7 +17113,7 @@
         {
           "name": "FetchBody",
           "kind": "interface",
-          "line": 397,
+          "line": 421,
           "exported": true,
           "signature": "export interface FetchBody { readonly body: FormData | Blob | string | undefined; readonly withJsonBody: boolean; readon…",
           "jsdoc": "Outcome of {@link buildFetchBody}."
@@ -17120,7 +17121,7 @@
         {
           "name": "buildFetchBody",
           "kind": "function",
-          "line": 413,
+          "line": 437,
           "exported": true,
           "signature": "export function buildFetchBody(options: RequestOptions): FetchBody",
           "jsdoc": "Resolve `RequestOptions.body` / `formData` / `binaryBody` into a `fetch`-ready body."
@@ -17291,7 +17292,7 @@
           "kind": "variable",
           "line": 116,
           "signature": "const NOT_RETRYABLE = new WeakSet<object>();",
-          "jsdoc": "Errors {@link executeWithRetry} must not retry whatever their type or status."
+          "jsdoc": "Errors whose request must not be sent again, whatever their type or status."
         },
         {
           "name": "notRetryable",
@@ -17302,16 +17303,24 @@
           "jsdoc": "Mark `error` so {@link executeWithRetry} throws it instead of running the operation again: the transport uses this for an error status on the GET a write was redirected to, because a retry would send the write again."
         },
         {
+          "name": "isNotRetryable",
+          "kind": "function",
+          "line": 133,
+          "exported": true,
+          "signature": "export function isNotRetryable(error: unknown): boolean",
+          "jsdoc": "Whether `error` was marked by {@link notRetryable}. Anything that sends a request again after an error (the retry loop, the OAuth refresh middleware) must check this first."
+        },
+        {
           "name": "hasCode",
           "kind": "function",
-          "line": 129,
+          "line": 138,
           "signature": "function hasCode(error: unknown, accept: (code: string) => boolean): boolean",
           "jsdoc": "Walk the error + `cause` chain for a string system `code` that `accept` matches."
         },
         {
           "name": "sleep",
           "kind": "function",
-          "line": 146,
+          "line": 155,
           "exported": true,
           "signature": "export function sleep(ms: number): Promise<void>",
           "jsdoc": "Sleep for the given number of milliseconds."
@@ -17319,7 +17328,7 @@
         {
           "name": "RetryConfig",
           "kind": "interface",
-          "line": 157,
+          "line": 166,
           "exported": true,
           "signature": "export interface RetryConfig { readonly retries: number; readonly retryDelay: number; readonly maxRetryDelay: number; }",
           "jsdoc": "Configuration consumed by {@link executeWithRetry}. A {@link ResolvedConfig} satisfies this shape structurally, so the transport can pass its own config object without adapting."
@@ -17327,7 +17336,7 @@
         {
           "name": "executeWithRetry",
           "kind": "function",
-          "line": 188,
+          "line": 197,
           "exported": true,
           "signature": "export async function executeWithRetry<T>( operation: () => Promise<T>, config: RetryConfig, signal?: AbortSignal, ): Pr…",
           "jsdoc": "Run an async operation with retry, exponential backoff, and abort-aware sleep."
@@ -17335,44 +17344,44 @@
         {
           "name": "shouldRetry",
           "kind": "function",
-          "line": 210,
+          "line": 219,
           "signature": "function shouldRetry(error: unknown, attempt: number, retries: number): boolean"
         },
         {
           "name": "RETRY_DELAY_HARD_CEILING",
           "kind": "variable",
-          "line": 240,
+          "line": 249,
           "signature": "const RETRY_DELAY_HARD_CEILING = 60_000;",
           "jsdoc": "Hard ceiling applied when a retry delay is unschedulable. `resolveConfig` rejects invalid values up front — this constant is defence-in-depth for callers that bypass `resolveConfig` (e.g. custom transports building a structural `RetryConfig`). Without it, Node coerces `NaN`, `Infinity`, and values above its timer ceiling to near-immediate timers."
         },
         {
           "name": "MAX_TIMER_DELAY",
           "kind": "variable",
-          "line": 241,
+          "line": 250,
           "signature": "const MAX_TIMER_DELAY = 2_147_483_647;"
         },
         {
           "name": "effectiveMaxDelay",
           "kind": "function",
-          "line": 243,
+          "line": 252,
           "signature": "function effectiveMaxDelay(maxRetryDelay: number): number"
         },
         {
           "name": "effectiveBaseDelay",
           "kind": "function",
-          "line": 249,
+          "line": 258,
           "signature": "function effectiveBaseDelay(retryDelay: number, ceiling: number): number"
         },
         {
           "name": "getRetryDelay",
           "kind": "function",
-          "line": 255,
+          "line": 264,
           "signature": "function getRetryDelay( error: unknown, attempt: number, retryDelay: number, maxRetryDelay: number, ): number"
         },
         {
           "name": "sleepWithAbort",
           "kind": "function",
-          "line": 287,
+          "line": 296,
           "exported": true,
           "signature": "export async function sleepWithAbort(delayMs: number, signal?: AbortSignal): Promise<void>",
           "jsdoc": "Sleep for `delayMs` milliseconds, rejecting with the signal's normalised abort reason if `signal` fires before the timer. Exported so other middleware (e.g. OAuth refresh jitter) can share a single abort-aware sleep implementation rather than duplicating timer + listener cleanup. Listener is registered with `{ once: true }` AND explicitly removed on the resolve path so it never outlives the sleep."
@@ -17380,7 +17389,7 @@
         {
           "name": "getAbortReason",
           "kind": "function",
-          "line": 312,
+          "line": 321,
           "signature": "function getAbortReason(signal: AbortSignal): Error"
         }
       ],

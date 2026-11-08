@@ -112,7 +112,7 @@ export function isHeadersTimeout(error: unknown): boolean {
   return hasCode(error, (code) => code === 'UND_ERR_HEADERS_TIMEOUT');
 }
 
-/** Errors {@link executeWithRetry} must not retry whatever their type or status. */
+/** Errors whose request must not be sent again, whatever their type or status. */
 const NOT_RETRYABLE = new WeakSet<object>();
 
 /**
@@ -123,6 +123,15 @@ const NOT_RETRYABLE = new WeakSet<object>();
 export function notRetryable<T extends object>(error: T): T {
   NOT_RETRYABLE.add(error);
   return error;
+}
+
+/**
+ * Whether `error` was marked by {@link notRetryable}. Anything that sends a
+ * request again after an error (the retry loop, the OAuth refresh middleware)
+ * must check this first.
+ */
+export function isNotRetryable(error: unknown): boolean {
+  return typeof error === 'object' && error !== null && NOT_RETRYABLE.has(error);
 }
 
 /** Walk the error + `cause` chain for a string system `code` that `accept` matches. */
@@ -210,7 +219,7 @@ export async function executeWithRetry<T>(
 function shouldRetry(error: unknown, attempt: number, retries: number): boolean {
   if (attempt >= retries) return false;
 
-  if (typeof error === 'object' && error !== null && NOT_RETRYABLE.has(error)) return false;
+  if (isNotRetryable(error)) return false;
 
   // An open circuit breaker should never be retried — the downstream is
   // presumed unhealthy. Spinning through retry attempts would only delay the

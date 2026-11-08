@@ -15,12 +15,14 @@ import { HttpTransport } from '../../src/core/transport.js';
 import { resolveConfig } from '../../src/core/config.js';
 import { sanitizePathForLogging } from '../../src/core/request.js';
 import {
+  AuthenticationError,
   CircuitBreakerOpenError,
   HttpError,
   NetworkError,
   ValidationError,
 } from '../../src/core/errors.js';
 import { createCircuitBreakerMiddleware } from '../../src/core/circuit-breaker.js';
+import { createOAuthRefreshMiddleware } from '../../src/core/oauth.js';
 import type { ClientConfig } from '../../src/core/types.js';
 
 // ---------------------------------------------------------------------------
@@ -229,6 +231,100 @@ describe('a write answered with a body-dropping redirect the client will not fol
 
     expect(error).toBeInstanceOf(ValidationError);
     expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  // A 301/302 keeps the method and body for anything but POST, so it replays like a 307.
+  it.each<[number, string]>([
+    [301, 'PUT'],
+    [302, 'PUT'],
+    [301, 'PATCH'],
+    [302, 'PATCH'],
+    [301, 'DELETE'],
+    [302, 'DELETE'],
+  ])('still refuses a %i on %s off-host with a ValidationError', async (status, method) => {
+    const fetchMock = vi.fn(() =>
+      Promise.resolve(new Response(null, { status, headers: { location: `${FOREIGN}/x` } })),
+    );
+
+    const error = await transport(fetchMock as typeof fetch)
+      .request({ method: method as 'PUT', path: '/rest/api/3/x', body: { a: 1 } })
+      .catch((e: unknown) => e);
+
+    expect(error).toBeInstanceOf(ValidationError);
+    expect(error).not.toBeInstanceOf(HttpError);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// A write redirected to a GET that then answers 401 under OAuth refresh (#375 review, round 3)
+// ---------------------------------------------------------------------------
+
+describe('a write whose followed body-dropping redirect answers 401 under OAuth refresh', () => {
+  const tokenFetch = vi.fn(() =>
+    Promise.resolve(
+      new Response(JSON.stringify({ access_token: 'fresh', refresh_token: 'r2' }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      }),
+    ),
+  );
+  beforeEach(() => tokenFetch.mockClear());
+
+  const oauthTransport = (fetchImpl: typeof fetch): HttpTransport =>
+    transport(fetchImpl, {
+      auth: { type: 'bearer', token: 'stale' },
+      middleware: [
+        createOAuthRefreshMiddleware({
+          accessToken: 'stale',
+          refreshToken: 'r1',
+          clientId: 'cid',
+          clientSecret: 'csec',
+          retryJitterMs: 0,
+          fetch: tokenFetch as unknown as typeof fetch,
+        }),
+      ],
+    });
+
+  it('does not refresh and resend a 303-redirected POST whose GET answers 401', async () => {
+    const fetchMock = vi.fn((_url: string, init: RequestInit) =>
+      Promise.resolve(
+        init.method === 'GET'
+          ? new Response(null, { status: 401 })
+          : new Response(null, {
+              status: 303,
+              headers: { location: `${TENANT}/rest/api/3/task/1` },
+            }),
+      ),
+    );
+
+    const error = await oauthTransport(fetchMock as unknown as typeof fetch)
+      .request({ method: 'POST', path: '/rest/api/3/project/PROJ/delete' })
+      .catch((e: unknown) => e);
+
+    expect(error).toBeInstanceOf(AuthenticationError);
+    expect(fetchMock.mock.calls.map(([, init]) => init.method)).toEqual(['POST', 'GET']);
+    expect(tokenFetch).not.toHaveBeenCalled();
+  });
+
+  it('still refreshes and resends a POST that the server answered 401 itself', async () => {
+    const fetchMock = vi.fn((_url: string, init: RequestInit) =>
+      Promise.resolve(
+        new Headers(init.headers).get('authorization') === 'Bearer fresh'
+          ? new Response('{}', { status: 201, headers: { 'content-type': 'application/json' } })
+          : new Response(null, { status: 401 }),
+      ),
+    );
+
+    const response = await oauthTransport(fetchMock as unknown as typeof fetch).request({
+      method: 'POST',
+      path: '/rest/api/3/issue',
+      body: {},
+    });
+
+    expect(response.status).toBe(201);
+    expect(fetchMock.mock.calls.map(([, init]) => init.method)).toEqual(['POST', 'POST']);
+    expect(tokenFetch).toHaveBeenCalledTimes(1);
   });
 });
 
@@ -589,6 +685,61 @@ describe('sanitizePathForLogging on input URL parsing rejects (F355)', () => {
         const input = `${UNPARSEABLE}${t}`;
         expect(sanitizePathForLogging(input)).toBe(input.replace(/[?#].*$/, ''));
       }),
+    );
+  });
+});
+
+// ---------------------------------------------------------------------------
+// JWT-shape redaction in sanitizePathForLogging must be linear (#375 review, round 3)
+// ---------------------------------------------------------------------------
+
+describe('sanitizePathForLogging on a long run of JWT-like text', () => {
+  /** The redaction regex 4.0.0 shipped; the property below pins identical output. */
+  const OLD_JWT_SHAPE = /eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/g;
+  /** Generous: the old regex took ~8.5 s on the first input; a linear scan takes a few ms. */
+  const BUDGET_MS = 500;
+
+  it.each([
+    ['a run of eyJ', `https://x.example/${'eyJ'.repeat(40_000)}`],
+    ['a long dot chain', `https://x.example/${'eyJa.'.repeat(20_000)}${'a.'.repeat(20_000)}`],
+  ])('redacts %s quickly', (_label, input) => {
+    const start = performance.now();
+    sanitizePathForLogging(input);
+    const elapsed = performance.now() - start;
+
+    expect(elapsed).toBeLessThan(BUDGET_MS);
+  });
+
+  it.each([
+    ['/eyJa.b.c', '/***.jwt.***'],
+    ['/abc.eyJx.y.z', '/abc.***.jwt.***'],
+    ['/xeyJa.b.c.d', '/x***.jwt.***.d'],
+    ['/eyJa.b.c.eyJd.e-f.g_h', '/***.jwt.***.***.jwt.***'],
+    ['/eyJ.b.c', '/eyJ.b.c'],
+    ['/eyJa..c', '/eyJa..c'],
+    ['/eyJa.b.', '/eyJa.b.'],
+    ['/eyJeyJ.a.b', '/***.jwt.***'],
+    ['/a~eyJa.b.c~d', '/a~***.jwt.***~d'],
+  ])('redacts %j to %j', (input, output) => {
+    expect(sanitizePathForLogging(input)).toBe(output);
+  });
+
+  it('matches the old regex on every segment', () => {
+    // The unparseable prefix takes the fallback branch, so the URL parser does not
+    // normalise `.` segments; there is no `?`, `#`, `@` or sensitive name to rewrite.
+    const tail = fc
+      .array(fc.constantFrom('eyJ', 'e', 'J', 'a', '_', '-', '.', '/', '~'), { maxLength: 40 })
+      .map((units) => units.join(''));
+    fc.assert(
+      fc.property(tail, (t) => {
+        const input = `https://[/${t}`;
+        const expected = input
+          .split('/')
+          .map((segment) => segment.replace(OLD_JWT_SHAPE, '***.jwt.***'))
+          .join('/');
+        expect(sanitizePathForLogging(input)).toBe(expected);
+      }),
+      { numRuns: 2000 },
     );
   });
 });

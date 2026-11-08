@@ -5,7 +5,7 @@ import {
   hostMatchesExact,
   isInvalidBareHostChar,
 } from './atlassian-hosts.js';
-import { sleepWithAbort } from './retry.js';
+import { isNotRetryable, sleepWithAbort } from './retry.js';
 
 /** Default OAuth 2.0 3LO token endpoint URL for Atlassian Cloud. */
 const DEFAULT_OAUTH_TOKEN_ENDPOINT = 'https://auth.atlassian.com/oauth/token';
@@ -176,6 +176,9 @@ export function createOAuthRefreshMiddleware(config: OAuthRefreshConfig): Middle
       return await next(authedOptions);
     } catch (error) {
       if (!(error instanceof AuthenticationError)) throw error;
+      // A 401 on the GET a write was redirected to: the server may have applied
+      // the write, so sending it again with a fresh token could apply it twice.
+      if (isNotRetryable(error)) throw error;
 
       // Cooldown gate: replay the cached refresh error without firing a new
       // token exchange. Suppresses the post-failure storm when an outage
