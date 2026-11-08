@@ -95,6 +95,15 @@ function runStep(script: string, env: Record<string, string>, fakes: Record<stri
   }
 }
 
+/** Substitutes `${{ expr }}` the way the runner does; an unknown expression is a test failure. */
+function expand(text: string, values: Record<string, string>): string {
+  return text.replace(/\$\{\{\s*(.+?)\s*\}\}/g, (_match, expression: string) => {
+    const value = values[expression];
+    if (value === undefined) throw new Error(`unexpected expression ${expression}`);
+    return value;
+  });
+}
+
 function assertJobGates(workflow: Workflow): void {
   expect(workflow.on).toEqual({ push: { tags: ['v*'] } });
   expect(workflow.permissions).toEqual({});
@@ -119,6 +128,14 @@ function assertJobGates(workflow: Workflow): void {
   const verify = job(workflow, 'verify');
   expect(verify.needs).toEqual(['preflight', 'publish']);
   expect(verify.permissions).toEqual({});
+
+  // A gate that may be skipped or may fail without failing the job is no gate.
+  for (const candidate of Object.values(workflow.jobs)) {
+    for (const unit of [candidate, ...candidate.steps]) {
+      expect(unit).not.toHaveProperty('if');
+      expect(unit).not.toHaveProperty('continue-on-error');
+    }
+  }
 }
 
 describe('publish workflow job gates', () => {
@@ -159,6 +176,21 @@ describe('publish workflow job gates', () => {
       'the tag/metadata check removed',
       'run: node scripts/validate-release-tag.js "$GITHUB_REF_NAME"',
       'run: echo skipped',
+    ],
+    [
+      'the provenance check allowed to fail',
+      '      - name: Require provenance from this repository and workflow\n',
+      '      - name: Require provenance from this repository and workflow\n        continue-on-error: true\n',
+    ],
+    [
+      'the CI-green check skipped',
+      '      - name: Require successful CI for this exact main push\n',
+      '      - name: Require successful CI for this exact main push\n        if: false\n',
+    ],
+    [
+      'the publish job allowed to fail',
+      '    environment: release\n',
+      '    environment: release\n    continue-on-error: true\n',
     ],
   ])('fails when the workflow has %s', (_label, from, to) => {
     expect(() => assertJobGates(mutate(from, to))).toThrow();
@@ -251,6 +283,165 @@ describe('publish workflow signed-tag preflight', () => {
     ['the HEAD comparison dropped', 'test "$(git rev-parse HEAD)" = "${release_sha}"', 'true'],
   ])('fails when the step has %s', (_label, from, to) => {
     expect(() => assertSignatureGate(mutate(from, to))).toThrow();
+  });
+});
+
+describe('publish workflow exact-main preflight and recheck', () => {
+  const OTHER_SHA = 'a'.repeat(40);
+  const GATES = [
+    ['preflight', 'Require the exact current main tip'],
+    ['publish', 'Recheck the current main tip after approval'],
+  ] as const;
+
+  function runMainTipCheck(
+    workflow: Workflow,
+    [jobName, stepName]: (typeof GATES)[number],
+    { main = RELEASE_SHA, head = RELEASE_SHA, fetchStatus = '0' } = {},
+  ) {
+    const { run, env = {} } = step(workflow, jobName, stepName);
+    const outputs = {
+      'steps.release.outputs.release_sha': RELEASE_SHA,
+      'needs.preflight.outputs.release-sha': RELEASE_SHA,
+    };
+    return runStep(
+      expand(run, outputs),
+      {
+        ...Object.fromEntries(Object.entries(env).map(([k, v]) => [k, expand(v, outputs)])),
+        FAKE_MAIN: main,
+        FAKE_HEAD: head,
+        FAKE_FETCH_STATUS: fetchStatus,
+      },
+      {
+        git: [
+          'case "$*" in',
+          '  "fetch --no-tags origin +refs/heads/main:refs/remotes/origin/main") exit "$FAKE_FETCH_STATUS" ;;',
+          '  "rev-parse refs/remotes/origin/main") echo "$FAKE_MAIN" ;;',
+          '  "rev-parse HEAD") echo "$FAKE_HEAD" ;;',
+          '  *) echo "unexpected git $*" >&2; exit 64 ;;',
+          'esac',
+        ].join('\n'),
+      },
+    );
+  }
+
+  function assertMainTipGates(workflow: Workflow): void {
+    for (const gate of GATES) {
+      const accepted = runMainTipCheck(workflow, gate);
+      expect(accepted.stderr).toBe('');
+      expect(accepted.status).toBe(0);
+
+      expect(runMainTipCheck(workflow, gate, { main: OTHER_SHA }).status).not.toBe(0);
+      expect(runMainTipCheck(workflow, gate, { fetchStatus: '1' }).status).not.toBe(0);
+    }
+    // only the post-approval recheck looks at the checked-out commit
+    expect(runMainTipCheck(workflow, GATES[1], { head: OTHER_SHA }).status).not.toBe(0);
+  }
+
+  it('requires the release commit to be the fetched main tip, before and after approval', () => {
+    assertMainTipGates(parse(PUBLISH_TEXT));
+  });
+
+  it.each([
+    [
+      'the preflight step body replaced with true',
+      [
+        '          RELEASE_SHA: ${{ steps.release.outputs.release_sha }}',
+        '        run: |',
+        '          set -euo pipefail',
+        "          git fetch --no-tags origin '+refs/heads/main:refs/remotes/origin/main'",
+        '          test "$(git rev-parse refs/remotes/origin/main)" = "${RELEASE_SHA}"',
+        '',
+      ].join('\n'),
+      '          RELEASE_SHA: ${{ steps.release.outputs.release_sha }}\n        run: |\n          true\n',
+    ],
+    [
+      'the recheck main comparison dropped',
+      [
+        '          test "$(git rev-parse HEAD)" = "${RELEASE_SHA}"',
+        '          test "$(git rev-parse refs/remotes/origin/main)" = "${RELEASE_SHA}"',
+      ].join('\n'),
+      '          test "$(git rev-parse HEAD)" = "${RELEASE_SHA}"',
+    ],
+    [
+      'the recheck HEAD comparison dropped',
+      '          test "$(git rev-parse HEAD)" = "${RELEASE_SHA}"\n',
+      '',
+    ],
+  ])('fails when the workflow has %s', (_label, from, to) => {
+    expect(() => assertMainTipGates(mutate(from, to))).toThrow();
+  });
+});
+
+describe('publish workflow CI-green preflight', () => {
+  const STEP = 'Require successful CI for this exact main push';
+  const GREEN_RUN = {
+    head_sha: RELEASE_SHA,
+    head_branch: 'main',
+    event: 'push',
+    status: 'completed',
+    conclusion: 'success',
+  };
+
+  function runCiCheck(workflow: Workflow, runs: unknown) {
+    const { run } = step(workflow, 'preflight', STEP);
+    return runStep(
+      expand(run, { 'steps.release.outputs.release_sha': RELEASE_SHA }),
+      {
+        GITHUB_REPOSITORY: 'dichovsky/atlassian-api-client',
+        FAKE_SHA: RELEASE_SHA,
+        FAKE_RUNS_JSON: JSON.stringify(runs),
+      },
+      {
+        gh: [
+          'case "$1 $2" in',
+          '  "api repos/$GITHUB_REPOSITORY/actions/workflows/ci.yml/runs?head_sha=$FAKE_SHA&branch=main&event=push&"*) printf "%s" "$FAKE_RUNS_JSON" ;;',
+          '  *) echo "unexpected gh $*" >&2; exit 64 ;;',
+          'esac',
+        ].join('\n'),
+      },
+    );
+  }
+
+  function assertCiGate(workflow: Workflow): void {
+    for (const runs of [
+      [GREEN_RUN],
+      // a failed run of the same commit does not hide a green one
+      [{ ...GREEN_RUN, conclusion: 'failure' }, GREEN_RUN],
+    ]) {
+      const accepted = runCiCheck(workflow, { workflow_runs: runs });
+      expect(accepted.stderr).toBe('');
+      expect(accepted.status).toBe(0);
+    }
+
+    for (const runs of [
+      [],
+      [{ ...GREEN_RUN, conclusion: 'failure' }],
+      [{ ...GREEN_RUN, status: 'in_progress', conclusion: null }],
+      [{ ...GREEN_RUN, head_sha: 'a'.repeat(40) }],
+      [{ ...GREEN_RUN, head_branch: 'release-410/release-process' }],
+      [{ ...GREEN_RUN, event: 'pull_request' }],
+    ]) {
+      expect(runCiCheck(workflow, { workflow_runs: runs }).status).not.toBe(0);
+    }
+    expect(runCiCheck(workflow, { message: 'Not Found' }).status).not.toBe(0);
+  }
+
+  it('requires a successful CI run of ci.yml for the release commit on main', () => {
+    assertCiGate(parse(PUBLISH_TEXT));
+  });
+
+  it.each([
+    ['the run count check replaced with true', 'test "${successful_runs}" -gt 0', 'true'],
+    ['the head_sha filter dropped', '.head_sha == $sha and\n', ''],
+    ['the branch filter dropped', '.head_branch == "main" and\n', ''],
+    ['the event filter dropped', '.event == "push" and\n', ''],
+    [
+      'the conclusion filter dropped',
+      '.status == "completed" and\n                .conclusion == "success"',
+      '.status == "completed"',
+    ],
+  ])('fails when the step has %s', (_label, from, to) => {
+    expect(() => assertCiGate(mutate(from, to))).toThrow();
   });
 });
 
