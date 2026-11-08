@@ -79,6 +79,7 @@ export class VersionsResource {
     pageId: string,
     params?: Omit<ListVersionsParams, 'cursor'>,
   ): AsyncGenerator<PageVersion> {
+    if (params?.limit !== undefined) validatePageSize(params.limit, 'limit');
     yield* paginateCursor<PageVersion>(
       this.transport,
       `${this.baseUrl}/pages/${encodePathSegment(pageId)}/versions`,

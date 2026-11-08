@@ -53,11 +53,11 @@ const KNOWN_GAPS: Readonly<
   },
   'confluence.databases.resetClassificationLevel': {
     unset: ['status'],
-    reason: 'resets the current version; the draft-status body is not exposed',
+    reason: "no gap: the spec enum is ['current'] only and the SDK default already sends it",
   },
   'confluence.whiteboards.resetClassificationLevel': {
     unset: ['status'],
-    reason: 'resets the current version; the draft-status body is not exposed',
+    reason: "no gap: the spec enum is ['current'] only and the SDK default already sends it",
   },
   'confluence.pages.update': {
     unset: ['spaceId'],
@@ -78,10 +78,6 @@ const KNOWN_GAPS: Readonly<
   'jira.filters.update': {
     unset: ['expand', 'overrideSharePermissions'],
     reason: 'response expansion and the admin share-permission override are not exposed',
-  },
-  'jira.issues.deleteAllWorklogs': {
-    unset: ['adjustEstimate', 'overrideEditableFlag'],
-    reason: 'estimate adjustment and admin override not exposed; defaults apply',
   },
   'jira.projects.create': {
     unset: [

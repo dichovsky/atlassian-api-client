@@ -116,6 +116,7 @@ export class TasksResource {
 
   /** Iterate over all tasks across all result pages. */
   async *listAll(params?: Omit<ListTasksParams, 'cursor'>): AsyncGenerator<ConfluenceTask> {
+    if (params?.limit !== undefined) validatePageSize(params.limit, 'limit');
     const basePath = `${this.baseUrl}/tasks`;
     const { path, query } = buildTasksQuery(basePath, params);
     yield* paginateCursor<ConfluenceTask>(this.transport, path, query);
