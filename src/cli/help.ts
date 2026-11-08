@@ -206,7 +206,7 @@ EXAMPLES:
   atlas confluence folders create --space-id 123 --title "Drafts" --parent-id 456
   atlas confluence folders get 789 --include-direct-children
   atlas confluence folders descendants 789 --depth 3 --limit 50
-  atlas confluence folders direct-children 789 --sort -modified-date
+  atlas confluence folders direct-children 789 --sort=-modified-date
   atlas confluence folders list-properties 789
   atlas confluence footer-comments list --sort=-created-date --limit 25
   atlas confluence footer-comments get 77777 --include-likes --include-versions

@@ -65,7 +65,7 @@ const KNOWN_GAPS: Readonly<
   },
   'confluence.whiteboards.resetClassificationLevel': {
     unset: ['status'],
-    reason: 'resets the current version; the draft-status body is not exposed',
+    reason: "no gap: the spec enum is ['current'] only and the SDK default already sends it",
   },
   'confluence.customContent.create': {
     unset: ['status'],

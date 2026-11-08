@@ -1942,7 +1942,7 @@ async function executeSpaceRoles(client: ConfluenceClient, cmd: ParsedCommand): 
 
   switch (cmd.action) {
     case 'list': {
-      const roleType = asEnum(opts['role-type'], SPACE_ROLE_TYPES, 'role-type');
+      // `role-type` is an open string in the spec (SYSTEM, CUSTOM or tenant-defined).
       const principalType = asEnum(
         opts['principal-type'],
         SPACE_ROLE_PRINCIPAL_TYPES,
@@ -1950,7 +1950,7 @@ async function executeSpaceRoles(client: ConfluenceClient, cmd: ParsedCommand): 
       );
       return client.spaceRoles.list({
         'space-id': asString(opts['space-id']),
-        ...(roleType !== undefined ? { 'role-type': roleType } : {}),
+        'role-type': asString(opts['role-type']),
         'principal-id': asString(opts['principal-id']),
         ...(principalType !== undefined ? { 'principal-type': principalType } : {}),
         limit: asPositiveInt(opts['limit'], '--limit'),
@@ -2157,6 +2157,30 @@ async function executeUsersBulk(client: ConfluenceClient, cmd: ParsedCommand): P
   }
 }
 
+/**
+ * The `version` of an update body: required `--version-number`, plus
+ * `--version-message` as `version.message` when given. Shared by the
+ * databases / embeds / folders / whiteboards `update-property` and
+ * `footer-comments update` actions.
+ */
+function newVersion(opts: ParsedCommand['options']): { number: number; message?: string } {
+  const number = requirePositiveInt(opts['version-number'], '--version-number');
+  const message = asString(opts['version-message']);
+  return message !== undefined ? { number, message } : { number };
+}
+
+/**
+ * `POST /folders` and `POST /embeds` take no `private` parameter, so a
+ * `--private` there would be silently dropped and create visible content.
+ */
+function rejectPrivate(opts: ParsedCommand['options'], resource: string): void {
+  if (opts['private'] === true) {
+    throw new Error(
+      `--private is not supported by ${resource} create (only databases and whiteboards create take it)`,
+    );
+  }
+}
+
 async function executeDatabases(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown> {
   const opts = cmd.options;
 
@@ -2235,18 +2259,14 @@ async function executeDatabases(client: ConfluenceClient, cmd: ParsedCommand): P
         requireOpt(opts['property-id'], '--property-id'),
       );
     case 'update-property': {
-      const versionNum = requirePositiveInt(opts['version-number'], '--version-number');
-      const versionMessage = asString(opts['version-message']);
+      const version = newVersion(opts);
       return client.databases.updateProperty(
         requireArg(cmd.positionalArgs[0], 'database ID'),
         requireOpt(opts['property-id'], '--property-id'),
         {
           key: requireOpt(opts['key'], '--key'),
           value: parseJsonValue(requireOpt(opts['value'], '--value')),
-          version: {
-            number: versionNum,
-            ...(versionMessage !== undefined ? { message: versionMessage } : {}),
-          },
+          version,
         },
       );
     }
@@ -2333,6 +2353,7 @@ async function executeEmbeds(client: ConfluenceClient, cmd: ParsedCommand): Prom
 
   switch (cmd.action) {
     case 'create':
+      rejectPrivate(opts, 'embeds');
       return client.embeds.create({
         spaceId: requireOpt(opts['space-id'], '--space-id'),
         title: asString(opts['title']),
@@ -2356,7 +2377,7 @@ async function executeEmbeds(client: ConfluenceClient, cmd: ParsedCommand): Prom
     case 'descendants':
       return client.embeds.listDescendants(requireArg(cmd.positionalArgs[0], 'embed ID'), {
         limit: asPositiveInt(opts['limit'], '--limit'),
-        depth: asPositiveInt(opts['depth'], '--depth'),
+        depth: asDepth(opts['depth']),
         cursor: asString(opts['cursor']),
       });
     case 'direct-children': {
@@ -2387,14 +2408,14 @@ async function executeEmbeds(client: ConfluenceClient, cmd: ParsedCommand): Prom
         requireOpt(opts['property-id'], '--property-id'),
       );
     case 'update-property': {
-      const versionNum = requirePositiveInt(opts['version-number'], '--version-number');
+      const version = newVersion(opts);
       return client.embeds.updateProperty(
         requireArg(cmd.positionalArgs[0], 'embed ID'),
         requireOpt(opts['property-id'], '--property-id'),
         {
           key: requireOpt(opts['key'], '--key'),
           value: parseJsonValue(requireOpt(opts['value'], '--value')),
-          version: { number: versionNum },
+          version,
         },
       );
     }
@@ -2416,6 +2437,7 @@ async function executeFolders(client: ConfluenceClient, cmd: ParsedCommand): Pro
 
   switch (cmd.action) {
     case 'create':
+      rejectPrivate(opts, 'folders');
       return client.folders.create({
         spaceId: requireOpt(opts['space-id'], '--space-id'),
         title: asString(opts['title']),
@@ -2438,7 +2460,7 @@ async function executeFolders(client: ConfluenceClient, cmd: ParsedCommand): Pro
     case 'descendants':
       return client.folders.listDescendants(requireArg(cmd.positionalArgs[0], 'folder ID'), {
         limit: asPositiveInt(opts['limit'], '--limit'),
-        depth: asPositiveInt(opts['depth'], '--depth'),
+        depth: asDepth(opts['depth']),
         cursor: asString(opts['cursor']),
       });
     case 'direct-children': {
@@ -2469,14 +2491,14 @@ async function executeFolders(client: ConfluenceClient, cmd: ParsedCommand): Pro
         requireOpt(opts['property-id'], '--property-id'),
       );
     case 'update-property': {
-      const versionNum = requirePositiveInt(opts['version-number'], '--version-number');
+      const version = newVersion(opts);
       return client.folders.updateProperty(
         requireArg(cmd.positionalArgs[0], 'folder ID'),
         requireOpt(opts['property-id'], '--property-id'),
         {
           key: requireOpt(opts['key'], '--key'),
           value: parseJsonValue(requireOpt(opts['value'], '--value')),
-          version: { number: versionNum },
+          version,
         },
       );
     }
@@ -2560,10 +2582,10 @@ async function executeFooterComments(
       });
     }
     case 'update': {
-      const versionNum = requirePositiveInt(opts['version-number'], '--version-number');
+      const version = newVersion(opts);
       // NOTE: deliberate cross-resource call — see CommentsResource.updateFooter for single source of truth
       return client.comments.updateFooter(requireArg(cmd.positionalArgs[0], 'comment ID'), {
-        version: { number: versionNum },
+        version,
         body: {
           representation: 'storage',
           value: requireOpt(opts['body'], '--body'),
@@ -2761,14 +2783,14 @@ async function executeWhiteboards(client: ConfluenceClient, cmd: ParsedCommand):
         requireOpt(opts['property-id'], '--property-id'),
       );
     case 'update-property': {
-      const versionNum = requirePositiveInt(opts['version-number'], '--version-number');
+      const version = newVersion(opts);
       return client.whiteboards.updateProperty(
         requireArg(cmd.positionalArgs[0], 'whiteboard ID'),
         requireOpt(opts['property-id'], '--property-id'),
         {
           key: requireOpt(opts['key'], '--key'),
           value: parseJsonValue(requireOpt(opts['value'], '--value')),
-          version: { number: versionNum },
+          version,
         },
       );
     }

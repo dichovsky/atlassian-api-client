@@ -6749,10 +6749,12 @@ describe('executeConfluenceCommand', () => {
       });
     });
 
-    it('space-roles list rejects invalid --role-type', async () => {
-      const parsed = cmd('space-roles', 'list', [], { 'role-type': 'bogus' });
-      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
-        '--role-type must be one of: SYSTEM, CUSTOM',
+    it('space-roles list forwards a tenant-defined --role-type (open string in the spec, F068)', async () => {
+      confluenceSpaceRolesMock.list.mockResolvedValue({ results: [], _links: {} });
+      const parsed = cmd('space-roles', 'list', [], { 'role-type': 'TENANT_DEFINED' });
+      await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluenceSpaceRolesMock.list).toHaveBeenCalledWith(
+        expect.objectContaining({ 'role-type': 'TENANT_DEFINED' }),
       );
     });
 

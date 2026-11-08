@@ -1,7 +1,9 @@
 /**
  * CLI → wire regressions for release 4.1.0 unit conf-b: `tasks`,
  * `footer-comments`, `inline-comments`, `databases` (and the versions resource
- * behind `pages versions`), plus the CLI→HTTP coverage the audit found missing
+ * behind `pages versions`), the `embeds` / `folders` / `whiteboards` /
+ * `space-roles` / `space-permissions` / `data-policies` / `admin-key` findings
+ * batched with them, plus the CLI→HTTP coverage the audit found missing
  * (F052, F059, F065). Every case drives real argv through {@link runCliWire},
  * and every captured request is checked against the pinned
  * `spec/confluence-v2.json` (operation exists for method + path, every query
@@ -161,6 +163,11 @@ describe('every documented command for these resources runs (F044, F064, F070)',
     '`app`',
     '`space-permissions`',
     '`space-roles`',
+    '`embeds`',
+    '`folders`',
+    '`whiteboards`',
+    '`data-policies`',
+    '`admin-key`',
     'Content permissions and restriction state',
   ];
 
@@ -183,10 +190,12 @@ describe('every documented command for these resources runs (F044, F064, F070)',
     .split('\n')
     .map((line) => line.trim())
     .filter((line) =>
-      /^atlas confluence (tasks|databases|footer-comments|inline-comments) /.test(line),
+      /^atlas confluence (tasks|databases|embeds|folders|whiteboards|footer-comments|inline-comments|space-roles|space-permissions|data-policies) /.test(
+        line,
+      ),
     );
   it('finds the help examples for these resources', () => {
-    expect(helpLines.length).toBeGreaterThanOrEqual(20);
+    expect(helpLines.length).toBeGreaterThanOrEqual(45);
   });
   it.each(helpLines)('--help example: %s', async (line) => {
     const [argv] = shellCommands(line.replace(/<([^>]+)>/g, '$1'));
@@ -389,27 +398,190 @@ describe('likes-users --limit accepts the spec minimum 0 (F067)', () => {
 
 // ─── databases ──────────────────────────────────────────────────────────────
 
-describe('databases update-property --version-message (F054)', () => {
-  const base = ['databases', 'update-property', '456', '--property-id', 'prop-1'];
+describe('update-property --version-message (F046, F054)', () => {
+  it.each(['databases', 'embeds', 'folders', 'whiteboards'])(
+    '%s update-property sends version.message when given',
+    async (resource) => {
+      const req = await sent([
+        ...[
+          resource,
+          'update-property',
+          '456',
+          '--property-id',
+          'prop/1',
+          '--key',
+          'feature-flags',
+        ],
+        ...['--value', '{"beta":true}', '--version-number', '5'],
+        ...['--version-message', 'Re-enable beta'],
+      ]);
+      expect(req.method).toBe('PUT');
+      expect(req.path).toBe(`${V2}/${resource}/456/properties/prop%2F1`);
+      expect(queryOf(req)).toEqual({});
+      expect(req.body).toEqual({
+        key: 'feature-flags',
+        value: { beta: true },
+        version: { number: 5, message: 'Re-enable beta' },
+      });
+    },
+  );
 
-  it('sends version.message when given', async () => {
+  it.each(['databases', 'embeds', 'folders', 'whiteboards'])(
+    '%s update-property sends only version.number without it',
+    async (resource) => {
+      const req = await sent([
+        ...[resource, 'update-property', '456', '--property-id', 'prop-1'],
+        ...['--key', 'k', '--value', '1', '--version-number', '4'],
+      ]);
+      expect(req.body).toEqual({ key: 'k', value: 1, version: { number: 4 } });
+    },
+  );
+
+  it('footer-comments update sends version.message with the storage body', async () => {
     const req = await sent([
-      ...base,
-      ...['--key', 'feature-flags', '--value', '{"beta":true}', '--version-number', '5'],
-      ...['--version-message', 'Re-enable beta'],
+      ...['footer-comments', 'update', '77777', '--body', 'Fixed typo', '--version-number', '3'],
+      ...['--version-message', 'Typo fix'],
     ]);
     expect(req.method).toBe('PUT');
-    expect(req.path).toBe(`${V2}/databases/456/properties/prop-1`);
+    expect(req.path).toBe(`${V2}/footer-comments/77777`);
     expect(req.body).toEqual({
-      key: 'feature-flags',
-      value: { beta: true },
-      version: { number: 5, message: 'Re-enable beta' },
+      version: { number: 3, message: 'Typo fix' },
+      body: { representation: 'storage', value: 'Fixed typo' },
     });
   });
 
-  it('sends only version.number without it', async () => {
-    const req = await sent([...base, '--key', 'k', '--value', '1', '--version-number', '4']);
-    expect(req.body).toEqual({ key: 'k', value: 1, version: { number: 4 } });
+  it('still requires --version-number, and checks it before the ID', async () => {
+    await rejected(
+      ['embeds', 'update-property', '--property-id', 'p', '--key', 'k', '--value', '1'],
+      'Missing required option: --version-number',
+    );
+    await rejected(
+      [
+        'folders',
+        'update-property',
+        'f1',
+        '--property-id',
+        'p',
+        '--key',
+        'k',
+        '--value',
+        '1',
+      ].concat(['--version-number', '0', '--version-message', 'm']),
+      '--version-number must be a positive integer, got: 0',
+    );
+  });
+});
+
+// ─── embeds / folders ───────────────────────────────────────────────────────
+
+describe('embeds / folders descendants --depth is 1-10 like databases (F058)', () => {
+  it.each([
+    ['embeds', '0'],
+    ['embeds', '11'],
+    ['folders', '0'],
+    ['folders', '11'],
+  ])('%s descendants --depth %s is rejected before the request', async (resource, depth) => {
+    await rejected(
+      [resource, 'descendants', 'x1', '--depth', depth],
+      `--depth must be between 1 and 10 (per API spec), got: ${depth}`,
+    );
+  });
+
+  it.each(['embeds', 'folders'])('%s descendants --depth 10 reaches the wire', async (resource) => {
+    const req = await sent([resource, 'descendants', 'x1', '--depth', '10', '--limit', '5']);
+    expect(req.path).toBe(`${V2}/${resource}/x1/descendants`);
+    expect(queryOf(req)).toEqual({ depth: '10', limit: '5' });
+  });
+});
+
+describe('--private on folders / embeds create is rejected, not dropped (F057)', () => {
+  it.each(['folders', 'embeds'])(
+    '%s create --private fails without a request',
+    async (resource) => {
+      await rejected(
+        [resource, 'create', '--space-id', '654321', '--private'],
+        `--private is not supported by ${resource} create (only databases and whiteboards create take it)`,
+      );
+    },
+  );
+
+  it.each(['folders', 'embeds'])(
+    '%s create --private false is the default and still creates',
+    async (resource) => {
+      const req = await sent([resource, 'create', '--space-id', '654321', '--private', 'false']);
+      expect(req.method).toBe('POST');
+      expect(req.path).toBe(`${V2}/${resource}`);
+      expect(queryOf(req)).toEqual({});
+      expect(req.body).toEqual({ spaceId: '654321' });
+    },
+  );
+
+  it('whiteboards create --private still sends private=true', async () => {
+    const req = await sent(['whiteboards', 'create', '--space-id', '654321', '--private']);
+    expect(queryOf(req)).toEqual({ private: 'true' });
+  });
+});
+
+// ─── whiteboards / space-roles / space-permissions skill text ───────────────
+
+describe('whiteboards create allowlists are in the skill (F047)', () => {
+  const section = skillSection('`whiteboards`');
+
+  /** The allowlist the CLI prints for an invalid value of `flag`. */
+  async function allowlist(flag: string): Promise<string[]> {
+    const run = await runCliWire([C, 'whiteboards', 'create', '--space-id', '1', flag, 'bogus']);
+    expect(run.requests).toHaveLength(0);
+    const match = /must be one of: (.*), got: bogus/.exec(run.stderr);
+    return (match?.[1] ?? '').split(', ');
+  }
+
+  it.each([
+    ['--template-key', 53],
+    ['--locale', 21],
+  ])('every %s value the CLI accepts is listed', async (flag, count) => {
+    const values = await allowlist(flag);
+    expect(values).toHaveLength(count);
+    for (const value of values) expect(section).toContain(`\`${value}\``);
+  });
+
+  it('does not point at a source file the installed skill does not ship', () => {
+    expect(section).not.toContain('src/confluence/types.ts');
+  });
+});
+
+describe('space-roles list --role-type is an open string (F068)', () => {
+  it('sends a tenant-defined role type with the principal pair', async () => {
+    const req = await sent([
+      ...[
+        'space-roles',
+        'list',
+        '--role-type',
+        'TENANT_DEFINED',
+        '--principal-type',
+        'ACCESS_CLASS',
+      ],
+      ...['--principal-id', 'all-licensed-users'],
+    ]);
+    expect(req.method).toBe('GET');
+    expect(req.path).toBe(`${V2}/space-roles`);
+    expect(queryOf(req)).toEqual({
+      'role-type': 'TENANT_DEFINED',
+      'principal-type': 'ACCESS_CLASS',
+      'principal-id': 'all-licensed-users',
+    });
+  });
+});
+
+describe('transition-list-combinations documents its body cursor (F066)', () => {
+  it('names the response cursor and generatedAt, and fetches page 2 with --cursor', async () => {
+    const section = skillSection('`space-permissions`');
+    expect(section).toContain('{ results, generatedAt?, cursor? }');
+    expect(section).toContain('Confluence administrator');
+    const req = await sent([
+      ...['space-permissions', 'transition-list-combinations', '--limit', '50'],
+      ...['--cursor', 'next-page-cursor'],
+    ]);
+    expect(queryOf(req)).toEqual({ limit: '50', cursor: 'next-page-cursor' });
   });
 });
 
