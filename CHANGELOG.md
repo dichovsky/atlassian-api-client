@@ -2,6 +2,23 @@
 
 ## [Unreleased](https://github.com/dichovsky/atlassian-api-client/compare/v4.1.0...HEAD)
 
+Covers the operations Atlassian added to the Jira platform v3 and Confluence v2 specs between 2026-09-02 and 2026-11-08; both snapshots are re-pinned. No public signature is removed or narrowed. Experimental endpoints are marked as such in their JSDoc and may change upstream without notice.
+
+### Added
+
+- **Confluence content permissions.** `pages`, `blogPosts`, `databases`, `whiteboards`, and `folders` each gain `getRestrictionState`, `setRestrictionState`, `listPermissions` / `listPermissionsAll`, `addPermissions`, `setPermissions`, and `deletePermissions`, with matching CLI actions (`get-restriction-state`, `set-restriction-state`, `list-permissions`, `add-permissions`, `set-permissions`, `delete-permissions`). `allow-self-lockout` is sent only when the caller sets it.
+- **Confluence database data (experimental).** `databases.listFields`, `listViews`, `listEntries` (with `sort` and `filter`), their `…All` generators, and `getEntry`; CLI `fields`, `views`, `entries`, and `get-entry`.
+- **Jira space policies (experimental).** New `client.policies` resource and `policies` CLI resource: list policies, read a project's policy state and rules, set or validate a project's policies, and apply or remove a policy across projects.
+- **Jira agent bulk invocation (experimental).** New `client.agents` resource (`startBatch`, `startUniform`) and `agents` CLI resource.
+- `jql.getInvalidJqlAuditEntries` (experimental), `forge.getBulkPinStatus`, `workflows.copyWorkflow`, and `fields.updateContextDefaultValues` for per-issue-type context defaults, each with a CLI action.
+- `fields.setContextIssueTypes` accepts `isAnyIssueType` and `defaultValue`, and `issueTypeIds` is now optional; the `longtext` custom-field context default-value variant; `query` and `scope` on `labels.list` / `listAll`; `query` on `config.listProjects` / `listProjectsAll`.
+- `read:bulk-job:jira` and `write:bulk-job:jira` in the OAuth scope catalog.
+- Every new request and response type above is exported from the package root (`atlassian-api-client`), e.g. `ContentPermissionsRequest`, `DatabaseEntryFilter`, `PolicySummaryResponse`, `StartAgentSessionsBatchData`, `WorkflowCopyRequest`, and `IssueTypeDefaultValueUpdate`.
+
+### Fixed
+
+- **The removed workflow transition-rule `draft` parameter is rejected before sending.** Atlassian removed it on 2026-11-02 and now answers it with HTTP 400, although the published spec still lists it. `getTransitionRuleConfigs` with `draft`, and `updateTransitionRuleConfigs` / `deleteTransitionRuleConfigs` with a `workflowId.draft`, now throw `ValidationError` without making a request, and `atlas jira workflows get-rule-config --draft` is rejected. The fields stay in the types, marked `@deprecated`.
+
 ## [4.1.0](https://github.com/dichovsky/atlassian-api-client/compare/v4.0.0...v4.1.0) (2026-09-11)
 
 A correctness release for the core transport, error, auth, and retry layers. There is no runtime change outside `src/core`; no resource, client, or CLI signature changed, and no public export was removed. The one new API is additive.

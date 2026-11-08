@@ -39,6 +39,8 @@ import { AuditingResource } from './resources/auditing.js';
 import { EventsResource } from './resources/events.js';
 import { ChangelogResource } from './resources/changelog.js';
 import { ForgeResource } from './resources/forge.js';
+import { PoliciesResource } from './resources/policies.js';
+import { AgentsResource } from './resources/agents.js';
 import { IncidentsResource } from './resources/incidents.js';
 import { PostIncidentReviewsResource } from './resources/post-incident-reviews.js';
 import { VulnerabilityResource } from './resources/vulnerability.js';
@@ -247,6 +249,10 @@ export class JiraClient {
   readonly changelog: ChangelogResource;
   /** Forge panel actions resource. */
   readonly forge: ForgeResource;
+  /** Jira policies resource (experimental; base: /rest/api/3/policies). */
+  readonly policies: PoliciesResource;
+  /** Bulk-start Rovo agent sessions on issues (experimental; base: /rest/api/3/agents). */
+  readonly agents: AgentsResource;
   /** Jira Operations incidents resource (base: /rest/operations/1.0). */
   readonly incidents: IncidentsResource;
   /** Jira Operations post-incident reviews resource (base: /rest/operations/1.0). */
@@ -457,6 +463,8 @@ export class JiraClient {
     this.events = new EventsResource(transport, baseUrl);
     this.changelog = new ChangelogResource(transport, baseUrl);
     this.forge = new ForgeResource(transport, baseUrl);
+    this.policies = new PoliciesResource(transport, baseUrl);
+    this.agents = new AgentsResource(transport, baseUrl);
     this.incidents = new IncidentsResource(transport, operationsBaseUrl);
     this.postIncidentReviews = new PostIncidentReviewsResource(transport, operationsBaseUrl);
     this.vulnerability = new VulnerabilityResource(transport, securityBaseUrl);

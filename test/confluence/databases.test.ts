@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
+import { describeContentPermissions } from './content-permissions-suite.js';
 import { DatabasesResource } from '../../src/confluence/resources/databases.js';
 import { MockTransport } from '../helpers/mock-transport.js';
 import { ValidationError } from '../../src/core/errors.js';
@@ -665,3 +666,217 @@ describe('DatabasesResource', () => {
     });
   });
 });
+
+// ── data: fields, views, entries (experimental) ─────────────────────────────
+
+describe('DatabasesResource data endpoints', () => {
+  let transport: MockTransport;
+  let resource: DatabasesResource;
+
+  const listEnvelope = (results: unknown[], next?: string) => ({
+    results,
+    _links: {
+      self: '/databases/42/x',
+      base: 'https://test.atlassian.net/wiki',
+      ...(next ? { next } : {}),
+    },
+    meta: { pageSize: 50, hasMore: next !== undefined },
+  });
+
+  beforeEach(() => {
+    transport = new MockTransport();
+    resource = new DatabasesResource(transport, BASE_URL);
+  });
+
+  describe.each([
+    ['listFields', 'fields'],
+    ['listViews', 'views'],
+    ['listEntries', 'entries'],
+  ] as const)('%s()', (method, leaf) => {
+    it(`issues GET /databases/{id}/${leaf} with an empty query and no headers by default`, async () => {
+      const payload = listEnvelope([{ id: 'x1' }]);
+      transport.respondWith(payload);
+
+      const result = await resource[method]('42');
+
+      expect(result).toEqual(payload);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/databases/42/${leaf}`,
+      });
+      expect(transport.lastCall?.options.query).toEqual({});
+      expect(transport.lastCall?.options.headers).toBeUndefined();
+    });
+
+    it('passes limit and cursor as query and ifNoneMatch as the If-None-Match header', async () => {
+      transport.respondWith(listEnvelope([]));
+
+      await resource[method]('42', { limit: 250, cursor: 'tok', ifNoneMatch: '"etag-1"' });
+
+      expect(transport.lastCall?.options.query).toEqual({ limit: 250, cursor: 'tok' });
+      expect(transport.lastCall?.options.headers).toEqual({ 'If-None-Match': '"etag-1"' });
+    });
+
+    it('rejects an invalid limit before any request and encodes the id', async () => {
+      await expect(resource[method]('42', { limit: 0 })).rejects.toThrow(ValidationError);
+      expect(transport.calls).toHaveLength(0);
+
+      transport.respondWith(listEnvelope([]));
+      await resource[method]('a/b');
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/databases/a%2Fb/${leaf}`);
+    });
+  });
+
+  describe('listEntries() sort and filter', () => {
+    it('sends sort and flattens scalar filters into filter[fieldId] keys', async () => {
+      transport.respondWith(listEnvelope([]));
+
+      await resource.listEntries('42', {
+        sort: '-fld1',
+        filter: { fld1: 'eq:Done', fld2: 7, fld3: true },
+      });
+
+      expect(transport.lastCall?.options.query).toEqual({
+        sort: '-fld1',
+        'filter[fld1]': 'eq:Done',
+        'filter[fld2]': 7,
+        'filter[fld3]': true,
+      });
+    });
+
+    it('flattens range filters into filter[fieldId][operator] keys', async () => {
+      transport.respondWith(listEnvelope([]));
+
+      await resource.listEntries('42', {
+        filter: { due: { gte: '2026-01-01', lt: '2027-01-01' }, qty: { gt: 3 } },
+      });
+
+      expect(transport.lastCall?.options.query).toEqual({
+        'filter[due][gte]': '2026-01-01',
+        'filter[due][lt]': '2027-01-01',
+        'filter[qty][gt]': 3,
+      });
+    });
+
+    it.each(['', 'a[b', 'a]b'])('rejects the field ID %j in a filter', async (fieldId) => {
+      await expect(resource.listEntries('42', { filter: { [fieldId]: 'x' } })).rejects.toThrow(
+        ValidationError,
+      );
+      expect(transport.calls).toHaveLength(0);
+    });
+
+    it('rejects an unknown range operator', async () => {
+      await expect(
+        resource.listEntries('42', {
+          filter: { fld1: { neq: 'x' } as unknown as { gte: string } },
+        }),
+      ).rejects.toThrow('range operator');
+      expect(transport.calls).toHaveLength(0);
+    });
+
+    it('rejects a filter condition that is neither scalar nor a range object', async () => {
+      await expect(
+        resource.listEntries('42', { filter: { fld1: null as unknown as string } }),
+      ).rejects.toThrow('must be a string, number, boolean, or range object');
+      expect(transport.calls).toHaveLength(0);
+    });
+
+    it('rejects an array condition as non-scalar instead of reading indices as operators', async () => {
+      await expect(
+        resource.listEntries('42', { filter: { fld1: ['a', 'b'] as unknown as string } }),
+      ).rejects.toThrow('must be a string, number, boolean, or range object');
+      expect(transport.calls).toHaveLength(0);
+    });
+
+    it('rejects an empty range object instead of silently dropping the filter', async () => {
+      await expect(resource.listEntries('42', { filter: { due: {} } })).rejects.toThrow(
+        'must set at least one of gte, lte, gt, lt',
+      );
+      expect(transport.calls).toHaveLength(0);
+    });
+
+    it.each([null, {}, true])('rejects the non-scalar range value %j', async (value) => {
+      await expect(
+        resource.listEntries('42', { filter: { due: { gte: value as unknown as string } } }),
+      ).rejects.toThrow('range value for "due" gte must be a string or number');
+      expect(transport.calls).toHaveLength(0);
+    });
+  });
+
+  describe.each([
+    ['listFieldsAll', 'fields'],
+    ['listViewsAll', 'views'],
+    ['listEntriesAll', 'entries'],
+  ] as const)('%s()', (method, leaf) => {
+    it('follows _links.next cursors and keeps limit, sort and filter on every page', async () => {
+      transport
+        .respondWith(listEnvelope([{ id: 'a' }], `/wiki/api/v2/databases/42/${leaf}?cursor=c2`))
+        .respondWith(listEnvelope([{ id: 'b' }]));
+
+      const params = {
+        limit: 1,
+        ...(method === 'listEntriesAll' ? { sort: 'f', filter: { f: 'x' } } : {}),
+      };
+      const ids: string[] = [];
+      for await (const item of resource[method]('42', params)) {
+        ids.push((item as { id: string }).id);
+      }
+
+      expect(ids).toEqual(['a', 'b']);
+      expect(transport.calls).toHaveLength(2);
+      expect(transport.calls[0]?.options.path).toBe(`${BASE_URL}/databases/42/${leaf}`);
+      const expectedBase =
+        method === 'listEntriesAll' ? { limit: 1, sort: 'f', 'filter[f]': 'x' } : { limit: 1 };
+      expect(transport.calls[0]?.options.query).toEqual(expectedBase);
+      expect(transport.calls[1]?.options.query).toEqual({ ...expectedBase, cursor: 'c2' });
+    });
+
+    it('sends an empty query without params and rejects an invalid limit', async () => {
+      transport.respondWith(listEnvelope([]));
+
+      for await (const item of resource[method]('42')) void item;
+
+      expect(transport.lastCall?.options.query).toEqual({});
+      await expect(resource[method]('42', { limit: -1 }).next()).rejects.toThrow(ValidationError);
+    });
+  });
+
+  describe('getEntry()', () => {
+    it('issues GET /databases/{id}/entries/{entryId} with encoded segments and no headers', async () => {
+      const entry = {
+        id: 'e1',
+        databaseId: '42',
+        values: { fld1: { type: 'text', plain: 'hi', rich: null } },
+        _links: { self: '/databases/42/entries/e1', base: 'https://test.atlassian.net/wiki' },
+      };
+      transport.respondWith(entry);
+
+      const result = await resource.getEntry('42', 'e/1');
+
+      expect(result).toEqual(entry);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/databases/42/entries/e%2F1`,
+      });
+      expect(transport.lastCall?.options.headers).toBeUndefined();
+    });
+
+    it('sends ifNoneMatch as the If-None-Match header', async () => {
+      transport.respondWith({});
+
+      await resource.getEntry('42', 'e1', { ifNoneMatch: 'W/"abc"' });
+
+      expect(transport.lastCall?.options.headers).toEqual({ 'If-None-Match': 'W/"abc"' });
+    });
+
+    it('rejects dot-segment entry IDs', async () => {
+      await expect(resource.getEntry('42', '..')).rejects.toThrow(ValidationError);
+    });
+  });
+});
+
+describeContentPermissions(
+  'DatabasesResource',
+  'databases',
+  (transport) => new DatabasesResource(transport, BASE_URL),
+);

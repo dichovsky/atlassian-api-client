@@ -118,6 +118,20 @@ export interface ListWorkflowsParams {
   readonly isActive?: boolean;
 }
 
+/** Message for the `draft` workflow-rule parameter Atlassian removed on 2026-11-02 (CHANGE-3147). */
+function draftRemovedMessage(where: string): string {
+  return `${where} was removed by Atlassian on 2026-11-02 (CHANGE-3147); the API now rejects it with HTTP 400. Omit it.`;
+}
+
+/** Reject workflow-rule entries whose `workflowId.draft` is set (removed 2026-11-02). */
+function assertNoDraftWorkflowIds(
+  entries: readonly { readonly workflowId: WorkflowIdRef }[],
+): void {
+  if (entries.some((entry) => entry.workflowId?.draft !== undefined)) {
+    throw new ValidationError(draftRemovedMessage('workflowId.draft'));
+  }
+}
+
 export class WorkflowsResource {
   constructor(
     private readonly transport: Transport,
@@ -385,6 +399,25 @@ export class WorkflowsResource {
   }
 
   /**
+   * Copy a workflow, and the statuses it uses, into a new workflow.
+   * POST /rest/api/3/workflows/copy (`copyWorkflow`).
+   *
+   * @remarks
+   * The copy is created in the same scope as its source. Requires permission to
+   * read the source and to create the copy (*Administer Jira*, or the project
+   * permissions for a project-scoped workflow). Responds 409 while another
+   * workflow configuration update task is running.
+   */
+  async copyWorkflow(body: WorkflowCopyRequest): Promise<WorkflowCreateResponse> {
+    const resp = await this.transport.request<WorkflowCreateResponse>({
+      method: 'POST',
+      path: `${this.baseUrl}/workflows/copy`,
+      body,
+    });
+    return resp.data;
+  }
+
+  /**
    * Get workflow transition rule configurations (B843).
    * GET /rest/api/3/workflow/rule/config
    */
@@ -394,11 +427,13 @@ export class WorkflowsResource {
     if (!params.types || params.types.length === 0) {
       throw new ValidationError('types is required for getTransitionRuleConfigs');
     }
+    if (params.draft !== undefined) {
+      throw new ValidationError(draftRemovedMessage('draft'));
+    }
     if (params.maxResults !== undefined) validatePageSize(params.maxResults, 'maxResults');
-    const query: Record<string, string | number | boolean | undefined> = {};
+    const query: Record<string, string | number | undefined> = {};
     if (params.startAt !== undefined) query['startAt'] = params.startAt;
     if (params.maxResults !== undefined) query['maxResults'] = params.maxResults;
-    if (params.draft !== undefined) query['draft'] = params.draft;
     if (params.expand !== undefined) query['expand'] = params.expand;
     let path = appendRepeatedParams(`${this.baseUrl}/workflow/rule/config`, 'types', params.types);
     path = appendRepeatedParams(path, 'keys', params.keys);
@@ -435,6 +470,7 @@ export class WorkflowsResource {
     if (!body.workflows || body.workflows.length === 0) {
       throw new ValidationError('workflows array is required for updateTransitionRuleConfigs');
     }
+    assertNoDraftWorkflowIds(body.workflows);
     const resp = await this.transport.request<WorkflowTransitionRulesUpdateErrors>({
       method: 'PUT',
       path: `${this.baseUrl}/workflow/rule/config`,
@@ -465,6 +501,7 @@ export class WorkflowsResource {
     if (!body.workflows || body.workflows.length === 0) {
       throw new ValidationError('workflows array is required for deleteTransitionRuleConfigs');
     }
+    assertNoDraftWorkflowIds(body.workflows);
     const resp = await this.transport.request<WorkflowTransitionRulesUpdateErrors>({
       method: 'PUT',
       path: `${this.baseUrl}/workflow/rule/config/delete`,
@@ -746,6 +783,16 @@ export interface WorkflowCreateResponse {
   readonly statuses?: JiraWorkflowStatus[];
 }
 
+/** Request body for POST /rest/api/3/workflows/copy (`copyWorkflow`). Spec: `WorkflowCopyRequest`. */
+export interface WorkflowCopyRequest {
+  /** The ID of the workflow to copy (1-255 chars). */
+  readonly workflowId: string;
+  /** The name of the new workflow (1-255 chars). */
+  readonly workflowName: string;
+  /** Description of the new workflow (max 2048 chars). Defaults to empty. */
+  readonly description?: string;
+}
+
 /** Validation level options for validate-create. */
 export interface ValidationOptionsForCreate {
   readonly levels?: string[];
@@ -879,7 +926,11 @@ export interface WorkflowTransitionRuleConfigParams {
   readonly keys?: string[];
   readonly workflowNames?: string[];
   readonly withTags?: string[];
-  /** @deprecated The 'draft' parameter will be removed on November 2, 2026. */
+  /**
+   * @deprecated Removed by Atlassian on 2026-11-02 (CHANGE-3147): requests that
+   * include `draft` now fail with HTTP 400. `getTransitionRuleConfigs` throws a
+   * `ValidationError` when it is set and never sends it.
+   */
   readonly draft?: boolean;
   readonly expand?: string;
 }
@@ -906,10 +957,14 @@ export interface AppWorkflowTransitionRuleItem {
   readonly transition?: TransitionRuleTransitionRef;
 }
 
-/** Identifies a workflow by name (and optionally draft status). Mirrors spec WorkflowId. */
+/** Identifies a workflow by name. Mirrors spec WorkflowId. */
 export interface WorkflowIdRef {
   readonly name: string;
-  /** @deprecated Will be removed November 2, 2026. */
+  /**
+   * @deprecated Removed by Atlassian on 2026-11-02 (CHANGE-3147); responses no
+   * longer carry it. `updateTransitionRuleConfigs` and `deleteTransitionRuleConfigs`
+   * throw a `ValidationError` when a request `workflowId` sets it.
+   */
   readonly draft?: boolean;
 }
 
