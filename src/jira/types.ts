@@ -369,6 +369,13 @@ export interface UpdateIssueCommentData {
 export interface ListLabelsParams {
   readonly startAt?: number;
   readonly maxResults?: number;
+  /** Case-insensitive prefix used to filter labels before pagination. */
+  readonly query?: string;
+  /**
+   * Search scope: `RECENT_PROJECTS` or `ALL_BROWSEABLE_PROJECTS`. When omitted the
+   * search is unbounded; blank or unrecognised values use `ALL_BROWSEABLE_PROJECTS`.
+   */
+  readonly scope?: string;
 }
 
 // --- User Management Types (B797-B808) ---

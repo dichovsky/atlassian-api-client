@@ -67,6 +67,29 @@ describe('LabelsResource', () => {
       const query = transport.lastCall?.options.query ?? {};
       expect(query['startAt']).toBeUndefined();
       expect(query['maxResults']).toBeUndefined();
+      expect(query['query']).toBeUndefined();
+      expect(query['scope']).toBeUndefined();
+    });
+
+    it('passes the query prefix filter and scope', async () => {
+      transport.respondWith(makeLabelsResponse(['bug']));
+
+      await resource.list({ query: 'bu', scope: 'RECENT_PROJECTS' });
+
+      expect(transport.lastCall?.options.query).toEqual({
+        query: 'bu',
+        scope: 'RECENT_PROJECTS',
+      });
+    });
+
+    it('passes only the filter that is set', async () => {
+      transport.respondWith(makeLabelsResponse([])).respondWith(makeLabelsResponse([]));
+
+      await resource.list({ query: 'bu' });
+      expect(transport.lastCall?.options.query).toEqual({ query: 'bu' });
+
+      await resource.list({ scope: 'ALL_BROWSEABLE_PROJECTS' });
+      expect(transport.lastCall?.options.query).toEqual({ scope: 'ALL_BROWSEABLE_PROJECTS' });
     });
 
     it('includes nextPage and self URL fields from spec', async () => {
@@ -138,6 +161,39 @@ describe('LabelsResource', () => {
       }
 
       expect(results).toEqual(['alpha', 'beta']);
+    });
+
+    it('forwards query and scope on every page', async () => {
+      transport
+        .respondWith({ values: ['alpha'], startAt: 0, maxResults: 1, total: 2, isLast: false })
+        .respondWith({ values: ['alps'], startAt: 1, maxResults: 1, total: 2, isLast: true });
+
+      const results: string[] = [];
+      for await (const label of resource.listAll({
+        query: 'al',
+        scope: 'RECENT_PROJECTS',
+        maxResults: 1,
+      })) {
+        results.push(label);
+      }
+
+      expect(results).toEqual(['alpha', 'alps']);
+      expect(transport.calls.map((c) => c.options.query)).toEqual([
+        { query: 'al', scope: 'RECENT_PROJECTS', startAt: 0, maxResults: 1 },
+        { query: 'al', scope: 'RECENT_PROJECTS', startAt: 1, maxResults: 1 },
+      ]);
+    });
+
+    it('sends no filter keys when query and scope are unset', async () => {
+      transport.respondWith(makeLabelsResponse([]));
+
+      const results: string[] = [];
+      for await (const label of resource.listAll()) {
+        results.push(label);
+      }
+
+      expect(results).toEqual([]);
+      expect(transport.lastCall?.options.query).toEqual({ startAt: 0, maxResults: 50 });
     });
 
     it('yields nothing for empty result set', async () => {

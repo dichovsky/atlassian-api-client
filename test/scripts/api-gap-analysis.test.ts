@@ -48,7 +48,7 @@ async function expectAdminKeyMutationToFail(
     ).rejects.toMatchObject({
       code: 1,
       stdout: expect.stringContaining(
-        'confluence-v2: 218 ops | impl 217 | MISSING 1 (live 1, dep 0)',
+        'confluence-v2: 252 ops | impl 251 | MISSING 1 (live 1, dep 0)',
       ),
     });
   } finally {
@@ -87,7 +87,7 @@ async function expectAdminKeyMutationToPass(
       );
     }
     expect(stderr).toBe('');
-    expect(stdout).toContain('confluence-v2: 218 ops | impl 218 | MISSING 0 (live 0, dep 0)');
+    expect(stdout).toContain('confluence-v2: 252 ops | impl 252 | MISSING 0 (live 0, dep 0)');
   } finally {
     await rm(fixtureRoot, { recursive: true, force: true });
   }
@@ -377,8 +377,8 @@ print("cache-equivalence-ok")
 
       expect(stderr).toBe('');
       expect(stdout).not.toContain('!!! UNRESOLVED');
-      expect(stdout).toContain('completeness: jira 719/719 paths | conf 226/226 paths');
-      expect(stdout).toContain('confluence-v2: 218 ops | impl 218 | MISSING 0 (live 0, dep 0)');
+      expect(stdout).toContain('completeness: jira 732/732 paths | conf 260/260 paths');
+      expect(stdout).toContain('confluence-v2: 252 ops | impl 252 | MISSING 0 (live 0, dep 0)');
       expect(stdout).toContain(
         '/wiki/rest/api [confluence-v1 attachment upload — out of reviewed spec scope]',
       );
@@ -441,7 +441,7 @@ print("cache-equivalence-ok")
         ).rejects.toMatchObject({
           code: 1,
           stdout: expect.stringContaining(
-            'confluence-v2: 219 ops | impl 218 | MISSING 1 (live 1, dep 0)',
+            'confluence-v2: 253 ops | impl 252 | MISSING 1 (live 1, dep 0)',
           ),
         });
       } finally {
@@ -845,7 +845,7 @@ ${liveRequest}`,
         );
 
         expect(stderr).toBe('');
-        expect(stdout).toContain('confluence-v2: 218 ops | impl 218 | MISSING 0 (live 0, dep 0)');
+        expect(stdout).toContain('confluence-v2: 252 ops | impl 252 | MISSING 0 (live 0, dep 0)');
       } finally {
         await rm(fixtureRoot, { recursive: true, force: true });
       }
@@ -1051,7 +1051,7 @@ ${liveImplementation}
         ).rejects.toMatchObject({
           code: 1,
           stdout: expect.stringContaining(
-            'confluence-v2: 218 ops | impl 217 | MISSING 1 (live 1, dep 0)',
+            'confluence-v2: 252 ops | impl 251 | MISSING 1 (live 1, dep 0)',
           ),
         });
       } finally {
@@ -1091,7 +1091,7 @@ ${liveImplementation}
         ).rejects.toMatchObject({
           code: 1,
           stdout: expect.stringContaining(
-            'confluence-v2: 218 ops | impl 217 | MISSING 1 (live 1, dep 0)',
+            'confluence-v2: 252 ops | impl 251 | MISSING 1 (live 1, dep 0)',
           ),
         });
       } finally {
@@ -1128,7 +1128,7 @@ ${liveImplementation}
         ).rejects.toMatchObject({
           code: 1,
           stdout: expect.stringMatching(
-            /confluence-v2: 218 ops \| impl \d+ \| MISSING [1-9]\d* \(live [1-9]\d*, dep \d+\)/,
+            /confluence-v2: 252 ops \| impl \d+ \| MISSING [1-9]\d* \(live [1-9]\d*, dep \d+\)/,
           ),
         });
       } finally {
@@ -1167,7 +1167,7 @@ ${liveImplementation}
         ).rejects.toMatchObject({
           code: 1,
           stdout: expect.stringMatching(
-            /confluence-v2: 218 ops \| impl \d+ \| MISSING [1-9]\d* \(live [1-9]\d*, dep \d+\)/,
+            /confluence-v2: 252 ops \| impl \d+ \| MISSING [1-9]\d* \(live [1-9]\d*, dep \d+\)/,
           ),
         });
       } finally {
@@ -1205,7 +1205,7 @@ ${liveImplementation}
         ).rejects.toMatchObject({
           code: 1,
           stdout: expect.stringMatching(
-            /confluence-v2: 218 ops \| impl \d+ \| MISSING [1-9]\d* \(live [1-9]\d*, dep \d+\)/,
+            /confluence-v2: 252 ops \| impl \d+ \| MISSING [1-9]\d* \(live [1-9]\d*, dep \d+\)/,
           ),
         });
       } finally {
@@ -1242,7 +1242,7 @@ ${liveImplementation}
         ).rejects.toMatchObject({
           code: 1,
           stdout: expect.stringMatching(
-            /confluence-v2: 218 ops \| impl \d+ \| MISSING [1-9]\d* \(live [1-9]\d*, dep \d+\)/,
+            /confluence-v2: 252 ops \| impl \d+ \| MISSING [1-9]\d* \(live [1-9]\d*, dep \d+\)/,
           ),
         });
       } finally {
@@ -1286,7 +1286,7 @@ ${liveImplementation}
         ).rejects.toMatchObject({
           code: 1,
           stdout: expect.stringContaining(
-            'confluence-v2: 218 ops | impl 217 | MISSING 1 (live 1, dep 0)',
+            'confluence-v2: 252 ops | impl 251 | MISSING 1 (live 1, dep 0)',
           ),
         });
       } finally {
@@ -1328,7 +1328,7 @@ ${liveImplementation}
         ).rejects.toMatchObject({
           code: 1,
           stdout: expect.stringContaining(
-            'confluence-v2: 218 ops | impl 217 | MISSING 1 (live 1, dep 0)',
+            'confluence-v2: 252 ops | impl 251 | MISSING 1 (live 1, dep 0)',
           ),
         });
       } finally {
@@ -1373,7 +1373,7 @@ ${liveImplementation}
         ).rejects.toMatchObject({
           code: 1,
           stdout: expect.stringContaining(
-            'confluence-v2: 218 ops | impl 217 | MISSING 1 (live 1, dep 0)',
+            'confluence-v2: 252 ops | impl 251 | MISSING 1 (live 1, dep 0)',
           ),
         });
       } finally {
@@ -1430,7 +1430,7 @@ ${liveImplementation}
         ).rejects.toMatchObject({
           code: 1,
           stdout: expect.stringContaining(
-            'confluence-v2: 218 ops | impl 217 | MISSING 1 (live 1, dep 0)',
+            'confluence-v2: 252 ops | impl 251 | MISSING 1 (live 1, dep 0)',
           ),
         });
       } finally {
@@ -1485,7 +1485,7 @@ ${liveImplementation}
         ).rejects.toMatchObject({
           code: 1,
           stdout: expect.stringContaining(
-            'confluence-v2: 218 ops | impl 217 | MISSING 1 (live 1, dep 0)',
+            'confluence-v2: 252 ops | impl 251 | MISSING 1 (live 1, dep 0)',
           ),
         });
       } finally {
@@ -1526,7 +1526,7 @@ ${liveImplementation}
         ).rejects.toMatchObject({
           code: 1,
           stdout: expect.stringContaining(
-            'confluence-v2: 218 ops | impl 217 | MISSING 1 (live 1, dep 0)',
+            'confluence-v2: 252 ops | impl 251 | MISSING 1 (live 1, dep 0)',
           ),
         });
       } finally {
@@ -1569,7 +1569,7 @@ ${liveImplementation}
         ).rejects.toMatchObject({
           code: 1,
           stdout: expect.stringContaining(
-            'confluence-v2: 218 ops | impl 217 | MISSING 1 (live 1, dep 0)',
+            'confluence-v2: 252 ops | impl 251 | MISSING 1 (live 1, dep 0)',
           ),
         });
       } finally {
@@ -1610,7 +1610,7 @@ ${liveImplementation}
         ).rejects.toMatchObject({
           code: 1,
           stdout: expect.stringContaining(
-            'confluence-v2: 218 ops | impl 217 | MISSING 1 (live 1, dep 0)',
+            'confluence-v2: 252 ops | impl 251 | MISSING 1 (live 1, dep 0)',
           ),
         });
       } finally {
@@ -1655,7 +1655,7 @@ ${liveImplementation}
         ).rejects.toMatchObject({
           code: 1,
           stdout: expect.stringContaining(
-            'confluence-v2: 218 ops | impl 217 | MISSING 1 (live 1, dep 0)',
+            'confluence-v2: 252 ops | impl 251 | MISSING 1 (live 1, dep 0)',
           ),
         });
       } finally {
@@ -1702,7 +1702,7 @@ ${liveImplementation}
         ).rejects.toMatchObject({
           code: 1,
           stdout: expect.stringContaining(
-            'confluence-v2: 218 ops | impl 217 | MISSING 1 (live 1, dep 0)',
+            'confluence-v2: 252 ops | impl 251 | MISSING 1 (live 1, dep 0)',
           ),
         });
       } finally {
@@ -1744,7 +1744,7 @@ ${liveImplementation}
         ).rejects.toMatchObject({
           code: 1,
           stdout: expect.stringContaining(
-            'confluence-v2: 218 ops | impl 217 | MISSING 1 (live 1, dep 0)',
+            'confluence-v2: 252 ops | impl 251 | MISSING 1 (live 1, dep 0)',
           ),
         });
       } finally {
@@ -1781,7 +1781,7 @@ ${liveImplementation}
         ).rejects.toMatchObject({
           code: 1,
           stdout: expect.stringMatching(
-            /jira-platform: 617 ops \| impl \d+ \| MISSING 1[1-9] \(live [1-9]\d*, dep 10\)/,
+            /jira-platform: 630 ops \| impl \d+ \| MISSING 1[1-9] \(live [1-9]\d*, dep 10\)/,
           ),
         });
       } finally {
@@ -2025,7 +2025,7 @@ void shadow;
         ).rejects.toMatchObject({
           code: 1,
           stdout: expect.stringContaining(
-            'confluence-v2: 218 ops | impl 217 | MISSING 1 (live 1, dep 0)',
+            'confluence-v2: 252 ops | impl 251 | MISSING 1 (live 1, dep 0)',
           ),
         });
       } finally {
@@ -2065,7 +2065,7 @@ void shadow;
         ).rejects.toMatchObject({
           code: 1,
           stdout: expect.stringContaining(
-            'confluence-v2: 218 ops | impl 217 | MISSING 1 (live 1, dep 0)',
+            'confluence-v2: 252 ops | impl 251 | MISSING 1 (live 1, dep 0)',
           ),
         });
       } finally {
@@ -2579,7 +2579,7 @@ export class AdminKeyResource {
         );
         expect(stderr).toBe('');
         expect(stdout).not.toContain('!!! UNRESOLVED');
-        expect(stdout).toContain('confluence-v2: 218 ops | impl 218 | MISSING 0 (live 0, dep 0)');
+        expect(stdout).toContain('confluence-v2: 252 ops | impl 252 | MISSING 0 (live 0, dep 0)');
       } finally {
         await rm(fixtureRoot, { recursive: true, force: true });
       }
@@ -2622,7 +2622,7 @@ ${ADMIN_KEY_GET_IMPLEMENTATION}`,
           { cwd: REPO_ROOT },
         );
         expect(stderr).toBe('');
-        expect(stdout).toContain('confluence-v2: 218 ops | impl 218 | MISSING 0 (live 0, dep 0)');
+        expect(stdout).toContain('confluence-v2: 252 ops | impl 252 | MISSING 0 (live 0, dep 0)');
       } finally {
         await rm(fixtureRoot, { recursive: true, force: true });
       }
@@ -2717,7 +2717,7 @@ export class ${className} {
         ).rejects.toMatchObject({
           code: 1,
           stdout: expect.stringContaining(
-            'confluence-v2: 218 ops | impl 217 | MISSING 1 (live 1, dep 0)',
+            'confluence-v2: 252 ops | impl 251 | MISSING 1 (live 1, dep 0)',
           ),
         });
       } finally {
@@ -2783,7 +2783,7 @@ export class ${className} {
         );
         expect(stderr).toBe('');
         expect(stdout).not.toContain('!!! UNRESOLVED');
-        expect(stdout).toContain('confluence-v2: 218 ops | impl 218 | MISSING 0 (live 0, dep 0)');
+        expect(stdout).toContain('confluence-v2: 252 ops | impl 252 | MISSING 0 (live 0, dep 0)');
       } finally {
         await rm(fixtureRoot, { recursive: true, force: true });
       }
@@ -3843,7 +3843,7 @@ ${ADMIN_KEY_GET_IMPLEMENTATION}
           { cwd: REPO_ROOT },
         );
         expect(stderr).toBe('');
-        expect(stdout).toContain('confluence-v2: 218 ops | impl 218 | MISSING 0 (live 0, dep 0)');
+        expect(stdout).toContain('confluence-v2: 252 ops | impl 252 | MISSING 0 (live 0, dep 0)');
       } finally {
         await rm(fixtureRoot, { recursive: true, force: true });
       }
@@ -4048,7 +4048,7 @@ ${ADMIN_KEY_GET_IMPLEMENTATION}
           }),
         ).rejects.toMatchObject({
           stdout: expect.stringContaining(
-            'confluence-v2: 218 ops | impl 217 | MISSING 1 (live 1, dep 0)',
+            'confluence-v2: 252 ops | impl 251 | MISSING 1 (live 1, dep 0)',
           ),
         });
       } finally {
@@ -4306,7 +4306,7 @@ ${ADMIN_KEY_GET_IMPLEMENTATION}
         ).rejects.toMatchObject({
           code: 1,
           stdout: expect.stringMatching(
-            /confluence-v2: 218 ops \| impl \d+ \| MISSING [1-9]\d* \(live [1-9]\d*, dep \d+\)/,
+            /confluence-v2: 252 ops \| impl \d+ \| MISSING [1-9]\d* \(live [1-9]\d*, dep \d+\)/,
           ),
         });
       } finally {
@@ -4346,7 +4346,7 @@ ${ADMIN_KEY_GET_IMPLEMENTATION}
         ).rejects.toMatchObject({
           code: 1,
           stdout: expect.stringMatching(
-            /confluence-v2: 218 ops \| impl \d+ \| MISSING [1-9]\d* \(live [1-9]\d*, dep \d+\)/,
+            /confluence-v2: 252 ops \| impl \d+ \| MISSING [1-9]\d* \(live [1-9]\d*, dep \d+\)/,
           ),
         });
       } finally {
@@ -4384,7 +4384,7 @@ ${ADMIN_KEY_GET_IMPLEMENTATION}
         ).rejects.toMatchObject({
           code: 1,
           stdout: expect.stringMatching(
-            /confluence-v2: 218 ops \| impl \d+ \| MISSING [1-9]\d* \(live [1-9]\d*, dep \d+\)/,
+            /confluence-v2: 252 ops \| impl \d+ \| MISSING [1-9]\d* \(live [1-9]\d*, dep \d+\)/,
           ),
         });
       } finally {
@@ -4486,7 +4486,7 @@ export function makeAdminKeyResource(
         ).rejects.toMatchObject({
           code: 1,
           stdout: expect.stringMatching(
-            /confluence-v2: 218 ops \| impl \d+ \| MISSING [1-9]\d* \(live [1-9]\d*, dep \d+\)/,
+            /confluence-v2: 252 ops \| impl \d+ \| MISSING [1-9]\d* \(live [1-9]\d*, dep \d+\)/,
           ),
         });
       } finally {
@@ -4526,7 +4526,7 @@ export function makeAdminKeyResource(
         ).rejects.toMatchObject({
           code: 1,
           stdout: expect.stringMatching(
-            /confluence-v2: 218 ops \| impl \d+ \| MISSING [1-9]\d* \(live [1-9]\d*, dep \d+\)/,
+            /confluence-v2: 252 ops \| impl \d+ \| MISSING [1-9]\d* \(live [1-9]\d*, dep \d+\)/,
           ),
         });
       } finally {
@@ -4563,7 +4563,7 @@ export function makeAdminKeyResource(
         ).rejects.toMatchObject({
           code: 1,
           stdout: expect.stringContaining(
-            'confluence-v2: 219 ops | impl 218 | MISSING 1 (live 1, dep 0)',
+            'confluence-v2: 253 ops | impl 252 | MISSING 1 (live 1, dep 0)',
           ),
         });
       } finally {

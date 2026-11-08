@@ -551,6 +551,55 @@ describe('WorkflowsResource', () => {
     });
   });
 
+  // ── copyWorkflow (POST /workflows/copy) ────────────────────────────────────
+
+  describe('copyWorkflow()', () => {
+    const copyResponse = {
+      workflows: [{ id: 'new-workflow-id', name: 'Copy of Software workflow' }],
+      statuses: [{ id: '10001', name: 'To Do', statusCategory: 'TODO' }],
+    };
+
+    it('calls POST /workflows/copy with workflowId, workflowName and description', async () => {
+      transport.respondWith(copyResponse);
+
+      const result = await workflows.copyWorkflow({
+        workflowId: WORKFLOW_ID,
+        workflowName: 'Copy of Software workflow',
+        description: 'Cloned for the pilot team',
+      });
+
+      expect(result).toEqual(copyResponse);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'POST',
+        path: `${BASE_URL}/workflows/copy`,
+        body: {
+          workflowId: WORKFLOW_ID,
+          workflowName: 'Copy of Software workflow',
+          description: 'Cloned for the pilot team',
+        },
+      });
+    });
+
+    it('omits description when not provided', async () => {
+      transport.respondWith(copyResponse);
+
+      await workflows.copyWorkflow({ workflowId: WORKFLOW_ID, workflowName: 'Copy' });
+
+      expect(transport.lastCall?.options.body).toEqual({
+        workflowId: WORKFLOW_ID,
+        workflowName: 'Copy',
+      });
+    });
+
+    it('propagates transport errors', async () => {
+      transport.respondWithError(new Error('conflict'));
+
+      await expect(
+        workflows.copyWorkflow({ workflowId: WORKFLOW_ID, workflowName: 'Copy' }),
+      ).rejects.toThrow('conflict');
+    });
+  });
+
   // ── validateCreate (B849) ─────────────────────────────────────────────────
 
   describe('validateCreate()', () => {
@@ -767,7 +816,7 @@ describe('WorkflowsResource', () => {
       total: 1,
       values: [
         {
-          workflowId: { name: 'My Workflow', draft: false },
+          workflowId: { name: 'My Workflow' },
           postFunctions: [
             {
               id: 'b4d6cbdc',
@@ -815,7 +864,6 @@ describe('WorkflowsResource', () => {
         keys: ['key-a', 'key-b'],
         workflowNames: ['My Workflow'],
         withTags: ['tag1'],
-        draft: false,
         expand: 'transition',
       });
 
@@ -828,10 +876,23 @@ describe('WorkflowsResource', () => {
       expect(transport.lastCall?.options.query).toMatchObject({
         startAt: 0,
         maxResults: 10,
-        draft: false,
         expand: 'transition',
       });
+      expect(transport.lastCall?.options.query).not.toHaveProperty('draft');
     });
+
+    it.each([false, true])(
+      'throws ValidationError and sends no request when the removed draft param is %s',
+      async (draft) => {
+        await expect(
+          workflows.getTransitionRuleConfigs({ types: ['postfunction'], draft }),
+        ).rejects.toThrow(ValidationError);
+        await expect(
+          workflows.getTransitionRuleConfigs({ types: ['postfunction'], draft }),
+        ).rejects.toThrow(/CHANGE-3147/);
+        expect(transport.calls).toHaveLength(0);
+      },
+    );
 
     it('does not include optional params when not provided', async () => {
       transport.respondWith(ruleConfigPage);
@@ -867,7 +928,7 @@ describe('WorkflowsResource', () => {
     const updateResponse = {
       updateResults: [
         {
-          workflowId: { name: 'My Workflow', draft: false },
+          workflowId: { name: 'My Workflow' },
           ruleUpdateErrors: {},
           updateErrors: [],
         },
@@ -880,7 +941,7 @@ describe('WorkflowsResource', () => {
       const result = await workflows.updateTransitionRuleConfigs({
         workflows: [
           {
-            workflowId: { name: 'My Workflow', draft: false },
+            workflowId: { name: 'My Workflow' },
             postFunctions: [
               { id: 'rule-id', key: 'postfunction-key', configuration: { value: '{}' } },
             ],
@@ -893,6 +954,32 @@ describe('WorkflowsResource', () => {
         method: 'PUT',
         path: `${BASE_URL}/workflow/rule/config`,
       });
+    });
+
+    it.each([false, true])(
+      'throws ValidationError and sends no request when a workflowId carries the removed draft=%s',
+      async (draft) => {
+        const entry = (workflowId: { name: string; draft?: boolean }) => ({
+          workflowId,
+          conditions: [{ id: 'c', key: 'k', configuration: { value: '{}' } }],
+        });
+        const body = { workflows: [entry({ name: 'Clean' }), entry({ name: 'Draft', draft })] };
+
+        await expect(workflows.updateTransitionRuleConfigs(body)).rejects.toThrow(ValidationError);
+        await expect(workflows.updateTransitionRuleConfigs(body)).rejects.toThrow(/CHANGE-3147/);
+        expect(transport.calls).toHaveLength(0);
+      },
+    );
+
+    it('leaves an entry without a workflowId to the server instead of crashing client-side', async () => {
+      transport.respondWith(updateResponse);
+
+      const body = { workflows: [{}] } as unknown as Parameters<
+        typeof workflows.updateTransitionRuleConfigs
+      >[0];
+      await workflows.updateTransitionRuleConfigs(body);
+
+      expect(transport.lastCall?.options.body).toEqual(body);
     });
 
     it('passes the workflows body correctly', async () => {
@@ -930,7 +1017,7 @@ describe('WorkflowsResource', () => {
     const deleteResponse = {
       updateResults: [
         {
-          workflowId: { name: 'My Workflow', draft: false },
+          workflowId: { name: 'My Workflow' },
           ruleUpdateErrors: {},
           updateErrors: [],
         },
@@ -962,7 +1049,7 @@ describe('WorkflowsResource', () => {
       const body = {
         workflows: [
           {
-            workflowId: { name: 'Workflow B', draft: false },
+            workflowId: { name: 'Workflow B' },
             workflowRuleIds: ['abc', 'def'],
           },
         ],
@@ -971,6 +1058,22 @@ describe('WorkflowsResource', () => {
 
       expect(transport.lastCall?.options.body).toEqual(body);
     });
+
+    it.each([false, true])(
+      'throws ValidationError and sends no request when a workflowId carries the removed draft=%s',
+      async (draft) => {
+        const body = {
+          workflows: [
+            { workflowId: { name: 'Clean' }, workflowRuleIds: ['a'] },
+            { workflowId: { name: 'Draft', draft }, workflowRuleIds: ['b'] },
+          ],
+        };
+
+        await expect(workflows.deleteTransitionRuleConfigs(body)).rejects.toThrow(ValidationError);
+        await expect(workflows.deleteTransitionRuleConfigs(body)).rejects.toThrow(/CHANGE-3147/);
+        expect(transport.calls).toHaveLength(0);
+      },
+    );
 
     it('throws ValidationError when workflows array is empty', async () => {
       await expect(workflows.deleteTransitionRuleConfigs({ workflows: [] })).rejects.toThrow(

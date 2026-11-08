@@ -106,4 +106,46 @@ describe('ForgeResource', () => {
       ).rejects.toThrow('forbidden');
     });
   });
+
+  // ── getBulkPinStatus ──────────────────────────────────────────────────────
+
+  describe('getBulkPinStatus()', () => {
+    const moduleId = 'ari:cloud:ecosystem::extension/app/env/static/my-panel';
+
+    it('calls POST /forge/panel/action/bulk/status with moduleId + project ID/key strings', async () => {
+      const statusResponse = {
+        moduleId,
+        statuses: [
+          { projectIdOrKey: 'PROJ', pinned: true, pinnedAt: 1731000000000 },
+          { projectIdOrKey: '99999', pinned: false, error: 'Project not found' },
+        ],
+      };
+      transport.respondWith(statusResponse);
+
+      const result = await forge.getBulkPinStatus({ moduleId, projectList: ['PROJ', '99999'] });
+
+      expect(result).toEqual(statusResponse);
+      expect(transport.lastCall?.options).toEqual({
+        method: 'POST',
+        path: `${BASE_URL}/forge/panel/action/bulk/status`,
+        body: { moduleId, projectList: ['PROJ', '99999'] },
+      });
+    });
+
+    it('uses the status path, not the async pin action path', async () => {
+      transport.respondWith({ moduleId, statuses: [] });
+
+      await forge.getBulkPinStatus({ moduleId, projectList: [] });
+
+      expect(transport.lastCall?.options.path).not.toContain('/async');
+    });
+
+    it('propagates transport errors', async () => {
+      transport.respondWithError(new Error('forbidden'));
+
+      await expect(forge.getBulkPinStatus({ moduleId, projectList: ['PROJ'] })).rejects.toThrow(
+        'forbidden',
+      );
+    });
+  });
 });

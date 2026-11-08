@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
+import { describeContentPermissions } from './content-permissions-suite.js';
 import { FoldersResource } from '../../src/confluence/resources/folders.js';
 import { MockTransport } from '../helpers/mock-transport.js';
 import { ValidationError } from '../../src/core/errors.js';
@@ -601,3 +602,9 @@ describe('FoldersResource', () => {
     });
   });
 });
+
+describeContentPermissions(
+  'FoldersResource',
+  'folders',
+  (transport) => new FoldersResource(transport, BASE_URL),
+);
