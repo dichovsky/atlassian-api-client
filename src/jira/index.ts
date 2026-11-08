@@ -471,6 +471,7 @@ export type {
   BulkCreatedIssues,
   BulkSetIssuePropertyData,
   BulkDeleteIssuePropertyData,
+  BulkIssuePropertyOptions,
   BulkResourceBaseUrls,
   SubmittedBulkOperation,
   BulkDeleteIssuesInput,

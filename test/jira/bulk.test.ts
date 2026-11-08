@@ -1,5 +1,6 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, expectTypeOf, beforeEach } from 'vitest';
 import { BulkResource } from '../../src/jira/resources/bulk.js';
+import type { Task } from '../../src/jira/resources/task.js';
 import { ValidationError } from '../../src/core/errors.js';
 import { MockTransport } from '../helpers/mock-transport.js';
 import type {
@@ -132,6 +133,36 @@ describe('BulkResource', () => {
   });
 
   // ── setPropertyBulk ───────────────────────────────────────────────────────
+
+  describe('setPropertyBulk() / deletePropertyBulk() task result (F180)', () => {
+    const task = { id: '10010', status: 'ENQUEUED', progress: 0, self: 'https://x/task/10010' };
+
+    it('resolves the followed task with returnTask: true', async () => {
+      transport.respondWith(task).respondWith(task);
+
+      const set = await bulk.setPropertyBulk('p', { value: 1 }, { returnTask: true });
+      const del = await bulk.deletePropertyBulk('p', {}, { returnTask: true });
+
+      expect(set).toEqual(task);
+      expect(del).toEqual(task);
+      expectTypeOf(() =>
+        bulk.setPropertyBulk('p', { value: 1 }, { returnTask: true }),
+      ).returns.resolves.toEqualTypeOf<Task>();
+    });
+
+    it('stays void without it', async () => {
+      transport.respondWith(task).respondWith(task);
+
+      await expect(bulk.setPropertyBulk('p', { value: 1 })).resolves.toBeUndefined();
+      await expect(
+        bulk.deletePropertyBulk('p', {}, { returnTask: false }),
+      ).resolves.toBeUndefined();
+      expectTypeOf(() => bulk.setPropertyBulk('p', { value: 1 })).returns.toEqualTypeOf<
+        Promise<void>
+      >();
+      expectTypeOf(() => bulk.deletePropertyBulk('p', {})).returns.toEqualTypeOf<Promise<void>>();
+    });
+  });
 
   describe('setPropertyBulk()', () => {
     it('calls PUT /issue/properties/{propertyKey} with the data', async () => {

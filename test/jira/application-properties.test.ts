@@ -95,6 +95,16 @@ describe('ApplicationPropertiesResource', () => {
       expect(result[1]?.key).toBe('jira.home');
     });
 
+    it('wraps a bare-object key lookup in a one-element array (F196)', async () => {
+      // The spec description says `key` returns the property as an object.
+      const prop = makeProperty({ id: 'jira.title', key: 'jira.title' });
+      transport.respondWith(prop);
+
+      const result = await resource.list({ key: 'jira.title' });
+
+      expect(result).toEqual([prop]);
+    });
+
     it('propagates transport errors', async () => {
       // Arrange
       transport.respondWithError(new Error('network error'));

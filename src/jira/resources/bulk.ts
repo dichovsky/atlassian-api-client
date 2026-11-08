@@ -1,6 +1,7 @@
 import type { Transport } from '../../core/types.js';
 import { encodePathSegment } from '../../core/path.js';
 import { ValidationError } from '../../core/errors.js';
+import type { Task } from './task.js';
 
 export interface BulkIssueUpdate {
   readonly fields: Record<string, unknown>;
@@ -81,6 +82,12 @@ export interface BulkDeleteIssuePropertyData {
     readonly entityIds?: number[];
     readonly currentValue?: unknown;
   };
+}
+
+/** Options for {@link BulkResource.setPropertyBulk} and {@link BulkResource.deletePropertyBulk}. */
+export interface BulkIssuePropertyOptions {
+  /** Resolve the async task's progress instead of discarding it. */
+  readonly returnTask?: boolean;
 }
 
 /**
@@ -439,25 +446,63 @@ export class BulkResource {
     return response.data;
   }
 
+  /**
+   * Set a property on a bulk set of issues. Jira runs this as an async task
+   * and answers `303 See Other` to `GET /rest/api/3/task/{taskId}`, which the
+   * transport follows; with `returnTask: true` this resolves that task's
+   * progress (poll it with `TaskResource.get`), otherwise `void`.
+   */
+  setPropertyBulk(
+    propertyKey: string,
+    data: BulkSetIssuePropertyData,
+    options: BulkIssuePropertyOptions & { readonly returnTask: true },
+  ): Promise<Task>;
   /** Set a property on a bulk set of issues. */
-  async setPropertyBulk(propertyKey: string, data: BulkSetIssuePropertyData): Promise<void> {
-    await this.transport.request<undefined>({
+  setPropertyBulk(
+    propertyKey: string,
+    data: BulkSetIssuePropertyData,
+    options?: BulkIssuePropertyOptions,
+  ): Promise<void>;
+  async setPropertyBulk(
+    propertyKey: string,
+    data: BulkSetIssuePropertyData,
+    options?: BulkIssuePropertyOptions,
+  ): Promise<Task | void> {
+    const response = await this.transport.request<Task>({
       method: 'PUT',
       path: `${this.baseUrl}/issue/properties/${encodePathSegment(propertyKey)}`,
       body: data,
     });
+    return options?.returnTask === true ? response.data : undefined;
   }
 
   /**
-   * Delete a property from a bulk set of issues.
+   * Delete a property from a bulk set of issues. Async like
+   * {@link setPropertyBulk}: `returnTask: true` resolves the task progress.
    * Spec: requestBody.required = true — body is required (not optional).
    */
-  async deletePropertyBulk(propertyKey: string, data: BulkDeleteIssuePropertyData): Promise<void> {
-    await this.transport.request<undefined>({
+  deletePropertyBulk(
+    propertyKey: string,
+    data: BulkDeleteIssuePropertyData,
+    options: BulkIssuePropertyOptions & { readonly returnTask: true },
+  ): Promise<Task>;
+  /** Delete a property from a bulk set of issues. */
+  deletePropertyBulk(
+    propertyKey: string,
+    data: BulkDeleteIssuePropertyData,
+    options?: BulkIssuePropertyOptions,
+  ): Promise<void>;
+  async deletePropertyBulk(
+    propertyKey: string,
+    data: BulkDeleteIssuePropertyData,
+    options?: BulkIssuePropertyOptions,
+  ): Promise<Task | void> {
+    const response = await this.transport.request<Task>({
       method: 'DELETE',
       path: `${this.baseUrl}/issue/properties/${encodePathSegment(propertyKey)}`,
       body: data,
     });
+    return options?.returnTask === true ? response.data : undefined;
   }
 
   // ── B345 ────────────────────────────────────────────────────────────────

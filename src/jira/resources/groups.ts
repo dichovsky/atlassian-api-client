@@ -44,7 +44,10 @@ export interface GroupPickerParams {
   readonly caseInsensitive?: boolean;
   /** Maximum number of groups to return (default 20). */
   readonly maxResults?: number;
-  /** Account ID of the user whose groups are excluded. */
+  /**
+   * @deprecated Atlassian removed this parameter ("no longer available"); the
+   * server ignores it, so results are not filtered. Use {@link excludeId}.
+   */
   readonly userName?: string;
 }
 
@@ -239,6 +242,9 @@ export class GroupsResource {
    * B923: Fetch a single group, with optional `expand=users` for an inline
    * first-page member list.
    * GET /rest/api/3/group
+   *
+   * @deprecated Atlassian deprecated this operation; use {@link listMembers}
+   *   (`GET /rest/api/3/group/member`) to list a group's users.
    */
   async get(params?: GetGroupParams): Promise<Group> {
     const query: Record<string, string | number | boolean | undefined> = {};
