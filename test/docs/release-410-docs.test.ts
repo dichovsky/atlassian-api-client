@@ -85,7 +85,7 @@ describe('F297: success-path request ids are visible to middleware, not to resou
   });
 
   it('a middleware sees ApiResponse.requestId while the resource returns unwrapped data', async () => {
-    const seen: Array<string | undefined> = [];
+    const seen: (string | undefined)[] = [];
     const logRequestId: Middleware = async (options, next) => {
       const response = await next(options);
       seen.push(response.requestId);
@@ -324,13 +324,15 @@ describe('F298: scope catalog counts', () => {
   function scopesReferencedByOperations(): Set<string> {
     const used = new Set<string>();
     for (const name of ['jiraPlatform', 'jiraSoftware', 'confluence'] as const) {
-      const paths = readSpec(name).paths as Record<string, Record<string, unknown>>;
+      const { paths } = readSpec(name) as unknown as {
+        paths: Record<string, Record<string, unknown>>;
+      };
       for (const item of Object.values(paths)) {
         for (const op of Object.values(item)) {
           if (typeof op !== 'object' || op === null) continue;
           const operation = op as {
-            security?: Array<Record<string, string[]>>;
-            'x-atlassian-oauth2-scopes'?: Array<{ scopes?: string[] }>;
+            security?: Record<string, string[]>[];
+            'x-atlassian-oauth2-scopes'?: { scopes?: string[] }[];
           };
           for (const requirement of operation.security ?? []) {
             for (const scopes of Object.values(requirement)) scopes.forEach((s) => used.add(s));
