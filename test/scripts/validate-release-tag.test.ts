@@ -25,11 +25,13 @@ describe('release tag validation', () => {
     lockVersion = packageVersion,
     lockRootVersion = packageVersion,
     changelogVersion = packageVersion,
+    changelog = `# Changelog\n\n## [${changelogVersion}](https://example.test/compare) (2026-09-02)\n`,
   }: {
     packageVersion?: string;
     lockVersion?: string;
     lockRootVersion?: string;
     changelogVersion?: string;
+    changelog?: string;
   } = {}): void {
     writeFileSync(
       join(fixtureRoot, 'package.json'),
@@ -43,10 +45,7 @@ describe('release tag validation', () => {
         packages: { '': { name: 'fixture', version: lockRootVersion } },
       }),
     );
-    writeFileSync(
-      join(fixtureRoot, 'CHANGELOG.md'),
-      `# Changelog\n\n## [${changelogVersion}](https://example.test/compare) (2026-09-02)\n`,
-    );
+    writeFileSync(join(fixtureRoot, 'CHANGELOG.md'), changelog);
   }
 
   function validate(tag?: string) {
@@ -108,5 +107,65 @@ describe('release tag validation', () => {
 
     expect(result.status).toBe(1);
     expect(result.stderr).toContain('CHANGELOG.md has no release section for 4.0.0');
+  });
+
+  describe('changelog fold', () => {
+    const UNRELEASED = '## [Unreleased](https://example.test/compare/v4.0.0...HEAD)';
+    const RELEASE = '## [4.0.0](https://example.test/compare/v3.9.0...v4.0.0) (2026-09-02)';
+    const PREVIOUS = '## [3.9.0](https://example.test/compare/v3.8.0...v3.9.0) (2026-08-01)';
+
+    function validateChangelog(...sections: string[]) {
+      writeFixture({ changelog: ['# Changelog', ...sections].join('\n\n') + '\n' });
+      return validate('v4.0.0');
+    }
+
+    it('accepts an empty Unreleased section above the dated release section', () => {
+      const result = validateChangelog(UNRELEASED, `${RELEASE}\n\n### Fixed\n\n- a fix`, PREVIOUS);
+
+      expect(result.stderr).toBe('');
+      expect(result.status).toBe(0);
+    });
+
+    it('rejects entries still under Unreleased', () => {
+      const result = validateChangelog(
+        `${UNRELEASED}\n\n### Added\n\n- not folded yet`,
+        RELEASE,
+        PREVIOUS,
+      );
+
+      expect(result.status).toBe(1);
+      expect(result.stderr).toContain('CHANGELOG.md has unreleased entries');
+    });
+
+    it.each([
+      ['no date', '## [4.0.0](https://example.test/compare/v3.9.0...v4.0.0)'],
+      ['an impossible date', '## [4.0.0](https://example.test/compare) (2026-02-30)'],
+      ['a non-ISO date', '## [4.0.0](https://example.test/compare) (Sep 2, 2026)'],
+    ])('rejects a release heading with %s', (_label, heading) => {
+      const result = validateChangelog(UNRELEASED, heading, PREVIOUS);
+
+      expect(result.status).toBe(1);
+      expect(result.stderr).toContain('CHANGELOG.md release section for 4.0.0 must end with');
+    });
+
+    it('rejects a duplicated release section', () => {
+      const result = validateChangelog(UNRELEASED, RELEASE, RELEASE, PREVIOUS);
+
+      expect(result.status).toBe(1);
+      expect(result.stderr).toContain('CHANGELOG.md has 2 release sections for 4.0.0');
+    });
+
+    it('rejects a release section that is not the newest release entry', () => {
+      const result = validateChangelog(
+        UNRELEASED,
+        '## [4.1.0](https://example.test/compare/v4.0.0...v4.1.0) (2026-09-03)',
+        RELEASE,
+      );
+
+      expect(result.status).toBe(1);
+      expect(result.stderr).toContain(
+        'CHANGELOG.md release section for 4.0.0 must be the newest entry',
+      );
+    });
   });
 });

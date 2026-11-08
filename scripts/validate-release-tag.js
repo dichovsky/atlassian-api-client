@@ -25,6 +25,48 @@ function escapeRegex(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+function changelogSections(changelog) {
+  const sections = [];
+  for (const line of changelog.split('\n')) {
+    if (line.startsWith('## ')) sections.push({ heading: line.trimEnd(), body: [] });
+    else sections.at(-1)?.body.push(line);
+  }
+  return sections;
+}
+
+function isCalendarDate(value) {
+  const time = Date.parse(value);
+  return !Number.isNaN(time) && new Date(time).toISOString().slice(0, 10) === value;
+}
+
+// The release section must already hold everything being shipped: an
+// Unreleased section with content means the fold was skipped, and a pushed
+// tag cannot be moved to fix that afterwards.
+function changelogProblem(changelog, version) {
+  const sections = changelogSections(changelog);
+  const isUnreleased = (section) => /^## \[Unreleased\]/i.test(section.heading);
+  if (sections.some((s) => isUnreleased(s) && s.body.some((line) => line.trim() !== ''))) {
+    return `CHANGELOG.md has unreleased entries; move them into the ${version} section before tagging`;
+  }
+
+  const releases = sections.filter((section) => !isUnreleased(section));
+  const heading = new RegExp(`^## \\[${escapeRegex(version)}\\](?:\\([^\\n]*\\))?`);
+  const matches = releases.filter((section) => heading.test(section.heading));
+  if (matches.length === 0) return `CHANGELOG.md has no release section for ${version}`;
+  if (matches.length > 1) {
+    return `CHANGELOG.md has ${matches.length} release sections for ${version}`;
+  }
+  if (releases[0] !== matches[0]) {
+    return `CHANGELOG.md release section for ${version} must be the newest entry; found ${JSON.stringify(releases[0].heading)} above it`;
+  }
+
+  const date = / \((\d{4}-\d{2}-\d{2})\)$/.exec(matches[0].heading)?.[1];
+  if (!date || !isCalendarDate(date)) {
+    return `CHANGELOG.md release section for ${version} must end with its release date as (YYYY-MM-DD); received ${JSON.stringify(matches[0].heading)}`;
+  }
+  return undefined;
+}
+
 function main() {
   const args = process.argv.slice(2);
   if (args.length !== 1) {
@@ -60,9 +102,9 @@ function main() {
     }
 
     const changelog = readFileSync(resolve(process.cwd(), 'CHANGELOG.md'), 'utf8');
-    const section = new RegExp(`^## \\[${escapeRegex(version)}\\](?:\\([^\\n]*\\))?`, 'm');
-    if (!section.test(changelog)) {
-      fail(`CHANGELOG.md has no release section for ${version}`);
+    const problem = changelogProblem(changelog, version);
+    if (problem) {
+      fail(problem);
       return;
     }
   } catch (error) {

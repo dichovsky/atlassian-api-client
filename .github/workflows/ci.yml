@@ -99,10 +99,34 @@ jobs:
       - name: Build and validate exports
         run: npm run validate:package
 
+  # .nvmrc tracks the latest Node 24 release; this job tests the oldest
+  # version package.json engines.node still promises to support.
+  node_floor:
+    name: Tests on the minimum supported Node.js
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24.0.0'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build and run unit tests
+        run: npm run build && npm run test:unit
+
   ci:
     name: CI
     if: always()
-    needs: [quality, coverage, api_gap, package]
+    needs: [quality, coverage, api_gap, package, node_floor]
     runs-on: ubuntu-latest
 
     steps:
@@ -112,8 +136,10 @@ jobs:
           COVERAGE_RESULT: ${{ needs.coverage.result }}
           API_GAP_RESULT: ${{ needs.api_gap.result }}
           PACKAGE_RESULT: ${{ needs.package.result }}
+          NODE_FLOOR_RESULT: ${{ needs.node_floor.result }}
         run: |
           test "$QUALITY_RESULT" = success
           test "$COVERAGE_RESULT" = success
           test "$API_GAP_RESULT" = success
           test "$PACKAGE_RESULT" = success
+          test "$NODE_FLOOR_RESULT" = success

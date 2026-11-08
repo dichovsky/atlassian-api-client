@@ -124,10 +124,11 @@ jobs:
         run: |
           set -euo pipefail
           npm_version="$(npm --version)"
-          [[ "${npm_version}" =~ ^([0-9]+)\.([0-9]+)\.[0-9]+ ]]
+          [[ "${npm_version}" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+) ]]
           npm_major="${BASH_REMATCH[1]}"
           npm_minor="${BASH_REMATCH[2]}"
-          if ((npm_major < 11 || (npm_major == 11 && npm_minor < 5))); then
+          npm_patch="${BASH_REMATCH[3]}"
+          if ((npm_major < 11 || (npm_major == 11 && (npm_minor < 5 || (npm_minor == 5 && npm_patch < 1))))); then
             echo "npm >= 11.5.1 is required for trusted publishing; found ${npm_version}" >&2
             exit 1
           fi
@@ -232,3 +233,27 @@ jobs:
             fi
             sleep 15
           done
+
+      # npm audit signatures also passes for a package with no attestation, so
+      # require SLSA provenance that names this repository, workflow, and tag.
+      - name: Require provenance from this repository and workflow
+        env:
+          PACKAGE_NAME: atlassian-api-client
+          VERSION: ${{ needs.preflight.outputs.version }}
+          REPOSITORY_URL: https://github.com/dichovsky/atlassian-api-client
+        run: |
+          set -euo pipefail
+          slsa_v1='https://slsa.dev/provenance/v1'
+          test "$(npm view "${PACKAGE_NAME}@${VERSION}" dist.attestations.provenance.predicateType)" = "${slsa_v1}"
+          attestations_url="$(npm view "${PACKAGE_NAME}@${VERSION}" dist.attestations.url)"
+          curl --fail --silent --show-error --location --retry 5 --retry-all-errors "${attestations_url}" |
+            jq -e \
+              --arg type "${slsa_v1}" \
+              --arg repository "${REPOSITORY_URL}" \
+              --arg ref "refs/tags/v${VERSION}" \
+              '[.attestations[]
+                | select(.predicateType == $type)
+                | .bundle.dsseEnvelope.payload | @base64d | fromjson
+                | .predicate.buildDefinition.externalParameters.workflow
+                | select(.repository == $repository and .path == ".github/workflows/publish.yml" and .ref == $ref)
+              ] | length == 1' >/dev/null
