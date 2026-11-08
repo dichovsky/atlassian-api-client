@@ -879,12 +879,14 @@ describe('workflowscheme', () => {
 
 describe('project-template selectors and save-template (F241, F237)', () => {
   it('skill names the template selectors; edit-template sends the key it names', async () => {
-    expect(skillRow('projects.md', 'project-template', 'edit-template')[2]).toContain(
-      '`--template-key`',
-    );
-    expect(skillRow('projects.md', 'project-template', 'live-template')[2]).toBe(
-      'one of `--project-id`, `--template-key`',
-    );
+    // Jira finds the template by these selectors, but neither the spec nor the CLI requires
+    // them, so the skill lists them as optional flags rather than required ones.
+    const editRow = skillRow('projects.md', 'project-template', 'edit-template');
+    expect(editRow[2]).toBe('at least one flag');
+    expect(editRow[3]).toContain('`--template-key` (identifies the template; Jira needs it)');
+    const liveRow = skillRow('projects.md', 'project-template', 'live-template');
+    expect(liveRow[2]).toBe('—');
+    expect(liveRow[3]).toContain('`--project-id` or `--template-key`');
     expect(skillSection('projects.md', 'project-template')).toContain(
       'selectors are required by Jira, which uses them to find the template. The CLI does not check them',
     );
