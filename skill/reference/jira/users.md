@@ -10,7 +10,7 @@
 | `me`                       | —               | —                                               | —                                                                                                                                                                |
 | `search`                   | —               | `--query`                                       | `--max-results`                                                                                                                                                  |
 | `delete`                   | —               | `--account-id`                                  | —                                                                                                                                                                |
-| `create`                   | —               | `--email`, `--products`                         | `--display-name`                                                                                                                                                 |
+| `create`                   | —               | `--email-address`, `--products`                 | `--display-name`                                                                                                                                                 |
 | `assignable-multi-project` | —               | —                                               | `--query`, `--user-name`, `--account-id`, `--project-keys`, `--max-results`, `--start-at`                                                                        |
 | `assignable`               | —               | one of `--project`, `--issue-key`, `--issue-id` | `--query`, `--user-name`, `--account-id`, `--start-at`, `--max-results`, `--session-id`, `--action-descriptor-id`, `--recommend`, `--account-type`, `--app-type` |
 | `bulk`                     | —               | `--account-ids`                                 | `--start-at`, `--max-results`                                                                                                                                    |
@@ -35,7 +35,7 @@
 
 - `users me` returns the caller's profile — a fast way to verify auth env vars are working without touching tenant data.
 - `users delete` requires `--account-id`. Returns `{ deleted: true }` on success.
-- `users create` requires `--email` and `--products` (spec-required). `--products` is comma-separated: `jira-core`, `jira-servicedesk`, `jira-product-discovery`, `jira-software`; pass `--products ""` to create a user with no product access. `--display-name` is optional.
+- `users create` requires `--email-address` (the new user's email) and `--products` (spec-required). Do not use `--email` for the new user: it is the global basic-auth login, so under basic auth the CLI rejects it here (it is still accepted as the new user's address under bearer auth). `--products` is comma-separated: `jira-core`, `jira-servicedesk`, `jira-product-discovery`, `jira-software`; pass `--products ""` to create a user with no product access. `--display-name` is optional.
 - `users assignable-multi-project` accepts `--project-keys` as a comma-separated list.
 - `users assignable` needs one of `--project` (ID or case-sensitive key), `--issue-key` or `--issue-id`; the issue-scoped form returns users assignable to that issue. `--action-descriptor-id` is a transition ID (non-negative integer), to find users assignable during that transition. `--session-id` stays the same until the assignee is set. `--recommend` (bare boolean) asks Jira to recommend assignees. `--account-type` and `--app-type` are comma-separated filters, sent as repeated query params.
 - `users assignable` and `viewissue-search` also need a user selector: the spec requires `--query` (matched against display name and email prefixes) or `--account-id` (exact match) on top of the issue/project scope. The CLI does not check this; pass one of them, as in the examples below.
@@ -56,6 +56,9 @@ atlas jira users permission-search --permissions BROWSE_PROJECTS --project-key P
 
 # Typeahead picker search
 atlas jira users picker --query "Jane"
+
+# Create a user (admin); auth stays on ATLASSIAN_EMAIL / ATLASSIAN_API_TOKEN
+atlas jira users create --email-address new.hire@example.com --products jira-software --display-name "New Hire"
 
 # User properties
 atlas jira users list-properties --account-id 5b10a2844c20165700ede21g

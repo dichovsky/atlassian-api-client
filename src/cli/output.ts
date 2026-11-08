@@ -218,21 +218,30 @@ function printTable(data: unknown): void {
   process.stdout.write(sanitizeForTerminal(String(data), isTty) + '\n');
 }
 
+const LIST_ENVELOPE_KEYS = ['results', 'values', 'issues'] as const;
+
+/**
+ * The records of a list/search envelope (`{ results }`, `{ values }`,
+ * `{ issues }`, or an id-less object with exactly one array property), or
+ * `undefined` when `data` is a single record or a primitive.
+ */
+function listEnvelopeItems(data: unknown): unknown[] | undefined {
+  if (data === null || typeof data !== 'object' || extractId(data) !== '') return undefined;
+  const record = data as Record<string, unknown>;
+  for (const key of LIST_ENVELOPE_KEYS) {
+    const value = record[key];
+    if (Array.isArray(value)) return value;
+  }
+  const arrays = Object.values(record).filter(Array.isArray);
+  return arrays.length === 1 ? arrays[0] : undefined;
+}
+
 function printMinimal(data: unknown): void {
   const isTty = stdoutIsTty();
-  if (Array.isArray(data)) {
-    for (const item of data) {
-      process.stdout.write(sanitizeForTerminal(extractId(item), isTty) + '\n');
-    }
-    return;
+  const records = Array.isArray(data) ? data : listEnvelopeItems(data);
+  for (const item of records ?? [data]) {
+    process.stdout.write(sanitizeForTerminal(extractId(item), isTty) + '\n');
   }
-
-  if (data !== null && typeof data === 'object') {
-    process.stdout.write(sanitizeForTerminal(extractId(data), isTty) + '\n');
-    return;
-  }
-
-  process.stdout.write(sanitizeForTerminal(String(data), isTty) + '\n');
 }
 
 function extractId(obj: unknown): string {
@@ -242,6 +251,7 @@ function extractId(obj: unknown): string {
     return String(record['id']);
   if (typeof record['key'] === 'string') return record['key'];
   if (typeof record['name'] === 'string') return record['name'];
+  if (typeof record['accountId'] === 'string') return record['accountId'];
   return '';
 }
 

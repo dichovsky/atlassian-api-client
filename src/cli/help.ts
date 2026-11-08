@@ -15,9 +15,11 @@ UTILITIES:
 GLOBAL OPTIONS:
   --base-url, -u   Atlassian instance URL (or ATLASSIAN_BASE_URL)
   --auth-type      Auth scheme: basic (default) or bearer (or ATLASSIAN_AUTH_TYPE)
-  --email, -e      Email for basic auth (or ATLASSIAN_EMAIL); not used for bearer
+  --email, -e      Email for basic auth (or ATLASSIAN_EMAIL); not used for bearer.
+                   Never the payload email: jira users create takes --email-address
   --token, -t      API token (basic) or bearer token (or ATLASSIAN_API_TOKEN)
-  --format, -f     Output format: json (default), table, minimal
+  --format, -f     Output format: json (default), table, minimal (one id per
+                   record; list/search results are unwrapped)
   --allowed-hosts  Comma-separated list of allowed hostnames for self-hosted
                    or proxied deployments (or ATLASSIAN_ALLOWED_HOSTS). When
                    omitted, only the default Atlassian suffix allowlist
@@ -28,6 +30,13 @@ GLOBAL OPTIONS:
                    (or ATLASSIAN_SOFTWARE_CLOUD_ID); requires bearer auth.
   --help, -h       Show help
   --version        Show version
+
+BOOLEAN FLAGS (flags that work bare, with no value):
+  --flag, --flag true and --flag=true mean true; --flag false, --flag=false
+  and --no-flag mean false; omit the flag to keep the server default. Only
+  true/false are accepted (--flag no is an error). A true/false word right
+  after such a flag is its value (put a positional true/false after --).
+  Flags documented with values (e.g. --validate-query) always need one.
 
 EXAMPLES:
   atlas confluence pages list --base-url https://myco.atlassian.net -e user@co.com -t TOKEN

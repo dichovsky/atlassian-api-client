@@ -851,7 +851,7 @@ its `status` between `incomplete` and `complete`.
 
 - `--status` accepts `incomplete` or `complete` (the only two task states v2 surfaces). On `update` it's required and toggles the task. On `list` it filters results.
 - `--task-id` filters to a single numeric platform task ID (distinct from the string task ID positional argument used by `get` / `update`).
-- `--include-blank-tasks` includes tasks whose `body` is empty (e.g. checkboxes without inline text). Omit to hide them.
+- `--include-blank-tasks` controls tasks whose `body` is empty (e.g. checkboxes without inline text). The server includes them by default; pass `--include-blank-tasks false` (or `--no-include-blank-tasks`) to hide them.
 - `--body-format` accepts `storage` or `atlas_doc_format` and controls the representation of the task body when present.
 - All date-range filters (`--created-at-*`, `--due-at-*`, `--completed-at-*`) accept integer Unix epoch milliseconds, not ISO-8601 strings; ranges are inclusive on both ends.
 - `--space-id`, `--page-id`, `--blog-post-id` scope the listing to tasks within that container; combine to narrow further. The user-attribution filters (`--created-by`, `--assigned-to`, `--completed-by`) accept Atlassian account IDs.

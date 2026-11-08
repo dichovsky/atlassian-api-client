@@ -133,7 +133,7 @@ const second = await client.search.searchJqlGet({
 
 ## Output shape notes
 
-- `issues get` returns the full Jira issue including `fields.summary`, `fields.status.name`, etc. With `--format minimal` you get the issue key (`PROJ-123`).
+- `issues get` returns the full Jira issue including `fields.summary`, `fields.status.name`, etc. With `--format minimal` you get the numeric issue ID (`10123`), not the key; read `.key` from `--format json` for the key.
 - Default `search` returns `{ issues: [...], nextPageToken?, isLast?, names?, warnings? }`. Continue with `--next-page-token`; do not expect offset fields such as `total` or `startAt`.
 - `transitions` returns `{ transitions: [{ id, name, to: { name } }, ...] }`. The `id` is what you pass to `--transition-id`.
 - `users me` returns the caller's `accountId`, `emailAddress` (if visible to caller), and `displayName`.

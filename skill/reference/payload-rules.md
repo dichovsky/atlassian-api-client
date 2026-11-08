@@ -8,7 +8,11 @@
 
 ## Output parsing
 
-`--format minimal` emits one line per record. Field extraction order is **id → key → name**. Pipe through `awk` / `cut` with this order assumption; do not assume `name` is first. For Jira issues this yields the issue key (e.g. `PROJ-123`); for Confluence pages it yields the page ID.
+`--format minimal` emits one line per record. List and search results are unwrapped, so `pages list`, `projects list` and `jira search` print one line per item (`results`, `values` or `issues`); an empty list prints nothing. Field extraction order is **id → key → name → accountId** (Jira users print their account ID). Pipe through `awk` / `cut` with this order assumption; do not assume `name` is first. Jira issues carry an `id`, so they yield the numeric issue ID (e.g. `10123`), not the key; for the key use `--format json` and read `.key` (e.g. `| jq -r '.issues[].key'`). Confluence pages yield the page ID.
+
+## Boolean flags
+
+Every flag that works bare (`--flag` with no value) is tri-state: `--flag`, `--flag true` or `--flag=true` sends `true`; `--flag false`, `--flag=false` or `--no-flag` sends `false`; omitting it keeps the server default. Use this to turn off a default-true option, e.g. `atlas jira issues picker --query bug --show-sub-tasks false`. Only `true`/`false` are accepted: `--purge no` and `--purge=yes` are rejected, never read as `true`. A `true`/`false` word right after such a flag is its value, so put a positional with that text after `--`. Flags documented with a value list (e.g. `--validate-query strict|warn|none|true|false`) always need the value.
 
 ## Request policy
 
