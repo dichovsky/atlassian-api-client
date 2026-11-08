@@ -96,9 +96,13 @@ export async function runCli(
   }
 }
 
-async function main(): Promise<void> {
+/**
+ * Bin entry: run {@link runCli} on `argv` against the real stdout/stderr and
+ * set `process.exitCode` on failure.
+ */
+export async function main(argv: readonly string[]): Promise<void> {
   const code = await runCli(
-    process.argv,
+    argv,
     (line) => process.stdout.write(line + '\n'),
     (line) => process.stderr.write(line + '\n'),
   );
@@ -128,7 +132,7 @@ function isEntryPoint(): boolean {
 }
 
 if (isEntryPoint()) {
-  main().catch((error: unknown) => {
+  main(process.argv).catch((error: unknown) => {
     const message = error instanceof Error ? error.message : String(error);
     printError(message);
     process.exitCode = 1;
