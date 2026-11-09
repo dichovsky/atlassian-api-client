@@ -2067,7 +2067,8 @@ async function executeSpaceRoles(client: ConfluenceClient, cmd: ParsedCommand): 
         'principal-type',
       );
       return client.spaceRoles.list({
-        'space-id': asString(opts['space-id']),
+        // A blank `space-id` reads as "every role on the tenant", so it is refused.
+        'space-id': trimmedFilter(opts, 'space-id'),
         'role-type': trimmedFilter(opts, 'role-type'),
         'principal-id': asString(opts['principal-id']),
         ...(principalType !== undefined ? { 'principal-type': principalType } : {}),

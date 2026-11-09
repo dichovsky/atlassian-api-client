@@ -322,11 +322,10 @@ describe('InlineCommentsResource', () => {
       expect(transport.calls[1]?.options.query).toMatchObject({ cursor: 'c2' });
     });
 
-    it('accepts limit=0 (spec minimum=0)', async () => {
-      transport.respondWith({ results: [], _links: {} });
+    it('rejects limit=0 before any request: a zero-size page cannot drive iteration', async () => {
       const iter = resource.listLikeUsersAll('88888', { limit: 0 });
-      await iter.next();
-      expect(transport.lastCall?.options.query).toEqual({ limit: 0 });
+      await expect(iter.next()).rejects.toThrow('limit must be a positive integer, got: 0');
+      expect(transport.calls).toHaveLength(0);
     });
 
     it('throws ValidationError when limit is negative before any request', async () => {

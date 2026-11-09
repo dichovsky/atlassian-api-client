@@ -109,7 +109,7 @@ describe('M-CA3: attachments thumbnail --file refuses an existing file before th
     const argv = argvFor(file);
     const run = await runCliWire(argv, { respond: { body: 'PNG' } });
     const req = only(run);
-    expect(req.path).toBe(`${C}/attachments/att-1/thumbnail/download`);
+    expect(req.path).toBe(`${C}/attachments/att123456/thumbnail/download`);
     expect(req.query.get('width')).toBe('200');
     expect(req.query.get('height')).toBe('200');
     expect(JSON.parse(run.stdout)).toEqual({ downloaded: true, byteLength: 3, file });
