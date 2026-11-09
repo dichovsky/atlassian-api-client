@@ -435,4 +435,7 @@ atlas jira backlog move --board-id 1 --issues PROJ-1,PROJ-2 --before PROJ-10
 
 # Move issues to the global backlog (no board scope) (B236)
 atlas jira backlog move --issues PROJ-3,PROJ-4
+
+# Rank the moved issue after PROJ-2 by the board's rank field 10019 (rank flags need --board-id)
+atlas jira backlog move --board-id 1 --issues PROJ-5 --after PROJ-2 --custom-field 10019
 ```

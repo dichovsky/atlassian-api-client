@@ -19,7 +19,11 @@ export class InstanceResource {
     private readonly baseUrl: string,
   ) {}
 
-  /** Get the instance license information. */
+  /**
+   * Get the instance license information.
+   *
+   * @experimental Atlassian marks this operation as experimental.
+   */
   async getLicense(): Promise<InstanceLicense> {
     const response = await this.transport.request<InstanceLicense>({
       method: 'GET',

@@ -41,6 +41,8 @@ export class TaskResource {
   /**
    * Cancel a long-running async task.
    * The task must still be running; completed tasks cannot be cancelled.
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   async cancel(taskId: string): Promise<void> {
     await this.transport.request<undefined>({

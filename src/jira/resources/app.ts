@@ -337,6 +337,8 @@ export class AppResource {
   /**
    * Fetch paginated field context configurations for the given fields.
    * POST /rest/api/3/app/field/context/configuration/list
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   async listFieldContextConfigurations(
     data: ListFieldContextConfigurationsData,

@@ -147,7 +147,11 @@ export class UsersResource {
     return response.data;
   }
 
-  /** Fetch multiple users by account ID (B801). */
+  /**
+   * Fetch multiple users by account ID (B801).
+   *
+   * @experimental Atlassian marks this operation as experimental.
+   */
   async bulkGet(params: BulkUsersParams): Promise<BulkUsersResponse> {
     // accountId is a required repeated query param (?accountId=a&accountId=b).
     requireValues(params.accountId, 'accountId');
@@ -162,7 +166,11 @@ export class UsersResource {
     return response.data;
   }
 
-  /** Get account IDs for legacy usernames or keys (B802). */
+  /**
+   * Get account IDs for legacy usernames or keys (B802).
+   *
+   * @experimental Atlassian marks this operation as experimental.
+   */
   async bulkMigration(params: BulkMigrationParams): Promise<UserMigrationRecord[]> {
     // `username` and `key` are repeated query params; build them into the path
     // so the transport does not collapse the duplicate keys.

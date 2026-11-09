@@ -24,7 +24,11 @@ export class LicenseResource {
     private readonly baseUrl: string,
   ) {}
 
-  /** Get approximate user count for all licensed Jira products. */
+  /**
+   * Get approximate user count for all licensed Jira products.
+   *
+   * @experimental Atlassian marks this operation as experimental.
+   */
   async getApproximateCount(): Promise<LicenseMetric> {
     const response = await this.transport.request<LicenseMetric>({
       method: 'GET',
@@ -33,7 +37,11 @@ export class LicenseResource {
     return response.data;
   }
 
-  /** Get approximate user count for a specific Jira product by application key. */
+  /**
+   * Get approximate user count for a specific Jira product by application key.
+   *
+   * @experimental Atlassian marks this operation as experimental.
+   */
   async getApproximateCountForProduct(applicationKey: ApplicationKey): Promise<LicenseMetric> {
     const response = await this.transport.request<LicenseMetric>({
       method: 'GET',
