@@ -119,6 +119,14 @@ const NOT_RETRYABLE = new WeakSet<object>();
  * Mark `error` so {@link executeWithRetry} throws it instead of running the
  * operation again: the transport uses this for an error status on the GET a
  * write was redirected to, because a retry would send the write again.
+ *
+ * The mark is on the object and lasts as long as it does. The transport's own
+ * errors are new objects on every throw, but a custom `config.fetch` that
+ * rejects that GET with one shared instance (a cached `HttpError`, say) leaves
+ * that instance unretried for every later request that rejects with it. This
+ * is deliberate: a per-attempt flag would need async-context tracking, and a
+ * middleware that calls `next()` from another request's context would then
+ * lose the flag and send the write again. A stale mark only skips a retry.
  */
 export function notRetryable<T extends object>(error: T): T {
   NOT_RETRYABLE.add(error);

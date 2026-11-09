@@ -510,6 +510,28 @@ describe('a write whose followed body-dropping redirect answers a retryable stat
 
     expect(fetchMock).toHaveBeenCalledTimes(3);
   });
+
+  it('still retries a later plain GET 503 on the same transport (the mark is per error object)', async () => {
+    const fetchMock = vi.fn((_url: string, init: RequestInit) =>
+      Promise.resolve(
+        init.method === 'POST'
+          ? new Response(null, { status: 303, headers: { location: `${TENANT}/t` } })
+          : new Response(null, { status: 503 }),
+      ),
+    );
+    const shared = transport(fetchMock as unknown as typeof fetch);
+
+    await shared.request({ method: 'POST', path: '/x', body: {} }).catch((e: unknown) => e);
+    await shared.request({ method: 'GET', path: '/y' }).catch((e: unknown) => e);
+
+    expect(fetchMock.mock.calls.map(([, init]) => init.method)).toEqual([
+      'POST',
+      'GET',
+      'GET',
+      'GET',
+      'GET',
+    ]);
+  });
 });
 
 // ---------------------------------------------------------------------------
