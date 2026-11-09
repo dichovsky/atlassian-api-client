@@ -34,18 +34,16 @@ export default tseslint.config(
     },
   },
   {
+    // The scripts are plain ESM JavaScript outside the TypeScript project, so
+    // they get the syntax rules without type-aware parsing.
+    files: ['scripts/**/*.js'],
+    ...tseslint.configs.disableTypeChecked,
+  },
+  {
     // `.claude/**` holds gitignored agent scratch space (worktrees, review
     // artifacts) that is never part of the package. ESLint does not read
     // `.gitignore`, so without this entry a stray `.ts` file left there by a
     // local tool fails `eslint .` on an otherwise clean tree.
-    ignores: [
-      'dist/**',
-      'node_modules/**',
-      'coverage/**',
-      'scripts/**',
-      '.claude/**',
-      '*.config.*',
-      '*.json',
-    ],
+    ignores: ['dist/**', 'node_modules/**', 'coverage/**', '.claude/**', '*.config.*', '*.json'],
   },
 );

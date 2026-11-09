@@ -1,23 +1,19 @@
 #!/usr/bin/env node
 
-import { readFileSync } from 'node:fs';
+import { readFileSync, realpathSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import { resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const USAGE = 'Usage: node scripts/validate-release-tag.js vX.Y.Z';
 const STABLE_TAG = /^v((?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*))$/;
 
-function fail(message) {
-  process.stderr.write(`Release validation failed: ${message}\n`);
-  process.exitCode = 1;
-}
-
-function readJson(file) {
-  const path = resolve(process.cwd(), file);
+function readJson(readFile, file) {
   try {
-    return JSON.parse(readFileSync(path, 'utf8'));
+    return JSON.parse(readFile(file));
   } catch (error) {
     const detail = error instanceof Error ? error.message : String(error);
-    throw new Error(`cannot read ${file}: ${detail}`);
+    throw new Error(`cannot read ${file}: ${detail}`, { cause: error });
   }
 }
 
@@ -67,25 +63,27 @@ function changelogProblem(changelog, version) {
   return undefined;
 }
 
-function main() {
-  const args = process.argv.slice(2);
-  if (args.length !== 1) {
-    fail(USAGE);
-    return;
-  }
+/**
+ * Check a release tag against package.json, package-lock.json and CHANGELOG.md.
+ *
+ * @param {readonly string[]} args - The command-line arguments: exactly one tag.
+ * @param {(file: string) => string} readFile - Reads a repository file as UTF-8.
+ * @returns {string | undefined} Why the tag is invalid, or `undefined` when it is valid.
+ */
+export function releaseTagProblem(args, readFile) {
+  if (args.length !== 1) return USAGE;
 
   const tag = args[0];
   const match = STABLE_TAG.exec(tag);
   if (!match) {
-    fail(`expected a stable release tag in the form vX.Y.Z; received ${JSON.stringify(tag)}`);
-    return;
+    return `expected a stable release tag in the form vX.Y.Z; received ${JSON.stringify(tag)}`;
   }
 
   const version = match[1];
 
   try {
-    const packageJson = readJson('package.json');
-    const packageLock = readJson('package-lock.json');
+    const packageJson = readJson(readFile, 'package.json');
+    const packageLock = readJson(readFile, 'package-lock.json');
     const versions = [
       ['package.json', packageJson.version],
       ['package-lock.json top-level', packageLock.version],
@@ -94,26 +92,60 @@ function main() {
 
     for (const [source, actual] of versions) {
       if (actual !== version) {
-        fail(
-          `${source} version must equal tag version ${version}; received ${JSON.stringify(actual)}`,
-        );
-        return;
+        return `${source} version must equal tag version ${version}; received ${JSON.stringify(actual)}`;
       }
     }
 
-    const changelog = readFileSync(resolve(process.cwd(), 'CHANGELOG.md'), 'utf8');
-    const problem = changelogProblem(changelog, version);
-    if (problem) {
-      fail(problem);
-      return;
-    }
+    return changelogProblem(readFile('CHANGELOG.md'), version);
   } catch (error) {
-    const detail = error instanceof Error ? error.message : String(error);
-    fail(detail);
-    return;
+    return error instanceof Error ? error.message : String(error);
   }
-
-  process.stdout.write(`Release tag ${tag} is valid for package version ${version}.\n`);
 }
 
-main();
+/**
+ * Validate the tag in `args` and report the result as the CLI does: one line
+ * on stdout when it is valid, otherwise one line on stderr and exit code 1.
+ *
+ * @param {readonly string[]} args - The command-line arguments: exactly one tag.
+ * @param {(file: string) => string} readFile - Reads a repository file as UTF-8.
+ * @param {{ stdout: { write(text: string): unknown }, stderr: { write(text: string): unknown }, exitCode?: number | string }} io
+ *   Where to report; the CLI passes `process`.
+ */
+export function main(args, readFile, io) {
+  const problem = releaseTagProblem(args, readFile);
+  if (problem) {
+    io.stderr.write(`Release validation failed: ${problem}\n`);
+    io.exitCode = 1;
+    return;
+  }
+  const version = STABLE_TAG.exec(args[0])[1];
+  io.stdout.write(`Release tag ${args[0]} is valid for package version ${version}.\n`);
+}
+
+/**
+ * Whether node is running `scriptPath` as this module, rather than a test
+ * importing it. `scriptPath` is resolved the way node resolves its entry point,
+ * so `node scripts/name` finds `name.js`, and both sides are compared by real
+ * path, so neither a symlinked checkout nor `--preserve-symlinks-main` makes
+ * the check exit 0 without running.
+ *
+ * @param {string} moduleUrl - `import.meta.url` of the module.
+ * @param {string | undefined} scriptPath - `process.argv[1]`.
+ * @returns {boolean}
+ */
+export function isEntryPoint(moduleUrl, scriptPath) {
+  try {
+    const entry = createRequire(moduleUrl).resolve(resolve(scriptPath));
+    return realpathSync(entry) === realpathSync(fileURLToPath(moduleUrl));
+  } catch {
+    return false;
+  }
+}
+
+if (isEntryPoint(import.meta.url, process.argv[1])) {
+  main(
+    process.argv.slice(2),
+    (file) => readFileSync(resolve(process.cwd(), file), 'utf8'),
+    process,
+  );
+}
