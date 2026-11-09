@@ -17,7 +17,7 @@
  * body) is left alone, and a JSON value that only fails on an elision
  * (`{"n":<count>}`, `[...]`) is retried with the elision filled in.
  */
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { parseCommand } from '../../src/cli/router.js';
 import { actionsForResource, parseCases } from './dispatcher-map.js';
@@ -142,6 +142,24 @@ export function inlineCommands(markdown: string, file: string): DocCommand[] {
     }
   });
   return out;
+}
+
+/** Every `## ` section whose heading names `` `resource` ``, from every skill file of `api`. */
+export function skillSections(api: 'jira' | 'confluence', resource: string): string {
+  const dir = resolve(ROOT, 'skill', 'reference');
+  const files =
+    api === 'confluence'
+      ? [resolve(dir, 'confluence.md')]
+      : [
+          resolve(dir, 'jira.md'),
+          ...readdirSync(resolve(dir, 'jira'))
+            .filter((f) => f.endsWith('.md'))
+            .map((f) => resolve(dir, 'jira', f)),
+        ];
+  return files
+    .flatMap((file) => readFileSync(file, 'utf8').split(/^(?=## )/m))
+    .filter((section) => /^## .*/.exec(section)?.[0].includes(`\`${resource}\``))
+    .join('\n');
 }
 
 /** One action-table row: the actions of its first cell and the resources its section names. */

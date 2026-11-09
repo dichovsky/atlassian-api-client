@@ -87,7 +87,8 @@ const KNOWN_GAPS: Readonly<
   },
   'jira.dashboards.listAvailableGadgets': {
     unset: ['dashboardId', 'gadgetId', 'moduleKey', 'uri'],
-    reason: 'deprecated: getAllAvailableDashboardGadgets takes no parameters; the SDK ignores them',
+    reason:
+      'not an API param: getAllAvailableDashboardGadgets takes no parameters; the SDK ignores them (ListAvailableGadgetsParams is @deprecated)',
   },
   'jira.dashboards.searchAll': {
     unset: ['logger'],
@@ -420,10 +421,14 @@ function analyzeCalls(
         const arg = node.arguments[i];
         const properties = sdkProperties(checker, paramType, sdkDir);
         if (!properties) {
-          // A scalar/positional parameter: reached when some call site passes it.
+          // A scalar/positional parameter: reached when some call site passes
+          // it a value that is not always undefined (`undefined`, `void 0`).
           const slot = method.slots.get(param.name) ?? { properties: [param.name], keys: NONE };
           method.slots.set(param.name, slot);
-          if (arg) slot.keys = union(slot.keys, just(param.name));
+          const passed =
+            arg !== undefined &&
+            (checker.getTypeAtLocation(arg).flags & ts.TypeFlags.Undefined) === 0;
+          if (passed) slot.keys = union(slot.keys, just(param.name));
           return;
         }
         const slot = method.slots.get(param.name) ?? { properties, keys: NONE };
@@ -589,6 +594,13 @@ void client.issues.transition('K-1', { ...rest, update: update as Record<string,
   },
   'an omitted positional scalar parameter is a gap (F288)': {
     code: `void client.links.del('1');`,
+    gaps: { 'links.del': ['seq'] },
+  },
+  'a positional scalar passed only as undefined is a gap': {
+    code: `const none = undefined;
+void client.links.del('1', undefined);
+void client.links.del('2', void 0);
+void client.links.del('3', none);`,
     gaps: { 'links.del': ['seq'] },
   },
   'a positional scalar passed at any call site is reached': {

@@ -2,8 +2,10 @@
  * Release unit parity-analyzers: the parity analyzers themselves (F287,
  * F288, F290, F341), the Connect-JWT-only exemption list, the inputs left
  * CLI-unreachable on purpose (X-KNOWN-UNREACHABLE) and the global network
- * guard (X-NO-NETWORK). The exhaustive lifecycle-marker check (X-MARKERS-ALL)
- * is in `release-410-parity-analyzers-markers.test.ts`.
+ * guard's behaviour (X-NO-NETWORK; its registration is checked in
+ * `release-410-parity-analyzers-network.test.ts`). The exhaustive
+ * lifecycle-marker check (X-MARKERS-ALL) is in
+ * `release-410-parity-analyzers-markers.test.ts`.
  *
  * Every CLI command below is a skill example taken verbatim from the skill
  * file (`skillExample`), or built only from the flags the skill's action
@@ -23,6 +25,7 @@ import {
   fencedCommands,
   inlineCommands,
   shellWords,
+  skillSections,
 } from '../helpers/skill-commands.js';
 import { cliActions, methodsFor, specOperations } from '../helpers/sdk-routes.js';
 import { guardedFetch, isLoopback } from '../setup/no-network.js';
@@ -408,19 +411,22 @@ describe('Connect-JWT-only operations are a pinned, spec-derived exemption', () 
         ),
       ];
       expect(actions.sort()).toEqual([...(CONNECT_ONLY[operationId] ?? [])].sort());
-      const docs = [ADMIN, 'skill/reference/jira/schemes.md']
-        .map((f) => readFileSync(resolve(ROOT, f), 'utf8'))
-        .join('\n');
       for (const pair of actions) {
-        const action = pair.split(' ')[1] as string;
-        const marked = docs
-          .split('\n')
+        const [resource, action] = pair.split(' ') as [string, string];
+        // Only the action's own resource section counts: `get`/`delete` are shared names.
+        const lines = skillSections('jira', resource).split('\n');
+        const marked = lines
           .filter((line) => line.includes('**Connect app (JWT) only**'))
           .some((line) => {
             const covered = /\*\*Connect app \(JWT\) only\*\* \(([^)]*)\)/.exec(line)?.[1] ?? '';
             return covered.includes(`\`${action}\``);
           });
         expect(marked, `${pair}: a "**Connect app (JWT) only**" line naming it`).toBe(true);
+        const forgeToo = lines
+          .flatMap((line) => line.split(/(?<=\.)\s/))
+          .filter((sentence) => /Connect(?:\/| or )Forge/.test(sentence))
+          .filter((sentence) => sentence.includes(`\`${action}\``));
+        expect(forgeToo, `${pair}: no sentence also opens it to Forge apps`).toEqual([]);
       }
     },
   );
@@ -535,19 +541,17 @@ describe('F290 / F341: the doc command checker catches what the old checks misse
 
 // ─── X-NO-NETWORK ────────────────────────────────────────────────────────────
 
-describe('X-NO-NETWORK: tests cannot reach a real host', () => {
-  it('the global fetch is the guard while no test stub is installed', () => {
-    expect(globalThis.fetch).toBe(guardedFetch);
-  });
-
+// The registration itself (setupFiles) is checked in
+// release-410-parity-analyzers-network.test.ts, which does not import the guard.
+describe('X-NO-NETWORK: the guard refuses every non-loopback host', () => {
   it('refuses a real request to a non-loopback host', async () => {
-    await expect(fetch('https://example.invalid/rest/api/3/myself')).rejects.toThrow(
+    await expect(guardedFetch('https://example.invalid/rest/api/3/myself')).rejects.toThrow(
       'test network guard: refused a real request to https://example.invalid',
     );
-    await expect(fetch(new Request('https://test.atlassian.net/x'))).rejects.toThrow(
+    await expect(guardedFetch(new Request('https://test.atlassian.net/x'))).rejects.toThrow(
       'https://test.atlassian.net',
     );
-    await expect(fetch(new URL('http://10.0.0.1/'))).rejects.toThrow('http://10.0.0.1');
+    await expect(guardedFetch(new URL('http://10.0.0.1/'))).rejects.toThrow('http://10.0.0.1');
   });
 
   it('still reaches a real socket server on loopback', async () => {
@@ -555,7 +559,7 @@ describe('X-NO-NETWORK: tests cannot reach a real host', () => {
     await server.start();
     try {
       server.setHandler('/ping', { status: 200, body: { ok: true } });
-      const response = await fetch(`${server.baseUrl}/ping`);
+      const response = await guardedFetch(`${server.baseUrl}/ping`);
       expect(await response.json()).toEqual({ ok: true });
     } finally {
       await server.close();

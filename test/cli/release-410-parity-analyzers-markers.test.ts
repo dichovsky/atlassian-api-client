@@ -12,8 +12,6 @@
  * per-unit marker tests (`test/jira/release-410-*markers*.test.ts`) stay as
  * focused checks of the same rule.
  */
-import { readFileSync, readdirSync } from 'node:fs';
-import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
   cliActions,
@@ -23,8 +21,7 @@ import {
   type SdkMethod,
   type SpecOperation,
 } from '../helpers/sdk-routes.js';
-
-const ROOT = resolve(import.meta.dirname, '..', '..');
+import { skillSections } from '../helpers/skill-commands.js';
 
 /**
  * Marked operations the SDK does not implement. All ten are deprecated
@@ -55,24 +52,6 @@ function tagsOf(op: SpecOperation): Tag[] {
 }
 
 const key = (m: SdkMethod): string => `${m.api}.${m.property}.${m.method}`;
-
-/** Every `## ` section whose heading names `` `resource` ``, from every skill file of `api`. */
-function skillSections(api: 'jira' | 'confluence', resource: string): string {
-  const dir = resolve(ROOT, 'skill', 'reference');
-  const files =
-    api === 'confluence'
-      ? [resolve(dir, 'confluence.md')]
-      : [
-          resolve(dir, 'jira.md'),
-          ...readdirSync(resolve(dir, 'jira'))
-            .filter((f) => f.endsWith('.md'))
-            .map((f) => resolve(dir, 'jira', f)),
-        ];
-  return files
-    .flatMap((file) => readFileSync(file, 'utf8').split(/^(?=## )/m))
-    .filter((section) => /^## .*/.exec(section)?.[0].includes(`\`${resource}\``))
-    .join('\n');
-}
 
 /** Backticked tokens of `text`, except the `x-experimental` keyword. */
 function named(text: string): string[] {

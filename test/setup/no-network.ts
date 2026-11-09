@@ -21,14 +21,15 @@ export function isLoopback(hostname: string): boolean {
   );
 }
 
-/** `fetch` that refuses every non-loopback URL. */
-export function guardedFetch(input: string | URL | Request, init?: RequestInit): Promise<Response> {
+/** `fetch` that refuses every non-loopback URL (async, so a bad URL rejects like the real one). */
+export async function guardedFetch(
+  input: string | URL | Request,
+  init?: RequestInit,
+): Promise<Response> {
   const url = new URL(input instanceof Request ? input.url : String(input));
   if (!isLoopback(url.hostname)) {
-    return Promise.reject(
-      new Error(
-        `test network guard: refused a real request to ${url.origin}; stub fetch (vi.stubGlobal, runCliWire) or use a localhost server`,
-      ),
+    throw new Error(
+      `test network guard: refused a real request to ${url.origin}; stub fetch (vi.stubGlobal, runCliWire) or use a localhost server`,
     );
   }
   return realFetch(input, init);
