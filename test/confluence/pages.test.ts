@@ -3,6 +3,7 @@ import { describeContentPermissions } from './content-permissions-suite.js';
 import { PagesResource } from '../../src/confluence/resources/pages.js';
 import type { CreatePageData, CreatePageRequest } from '../../src/confluence/types/pages.js';
 import { MockTransport } from '../helpers/mock-transport.js';
+import { ValidationError } from '../../src/core/errors.js';
 
 interface ExtendedCreatePageData extends CreatePageData {
   readonly clientTag?: string;
@@ -929,6 +930,36 @@ describe('PagesResource', () => {
         method: 'GET',
         path: `${BASE_URL}/pages/p-1/likes/count`,
       });
+    });
+
+    it('listLikeUsers() sends the spec minimum limit 0 (M3-2/M5-1)', async () => {
+      transport.respondWith({ results: [], _links: {} });
+      await pages.listLikeUsers('p-1', { limit: 0 });
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/pages/p-1/likes/users`,
+        query: { limit: 0 },
+      });
+    });
+
+    it.each([-1, 1.5, Number.NaN])(
+      'listLikeUsers() rejects limit %s before any request',
+      async (limit) => {
+        await expect(pages.listLikeUsers('p-1', { limit })).rejects.toThrow(
+          new ValidationError(`limit must be a non-negative integer, got: ${limit}`),
+        );
+        expect(transport.calls).toHaveLength(0);
+      },
+    );
+
+    it('listLikeUsersAll() still rejects limit 0: a zero-size page never advances', async () => {
+      const iterate = async () => {
+        for await (const _ of pages.listLikeUsersAll('p-1', { limit: 0 })) {
+          /* consume */
+        }
+      };
+      await expect(iterate()).rejects.toThrow(ValidationError);
+      expect(transport.calls).toHaveLength(0);
     });
 
     it('listLikeUsers() forwards cursor + limit', async () => {

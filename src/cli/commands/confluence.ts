@@ -263,7 +263,7 @@ async function executePages(client: ConfluenceClient, cmd: ParsedCommand): Promi
     case 'likes-users':
       return client.pages.listLikeUsers(requireArg(cmd.positionalArgs[0], 'page ID'), {
         cursor: asString(opts['cursor']),
-        limit: asPositiveInt(opts['limit'], '--limit'),
+        limit: asNonNegativeInt(opts['limit'], '--limit'),
       });
 
     // ── operations (B179) ─────────────────────────────────────────────────
@@ -921,7 +921,7 @@ async function executeBlogPosts(client: ConfluenceClient, cmd: ParsedCommand): P
     case 'likes-users':
       return client.blogPosts.listLikeUsers(requireArg(cmd.positionalArgs[0], 'blog post ID'), {
         cursor: asString(opts['cursor']),
-        limit: asPositiveInt(opts['limit'], '--limit'),
+        limit: asNonNegativeInt(opts['limit'], '--limit'),
       });
 
     // ── operations (B082) ─────────────────────────────────────────────────
