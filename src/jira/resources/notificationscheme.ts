@@ -124,7 +124,10 @@ export interface GetNotificationSchemeParams {
  * read-only.
  */
 export interface NotificationSchemeNotificationWrite {
-  /** The notification type, e.g. `CurrentAssignee`, `Group`, `EmailAddress`. */
+  /**
+   * The notification type, e.g. `CurrentAssignee`, `Group`, `User`. Jira Cloud
+   * no longer supports `EmailAddress` (CHANGE-1031).
+   */
   readonly notificationType: string;
   /** The value corresponding to the specified notification type. */
   readonly parameter?: string;
@@ -230,6 +233,8 @@ export class NotificationSchemeResource {
   /**
    * B606: Create a notification scheme.
    * POST /rest/api/3/notificationscheme
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   async create(data: CreateNotificationSchemeData): Promise<CreatedNotificationScheme> {
     const body: Record<string, unknown> = { name: data.name };
@@ -263,6 +268,8 @@ export class NotificationSchemeResource {
   /**
    * B608: Update a notification scheme. Returns void (204 No Content).
    * PUT /rest/api/3/notificationscheme/{id}
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   async update(id: string, data: UpdateNotificationSchemeData): Promise<void> {
     const body: Record<string, unknown> = {};
@@ -290,6 +297,8 @@ export class NotificationSchemeResource {
   /**
    * B610: Delete a notification scheme.
    * DELETE /rest/api/3/notificationscheme/{notificationSchemeId}
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   async delete(notificationSchemeId: string): Promise<void> {
     await this.transport.request<undefined>({

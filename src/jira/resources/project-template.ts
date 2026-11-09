@@ -178,24 +178,29 @@ export class ProjectTemplateResource {
    * B653 POST /rest/api/3/project-template
    * Creates a project based on a custom template (async — returns 303 redirect).
    *
-   * The server responds with 303 and a `Location` header pointing to the task
-   * URL. Use the returned URL with `GET /rest/api/3/task/{taskId}` to poll for
-   * completion. Returns `undefined` when the server omits the `Location` header.
+   * The server responds with 303 and a `Location` header pointing to the task.
+   * Resolves that task URL: the `Location` header when the 303 reaches the
+   * caller, or the `self` link of the task once the redirect has been followed
+   * (the default HTTP transport follows it to `GET /rest/api/3/task/{taskId}`).
+   * Poll it with `GET /rest/api/3/task/{taskId}`. Resolves `undefined` when
+   * neither is present.
    */
   async createWithCustomTemplate(
     data: ProjectCustomTemplateCreateRequestDTO,
   ): Promise<string | undefined> {
-    const response = await this.transport.request<undefined>({
+    const response = await this.transport.request<{ readonly self?: string } | undefined>({
       method: 'POST',
       path: `${this.baseUrl}/project-template`,
       body: data,
     });
-    return response.headers.get('location') ?? undefined;
+    return response.headers.get('location') ?? response.data?.self ?? undefined;
   }
 
   /**
    * B654 PUT /rest/api/3/project-template/edit-template
    * Edits an existing custom template. Returns 200 with no JSON body.
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   async editTemplate(data: EditTemplateRequest): Promise<void> {
     await this.transport.request<undefined>({
@@ -208,6 +213,8 @@ export class ProjectTemplateResource {
   /**
    * B655 GET /rest/api/3/project-template/live-template
    * Retrieves a live custom project template by templateKey or projectId.
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   async getLiveTemplate(params?: GetLiveTemplateParams): Promise<ProjectTemplateModel> {
     const query: Record<string, string | undefined> = {};
@@ -224,6 +231,8 @@ export class ProjectTemplateResource {
   /**
    * B656 DELETE /rest/api/3/project-template/remove-template
    * Removes a custom template by templateKey (required). Returns 200 no body.
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   async removeTemplate(templateKey: string): Promise<void> {
     await this.transport.request<undefined>({
@@ -236,6 +245,8 @@ export class ProjectTemplateResource {
   /**
    * B657 POST /rest/api/3/project-template/save-template
    * Saves a custom project template. Returns SaveTemplateResponse.
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   async saveTemplate(data: SaveTemplateRequest): Promise<SaveTemplateResponse> {
     const response = await this.transport.request<SaveTemplateResponse>({

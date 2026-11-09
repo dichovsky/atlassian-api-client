@@ -4625,12 +4625,13 @@ async function executeResolutions(client: JiraClient, cmd: ParsedCommand): Promi
       const id = requireArg(cmd.positionalArgs[0], 'id');
       // `replaceWith` is required by the spec — deleting without it returns 400.
       const replaceWith = requireOpt(opts['replace-with'], '--replace-with');
-      await client.resolutions.delete(id, { replaceWith });
-      return { deleted: true };
+      // Asynchronous: the deletion task to poll with `atlas jira task get <id>`.
+      return (await client.resolutions.delete(id, { replaceWith })) ?? { deleted: true };
     }
     case 'set-default': {
       const id = requireArg(cmd.positionalArgs[0], 'id');
-      await client.resolutions.setDefault({ id });
+      // `null` erases the default resolution (spec: JSON null, not a string).
+      await client.resolutions.setDefault({ id: id === 'null' ? null : id });
       return { updated: true };
     }
     case 'move': {
@@ -5213,24 +5214,21 @@ async function executePermissionSchemes(client: JiraClient, cmd: ParsedCommand):
         requireArg(cmd.positionalArgs[0], 'schemeId'),
         'schemeId',
       );
-      const holderType = asString(opts['holder-type']);
+      // A grant needs a holder and a permission; Jira rejects an empty one.
+      const holderType = requireOpt(opts['holder-type'], '--holder-type');
       const holderParameter = asString(opts['holder-parameter']);
       const holderValue = asString(opts['holder-value']);
-      const permission = asString(opts['permission']);
+      const permission = requireOpt(opts['permission'], '--permission');
       const expand = asString(opts['expand']);
-      const holder =
-        holderType !== undefined
-          ? {
-              type: holderType,
-              ...(holderParameter !== undefined && { parameter: holderParameter }),
-              ...(holderValue !== undefined && { value: holderValue }),
-            }
-          : undefined;
       return client.permissionSchemes.createPermission(
         schemeId,
         {
-          ...(holder !== undefined && { holder }),
-          ...(permission !== undefined && { permission }),
+          holder: {
+            type: holderType,
+            ...(holderParameter !== undefined && { parameter: holderParameter }),
+            ...(holderValue !== undefined && { value: holderValue }),
+          },
+          permission,
         },
         expand !== undefined ? { expand } : undefined,
       );
@@ -5291,10 +5289,16 @@ async function executeIssueTypeSchemes(client: JiraClient, cmd: ParsedCommand): 
   switch (cmd.action) {
     case 'list': {
       const ids = parseCsv(opts['ids']);
+      const orderBy = asScreensOrderBy(opts['order-by']);
+      const expand = asString(opts['expand']);
+      const queryString = asString(opts['query-string']);
       return client.issueTypeSchemes.list({
         startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
         ...(ids !== undefined && { id: ids }),
+        ...(orderBy !== undefined && { orderBy }),
+        ...(expand !== undefined && { expand }),
+        ...(queryString !== undefined && { queryString }),
       });
     }
     case 'list-mapping': {
@@ -5306,7 +5310,8 @@ async function executeIssueTypeSchemes(client: JiraClient, cmd: ParsedCommand): 
       });
     }
     case 'list-project': {
-      const projectId = parseCsv(opts['project-ids']) ?? [];
+      const projectId = parseCsv(opts['project-ids']);
+      if (projectId === undefined) throw new Error('Missing required option: --project-ids');
       return client.issueTypeSchemes.listProject({
         startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
@@ -5376,6 +5381,9 @@ async function executeIssueTypeSchemes(client: JiraClient, cmd: ParsedCommand): 
       const after = asString(opts['after']);
       const positionRaw = asString(opts['position']);
       const position = positionRaw !== undefined ? asMovePosition(positionRaw) : undefined;
+      if (after === undefined && position === undefined) {
+        throw new Error('move-issue-types requires one of: --position, --after');
+      }
       await client.issueTypeSchemes.moveIssueTypes(schemeId, {
         issueTypeIds,
         ...(after !== undefined && { after }),
@@ -5440,16 +5448,11 @@ async function executeRoles(client: JiraClient, cmd: ParsedCommand): Promise<unk
       return client.roles.create(body);
     }
     case 'update': {
+      // PUT replaces the role: Jira requires both fields (use partial-update for one).
       const roleId = parsePositiveIntArg(requireArg(cmd.positionalArgs[0], 'roleId'), 'roleId');
-      const name = asString(opts['name']);
-      const description = asString(opts['description']);
-      if (name === undefined && description === undefined) {
-        throw new Error('update requires at least one of: --name, --description');
-      }
-      const body: { name?: string; description?: string } = {};
-      if (name !== undefined) body.name = name;
-      if (description !== undefined) body.description = description;
-      return client.roles.update(roleId, body);
+      const name = requireOpt(opts['name'], '--name');
+      const description = requireOpt(opts['description'], '--description');
+      return client.roles.update(roleId, { name, description });
     }
     case 'partial-update': {
       const roleId = parsePositiveIntArg(requireArg(cmd.positionalArgs[0], 'roleId'), 'roleId');
@@ -5457,6 +5460,10 @@ async function executeRoles(client: JiraClient, cmd: ParsedCommand): Promise<unk
       const description = asString(opts['description']);
       if (name === undefined && description === undefined) {
         throw new Error('partial-update requires at least one of: --name, --description');
+      }
+      // Jira updates only the name when both are sent.
+      if (name !== undefined && description !== undefined) {
+        throw new Error('partial-update changes one field: pass --name or --description, not both');
       }
       const body: { name?: string; description?: string } = {};
       if (name !== undefined) body.name = name;
@@ -5481,6 +5488,7 @@ async function executeRoles(client: JiraClient, cmd: ParsedCommand): Promise<unk
       if (userRaw === undefined && groupRaw === undefined && groupIdRaw === undefined) {
         throw new Error('add-actors requires at least one of: --user, --group, --group-id');
       }
+      rejectRoleActorMix(userRaw, groupRaw, groupIdRaw, 'add-actors cannot add users and groups');
       const data: { user?: string[]; group?: string[]; groupId?: string[] } = {};
       if (userRaw !== undefined)
         data.user = userRaw
@@ -5508,11 +5516,37 @@ async function executeRoles(client: JiraClient, cmd: ParsedCommand): Promise<unk
       if (accountId !== undefined) params.user = accountId;
       if (groupName !== undefined) params.group = groupName;
       if (groupId !== undefined) params.groupId = groupId;
-      await client.roles.deleteActors(roleId, Object.keys(params).length > 0 ? params : undefined);
-      return { deleted: true };
+      rejectRoleActorMix(
+        accountId,
+        groupName,
+        groupId,
+        'delete-actors cannot delete a user and a group',
+      );
+      // The role with its remaining default actors.
+      return (
+        (await client.roles.deleteActors(
+          roleId,
+          Object.keys(params).length > 0 ? params : undefined,
+        )) ?? { deleted: true }
+      );
     }
     default:
       throw new Error(`Unknown roles action: ${cmd.action}. Actions: ${ROLES_ACTIONS.join(', ')}`);
+  }
+}
+
+/** Jira rejects users and groups in one actor request, and a group by both name and ID. */
+function rejectRoleActorMix(
+  user: string | undefined,
+  groupName: string | undefined,
+  groupId: string | undefined,
+  mixMessage: string,
+): void {
+  if (user !== undefined && (groupName !== undefined || groupId !== undefined)) {
+    throw new Error(`${mixMessage} in the same request`);
+  }
+  if (groupName !== undefined && groupId !== undefined) {
+    throw new Error('pass either --group-name/--group or --group-id, not both');
   }
 }
 
@@ -5886,10 +5920,12 @@ async function executeNotificationSchemes(
       return { deleted: true };
     }
     case 'list-projects': {
+      const schemeIds = parseCsv(opts['scheme-ids']);
       const projectIds = parseCsv(opts['project-ids']);
       return client.notificationSchemes.listProjects({
         startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+        ...(schemeIds !== undefined && { notificationSchemeId: schemeIds }),
         ...(projectIds !== undefined && { projectId: projectIds }),
       });
     }
@@ -6158,7 +6194,7 @@ async function executeVersionResource(client: JiraClient, cmd: ParsedCommand): P
 
   switch (cmd.action) {
     case 'create': {
-      const name = asString(opts['name']);
+      const name = requireOpt(opts['name'], '--name');
       const description = asString(opts['description']);
       const archived = asBoolFlag(opts['archived']);
       const released = asBoolFlag(opts['released']);
@@ -6168,8 +6204,12 @@ async function executeVersionResource(client: JiraClient, cmd: ParsedCommand): P
       const projectId = asPositiveInt(opts['project-id'], '--project-id');
       const moveUnfixedIssuesTo = asString(opts['move-unfixed-issues-to']);
       const driver = asString(opts['driver']);
+      const expand = asString(opts['expand']);
+      if (projectId === undefined && project === undefined) {
+        throw new Error('create requires --project-id (or the deprecated --project key)');
+      }
       return client.version.create({
-        ...(name !== undefined && { name }),
+        name,
         ...(description !== undefined && { description }),
         ...(archived !== undefined && { archived }),
         ...(released !== undefined && { released }),
@@ -6179,6 +6219,7 @@ async function executeVersionResource(client: JiraClient, cmd: ParsedCommand): P
         ...(projectId !== undefined && { projectId }),
         ...(moveUnfixedIssuesTo !== undefined && { moveUnfixedIssuesTo }),
         ...(driver !== undefined && { driver }),
+        ...(expand !== undefined && { expand }),
       });
     }
     case 'get': {
@@ -6198,6 +6239,7 @@ async function executeVersionResource(client: JiraClient, cmd: ParsedCommand): P
       const projectId = asPositiveInt(opts['project-id'], '--project-id');
       const moveUnfixedIssuesTo = asString(opts['move-unfixed-issues-to']);
       const driver = asString(opts['driver']);
+      const expand = asString(opts['expand']);
       if (
         name === undefined &&
         description === undefined &&
@@ -6208,10 +6250,11 @@ async function executeVersionResource(client: JiraClient, cmd: ParsedCommand): P
         project === undefined &&
         projectId === undefined &&
         moveUnfixedIssuesTo === undefined &&
-        driver === undefined
+        driver === undefined &&
+        expand === undefined
       ) {
         throw new Error(
-          'update requires at least one of: --name, --description, --archived, --released, --start-date, --release-date, --project, --project-id, --move-unfixed-issues-to, --driver',
+          'update requires at least one of: --name, --description, --archived, --released, --start-date, --release-date, --project, --project-id, --move-unfixed-issues-to, --driver, --expand',
         );
       }
       return client.version.update(id, {
@@ -6225,6 +6268,7 @@ async function executeVersionResource(client: JiraClient, cmd: ParsedCommand): P
         ...(projectId !== undefined && { projectId }),
         ...(moveUnfixedIssuesTo !== undefined && { moveUnfixedIssuesTo }),
         ...(driver !== undefined && { driver }),
+        ...(expand !== undefined && { expand }),
       });
     }
     case 'delete': {
@@ -6250,6 +6294,9 @@ async function executeVersionResource(client: JiraClient, cmd: ParsedCommand): P
       const pos = posRaw !== undefined ? asVersionMovePosition(posRaw) : undefined;
       if (after === undefined && pos === undefined) {
         throw new Error('move requires at least one of: --after, --position');
+      }
+      if (after !== undefined && pos !== undefined) {
+        throw new Error('move accepts either --after or --position, not both');
       }
       return client.version.move(id, {
         ...(after !== undefined && { after }),
@@ -6277,10 +6324,12 @@ async function executeVersionResource(client: JiraClient, cmd: ParsedCommand): P
     }
     case 'update-related-work': {
       const id = requireArg(cmd.positionalArgs[0], 'id');
+      const relatedWorkId = requireOpt(opts['related-work-id'], '--related-work-id');
       const category = requireOpt(opts['category'], '--category');
       const title = asString(opts['title']);
       const url = asString(opts['url']);
       return client.version.updateRelatedWork(id, {
+        relatedWorkId,
         category,
         ...(title !== undefined && { title }),
         ...(url !== undefined && { url }),
@@ -6422,26 +6471,30 @@ async function executeConfig(client: JiraClient, cmd: ParsedCommand): Promise<un
     case 'remove-field-associations': {
       const raw = requireOpt(opts['body'], '--body');
       const body = parseJsonObjectFlag(raw, '--body') as RemoveFieldAssociationsBody;
-      await client.config.removeFieldAssociations(body);
-      return { deleted: true };
+      // 200/207 carry per-entry `results` (207 = some entries failed); 204 has none.
+      return (await client.config.removeFieldAssociations(body)) ?? { deleted: true };
     }
     case 'update-field-associations': {
       const raw = requireOpt(opts['body'], '--body');
       const body = parseJsonObjectFlag(raw, '--body') as UpdateFieldAssociationsBody;
-      await client.config.updateFieldAssociations(body);
-      return { updated: true };
+      // 200/207 carry per-entry `results` (207 = some entries failed); 204 has none.
+      return (await client.config.updateFieldAssociations(body)) ?? { updated: true };
     }
     case 'remove-field-parameters': {
       const raw = requireOpt(opts['body'], '--body');
       const body = parseJsonObjectFlag(raw, '--body') as RemoveFieldParametersBody;
-      await client.config.removeFieldParameters(body);
-      return { deleted: true };
+      // 207 carries per-entry `results` (some entries failed); 200/204 have none.
+      return (
+        (await client.config.removeFieldParameters(body, { returnResults: true })) ?? {
+          deleted: true,
+        }
+      );
     }
     case 'update-field-parameters': {
       const raw = requireOpt(opts['body'], '--body');
       const body = parseJsonObjectFlag(raw, '--body') as UpdateFieldParametersBody;
-      await client.config.updateFieldParameters(body);
-      return { updated: true };
+      // 200/207 carry per-entry `results` (207 = some entries failed); 204 has none.
+      return (await client.config.updateFieldParameters(body)) ?? { updated: true };
     }
     case 'get-projects-with-schemes': {
       const projectIds = parseIntCsv(opts['project-ids'], '--project-ids');
@@ -6457,8 +6510,8 @@ async function executeConfig(client: JiraClient, cmd: ParsedCommand): Promise<un
     case 'associate-projects': {
       const raw = requireOpt(opts['body'], '--body');
       const body = parseJsonObjectFlag(raw, '--body') as AssociateProjectsBody;
-      await client.config.associateProjects(body);
-      return { updated: true };
+      // 200/207 carry per-entry `results` (207 = some entries failed); 204 has none.
+      return (await client.config.associateProjects(body)) ?? { updated: true };
     }
     default:
       throw new Error(
@@ -6547,13 +6600,9 @@ async function executeIssueSecuritySchemes(
     }
     case 'add-levels': {
       const schemeId = requireArg(cmd.positionalArgs[0], 'schemeId');
-      const levelsRaw = asString(opts['levels']);
-      let levels: unknown[] | undefined;
-      if (levelsRaw !== undefined) {
-        levels = parseJsonArrayFlag(levelsRaw, '--levels');
-      }
+      const levels = parseJsonArrayFlag(requireOpt(opts['levels'], '--levels'), '--levels');
       await client.issueSecuritySchemes.addLevels(schemeId, {
-        ...(levels !== undefined && { levels: levels as SecuritySchemeLevelBean[] }),
+        levels: levels as SecuritySchemeLevelBean[],
       });
       return { updated: true };
     }
@@ -6583,13 +6632,9 @@ async function executeIssueSecuritySchemes(
     case 'add-level-members': {
       const schemeId = requireArg(cmd.positionalArgs[0], 'schemeId');
       const levelId = requireArg(cmd.positionalArgs[1], 'levelId');
-      const membersRaw = asString(opts['members']);
-      let members: unknown[] | undefined;
-      if (membersRaw !== undefined) {
-        members = parseJsonArrayFlag(membersRaw, '--members');
-      }
+      const members = parseJsonArrayFlag(requireOpt(opts['members'], '--members'), '--members');
       await client.issueSecuritySchemes.addLevelMembers(schemeId, levelId, {
-        ...(members !== undefined && { members: members as SecuritySchemeLevelMemberBean[] }),
+        members: members as SecuritySchemeLevelMemberBean[],
       });
       return { updated: true };
     }
@@ -6650,7 +6695,8 @@ async function executeIssueSecuritySchemes(
       const mappingsRaw = asString(opts['old-to-new-mappings']);
       const data: AssociateSchemesToProjectsData = {
         projectId,
-        schemeId,
+        // `null` clears the project's issue security scheme association.
+        schemeId: schemeId === 'null' ? null : schemeId,
         ...(mappingsRaw !== undefined && {
           oldToNewSecurityLevelMappings: parseJsonArrayFlag(
             mappingsRaw,
@@ -6844,6 +6890,9 @@ async function executeScreens(client: JiraClient, cmd: ParsedCommand): Promise<u
       const id = requireArg(cmd.positionalArgs[2], 'id');
       const position = asMoveFieldPosition(opts['position']);
       const after = asString(opts['after']);
+      if (position === undefined && after === undefined) {
+        throw new Error('move-field requires one of: --position, --after');
+      }
       await client.screens.moveField(screenId, tabId, id, {
         ...(position !== undefined && { position }),
         ...(after !== undefined && { after }),
@@ -6931,9 +6980,9 @@ async function executeScreenScheme(client: JiraClient, cmd: ParsedCommand): Prom
     case 'create': {
       const name = requireOpt(opts['name'], '--name');
       const defaultScreen = requireIntOpt(opts['default-screen'], '--default-screen');
-      const viewScreen = asNonNegativeInt(opts['view-screen'], '--view-screen');
-      const editScreen = asNonNegativeInt(opts['edit-screen'], '--edit-screen');
-      const createScreen = asNonNegativeInt(opts['create-screen'], '--create-screen');
+      const viewScreen = screenIdOpt(opts['view-screen'], '--view-screen');
+      const editScreen = screenIdOpt(opts['edit-screen'], '--edit-screen');
+      const createScreen = screenIdOpt(opts['create-screen'], '--create-screen');
       const description = asString(opts['description']);
       return client.screenScheme.create({
         name,
@@ -6950,10 +6999,11 @@ async function executeScreenScheme(client: JiraClient, cmd: ParsedCommand): Prom
       const screenSchemeId = requireArg(cmd.positionalArgs[0], 'screenSchemeId');
       const name = asString(opts['name']);
       const description = asString(opts['description']);
-      const defaultScreen = asNonNegativeInt(opts['default-screen'], '--default-screen');
-      const viewScreen = asNonNegativeInt(opts['view-screen'], '--view-screen');
-      const editScreen = asNonNegativeInt(opts['edit-screen'], '--edit-screen');
-      const createScreen = asNonNegativeInt(opts['create-screen'], '--create-screen');
+      const defaultScreen = screenIdOpt(opts['default-screen'], '--default-screen');
+      // `null` removes the view/edit/create association (the default stays required).
+      const viewScreen = nullableScreenIdOpt(opts['view-screen'], '--view-screen');
+      const editScreen = nullableScreenIdOpt(opts['edit-screen'], '--edit-screen');
+      const createScreen = nullableScreenIdOpt(opts['create-screen'], '--create-screen');
       const hasScreens =
         defaultScreen !== undefined ||
         viewScreen !== undefined ||
@@ -6966,14 +7016,15 @@ async function executeScreenScheme(client: JiraClient, cmd: ParsedCommand): Prom
       }
       // Spec: UpdateScreenTypes uses string IDs (not integers like create).
       // --default-screen is optional on update; a partial screens object is valid.
-      // Note: null removal (to disassociate a screen) is not yet supported here.
-      let screens: { default?: string; view?: string; edit?: string; create?: string } | undefined;
+      let screens:
+        | { default?: string; view?: string | null; edit?: string | null; create?: string | null }
+        | undefined;
       if (hasScreens) {
         screens = {
           ...(defaultScreen !== undefined && { default: String(defaultScreen) }),
-          ...(viewScreen !== undefined && { view: String(viewScreen) }),
-          ...(editScreen !== undefined && { edit: String(editScreen) }),
-          ...(createScreen !== undefined && { create: String(createScreen) }),
+          ...(viewScreen !== undefined && { view: viewScreen }),
+          ...(editScreen !== undefined && { edit: editScreen }),
+          ...(createScreen !== undefined && { create: createScreen }),
         };
       }
       await client.screenScheme.update(screenSchemeId, {
@@ -7007,13 +7058,32 @@ function asScreenSchemeOrderBy(
 }
 
 function requireIntOpt(value: string | boolean | undefined, name: string): number {
+  const n = screenIdOpt(value, name);
+  if (n === undefined) throw new Error(`${name} is required`);
+  return n;
+}
+
+/** A screen ID flag: decimal digits only, so `''` is rejected instead of becoming 0. */
+function screenIdOpt(value: string | boolean | undefined, name: string): number | undefined {
   const s = asString(value);
-  if (s === undefined) throw new Error(`${name} is required`);
+  if (s === undefined) return undefined;
+  if (!/^\d+$/.test(s)) throw new Error(`${name} must be a non-negative integer, got: ${s}`);
   const n = Number(s);
-  if (!Number.isInteger(n) || n < 0) {
-    throw new Error(`${name} must be a non-negative integer, got: ${s}`);
+  // Above 2^53 - 1, Number() rounds to a different ID.
+  if (!Number.isSafeInteger(n)) {
+    throw new Error(`${name} must be at most ${Number.MAX_SAFE_INTEGER}, got: ${s}`);
   }
   return n;
+}
+
+/** Like {@link screenIdOpt} for `screenscheme update`, where `null` removes the screen. */
+function nullableScreenIdOpt(
+  value: string | boolean | undefined,
+  name: string,
+): string | null | undefined {
+  if (value === 'null') return null;
+  const n = screenIdOpt(value, name);
+  return n === undefined ? undefined : String(n);
 }
 
 // ─── Plans (B625-B640) ─────────────────────────────────────────────────────
@@ -7044,6 +7114,26 @@ function asFiniteNumber(value: string | boolean | undefined, name: string): numb
   const n = Number(value);
   if (!Number.isFinite(n)) throw new Error(`${name} must be a finite number, got: ${value}`);
   return n;
+}
+
+type PlanJsonPatch = Extract<Parameters<JiraClient['plans']['update']>[1], unknown[]>;
+
+/**
+ * `--body` of the plans patch actions: an RFC 6902 JSON Patch array, or one
+ * operation object, which is wrapped into an array.
+ */
+function parseJsonPatchFlag(raw: string): PlanJsonPatch {
+  const parsed = parseJsonValueFlag(raw, '--body');
+  const ops = Array.isArray(parsed) ? parsed : [parsed];
+  const valid = ops.every(
+    (op) => isJsonObject(op) && typeof op['op'] === 'string' && typeof op['path'] === 'string',
+  );
+  if (ops.length === 0 || !valid) {
+    throw new Error(
+      '--body must be a JSON Patch: an array of {"op","path","value"} operations (or one such object)',
+    );
+  }
+  return ops as PlanJsonPatch;
 }
 
 async function executePlans(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
@@ -7112,8 +7202,7 @@ async function executePlans(client: JiraClient, cmd: ParsedCommand): Promise<unk
     }
     case 'update': {
       const planId = parsePositiveIntArg(requireArg(cmd.positionalArgs[0], 'planId'), 'planId');
-      const raw = requireOpt(opts['body'], '--body');
-      const patch = parseJsonObjectFlag(raw, '--body');
+      const patch = parseJsonPatchFlag(requireOpt(opts['body'], '--body'));
       const useGroupId =
         opts['use-group-id'] !== undefined ? (opts['use-group-id'] as boolean) : undefined;
       await client.plans.update(planId, patch, useGroupId);
@@ -7167,8 +7256,7 @@ async function executePlans(client: JiraClient, cmd: ParsedCommand): Promise<unk
     case 'update-atlassian-team': {
       const planId = parsePositiveIntArg(requireArg(cmd.positionalArgs[0], 'planId'), 'planId');
       const atlassianTeamId = requireArg(cmd.positionalArgs[1], 'atlassianTeamId');
-      const raw = requireOpt(opts['body'], '--body');
-      const patch = parseJsonObjectFlag(raw, '--body');
+      const patch = parseJsonPatchFlag(requireOpt(opts['body'], '--body'));
       await client.plans.updateAtlassianTeam(planId, atlassianTeamId, patch);
       return { updated: true };
     }
@@ -7216,8 +7304,7 @@ async function executePlans(client: JiraClient, cmd: ParsedCommand): Promise<unk
         requireArg(cmd.positionalArgs[1], 'planOnlyTeamId'),
         'planOnlyTeamId',
       );
-      const raw = requireOpt(opts['body'], '--body');
-      const patch = parseJsonObjectFlag(raw, '--body');
+      const patch = parseJsonPatchFlag(requireOpt(opts['body'], '--body'));
       await client.plans.updatePlanOnlyTeam(planId, planOnlyTeamId, patch);
       return { updated: true };
     }
@@ -7542,6 +7629,7 @@ async function executeWorkflowScheme(client: JiraClient, cmd: ParsedCommand): Pr
       const startAt = asNonNegativeInt(opts['start-at'], '--start-at');
       const maxResults = asPositiveInt(opts['max-results'], '--max-results');
       if (opts['all'] === true) {
+        if (startAt !== undefined) throw new Error('--start-at cannot be combined with --all');
         return drainWorkflowSchemes(
           client.workflowScheme.listAll({
             ...(maxResults !== undefined && { maxResults }),
@@ -7666,11 +7754,20 @@ async function executeWorkflowScheme(client: JiraClient, cmd: ParsedCommand): Pr
       });
     }
     case 'list-by-project': {
-      const projectIds = parseCsv(opts['project-id']);
+      // Decimal digits only: Number() accepts -5, 1e3 or 0x10 and rounds IDs above 2^53 - 1.
+      const projectIds = parseCsv(opts['project-id'])?.map((s) => {
+        const n = Number(s);
+        if (!/^\d+$/.test(s) || n === 0 || !Number.isSafeInteger(n)) {
+          throw new Error(
+            `--project-id must contain positive integers up to ${Number.MAX_SAFE_INTEGER}, got: ${s}`,
+          );
+        }
+        return n;
+      });
       if (projectIds === undefined || projectIds.length === 0) {
         throw new Error('Missing required option: --project-id');
       }
-      return client.workflowScheme.getProjectAssociations({ projectId: projectIds.map(Number) });
+      return client.workflowScheme.getProjectAssociations({ projectId: projectIds });
     }
     case 'assign-project': {
       const body = parseJsonObjectFlag(requireOpt(opts['body'], '--body'), '--body');
@@ -8689,11 +8786,22 @@ async function executeProjectTemplate(client: JiraClient, cmd: ParsedCommand): P
         ...(additionalProperties !== undefined && { additionalProperties }),
       };
 
-      await client.projectTemplate.createWithCustomTemplate({
+      const taskUrl = await client.projectTemplate.createWithCustomTemplate({
         details,
         template,
       });
-      return { queued: true };
+      // Asynchronous: poll the task with `atlas jira task get <taskId>`. The ID is the
+      // last path segment, ignoring a query string, fragment or trailing slash.
+      const taskId = taskUrl
+        ?.replace(/[?#].*$/, '')
+        .replace(/\/+$/, '')
+        .split('/')
+        .pop();
+      return {
+        queued: true,
+        ...(taskId !== undefined && taskId !== '' && { taskId }),
+        ...(taskUrl !== undefined && { taskUrl }),
+      };
     }
 
     // B654 PUT /rest/api/3/project-template/edit-template
@@ -9038,12 +9146,23 @@ async function executeRepository(client: JiraClient, cmd: ParsedCommand): Promis
 
 const ISSUE_LINK_ACTIONS = ['create', 'get', 'delete'] as const;
 
+/** An issue key always has a project prefix, so an all-digit value is an issue ID. */
+function linkedIssueRef(value: string): { id: string } | { key: string } {
+  return /^\d+$/.test(value) ? { id: value } : { key: value };
+}
+
 async function executeIssueLink(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
   const opts = cmd.options;
 
   switch (cmd.action) {
     case 'create': {
-      const linkType = requireOpt(opts['link-type'], '--link-type');
+      if (opts['link-type'] !== undefined && opts['link-type-id'] !== undefined) {
+        throw new Error('pass --link-type or --link-type-id, not both');
+      }
+      const type =
+        opts['link-type-id'] !== undefined
+          ? { id: requireOpt(opts['link-type-id'], '--link-type-id') }
+          : { name: requireOpt(opts['link-type'], '--link-type or --link-type-id') };
       const inwardIssue = requireOpt(opts['inward-issue'], '--inward-issue');
       const outwardIssue = requireOpt(opts['outward-issue'], '--outward-issue');
       const commentRaw = asString(opts['comment']);
@@ -9051,9 +9170,9 @@ async function executeIssueLink(client: JiraClient, cmd: ParsedCommand): Promise
       const comment =
         commentRaw !== undefined ? parseJsonObjectFlag(commentRaw, '--comment') : undefined;
       await client.issueLink.create({
-        type: { name: linkType },
-        inwardIssue: { key: inwardIssue },
-        outwardIssue: { key: outwardIssue },
+        type,
+        inwardIssue: linkedIssueRef(inwardIssue),
+        outwardIssue: linkedIssueRef(outwardIssue),
         ...(comment !== undefined && { comment }),
       });
       return { created: true };

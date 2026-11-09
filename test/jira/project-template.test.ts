@@ -41,7 +41,7 @@ describe('ProjectTemplateResource', () => {
           additionalProperties: { foo: 'bar' },
         },
         template: {
-          project: { projectType: 'software' },
+          project: { projectTypeKey: 'software' },
           workflow: { workflowSchemeId: 10001 },
         },
       });
@@ -65,7 +65,7 @@ describe('ProjectTemplateResource', () => {
             additionalProperties: { foo: 'bar' },
           },
           template: {
-            project: { projectType: 'software' },
+            project: { projectTypeKey: 'software' },
             workflow: { workflowSchemeId: 10001 },
           },
         },

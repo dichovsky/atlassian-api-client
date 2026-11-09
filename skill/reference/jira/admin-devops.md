@@ -1132,6 +1132,8 @@ atlas jira filters set-default-share-scope --share-scope PRIVATE
 
 Config field association scheme management (B367–B381). Covers the `/rest/api/3/config/fieldschemes` surface: paginated listing, CRUD, clone, per-scheme field associations, per-field parameter overrides, and project association management.
 
+> **Experimental:** every operation is marked `x-experimental` by Atlassian; shapes may change without notice. All actions need the **Administer Jira** global permission.
+
 **Note:** This resource is distinct from `fieldconfiguration` (`/rest/api/3/fieldconfiguration`) and `fieldconfigurationscheme` (`/rest/api/3/fieldconfigurationscheme`). It implements the newer field _association_ scheme API under `/rest/api/3/config/fieldschemes`.
 
 **Paginated endpoints** (support `--start-at`, `--max-results`):
@@ -1148,6 +1150,16 @@ Config field association scheme management (B367–B381). Covers the `/rest/api/
 - `remove-field-parameters` — DELETE /config/fieldschemes/fields/parameters: `Record<fieldId, [{schemeId?, workTypeIds?, parameters?}]>`
 - `update-field-parameters` — PUT /config/fieldschemes/fields/parameters: `Record<fieldId, [{schemeIds?, parameters?, workTypeParameters?}]>`
 - `associate-projects` — PUT /config/fieldschemes/projects: `Record<schemeId, {projectIds: number[]}>`
+
+**Field parameter shapes:**
+
+- `update-field-parameters` entry: `{ "schemeIds": [<scheme id>, ...], "parameters"?: <params>, "workTypeParameters"?: [<work type params>, ...] }`. `parameters` sets the field's defaults across all work types in those schemes; `workTypeParameters` overrides them per work type (issue type).
+- `<params>`: `{ "description"?: "<text>", "isRequired"?: <boolean>, "rendererType"?: "jira-text-renderer" | "atlassian-wiki-renderer" }` — an omitted key keeps its current value.
+- `<work type params>`: `{ "workTypeId": <issue type id>, "description"?, "isRequired"?, "rendererType"? }` (same keys as `<params>`).
+- `remove-field-parameters` entry: `{ "schemeId": <scheme id>, "workTypeIds": [<issue type id>, ...], "parameters": ["description" | "isRequired" | "rendererType", ...] }` — removes those per-work-type overrides. At most 100 removals per request (work types × parameter names, summed over entries).
+- `update-field-parameters` takes at most 100 field IDs per request, 50 entries per field and 50 scheme IDs per entry.
+
+**Output of the body endpoints:** Jira answers 200 (all applied), 207 (some entries failed) or 204 (no body). On 200/207 the CLI prints Jira's `{ "results": [ { "fieldId", "schemeId", "success", "error"?, ... } ] }` as-is — check every `success`; an entry with `success: false` was **not** applied and `error` says why. When Jira sends no body (204, and a 200 from `remove-field-parameters`) it prints `{ "updated": true }` (or `{ "deleted": true }` for the `remove-*` actions).
 
 ```sh
 # List all schemes (paginated)
@@ -1186,6 +1198,9 @@ atlas jira config remove-field-parameters --body '{"customfield_10001":[{"scheme
 # Update per-field parameter overrides
 atlas jira config update-field-parameters --body '{"customfield_10001":[{"schemeIds":[10001],"parameters":{"isRequired":true}}]}'
 
+# Default description for all work types, required + wiki renderer only for issue type 10002
+atlas jira config update-field-parameters --body '{"customfield_10001":[{"schemeIds":[10001,10002],"parameters":{"description":"Customer impact"},"workTypeParameters":[{"workTypeId":10002,"isRequired":true,"rendererType":"atlassian-wiki-renderer"}]}]}'
+
 # Get project→scheme mappings for given projects (projectId required)
 atlas jira config get-projects-with-schemes --project-ids 10100,10101
 
@@ -1197,9 +1212,20 @@ atlas jira config associate-projects --body '{"10001":{"projectIds":[10100,10101
 
 Advanced Roadmaps plans management (B625–B640). Covers the `/rest/api/3/plans/plan` surface: cursor-paginated plan listing, CRUD, archive/trash/duplicate, and team management (Atlassian teams and plan-only teams).
 
-**Pagination:** `list` and `list-teams` use cursor pagination (`--cursor`, `--max-results`).
+> **Experimental:** every operation is marked `x-experimental` by Atlassian; shapes may change without notice.
 
-**Update/patch endpoints (B628, B635, B639):** accept a JSON-patch object via `--body`.
+**Pagination:** `list` and `list-teams` use cursor pagination. Each page is `{ values: [...], nextPageCursor?, last?, cursor?, size?, total? }`; pass the page's `nextPageCursor` as `--cursor` to get the next page, and stop when `last` is `true` or `nextPageCursor` is absent.
+
+**Update/patch endpoints (B628, B635, B639):** `--body` is an RFC 6902 **JSON Patch array** of operations, e.g. `[{"op":"replace","path":"/name","value":"Renamed"}]` (sent as `application/json-patch+json`). Each operation needs `op` (`add`, `remove`, `replace`, `move`, `copy`, `test`) and a JSON-pointer `path`; several operations can go in one array. A single operation object is accepted and sent wrapped in an array. These actions print `{ "updated": true }`.
+
+**`create` JSON flags** (`create` and `duplicate` print the new plan ID, a number):
+
+- `--issue-sources` (required): `[{ "type": "Board" | "Project" | "Filter", "value": <board, project or filter id> }, ...]`.
+- `--scheduling` (required): `{ "estimation": "StoryPoints" | "Days" | "Hours", "dependencies"?: "Sequential" | "Concurrent", "inferredDates"?: "None" | "SprintDates" | "ReleaseDates", "startDate"?: <date field>, "endDate"?: <date field> }` — `estimation` is required. `<date field>` is `{ "type": "DueDate" | "TargetStartDate" | "TargetEndDate" | "DateCustomField", "dateCustomFieldId"?: <id, for DateCustomField> }`.
+- `--cross-project-releases`: `[{ "name": "<release name>", "releaseIds"?: [<version id>, ...] }, ...]`.
+- `--custom-fields`: `[{ "customFieldId": <id>, "filter"?: <boolean> }, ...]`.
+- `--exclusion-rules`: `{ "numberOfDaysToShowCompletedIssues"?: <int>, "issueIds"?: [...], "issueTypeIds"?: [...], "releaseIds"?: [...], "workStatusCategoryIds"?: [...], "workStatusIds"?: [...] }` (all ID lists are numeric).
+- `--plan-permissions`: `[{ "type": "View" | "Edit", "holder": { "type": "Group" | "AccountId", "value": "<group name or ID, or account ID>" } }, ...]`; pass `--use-group-id` when `value` is a group ID.
 
 **Enum values:**
 
@@ -1208,29 +1234,32 @@ Advanced Roadmaps plans management (B625–B640). Covers the `/rest/api/3/plans/
 - `--scheduling` dependencies: `Sequential`, `Concurrent`
 - `--scheduling` inferredDates: `None`, `SprintDates`, `ReleaseDates`
 
-| Action                  | Positional                  | Required flags                                                         | Optional flags                                                                                                                  |
-| ----------------------- | --------------------------- | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| `list`                  | —                           | —                                                                      | `--cursor`, `--max-results`, `--include-trashed`, `--include-archived`                                                          |
-| `create`                | —                           | `--name`, `--issue-sources` (JSON array), `--scheduling` (JSON object) | `--use-group-id`, `--cross-project-releases`, `--custom-fields`, `--exclusion-rules`, `--lead-account-id`, `--plan-permissions` |
-| `get`                   | `planId`                    | —                                                                      | `--use-group-id`                                                                                                                |
-| `update`                | `planId`                    | `--body` (JSON-patch object)                                           | `--use-group-id`                                                                                                                |
-| `archive`               | `planId`                    | —                                                                      | —                                                                                                                               |
-| `duplicate`             | `planId`                    | `--name`                                                               | —                                                                                                                               |
-| `trash`                 | `planId`                    | —                                                                      | —                                                                                                                               |
-| `list-teams`            | `planId`                    | —                                                                      | `--cursor`, `--max-results`                                                                                                     |
-| `add-atlassian-team`    | `planId`                    | `--atlassian-team-id`, `--planning-style`                              | `--capacity`, `--issue-source-id`, `--sprint-length`                                                                            |
-| `delete-atlassian-team` | `planId`, `atlassianTeamId` | —                                                                      | —                                                                                                                               |
-| `get-atlassian-team`    | `planId`, `atlassianTeamId` | —                                                                      | —                                                                                                                               |
-| `update-atlassian-team` | `planId`, `atlassianTeamId` | `--body` (JSON-patch object)                                           | —                                                                                                                               |
-| `create-plan-only-team` | `planId`                    | `--name`, `--planning-style`                                           | `--capacity`, `--issue-source-id`, `--member-account-ids` (CSV), `--sprint-length`                                              |
-| `delete-plan-only-team` | `planId`, `planOnlyTeamId`  | —                                                                      | —                                                                                                                               |
-| `get-plan-only-team`    | `planId`, `planOnlyTeamId`  | —                                                                      | —                                                                                                                               |
-| `update-plan-only-team` | `planId`, `planOnlyTeamId`  | `--body` (JSON-patch object)                                           | —                                                                                                                               |
+| Action                  | Positional                  | Required flags                                                         | Optional flags                                                                                                                                                                       |
+| ----------------------- | --------------------------- | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `list`                  | —                           | —                                                                      | `--cursor`, `--max-results`, `--include-trashed`, `--include-archived`                                                                                                               |
+| `create`                | —                           | `--name`, `--issue-sources` (JSON array), `--scheduling` (JSON object) | `--use-group-id`, `--cross-project-releases` (JSON array), `--custom-fields` (JSON array), `--exclusion-rules` (JSON object), `--lead-account-id`, `--plan-permissions` (JSON array) |
+| `get`                   | `planId`                    | —                                                                      | `--use-group-id`                                                                                                                                                                     |
+| `update`                | `planId`                    | `--body` (JSON Patch array)                                            | `--use-group-id`                                                                                                                                                                     |
+| `archive`               | `planId`                    | —                                                                      | —                                                                                                                                                                                    |
+| `duplicate`             | `planId`                    | `--name`                                                               | —                                                                                                                                                                                    |
+| `trash`                 | `planId`                    | —                                                                      | —                                                                                                                                                                                    |
+| `list-teams`            | `planId`                    | —                                                                      | `--cursor`, `--max-results`                                                                                                                                                          |
+| `add-atlassian-team`    | `planId`                    | `--atlassian-team-id`, `--planning-style`                              | `--capacity`, `--issue-source-id`, `--sprint-length`                                                                                                                                 |
+| `delete-atlassian-team` | `planId`, `atlassianTeamId` | —                                                                      | —                                                                                                                                                                                    |
+| `get-atlassian-team`    | `planId`, `atlassianTeamId` | —                                                                      | —                                                                                                                                                                                    |
+| `update-atlassian-team` | `planId`, `atlassianTeamId` | `--body` (JSON Patch array)                                            | —                                                                                                                                                                                    |
+| `create-plan-only-team` | `planId`                    | `--name`, `--planning-style`                                           | `--capacity`, `--issue-source-id`, `--member-account-ids` (CSV), `--sprint-length`                                                                                                   |
+| `delete-plan-only-team` | `planId`, `planOnlyTeamId`  | —                                                                      | —                                                                                                                                                                                    |
+| `get-plan-only-team`    | `planId`, `planOnlyTeamId`  | —                                                                      | —                                                                                                                                                                                    |
+| `update-plan-only-team` | `planId`, `planOnlyTeamId`  | `--body` (JSON Patch array)                                            | —                                                                                                                                                                                    |
 
 ```sh
 # List all plans (cursor pagination)
 atlas jira plans list --max-results 50
 atlas jira plans list --include-trashed --include-archived
+
+# Next page: pass the previous page's nextPageCursor
+atlas jira plans list --max-results 50 --cursor "<nextPageCursor>"
 
 # Get a plan
 atlas jira plans get 10001
@@ -1238,6 +1267,9 @@ atlas jira plans get 10001 --use-group-id
 
 # Create a plan (issueSources and scheduling are required)
 atlas jira plans create --name "Q3 Plan" --issue-sources '[{"type":"Board","value":1}]' --scheduling '{"estimation":"StoryPoints","dependencies":"Sequential","startDate":{"type":"TargetStartDate"},"endDate":{"type":"TargetEndDate"}}'
+
+# Create a plan with releases, a custom field filter, exclusions and an editor
+atlas jira plans create --name "Q4 Plan" --issue-sources '[{"type":"Project","value":10100}]' --scheduling '{"estimation":"Days","inferredDates":"ReleaseDates"}' --cross-project-releases '[{"name":"Q4 release","releaseIds":[10200,10201]}]' --custom-fields '[{"customFieldId":10050,"filter":true}]' --exclusion-rules '{"numberOfDaysToShowCompletedIssues":30,"issueTypeIds":[10003]}' --plan-permissions '[{"type":"Edit","holder":{"type":"AccountId","value":"5b10ac8d82e05b22cc7d4ef5"}}]'
 
 # Duplicate a plan
 atlas jira plans duplicate 10001 --name "Copy of Q3 Plan"
@@ -1247,7 +1279,7 @@ atlas jira plans archive 10001
 atlas jira plans trash 10001
 
 # Update a plan (JSON-patch)
-atlas jira plans update 10001 --body '{"op":"replace","path":"/name","value":"Renamed Plan"}'
+atlas jira plans update 10001 --body '[{"op":"replace","path":"/name","value":"Renamed Plan"},{"op":"replace","path":"/scheduling/estimation","value":"Days"}]'
 
 # List teams for a plan
 atlas jira plans list-teams 10001 --max-results 20
@@ -1260,7 +1292,7 @@ atlas jira plans get-atlassian-team 10001 team-abc-123
 atlas jira plans delete-atlassian-team 10001 team-abc-123
 
 # Update an Atlassian team (JSON-patch)
-atlas jira plans update-atlassian-team 10001 team-abc-123 --body '{"op":"replace","path":"/sprintLength","value":21}'
+atlas jira plans update-atlassian-team 10001 team-abc-123 --body '[{"op":"replace","path":"/sprintLength","value":21}]'
 
 # Create a plan-only team
 atlas jira plans create-plan-only-team 10001 --name "My Team" --planning-style Kanban --member-account-ids acc-1,acc-2
@@ -1270,7 +1302,7 @@ atlas jira plans get-plan-only-team 10001 2001
 atlas jira plans delete-plan-only-team 10001 2001
 
 # Update a plan-only team (JSON-patch)
-atlas jira plans update-plan-only-team 10001 2001 --body '{"op":"replace","path":"/name","value":"Renamed Team"}'
+atlas jira plans update-plan-only-team 10001 2001 --body '[{"op":"replace","path":"/name","value":"Renamed Team"}]'
 ```
 
 ## `universal-avatar`

@@ -570,4 +570,10 @@ export type {
   BulkAgentSessionItemError,
   BulkAgentSessionOutcome,
   BulkAgentSessionsResponse,
+  // Expression evaluation context, field-scheme parameter removal results
+  ExpressionEvaluateJqlContext,
+  ExpressionEvaluateContext,
+  ExpressionEvaluateData,
+  RemoveFieldParametersResult,
+  RemoveFieldParametersResultEntry,
 } from './jira/index.js';
