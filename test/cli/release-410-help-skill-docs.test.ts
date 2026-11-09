@@ -1,6 +1,6 @@
 /**
  * Release 4.1.0 unit help-skill: structural checks over the bundled skill
- * (F006, F340, F344, F345, F170, F245).
+ * (F006, F340, F344, F345, F170, F245, review r1 Connect cross-reference).
  */
 import { describe, expect, it } from 'vitest';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
@@ -151,5 +151,18 @@ describe('Connect-JWT-only actions say so (F170, F245)', () => {
         `${resource} ${action}`,
       ).toBe(true);
     }
+  });
+
+  it.each([
+    ['jira/admin-devops.md', 'app', 'Connect JWT'],
+    ['jira/admin-devops.md', 'addons', 'Only a Connect app'],
+    ['jira/admin-devops.md', 'webhooks', '`list-failed` only from Connect apps'],
+    ['jira/schemes.md', 'workflows', '**Connect/Forge apps only:** `get-rule-config`'],
+    ['jira/search.md', 'jql', '**App-only precomputation actions:**'],
+  ] as const)('auth-and-safety.md points to the app-only note in %s `%s`', (file, name, note) => {
+    const authSafety = read(resolve(SKILL_DIR, 'reference/auth-and-safety.md'));
+    expect(authSafety).toContain(`\`${name}`);
+    expect(authSafety).toContain(`in \`${file}\``);
+    expect(section(read(resolve(SKILL_DIR, 'reference', file)), name)).toContain(note);
   });
 });

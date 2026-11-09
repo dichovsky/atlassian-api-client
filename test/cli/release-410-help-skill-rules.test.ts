@@ -1,11 +1,13 @@
 /**
  * Release 4.1.0 unit help-skill: the generic CLI rules the skill states, run
- * through the real CLI (F069, F009, F346, F342, X-HS1..X-HS5).
+ * through the real CLI (F069, F009, F346, F342, X-HS1..X-HS5, X-HS8).
  */
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { runCliWire, type CliWireResult, type WireRequest } from '../helpers/cli-wire.js';
+import { runAtlas, type RunResult } from '../e2e/helpers/cli-runner.js';
+import { TimeoutError } from '../../src/core/errors.js';
 
 const SKILL = resolve(import.meta.dirname, '..', '..', 'skill');
 const PAYLOAD_RULES = readFileSync(resolve(SKILL, 'reference/payload-rules.md'), 'utf8');
@@ -82,10 +84,44 @@ describe('flags that only act when true send nothing for false (X-HS3)', () => {
     [['jira', 'issues', 'update', 'K-1', '--summary', 'x', '--return-issue', 'false'], 'PUT'],
     [['confluence', 'pages', 'delete', '123', '--purge', 'false'], 'DELETE'],
     [['confluence', 'pages', 'delete', '123', '--draft', 'false'], 'DELETE'],
+    [['confluence', 'pages', 'get', '5', '--get-draft', 'false', '--include-labels=false'], 'GET'],
+    [['confluence', 'spaces', 'get', '9', '--include-icon', 'false'], 'GET'],
   ] as const)('%j', async (argv, method) => {
     const req = await oneRequest(argv);
     expect(req.method).toBe(method);
     expect([...req.query.keys()]).toEqual([]);
+  });
+
+  it('payload-rules.md calls its list examples and names the Confluence get flags', () => {
+    expect(PAYLOAD_RULES).toContain('For example: `--delete-subtasks`');
+    expect(PAYLOAD_RULES).toContain(
+      '`--get-draft` and the `--include-*` flags other than `--include-version`',
+    );
+  });
+});
+
+describe('a 1 or 0 after a boolean flag sets it to true (review r1 minor)', () => {
+  it.each([
+    [['confluence', 'pages', 'delete', '123', '--purge', '0'], `${C}/pages/123`, 'purge'],
+    [
+      ['jira', 'issues', 'delete', 'K-1', '--delete-subtasks', '0'],
+      '/rest/api/3/issue/K-1',
+      'deleteSubtasks',
+    ],
+  ] as const)('%j sends %s?%s=true', async (argv, path, param) => {
+    const req = await oneRequest(argv);
+    expect(req.method).toBe('DELETE');
+    expect(req.path).toBe(path);
+    expect([...req.query.entries()]).toEqual([[param, 'true']]);
+  });
+
+  it('payload-rules.md warns that the flag becomes true', () => {
+    expect(PAYLOAD_RULES).toContain(
+      'a `1` or `0` after the flag is not its value: the flag is set to `true` and the digit becomes a stray positional',
+    );
+    expect(PAYLOAD_RULES).toContain(
+      '`atlas confluence pages delete 123 --purge 0` purges the page',
+    );
   });
 });
 
@@ -136,6 +172,17 @@ describe('--format minimal follows the documented rules (X-HS2, X-HS4)', () => {
 
   it('an empty list prints nothing', async () => {
     expect(await minimal(['confluence', 'pages', 'list'], { results: [], _links: {} })).toBe('');
+  });
+
+  it('an object whose name is not a string is an envelope, as rule 2 states', async () => {
+    const out = await minimal(['jira', 'issue-types', 'list'], {
+      name: { first: 'not-a-record-name' },
+      values: [{ id: 7 }],
+    });
+    expect(out).toBe('7\n');
+    expect(PAYLOAD_RULES).toContain(
+      '2. An object with a string or number `id`, or a string `key`, `name` or `accountId`, is one record',
+    );
   });
 });
 
@@ -252,5 +299,90 @@ describe('atlas scopes validate works as auth-and-safety.md documents it (F342)'
     const run = await runCliWire(['scopes', 'validate'], { env: noAuth });
     expect(run.exitCode).toBe(1);
     expect(run.stderr).toContain('Known scopes:');
+  });
+});
+
+describe('write failures the skill tells agents to read back first (X-HS8)', () => {
+  /** Run `atlas <args>` against a fetch stub, counting the requests it sends. */
+  async function failingWrite(
+    args: readonly string[],
+    fetchStub: () => Promise<Response>,
+  ): Promise<{ readonly run: RunResult; readonly calls: number }> {
+    let calls = 0;
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = (() => {
+      calls++;
+      return fetchStub();
+    }) as typeof fetch;
+    try {
+      return { run: await runAtlas(args), calls };
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  }
+
+  const coded = (message: string, code: string): TypeError =>
+    new TypeError(message, { cause: Object.assign(new Error(code), { code }) });
+  const create = [
+    'jira',
+    'issues',
+    'create',
+    '--project',
+    'PROJ',
+    '--type',
+    'Task',
+    '--summary',
+    'Fix login',
+  ];
+
+  it('a write whose response headers time out prints `Error: fetch failed`, sent once', async () => {
+    const { run, calls } = await failingWrite(
+      ['jira', 'issues', 'update', 'K-1', '--summary', 'x'],
+      () => Promise.reject(coded('fetch failed', 'UND_ERR_HEADERS_TIMEOUT')),
+    );
+    expect(calls).toBe(1);
+    expect(run.code).toBe(1);
+    expect(run.stderr).toBe('Error: fetch failed\n');
+    expect(AUTH_SAFETY).toContain('`Error: fetch failed`');
+  });
+
+  it('a create whose 201 body dies mid-read prints `Error: terminated`, sent once', async () => {
+    const { run, calls } = await failingWrite(create, () =>
+      Promise.resolve(
+        new Response(
+          new ReadableStream({
+            pull(controller) {
+              controller.error(coded('terminated', 'UND_ERR_SOCKET'));
+            },
+          }),
+          { status: 201, headers: { 'content-type': 'application/json' } },
+        ),
+      ),
+    );
+    expect(calls).toBe(1);
+    expect(run.code).toBe(1);
+    expect(run.stderr).toBe('Error: terminated\n');
+    expect(AUTH_SAFETY).toContain('`Error: terminated`');
+  });
+
+  it('a create redirected off the allowlist says it may already have applied it, sent once', async () => {
+    const { run, calls } = await failingWrite(create, () =>
+      Promise.resolve(
+        new Response(null, { status: 303, headers: { location: 'https://evil.example.com/x' } }),
+      ),
+    );
+    expect(calls).toBe(1);
+    expect(run.code).toBe(1);
+    expect(run.stderr).toContain('may already have applied it');
+    expect(AUTH_SAFETY).toContain('"may already have applied it"');
+  });
+
+  it('quotes the timeout message the CLI prints with its default timeout', () => {
+    expect(new TimeoutError(30_000).message).toBe('Request timed out after 30000ms');
+    expect(AUTH_SAFETY).toContain('`Error: Request timed out after 30000ms`');
+  });
+
+  it('does not key the rule on "not retried", which the CLI never prints', () => {
+    expect(AUTH_SAFETY).not.toContain('not retried');
   });
 });

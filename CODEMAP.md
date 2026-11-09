@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "4.1.0"
   },
-  "sourceHash": "87e6a378f05b3623f97bd4c901a1004d8878b3876678689980adac53ad1b9c3a",
+  "sourceHash": "7fa6fa5a23d5fd33b5478d421d1373f86eeb7ce3189f3023179a007fb0f93e55",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -7351,19 +7351,19 @@
         {
           "name": "CONFLUENCE_HELP",
           "kind": "variable",
-          "line": 124,
+          "line": 126,
           "signature": "const CONFLUENCE_HELP = `atlas confluence - Confluence Cloud REST API v2\n\nRESOURCES:\n  pages                  list, get,…"
         },
         {
           "name": "JIRA_HELP",
           "kind": "variable",
-          "line": 316,
+          "line": 318,
           "signature": "const JIRA_HELP = `atlas jira - Jira Cloud Platform v3 + Software/Agile + DevOps APIs\n\nRESOURCES:\n  issues        get, c…"
         },
         {
           "name": "getHelpText",
           "kind": "function",
-          "line": 835,
+          "line": 837,
           "exported": true,
           "signature": "export function getHelpText(api?: string): string",
           "jsdoc": "Get help text for the given level."

@@ -16,6 +16,7 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { InstallSkillError, runInstall } from '../../src/skill-installer/index.js';
 import { executeInstallSkill } from '../../src/cli/commands/install-skill.js';
+import { getHelpText } from '../../src/cli/help.js';
 
 const SKILL = resolve(import.meta.dirname, '..', '..', 'skill');
 const VERSION = '4.1.0';
@@ -129,5 +130,32 @@ describe('install-skill --dry-run reports what the real install would do (F350)'
     expect(preview.code).toBe(0);
     expect(preview.err[0]).toMatch(/^Would install \d+ files to /);
     expect(readFileSync(join(target, 'SKILL.md'), 'utf8')).toContain('version: 4.0.0');
+  });
+
+  it.each([false, true])(
+    'a symlinked parent directory outside the target exits 2 even with --force (dryRun %s)',
+    (dryRun) => {
+      const target = join(root, `t-${String(dryRun)}`);
+      const outside = join(root, `outside-${String(dryRun)}`);
+      mkdirSync(target);
+      mkdirSync(outside);
+      symlinkSync(outside, join(target, 'reference'));
+      let error: unknown;
+      try {
+        runInstall(SKILL, VERSION, { target, force: true, dryRun, print: false });
+      } catch (err) {
+        error = err;
+      }
+      expect(error).toBeInstanceOf(InstallSkillError);
+      expect((error as InstallSkillError).exitCode).toBe(2);
+      expect((error as InstallSkillError).message).toContain('is outside the install target');
+      expect(readdirSync(outside)).toEqual([]);
+    },
+  );
+
+  it('install-skill --help says --force does not lift the containment check', () => {
+    expect(getHelpText('install-skill').replace(/\s+/g, ' ')).toContain(
+      'a symlinked directory that resolves outside the target exits 2 even with --force',
+    );
   });
 });

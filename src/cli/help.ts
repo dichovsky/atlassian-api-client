@@ -102,7 +102,9 @@ OPTIONS:
   --force          Overwrite an existing install of a different version
   --dry-run        List files that would be copied; do not write. Runs the
                    same checks as a real install, so it exits 2 where the
-                   install would (add --force to see the overwrite)
+                   install would (add --force to see the overwrite; a
+                   symlinked directory that resolves outside the target
+                   exits 2 even with --force)
   --print          Print the bundled source directory and exit
 
 DEFAULT TARGET:

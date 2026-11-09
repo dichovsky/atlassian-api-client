@@ -172,9 +172,9 @@ describe('Reference content sanity checks', () => {
     expect(SKILL_MD).toContain('atlas scopes validate');
   });
 
-  it('tells agents not to re-run a write that failed as not retried (X-HS8)', () => {
+  it('tells agents to read back a write that failed at the network level (X-HS8)', () => {
     expect(AUTH_SAFETY_REF).toContain(
-      'fails with a message that contains "not retried" or "may already have applied it", do not run it again',
+      'After any of these, do not run the write again: read the resource back first',
     );
   });
 
