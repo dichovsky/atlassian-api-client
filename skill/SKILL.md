@@ -18,8 +18,8 @@ source: atlassian-api-client npm package
 
 ## Routing
 
-- If auth or host-validation is relevant: read `reference/auth-and-safety.md`.
-- If shaping payloads/results is relevant: read `reference/payload-rules.md`.
+- If auth, host-validation, error handling or OAuth scopes (`atlas scopes validate`) are relevant: read `reference/auth-and-safety.md`.
+- If shaping payloads/results, boolean flags or `--format minimal` output are relevant: read `reference/payload-rules.md`.
 - If user asks for command syntax/examples: read `reference/examples.md`.
 - If Confluence action/flag mapping is needed: read `reference/confluence.md`.
 - If Jira action/flag mapping is needed: read `reference/jira.md` for the resource×action matrix, then the one domain file it points to under `reference/jira/` (e.g. `jira/issues.md`, `jira/agile.md`) for that resource's flags and examples — avoids loading the full Jira reference.
@@ -32,6 +32,7 @@ source: atlassian-api-client npm package
 - Return minimal output first (`--format minimal` when IDs are sufficient: one ID per record, list/search envelopes unwrapped; Jira issues print the numeric ID, not the key).
 - Prefer pagination limits and cursors over bulk dumps.
 - Use JSON-valued flags (e.g. `--body '{...}'`) for complex payloads; all resource operations are CLI-reachable.
+- Write a value that starts with `-` with `=`: `--sort=-created-date` (`--sort -created-date` is rejected).
 
 ## Command shape (compact schema)
 
@@ -65,3 +66,5 @@ npx --package atlassian-api-client -- atlas install-skill --local
 ```
 
 The `--package` flag is required because the binary name `atlas` is also used by other packages. If `atlassian-api-client` is already in the current project's `node_modules`, `npx atlas install-skill` also works.
+
+Upgrading over an older installed version exits 2 until you add `--force`; `--dry-run` reports the same outcome without writing.

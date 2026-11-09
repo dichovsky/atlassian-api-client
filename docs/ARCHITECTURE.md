@@ -661,20 +661,20 @@ The package uses only Node.js built-ins available in the supported runtime (Node
 
 ### Dev Dependencies
 
-| Package                      | Purpose                                                                                                                                                                                       |
-| ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `@typescript/native`         | TypeScript 7 (aliased from `npm:typescript`) — the build and type-check compiler (`npm run tsc:7`)                                                                                            |
-| `typescript`                 | TypeScript 6 bridge (aliased from `npm:@typescript/typescript6`): compiler API for `typescript-eslint`, codemap, JSDoc test, CLI write-property reachability test; `tsc6` for `typecheck:ts6` |
-| `@types/node`                | Node.js type definitions                                                                                                                                                                      |
-| `vitest`                     | Test framework                                                                                                                                                                                |
-| `@vitest/coverage-v8`        | V8-based coverage                                                                                                                                                                             |
-| `eslint`, `@eslint/js`       | Linting                                                                                                                                                                                       |
-| `typescript-eslint`          | TypeScript ESLint rules + parser (unified)                                                                                                                                                    |
-| `globals`                    | Global-variable definitions for the ESLint config                                                                                                                                             |
-| `prettier`                   | Code formatting                                                                                                                                                                               |
-| `fast-check`                 | Property-based testing (B014)                                                                                                                                                                 |
-| `conventional-changelog-cli` | Changelog generation (`npm run changelog`)                                                                                                                                                    |
-| `rimraf`                     | Cross-platform clean (`npm run clean`)                                                                                                                                                        |
+| Package                      | Purpose                                                                                                                                                                                                                      |
+| ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@typescript/native`         | TypeScript 7 (aliased from `npm:typescript`) — the build and type-check compiler (`npm run tsc:7`)                                                                                                                           |
+| `typescript`                 | TypeScript 6 bridge (aliased from `npm:@typescript/typescript6`): compiler API for `typescript-eslint`, codemap, JSDoc test, CLI write-property reachability test, skill TypeScript-snippet test; `tsc6` for `typecheck:ts6` |
+| `@types/node`                | Node.js type definitions                                                                                                                                                                                                     |
+| `vitest`                     | Test framework                                                                                                                                                                                                               |
+| `@vitest/coverage-v8`        | V8-based coverage                                                                                                                                                                                                            |
+| `eslint`, `@eslint/js`       | Linting                                                                                                                                                                                                                      |
+| `typescript-eslint`          | TypeScript ESLint rules + parser (unified)                                                                                                                                                                                   |
+| `globals`                    | Global-variable definitions for the ESLint config                                                                                                                                                                            |
+| `prettier`                   | Code formatting                                                                                                                                                                                                              |
+| `fast-check`                 | Property-based testing (B014)                                                                                                                                                                                                |
+| `conventional-changelog-cli` | Changelog generation (`npm run changelog`)                                                                                                                                                                                   |
+| `rimraf`                     | Cross-platform clean (`npm run clean`)                                                                                                                                                                                       |
 
 ---
 

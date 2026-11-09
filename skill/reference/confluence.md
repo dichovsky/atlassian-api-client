@@ -190,7 +190,7 @@ Lifecycle (`list` / `get` / `create`) plus the full `/spaces/{id}/…` sub-resou
 | `update-property`                     | `<spaceId>` | `--property-id`, `--key`, `--value`, `--version-number` | `--message`                                                                                                                                                            |
 | `delete-property`                     | `<spaceId>` | `--property-id`                                         | —                                                                                                                                                                      |
 
-- `create` requires either `--key` or `--alias` for the space URL identifier (the OpenAPI spec encodes this constraint in prose); `--description` is sent as `{ value, representation: 'plain' }` since the v2 API only accepts the plain representation. `--private` mints a private space (the calling user becomes the sole admin). `--copy-space-access-configuration` clones the access configuration from the named space id. Available on tenants with Role-Based Access Control. `--value` sends an explicit role-assignment grant set (`roleAssignments`): the same JSON array of `{ principal: { principalType, principalId }, roleId }` entries as `set-role-assignments --value`.
+- `create`: pass `--key` or `--alias` for the space URL identifier. The API requires one of them (the OpenAPI spec says so in prose); the CLI does not check this, so a request with neither is sent and Confluence rejects it. `--description` is sent as `{ value, representation: 'plain' }` since the v2 API only accepts the plain representation. `--private` mints a private space (the calling user becomes the sole admin). `--copy-space-access-configuration` clones the access configuration from the named space id. Available on tenants with Role-Based Access Control. `--value` sends an explicit role-assignment grant set (`roleAssignments`): the same JSON array of `{ principal: { principalType, principalId }, roleId }` entries as `set-role-assignments --value`.
 - `list --ids`, `--keys`, and `--labels` accept comma-separated values. Every `--ids` entry must be a decimal integer; the CLI preserves it as a string so int64 values above JavaScript's safe-integer limit (for example, `9007199254740993`) remain exact. `--type` accepts `global`, `collaboration`, `knowledge_base`, `personal`, `system`, `onboarding`, or `xflow_sample_space`; `--status` accepts `current`, `archived`, or `trashed`. `--sort` accepts `id`, `key`, or `name`, optionally prefixed with `-`. `--description-format` is `plain` or `view`; `--include-icon` fetches the icon.
 - `get` can inline labels, properties, operations, permissions, and the space icon. `--include-role-assignments` is currently EAP-only. Both `list` and `get` return the current `spaceOwnerId` field when Atlassian exposes it.
 - `blog-posts --sort` accepts `BlogPostSortOrder` (`id`, `-id`, `created-date`, `-created-date`, `modified-date`, `-modified-date`). `--status` is comma-separated `current,deleted,trashed` (narrower than the standalone `/blogposts` collection — `historical` / `draft` are not legal here). `--body-format` is `storage` or `atlas_doc_format`.
@@ -1503,13 +1503,13 @@ atlas confluence pages list --space-id 123 --limit 50 --cursor "<value-from-resp
 
 When `_links.next` is absent, you've reached the end.
 
-For programmatic iteration over all pages, prefer the SDK's `paginateCursor` helper:
+For programmatic iteration over all pages, use the SDK's `listAll*` async generators (`pages.listAll`, `spaces.listAll`, `blogPosts.listAll`, ...); they follow the cursor for you:
 
 ```ts
-import { ConfluenceClient, paginateCursor } from 'atlassian-api-client';
+import { ConfluenceClient } from 'atlassian-api-client';
 const client = new ConfluenceClient(config);
-for await (const page of paginateCursor((cursor) => client.pages.list({ spaceId, cursor }))) {
-  // ...
+for await (const page of client.pages.listAll({ spaceId })) {
+  console.log(page.id, page.title);
 }
 ```
 

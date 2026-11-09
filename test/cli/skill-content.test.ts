@@ -167,6 +167,17 @@ describe('Reference content sanity checks', () => {
     );
   });
 
+  it('documents the auth-free scope validator (F342)', () => {
+    expect(AUTH_SAFETY_REF).toContain('atlas scopes validate read:issue:jira write:issue:jira');
+    expect(SKILL_MD).toContain('atlas scopes validate');
+  });
+
+  it('tells agents to read back a write that failed at the network level (X-HS8)', () => {
+    expect(AUTH_SAFETY_REF).toContain(
+      'After any of these, do not run the write again: read the resource back first',
+    );
+  });
+
   it('forbids bypassing a failing atlas command with a raw HTTP/curl request', () => {
     expect(AUTH_SAFETY_REF).toContain('Never construct a raw HTTP/curl request to bypass');
   });
@@ -321,7 +332,7 @@ describe('Example commands in skill docs parse correctly', () => {
       const tokens = tokenize(example);
       const argv = ['node', ...tokens];
       const parsed = parseCommand(argv);
-      expect(parsed.api).toMatch(/^(confluence|jira|install-skill)$/);
+      expect(parsed.api).toMatch(/^(confluence|jira|install-skill|scopes)$/);
       if (parsed.api === 'confluence') {
         expect(confluenceResources).toContain(parsed.resource);
       } else if (parsed.api === 'jira') {

@@ -121,6 +121,8 @@ atlas jira app delete-forge-property my-key
 
 **URL base:** `/rest/operations/1.0` (Jira Operations / JSM Incident Management API — not `/rest/api/3`).
 
+**Connect app (JWT) only** (`get`, `delete`): only Connect apps that define the `jiraOperationsInfoProvider` module can call this. The CLI only sends basic or bearer auth, which Jira rejects here (expect 401/403); do not retry from the CLI, use the SDK's `createConnectJwtMiddleware` (see [`../auth-and-safety.md`](../auth-and-safety.md)).
+
 | Action   | Positional     | Required flags | Optional flags |
 | -------- | -------------- | -------------- | -------------- |
 | `get`    | `<incidentId>` | —              | —              |
@@ -137,6 +139,8 @@ atlas jira incidents delete INC-123
 ## `post-incident-reviews`
 
 **URL base:** `/rest/operations/1.0` (Jira Operations / JSM Incident Management API — not `/rest/api/3`).
+
+**Connect app (JWT) only** (`get`, `delete`): only Connect apps that define the `jiraOperationsInfoProvider` module can call this. The CLI only sends basic or bearer auth, which Jira rejects here (expect 401/403); do not retry from the CLI, use the SDK's `createConnectJwtMiddleware` (see [`../auth-and-safety.md`](../auth-and-safety.md)).
 
 | Action   | Positional   | Required flags | Optional flags |
 | -------- | ------------ | -------------- | -------------- |
@@ -173,6 +177,8 @@ atlas jira vulnerability delete VULN-789
 ## `devopscomponents`
 
 **URL base:** `/rest/devopscomponents/1.0` (Jira DevOps Components API — not `/rest/api/3`).
+
+**Connect app (JWT) only** (`get`, `delete`): only Connect apps that define the `jiraDevOpsComponentProvider` module can call this. The CLI only sends basic or bearer auth, which Jira rejects here (expect 401/403); do not retry from the CLI, use the SDK's `createConnectJwtMiddleware` (see [`../auth-and-safety.md`](../auth-and-safety.md)).
 
 | Action   | Positional      | Required flags | Optional flags |
 | -------- | --------------- | -------------- | -------------- |
@@ -774,6 +780,8 @@ Look up Atlassian Connect services by their service IDs. The `serviceIds` parame
 **required** by the spec (min 1, max 20). Pass IDs as a comma-separated list via `--service-ids`;
 they are sent as repeated query params (`?serviceIds=a&serviceIds=b`).
 
+**Connect app (JWT) only** (`get`): only Connect apps can call this, for service IDs of the tenant they call. The CLI only sends basic or bearer auth, which Jira rejects here (expect 401/403); do not retry from the CLI, use the SDK's `createConnectJwtMiddleware` (see [`../auth-and-safety.md`](../auth-and-safety.md)).
+
 | Action | Positional | Required flags        | Optional flags |
 | ------ | ---------- | --------------------- | -------------- |
 | `get`  | —          | `--service-ids` (CSV) | —              |
@@ -970,6 +978,9 @@ the CLI does NOT auto-poll, callers drive the cadence.
 
 - Core endpoints: `/rest/api/3/bulk/*`
 - DevOps ingest endpoints use their own bases — `builds 0.1`, `deployments 0.1`, `devinfo 0.10`, `devopscomponents 1.0`, `featureflags 0.1`, `operations 1.0`, `remotelinks 1.0`, `security 1.0`. With `--software-cloud-id`, Builds, Deployments, Development Information, and Feature Flag ingestion use the proxy routes listed above.
+
+- **Connect app (JWT) only** (`submit-operations`): only Connect apps that define the `jiraOperationsInfoProvider` module can call this. The CLI only sends basic or bearer auth, which Jira rejects here (expect 401/403); do not retry from the CLI, use the SDK's `createConnectJwtMiddleware` (see [`../auth-and-safety.md`](../auth-and-safety.md)).
+- **Connect app (JWT) only** (`submit-devops-components`): only Connect apps that define the `jiraDevOpsComponentProvider` module can call this. The CLI only sends basic or bearer auth, which Jira rejects here (expect 401/403); do not retry from the CLI, use the SDK's `createConnectJwtMiddleware` (see [`../auth-and-safety.md`](../auth-and-safety.md)).
 
 | Action                     | Positional      | Required flags                     | Optional flags                                         |
 | -------------------------- | --------------- | ---------------------------------- | ------------------------------------------------------ |
@@ -1555,6 +1566,8 @@ Linked Workspaces — spans Operations and Security APIs (B984-B986, B995-B998).
 
 Operations endpoints use base `/rest/operations/1.0`; Security endpoints use `/rest/security/1.0`.
 
+**Connect app (JWT) only** (`list-operations`, `bulk-delete-operations`, `bulk-create-operations`): only Connect apps that define the `jiraOperationsInfoProvider` module can call this. The CLI only sends basic or bearer auth, which Jira rejects here (expect 401/403); do not retry from the CLI, use the SDK's `createConnectJwtMiddleware` (see [`../auth-and-safety.md`](../auth-and-safety.md)). The `*-security` actions accept OAuth 2.0 (bearer).
+
 | Action                   | Positional args | Required flags    | Optional flags |
 | ------------------------ | --------------- | ----------------- | -------------- |
 | `list-operations`        | —               | —                 | —              |
@@ -1610,6 +1623,8 @@ All eight actions share the same contract: `DELETE <product-base>/bulkByProperti
 
 - `--properties`: the properties to match, sent as query params with AND logic (all must match): comma-separated `key=value` pairs (`accountId=account-123` or `accountId=acc-1,environment=prod`), or a JSON object when a value contains a comma (`--properties '{"tags":"a,b"}'`; values are strings or numbers). A repeated key is rejected rather than silently replacing the first; an empty key or an empty value is rejected too.
 - `--update-sequence-id <n>` (`delete-devinfo` only) — positive integer, sent as `_updateSequenceId`: only dev-info data with an `updateSequenceId` less than or equal to it is deleted. Every other action rejects it: Jira no longer supports the guard on feature flags, builds, deployments and remote links, and the security, operations and DevOps-component deletes never had one.
+- **Connect app (JWT) only** (`delete-operations`): only Connect apps that define the `jiraOperationsInfoProvider` module can call this. The CLI only sends basic or bearer auth, which Jira rejects here (expect 401/403); do not retry from the CLI, use the SDK's `createConnectJwtMiddleware` (see [`../auth-and-safety.md`](../auth-and-safety.md)).
+- **Connect app (JWT) only** (`delete-devops-components`): only Connect apps that define the `jiraDevOpsComponentProvider` module can call this. The CLI only sends basic or bearer auth, which Jira rejects here (expect 401/403); do not retry from the CLI, use the SDK's `createConnectJwtMiddleware` (see [`../auth-and-safety.md`](../auth-and-safety.md)).
 - Granular delete scopes match the entity family. In particular, `delete-security` requires `delete:security:jira`; builds, deployments, dev info, feature flags, and remote links use their respective `delete:*` scope.
 
 ```sh
@@ -1647,6 +1662,8 @@ atlas jira bulk-by-properties delete-builds --properties '{"accountId":"account-
 ## `migration`
 
 Connect-to-Forge issue field migration and app migration helpers under `/rest/atlassian-connect/1/migration` (B946–B950).
+
+**Connect app (JWT) only** (`update-fields`, `update-properties`, `search-workflow-rules`): these are for Connect apps during app migration and act on data the calling Connect app owns. The CLI only sends basic or bearer auth, which Jira rejects here (expect 401/403); do not retry from the CLI, use the SDK's `createConnectJwtMiddleware` (see [`../auth-and-safety.md`](../auth-and-safety.md)). `get-task` and `submit-task` accept basic or OAuth 2.0 auth.
 
 **Important:** `update-fields` (B948), `update-properties` (B949), and `search-workflow-rules` (B950) require the `--transfer-id` flag (UUID) — the Atlassian migration transfer context identifier sent as the `Atlassian-Transfer-Id` request header.
 

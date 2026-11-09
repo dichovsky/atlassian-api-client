@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "4.1.0"
   },
-  "sourceHash": "90d3c9ea64bb8ec718286ccdf28cca9938aa228419c7e8ee937fb39cc5bcd1bb",
+  "sourceHash": "c069bae42f14171535a64e8cfe9c1fa5f2d9ab47da4e8ebdcaef331c77aa213c",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -5623,21 +5623,21 @@
         {
           "name": "buildGetBlogPostParams",
           "kind": "function",
-          "line": 3578,
+          "line": 3580,
           "signature": "function buildGetBlogPostParams( opts: Record<string, string | boolean | undefined>, ): GetBlogPostParams | undefined",
-          "jsdoc": "Project the CLI flag bag onto a `GetBlogPostParams` query bag. Returns `undefined` when no spec-mapped flag is present so the caller can short-circuit to the no-arg `blogPosts.get(id)` overload (avoids sending an empty `query={}` object to the transport)."
+          "jsdoc": "Project the CLI flag bag onto a `GetBlogPostParams` query bag. Returns `undefined` when no spec-mapped flag is set so the caller can short-circuit to the no-arg `blogPosts.get(id)` overload (avoids sending an empty `query={}` object to the transport)."
         },
         {
           "name": "buildGetPageParams",
           "kind": "function",
-          "line": 3605,
+          "line": 3607,
           "signature": "function buildGetPageParams( opts: Record<string, string | boolean | undefined>, ): GetPageParams | undefined",
           "jsdoc": "Project the current `GET /pages/{id}` flags onto its query contract."
         },
         {
           "name": "buildGetSpaceParams",
           "kind": "function",
-          "line": 3639,
+          "line": 3641,
           "signature": "function buildGetSpaceParams( opts: Record<string, string | boolean | undefined>, ): GetSpaceParams | undefined",
           "jsdoc": "Project `GET /spaces/{id}` flags while preserving the no-params overload."
         }
@@ -7435,31 +7435,31 @@
         {
           "name": "SCOPES_HELP",
           "kind": "variable",
-          "line": 52,
+          "line": 65,
           "signature": "const SCOPES_HELP = `atlas scopes - Atlassian OAuth 2.0 scope utilities\n\nUSAGE:\n  atlas scopes validate <scope> [scope..…"
         },
         {
           "name": "INSTALL_SKILL_HELP",
           "kind": "variable",
-          "line": 78,
+          "line": 91,
           "signature": "const INSTALL_SKILL_HELP = `atlas install-skill - Install the bundled Claude Code skill\n\nUSAGE:\n  atlas install-skill [o…"
         },
         {
           "name": "CONFLUENCE_HELP",
           "kind": "variable",
-          "line": 103,
+          "line": 126,
           "signature": "const CONFLUENCE_HELP = `atlas confluence - Confluence Cloud REST API v2\n\nRESOURCES:\n  pages                  list, get,…"
         },
         {
           "name": "JIRA_HELP",
           "kind": "variable",
-          "line": 287,
+          "line": 318,
           "signature": "const JIRA_HELP = `atlas jira - Jira Cloud Platform v3 + Software/Agile + DevOps APIs\n\nRESOURCES:\n  issues        get, c…"
         },
         {
           "name": "getHelpText",
           "kind": "function",
-          "line": 795,
+          "line": 837,
           "exported": true,
           "signature": "export function getHelpText(api?: string): string",
           "jsdoc": "Get help text for the given level."
@@ -43450,41 +43450,48 @@
         {
           "name": "resolveTargetRealpath",
           "kind": "function",
-          "line": 493,
+          "line": 498,
           "signature": "function resolveTargetRealpath(target: string, fs: FilesystemDeps): string",
           "jsdoc": "Resolve the install target's canonical path. The target itself may not exist yet (we're about to `mkdir -p` it), so we walk up to the deepest existing ancestor, `realpath` THAT, then append the still-non-existent tail. The result is the canonical form `assertDestUnderTarget` compares against — without this normalisation, hosts like macOS (where `/var` is a symlink to `/private/var`) produce a spurious mismatch."
         },
         {
+          "name": "realpathViaExistingAncestor",
+          "kind": "function",
+          "line": 525,
+          "signature": "function realpathViaExistingAncestor( path: string, exists: (path: string) => boolean, realpath: (path: string) => strin…",
+          "jsdoc": "Canonical form of `path`, which may not exist yet: `realpath` of its deepest existing ancestor plus the still-missing tail. `undefined` when no ancestor exists within 32 levels."
+        },
+        {
           "name": "assertDestUnderTarget",
           "kind": "function",
-          "line": 543,
+          "line": 561,
           "signature": "function assertDestUnderTarget(dest: string, targetRealpath: string, fs: FilesystemDeps): void",
           "jsdoc": "Verify that `dest` resolves inside `targetRealpath` after symlinks in its parent chain are followed. We resolve the deepest existing ancestor (the file itself usually does not exist yet at write time) and require that canonical ancestor to be `targetRealpath` itself or a descendant."
         },
         {
           "name": "isPermissionError",
           "kind": "function",
-          "line": 573,
+          "line": 582,
           "signature": "function isPermissionError(err: unknown): boolean"
         },
         {
           "name": "writeWithPermissionGuard",
           "kind": "function",
-          "line": 580,
+          "line": 589,
           "signature": "function writeWithPermissionGuard(dest: string, op: () => void): void",
           "jsdoc": "Run a filesystem write op, mapping EACCES/EPERM to InstallSkillError exit code 3."
         },
         {
           "name": "InstallSkillRequest",
           "kind": "interface",
-          "line": 591,
+          "line": 600,
           "exported": true,
           "signature": "export interface InstallSkillRequest { readonly moduleUrl: string; readonly env: NodeJS.ProcessEnv; readonly cwd: string…"
         },
         {
           "name": "installSkill",
           "kind": "function",
-          "line": 609,
+          "line": 618,
           "exported": true,
           "signature": "export function installSkill(req: InstallSkillRequest): InstallSkillResult",
           "jsdoc": "Orchestrate a full skill install: resolve source, target, and version, then delegate to {@link runInstall}. Returns {@link InstallSkillResult}; exit codes and stdout/stderr are the caller's responsibility."
