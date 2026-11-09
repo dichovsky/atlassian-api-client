@@ -116,7 +116,7 @@ async function executePages(client: ConfluenceClient, cmd: ParsedCommand): Promi
       const bodyFormat = asEnum(opts['body-format'], CONTENT_BODY_FORMATS, 'body-format');
       return client.pages.list({
         ...(id !== undefined ? { id } : {}),
-        spaceId: asString(opts['space-id']),
+        spaceId: singleSpaceId(opts),
         title: asString(opts['title']),
         ...(status !== undefined ? { status } : {}),
         ...(subtype !== undefined ? { subtype } : {}),
@@ -476,7 +476,7 @@ async function executeSpaces(client: ConfluenceClient, cmd: ParsedCommand): Prom
         'description-format',
       );
       return client.spaces.list({
-        ids: parseCsvSpaceIdList(asString(opts['ids'])),
+        ids: parseCsvIdList(asString(opts['ids']), '--ids'),
         keys: parseCsvList(asString(opts['keys'])),
         ...(type !== undefined ? { type } : {}),
         ...(status !== undefined ? { status } : {}),
@@ -626,7 +626,9 @@ async function executeSpaces(client: ConfluenceClient, cmd: ParsedCommand): Prom
 
     // ── role assignments (B207-B208) ──────────────────────────────────────
     case 'role-assignments': {
-      const raRoleType = asEnum(opts['role-type'], SPACE_ROLE_TYPES, 'role-type');
+      // The spec types `role-type` as an open string (SYSTEM, CUSTOM or tenant-defined);
+      // the SDK param keeps its SYSTEM | CUSTOM type, so the CLI casts.
+      const raRoleType = trimmedFilter(opts, 'role-type') as SpaceRoleType | undefined;
       const raPrincipalType = asEnum(
         opts['principal-type'],
         SPACE_ROLE_PRINCIPAL_TYPES,
@@ -717,7 +719,7 @@ async function executeBlogPosts(client: ConfluenceClient, cmd: ParsedCommand): P
       const bpListId = parseCsvIdList(asString(opts['id']), '--id');
       return client.blogPosts.list({
         ...(bpListId !== undefined ? { id: bpListId } : {}),
-        spaceId: asString(opts['space-id']),
+        spaceId: singleSpaceId(opts),
         title: asString(opts['title']),
         ...(bpListStatus !== undefined ? { status: bpListStatus } : {}),
         ...(bpListBodyFormat !== undefined ? { 'body-format': bpListBodyFormat } : {}),
@@ -1371,20 +1373,29 @@ async function executeAttachments(client: ConfluenceClient, cmd: ParsedCommand):
     case 'operations':
       return client.attachments.getOperations(requireArg(cmd.positionalArgs[0], 'attachment ID'));
     case 'thumbnail': {
-      const buffer = await client.attachments.downloadThumbnail(
-        requireArg(cmd.positionalArgs[0], 'attachment ID'),
-        {
-          version: asPositiveInt(opts['version-number'], '--version-number'),
-          width: asPositiveInt(opts['width'], '--width'),
-          height: asPositiveInt(opts['height'], '--height'),
-        },
-      );
+      const attachmentId = requireArg(cmd.positionalArgs[0], 'attachment ID');
+      const thumbnailParams = {
+        version: asPositiveInt(opts['version-number'], '--version-number'),
+        width: asPositiveInt(opts['width'], '--width'),
+        height: asPositiveInt(opts['height'], '--height'),
+      };
       // The thumbnail body is binary, so it never goes to stdout: `--file`
-      // writes the bytes (refusing to overwrite unless `--force`), and the
-      // JSON confirmation reports the byte length.
+      // writes the bytes (refusing to overwrite unless `--force`, checked
+      // before the download too), and the JSON confirmation reports the byte length.
       const file = asString(opts['file']);
-      if (file === undefined) return { downloaded: true, byteLength: buffer.byteLength };
-      const { writeFile } = await import('node:fs/promises');
+      if (file === undefined) {
+        const buffer = await client.attachments.downloadThumbnail(attachmentId, thumbnailParams);
+        return { downloaded: true, byteLength: buffer.byteLength };
+      }
+      const { access, writeFile } = await import('node:fs/promises');
+      const exists = await access(file).then(
+        () => true,
+        () => false,
+      );
+      if (exists && opts['force'] !== true) {
+        throw new Error(`${file} already exists; pass --force to overwrite`);
+      }
+      const buffer = await client.attachments.downloadThumbnail(attachmentId, thumbnailParams);
       try {
         await writeFile(file, new Uint8Array(buffer), {
           flag: opts['force'] === true ? 'w' : 'wx',
@@ -1465,7 +1476,7 @@ async function executeLabels(client: ConfluenceClient, cmd: ParsedCommand): Prom
     case 'list-all': {
       const sort = asEnum(opts['sort'], LABEL_SORT_ORDERS, 'sort');
       return client.labels.list({
-        'label-id': parseCsvList(asString(opts['label-id'])),
+        'label-id': parseCsvIdList(asString(opts['label-id']), '--label-id'),
         prefix: parseCsvList(asString(opts['prefix'])),
         ...(sort !== undefined ? { sort } : {}),
         limit: asPositiveInt(opts['limit'], '--limit'),
@@ -1484,7 +1495,7 @@ async function executeLabels(client: ConfluenceClient, cmd: ParsedCommand): Prom
       const sort = asEnum(opts['sort'], BLOG_POST_SORT_ORDERS, 'sort');
       const bodyFormat = asEnum(opts['body-format'], CONTENT_BODY_FORMATS, 'body-format');
       return client.labels.listBlogPosts(requireArg(cmd.positionalArgs[0], 'label ID'), {
-        'space-id': parseCsvList(asString(opts['space-id'])),
+        'space-id': parseCsvIdList(asString(opts['space-id']), '--space-id'),
         ...(bodyFormat !== undefined ? { 'body-format': bodyFormat } : {}),
         ...(sort !== undefined ? { sort } : {}),
         limit: asPositiveInt(opts['limit'], '--limit'),
@@ -1495,7 +1506,7 @@ async function executeLabels(client: ConfluenceClient, cmd: ParsedCommand): Prom
       const sort = asEnum(opts['sort'], PAGE_SORT_ORDERS, 'sort');
       const bodyFormat = asEnum(opts['body-format'], CONTENT_BODY_FORMATS, 'body-format');
       return client.labels.listPages(requireArg(cmd.positionalArgs[0], 'label ID'), {
-        'space-id': parseCsvList(asString(opts['space-id'])),
+        'space-id': parseCsvIdList(asString(opts['space-id']), '--space-id'),
         ...(bodyFormat !== undefined ? { 'body-format': bodyFormat } : {}),
         ...(sort !== undefined ? { sort } : {}),
         limit: asPositiveInt(opts['limit'], '--limit'),
@@ -1654,8 +1665,8 @@ async function executeCustomContent(
           );
         }
       }
-      const id = parseCsvList(asString(opts['id']));
-      const spaceId = parseCsvList(asString(opts['space-id']));
+      const id = parseCsvIdList(asString(opts['id']), '--id');
+      const spaceId = parseCsvIdList(asString(opts['space-id']), '--space-id');
       return client.customContent.list({
         type: requireOpt(opts['type'], '--type'),
         ...(id !== undefined ? { id } : {}),
@@ -1899,42 +1910,63 @@ function parseCsvList(raw: string | undefined): readonly string[] | undefined {
   return items.length > 0 ? items : undefined;
 }
 
+/** A spec `int64` ID token. Range is left to the server (B1059), so `-1` passes. */
+const DECIMAL_ID = /^-?\d+$/;
+
 /**
- * Split the `spaces list --ids` flag into decimal int64 strings. Space IDs can
- * exceed JavaScript's safe-integer range, so converting them through `Number`
- * or `parseInt` would silently change the requested ID. Reject malformed
- * tokens rather than partially parsing or dropping them.
+ * Split a comma-separated flag of spec `int64` IDs into decimal strings, for
+ * SDK params typed as strings. Kept as strings so IDs above
+ * `Number.MAX_SAFE_INTEGER` stay exact; a malformed token (`abc`, `12abc`,
+ * `0x10`) throws rather than widening or changing the filter.
  */
-function parseCsvSpaceIdList(raw: string | undefined): readonly string[] | undefined {
+function parseCsvIdList(raw: string | undefined, flag: string): readonly string[] | undefined {
   const ids = parseCsvList(raw);
-  if (ids === undefined) return undefined;
-  for (const id of ids) {
-    if (!/^-?\d+$/.test(id)) {
-      throw new Error(`--ids must contain only decimal integer space IDs, got: ${id}`);
+  for (const id of ids ?? []) {
+    if (!DECIMAL_ID.test(id)) {
+      throw new Error(`${flag} must contain only decimal integer IDs, got: ${id}`);
     }
   }
   return ids;
 }
 
 /**
- * Split a comma-separated CLI flag of integer IDs into a `readonly number[]`.
- * Returns `undefined` when the input is unset. A malformed token (`abc`,
- * `12abc`) or one beyond `Number.MAX_SAFE_INTEGER` throws: dropping or
- * rounding it would silently widen or change the filter. Range is left to the
- * server (B1059), so `-1` passes through like `parseCsvSpaceIdList`.
+ * Like {@link parseCsvIdList}, for SDK params typed as `number[]`: a token
+ * beyond `Number.MAX_SAFE_INTEGER` also throws, since rounding it would
+ * change the requested ID.
  */
 function parseCsvIntList(raw: string | undefined, flag: string): readonly number[] | undefined {
   const strs = parseCsvList(raw);
   if (strs === undefined) return undefined;
   return strs.map((s) => {
     const n = Number(s);
-    if (!/^-?\d+$/.test(s) || !Number.isSafeInteger(n)) {
+    if (!DECIMAL_ID.test(s) || !Number.isSafeInteger(n)) {
       throw new Error(
         `${flag} must contain only decimal integer IDs up to ${Number.MAX_SAFE_INTEGER}, got: ${s}`,
       );
     }
     return n;
   });
+}
+
+/**
+ * `pages list` / `blog-posts list --space-id`: one space ID. The SDK sends it
+ * as one `space-id` value, so `1,2` would match no space (multi-space listing
+ * is not supported yet).
+ */
+function singleSpaceId(opts: ParsedCommand['options']): string | undefined {
+  const spaceId = asString(opts['space-id']);
+  if (spaceId?.includes(',')) throw new Error(`--space-id takes one space ID, got: ${spaceId}`);
+  return spaceId;
+}
+
+/**
+ * An open-string filter flag (`--role-type`), sent trimmed. A present but
+ * blank value is refused: it would go out blank and widen the listing.
+ */
+function trimmedFilter(opts: ParsedCommand['options'], flag: string): string | undefined {
+  const value = asString(opts[flag])?.trim();
+  if (value === '') throw new Error(`--${flag} must not be empty`);
+  return value;
 }
 
 /**
@@ -2033,7 +2065,7 @@ async function executeSpaceRoles(client: ConfluenceClient, cmd: ParsedCommand): 
       );
       return client.spaceRoles.list({
         'space-id': asString(opts['space-id']),
-        'role-type': nonEmptyFilter(opts, 'role-type'),
+        'role-type': trimmedFilter(opts, 'role-type'),
         'principal-id': asString(opts['principal-id']),
         ...(principalType !== undefined ? { 'principal-type': principalType } : {}),
         limit: asPositiveInt(opts['limit'], '--limit'),
@@ -2071,8 +2103,6 @@ async function executeSpaceRoles(client: ConfluenceClient, cmd: ParsedCommand): 
       );
   }
 }
-
-const SPACE_ROLE_TYPES: readonly SpaceRoleType[] = ['SYSTEM', 'CUSTOM'];
 
 const SPACE_ROLE_PRINCIPAL_TYPES: readonly SpaceRolePrincipalType[] = [
   'USER',
@@ -2958,10 +2988,13 @@ function asPositiveInt(value: string | boolean | undefined, name: string): numbe
   return n;
 }
 
-/** Parse an optional epoch-millisecond value (integer, zero included). */
+/**
+ * Parse an optional epoch-millisecond value (integer, zero included). A blank
+ * value is refused, not read as 0 (`Number('')` is 0).
+ */
 function asNonNegativeInt(value: string | boolean | undefined, name: string): number | undefined {
   if (typeof value !== 'string') return undefined;
-  const n = Number(value);
+  const n = value.trim() === '' ? NaN : Number(value);
   if (!Number.isInteger(n) || n < 0) {
     throw new Error(`${name} must be a non-negative integer, got: ${value}`);
   }
@@ -3502,17 +3535,6 @@ function versionData(
 ): { readonly number: number; readonly message?: string } {
   const message = asString(opts['message']);
   return message === undefined ? { number } : { number, message };
-}
-
-/** Split a comma-separated `--id`-style flag into decimal integer ID strings. */
-function parseCsvIdList(raw: string | undefined, flag: string): readonly string[] | undefined {
-  const ids = parseCsvList(raw);
-  for (const id of ids ?? []) {
-    if (!/^\d+$/.test(id)) {
-      throw new Error(`${flag} must contain only decimal integer IDs, got: ${id}`);
-    }
-  }
-  return ids;
 }
 
 /** Parse `--value` as a JSON array of `{ principal, roleId }` role assignments. */

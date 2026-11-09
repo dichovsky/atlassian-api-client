@@ -50,9 +50,13 @@ export class ConfluenceClient {
   readonly blogPosts: BlogPostsResource;
   /** Comments resource — footer and inline comments for pages and blog posts. */
   readonly comments: CommentsResource;
-  /** Attachments resource — upload, download, and manage file attachments. */
+  /**
+   * Attachments resource — list, get, upload and delete attachments; their
+   * properties, versions, footer comments, labels and operations; download a
+   * thumbnail (the attachment content itself has no download method).
+   */
   readonly attachments: AttachmentsResource;
-  /** Labels resource — list and manage content labels. */
+  /** Labels resource — read-only: list labels and the pages, blog posts and attachments carrying a label. */
   readonly labels: LabelsResource;
   /** Custom content resource. */
   readonly customContent: CustomContentResource;

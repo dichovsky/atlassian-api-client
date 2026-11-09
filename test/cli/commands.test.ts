@@ -2620,7 +2620,7 @@ describe('executeConfluenceCommand', () => {
     it.each(['10abc', 'not-a-number'])('spaces list rejects malformed ID %s', async (ids) => {
       await expect(
         executeConfluenceCommand(cmd('spaces', 'list', [], { ids }), GLOBALS),
-      ).rejects.toThrow(`--ids must contain only decimal integer space IDs, got: ${ids}`);
+      ).rejects.toThrow(`--ids must contain only decimal integer IDs, got: ${ids}`);
       expect(confluenceSpacesMock.list).not.toHaveBeenCalled();
     });
 
@@ -2951,13 +2951,16 @@ describe('executeConfluenceCommand', () => {
       );
     });
 
-    it('spaces role-assignments rejects invalid role-type', async () => {
-      await expect(
-        executeConfluenceCommand(
-          cmd('spaces', 'role-assignments', ['SP-1'], { 'role-type': 'OTHER' }),
-          GLOBALS,
-        ),
-      ).rejects.toThrow(/--role-type/);
+    it('spaces role-assignments passes a tenant-defined role-type through (spec: open string)', async () => {
+      confluenceSpacesMock.listRoleAssignments.mockResolvedValue({ results: [] });
+      await executeConfluenceCommand(
+        cmd('spaces', 'role-assignments', ['SP-1'], { 'role-type': ' OTHER ' }),
+        GLOBALS,
+      );
+      expect(confluenceSpacesMock.listRoleAssignments).toHaveBeenCalledWith(
+        'SP-1',
+        expect.objectContaining({ 'role-type': 'OTHER' }),
+      );
     });
 
     it('spaces set-role-assignments requires --value', async () => {
@@ -5791,7 +5794,7 @@ describe('executeConfluenceCommand', () => {
       confluenceCustomContentMock.list.mockResolvedValue({ results: [], _links: {} });
       const parsed = cmd('custom-content', 'list', [], {
         type: 'ai.atlassian.collection',
-        'space-id': 'sp-1',
+        'space-id': '654321',
         sort: 'created-date',
         limit: '25',
       });
@@ -5804,7 +5807,7 @@ describe('executeConfluenceCommand', () => {
       >;
       expect(args).toMatchObject({
         type: 'ai.atlassian.collection',
-        'space-id': ['sp-1'],
+        'space-id': ['654321'],
         sort: 'created-date',
         limit: 25,
       });

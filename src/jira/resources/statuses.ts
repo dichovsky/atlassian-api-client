@@ -232,12 +232,18 @@ export class StatusesResource {
     if (data.statuses === undefined || data.statuses.length === 0) {
       throw new ValidationError('bulkUpdate requires at least one status entry (--value)');
     }
-    // Spec `StatusUpdate` requires id, name and statusCategory on every entry.
+    // Spec `StatusUpdate` requires id, name and statusCategory, all strings, on every entry.
     data.statuses.forEach((status, i) => {
       for (const key of ['id', 'name', 'statusCategory'] as const) {
-        if (typeof status?.[key] !== 'string' || status[key] === '') {
+        const value: unknown = status?.[key];
+        if (value === undefined || value === null || value === '') {
           throw new ValidationError(
             `bulkUpdate statuses[${i}] requires ${key} (spec StatusUpdate)`,
+          );
+        }
+        if (typeof value !== 'string') {
+          throw new ValidationError(
+            `bulkUpdate statuses[${i}].${key} must be a string, got: ${typeof value} (spec StatusUpdate)`,
           );
         }
       }
