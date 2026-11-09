@@ -422,7 +422,7 @@ Issue security scheme management (B539–B555). Covers the full `/rest/api/3/iss
 
 - `get-all` takes no parameters and returns every scheme (`{ issueSecuritySchemes: [...] }`); Jira defines no filters for it. Use `search` (`--id`, `--project-ids`, pagination) to filter.
 - **Level object** (`--levels` items, for `create` and `add-levels`): `{ "name": "<unique, ≤255 chars>", "description"?: "<≤4000 chars>", "isDefault"?: <boolean, default false>, "members"?: [<member>, ...] }`. Only `name` is required.
-- **Member object** (`--members` items, and a level's `members`): `{ "type": "<member type>", "parameter"?: "<value>" }`. `type` is one of `reporter`, `group`, `user`, `projectrole`, `applicationRole`; `parameter` is the value for that type — the group name for `group`, the account ID for `user`, the project role ID for `projectrole`, the application key (e.g. `jira-software`) for `applicationRole`; omit it for `reporter`.
+- **Member object** (`--members` items, and a level's `members`): `{ "type": "<member type>", "parameter"?: "<value>" }`. `type` is the member type, for example `reporter`, `group`, `user`, `projectrole` or `applicationRole` (the spec lists these as examples); `parameter` is the value for that type — the group name for `group`, the account ID for `user`, the project role ID for `projectrole`, the application key (e.g. `jira-software`) for `applicationRole`; omit it for `reporter`.
 - `--old-to-new-mappings` (`associate-to-project`) is a JSON array of `{ "oldLevelId": "<id>|null", "newLevelId": "<id>|null" }`: both keys are required; `oldLevelId: null` remaps issues that have no level, `newLevelId: null` clears the old level from issues.
 - `--default-values` (`set-default-levels`) is a JSON array of `{ "issueSecuritySchemeId": "<id>", "defaultLevelId": "<id>" }`.
 
@@ -750,7 +750,7 @@ Workflow scheme management — full coverage of `/rest/api/3/workflowscheme` (B8
 
 **Required body endpoints (`--body` JSON):** `create`, `update`, `set-default`, `set-issuetype`, `set-workflow`, `assign-project`, `switch-project`, `update-draft`, `set-draft-default`, `set-draft-issuetype`, `set-draft-workflow`, `bulk-update`, `bulk-mappings`. Optional body: `publish-draft`, `bulk-read`. See [payload-rules.md](../payload-rules.md) for JSON-flag tips.
 
-`list --all` drains every page itself, so it does not take `--start-at`. `list-by-project --project-id` takes numeric project IDs (CSV), sent as repeated `projectId` params.
+`list --all` drains every page itself, so it does not take `--start-at`. `list-by-project --project-id` takes positive integer project IDs (CSV), sent as repeated `projectId` params.
 
 **Migration payloads** (all IDs are strings):
 
@@ -797,6 +797,8 @@ Workflow scheme management — full coverage of `/rest/api/3/workflowscheme` (B8
 | `set-workflow`    | `<id>`     | `--workflow-name`, `--body` | —                                             | B882    |
 
 ### Project usages and associations
+
+> **Experimental:** Atlassian marks `switch-project` `x-experimental`; its shape may change without notice.
 
 | Action            | Positional           | Required flags | Optional flags                       | BACKLOG |
 | ----------------- | -------------------- | -------------- | ------------------------------------ | ------- |

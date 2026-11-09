@@ -24,6 +24,8 @@ const RESOURCES = [
   'screens',
   'screenscheme',
   'version',
+  // Only for switchProject (routed to this unit); no other workflowscheme operation is marked.
+  'workflowscheme',
 ];
 
 interface SpecOperation {

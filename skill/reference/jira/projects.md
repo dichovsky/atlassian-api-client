@@ -259,7 +259,7 @@ Global project-role definitions at `/rest/api/3/role`. These are **top-level rol
 
 - `--user` and `--group-id` / `--group` for `add-actors` accept comma-separated values (multiple accounts/groups in one call).
 - `--account-id` / `--group-name` / `--group-id` for `delete-actors` accept a single value each (use `--account-id` instead of `--user` to remove a single user).
-- `update` (PUT) replaces the role and needs both `--name` and `--description`. `partial-update` (POST `/{id}`) changes exactly one of them per call (Jira ignores the description when both are sent, so the CLI rejects that).
+- `update` (PUT) replaces the role and needs both `--name` and a non-empty `--description`, so it cannot clear the description; use `atlas jira roles partial-update 10001 --description ''` for that. `partial-update` (POST `/{id}`) changes exactly one of them per call (Jira ignores the description when both are sent, so the CLI rejects that).
 - Jira cannot add or remove users and groups in the same request: `add-actors` takes `--user` **or** groups, `delete-actors` takes `--account-id` **or** a group. Identify a group by `--group-id` (preferred; names can change) or by name, not both.
 - `add-actors` and `delete-actors` print the role with its resulting default actors.
 - `--swap` for `delete` is a numeric role ID; Jira reassigns permissions to that role before deleting.

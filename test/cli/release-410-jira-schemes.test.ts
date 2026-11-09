@@ -210,6 +210,22 @@ describe('roles', () => {
     expect(skillRow('projects.md', 'roles', 'update')[2]).toBe('`--name`, `--description`');
   });
 
+  it('update cannot clear the description; the skill points to partial-update (round 4)', async () => {
+    await rejected(
+      ['jira', 'roles', 'update', '10001', '--name', 'Developers', '--description', ''],
+      /Missing required option: --description/,
+    );
+    const section = skillSection('projects.md', 'roles');
+    expect(section).toContain("atlas jira roles partial-update 10001 --description ''");
+    const { req } = await onlyRequest(
+      ['jira', 'roles', 'partial-update', '10001', '--description', ''],
+      { body: { id: 10001, name: 'Developers', description: '' } },
+    );
+    expect(req.method).toBe('POST');
+    expect(req.path).toBe(`${JIRA}/role/10001`);
+    expect(req.body).toEqual({ description: '' });
+  });
+
   it('partial-update takes exactly one of --name / --description (F209)', async () => {
     await rejected(
       ['jira', 'roles', 'partial-update', '10001', '--name', 'N', '--description', 'D'],
@@ -514,6 +530,8 @@ describe('issuesecurityschemes', () => {
     const section = skillSection('schemes.md', 'issuesecurityschemes');
     expect(section).toContain('projectrole');
     expect(section).toContain('applicationRole');
+    // The spec lists these member types as examples ("e.g."), not a closed set.
+    expect(section).not.toContain('`type` is one of');
   });
 
   it('add-levels and create --levels send the skill example levels (F219)', async () => {
@@ -855,9 +873,15 @@ describe('permission-schemes', () => {
 
 describe('workflowscheme', () => {
   it('list-by-project sends integer project ids as repeated params and rejects others (F240)', async () => {
-    await rejected(
-      ['jira', 'workflowscheme', 'list-by-project', '--project-id', 'abc'],
-      /--project-id must contain integers/,
+    // Number() would accept -5, 1e3, 0x10 and 1.0, and round an ID above 2^53 - 1.
+    for (const bad of ['abc', '-5', '1e3', '0x10', '1.0', '0', '9007199254740992']) {
+      await rejected(
+        ['jira', 'workflowscheme', 'list-by-project', '--project-id', `10010,${bad}`],
+        `--project-id must contain positive integers up to 9007199254740991, got: ${bad}`,
+      );
+    }
+    expect(skillSection('schemes.md', 'workflowscheme')).toContain(
+      '`list-by-project --project-id` takes positive integer project IDs (CSV)',
     );
     const { req } = await onlyRequest([
       'jira',
@@ -905,6 +929,10 @@ describe('workflowscheme', () => {
     ]);
     expect(run.requests[0]?.body).toEqual(body);
     expect(JSON.parse(run.stdout)).toEqual(task);
+    // Same marker convention as config, screens and version (spec x-experimental).
+    expect(section).toContain(
+      '> **Experimental:** Atlassian marks `switch-project` `x-experimental`; its shape may change without notice.',
+    );
   });
 
   it('publish-draft --validate-only prints null for the 204 (F241)', async () => {

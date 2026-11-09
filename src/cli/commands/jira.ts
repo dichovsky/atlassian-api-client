@@ -7513,7 +7513,16 @@ async function executeWorkflowScheme(client: JiraClient, cmd: ParsedCommand): Pr
       });
     }
     case 'list-by-project': {
-      const projectIds = parseIntCsv(opts['project-id'], '--project-id');
+      // Decimal digits only: Number() accepts -5, 1e3 or 0x10 and rounds IDs above 2^53 - 1.
+      const projectIds = parseCsv(opts['project-id'])?.map((s) => {
+        const n = Number(s);
+        if (!/^\d+$/.test(s) || n === 0 || !Number.isSafeInteger(n)) {
+          throw new Error(
+            `--project-id must contain positive integers up to ${Number.MAX_SAFE_INTEGER}, got: ${s}`,
+          );
+        }
+        return n;
+      });
       if (projectIds === undefined || projectIds.length === 0) {
         throw new Error('Missing required option: --project-id');
       }
