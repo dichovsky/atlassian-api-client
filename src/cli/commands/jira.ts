@@ -3564,7 +3564,7 @@ async function executeExistsByProperties(client: JiraClient, cmd: ParsedCommand)
         opts,
         'exists-by-properties get',
         ['entity-type', 'entity-id'],
-        'name the stored properties to match with --properties, e.g. --properties accountId=123',
+        'it was sent as a property filter, so pass it in --properties instead, e.g. --properties entityType=repository,entityId=123',
       );
       const raw = asString(opts['properties']);
       if (raw === undefined) {
@@ -3734,9 +3734,15 @@ function asIssueTypeKind(value: string | boolean | undefined): 'subtask' | 'stan
   throw new Error(`--type must be one of: subtask, standard. Got: ${s}`);
 }
 
-/** A CSV of int64 ids, each exact like `--issue-id`, sent once each (spec `uniqueItems`). */
+/**
+ * A CSV of int64 ids, each exact like `--issue-id`, sent once each (spec
+ * `uniqueItems`). A value naming no id is rejected: dropping it would send the
+ * request unfiltered.
+ */
 function exactUniqueIds(value: string | boolean | undefined, name: string): number[] | undefined {
   const ids = parseCsv(value)?.map((s) => asExactPositiveInt(s, name) as number);
+  if (value !== undefined && ids === undefined)
+    throw new Error(`${name} must name at least one id`);
   return ids && [...new Set(ids)];
 }
 

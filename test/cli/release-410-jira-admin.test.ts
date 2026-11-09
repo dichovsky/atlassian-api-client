@@ -318,7 +318,10 @@ describe('exists-by-properties get (F181)', () => {
       ['--properties', 'a=1', '--update-sequence-id', ''],
       '--update-sequence-id must be a positive integer',
     ],
-    [['--entity-type', 'repository'], '--entity-type is not supported by exists-by-properties get'],
+    [
+      ['--entity-type', 'repository'],
+      '--entity-type is not supported by exists-by-properties get; it was sent as a property filter, so pass it in --properties instead, e.g. --properties entityType=repository,entityId=123',
+    ],
     [
       ['--properties', '_updateSequenceId=abc'],
       '"_updateSequenceId" is the update-sequence guard, not a property',
@@ -355,6 +358,33 @@ describe('bulk-by-properties (F247, F249)', () => {
       environment: 'prod',
     });
   });
+
+  it.each(['__proto__=x', '{"__proto__":"x"}'])(
+    'a %s property is sent as a filter, never dropped into an unfiltered delete',
+    async (properties) => {
+      const run = await runCliWire([
+        'jira',
+        'bulk-by-properties',
+        'delete-builds',
+        '--properties',
+        properties,
+      ]);
+      expect(run.exitCode).toBe(0);
+      const req = only(run);
+      expect(req.method).toBe('DELETE');
+      expect(req.path).toBe('/rest/builds/0.1/bulkByProperties');
+      expect([...req.query]).toEqual([['__proto__', 'x']]);
+
+      const exists = await runCliWire([
+        'jira',
+        'exists-by-properties',
+        'get',
+        '--properties',
+        properties,
+      ]);
+      expect([...only(exists).query]).toEqual([['__proto__', 'x']]);
+    },
+  );
 
   it('delete-devinfo sends the still-supported _updateSequenceId guard', async () => {
     const run = await runCliWire(
@@ -530,6 +560,31 @@ describe('app field-context configurations (F182, F189, F192)', () => {
       }
     },
   );
+
+  it.each([
+    ['--ids', ''],
+    ['--ids', ' , '],
+    ['--context-ids', ''],
+    ['--context-ids', ','],
+  ])('%s %j names no id and is rejected, not sent unfiltered', async (flag, value) => {
+    for (const action of [
+      'get-field-context-configuration cf',
+      'list-field-context-configurations',
+    ]) {
+      const run = await runCliWire([
+        'jira',
+        'app',
+        ...action.split(' '),
+        '--field-ids-or-keys',
+        'cf',
+        flag,
+        value,
+      ]);
+      expect(run.exitCode).toBe(1);
+      expect(run.stderr).toContain(`${flag} must name at least one id`);
+      expect(run.requests).toHaveLength(0);
+    }
+  });
 
   it('--ids and --context-ids send each id once (spec uniqueItems)', async () => {
     const ids = await runCliWire([
