@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, expectTypeOf, beforeEach } from 'vitest';
 import {
   IssueSecuritySchemesResource,
   type AssociateSchemesToProjectsOptions,
@@ -359,10 +359,10 @@ describe('IssueSecuritySchemesResource', () => {
     it('a non-literal params value with returnTask true is typed void but resolves the task', async () => {
       transport.respondWith({ id: '10641' });
       const params: RemoveSecurityLevelParams = { returnTask: true };
+      const pending = resource.removeLevel('10001', '10100', params);
 
-      await expect(resource.removeLevel('10001', '10100', params)).resolves.toEqual({
-        id: '10641',
-      });
+      expectTypeOf(pending).resolves.toBeVoid();
+      await expect(pending).resolves.toEqual({ id: '10641' });
     });
   });
 
@@ -790,10 +790,13 @@ describe('IssueSecuritySchemesResource', () => {
     it('a non-literal options value with returnTask true is typed void but resolves the task', async () => {
       transport.respondWith({ id: '10641' });
       const options: AssociateSchemesToProjectsOptions = { returnTask: true };
+      const pending = resource.associateToProject(
+        { projectId: '10100', schemeId: '10001' },
+        options,
+      );
 
-      await expect(
-        resource.associateToProject({ projectId: '10100', schemeId: '10001' }, options),
-      ).resolves.toEqual({ id: '10641' });
+      expectTypeOf(pending).resolves.toBeVoid();
+      await expect(pending).resolves.toEqual({ id: '10641' });
     });
   });
 

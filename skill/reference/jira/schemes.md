@@ -426,25 +426,25 @@ Issue security scheme management (B539–B555). Covers the full `/rest/api/3/iss
 - `list-projects` — GET /issuesecurityschemes/project
 - `search` — GET /issuesecurityschemes/search
 
-| Action                 | Positional args                       | Key flags                                                                                                      | Returns                 |
-| ---------------------- | ------------------------------------- | -------------------------------------------------------------------------------------------------------------- | ----------------------- |
-| `get-all`              | —                                     | —                                                                                                              | SecuritySchemesResponse |
-| `create`               | —                                     | `--name` (req), `--description`, `--levels` (JSON array)                                                       | `{id}`                  |
-| `get`                  | `<id>`                                | —                                                                                                              | IssueSecurityScheme     |
-| `update`               | `<id>`                                | `--name`, `--description` (≥1 required)                                                                        | `{updated:true}`        |
-| `list-members`         | `<issueSecuritySchemeId>`             | `--issue-security-level-id`, `--expand`, pagination                                                            | PageBean                |
-| `delete`               | `<schemeId>`                          | —                                                                                                              | `{deleted:true}`        |
-| `add-levels`           | `<schemeId>`                          | `--levels` (req, JSON array of levels)                                                                         | `{updated:true}`        |
-| `remove-level`         | `<schemeId>` `<levelId>`              | `--replace-with`                                                                                               | `{deleted:true}`        |
-| `update-level`         | `<schemeId>` `<levelId>`              | `--name`, `--description` (≥1 required)                                                                        | `{updated:true}`        |
-| `add-level-members`    | `<schemeId>` `<levelId>`              | `--members` (req, JSON array of members)                                                                       | `{updated:true}`        |
-| `remove-level-member`  | `<schemeId>` `<levelId>` `<memberId>` | —                                                                                                              | `{deleted:true}`        |
-| `list-levels`          | —                                     | `--id`, `--scheme-id`, `--only-default`, pagination                                                            | PageBean                |
-| `set-default-levels`   | —                                     | `--default-values` (JSON array of `{defaultLevelId, issueSecuritySchemeId}`)                                   | `{updated:true}`        |
-| `list-level-members`   | —                                     | `--id`, `--scheme-id`, `--level-id`, `--expand`, pagination                                                    | PageBean                |
-| `list-projects`        | —                                     | `--issue-security-scheme-id`, `--project-ids`, pagination                                                      | PageBean                |
-| `associate-to-project` | —                                     | `--project-id` (req), `--scheme-id` (req; `null` clears the association), `--old-to-new-mappings` (JSON array) | `{updated:true}`        |
-| `search`               | —                                     | `--id`, `--project-ids`, pagination                                                                            | PageBean                |
+| Action                 | Positional args                       | Key flags                                                                                                      | Returns                         |
+| ---------------------- | ------------------------------------- | -------------------------------------------------------------------------------------------------------------- | ------------------------------- |
+| `get-all`              | —                                     | —                                                                                                              | SecuritySchemesResponse         |
+| `create`               | —                                     | `--name` (req), `--description`, `--levels` (JSON array)                                                       | `{id}`                          |
+| `get`                  | `<id>`                                | —                                                                                                              | IssueSecurityScheme             |
+| `update`               | `<id>`                                | `--name`, `--description` (≥1 required)                                                                        | `{updated:true}`                |
+| `list-members`         | `<issueSecuritySchemeId>`             | `--issue-security-level-id`, `--expand`, pagination                                                            | PageBean                        |
+| `delete`               | `<schemeId>`                          | —                                                                                                              | `{deleted:true}`                |
+| `add-levels`           | `<schemeId>`                          | `--levels` (req, JSON array of levels)                                                                         | `{updated:true}`                |
+| `remove-level`         | `<schemeId>` `<levelId>`              | `--replace-with`                                                                                               | Task (`{deleted:true}` if none) |
+| `update-level`         | `<schemeId>` `<levelId>`              | `--name`, `--description` (≥1 required)                                                                        | `{updated:true}`                |
+| `add-level-members`    | `<schemeId>` `<levelId>`              | `--members` (req, JSON array of members)                                                                       | `{updated:true}`                |
+| `remove-level-member`  | `<schemeId>` `<levelId>` `<memberId>` | —                                                                                                              | `{deleted:true}`                |
+| `list-levels`          | —                                     | `--id`, `--scheme-id`, `--only-default`, pagination                                                            | PageBean                        |
+| `set-default-levels`   | —                                     | `--default-values` (JSON array of `{defaultLevelId, issueSecuritySchemeId}`)                                   | `{updated:true}`                |
+| `list-level-members`   | —                                     | `--id`, `--scheme-id`, `--level-id`, `--expand`, pagination                                                    | PageBean                        |
+| `list-projects`        | —                                     | `--issue-security-scheme-id`, `--project-ids`, pagination                                                      | PageBean                        |
+| `associate-to-project` | —                                     | `--project-id` (req), `--scheme-id` (req; `null` clears the association), `--old-to-new-mappings` (JSON array) | Task (`{updated:true}` if none) |
+| `search`               | —                                     | `--id`, `--project-ids`, pagination                                                                            | PageBean                        |
 
 - `get-all` takes no parameters and returns every scheme (`{ issueSecuritySchemes: [...] }`); Jira defines no filters for it. Use `search` (`--id`, `--project-ids`, pagination) to filter.
 - **Level object** (`--levels` items, for `create` and `add-levels`): `{ "name": "<unique, ≤255 chars>", "description"?: "<≤4000 chars>", "isDefault"?: <boolean, default false>, "members"?: [<member>, ...] }`. Only `name` is required.

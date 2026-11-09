@@ -15,6 +15,7 @@ import type {
   RemoveSecurityLevelParams,
   TaskProgressBeanObject,
 } from '../../src/index.js';
+import { IssueSecuritySchemesResource } from '../../src/jira/resources/issuesecurityschemes.js';
 import {
   runCliWire,
   type CliWireResult,
@@ -225,11 +226,52 @@ describe('issuesecurityschemes asynchronous actions print the task (X-ISS-ASYNC)
     expect(typed).toBeTypeOf('function');
   });
 
+  it('migration: a Promise<undefined> fake fits both overloads; one returning the task declares both', () => {
+    // Compile-time proof of the 4.1.0 migration note (typecheck runs over test/**).
+    type Iss = Pick<JiraClient['issueSecuritySchemes'], 'associateToProject' | 'removeLevel'>;
+    const noTask: Iss = {
+      associateToProject: async () => undefined,
+      // eslint-disable-next-line @typescript-eslint/no-empty-function -- the empty-body fake is the case under test.
+      removeLevel: async () => {},
+    };
+    const singleSignature: Iss = {
+      // @ts-expect-error TS2322: one signature returning the task cannot satisfy the void overload.
+      associateToProject: async (): Promise<TaskProgressBeanObject | undefined> => undefined,
+      // @ts-expect-error TS2322: same for removeLevel.
+      removeLevel: async (): Promise<TaskProgressBeanObject | undefined> => undefined,
+    };
+    class BothOverloads extends IssueSecuritySchemesResource {
+      override associateToProject(
+        data: AssociateSchemesToProjectsData,
+        options: AssociateSchemesToProjectsOptions & { readonly returnTask: true },
+      ): Promise<TaskProgressBeanObject | undefined>;
+      override associateToProject(
+        data: AssociateSchemesToProjectsData,
+        options?: AssociateSchemesToProjectsOptions,
+      ): Promise<void>;
+      override async associateToProject(): Promise<TaskProgressBeanObject | void> {
+        return undefined;
+      }
+    }
+    class SingleSignature extends IssueSecuritySchemesResource {
+      // @ts-expect-error TS2416: an override returning the task must declare both overloads.
+      override async removeLevel(): Promise<TaskProgressBeanObject | undefined> {
+        return undefined;
+      }
+    }
+    expect([noTask, singleSignature, BothOverloads, SingleSignature]).toHaveLength(4);
+  });
+
   it('the skill says both run as a task and how to poll it', () => {
     const text = section('issuesecurityschemes');
     expect(text).toMatch(/`associate-to-project` and `remove-level` are \*\*asynchronous\*\*/);
     expect(text).toContain('atlas jira task get');
     expect(text).toContain('If Jira answers with no task (a 204 or an empty 200)');
+    // The table's Returns column agrees with the bullet.
+    expect(text).toMatch(/^\| `remove-level` .*\| Task \(`\{deleted:true\}` if none\) +\|$/m);
+    expect(text).toMatch(
+      /^\| `associate-to-project` .*\| Task \(`\{updated:true\}` if none\) +\|$/m,
+    );
   });
 });
 
@@ -1754,15 +1796,19 @@ const SPEC_OPS: readonly SpecOp[] = (() => {
  * action after "except".
  */
 function experimentalNoteCovers(resource: string, action: string): boolean {
-  const name = `\`${action}\``;
   return section(resource)
     .split('\n')
     .filter((line) => line.startsWith('> **Experimental:**'))
-    .some((line) => {
-      if (!/\bevery\b/.test(line)) return line.includes(name);
-      const except = /\bexcept\b(.*?)`x-experimental`/.exec(line)?.[1] ?? '';
-      return !except.includes(name);
-    });
+    .some((line) => noteCovers(line, action));
+}
+
+/** Whether one Experimental note line covers `action` (see {@link experimentalNoteCovers}). */
+function noteCovers(line: string, action: string): boolean {
+  const name = `\`${action}\``;
+  if (!/\bevery\b/.test(line)) return line.includes(name);
+  // The except list runs to the end of the clause (`;`), with or without a trailing `x-experimental`.
+  const except = /\bexcept\b([^;]*)/.exec(line)?.[1] ?? '';
+  return !except.includes(name);
 }
 
 /** The most literal spec operation the request matches (fewest path params). */
@@ -1821,6 +1867,14 @@ describe('every schemes.md example sends exactly the documented request', () => 
     expect(experimentalNoteCovers('priority-schemes', 'get')).toBe(true);
     expect(experimentalNoteCovers('screens', 'list')).toBe(false);
     expect(experimentalNoteCovers('screens', 'list-all-tabs')).toBe(true);
+  });
+
+  it('an "every … except" note without a trailing `x-experimental` still excludes the listed actions', () => {
+    const note =
+      '> **Experimental:** Atlassian marks every action except `get` and `list`; shapes may change.';
+    expect(noteCovers(note, 'get')).toBe(false);
+    expect(noteCovers(note, 'list')).toBe(false);
+    expect(noteCovers(note, 'create')).toBe(true);
   });
 });
 
