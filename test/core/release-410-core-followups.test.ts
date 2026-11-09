@@ -188,6 +188,9 @@ describe('a write answered with a body-dropping redirect the client will not fol
     ['plain http on an allowed host', 'http://test.atlassian.net/rest/api/3/task/1'],
     ['a non-default port on an allowed host', 'https://test.atlassian.net:8443/rest/api/3/task/1'],
     ['a Location that is not a URL', 'https://[broken'],
+    // 4.0.0's native follow rejected these with a TypeError and resent the write.
+    ['an ftp: Location', 'ftp://test.atlassian.net/x'],
+    ['a data: Location', 'data:text/plain,hi'],
   ])('treats a 303 to %s as accepted too', async (_label, location) => {
     const fetchMock = vi.fn(() =>
       Promise.resolve(new Response(null, { status: 303, headers: { location } })),
@@ -435,6 +438,29 @@ describe('a write whose followed body-dropping redirect fails at the transport',
 
     expect(error).toBe(bug);
     expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe('a write whose followed body-dropping redirect loops on the GET', () => {
+  let tenant: TestServer;
+
+  beforeAll(async () => {
+    tenant = await startServer((hit, res) => {
+      res.writeHead(hit.method === 'GET' ? 302 : 303, { location: '/rest/api/3/loop' });
+      res.end();
+    });
+  });
+  afterAll(() => tenant.close());
+
+  it("sends the write once and surfaces fetch's own redirect-limit TypeError", async () => {
+    const error = await jira(routeTo({ [TENANT]: tenant.port }), 2)
+      .issues.create({ fields: { summary: 'once' } })
+      .catch((e: unknown) => e);
+
+    expect(error).toBeInstanceOf(TypeError);
+    expect(error).not.toBeInstanceOf(NetworkError);
+    expect(((error as TypeError).cause as Error).message).toMatch(/redirect count exceeded/);
+    expect(tenant.hits.map((h) => h.method)).toEqual(['POST', ...Array<string>(21).fill('GET')]);
   });
 });
 
