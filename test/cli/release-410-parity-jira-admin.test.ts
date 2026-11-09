@@ -237,14 +237,21 @@ describe('bulk delete-property sends the spec filter as the body (M1-1)', () => 
   });
 
   it.each([
-    ['hasProperty (set-property only)', '{"hasProperty":true}'],
-    ['the 4.0.0 wrapped shape', '{"filter":{"currentValue":"deprecated value"}}'],
-  ])('refuses %s before sending', async (_label, filter) => {
+    [
+      'hasProperty (set-property only)',
+      '{"hasProperty":true}',
+      '--filter accepts only entityIds and currentValue (got hasProperty; hasProperty is set-property only)',
+    ],
+    [
+      'the 4.0.0 wrapped shape',
+      '{"filter":{"currentValue":"deprecated value"}}',
+      '--filter accepts only entityIds and currentValue (got filter)\n',
+    ],
+  ])('refuses %s before sending', async (_label, filter, message) => {
     const argv = example(ADMIN, 'jira bulk delete-property my-flag', `--filter '{"currentValue"`);
-    refused(
-      await runCliWire(withFlag(argv, '--filter', filter)),
-      /--filter accepts only entityIds and currentValue/,
-    );
+    const run = await runCliWire(withFlag(argv, '--filter', filter));
+    refused(run, /--filter accepts only entityIds and currentValue/);
+    expect(run.stderr).toContain(message);
   });
 
   it('the skill no longer offers hasProperty for delete-property', () => {
@@ -254,6 +261,10 @@ describe('bulk delete-property sends the spec filter as the body (M1-1)', () => 
     );
     expect(text).toContain(
       'For `delete-property` it accepts **only** `entityIds` and `currentValue` and is sent as the request body itself; `hasProperty` (set-property only) or any other key is rejected before sending.',
+    );
+    // set-property has three criteria, so "both" would undercount.
+    expect(text).toContain(
+      '`--filter` restricts which issues are affected; all given criteria are ANDed.',
     );
   });
 
@@ -871,6 +882,9 @@ describe('users legacy identifiers are flagged as ignored (M9-3)', () => {
     ]) {
       expect(note).toContain(needle);
     }
+    // The note is one bullet; it must not swallow the next list item.
+    expect(note).not.toMatch(/\.- `/);
+    expect(text.split('\n').some((l) => l.startsWith('- `search-query` and'))).toBe(true);
   });
 
   it('those flags still reach the wire, which is why the note matters', async () => {

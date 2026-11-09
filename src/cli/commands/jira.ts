@@ -4476,7 +4476,7 @@ async function executeBulk(client: JiraClient, cmd: ParsedCommand): Promise<unkn
       const unknown = Object.keys(filter).filter((k) => k !== 'entityIds' && k !== 'currentValue');
       if (unknown.length > 0) {
         throw new Error(
-          `bulk delete-property --filter accepts only entityIds and currentValue (got ${unknown.join(', ')}; hasProperty is set-property only)`,
+          `bulk delete-property --filter accepts only entityIds and currentValue (got ${unknown.join(', ')}${unknown.includes('hasProperty') ? '; hasProperty is set-property only' : ''})`,
         );
       }
       return client.bulk.deletePropertyBulk(propertyKey, filter as BulkDeleteIssuePropertyData, {

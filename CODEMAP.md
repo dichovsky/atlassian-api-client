@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "4.1.0"
   },
-  "sourceHash": "4ed4dd9740e65dc39d5d0023468bb2abe005c49513a8c2cbb50af6a10bb86a5d",
+  "sourceHash": "574b312f895fac5e4fd27583092e69c50a00f69441cd3606eebd02d64a0374e6",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -28955,92 +28955,92 @@
             {
               "name": "deleteIssuesBulk",
               "kind": "method",
-              "line": 536
+              "line": 538
             },
             {
               "name": "getIssueFieldsBulk",
               "kind": "method",
-              "line": 551
+              "line": 553
             },
             {
               "name": "editIssueFieldsBulk",
               "kind": "method",
-              "line": 571
+              "line": 573
             },
             {
               "name": "moveIssuesBulk",
               "kind": "method",
-              "line": 587
+              "line": 589
             },
             {
               "name": "getAvailableTransitionsBulk",
               "kind": "method",
-              "line": 602
+              "line": 604
             },
             {
               "name": "transitionIssuesBulk",
               "kind": "method",
-              "line": 623
+              "line": 625
             },
             {
               "name": "unwatchIssuesBulk",
               "kind": "method",
-              "line": 639
+              "line": 641
             },
             {
               "name": "watchIssuesBulk",
               "kind": "method",
-              "line": 655
+              "line": 657
             },
             {
               "name": "getBulkOperationStatus",
               "kind": "method",
-              "line": 670
+              "line": 672
             },
             {
               "name": "submitBuilds",
               "kind": "method",
-              "line": 686
+              "line": 688
             },
             {
               "name": "submitDeployments",
               "kind": "method",
-              "line": 698
+              "line": 700
             },
             {
               "name": "submitDevInfo",
               "kind": "method",
-              "line": 710
+              "line": 712
             },
             {
               "name": "submitDevopsComponents",
               "kind": "method",
-              "line": 722
+              "line": 724
             },
             {
               "name": "submitFeatureFlags",
               "kind": "method",
-              "line": 738
+              "line": 740
             },
             {
               "name": "submitOperations",
               "kind": "method",
-              "line": 750
+              "line": 752
             },
             {
               "name": "submitRemoteLinks",
               "kind": "method",
-              "line": 762
+              "line": 764
             },
             {
               "name": "submitSecurity",
               "kind": "method",
-              "line": 774
+              "line": 776
             },
             {
               "name": "requireDevopsBaseUrls",
               "kind": "method",
-              "line": 783
+              "line": 785
             }
           ]
         }
