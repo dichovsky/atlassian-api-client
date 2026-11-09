@@ -6995,10 +6995,13 @@ async function executeIssueSecuritySchemes(
       const schemeId = requireArg(cmd.positionalArgs[0], 'schemeId');
       const levelId = requireArg(cmd.positionalArgs[1], 'levelId');
       const replaceWith = asString(opts['replace-with']);
-      await client.issueSecuritySchemes.removeLevel(schemeId, levelId, {
+      // Asynchronous: print the removal task so it can be polled with `task get`.
+      // Off-spec 204 or empty 200 (no task): acknowledge as 4.0.0 did.
+      const task = await client.issueSecuritySchemes.removeLevel(schemeId, levelId, {
         ...(replaceWith !== undefined && { replaceWith }),
+        returnTask: true,
       });
-      return { deleted: true };
+      return task ?? { deleted: true };
     }
     case 'update-level': {
       const schemeId = requireArg(cmd.positionalArgs[0], 'schemeId');
@@ -7089,8 +7092,12 @@ async function executeIssueSecuritySchemes(
           ) as OldToNewSecurityLevelMapping[],
         }),
       };
-      await client.issueSecuritySchemes.associateToProject(data);
-      return { updated: true };
+      // Asynchronous: print the association task so it can be polled with `task get`.
+      // Off-spec 204 or empty 200 (no task): acknowledge as 4.0.0 did.
+      const task = await client.issueSecuritySchemes.associateToProject(data, {
+        returnTask: true,
+      });
+      return task ?? { updated: true };
     }
     case 'search': {
       const ids = parseCsv(opts['id']);
@@ -7342,6 +7349,11 @@ async function executeScreenScheme(client: JiraClient, cmd: ParsedCommand): Prom
       });
     }
     case 'list-all': {
+      if (opts['start-at'] !== undefined) {
+        throw new Error(
+          'list-all reads every page from the start; use list --start-at for one page',
+        );
+      }
       const ids = parseIntCsv(opts['ids'], '--ids');
       const orderBy = asScreenSchemeOrderBy(opts['order-by']);
       const results: unknown[] = [];
@@ -7849,7 +7861,8 @@ async function executeWorkflows(client: JiraClient, cmd: ParsedCommand): Promise
     // B841: POST /rest/api/3/workflow/history
     case 'read-history': {
       const workflowId = requireOpt(opts['workflow-id'], '--workflow-id');
-      const versionNumber = asPositiveInt(opts['version-number'], '--version-number');
+      // Versions start at 0 (the workflow as created); the spec sets no minimum.
+      const versionNumber = asNonNegativeInt(opts['version-number'], '--version-number');
       return client.workflows.readWorkflowFromHistory({
         workflowId,
         ...(versionNumber !== undefined && { version: versionNumber }),
@@ -8148,11 +8161,12 @@ async function executeWorkflowScheme(client: JiraClient, cmd: ParsedCommand): Pr
       if (projectIds === undefined || projectIds.length === 0) {
         throw new Error('Missing required option: --project-id');
       }
-      // Spec getWorkflowSchemeProjectAssociations: projectId maxItems 100.
-      if (projectIds.length > 100) {
-        throw new Error(`--project-id accepts at most 100 project IDs, got: ${projectIds.length}`);
+      // Spec getWorkflowSchemeProjectAssociations: projectId uniqueItems, maxItems 100.
+      const unique = [...new Set(projectIds)];
+      if (unique.length > 100) {
+        throw new Error(`--project-id accepts at most 100 project IDs, got: ${unique.length}`);
       }
-      return client.workflowScheme.getProjectAssociations({ projectId: projectIds });
+      return client.workflowScheme.getProjectAssociations({ projectId: unique });
     }
     case 'assign-project': {
       const body = parseJsonObjectFlag(requireOpt(opts['body'], '--body'), '--body');

@@ -57,6 +57,9 @@ atlas jira issue-type-schemes move-issue-types 10000 --issue-type-ids 10003 --af
 # Get scheme-to-issue-type mapping
 atlas jira issue-type-schemes list-mapping --scheme-ids 10000,10001
 
+# One page of the mapping for one scheme
+atlas jira issue-type-schemes list-mapping --scheme-ids 10000 --start-at 0 --max-results 5
+
 # Get project-to-scheme mapping
 atlas jira issue-type-schemes list-project --project-ids 10100,10101
 
@@ -134,6 +137,9 @@ atlas jira notification-schemes list --start-at 0 --max-results 50
 
 # List specific schemes with their events expanded
 atlas jira notification-schemes list --ids 10000,10001 --expand notificationSchemeEvents
+
+# Only the default schemes of two projects
+atlas jira notification-schemes list --project-ids 10100,10101 --only-default
 
 # Get one scheme by ID
 atlas jira notification-schemes get 10000 --expand notificationSchemeEvents
@@ -306,6 +312,9 @@ atlas jira permission-schemes create \
   --description "Everyone can browse" \
   --permissions '[{"holder":{"type":"anyone"},"permission":"BROWSE_PROJECTS"}]'
 
+# Create a scheme and print it with its grants
+atlas jira permission-schemes create --name "Browse Scheme" --permissions '[{"holder":{"type":"anyone"},"permission":"BROWSE_PROJECTS"}]' --expand permissions
+
 # Update a scheme's name and description
 atlas jira permission-schemes update 10000 --name "Renamed Scheme" --description "Updated description"
 
@@ -329,6 +338,9 @@ atlas jira permission-schemes create-permission 10000 \
 # Get a single permission grant by ID
 atlas jira permission-schemes get-permission 10000 10001
 
+# The same grant with the user it is granted to
+atlas jira permission-schemes get-permission 10000 10001 --expand user
+
 # Delete a permission grant
 atlas jira permission-schemes delete-permission 10000 10001
 ```
@@ -336,6 +348,8 @@ atlas jira permission-schemes delete-permission 10000 10001
 ## `priority-schemes`
 
 Priority scheme management (B644–B651). Covers the full `/rest/api/3/priorityscheme` surface: paginated listing, create/update/delete, scheme-scoped priority and project listings, and helper endpoints for suggested mappings and available priorities.
+
+> **Experimental:** Atlassian marks every `priority-schemes` action `x-experimental`; their shapes may change without notice.
 
 `create` returns either `{ id }` (synchronous, 201) or `{ id, task }` (asynchronous, 202). `update` always returns asynchronously with `{ task, priorityScheme }`. `delete` is `204 No Content` and is only available for schemes without associated projects.
 
@@ -365,6 +379,7 @@ atlas jira priority-schemes list --start-at 0 --max-results 50 --expand prioriti
 # Filter by IDs / name / default
 atlas jira priority-schemes list --scheme-ids 10000,10001 --order-by=-name
 atlas jira priority-schemes list --scheme-name "Critical" --only-default
+atlas jira priority-schemes list --priority-ids 10001,10002
 
 # Create a scheme
 atlas jira priority-schemes create \
@@ -411,31 +426,34 @@ Issue security scheme management (B539–B555). Covers the full `/rest/api/3/iss
 - `list-projects` — GET /issuesecurityschemes/project
 - `search` — GET /issuesecurityschemes/search
 
-| Action                 | Positional args                       | Key flags                                                                                                      | Returns                 |
-| ---------------------- | ------------------------------------- | -------------------------------------------------------------------------------------------------------------- | ----------------------- |
-| `get-all`              | —                                     | —                                                                                                              | SecuritySchemesResponse |
-| `create`               | —                                     | `--name` (req), `--description`, `--levels` (JSON array)                                                       | `{id}`                  |
-| `get`                  | `<id>`                                | —                                                                                                              | IssueSecurityScheme     |
-| `update`               | `<id>`                                | `--name`, `--description` (≥1 required)                                                                        | `{updated:true}`        |
-| `list-members`         | `<issueSecuritySchemeId>`             | `--issue-security-level-id`, `--expand`, pagination                                                            | PageBean                |
-| `delete`               | `<schemeId>`                          | —                                                                                                              | `{deleted:true}`        |
-| `add-levels`           | `<schemeId>`                          | `--levels` (req, JSON array of levels)                                                                         | `{updated:true}`        |
-| `remove-level`         | `<schemeId>` `<levelId>`              | `--replace-with`                                                                                               | `{deleted:true}`        |
-| `update-level`         | `<schemeId>` `<levelId>`              | `--name`, `--description` (≥1 required)                                                                        | `{updated:true}`        |
-| `add-level-members`    | `<schemeId>` `<levelId>`              | `--members` (req, JSON array of members)                                                                       | `{updated:true}`        |
-| `remove-level-member`  | `<schemeId>` `<levelId>` `<memberId>` | —                                                                                                              | `{deleted:true}`        |
-| `list-levels`          | —                                     | `--id`, `--scheme-id`, `--only-default`, pagination                                                            | PageBean                |
-| `set-default-levels`   | —                                     | `--default-values` (JSON array of `{defaultLevelId, issueSecuritySchemeId}`)                                   | `{updated:true}`        |
-| `list-level-members`   | —                                     | `--id`, `--scheme-id`, `--level-id`, `--expand`, pagination                                                    | PageBean                |
-| `list-projects`        | —                                     | `--issue-security-scheme-id`, `--project-ids`, pagination                                                      | PageBean                |
-| `associate-to-project` | —                                     | `--project-id` (req), `--scheme-id` (req; `null` clears the association), `--old-to-new-mappings` (JSON array) | `{updated:true}`        |
-| `search`               | —                                     | `--id`, `--project-ids`, pagination                                                                            | PageBean                |
+| Action                 | Positional args                       | Key flags                                                                                                      | Returns                         |
+| ---------------------- | ------------------------------------- | -------------------------------------------------------------------------------------------------------------- | ------------------------------- |
+| `get-all`              | —                                     | —                                                                                                              | SecuritySchemesResponse         |
+| `create`               | —                                     | `--name` (req), `--description`, `--levels` (JSON array)                                                       | `{id}`                          |
+| `get`                  | `<id>`                                | —                                                                                                              | IssueSecurityScheme             |
+| `update`               | `<id>`                                | `--name`, `--description` (≥1 required)                                                                        | `{updated:true}`                |
+| `list-members`         | `<issueSecuritySchemeId>`             | `--issue-security-level-id`, `--expand`, pagination                                                            | PageBean                        |
+| `delete`               | `<schemeId>`                          | —                                                                                                              | `{deleted:true}`                |
+| `add-levels`           | `<schemeId>`                          | `--levels` (req, JSON array of levels)                                                                         | `{updated:true}`                |
+| `remove-level`         | `<schemeId>` `<levelId>`              | `--replace-with`                                                                                               | Task (`{deleted:true}` if none) |
+| `update-level`         | `<schemeId>` `<levelId>`              | `--name`, `--description` (≥1 required)                                                                        | `{updated:true}`                |
+| `add-level-members`    | `<schemeId>` `<levelId>`              | `--members` (req, JSON array of members)                                                                       | `{updated:true}`                |
+| `remove-level-member`  | `<schemeId>` `<levelId>` `<memberId>` | —                                                                                                              | `{deleted:true}`                |
+| `list-levels`          | —                                     | `--id`, `--scheme-id`, `--only-default`, pagination                                                            | PageBean                        |
+| `set-default-levels`   | —                                     | `--default-values` (JSON array of `{defaultLevelId, issueSecuritySchemeId}`)                                   | `{updated:true}`                |
+| `list-level-members`   | —                                     | `--id`, `--scheme-id`, `--level-id`, `--expand`, pagination                                                    | PageBean                        |
+| `list-projects`        | —                                     | `--issue-security-scheme-id`, `--project-ids`, pagination                                                      | PageBean                        |
+| `associate-to-project` | —                                     | `--project-id` (req), `--scheme-id` (req; `null` clears the association), `--old-to-new-mappings` (JSON array) | Task (`{updated:true}` if none) |
+| `search`               | —                                     | `--id`, `--project-ids`, pagination                                                                            | PageBean                        |
 
 - `get-all` takes no parameters and returns every scheme (`{ issueSecuritySchemes: [...] }`); Jira defines no filters for it. Use `search` (`--id`, `--project-ids`, pagination) to filter.
 - **Level object** (`--levels` items, for `create` and `add-levels`): `{ "name": "<unique, ≤255 chars>", "description"?: "<≤4000 chars>", "isDefault"?: <boolean, default false>, "members"?: [<member>, ...] }`. Only `name` is required.
 - **Member object** (`--members` items, and a level's `members`): `{ "type": "<member type>", "parameter"?: "<value>" }`. `type` is the member type, for example `reporter`, `group`, `user`, `projectrole` or `applicationRole` (the spec lists these as examples); `parameter` is the value for that type — the group name for `group`, the account ID for `user`, the project role ID for `projectrole`, the application key (e.g. `jira-software`) for `applicationRole`; omit it for `reporter`.
 - `--old-to-new-mappings` (`associate-to-project`) is a JSON array of `{ "oldLevelId": "<id>|null", "newLevelId": "<id>|null" }`: both keys are required; `oldLevelId: null` remaps issues that have no level, `newLevelId: null` clears the old level from issues.
 - `--default-values` (`set-default-levels`) is a JSON array of `{ "issueSecuritySchemeId": "<id>", "defaultLevelId": "<id>" }`.
+- `--expand` (`list-members`, `list-level-members`) is a comma-separated list of `all`, `field`, `group`, `projectRole`, `user`: each adds the details of that kind of member (`all` adds every kind).
+- On the list actions (`list-members`, `list-levels`, `list-level-members`, `list-projects`, `search`), `--id`, `--scheme-id`, `--level-id`, `--issue-security-level-id`, `--issue-security-scheme-id` and `--project-ids` are comma-separated and sent as repeated query params. (`associate-to-project --scheme-id` is one scheme ID, or `null`.)
+- `associate-to-project` and `remove-level` are **asynchronous**: Jira answers with a task, and the CLI prints it (`{ "id", "self", "status", ... }`). Poll it with `atlas jira task get <id>` until `status` is `COMPLETE`. Both get HTTP 409 while a level-removal task is still running. If Jira answers with no task (a 204 or an empty 200), the CLI prints `{"updated": true}` (`associate-to-project`) or `{"deleted": true}` (`remove-level`).
 
 ```sh
 # List all schemes
@@ -451,6 +469,7 @@ atlas jira issuesecurityschemes delete 10001
 # Members of a scheme (paginated)
 atlas jira issuesecurityschemes list-members 10001
 atlas jira issuesecurityschemes list-members 10001 --issue-security-level-id 10100,10101
+atlas jira issuesecurityschemes list-members 10001 --expand all --start-at 0 --max-results 50
 
 # Manage levels
 atlas jira issuesecurityschemes add-levels 10001 --levels '[{"name":"Public","isDefault":true}]'
@@ -473,6 +492,7 @@ atlas jira issuesecurityschemes set-default-levels --default-values '[{"issueSec
 # List level members (paginated)
 atlas jira issuesecurityschemes list-level-members
 atlas jira issuesecurityschemes list-level-members --scheme-id 10001 --level-id 10100
+atlas jira issuesecurityschemes list-level-members --id 10300,10301 --scheme-id 10001 --level-id 10100 --expand user,group
 
 # Project-to-scheme mappings (paginated)
 atlas jira issuesecurityschemes list-projects
@@ -484,6 +504,9 @@ atlas jira issuesecurityschemes associate-to-project --project-id 10100 --scheme
 
 # Remove the project's issue security scheme (clear the old level from its issues)
 atlas jira issuesecurityschemes associate-to-project --project-id 10100 --scheme-id null --old-to-new-mappings '[{"oldLevelId":"10100","newLevelId":null}]'
+
+# Poll the task that associate-to-project or remove-level printed
+atlas jira task get 10641
 
 # Search schemes (paginated)
 atlas jira issuesecurityschemes search
@@ -499,24 +522,24 @@ Screen management (B746–B761). Covers the `/rest/api/3/screens` surface: CRUD,
 - `move-field` needs `--position` or `--after` (the ID of the tab field to place it after).
 - `list-all-tabs` returns **one page** (`{ isLast, startAt, maxResults, total, values: [{ screenId, tabId, tabName }] }`) for the screens in `--ids` and/or the tabs in `--tab-ids` (both sent as repeated `screenId` / `tabId` params). Page with `--start-at` (0-based) and `--max-results` until `isLast` is `true`.
 
-| Action                  | Positional                     | Required flags                                                            | Optional flags                                                                                              |
-| ----------------------- | ------------------------------ | ------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| `list`                  | —                              | —                                                                         | `--ids`, `--query-string`, `--scope` (GLOBAL/TEMPLATE/PROJECT), `--order-by`, `--start-at`, `--max-results` |
-| `create`                | —                              | `--name`                                                                  | `--description`                                                                                             |
-| `delete`                | `<screenId>`                   | —                                                                         | —                                                                                                           |
-| `update`                | `<screenId>`                   | at least one of `--name`, `--description`                                 | —                                                                                                           |
-| `list-available-fields` | `<screenId>`                   | —                                                                         | —                                                                                                           |
-| `list-tabs`             | `<screenId>`                   | —                                                                         | `--project-key`                                                                                             |
-| `create-tab`            | `<screenId>`                   | `--name`                                                                  | —                                                                                                           |
-| `delete-tab`            | `<screenId>` `<tabId>`         | —                                                                         | —                                                                                                           |
-| `update-tab`            | `<screenId>` `<tabId>`         | `--name`                                                                  | —                                                                                                           |
-| `list-tab-fields`       | `<screenId>` `<tabId>`         | —                                                                         | `--project-key`                                                                                             |
-| `add-field-to-tab`      | `<screenId>` `<tabId>`         | `--field-id`                                                              | `--skip-field-association`                                                                                  |
-| `remove-field-from-tab` | `<screenId>` `<tabId>` `<id>`  | —                                                                         | —                                                                                                           |
-| `move-field`            | `<screenId>` `<tabId>` `<id>`  | one of `--position` (Earlier\|Later\|First\|Last) or `--after` (field ID) | —                                                                                                           |
-| `move-tab`              | `<screenId>` `<tabId>` `<pos>` | —                                                                         | —                                                                                                           |
-| `add-to-default`        | `<fieldId>`                    | —                                                                         | —                                                                                                           |
-| `list-all-tabs`         | —                              | —                                                                         | `--ids` (CSV screen IDs), `--tab-ids` (CSV tab IDs), `--start-at`, `--max-results` (≤100, default 100)      |
+| Action                  | Positional                     | Required flags                                                            | Optional flags                                                                                                                                                                                       |
+| ----------------------- | ------------------------------ | ------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `list`                  | —                              | —                                                                         | `--ids`, `--query-string`, `--scope` (GLOBAL/TEMPLATE/PROJECT), `--order-by` (`name`\|`-name`\|`+name`\|`id`\|`-id`\|`+id`; descending needs `=`: `--order-by=-name`), `--start-at`, `--max-results` |
+| `create`                | —                              | `--name`                                                                  | `--description`                                                                                                                                                                                      |
+| `delete`                | `<screenId>`                   | —                                                                         | —                                                                                                                                                                                                    |
+| `update`                | `<screenId>`                   | at least one of `--name`, `--description`                                 | —                                                                                                                                                                                                    |
+| `list-available-fields` | `<screenId>`                   | —                                                                         | —                                                                                                                                                                                                    |
+| `list-tabs`             | `<screenId>`                   | —                                                                         | `--project-key`                                                                                                                                                                                      |
+| `create-tab`            | `<screenId>`                   | `--name`                                                                  | —                                                                                                                                                                                                    |
+| `delete-tab`            | `<screenId>` `<tabId>`         | —                                                                         | —                                                                                                                                                                                                    |
+| `update-tab`            | `<screenId>` `<tabId>`         | `--name`                                                                  | —                                                                                                                                                                                                    |
+| `list-tab-fields`       | `<screenId>` `<tabId>`         | —                                                                         | `--project-key`                                                                                                                                                                                      |
+| `add-field-to-tab`      | `<screenId>` `<tabId>`         | `--field-id`                                                              | `--skip-field-association`                                                                                                                                                                           |
+| `remove-field-from-tab` | `<screenId>` `<tabId>` `<id>`  | —                                                                         | —                                                                                                                                                                                                    |
+| `move-field`            | `<screenId>` `<tabId>` `<id>`  | one of `--position` (Earlier\|Later\|First\|Last) or `--after` (field ID) | —                                                                                                                                                                                                    |
+| `move-tab`              | `<screenId>` `<tabId>` `<pos>` | —                                                                         | —                                                                                                                                                                                                    |
+| `add-to-default`        | `<fieldId>`                    | —                                                                         | —                                                                                                                                                                                                    |
+| `list-all-tabs`         | —                              | —                                                                         | `--ids` (CSV screen IDs), `--tab-ids` (CSV tab IDs), `--start-at`, `--max-results` (≤100, default 100)                                                                                               |
 
 ```sh
 # Paginate screens
@@ -524,6 +547,9 @@ atlas jira screens list --max-results 50
 
 # Filter by IDs and search string
 atlas jira screens list --ids 10001,10002 --query-string Default
+
+# Global and project screens, sorted by name descending (CSV --scope is sent as repeated scope params)
+atlas jira screens list --scope GLOBAL,PROJECT --order-by=-name --start-at 0
 
 # Create a screen
 atlas jira screens create --name "Default Screen" --description "Main screen"
@@ -595,6 +621,7 @@ Screen scheme management (B762–B765). Covers the `/rest/api/3/screenscheme` su
 **`--order-by` values:** `name`, `-name`, `+name`, `id`, `-id`, `+id`. A leading `-` sorts descending and needs the `=` form: `--order-by=-name` (a separate `-name` argument reads as a flag).
 
 - `--expand issueTypeScreenSchemes` adds, for each screen scheme, the issue type screen schemes that use it.
+- `list` returns one page (`{ startAt, maxResults, total, isLast, values }`). `list-all` fetches every page itself and prints one flat array of screen schemes; `--max-results` is the page size (how many it asks for per request), not a cap on the total, and `--start-at` is refused. It takes the same filters as `list`.
 - Screen flags take a screen ID (digits only, at most 9007199254740991). On `update`, `--view-screen null`, `--edit-screen null` or `--create-screen null` removes that screen so the default screen is used; `--default-screen` cannot be `null`.
 
 ```sh
@@ -612,6 +639,9 @@ atlas jira screenscheme list --order-by=-name --expand issueTypeScreenSchemes
 
 # Paginate
 atlas jira screenscheme list --start-at 0 --max-results 50
+
+# Every screen scheme named like "Default" in one array, 50 per request
+atlas jira screenscheme list-all --max-results 50 --query-string Default --order-by=-name
 
 # Create a screen scheme (default screen is required)
 atlas jira screenscheme create --name "My Scheme" --default-screen 10001
@@ -659,7 +689,7 @@ Classic workflow management — `/rest/api/3/workflow` (B837–B845 + B934), and
 
 **Schema note:** `WorkflowReadResponse` (bulk-get response) and `WorkflowCreateResponse` (bulk-create response) share the same field names (`workflows`, `statuses`) but are distinct spec schema types. `WorkflowCreateValidateRequest` requires a `payload` field wrapping the `WorkflowCreateRequest`.
 
-**History note:** Stored workflow data expires after 60 days; no data before October 30, 2025 is available.
+**History note:** Stored workflow data expires after 60 days; no data before October 30, 2025 is available. `read-history --version-number` is the version to read (`version.versionNumber` in `bulk-get` output); versions start at 0, the workflow as created.
 
 **Connect/Forge apps only:** `get-rule-config`, `update-rule-config`, and `delete-rule-config` are restricted to Connect or Forge apps (403 if called from basic/bearer auth directly). `get-rule-config --types` is a CSV of `postfunction`, `condition`, `validator` (other values are refused before sending); `--keys`, `--workflow-names` and `--with-tags` are CSVs sent as repeated params (blank entries are dropped; a flag that names nothing, such as `--keys ,`, is refused). `update-rule-config --workflows` is a JSON array of `{workflowId: {name}, postFunctions?, conditions?, validators?}`; every rule needs `id`, `key` (the rule key from the app descriptor, as returned by `get-rule-config`) and `configuration` (`{value: "<string>", disabled?, tag?}`). `delete-rule-config --workflows` is a JSON array of `{workflowId: {name}, workflowRuleIds: [...]}`. A non-object entry is refused before sending.
 
@@ -741,6 +771,9 @@ atlas jira workflows default-editor
 # Read a specific workflow version from history — B841
 atlas jira workflows read-history --workflow-id c5ef565c-1b1e-427e-bc3b-e677b0dc027c --version-number 4
 
+# Read the workflow as it was created (version 0)
+atlas jira workflows read-history --workflow-id c5ef565c-1b1e-427e-bc3b-e677b0dc027c --version-number 0
+
 # List all history entries for a workflow — B842
 atlas jira workflows list-history --workflow-id c5ef565c-1b1e-427e-bc3b-e677b0dc027c
 atlas jira workflows list-history --workflow-id c5ef565c-1b1e-427e-bc3b-e677b0dc027c --expand includeIntermediateWorkflows
@@ -778,7 +811,13 @@ Workflow scheme management — full coverage of `/rest/api/3/workflowscheme` (B8
 
 **Required body endpoints (`--body` JSON):** `create`, `update`, `set-default`, `set-issuetype`, `set-workflow`, `assign-project`, `switch-project`, `update-draft`, `set-draft-default`, `set-draft-issuetype`, `set-draft-workflow`, `bulk-update`, `bulk-mappings`. Optional body: `publish-draft`, `bulk-read`. See [payload-rules.md](../payload-rules.md) for JSON-flag tips.
 
-`list --all` drains every page itself, so it does not take `--start-at`. `list-by-project --project-id` takes positive integer project IDs up to 9007199254740991 (CSV, at most 100 IDs; more is rejected before any request), sent as repeated `projectId` params.
+`list --all` drains every page itself, so it does not take `--start-at`. `list-by-project --project-id` takes positive integer project IDs up to 9007199254740991 (CSV, at most 100 IDs; more is rejected before any request), sent as repeated `projectId` params; duplicate IDs are sent once and count once toward the 100.
+
+**Scheme bodies** (`create`, `update`, `update-draft`; spec `WorkflowScheme`): `name` (unique, at most 255 characters; required on `create`), `description`, `defaultWorkflow` (the workflow **name** for issue types with no mapping; `create` defaults it to `jira`) and `issueTypeMappings` (`{ "<issueTypeId>": "<workflow name>" }`; an issue type maps to one workflow).
+
+**Mapping bodies:** `set-default` / `set-draft-default` take `{ "workflow": "<name>" }` (required). `set-issuetype` / `set-draft-issuetype` take `{ "workflow": "<name>" }` for the issue type in the positional (`issueType` in the body is optional). `set-workflow` / `set-draft-workflow` take `{ "issueTypes": ["<id>", ...], "defaultMapping"?: <bool>, "workflow"?: "<name>" }` for the workflow named by `--workflow-name`.
+
+**Active schemes:** a scheme that at least one project uses cannot be edited directly. Jira rejects `update`, `set-default`, `set-issuetype` and `set-workflow` on it unless the body has `updateDraftIfNeeded: true`, which writes the change to the scheme's draft instead (creating the draft if needed); publish the draft with `publish-draft`. `delete-default`, `delete-issuetype` and `delete-workflow` take the same switch as `--update-draft-if-needed`. On a scheme no project uses, `updateDraftIfNeeded: true` changes the scheme itself.
 
 **Migration payloads** (all IDs are strings):
 
@@ -844,6 +883,7 @@ atlas jira workflowscheme list --all
 
 # CRUD on schemes
 atlas jira workflowscheme create --body '{"name":"My Scheme","description":"Example"}'
+atlas jira workflowscheme create --body '{"name":"Dev Scheme","defaultWorkflow":"jira","issueTypeMappings":{"10000":"scrum"}}'
 atlas jira workflowscheme get 10001
 atlas jira workflowscheme get 10001 --return-draft-if-exists
 atlas jira workflowscheme update 10001 --body '{"name":"Renamed","updateDraftIfNeeded":true}'
@@ -853,6 +893,9 @@ atlas jira workflowscheme delete 10001
 atlas jira workflowscheme get-default 10001
 atlas jira workflowscheme set-default 10001 --body '{"workflow":"jira"}'
 atlas jira workflowscheme delete-default 10001 --update-draft-if-needed
+
+# On a scheme a project uses: change its draft instead (then run publish-draft)
+atlas jira workflowscheme set-default 10001 --body '{"workflow":"jira","updateDraftIfNeeded":true}'
 
 # Issue-type mappings
 atlas jira workflowscheme get-issuetype 10001 10000
@@ -866,6 +909,7 @@ atlas jira workflowscheme delete-workflow 10001 --workflow-name jira
 
 # Project usages (cursor pagination)
 atlas jira workflowscheme project-usages 10001 --max-results 50
+atlas jira workflowscheme project-usages 10001 --next-page-token eyJvIjoyfQ== --max-results 50
 
 # Project associations
 atlas jira workflowscheme list-by-project --project-id 10010,10020
@@ -1273,6 +1317,8 @@ atlas jira fields field-option-suggestions-search --field-key example-add-on__te
 ### Field admin and association (B414, B432, B442–B445, B447)
 
 Trash/restore custom fields, manage field-to-project associations, list screens a field appears on, and list trashed fields.
+
+> **Experimental:** Atlassian marks `field-project-associations` `x-experimental`; its shape may change without notice.
 
 `field-create-associations` / `field-remove-associations` take `--body` `{"associationContexts":[{"type":"PROJECT_ID","identifier":<projectId>}],"fields":[{"type":"FIELD_ID","identifier":"<fieldId>"}]}` (both lists required; `PROJECT_ID` and `FIELD_ID` are the identifier types the spec documents). One request handles up to 50 fields and 100 projects; the association also reaches every project that shares the same field configuration.
 

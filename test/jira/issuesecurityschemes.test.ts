@@ -1,5 +1,9 @@
-import { describe, it, expect, beforeEach } from 'vitest';
-import { IssueSecuritySchemesResource } from '../../src/jira/resources/issuesecurityschemes.js';
+import { describe, it, expect, expectTypeOf, beforeEach } from 'vitest';
+import {
+  IssueSecuritySchemesResource,
+  type AssociateSchemesToProjectsOptions,
+  type RemoveSecurityLevelParams,
+} from '../../src/jira/resources/issuesecurityschemes.js';
 import { MockTransport } from '../helpers/mock-transport.js';
 
 const BASE_URL = 'https://test.atlassian.net/rest/api/3';
@@ -331,6 +335,34 @@ describe('IssueSecuritySchemesResource', () => {
       await resource.removeLevel('10001', '10100');
 
       expect(transport.lastCall?.options.query?.['replaceWith']).toBeUndefined();
+    });
+
+    it('resolves the removal task with returnTask: true and never sends returnTask', async () => {
+      const task = { id: '10641', self: `${BASE_URL}/task/10641`, status: 'ENQUEUED' };
+      transport.respondWith(task);
+
+      const result = await resource.removeLevel('10001', '10100', {
+        replaceWith: '10101',
+        returnTask: true,
+      });
+
+      expect(result).toEqual(task);
+      expect(transport.lastCall?.options.query).toEqual({ replaceWith: '10101' });
+    });
+
+    it('resolves void without returnTask even when Jira returns the task', async () => {
+      transport.respondWith({ id: '10641' });
+
+      await expect(resource.removeLevel('10001', '10100')).resolves.toBeUndefined();
+    });
+
+    it('a non-literal params value with returnTask true is typed void but resolves the task', async () => {
+      transport.respondWith({ id: '10641' });
+      const params: RemoveSecurityLevelParams = { returnTask: true };
+      const pending = resource.removeLevel('10001', '10100', params);
+
+      expectTypeOf(pending).resolves.toBeVoid();
+      await expect(pending).resolves.toEqual({ id: '10641' });
     });
   });
 
@@ -731,6 +763,40 @@ describe('IssueSecuritySchemesResource', () => {
       await resource.associateToProject({ projectId: '10100', schemeId: '10001' });
 
       expect(transport.lastCall?.options.body).not.toHaveProperty('oldToNewSecurityLevelMappings');
+    });
+
+    it('resolves the association task with returnTask: true and never sends returnTask', async () => {
+      const task = { id: '10641', self: `${BASE_URL}/task/10641`, status: 'ENQUEUED' };
+      transport.respondWith(task);
+
+      const result = await resource.associateToProject(
+        { projectId: '10100', schemeId: '10001' },
+        { returnTask: true },
+      );
+
+      expect(result).toEqual(task);
+      expect(transport.lastCall?.options.body).toEqual({ projectId: '10100', schemeId: '10001' });
+      expect(transport.lastCall?.options.query).toBeUndefined();
+    });
+
+    it('resolves void without returnTask even when Jira returns the task', async () => {
+      transport.respondWith({ id: '10641' });
+
+      await expect(
+        resource.associateToProject({ projectId: '10100', schemeId: '10001' }),
+      ).resolves.toBeUndefined();
+    });
+
+    it('a non-literal options value with returnTask true is typed void but resolves the task', async () => {
+      transport.respondWith({ id: '10641' });
+      const options: AssociateSchemesToProjectsOptions = { returnTask: true };
+      const pending = resource.associateToProject(
+        { projectId: '10100', schemeId: '10001' },
+        options,
+      );
+
+      expectTypeOf(pending).resolves.toBeVoid();
+      await expect(pending).resolves.toEqual({ id: '10641' });
     });
   });
 
