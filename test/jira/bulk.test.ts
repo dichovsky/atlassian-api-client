@@ -339,6 +339,26 @@ describe('BulkResource', () => {
       expect(transport.lastCall?.options.body).toEqual({ entityIds: [1], currentValue: 'x' });
     });
 
+    it.each([
+      ['entityIds', { filter: { entityIds: [1] }, entityIds: undefined }, { entityIds: [1] }],
+      [
+        'currentValue',
+        { filter: { entityIds: [1], currentValue: 'x' }, currentValue: undefined },
+        { entityIds: [1], currentValue: 'x' },
+      ],
+    ])(
+      'keeps the deprecated filter criteria when top-level %s is explicitly undefined',
+      async (_key, data, expected) => {
+        // A forwarding wrapper passes `entityIds: o.entityIds` even when unset; an
+        // undefined top-level key must not erase the filter's criteria (unscoped delete).
+        transport.respondWith(undefined);
+
+        await bulk.deletePropertyBulk('p', data);
+
+        expect(JSON.stringify(transport.lastCall?.options.body)).toBe(JSON.stringify(expected));
+      },
+    );
+
     it('rejects the deprecated filter combined with top-level criteria, before sending', async () => {
       await expect(
         bulk.deletePropertyBulk('p', { filter: { entityIds: [1] }, currentValue: 'x' }),

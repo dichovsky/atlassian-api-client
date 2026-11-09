@@ -521,7 +521,9 @@ export class BulkResource {
       method: 'DELETE',
       path: `${this.baseUrl}/issue/properties/${encodePathSegment(propertyKey)}`,
       // Flatten the deprecated 4.0.0 `{ filter }` shape: the spec body is the filter itself.
-      body: { ...filter, ...criteria },
+      // The guard proved every top-level criterion is undefined when `filter` is set, so send
+      // `filter` alone: merging would let an explicit `entityIds: undefined` erase its criteria.
+      body: filter ?? criteria,
     });
     return options?.returnTask === true ? response.data : undefined;
   }
