@@ -11,6 +11,7 @@ import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'no
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
+import { getHelpText } from '../../src/cli/help.js';
 import {
   runCliWire,
   type CliWireResult,
@@ -264,6 +265,13 @@ describe('issue-attachments download-content / download-thumbnail --output (M3-1
     expect(text).toMatch(/`--output` never overwrites/);
     expect(text).not.toContain('use the SDK');
   });
+
+  it('atlas --help shows --output on both actions', () => {
+    const help = getHelpText('jira');
+    for (const action of ['download-content', 'download-thumbnail']) {
+      expect(help).toMatch(new RegExp(`issue-attachments ${action} 10001 .*--output `));
+    }
+  });
 });
 
 describe('issue-attachments upload --filename / --media-type (M3-6)', () => {
@@ -335,6 +343,22 @@ describe('priorities set-default / move (M2-1, X-PRIO-AFTER)', () => {
     await rejected(['jira', 'priorities', 'set-default'], /--id/);
   });
 
+  it.each([
+    [' 3 ', '3'],
+    [' null ', null],
+  ] as const)('set-default trims --id %j before sending', async (raw, id) => {
+    const argv = withFlag(example(META, 'jira priorities set-default --id null'), '--id', raw);
+    const { req } = await onlyRequest(argv, { status: 204 });
+    expect(req.body).toEqual({ id });
+  });
+
+  it('set-default refuses a blank --id before any request', async () => {
+    await rejected(['jira', 'priorities', 'set-default', '--id', '  '], /Missing value for --id/);
+    expect(section(META, '## `issue-types` / `priorities` / `statuses`')).toContain(
+      'The value is trimmed; an empty `--id` is rejected before any request.',
+    );
+  });
+
   it('move trims a padded --after value', async () => {
     const argv = withFlag(example(META, 'jira priorities move', '--after'), '--after', ' 10000 ');
     const { req } = await onlyRequest(argv, { status: 204 });
@@ -402,12 +426,31 @@ describe('projects delete-role-actors (M2-4)', () => {
     expect(JSON.parse(stdout)).toEqual({ deleted: true });
   });
 
+  it.each([
+    ['--user', { user: 'acc-1' }],
+    ['--group-id', { groupId: 'grp-1' }],
+  ] as const)('trims a padded %s value', async (flag, query) => {
+    const argv = example(PROJ, 'jira projects delete-role-actors', flag);
+    const value = argv[argv.indexOf(flag) + 1] as string;
+    const { req } = await onlyRequest(withFlag(argv, flag, ` ${value} `), { status: 204 });
+    expect(queryOf(req)).toEqual(query);
+  });
+
+  it('trims a padded --group value', async () => {
+    const { req } = await onlyRequest(
+      ['jira', 'projects', 'delete-role-actors', 'PROJ', '10001', '--group', ' legacy group '],
+      { status: 204 },
+    );
+    expect(queryOf(req)).toEqual({ group: 'legacy group' });
+  });
+
   it('the skill states the constraint', () => {
     const bullet = section(PROJ, '## `projects`')
       .split('\n')
       .find((l) => l.startsWith('- `delete-role-actors`'));
     expect(bullet).toMatch(/Pass at least one/);
     expect(bullet).toMatch(/`--group` and `--group-id` cannot be combined/);
+    expect(bullet).toMatch(/Surrounding spaces are trimmed/);
   });
 });
 
@@ -700,7 +743,7 @@ describe('version get / delete / delete-and-replace / create-related-work (M6-8)
         marker: '--move-fix-issues-to',
         method: 'DELETE',
         path: `${API}/version/10000`,
-        query: { moveFixIssuesTo: '10001' },
+        query: { moveFixIssuesTo: '10001', moveAffectedIssuesTo: '10002' },
       },
       {
         file: PROJ,

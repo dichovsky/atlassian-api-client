@@ -508,7 +508,7 @@ EXAMPLES:
   atlas jira issue-attachments download-content 10001 --redirect false
   atlas jira issue-attachments download-content 10001 --output ./report.pdf
   atlas jira issue-attachments get-meta
-  atlas jira issue-attachments download-thumbnail 10001 --width 200 --height 200 --fallback-to-default true
+  atlas jira issue-attachments download-thumbnail 10001 --width 200 --height 200 --fallback-to-default true --output ./thumb.png
   atlas jira issue-attachments upload PROJ-1 --file ./screenshot.png --media-type image/png
   atlas jira application-properties list --key jira.home
   atlas jira application-properties set jira.title --value "My Jira"

@@ -1078,9 +1078,9 @@ async function executeProjects(client: JiraClient, cmd: ParsedCommand): Promise<
       const projectIdOrKey = requireArg(cmd.positionalArgs[0], 'projectIdOrKey');
       const roleId = asPositiveInt(cmd.positionalArgs[1], 'roleId');
       if (roleId === undefined) throw new Error('Missing required argument: roleId');
-      const user = nonBlankOpt(opts['user'], '--user');
-      const groupId = nonBlankOpt(opts['group-id'], '--group-id');
-      const group = nonBlankOpt(opts['group'], '--group');
+      const user = nonBlankOpt(opts['user'], '--user')?.trim();
+      const groupId = nonBlankOpt(opts['group-id'], '--group-id')?.trim();
+      const group = nonBlankOpt(opts['group'], '--group')?.trim();
       // Spec deleteActor: `group` cannot be used with `groupId`.
       if (group !== undefined && groupId !== undefined) {
         throw new Error('pass either --group or --group-id, not both');
@@ -1820,7 +1820,7 @@ async function executePriorities(client: JiraClient, cmd: ParsedCommand): Promis
       return { updated: true };
     }
     case 'set-default': {
-      const id = requireOpt(opts['id'], '--id');
+      const id = requireOpt(nonBlankOpt(opts['id'], '--id'), '--id').trim();
       // `--id null` erases the default priority (spec: JSON null, not a string).
       await client.priorities.setDefault({ id: id === 'null' ? null : id });
       return { updated: true };

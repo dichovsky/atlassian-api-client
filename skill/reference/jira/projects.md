@@ -123,7 +123,7 @@ atlas jira component related-issue-counts 10000
 - `list-versions` `--order-by` accepts `description`, `name`, `releaseDate`, `sequence`, `startDate` (optionally prefixed with `+` or `-`); `--status` accepts `released`, `unreleased`, `archived` (comma-separated); `--expand` (also on `list-all-versions`) accepts `issuesstatus`, `operations`, `driver`, `approvers`.
 - `add-role-actors` accepts `--body` as a flat `ActorsMap` JSON object with `user` (account IDs), `group` (group names) and/or `groupId` (group IDs, preferred over `group`) string arrays (e.g. `{"user":["acc-1"]}`). At least one non-empty array is required; `group` and `groupId` cannot be combined; any other key is rejected before the request. It adds to the existing actors.
 - `set-role-actors` **replaces all actors** of the role. `--body` is `{"categorisedActors":{...}}` keyed by actor type: `atlassian-user-role-actor` (account IDs), `atlassian-group-role-actor-id` (group IDs, recommended because group names can change) and `atlassian-group-role-actor` (group names), each a string array.
-- `delete-role-actors` removes actors by `--user` (accountId), `--group-id`, or `--group` (name). Pass at least one; `--group` and `--group-id` cannot be combined (prefer `--group-id`, since group names can change). A missing actor, both group flags, or an empty value is rejected before any request.
+- `delete-role-actors` removes actors by `--user` (accountId), `--group-id`, or `--group` (name). Pass at least one; `--group` and `--group-id` cannot be combined (prefer `--group-id`, since group names can change). A missing actor, both group flags, or an empty value is rejected before any request. Surrounding spaces are trimmed.
 - `get-role-details --exclude-other-service-roles` hides the other service's default roles (the default CSM roles on a JSM project, or the default JSM roles on a CSM project). `--current-member`, `--exclude-connect-addons` and `--exclude-other-service-roles` are booleans: bare or `true` sends `true`, `false` sends `false`, omitted sends nothing.
 - `set-email` sets the project's sender address; `--email-address=""` (an empty string) restores the default address. The flag is required.
 - `archive` moves a project into the archived state. `restore` brings an archived or recycle-bin project back and prints the restored project.
@@ -396,7 +396,7 @@ atlas jira version update 10000 --name "v1.1" --released
 atlas jira version update 10000 --released false --archived false
 
 # Delete a version (deprecated; prefer delete-and-replace)
-atlas jira version delete 10000 --move-fix-issues-to 10001
+atlas jira version delete 10000 --move-fix-issues-to 10001 --move-affected-issues-to 10002
 
 # Merge two versions
 atlas jira version merge 10000 10001
