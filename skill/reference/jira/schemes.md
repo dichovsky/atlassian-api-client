@@ -750,7 +750,7 @@ Workflow scheme management — full coverage of `/rest/api/3/workflowscheme` (B8
 
 **Required body endpoints (`--body` JSON):** `create`, `update`, `set-default`, `set-issuetype`, `set-workflow`, `assign-project`, `switch-project`, `update-draft`, `set-draft-default`, `set-draft-issuetype`, `set-draft-workflow`, `bulk-update`, `bulk-mappings`. Optional body: `publish-draft`, `bulk-read`. See [payload-rules.md](../payload-rules.md) for JSON-flag tips.
 
-`list --all` drains every page itself, so it does not take `--start-at`. `list-by-project --project-id` takes positive integer project IDs (CSV), sent as repeated `projectId` params.
+`list --all` drains every page itself, so it does not take `--start-at`. `list-by-project --project-id` takes positive integer project IDs up to 9007199254740991 (CSV; Jira accepts at most 100), sent as repeated `projectId` params.
 
 **Migration payloads** (all IDs are strings):
 
