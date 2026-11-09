@@ -51,8 +51,11 @@ export interface DeletePriorityParams {
 
 /** Request body for PUT /rest/api/3/priority/default. */
 export interface SetDefaultPriorityData {
-  /** ID of the priority to set as the default. */
-  readonly id: string;
+  /**
+   * ID of the priority to set as the default, or `null` to erase the default
+   * priority setting (sent as JSON `null`).
+   */
+  readonly id: string | null;
 }
 
 /** Request body for PUT /rest/api/3/priority/move. */
@@ -95,7 +98,11 @@ export class PrioritiesResource {
     private readonly baseUrl: string,
   ) {}
 
-  /** List all priorities. GET /rest/api/3/priority */
+  /**
+   * List all priorities. GET /rest/api/3/priority
+   *
+   * @deprecated Atlassian deprecates `getPriorities`; use {@link search}, which pages and filters.
+   */
   async list(): Promise<Priority[]> {
     const response = await this.transport.request<Priority[]>({
       method: 'GET',
