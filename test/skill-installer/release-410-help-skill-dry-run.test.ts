@@ -4,17 +4,23 @@
  */
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
+  existsSync,
   mkdirSync,
   mkdtempSync,
   readFileSync,
   readdirSync,
   rmSync,
+  statSync,
   symlinkSync,
   writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
-import { InstallSkillError, runInstall } from '../../src/skill-installer/index.js';
+import {
+  InstallSkillError,
+  runInstall,
+  type FilesystemDeps,
+} from '../../src/skill-installer/index.js';
 import { executeInstallSkill } from '../../src/cli/commands/install-skill.js';
 import { getHelpText } from '../../src/cli/help.js';
 
@@ -152,6 +158,29 @@ describe('install-skill --dry-run reports what the real install would do (F350)'
       expect(readdirSync(outside)).toEqual([]);
     },
   );
+
+  it('a permission failure is the one outcome it cannot predict: install exits 3, dry run 0', () => {
+    const denied = (): never => {
+      throw Object.assign(new Error('denied'), { code: 'EACCES' });
+    };
+    const readOnly: FilesystemDeps = {
+      readFile: (p) => readFileSync(p, 'utf8'),
+      writeFile: denied,
+      mkdir: denied,
+      exists: (p) => existsSync(p),
+      readDir: (p) => readdirSync(p),
+      isDirectory: (p) => statSync(p).isDirectory(),
+    };
+    const target = join(root, 'read-only');
+    const opts = { target, force: false, print: false };
+    expect(() => runInstall(SKILL, VERSION, { ...opts, dryRun: false }, readOnly)).toThrow(
+      expect.objectContaining({
+        exitCode: 3,
+        message: expect.stringContaining('Permission denied'),
+      }),
+    );
+    expect(runInstall(SKILL, VERSION, { ...opts, dryRun: true }, readOnly).action).toBe('dry-run');
+  });
 
   it('install-skill --help says --force does not lift the containment check', () => {
     expect(getHelpText('install-skill').replace(/\s+/g, ' ')).toContain(

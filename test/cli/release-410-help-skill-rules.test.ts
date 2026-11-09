@@ -2,12 +2,11 @@
  * Release 4.1.0 unit help-skill: the generic CLI rules the skill states, run
  * through the real CLI (F069, F009, F346, F342, X-HS1..X-HS5, X-HS8).
  */
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { runCliWire, type CliWireResult, type WireRequest } from '../helpers/cli-wire.js';
 import { runAtlas, type RunResult } from '../e2e/helpers/cli-runner.js';
-import { TimeoutError } from '../../src/core/errors.js';
 
 const SKILL = resolve(import.meta.dirname, '..', '..', 'skill');
 const PAYLOAD_RULES = readFileSync(resolve(SKILL, 'reference/payload-rules.md'), 'utf8');
@@ -113,6 +112,16 @@ describe('a 1 or 0 after a boolean flag sets it to true (review r1 minor)', () =
     expect(req.method).toBe('DELETE');
     expect(req.path).toBe(path);
     expect([...req.query.entries()]).toEqual([[param, 'true']]);
+  });
+
+  it('a digit before the id is taken as the id (review r2 minor)', async () => {
+    const req = await oneRequest(['confluence', 'pages', 'delete', '--purge', '0', '123']);
+    expect(req.method).toBe('DELETE');
+    expect(req.path).toBe(`${C}/pages/0`);
+    expect([...req.query.entries()]).toEqual([['purge', 'true']]);
+    expect(PAYLOAD_RULES).toContain(
+      'before the id, the digit is taken as the id: `atlas confluence pages delete --purge 0 123` purges page `0`',
+    );
   });
 
   it('payload-rules.md warns that the flag becomes true', () => {
@@ -306,13 +315,13 @@ describe('write failures the skill tells agents to read back first (X-HS8)', () 
   /** Run `atlas <args>` against a fetch stub, counting the requests it sends. */
   async function failingWrite(
     args: readonly string[],
-    fetchStub: () => Promise<Response>,
+    fetchStub: (init?: RequestInit) => Promise<Response>,
   ): Promise<{ readonly run: RunResult; readonly calls: number }> {
     let calls = 0;
     const originalFetch = globalThis.fetch;
-    globalThis.fetch = (() => {
+    globalThis.fetch = ((_input: unknown, init?: RequestInit) => {
       calls++;
-      return fetchStub();
+      return fetchStub(init);
     }) as typeof fetch;
     try {
       return { run: await runAtlas(args), calls };
@@ -377,9 +386,51 @@ describe('write failures the skill tells agents to read back first (X-HS8)', () 
     expect(AUTH_SAFETY).toContain('"may already have applied it"');
   });
 
-  it('quotes the timeout message the CLI prints with its default timeout', () => {
-    expect(new TimeoutError(30_000).message).toBe('Request timed out after 30000ms');
+  it('a write that times out prints `Error: Request timed out after 30000ms`, sent once', async () => {
+    vi.useFakeTimers();
+    try {
+      const pending = failingWrite(
+        ['jira', 'issues', 'update', 'K-1', '--summary', 'x'],
+        (init) =>
+          new Promise((_resolve, reject) => {
+            init?.signal?.addEventListener('abort', () => {
+              reject(new DOMException('This operation was aborted', 'AbortError'));
+            });
+          }),
+      );
+      await vi.advanceTimersByTimeAsync(30_000);
+      const { run, calls } = await pending;
+      expect(calls).toBe(1);
+      expect(run.code).toBe(1);
+      expect(run.stderr).toBe('Error: Request timed out after 30000ms\n');
+    } finally {
+      vi.useRealTimers();
+    }
     expect(AUTH_SAFETY).toContain('`Error: Request timed out after 30000ms`');
+  });
+
+  it('a create redirected to a GET that fails prints that API error, so read back first too', async () => {
+    let sent = 0;
+    const { run, calls } = await failingWrite(create, () =>
+      Promise.resolve(
+        ++sent === 1
+          ? new Response(null, {
+              status: 303,
+              headers: { location: 'https://test.atlassian.net/rest/api/3/issue/10001' },
+            })
+          : new Response(JSON.stringify({ errorMessages: ['Issue does not exist'] }), {
+              status: 404,
+              headers: { 'content-type': 'application/json' },
+            }),
+      ),
+    );
+    expect(calls).toBe(2);
+    expect(run.code).toBe(1);
+    expect(run.stderr).toMatch(/^Error: .*Issue does not exist/);
+    expect(run.stderr).not.toContain('may already have applied it');
+    expect(AUTH_SAFETY).toContain(
+      'so a write that fails with a `404`, a `429` or a `5xx` may have been applied too',
+    );
   });
 
   it('does not key the rule on "not retried", which the CLI never prints', () => {

@@ -372,7 +372,8 @@ export function runInstall(
   //
   // F350: --dry-run runs every check of the real install and skips only the
   // writes and unlinks, so it reports the outcome (and exit code) the real
-  // install would have.
+  // install would have, except a permission failure (exit 3): only a real
+  // write can detect that.
   const skillMdIsSymlink = fs.exists(destSkillPath) && fs.isSymlink?.(destSkillPath) === true;
   if (skillMdIsSymlink) {
     if (!options.force) {

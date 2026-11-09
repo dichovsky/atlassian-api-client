@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "4.1.0"
   },
-  "sourceHash": "7fa6fa5a23d5fd33b5478d421d1373f86eeb7ce3189f3023179a007fb0f93e55",
+  "sourceHash": "c89fa2ca4ed075ecb3ff8d1116b121b7921cbca3455466c5b4376930f758f1e8",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -43294,48 +43294,48 @@
         {
           "name": "resolveTargetRealpath",
           "kind": "function",
-          "line": 496,
+          "line": 497,
           "signature": "function resolveTargetRealpath(target: string, fs: FilesystemDeps): string",
           "jsdoc": "Resolve the install target's canonical path. The target itself may not exist yet (we're about to `mkdir -p` it), so we walk up to the deepest existing ancestor, `realpath` THAT, then append the still-non-existent tail. The result is the canonical form `assertDestUnderTarget` compares against — without this normalisation, hosts like macOS (where `/var` is a symlink to `/private/var`) produce a spurious mismatch."
         },
         {
           "name": "realpathViaExistingAncestor",
           "kind": "function",
-          "line": 523,
+          "line": 524,
           "signature": "function realpathViaExistingAncestor( path: string, exists: (path: string) => boolean, realpath: (path: string) => strin…",
           "jsdoc": "Canonical form of `path`, which may not exist yet: `realpath` of its deepest existing ancestor plus the still-missing tail. `undefined` when no ancestor exists within 32 levels."
         },
         {
           "name": "assertDestUnderTarget",
           "kind": "function",
-          "line": 559,
+          "line": 560,
           "signature": "function assertDestUnderTarget(dest: string, targetRealpath: string, fs: FilesystemDeps): void",
           "jsdoc": "Verify that `dest` resolves inside `targetRealpath` after symlinks in its parent chain are followed. We resolve the deepest existing ancestor (the file itself usually does not exist yet at write time) and require that canonical ancestor to be `targetRealpath` itself or a descendant."
         },
         {
           "name": "isPermissionError",
           "kind": "function",
-          "line": 580,
+          "line": 581,
           "signature": "function isPermissionError(err: unknown): boolean"
         },
         {
           "name": "writeWithPermissionGuard",
           "kind": "function",
-          "line": 587,
+          "line": 588,
           "signature": "function writeWithPermissionGuard(dest: string, op: () => void): void",
           "jsdoc": "Run a filesystem write op, mapping EACCES/EPERM to InstallSkillError exit code 3."
         },
         {
           "name": "InstallSkillRequest",
           "kind": "interface",
-          "line": 598,
+          "line": 599,
           "exported": true,
           "signature": "export interface InstallSkillRequest { readonly moduleUrl: string; readonly env: NodeJS.ProcessEnv; readonly cwd: string…"
         },
         {
           "name": "installSkill",
           "kind": "function",
-          "line": 616,
+          "line": 617,
           "exported": true,
           "signature": "export function installSkill(req: InstallSkillRequest): InstallSkillResult",
           "jsdoc": "Orchestrate a full skill install: resolve source, target, and version, then delegate to {@link runInstall}. Returns {@link InstallSkillResult}; exit codes and stdout/stderr are the caller's responsibility."
