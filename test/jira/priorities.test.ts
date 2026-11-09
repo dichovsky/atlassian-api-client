@@ -155,6 +155,26 @@ describe('PrioritiesResource', () => {
       expect(body).not.toHaveProperty('description');
       expect(body).not.toHaveProperty('iconUrl');
       expect(body).not.toHaveProperty('statusColor');
+      expect(body).not.toHaveProperty('avatarId');
+    });
+
+    it('includes avatarId in body (spec CreatePriorityDetails)', async () => {
+      transport.respondWith(makePriority('99'));
+
+      await priorities.create({ name: 'Critical', statusColor: '#F00', avatarId: 10300 });
+
+      expect(transport.lastCall?.options.body).toEqual({
+        name: 'Critical',
+        statusColor: '#F00',
+        avatarId: 10300,
+      });
+    });
+
+    it('rejects iconUrl together with avatarId', async () => {
+      await expect(
+        priorities.create({ name: 'C', statusColor: '#F00', iconUrl: 'x', avatarId: 1 }),
+      ).rejects.toThrow('priorities.create accepts iconUrl or avatarId, not both');
+      expect(transport.calls).toHaveLength(0);
     });
   });
 
@@ -230,8 +250,24 @@ describe('PrioritiesResource', () => {
       });
     });
 
-    it('throws ValidationError when name is empty string', async () => {
-      await expect(priorities.update('10', { name: '' })).rejects.toBeInstanceOf(ValidationError);
+    it('sends a partial update without name (spec UpdatePriorityDetails has no required fields)', async () => {
+      transport.respondWith(undefined, 204);
+
+      await priorities.update('10', { description: 'D', avatarId: 7 });
+
+      expect(transport.lastCall?.options.body).toEqual({ description: 'D', avatarId: 7 });
+    });
+
+    it('throws ValidationError when no field is given', async () => {
+      await expect(priorities.update('10', {})).rejects.toBeInstanceOf(ValidationError);
+      expect(transport.calls).toHaveLength(0);
+    });
+
+    it('throws ValidationError when iconUrl and avatarId are both given', async () => {
+      await expect(
+        priorities.update('10', { iconUrl: '/images/icons/priorities/low.png', avatarId: 1 }),
+      ).rejects.toThrow('iconUrl or avatarId, not both');
+      expect(transport.calls).toHaveLength(0);
     });
   });
 
@@ -342,6 +378,19 @@ describe('PrioritiesResource', () => {
         priorityName: 'High',
         expand: 'schemes',
       });
+    });
+
+    it('repeats projectId after id (spec type:array), in search and searchAll', async () => {
+      transport.respondWith(makePage([]));
+
+      await priorities.search({ id: ['1'], projectId: ['10000', '10001'] });
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/priority/search?id=1&projectId=10000&projectId=10001`,
+      );
+
+      transport.respondWith(makePage([]));
+      await priorities.searchAll({ projectId: ['10000'] }).next();
+      expect(transport.lastCall?.options.path).toContain('/priority/search?projectId=10000');
     });
 
     it('omits empty id array', async () => {

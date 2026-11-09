@@ -1,4 +1,5 @@
 import type { Transport } from '../../core/types.js';
+import { ValidationError } from '../../core/errors.js';
 import { encodePathSegment } from '../../core/path.js';
 import { appendRepeatedParams } from '../../core/query.js';
 import type {
@@ -30,6 +31,17 @@ import type {
   SearchAllUsersParams,
 } from '../types.js';
 
+/** Query parameters for GET /rest/api/3/user and GET /rest/api/3/myself. */
+export interface GetUserParams {
+  /** Comma-separated expand list: `groups` (incl. nested), `applicationRoles`. */
+  readonly expand?: string;
+}
+
+/** Throw when a required `type: array` query parameter would be sent empty. */
+function requireValues(values: readonly string[], name: string): void {
+  if (values.length === 0) throw new ValidationError(`${name} must contain at least one value`);
+}
+
 export class UsersResource {
   constructor(
     private readonly transport: Transport,
@@ -37,20 +49,21 @@ export class UsersResource {
   ) {}
 
   /** Get a user by account ID. */
-  async get(accountId: string): Promise<User> {
+  async get(accountId: string, params?: GetUserParams): Promise<User> {
     const response = await this.transport.request<User>({
       method: 'GET',
       path: `${this.baseUrl}/user`,
-      query: { accountId },
+      query: { accountId, expand: params?.expand },
     });
     return response.data;
   }
 
   /** Get the currently authenticated user. */
-  async getCurrentUser(): Promise<User> {
+  async getCurrentUser(params?: GetUserParams): Promise<User> {
     const response = await this.transport.request<User>({
       method: 'GET',
       path: `${this.baseUrl}/myself`,
+      query: { expand: params?.expand },
     });
     return response.data;
   }
@@ -136,18 +149,14 @@ export class UsersResource {
 
   /** Fetch multiple users by account ID (B801). */
   async bulkGet(params: BulkUsersParams): Promise<BulkUsersResponse> {
-    // accountId is a repeated query param (?accountId=a&accountId=b). The shared
-    // transport `query` field collapses duplicate keys, so build the repeated
-    // pairs into the path directly (see UsersResource note / app.ts pattern).
-    const accountIdQs = params.accountId
-      .map((id) => `accountId=${encodeURIComponent(id)}`)
-      .join('&');
+    // accountId is a required repeated query param (?accountId=a&accountId=b).
+    requireValues(params.accountId, 'accountId');
     const query: Record<string, string | number | undefined> = {};
     if (params.startAt !== undefined) query['startAt'] = params.startAt;
     if (params.maxResults !== undefined) query['maxResults'] = params.maxResults;
     const response = await this.transport.request<BulkUsersResponse>({
       method: 'GET',
-      path: `${this.baseUrl}/user/bulk?${accountIdQs}`,
+      path: appendRepeatedParams(`${this.baseUrl}/user/bulk`, 'accountId', params.accountId),
       query,
     });
     return response.data;
@@ -226,10 +235,10 @@ export class UsersResource {
 
   /** Get email addresses for multiple users by account IDs (B807). */
   async bulkGetEmails(accountIds: string[]): Promise<BulkUserEmailsResponse> {
-    const accountIdQs = accountIds.map((id) => `accountId=${encodeURIComponent(id)}`).join('&');
+    requireValues(accountIds, 'accountIds');
     const response = await this.transport.request<BulkUserEmailsResponse>({
       method: 'GET',
-      path: `${this.baseUrl}/user/email/bulk?${accountIdQs}`,
+      path: appendRepeatedParams(`${this.baseUrl}/user/email/bulk`, 'accountId', accountIds),
     });
     return response.data;
   }
@@ -403,7 +412,12 @@ export class UsersResource {
     return response.data;
   }
 
-  /** Returns a list of users matching a search string (B819). */
+  /**
+   * Returns a page of all users (B819), like {@link list}. The spec for
+   * GET /users/search declares only `startAt`, `maxResults` and `expand`;
+   * `query` and `username` are not part of it and do not filter. To search by
+   * name or email use {@link search} or {@link picker}.
+   */
   async listSearch(params: SearchAllUsersParams = {}): Promise<User[]> {
     const query: Record<string, string | number | boolean | undefined> = {};
     if (params.query !== undefined) query['query'] = params.query;

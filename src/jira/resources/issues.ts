@@ -1,4 +1,4 @@
-import type { Transport } from '../../core/types.js';
+import type { ApiResponse, Transport } from '../../core/types.js';
 import { ValidationError } from '../../core/errors.js';
 import { encodePathSegment } from '../../core/path.js';
 import { appendRepeatedParams } from '../../core/query.js';
@@ -80,6 +80,24 @@ export interface DeleteAllWorklogsParams {
   readonly adjustEstimate?: 'leave' | 'auto';
   /** Whether worklogs are removed even if the issue is not editable. */
   readonly overrideEditableFlag?: boolean;
+  /**
+   * Client-side, never sent: with `true` the call resolves a
+   * {@link WorklogBulkOutcome} instead of `void`, so a partial success shows.
+   */
+  readonly returnOutcome?: boolean;
+}
+
+/**
+ * Outcome of a bulk worklog delete or move, resolved when the call passes
+ * `returnOutcome: true`. Jira answers 204 when it processed every worklog and
+ * 200 with a message when it processed only some (spec: bulkDeleteWorklogs,
+ * bulkMoveWorklogs; the 200 body has no schema).
+ */
+export interface WorklogBulkOutcome {
+  /** `true` when Jira answered 200 (partial success); `false` on 204. */
+  readonly partial: boolean;
+  /** The 200 response body (Jira's partial-success message), when there is one. */
+  readonly details?: unknown;
 }
 
 export interface GetWorklogParams {
@@ -104,6 +122,8 @@ export interface WorklogMoveData {
 export interface MoveWorklogParams {
   readonly adjustEstimate?: string;
   readonly overrideEditableFlag?: boolean;
+  /** Client-side, never sent: `true` resolves a {@link WorklogBulkOutcome}. */
+  readonly returnOutcome?: boolean;
 }
 
 // ── Worklog properties ────────────────────────────────────────────────────────
@@ -529,6 +549,23 @@ export interface UpdateIssueParams {
   readonly expand?: string;
 }
 
+/** Optional query parameters for POST /rest/api/3/issue (createIssue). */
+export interface CreateIssueParams {
+  /**
+   * Whether the project, issue type and request type are added to the user's
+   * recently used history (preselected next time). Default: false.
+   */
+  readonly updateHistory?: boolean;
+}
+
+/** Optional query parameters for GET /rest/api/3/issue/{issueIdOrKey}/editmeta. */
+export interface GetEditMetaParams {
+  /** Whether hidden fields are returned (Connect/Forge apps with Administer Jira). */
+  readonly overrideScreenSecurity?: boolean;
+  /** Whether non-editable fields are returned (Connect/Forge apps with Administer Jira). */
+  readonly overrideEditableFlag?: boolean;
+}
+
 // ── Delete issue query params ─────────────────────────────────────────────
 
 /**
@@ -580,6 +617,14 @@ export interface AssignIssueData {
   readonly accountId?: string | null;
 }
 
+/** 204 = every worklog processed; 200 = partial success, its body kept as `details`. */
+function worklogBulkOutcome(response: ApiResponse<unknown>): WorklogBulkOutcome {
+  if (response.status !== 200) return { partial: false };
+  return response.data === undefined
+    ? { partial: true }
+    : { partial: true, details: response.data };
+}
+
 export class IssuesResource {
   constructor(
     private readonly transport: Transport,
@@ -612,10 +657,13 @@ export class IssuesResource {
   }
 
   /** Create a new issue. */
-  async create(data: CreateIssueData): Promise<CreatedIssue> {
+  async create(data: CreateIssueData, params?: CreateIssueParams): Promise<CreatedIssue> {
+    const query: Record<string, boolean | undefined> = {};
+    if (params?.updateHistory !== undefined) query['updateHistory'] = params.updateHistory;
     const response = await this.transport.request<CreatedIssue>({
       method: 'POST',
       path: `${this.baseUrl}/issue`,
+      query,
       body: data,
     });
     return response.data;
@@ -624,6 +672,12 @@ export class IssuesResource {
   /**
    * Update an issue. With `returnIssue: true` Jira answers 200 with the edited
    * issue (shaped by `expand`) and this resolves it; otherwise 204 and `void`.
+   *
+   * Only a literal `returnIssue: true` (or an `as const` object) selects this
+   * `Promise<Issue>` overload. A `boolean` variable or a widened object such
+   * as `const p = { returnIssue: true }` is typed `Promise<void>`, although the
+   * issue is still resolved at runtime when the value is `true`. A server that
+   * answers 204 despite `returnIssue: true` resolves `undefined`.
    */
   update(
     issueIdOrKey: string,
@@ -848,10 +902,19 @@ export class IssuesResource {
    * Get the edit metadata for an issue (B487).
    * GET /rest/api/3/issue/{issueIdOrKey}/editmeta
    */
-  async getEditMeta(issueIdOrKey: string): Promise<Record<string, unknown>> {
+  async getEditMeta(
+    issueIdOrKey: string,
+    params?: GetEditMetaParams,
+  ): Promise<Record<string, unknown>> {
+    const query: Record<string, boolean | undefined> = {};
+    if (params?.overrideScreenSecurity !== undefined)
+      query['overrideScreenSecurity'] = params.overrideScreenSecurity;
+    if (params?.overrideEditableFlag !== undefined)
+      query['overrideEditableFlag'] = params.overrideEditableFlag;
     const response = await this.transport.request<Record<string, unknown>>({
       method: 'GET',
       path: `${this.baseUrl}/issue/${encodePathSegment(issueIdOrKey)}/editmeta`,
+      query,
     });
     return response.data;
   }
@@ -925,12 +988,18 @@ export class IssuesResource {
   }
 
   /**
-   * Delete all remote links for an issue, optionally filtered by globalId (B493).
-   * DELETE /rest/api/3/issue/{issueIdOrKey}/remotelink
+   * Delete the remote link whose global ID is `params.globalId` (B493).
+   * DELETE /rest/api/3/issue/{issueIdOrKey}/remotelink (deleteRemoteIssueLinkByGlobalId)
+   *
+   * Despite the name, Jira has no "delete every link" operation: `globalId` is
+   * required by the spec, so a missing or empty one throws `ValidationError`
+   * before any request. Use `deleteRemoteLink` to delete by link ID.
    */
   async deleteAllRemoteLinks(issueIdOrKey: string, params?: { globalId?: string }): Promise<void> {
-    const query: Record<string, string | undefined> = {};
-    if (params?.globalId !== undefined) query['globalId'] = params.globalId;
+    if (!params?.globalId) {
+      throw new ValidationError('globalId is required: Jira deletes a remote link by global ID');
+    }
+    const query: Record<string, string> = { globalId: params.globalId };
     await this.transport.request<undefined>({
       method: 'DELETE',
       path: `${this.baseUrl}/issue/${encodePathSegment(issueIdOrKey)}/remotelink`,
@@ -1049,10 +1118,16 @@ export class IssuesResource {
   /**
    * Remove a watcher from an issue (B502).
    * DELETE /rest/api/3/issue/{issueIdOrKey}/watchers
+   *
+   * `accountId` is required by the spec (Jira answers 400 without it); a
+   * missing or empty one throws `ValidationError` before any request. To stop
+   * watching yourself, pass your own account ID.
    */
   async removeWatcher(issueIdOrKey: string, params?: { accountId?: string }): Promise<void> {
-    const query: Record<string, string | undefined> = {};
-    if (params?.accountId !== undefined) query['accountId'] = params.accountId;
+    if (!params?.accountId) {
+      throw new ValidationError('accountId is required to remove a watcher');
+    }
+    const query: Record<string, string> = { accountId: params.accountId };
     await this.transport.request<undefined>({
       method: 'DELETE',
       path: `${this.baseUrl}/issue/${encodePathSegment(issueIdOrKey)}/watchers`,
@@ -1091,26 +1166,43 @@ export class IssuesResource {
    * Bulk delete worklogs for an issue (B505).
    * DELETE /rest/api/3/issue/{issueIdOrKey}/worklog
    * Spec: operationId bulkDeleteWorklogs — requires WorklogIdsRequestBean { ids } body (#204).
-   * Returns void on success. Per the Jira v3 spec, bulkDeleteWorklogs can return 204 (full
-   * success) or 200 (partial success with a message body). This method does not surface the
-   * 200 partial-success payload — callers cannot distinguish partial from full success
-   * (known limitation; surfacing the payload would require a breaking return-type change).
+   * Jira answers 204 (every worklog deleted) or 200 (partial success with a message). Pass
+   * `returnOutcome: true` to resolve a {@link WorklogBulkOutcome} that tells them apart;
+   * otherwise this resolves `void` either way.
+   *
+   * Only a literal `returnOutcome: true` (or an `as const` object) selects this
+   * `Promise<WorklogBulkOutcome>` overload. A `boolean` variable or a widened object such
+   * as `const p = { returnOutcome: true }` is typed `Promise<void>`, although the outcome is
+   * still resolved at runtime when the value is `true`. A subclass or hand-typed fake must
+   * implement both overloads (a lone `Promise<void>` signature no longer type-checks).
    */
+  deleteAllWorklogs(
+    issueIdOrKey: string,
+    ids: number[],
+    params: DeleteAllWorklogsParams & { readonly returnOutcome: true },
+  ): Promise<WorklogBulkOutcome>;
+  /** Bulk delete worklogs for an issue (B505); resolves `void` unless `returnOutcome` is `true`. */
+  deleteAllWorklogs(
+    issueIdOrKey: string,
+    ids: number[],
+    params?: DeleteAllWorklogsParams,
+  ): Promise<void>;
   async deleteAllWorklogs(
     issueIdOrKey: string,
     ids: number[],
     params?: DeleteAllWorklogsParams,
-  ): Promise<void> {
+  ): Promise<WorklogBulkOutcome | void> {
     const query: Record<string, string | boolean | undefined> = {};
     if (params?.adjustEstimate !== undefined) query['adjustEstimate'] = params.adjustEstimate;
     if (params?.overrideEditableFlag !== undefined)
       query['overrideEditableFlag'] = params.overrideEditableFlag;
-    await this.transport.request<undefined>({
+    const response = await this.transport.request<unknown>({
       method: 'DELETE',
       path: `${this.baseUrl}/issue/${encodePathSegment(issueIdOrKey)}/worklog`,
       query,
       body: { ids },
     });
+    return params?.returnOutcome === true ? worklogBulkOutcome(response) : undefined;
   }
 
   /**
@@ -1293,24 +1385,44 @@ export class IssuesResource {
    * Move a worklog (B515).
    * POST /rest/api/3/issue/{issueIdOrKey}/worklog/move
    * issueIdOrKey = SOURCE issue (path). data.issueIdOrKey = DESTINATION issue (body).
+   * Jira answers 204 (every worklog moved) or 200 (partial success, spec bulkMoveWorklogs);
+   * pass `returnOutcome: true` to resolve a {@link WorklogBulkOutcome} that tells them apart.
+   *
+   * Only a literal `returnOutcome: true` (or an `as const` object) selects this
+   * `Promise<WorklogBulkOutcome>` overload. A `boolean` variable or a widened object such
+   * as `const p = { returnOutcome: true }` is typed `Promise<void>`, although the outcome is
+   * still resolved at runtime when the value is `true`. A subclass or hand-typed fake must
+   * implement both overloads (a lone `Promise<void>` signature no longer type-checks).
    */
+  moveWorklog(
+    issueIdOrKey: string,
+    data: WorklogMoveData,
+    params: MoveWorklogParams & { readonly returnOutcome: true },
+  ): Promise<WorklogBulkOutcome>;
+  /** Move worklogs to another issue (B515); resolves `void` unless `returnOutcome` is `true`. */
+  moveWorklog(
+    issueIdOrKey: string,
+    data: WorklogMoveData,
+    params?: MoveWorklogParams,
+  ): Promise<void>;
   async moveWorklog(
     issueIdOrKey: string,
     data: WorklogMoveData,
     params?: MoveWorklogParams,
-  ): Promise<void> {
+  ): Promise<WorklogBulkOutcome | void> {
     const query: Record<string, string | boolean | undefined> = {};
     if (params?.adjustEstimate !== undefined) query['adjustEstimate'] = params.adjustEstimate;
     if (params?.overrideEditableFlag !== undefined)
       query['overrideEditableFlag'] = params.overrideEditableFlag;
     const body: Record<string, unknown> = { ids: data.ids };
     if (data.issueIdOrKey !== undefined) body['issueIdOrKey'] = data.issueIdOrKey;
-    await this.transport.request<undefined>({
+    const response = await this.transport.request<unknown>({
       method: 'POST',
       path: `${this.baseUrl}/issue/${encodePathSegment(issueIdOrKey)}/worklog/move`,
       query,
       body,
     });
+    return params?.returnOutcome === true ? worklogBulkOutcome(response) : undefined;
   }
 
   // ── Issue archive (B516, B517, B528) ─────────────────────────────────────
@@ -1376,6 +1488,10 @@ export class IssuesResource {
   /**
    * Get issue create metadata (B924).
    * GET /rest/api/3/issue/createmeta
+   *
+   * @deprecated Atlassian deprecated this endpoint (CHANGE-1304). Use
+   * {@link IssuesResource.getCreateMetaIssueTypes} and
+   * {@link IssuesResource.getCreateMetaIssueType} instead.
    */
   async getCreateMeta(params?: CreateMetaParams): Promise<Record<string, unknown>> {
     const query: Record<string, string | undefined> = {};

@@ -414,6 +414,11 @@ const GLOBAL_OPTIONS = {
   'email-address': { type: 'string' as const },
   'component-source': { type: 'string' as const },
   'classification-id': { type: 'string' as const },
+  // issues get/get-agile/create/transitions query flags (release 4.1.0)
+  'include-unavailable-transitions': { type: 'boolean' as const },
+  'skip-remote-only-condition': { type: 'boolean' as const },
+  'sort-by-ops-bar-and-status': { type: 'boolean' as const },
+  'update-history': { type: 'boolean' as const },
   // issue sub-resource options (B478-B504)
   'global-id': { type: 'string' as const },
   // worklog options (B505-B515)
@@ -567,6 +572,8 @@ const GLOBAL_OPTIONS = {
   'priority-name': { type: 'string' as const },
   // issuetype create option
   'hierarchy-level': { type: 'string' as const },
+  // issuetype list-for-project (hierarchy-level filter)
+  level: { type: 'string' as const },
   // app list-field-context-configurations options
   'field-ids-or-keys': { type: 'string' as const },
   'context-ids': { type: 'string' as const },
@@ -584,6 +591,8 @@ const GLOBAL_OPTIONS = {
   recommend: { type: 'boolean' as const },
   'account-type': { type: 'string' as const },
   'app-type': { type: 'string' as const },
+  // users search (user-property query)
+  property: { type: 'string' as const },
   // issue-link create (JSON comment object)
   comment: { type: 'string' as const },
   // `notifyUsers` defaults to true. Legacy alias: parseCommand reports any
