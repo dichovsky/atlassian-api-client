@@ -176,4 +176,9 @@ describe('the package root exports the public param and element types (F153, F16
     expectTypeOf<JqlSuggestion>().toHaveProperty('value');
     expectTypeOf<WebhookRegistrationResult>().toHaveProperty('createdWebhookId');
   });
+
+  it('types JqlQueryToSanitize.accountId as the spec nullable string (R4-m1)', () => {
+    expectTypeOf<JqlQueryToSanitize['accountId']>().toEqualTypeOf<string | null | undefined>();
+    expectTypeOf<{ query: 'project = A'; accountId: null }>().toExtend<JqlQueryToSanitize>();
+  });
 });

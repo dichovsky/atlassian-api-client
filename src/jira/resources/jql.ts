@@ -232,7 +232,8 @@ export interface ParsedJqlQuery {
  */
 export interface JqlQueryToSanitize {
   readonly query: string;
-  readonly accountId?: string;
+  /** Spec `nullable: true`: `null` (like omission) sanitizes for an anonymous user. */
+  readonly accountId?: string | null;
 }
 
 /**

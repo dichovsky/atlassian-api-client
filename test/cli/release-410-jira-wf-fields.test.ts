@@ -1160,6 +1160,28 @@ describe('fields: every CSV ID flag refuses a list that names nothing (skill rul
       /--project-ids must contain integers, got: x/,
     );
   });
+
+  // R4-I1: 4.0.0 already refused '' on these required flags (requireOpt), so
+  // the changelog claims no change for '' here; pin the message it keeps.
+  const ctx = ['--field-id', 'cf', '--context-id', '10100'];
+  it.each([
+    ['context-option-move', '--option-ids', '--position', 'First'],
+    ['context-issuetype-remove', '--issue-type-ids'],
+    ['context-project-set', '--project-ids'],
+    ['context-project-remove', '--project-ids'],
+  ])("%s %s '' is still a missing required option", async (action, flag, ...rest) => {
+    await rejected(
+      ['fields', action, ...ctx, flag, '', ...rest],
+      `Missing required option: ${flag}`,
+    );
+  });
+
+  it("context-issuetype-set --issue-type-ids '' (optional since #369) is an empty list", async () => {
+    await rejected(
+      ['fields', 'context-issuetype-set', ...ctx, '--issue-type-ids', ''],
+      /--issue-type-ids must contain at least one ID/,
+    );
+  });
 });
 
 describe('workflows get-rule-config sends no blank --keys / --workflow-names / --with-tags', () => {

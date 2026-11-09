@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "4.1.0"
   },
-  "sourceHash": "572959e995f17fc3d532c92bfc75f953deee1ab162aebea8cda983b7eff241d0",
+  "sourceHash": "094a5ed2933de50630c077266fec025bde6ab9da5004054e251d57afb3e781fb",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -2403,7 +2403,7 @@
       "kind": "interface",
       "file": "src/jira/resources/jql.ts",
       "line": 233,
-      "signature": "export interface JqlQueryToSanitize { readonly query: string; readonly accountId?: string; }",
+      "signature": "export interface JqlQueryToSanitize { readonly query: string; readonly accountId?: string | null; }",
       "jsdoc": "A JQL query to sanitize (spec `JqlQueryToSanitize`) for `accountId`; without it the query is sanitized for an anonymous user.",
       "typeOnly": true
     },
@@ -2429,7 +2429,7 @@
       "name": "JqlSuggestion",
       "kind": "interface",
       "file": "src/jira/resources/jql.ts",
-      "line": 282,
+      "line": 283,
       "signature": "export interface JqlSuggestion { readonly value: string; readonly displayName?: string; }",
       "jsdoc": "One field auto-complete suggestion (spec `AutoCompleteSuggestion`).",
       "typeOnly": true
@@ -2438,7 +2438,7 @@
       "name": "JqlSuggestions",
       "kind": "interface",
       "file": "src/jira/resources/jql.ts",
-      "line": 293,
+      "line": 294,
       "signature": "export interface JqlSuggestions { readonly results?: JqlSuggestion[]; }",
       "jsdoc": "Field-value suggestions returned by the JQL field reference suggestions endpoint (`AutoCompleteSuggestions` schema).",
       "typeOnly": true
@@ -2447,7 +2447,7 @@
       "name": "JqlSuggestionsParams",
       "kind": "interface",
       "file": "src/jira/resources/jql.ts",
-      "line": 274,
+      "line": 275,
       "signature": "export interface JqlSuggestionsParams { readonly fieldName?: string; readonly fieldValue?: string; readonly predicateNam…",
       "jsdoc": "Query parameters for fetching field-value suggestions for JQL autocomplete (`GET /jql/autocompletedata/suggestions`).",
       "typeOnly": true
@@ -3799,7 +3799,7 @@
       "name": "SanitizeJqlQueriesData",
       "kind": "interface",
       "file": "src/jira/resources/jql.ts",
-      "line": 259,
+      "line": 260,
       "signature": "export interface SanitizeJqlQueriesData { readonly queries: JqlQueryToSanitize[]; }",
       "jsdoc": "Request body for sanitizing one or more JQL queries (removes personal data).",
       "typeOnly": true
@@ -3808,7 +3808,7 @@
       "name": "SanitizedJqlQueries",
       "kind": "interface",
       "file": "src/jira/resources/jql.ts",
-      "line": 264,
+      "line": 265,
       "signature": "export interface SanitizedJqlQueries { readonly queries: SanitizedJqlQuery[]; }",
       "jsdoc": "Response from the JQL sanitize endpoint containing sanitized query strings.",
       "typeOnly": true
@@ -3817,7 +3817,7 @@
       "name": "SanitizedJqlQuery",
       "kind": "interface",
       "file": "src/jira/resources/jql.ts",
-      "line": 245,
+      "line": 246,
       "signature": "export interface SanitizedJqlQuery { readonly initialQuery: string; readonly sanitizedQuery?: string; readonly accountId…",
       "jsdoc": "Details of a sanitized JQL query (`SanitizedJqlQuery` schema).",
       "typeOnly": true
@@ -6814,188 +6814,188 @@
         {
           "name": "executeIssueLinkType",
           "kind": "function",
-          "line": 8569,
+          "line": 8571,
           "signature": "async function executeIssueLinkType(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "ACCESS_LEVELS",
           "kind": "variable",
-          "line": 8611,
+          "line": 8613,
           "signature": "const ACCESS_LEVELS = ['open', 'limited', 'private', 'free'] as const;"
         },
         {
           "name": "ASSIGNEE_TYPES",
           "kind": "variable",
-          "line": 8612,
+          "line": 8614,
           "signature": "const ASSIGNEE_TYPES = ['PROJECT_DEFAULT', 'COMPONENT_LEAD', 'PROJECT_LEAD', 'UNASSIGNED'] as const;"
         },
         {
           "name": "SAVE_TEMPLATE_TYPES",
           "kind": "variable",
-          "line": 8613,
+          "line": 8615,
           "signature": "const SAVE_TEMPLATE_TYPES = ['LIVE', 'SNAPSHOT'] as const;"
         },
         {
           "name": "PROJECT_TEMPLATE_ACTIONS",
           "kind": "variable",
-          "line": 8615,
+          "line": 8617,
           "signature": "const PROJECT_TEMPLATE_ACTIONS = [ 'create', 'edit-template', 'live-template', 'remove-template', 'save-template', ] as …"
         },
         {
           "name": "executeProjectTemplate",
           "kind": "function",
-          "line": 8623,
+          "line": 8625,
           "signature": "async function executeProjectTemplate(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "WORKLOG_ACTIONS",
           "kind": "variable",
-          "line": 8828,
+          "line": 8830,
           "signature": "const WORKLOG_ACTIONS = ['deleted', 'list', 'updated'] as const;"
         },
         {
           "name": "executeWorklog",
           "kind": "function",
-          "line": 8830,
+          "line": 8832,
           "signature": "async function executeWorklog(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "UI_MODIFICATIONS_ACTIONS",
           "kind": "variable",
-          "line": 8872,
+          "line": 8874,
           "signature": "const UI_MODIFICATIONS_ACTIONS = ['list', 'list-all', 'create', 'update', 'delete'];"
         },
         {
           "name": "executeUiModifications",
           "kind": "function",
-          "line": 8874,
+          "line": 8876,
           "signature": "async function executeUiModifications(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executePermissions",
           "kind": "function",
-          "line": 8953,
+          "line": 8955,
           "signature": "async function executePermissions(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeRepository",
           "kind": "function",
-          "line": 8996,
+          "line": 8998,
           "signature": "async function executeRepository(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "ISSUE_LINK_ACTIONS",
           "kind": "variable",
-          "line": 9037,
+          "line": 9039,
           "signature": "const ISSUE_LINK_ACTIONS = ['create', 'get', 'delete'] as const;"
         },
         {
           "name": "executeIssueLink",
           "kind": "function",
-          "line": 9039,
+          "line": 9041,
           "signature": "async function executeIssueLink(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "PIPELINES_ACTIONS",
           "kind": "variable",
-          "line": 9075,
+          "line": 9077,
           "signature": "const PIPELINES_ACTIONS = [ 'get-build', 'delete-build', 'get-deployment', 'delete-deployment', 'get-deployment-gating-s…"
         },
         {
           "name": "executePipelines",
           "kind": "function",
-          "line": 9083,
+          "line": 9085,
           "signature": "async function executePipelines(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "LINKED_WORKSPACES_ACTIONS",
           "kind": "variable",
-          "line": 9131,
+          "line": 9133,
           "signature": "const LINKED_WORKSPACES_ACTIONS = [ 'list-operations', 'bulk-delete-operations', 'bulk-create-operations', 'list-securit…"
         },
         {
           "name": "executeLinkedWorkspaces",
           "kind": "function",
-          "line": 9141,
+          "line": 9143,
           "signature": "async function executeLinkedWorkspaces(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "BULK_BY_PROPERTIES_ACTIONS",
           "kind": "variable",
-          "line": 9179,
+          "line": 9181,
           "signature": "const BULK_BY_PROPERTIES_ACTIONS = [ 'delete-builds', 'delete-deployments', 'delete-devinfo', 'delete-devops-components'…"
         },
         {
           "name": "executeBulkByProperties",
           "kind": "function",
-          "line": 9190,
+          "line": 9192,
           "signature": "async function executeBulkByProperties(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "DASHBOARDS_ACTIONS",
           "kind": "variable",
-          "line": 9265,
+          "line": 9267,
           "signature": "const DASHBOARDS_ACTIONS = [ 'list', 'get', 'create', 'update', 'delete', 'list-gadgets', 'add-gadget', 'update-gadget',…"
         },
         {
           "name": "DASHBOARD_LIST_FILTERS",
           "kind": "variable",
-          "line": 9286,
+          "line": 9288,
           "signature": "const DASHBOARD_LIST_FILTERS = ['my', 'favourite'] as const;"
         },
         {
           "name": "DASHBOARD_SEARCH_STATUSES",
           "kind": "variable",
-          "line": 9287,
+          "line": 9289,
           "signature": "const DASHBOARD_SEARCH_STATUSES = ['active', 'archived', 'deleted'] as const;"
         },
         {
           "name": "DASHBOARD_ORDER_BY_VALUES",
           "kind": "variable",
-          "line": 9288,
+          "line": 9290,
           "signature": "const DASHBOARD_ORDER_BY_VALUES = [ 'description', '-description', '+description', 'favorite_count', '-favorite_count', …"
         },
         {
           "name": "BULK_EDIT_DASHBOARD_ACTIONS",
           "kind": "variable",
-          "line": 9308,
+          "line": 9310,
           "signature": "const BULK_EDIT_DASHBOARD_ACTIONS = [ 'changeOwner', 'changePermission', 'addPermission', 'removePermission', ] as const…"
         },
         {
           "name": "dashboardWriteParams",
           "kind": "function",
-          "line": 9316,
+          "line": 9318,
           "signature": "function dashboardWriteParams(opts: ParsedCommand['options']): { extendAdminPermissions?: boolean; }",
           "jsdoc": "`--extend-admin-permissions` query for dashboards create/update/copy."
         },
         {
           "name": "dashboardPermissionsFlag",
           "kind": "function",
-          "line": 9323,
+          "line": 9325,
           "signature": "function dashboardPermissionsFlag( value: string | boolean | undefined, flag: string, ): DashboardSharePermission[]"
         },
         {
           "name": "requireBoolOpt",
           "kind": "function",
-          "line": 9330,
+          "line": 9332,
           "signature": "function requireBoolOpt(value: string | boolean | undefined, name: string): boolean"
         },
         {
           "name": "executeDashboards",
           "kind": "function",
-          "line": 9336,
+          "line": 9338,
           "signature": "async function executeDashboards(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "MIGRATION_ACTIONS",
           "kind": "variable",
-          "line": 9625,
+          "line": 9627,
           "signature": "const MIGRATION_ACTIONS = [ 'get-task', 'submit-task', 'update-fields', 'update-properties', 'search-workflow-rules', ] …"
         },
         {
           "name": "executeMigration",
           "kind": "function",
-          "line": 9633,
+          "line": 9635,
           "signature": "async function executeMigration(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         }
       ],
@@ -35035,13 +35035,13 @@
           "kind": "interface",
           "line": 233,
           "exported": true,
-          "signature": "export interface JqlQueryToSanitize { readonly query: string; readonly accountId?: string; }",
+          "signature": "export interface JqlQueryToSanitize { readonly query: string; readonly accountId?: string | null; }",
           "jsdoc": "A JQL query to sanitize (spec `JqlQueryToSanitize`) for `accountId`; without it the query is sanitized for an anonymous user."
         },
         {
           "name": "SanitizedJqlQuery",
           "kind": "interface",
-          "line": 245,
+          "line": 246,
           "exported": true,
           "signature": "export interface SanitizedJqlQuery { readonly initialQuery: string; readonly sanitizedQuery?: string; readonly accountId…",
           "jsdoc": "Details of a sanitized JQL query (`SanitizedJqlQuery` schema)."
@@ -35049,7 +35049,7 @@
         {
           "name": "SanitizeJqlQueriesData",
           "kind": "interface",
-          "line": 259,
+          "line": 260,
           "exported": true,
           "signature": "export interface SanitizeJqlQueriesData { readonly queries: JqlQueryToSanitize[]; }",
           "jsdoc": "Request body for sanitizing one or more JQL queries (removes personal data)."
@@ -35057,7 +35057,7 @@
         {
           "name": "SanitizedJqlQueries",
           "kind": "interface",
-          "line": 264,
+          "line": 265,
           "exported": true,
           "signature": "export interface SanitizedJqlQueries { readonly queries: SanitizedJqlQuery[]; }",
           "jsdoc": "Response from the JQL sanitize endpoint containing sanitized query strings."
@@ -35065,7 +35065,7 @@
         {
           "name": "JqlSuggestionsParams",
           "kind": "interface",
-          "line": 274,
+          "line": 275,
           "exported": true,
           "signature": "export interface JqlSuggestionsParams { readonly fieldName?: string; readonly fieldValue?: string; readonly predicateNam…",
           "jsdoc": "Query parameters for fetching field-value suggestions for JQL autocomplete (`GET /jql/autocompletedata/suggestions`)."
@@ -35073,7 +35073,7 @@
         {
           "name": "JqlSuggestion",
           "kind": "interface",
-          "line": 282,
+          "line": 283,
           "exported": true,
           "signature": "export interface JqlSuggestion { readonly value: string; readonly displayName?: string; }",
           "jsdoc": "One field auto-complete suggestion (spec `AutoCompleteSuggestion`)."
@@ -35081,7 +35081,7 @@
         {
           "name": "JqlSuggestions",
           "kind": "interface",
-          "line": 293,
+          "line": 294,
           "exported": true,
           "signature": "export interface JqlSuggestions { readonly results?: JqlSuggestion[]; }",
           "jsdoc": "Field-value suggestions returned by the JQL field reference suggestions endpoint (`AutoCompleteSuggestions` schema)."
@@ -35089,69 +35089,69 @@
         {
           "name": "JqlResource",
           "kind": "class",
-          "line": 297,
+          "line": 298,
           "exported": true,
           "signature": "export class JqlResource",
           "members": [
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 298
+              "line": 299
             },
             {
               "name": "getAutocompleteData",
               "kind": "method",
-              "line": 304
+              "line": 305
             },
             {
               "name": "getFieldReferenceSuggestions",
               "kind": "method",
-              "line": 313
+              "line": 314
             },
             {
               "name": "parse",
               "kind": "method",
-              "line": 329
+              "line": 330
             },
             {
               "name": "sanitize",
               "kind": "method",
-              "line": 345
+              "line": 346
             },
             {
               "name": "getAutocompleteDataPost",
               "kind": "method",
-              "line": 355
+              "line": 356
             },
             {
               "name": "getPrecomputations",
               "kind": "method",
-              "line": 365
+              "line": 366
             },
             {
               "name": "updatePrecomputations",
               "kind": "method",
-              "line": 393
+              "line": 394
             },
             {
               "name": "getPrecomputationsById",
               "kind": "method",
-              "line": 411
+              "line": 412
             },
             {
               "name": "matchIssues",
               "kind": "method",
-              "line": 428
+              "line": 429
             },
             {
               "name": "migrateQueries",
               "kind": "method",
-              "line": 438
+              "line": 439
             },
             {
               "name": "getInvalidJqlAuditEntries",
               "kind": "method",
-              "line": 457
+              "line": 458
             }
           ]
         }

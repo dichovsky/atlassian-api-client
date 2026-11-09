@@ -8544,7 +8544,9 @@ async function executeJql(client: JiraClient, cmd: ParsedCommand): Promise<unkno
       if (!queries.every(isQuery)) {
         throw new Error('--queries must be a JSON array of {query, accountId?} objects');
       }
-      return client.jql.sanitize({ queries: queries as { query: string; accountId?: string }[] });
+      return client.jql.sanitize({
+        queries: queries as { query: string; accountId?: string | null }[],
+      });
     }
 
     // GET /invalid-jqls-access-log (experimental)
