@@ -422,12 +422,12 @@ function analyzeCalls(
         const properties = sdkProperties(checker, paramType, sdkDir);
         if (!properties) {
           // A scalar/positional parameter: reached when some call site passes
-          // it a value that is not always undefined (`undefined`, `void 0`).
+          // it a value that is not always undefined or null (`undefined`, `void 0`, `null`).
           const slot = method.slots.get(param.name) ?? { properties: [param.name], keys: NONE };
           method.slots.set(param.name, slot);
+          const nothing = ts.TypeFlags.Undefined | ts.TypeFlags.Null;
           const passed =
-            arg !== undefined &&
-            (checker.getTypeAtLocation(arg).flags & ts.TypeFlags.Undefined) === 0;
+            arg !== undefined && (checker.getTypeAtLocation(arg).flags & nothing) === 0;
           if (passed) slot.keys = union(slot.keys, just(param.name));
           return;
         }
@@ -523,7 +523,7 @@ declare const client: {
   issues: { transition(key: string, data: TransitionData): Promise<void> };
   roles: { addActors(roleId: number, data: ActorsData): Promise<void> };
   users: { search(params?: SearchParams): Promise<void> };
-  links: { del(id: string, seq?: number): Promise<void> };
+  links: { del(id: string, seq?: number | null): Promise<void> };
 };
 declare const flag: string;
 export {};
@@ -596,11 +596,12 @@ void client.issues.transition('K-1', { ...rest, update: update as Record<string,
     code: `void client.links.del('1');`,
     gaps: { 'links.del': ['seq'] },
   },
-  'a positional scalar passed only as undefined is a gap': {
+  'a positional scalar passed only as undefined or null is a gap': {
     code: `const none = undefined;
 void client.links.del('1', undefined);
 void client.links.del('2', void 0);
-void client.links.del('3', none);`,
+void client.links.del('3', none);
+void client.links.del('4', null);`,
     gaps: { 'links.del': ['seq'] },
   },
   'a positional scalar passed at any call site is reached': {
