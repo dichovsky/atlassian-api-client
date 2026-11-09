@@ -607,7 +607,12 @@ export class ProjectsResource {
     return response.data;
   }
 
-  /** List recently viewed projects (B696); Jira returns up to 20. */
+  /**
+   * List recently viewed projects (B696); Jira returns up to 20.
+   * GET /rest/api/3/project/recent
+   *
+   * @experimental Atlassian marks this operation as experimental.
+   */
   async recent(params?: RecentProjectsParams): Promise<Project[]> {
     const query: Record<string, string | undefined> = {};
     if (params?.expand) query['expand'] = params.expand.join(',');
@@ -781,7 +786,12 @@ export class ProjectsResource {
 
   // ── B681-B695: roles, statuses, versions, schemes ────────────────────────
 
-  /** Restore a deleted project (B681). Returns the restored project (200 Project) per spec. */
+  /**
+   * Restore a deleted project (B681). Returns the restored project (200 Project) per spec.
+   * POST /rest/api/3/project/{projectIdOrKey}/restore
+   *
+   * @experimental Atlassian marks this operation as experimental.
+   */
   async restore(projectIdOrKey: string): Promise<Project> {
     const response = await this.transport.request<Project>({
       method: 'POST',
@@ -799,7 +809,12 @@ export class ProjectsResource {
     return response.data;
   }
 
-  /** Get project classification config (B668). */
+  /**
+   * Get project classification config (B668).
+   * GET /rest/api/3/project/{projectIdOrKey}/classification-config
+   *
+   * @experimental Atlassian marks this operation as experimental.
+   */
   async getClassificationConfig(projectIdOrKey: string): Promise<ProjectClassificationConfig> {
     const response = await this.transport.request<ProjectClassificationConfig>({
       method: 'GET',
@@ -808,7 +823,12 @@ export class ProjectsResource {
     return response.data;
   }
 
-  /** Delete the default classification level for a project (B669). */
+  /**
+   * Delete the default classification level for a project (B669).
+   * DELETE /rest/api/3/project/{projectIdOrKey}/classification-level/default
+   *
+   * @experimental Atlassian marks this operation as experimental.
+   */
   async deleteClassificationLevel(projectIdOrKey: string): Promise<void> {
     await this.transport.request<unknown>({
       method: 'DELETE',
@@ -816,7 +836,12 @@ export class ProjectsResource {
     });
   }
 
-  /** Get the default classification level for a project (B670). */
+  /**
+   * Get the default classification level for a project (B670).
+   * GET /rest/api/3/project/{projectIdOrKey}/classification-level/default
+   *
+   * @experimental Atlassian marks this operation as experimental.
+   */
   async getClassificationLevel(projectIdOrKey: string): Promise<ProjectClassificationLevel> {
     const response = await this.transport.request<ProjectClassificationLevel>({
       method: 'GET',
@@ -825,7 +850,12 @@ export class ProjectsResource {
     return response.data;
   }
 
-  /** Set the default classification level for a project (B671). */
+  /**
+   * Set the default classification level for a project (B671).
+   * PUT /rest/api/3/project/{projectIdOrKey}/classification-level/default
+   *
+   * @experimental Atlassian marks this operation as experimental.
+   */
   async setClassificationLevel(projectIdOrKey: string, data: { id?: string }): Promise<void> {
     const body: Record<string, unknown> = {};
     if (data.id !== undefined) body['id'] = data.id;
@@ -911,7 +941,12 @@ export class ProjectsResource {
     return response.data;
   }
 
-  /** Asynchronously delete a project (B674). Returns task progress per spec (303 TaskProgressBeanObject). */
+  /**
+   * Asynchronously delete a project (B674). Returns task progress per spec (303 TaskProgressBeanObject).
+   * POST /rest/api/3/project/{projectIdOrKey}/delete
+   *
+   * @experimental Atlassian marks this operation as experimental.
+   */
   async deleteAsync(projectIdOrKey: string): Promise<TaskProgressBeanObject> {
     const response = await this.transport.request<TaskProgressBeanObject>({
       method: 'POST',
@@ -1215,11 +1250,15 @@ export class ProjectsResource {
   /**
    * @deprecated Jira requires `projectId` and `workTypeId`; this form throws a
    * {@link ValidationError} before a request is sent.
+   * @experimental Atlassian marks this operation as experimental.
    */
   getProjectsFields(): Promise<unknown[]>;
   /**
    * Get the fields of the given work types (issue types) in the given
    * projects, one page at a time (B706).
+   * GET /rest/api/3/projects/fields
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   getProjectsFields(
     params: GetProjectsFieldsParams,

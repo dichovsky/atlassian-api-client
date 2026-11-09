@@ -288,6 +288,14 @@ describe('PrioritiesResource', () => {
         body: { id: '5' },
       });
     });
+
+    it('sends a JSON null id to erase the default priority (M2-1)', async () => {
+      transport.respondWith(undefined, 204);
+
+      await priorities.setDefault({ id: null });
+
+      expect(transport.lastCall?.options.body).toEqual({ id: null });
+    });
   });
 
   // ── move (B643) ───────────────────────────────────────────────────────────

@@ -506,6 +506,7 @@ EXAMPLES:
   atlas jira issue-attachments expand-human 10001
   atlas jira issue-attachments expand-raw 10001
   atlas jira issue-attachments download-content 10001 --redirect false
+  atlas jira issue-attachments download-content 10001 --output ./report.pdf
   atlas jira issue-attachments get-meta
   atlas jira issue-attachments download-thumbnail 10001 --width 200 --height 200 --fallback-to-default true
   atlas jira issue-attachments upload PROJ-1 --file ./screenshot.png --media-type image/png

@@ -47,6 +47,8 @@ atlas jira component related-issue-counts 10000
 
 ## `projects`
 
+> **Experimental:** Atlassian marks `recent`, `get-classification-config`, `get-classification-level`, `set-classification-level`, `delete-classification-level`, `delete-async`, `restore` and `get-projects-fields` `x-experimental`; their shapes may change without notice.
+
 | Action                        | Positional                         | Required flags                                                                                                    | Optional flags                                                                                                                                                                                                         |
 | ----------------------------- | ---------------------------------- | ----------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `list`                        | —                                  | —                                                                                                                 | `--start-at`, `--max-results`, `--order-by`, `--expand` (CSV), `--status` (CSV), `--type-key`, `--action`, `--id` (CSV integers), `--keys` (CSV), `--query`, `--category-id`, `--property-query`, `--properties` (CSV) |
@@ -121,7 +123,7 @@ atlas jira component related-issue-counts 10000
 - `list-versions` `--order-by` accepts `description`, `name`, `releaseDate`, `sequence`, `startDate` (optionally prefixed with `+` or `-`); `--status` accepts `released`, `unreleased`, `archived` (comma-separated); `--expand` (also on `list-all-versions`) accepts `issuesstatus`, `operations`, `driver`, `approvers`.
 - `add-role-actors` accepts `--body` as a flat `ActorsMap` JSON object with `user` (account IDs), `group` (group names) and/or `groupId` (group IDs, preferred over `group`) string arrays (e.g. `{"user":["acc-1"]}`). At least one non-empty array is required; `group` and `groupId` cannot be combined; any other key is rejected before the request. It adds to the existing actors.
 - `set-role-actors` **replaces all actors** of the role. `--body` is `{"categorisedActors":{...}}` keyed by actor type: `atlassian-user-role-actor` (account IDs), `atlassian-group-role-actor-id` (group IDs, recommended because group names can change) and `atlassian-group-role-actor` (group names), each a string array.
-- `delete-role-actors` removes actors by `--user` (accountId), `--group-id`, or `--group` (name).
+- `delete-role-actors` removes actors by `--user` (accountId), `--group-id`, or `--group` (name). Pass at least one; `--group` and `--group-id` cannot be combined (prefer `--group-id`, since group names can change). A missing actor, both group flags, or an empty value is rejected before any request.
 - `get-role-details --exclude-other-service-roles` hides the other service's default roles (the default CSM roles on a JSM project, or the default JSM roles on a CSM project). `--current-member`, `--exclude-connect-addons` and `--exclude-other-service-roles` are booleans: bare or `true` sends `true`, `false` sends `false`, omitted sends nothing.
 - `set-email` sets the project's sender address; `--email-address=""` (an empty string) restores the default address. The flag is required.
 - `archive` moves a project into the archived state. `restore` brings an archived or recycle-bin project back and prints the restored project.
@@ -141,6 +143,9 @@ atlas jira component related-issue-counts 10000
 ```sh
 # List projects (paginated, preferred)
 atlas jira projects list --type-key software --status live --action browse --query platform --order-by key --max-results 50
+
+# Archived or deleted projects among given IDs/keys in a category, with a property filter (CSV flags become repeated params)
+atlas jira projects list --status archived,deleted --id 10000,10001 --keys PROJ,OPS --category-id 10020 --property-query '[project.owner].team=core' --properties project.owner --expand description,lead --start-at 50
 
 # List projects using the legacy endpoint
 atlas jira projects list-legacy --expand description,lead --recent 10 --properties project.owner,project.region
@@ -194,11 +199,14 @@ atlas jira projects restore PROJ
 # List all roles for a project (name -> URL map)
 atlas jira projects list-roles PROJ
 
-# Get a specific project role with its actors
-atlas jira projects get-role PROJ 10001
+# Get a specific project role with its actors (only active users)
+atlas jira projects get-role PROJ 10001 --exclude-inactive-users
 
 # Delete a user actor from a project role
 atlas jira projects delete-role-actors PROJ 10001 --user acc-1
+
+# Delete a group actor (by group ID) from a project role
+atlas jira projects delete-role-actors PROJ 10001 --group-id grp-1
 
 # Add actors to a project role (flat ActorsMap: user, group, groupId)
 atlas jira projects add-role-actors PROJ 10001 --body '{"user":["acc-1"]}'
@@ -213,7 +221,7 @@ atlas jira projects get-role-details PROJ --current-member --exclude-other-servi
 atlas jira projects get-statuses PROJ
 
 # List project versions (paginated)
-atlas jira projects list-versions PROJ --order-by name --status released
+atlas jira projects list-versions PROJ --order-by name --status released,archived
 
 # List all project versions (flat array; only expand is supported)
 atlas jira projects list-all-versions PROJ --expand operations
@@ -406,7 +414,7 @@ atlas jira version related-issue-counts 10000
 atlas jira version list-related-work 10000
 
 # Create related work
-atlas jira version create-related-work 10000 --category "Confluence page" --url "https://example.com"
+atlas jira version create-related-work 10000 --category "Confluence page" --title "Release notes" --url "https://example.com"
 
 # Update related work
 atlas jira version update-related-work 10000 --related-work-id fabcdef6-7878-1234-beaf-43211234abcd --category "Design doc" --title "Updated" --url "https://example.com/design"
@@ -456,6 +464,22 @@ atlas jira project-template create \
   --key "MP" \
   --description "Created from custom template" \
   --language "en" \
+  --template '{"project":{"projectTypeKey":"software"}}'
+
+# Create a project with every optional detail set — B653
+atlas jira project-template create \
+  --name "Platform" \
+  --key "PLAT" \
+  --description "Platform team" \
+  --url "https://example.com/platform" \
+  --language "en" \
+  --lead-account-id 5b10a2844c20165700ede21g \
+  --access-level private \
+  --assignee-type PROJECT_LEAD \
+  --avatar-id 10200 \
+  --category-id 10000 \
+  --enable-components false \
+  --additional-properties '{"team":"platform"}' \
   --template '{"project":{"projectTypeKey":"software"}}'
 
 # Create a project that reuses existing schemes — B653

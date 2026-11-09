@@ -1078,11 +1078,17 @@ async function executeProjects(client: JiraClient, cmd: ParsedCommand): Promise<
       const projectIdOrKey = requireArg(cmd.positionalArgs[0], 'projectIdOrKey');
       const roleId = asPositiveInt(cmd.positionalArgs[1], 'roleId');
       if (roleId === undefined) throw new Error('Missing required argument: roleId');
-      await client.projects.deleteRoleActors(projectIdOrKey, roleId, {
-        user: asString(opts['user']),
-        groupId: asString(opts['group-id']),
-        group: asString(opts['group']),
-      });
+      const user = nonBlankOpt(opts['user'], '--user');
+      const groupId = nonBlankOpt(opts['group-id'], '--group-id');
+      const group = nonBlankOpt(opts['group'], '--group');
+      // Spec deleteActor: `group` cannot be used with `groupId`.
+      if (group !== undefined && groupId !== undefined) {
+        throw new Error('pass either --group or --group-id, not both');
+      }
+      if (user === undefined && groupId === undefined && group === undefined) {
+        throw new Error('delete-role-actors requires one of --user, --group-id or --group');
+      }
+      await client.projects.deleteRoleActors(projectIdOrKey, roleId, { user, groupId, group });
       return { deleted: true };
     }
     case 'get-role': {
@@ -1815,14 +1821,15 @@ async function executePriorities(client: JiraClient, cmd: ParsedCommand): Promis
     }
     case 'set-default': {
       const id = requireOpt(opts['id'], '--id');
-      await client.priorities.setDefault({ id });
+      // `--id null` erases the default priority (spec: JSON null, not a string).
+      await client.priorities.setDefault({ id: id === 'null' ? null : id });
       return { updated: true };
     }
     case 'move': {
       const idsRaw = requireOpt(opts['ids'], '--ids');
       const ids = splitCsvIds(idsRaw);
-      const after = nonBlankOpt(opts['after'], '--after');
-      const position = nonBlankOpt(opts['position'], '--position');
+      const after = nonBlankOpt(opts['after'], '--after')?.trim();
+      const position = nonBlankOpt(opts['position'], '--position')?.trim();
       if (after !== undefined && position !== undefined) {
         throw new Error('priorities move accepts either --after or --position, not both');
       }
@@ -4543,10 +4550,11 @@ async function executeIssueAttachments(client: JiraClient, cmd: ParsedCommand): 
     case 'download-content': {
       const attachmentId = requireArg(cmd.positionalArgs[0], 'attachmentId');
       const redirect = asBoolFlag(opts['redirect']);
-      const buffer = await client.issueAttachments.downloadContent(attachmentId, {
-        ...(redirect !== undefined && { redirect }),
-      });
-      return { bytes: buffer.byteLength };
+      return avatarImageResult(opts['output'], () =>
+        client.issueAttachments.downloadContent(attachmentId, {
+          ...(redirect !== undefined && { redirect }),
+        }),
+      );
     }
     case 'get-meta':
       return client.issueAttachments.getMeta();
@@ -4556,13 +4564,14 @@ async function executeIssueAttachments(client: JiraClient, cmd: ParsedCommand): 
       const fallbackToDefault = asBoolFlag(opts['fallback-to-default']);
       const width = asPositiveInt(opts['width'], '--width');
       const height = asPositiveInt(opts['height'], '--height');
-      const buffer = await client.issueAttachments.downloadThumbnail(attachmentId, {
-        ...(redirect !== undefined && { redirect }),
-        ...(fallbackToDefault !== undefined && { fallbackToDefault }),
-        ...(width !== undefined && { width }),
-        ...(height !== undefined && { height }),
-      });
-      return { bytes: buffer.byteLength };
+      return avatarImageResult(opts['output'], () =>
+        client.issueAttachments.downloadThumbnail(attachmentId, {
+          ...(redirect !== undefined && { redirect }),
+          ...(fallbackToDefault !== undefined && { fallbackToDefault }),
+          ...(width !== undefined && { width }),
+          ...(height !== undefined && { height }),
+        }),
+      );
     }
     case 'upload': {
       const issueIdOrKey = requireArg(cmd.positionalArgs[0], 'issueIdOrKey');
@@ -4588,9 +4597,10 @@ async function executeIssueAttachments(client: JiraClient, cmd: ParsedCommand): 
 }
 
 /**
- * Print the image size, or write the image to `--output`. A blank path, an
- * existing file or a missing directory is refused before the download; nothing
- * is overwritten.
+ * Print the downloaded size, or write the bytes (an avatar image, an
+ * attachment or its thumbnail) to `--output`. A blank path, an existing file
+ * or a missing directory is refused before the download; nothing is
+ * overwritten.
  */
 async function avatarImageResult(
   outputFlag: string | boolean | undefined,
@@ -8921,10 +8931,7 @@ async function executeJql(client: JiraClient, cmd: ParsedCommand): Promise<unkno
 
     // B590: GET /jql/function/computation
     case 'get-precomputations': {
-      const functionKeyRaw = asString(opts['function-key']);
-      const functionKey = functionKeyRaw
-        ? functionKeyRaw.split(',').map((s) => s.trim())
-        : undefined;
+      const functionKey = filterCsv(opts['function-key'], '--function-key', 'function key');
       const startAt = asNonNegativeInt(opts['start-at'], '--start-at');
       const maxResults = asPositiveInt(opts['max-results'], '--max-results');
       const orderBy = asString(opts['order-by']);
@@ -8960,10 +8967,11 @@ async function executeJql(client: JiraClient, cmd: ParsedCommand): Promise<unkno
 
     // B592: POST /jql/function/computation/search
     case 'get-precomputations-by-id': {
-      const precomputationIDsRaw = asString(opts['precomputation-ids']);
-      const precomputationIDs = precomputationIDsRaw
-        ? precomputationIDsRaw.split(',').map((s) => s.trim())
-        : undefined;
+      const precomputationIDs = filterCsv(
+        opts['precomputation-ids'],
+        '--precomputation-ids',
+        'precomputation ID',
+      );
       const orderBy = asString(opts['order-by']);
       return client.jql.getPrecomputationsById(
         { ...(precomputationIDs !== undefined && { precomputationIDs }) },
