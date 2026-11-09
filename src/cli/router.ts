@@ -422,10 +422,10 @@ const GLOBAL_OPTIONS = {
   'email-address': { type: 'string' as const },
   'component-source': { type: 'string' as const },
   'classification-id': { type: 'string' as const },
-  // projects get-role-details / get-projects-fields (release 4.1.0)
+  // projects get-role-details / get-projects-fields (release 5.0.0)
   'exclude-other-service-roles': { type: 'boolean' as const },
   'work-type-ids': { type: 'string' as const },
-  // issues get/get-agile/create/transitions query flags (release 4.1.0)
+  // issues get/get-agile/create/transitions query flags (release 5.0.0)
   'include-unavailable-transitions': { type: 'boolean' as const },
   'skip-remote-only-condition': { type: 'boolean' as const },
   'sort-by-ops-bar-and-status': { type: 'boolean' as const },
