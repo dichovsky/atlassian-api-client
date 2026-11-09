@@ -54,7 +54,7 @@ function readSpec(name: keyof typeof SPEC_FILES): OpenApiSpec {
   return JSON.parse(readFileSync(SPEC_FILES[name], 'utf8')) as OpenApiSpec;
 }
 
-describe('F295: Jira search guidance targets the current /search/jql endpoint', () => {
+describe('Jira search guidance targets the current /search/jql endpoint', () => {
   it('README and examples do not call the deprecated legacy search methods', () => {
     expect(README).not.toMatch(/jira\.search\.search(All|Get)?\(/);
     for (const example of ['jira-basic.ts', 'pagination.ts']) {
@@ -93,7 +93,7 @@ describe('F295: Jira search guidance targets the current /search/jql endpoint', 
   });
 });
 
-describe('F297: success-path request ids are visible to middleware, not to resource callers', () => {
+describe('Success-path request ids are visible to middleware, not to resource callers', () => {
   it('README no longer reads requestId from a resource method result', () => {
     expect(README).not.toMatch(/const response = await (client|confluence|jira)\./);
     expect(README).toContain('const response = await next(options);');
@@ -128,7 +128,7 @@ describe('F297: success-path request ids are visible to middleware, not to resou
   });
 });
 
-describe('F299: the refresh report is labelled historical and the index points at the live pins', () => {
+describe('The 2026-08-30 refresh report is labelled historical and the index points at the live pins', () => {
   it('docs index no longer calls the 2026-08-30 report current', () => {
     expect(DOCS_INDEX).not.toMatch(/ATLASSIAN-API-REFRESH-2026-08-30\.md\]\([^)]*\) — current/);
     const living = section(DOCS_INDEX, '## Living references');
@@ -164,7 +164,7 @@ describe('F299: the refresh report is labelled historical and the index points a
   });
 });
 
-describe('F300 / F306: CONTRIBUTING matches the real gate and parity rule', () => {
+describe('CONTRIBUTING matches the real gate and parity rule', () => {
   const adding = section(CONTRIBUTING, '## Adding a New Resource');
 
   it('"Adding a New Resource" names the parity test, router flags, root exports, and codemap', () => {
@@ -223,7 +223,7 @@ describe('F300 / F306: CONTRIBUTING matches the real gate and parity rule', () =
   });
 });
 
-describe('F301 / F302: README utility examples match real output', () => {
+describe('README utility examples match real output', () => {
   it('spec-drift example output shows the pinned type counts and contract fingerprints', () => {
     for (const [name, file] of [
       ['jiraPlatform', 'jira-platform-v3.json'],
@@ -264,7 +264,7 @@ describe('F301 / F302: README utility examples match real output', () => {
   });
 });
 
-describe('F303: rate limiter belongs inside cache/batch', () => {
+describe('The proactive rate limiter belongs inside cache/batch', () => {
   it('README says "inside" and shows the array order', () => {
     expect(README).toContain('after (inside) cache/batch');
     expect(README).not.toContain('after (outside) cache/batch');
@@ -288,7 +288,7 @@ describe('F303: rate limiter belongs inside cache/batch', () => {
   });
 });
 
-describe('F304 / F305: ARCHITECTURE core-layer descriptions match the code', () => {
+describe('ARCHITECTURE core-layer descriptions match the code', () => {
   it('lists every ClientConfig field', () => {
     const typesSource = read('src', 'core', 'types.ts');
     const body = /export interface ClientConfig \{([\s\S]*?)\n\}/.exec(typesSource)?.[1] ?? '';
@@ -359,7 +359,7 @@ describe('F304 / F305: ARCHITECTURE core-layer descriptions match the code', () 
   });
 });
 
-describe('F298: scope catalog counts', () => {
+describe('README and ARCHITECTURE scope catalog counts match listKnownScopes()', () => {
   const total = listKnownScopes().length;
 
   function scopesReferencedByOperations(): Set<string> {
@@ -408,7 +408,7 @@ describe('F298: scope catalog counts', () => {
   });
 });
 
-describe('F308 / F309: agent instructions and cross-references stay accurate', () => {
+describe('Agent instructions and cross-references stay accurate', () => {
   it('spec/README.md only references CLAUDE.md sections that exist', () => {
     expect(SPEC_README).not.toContain('PR Review HARD');
     const referenced = /`CLAUDE\.md` → ([^\n]*)\)\./.exec(SPEC_README)?.[1] ?? '';
