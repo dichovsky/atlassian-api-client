@@ -616,7 +616,7 @@ Classic workflow management — `/rest/api/3/workflow` (B837–B845 + B934), and
 
 **Removed API:** Atlassian removed the four workflow transition-property endpoints in July 2026. They are intentionally absent from the SDK and CLI; use bulk workflow read/update operations instead.
 
-**Removed parameter:** Atlassian removed the `draft` workflow-rule selector on November 2, 2026 (CHANGE-3147): requests that include it now fail with HTTP 400, and `workflowId` objects in responses no longer carry it. Only published workflows remain, so the SDK never sends it: `"draft": false` inside a `workflowId` given to `update-rule-config` / `delete-rule-config` is dropped, while `"draft": true` is refused before sending. `get-rule-config --draft` is refused. Omit it.
+**Removed parameter:** Atlassian removed the `draft` workflow-rule selector on November 2, 2026 (CHANGE-3147): requests that include it now fail with HTTP 400, and `workflowId` objects in responses no longer carry it. Only published workflows remain, so the SDK never sends it: `"draft": false` inside a `workflowId` given to `update-rule-config` / `delete-rule-config` is dropped, while `"draft": true` (or any other non-`false` value, such as the string `"true"`) is refused before sending. `get-rule-config --draft` is refused. Omit it.
 
 ### Actions
 
@@ -973,7 +973,7 @@ atlas jira fields field-delete customfield_10001
 ```
 
 - `field-update` returns **no body** (the spec responds 204 No Content); the SDK `update()` resolves to `void`.
-- `field-delete` is **asynchronous**: Jira answers 303 to a task, and the CLI prints that task (`{id, self, status, progress, …}`) rather than a confirmation — the field is gone only when the task finishes. Poll it with `atlas jira task get <taskId>` until `status` is `COMPLETE` (or `FAILED`, `CANCELLED`, `DEAD`). In the SDK, `client.fields.delete(id, { returnTask: true })` resolves the task; `client.fields.delete(id)` still resolves `void`.
+- `field-delete` is **asynchronous**: Jira answers 303 to a task, and the CLI prints that task (`{id, self, status, progress, …}`) rather than a confirmation — the field is gone only when the task finishes. Poll it with `atlas jira task get <taskId>` until `status` is `COMPLETE` (or `FAILED`, `CANCELLED`, `DEAD`). If Jira answers without a task (204 or an empty 200), the CLI prints `{"deleted": true}`. In the SDK, `client.fields.delete(id, { returnTask: true })` resolves the task; `client.fields.delete(id)` still resolves `void`.
 
 ### Field Contexts (B415–B418)
 
