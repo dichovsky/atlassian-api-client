@@ -165,6 +165,8 @@ export class ScreensResource {
   /**
    * B747: Create a screen.
    * POST /rest/api/3/screens
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   async create(data: CreateScreenData): Promise<Screen> {
     const body: Record<string, unknown> = { name: data.name };
@@ -180,6 +182,8 @@ export class ScreensResource {
   /**
    * B748: Delete a screen.
    * DELETE /rest/api/3/screens/{screenId}
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   async delete(screenId: number): Promise<void> {
     await this.transport.request<undefined>({
@@ -191,6 +195,8 @@ export class ScreensResource {
   /**
    * B749: Update a screen.
    * PUT /rest/api/3/screens/{screenId}
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   async update(screenId: number, data: UpdateScreenData): Promise<Screen> {
     const body: Record<string, unknown> = {};
@@ -364,6 +370,8 @@ export class ScreensResource {
   /**
    * B761: List a page of screen tabs across screens (offset-paginated).
    * GET /rest/api/3/screens/tabs
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   async listScreenTabs(params?: ListAllTabsParams): Promise<OffsetPaginatedResponse<ScreenTabRef>> {
     if (params?.maxResult !== undefined) validatePageSize(params.maxResult, 'maxResult');
@@ -384,6 +392,8 @@ export class ScreensResource {
    * offset-pagination convention (`maxResults`). Because {@link paginateOffset}
    * always injects `maxResults`, this generator drives the loop manually to
    * emit the correct wire parameter.
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   async *listAllScreenTabs(
     params?: Omit<ListAllTabsParams, 'startAt'>,

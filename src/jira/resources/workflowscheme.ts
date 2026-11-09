@@ -754,6 +754,8 @@ export class WorkflowSchemeResource {
    *
    * Returns a {@link TaskProgressBeanObject} describing the long-running task
    * (HTTP 303 in the spec; the transport surfaces the body).
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   async switchProject(data: SwitchSchemeForProjectData): Promise<TaskProgressBeanObject> {
     const body: Record<string, unknown> = {};

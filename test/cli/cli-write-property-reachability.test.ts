@@ -103,14 +103,6 @@ const KNOWN_GAPS: Readonly<
     unset: ['name', 'password', 'applicationKeys'],
     reason: 'removed or deprecated in the NewUserDetails spec',
   },
-  'jira.version.create': {
-    unset: ['expand'],
-    reason: 'response expansion only',
-  },
-  'jira.version.update': {
-    unset: ['expand'],
-    reason: 'response expansion only',
-  },
 };
 
 // ─── Analysis ──────────────────────────────────────────────────────────────

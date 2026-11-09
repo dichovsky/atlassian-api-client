@@ -74,8 +74,9 @@ export interface AnalyseExpressionsParams {
 }
 
 /**
- * JQL context bean for the `issues` context variable in POST /expression/eval
- * and /expression/evaluate (`JexpJqlIssues` schema).
+ * JQL context bean for the `issues` context variable in deprecated POST
+ * /expression/eval (`JexpJqlIssues` schema). POST /expression/evaluate takes
+ * {@link ExpressionEvaluateJqlContext} instead.
  *
  * These fields appear in the REQUEST context — not in the response JQL metadata.
  */
@@ -108,8 +109,9 @@ export interface CustomContextVariable {
 }
 
 /**
- * Evaluation context for POST /expression/eval and /expression/evaluate
- * (`JiraExpressionEvalContextBean` schema).
+ * Evaluation context for deprecated POST /expression/eval
+ * (`JiraExpressionEvalContextBean` schema). POST /expression/evaluate takes
+ * {@link ExpressionEvaluateContext} instead.
  *
  * Note: `issue.id` and `project.id` are integers (int64) per `IdOrKeyBean`.
  */
@@ -128,12 +130,44 @@ export interface ExpressionEvalContext {
   readonly sprint?: number;
 }
 
-/** Request body for POST /expression/eval and /expression/evaluate. */
+/**
+ * Request body for deprecated POST /expression/eval. POST /expression/evaluate
+ * takes {@link ExpressionEvaluateData} instead.
+ */
 export interface EvaluateExpressionData {
   /** The Jira expression to evaluate. */
   readonly expression: string;
   /** Optional evaluation context. */
   readonly context?: ExpressionEvalContext;
+}
+
+/**
+ * JQL context bean for the `issues` context variable in POST
+ * /expression/evaluate (`JexpEvaluateCtxJqlIssues` schema). Page through the
+ * issues by passing back the `nextPageToken` from the previous response's
+ * `meta.issues.jql`; there is no `startAt`.
+ */
+export interface ExpressionEvaluateJqlContext {
+  readonly query?: string;
+  readonly maxResults?: number;
+  readonly nextPageToken?: string;
+}
+
+/**
+ * Evaluation context for POST /expression/evaluate
+ * (`JiraExpressionEvaluateContextBean` schema): {@link ExpressionEvalContext}
+ * with the token-paged `issues.jql` of the current endpoint.
+ */
+export interface ExpressionEvaluateContext extends Omit<ExpressionEvalContext, 'issues'> {
+  readonly issues?: { readonly jql?: ExpressionEvaluateJqlContext };
+}
+
+/** Request body for POST /expression/evaluate (`JiraExpressionEvaluateRequestBean`). */
+export interface ExpressionEvaluateData {
+  /** The Jira expression to evaluate. */
+  readonly expression: string;
+  /** Optional evaluation context. */
+  readonly context?: ExpressionEvaluateContext;
 }
 
 /** Query parameters for POST /expression/eval and /expression/evaluate. */
@@ -303,7 +337,7 @@ export class ExpressionResource {
    * (required), optional `isLast`. Does NOT return offset-based fields.
    */
   async evaluate(
-    data: EvaluateExpressionData,
+    data: ExpressionEvaluateData,
     params?: EvaluateExpressionParams,
   ): Promise<EvaluateExpressionResponse> {
     const query: Record<string, string | undefined> = {};

@@ -498,6 +498,7 @@ EXAMPLES:
   atlas jira permission-schemes delete-permission 10000 10001
   atlas jira issue-type-schemes list --start-at 0 --max-results 50
   atlas jira issue-type-schemes list --ids 10000,10001
+  atlas jira issue-type-schemes list --query-string Dev --order-by=-id --expand projects,issueTypes
   atlas jira issue-type-schemes create --name "Software Development" --description "Default for dev" --default-issue-type-id 10001 --issue-type-ids 10001,10002,10003
   atlas jira issue-type-schemes update 10000 --name "Updated Scheme" --description "New description"
   atlas jira issue-type-schemes delete 10000
@@ -516,6 +517,7 @@ EXAMPLES:
   atlas jira notification-schemes delete 10000
   atlas jira notification-schemes remove-notification 10000 5
   atlas jira notification-schemes list-projects --project-ids 10100,10101
+  atlas jira notification-schemes list-projects --scheme-ids 10000,10001
   atlas jira roles list
   atlas jira roles get 10001
   atlas jira roles create --name "Developers" --description "Development team role"
@@ -535,6 +537,7 @@ EXAMPLES:
   atlas jira resolutions update 10001 --name "Fixed" --description "Issue was fixed"
   atlas jira resolutions delete 10001 --replace-with 10000
   atlas jira resolutions set-default 10001
+  atlas jira resolutions set-default null
   atlas jira resolutions move --ids 10001,10002 --after 10000
   atlas jira resolutions search --query-string "Won't" --max-results 10
   atlas jira statuses bulk-delete --ids 10001,10002
@@ -611,6 +614,7 @@ EXAMPLES:
   atlas jira plans archive 10001
   atlas jira plans trash 10001
   atlas jira plans duplicate 10001 --name "Copy of My Plan"
+  atlas jira plans update 10001 --body '[{"op":"replace","path":"/name","value":"Renamed Plan"}]'
   atlas jira plans list-teams 10001 --max-results 20
   atlas jira plans get-atlassian-team 10001 team-abc-123
   atlas jira plans delete-atlassian-team 10001 team-abc-123
