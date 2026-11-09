@@ -926,15 +926,15 @@ describe('webhooks client-side checks (F161)', () => {
   it.each([
     [
       ['webhooks', 'delete', '--webhook-ids', '["a"]'],
-      /--webhook-ids must be a JSON array of integer/,
+      /--webhook-ids must be a JSON array of positive integer/,
     ],
     [
       ['webhooks', 'refresh', '--webhook-ids', '[null]'],
-      /--webhook-ids must be a JSON array of integer/,
+      /--webhook-ids must be a JSON array of positive integer/,
     ],
     [
       ['webhooks', 'refresh', '--webhook-ids', '[1.5]'],
-      /--webhook-ids must be a JSON array of integer/,
+      /--webhook-ids must be a JSON array of positive integer/,
     ],
     [
       [
@@ -944,15 +944,15 @@ describe('webhooks client-side checks (F161)', () => {
         '--webhooks',
         '[{"jqlFilter":"project = P","events":["jira:issue_created","bogus_event"]}]',
       ],
-      /--webhooks\[0\]\.events must be a JSON array of: jira:issue_created, .*jira:version_deleted/,
+      /--webhooks\[0\]\.events must be a non-empty JSON array of: jira:issue_created, .*jira:version_deleted/,
     ],
     [
       ['webhooks', 'register', ...URL_FLAG, '--webhooks', '[{"jqlFilter":"project = P"}]'],
-      /--webhooks\[0\]\.events must be a JSON array of/,
+      /--webhooks\[0\]\.events must be a non-empty JSON array of/,
     ],
     [
       ['webhooks', 'register', ...URL_FLAG, '--webhooks', '[{"jqlFilter":"p","events":"x"}]'],
-      /--webhooks\[0\]\.events must be a JSON array of/,
+      /--webhooks\[0\]\.events must be a non-empty JSON array of/,
     ],
     [
       ['webhooks', 'register', ...URL_FLAG, '--webhooks', '[null]'],
@@ -1041,5 +1041,62 @@ describe('filters search --order-by is checked against the spec enum', () => {
   it.each(['is_shared', '+owner', '-favourite_count'])('sends %s', async (orderBy) => {
     const req = await onlyRequest(['filters', 'search', `--order-by=${orderBy}`]);
     expect(req.query.get('orderBy')).toBe(orderBy);
+  });
+});
+
+// ── review round 2 ────────────────────────────────────────────────────────────
+
+describe('webhooks register needs jqlFilter and at least one event (WebhookDetails.required)', () => {
+  const REGISTER = ['webhooks', 'register', '--url', 'https://example.com/hook', '--webhooks'];
+  it.each([
+    ['[{"jqlFilter":"project = P","events":[]}]', /--webhooks\[0\]\.events must be a non-empty/],
+    ['[{"events":["jira:issue_created"]}]', /--webhooks\[0\]\.jqlFilter must be a JQL string/],
+    [
+      '[{"jqlFilter":7,"events":["jira:issue_created"]}]',
+      /--webhooks\[0\]\.jqlFilter must be a JQL string/,
+    ],
+  ])('%s', async (webhooks, message) => {
+    await rejected([...REGISTER, webhooks], message);
+  });
+});
+
+describe('webhooks --webhook-ids must be positive', () => {
+  it.each([
+    ['refresh', '[0]'],
+    ['delete', '[10000,-1]'],
+  ])('%s %s', async (action, ids) => {
+    await rejected(
+      ['webhooks', action, '--webhook-ids', ids],
+      /--webhook-ids must be a JSON array of positive integer webhook IDs/,
+    );
+  });
+});
+
+describe('dashboards bulk-edit refuses --entity-ids that name no dashboard', () => {
+  it.each([',', ' , '])('%j', async (ids) => {
+    await rejected(
+      [
+        'dashboards',
+        'bulk-edit',
+        '--entity-ids',
+        ids,
+        '--action',
+        'changeOwner',
+        '--new-owner',
+        'acc-1',
+        '--autofix-name',
+        'true',
+      ],
+      /--entity-ids must contain at least one ID/,
+    );
+  });
+});
+
+describe('fields field-list --type names types, not IDs', () => {
+  it('says "type" when the list is empty', async () => {
+    await rejected(
+      ['fields', 'field-list', '--type', ','],
+      /--type must contain at least one type \(custom, system\)/,
+    );
   });
 });

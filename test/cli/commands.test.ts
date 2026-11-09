@@ -30671,20 +30671,19 @@ describe('executeJiraCommand', () => {
       ).rejects.toThrow('is not a positive integer');
     });
 
-    it('bulk-edit treats an empty --entity-ids token list as no entity ids', async () => {
-      jiraDashboardsMock.bulkEdit.mockResolvedValue({ status: 'ok' });
-      await executeJiraCommand(
-        cmd('dashboards', 'bulk-edit', [], {
-          'entity-ids': ',',
-          action: 'changeOwner',
-          'new-owner': 'acc-1',
-          'autofix-name': true,
-        }),
-        GLOBALS,
-      );
-      expect(jiraDashboardsMock.bulkEdit).toHaveBeenCalledWith(
-        expect.objectContaining({ entityIds: [], action: 'changeOwner' }),
-      );
+    it('bulk-edit refuses an --entity-ids token list that names no entity', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('dashboards', 'bulk-edit', [], {
+            'entity-ids': ',',
+            action: 'changeOwner',
+            'new-owner': 'acc-1',
+            'autofix-name': true,
+          }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--entity-ids must contain at least one ID');
+      expect(jiraDashboardsMock.bulkEdit).not.toHaveBeenCalled();
     });
 
     it('bulk-edit changeOwner action passes changeOwnerDetails with integer entityIds', async () => {

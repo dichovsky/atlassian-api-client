@@ -2432,28 +2432,38 @@ const WEBHOOK_EVENTS = Object.keys({
   'jira:version_deleted': true,
 } satisfies Record<WebhookEvent, true>);
 
-/** `--webhooks` for `register`: each entry an object whose `events` are spec values. */
+/**
+ * `--webhooks` for `register`: each entry an object with the spec-required
+ * `jqlFilter` string and a non-empty `events` array of spec values.
+ */
 function webhookRegistrationsFlag(raw: string): WebhookRegistration[] {
   const entries = parseJsonArrayFlag(raw, '--webhooks');
   entries.forEach((entry, i) => {
     if (!isJsonObject(entry)) throw new Error(`--webhooks[${i}] must be a JSON object`);
     const events = entry['events'];
-    if (!Array.isArray(events) || !events.every((e) => WEBHOOK_EVENTS.includes(e as string))) {
+    if (
+      !Array.isArray(events) ||
+      events.length === 0 ||
+      !events.every((e) => WEBHOOK_EVENTS.includes(e as string))
+    ) {
       throw new Error(
-        `--webhooks[${i}].events must be a JSON array of: ${WEBHOOK_EVENTS.join(', ')}`,
+        `--webhooks[${i}].events must be a non-empty JSON array of: ${WEBHOOK_EVENTS.join(', ')}`,
       );
+    }
+    if (typeof entry['jqlFilter'] !== 'string') {
+      throw new Error(`--webhooks[${i}].jqlFilter must be a JQL string (required)`);
     }
   });
   return entries as WebhookRegistration[];
 }
 
-/** `--webhook-ids` for `refresh`/`delete`: a JSON array of integer IDs. */
+/** `--webhook-ids` for `refresh`/`delete`: a JSON array of positive integer IDs. */
 function webhookIdsFlag(value: string | boolean | undefined): number[] {
   const raw = asString(value);
   if (raw === undefined) throw new Error('--webhook-ids is required');
   const ids = parseJsonArrayFlag(raw, '--webhook-ids');
-  if (!ids.every((id) => Number.isInteger(id))) {
-    throw new Error('--webhook-ids must be a JSON array of integer webhook IDs');
+  if (!ids.every((id) => Number.isInteger(id) && (id as number) > 0)) {
+    throw new Error('--webhook-ids must be a JSON array of positive integer webhook IDs');
   }
   return ids as number[];
 }
@@ -4535,15 +4545,7 @@ function requireFilterShareScope(
 
 function asFilterShareType(
   value: string | boolean | undefined,
-):
-  | 'user'
-  | 'group'
-  | 'project'
-  | 'projectRole'
-  | 'global'
-  | 'loggedin'
-  | 'authenticated'
-  | undefined {
+): 'user' | 'group' | 'project' | 'projectRole' | 'global' | 'authenticated' | undefined {
   const s = asString(value);
   if (s === undefined) return undefined;
   // `loggedin` is the read-side name; requests must say `authenticated`.
@@ -4602,7 +4604,7 @@ function filterQueryParams(opts: ParsedCommand['options']): {
 
 function requireFilterShareType(
   value: string | boolean | undefined,
-): 'user' | 'group' | 'project' | 'projectRole' | 'global' | 'loggedin' | 'authenticated' {
+): 'user' | 'group' | 'project' | 'projectRole' | 'global' | 'authenticated' {
   const t = asFilterShareType(value);
   if (t === undefined) throw new Error('Missing required option: --share-type');
   return t;
@@ -7699,12 +7701,16 @@ const FIELDS_ACTIONS = [
   'field-trash-list',
 ] as const;
 
-/** Split a CSV flag of IDs, dropping blanks; a given flag must name at least one ID. */
-function idsCsvFlag(value: string | boolean | undefined, name: string): string[] | undefined {
+/** Split a CSV flag of IDs, dropping blanks; a given flag must name at least one `noun`. */
+function idsCsvFlag(
+  value: string | boolean | undefined,
+  name: string,
+  noun = 'ID',
+): string[] | undefined {
   const raw = asString(value);
   if (raw === undefined) return undefined;
   const ids = splitCsvIds(raw);
-  if (ids.length === 0) throw new Error(`${name} must contain at least one ID`);
+  if (ids.length === 0) throw new Error(`${name} must contain at least one ${noun}`);
   return ids;
 }
 
@@ -7720,7 +7726,7 @@ async function executeFields(client: JiraClient, cmd: ParsedCommand): Promise<un
       // B446: GET /rest/api/3/field/search
       const startAt = asNonNegativeInt(opts['start-at'], '--start-at');
       const maxResults = asPositiveInt(opts['max-results'], '--max-results');
-      const type = idsCsvFlag(opts['type'], '--type')?.map((t) => {
+      const type = idsCsvFlag(opts['type'], '--type', 'type (custom, system)')?.map((t) => {
         if (t !== 'custom' && t !== 'system') {
           throw new Error(`--type must contain only 'custom' or 'system', got: ${t}`);
         }
@@ -9357,14 +9363,12 @@ async function executeDashboards(client: JiraClient, cmd: ParsedCommand): Promis
     // ── bulk-edit ────────────────────────────────────────────────────────────
     case 'bulk-edit': {
       // entityIds spec type: integer[] — parse each CSV entry as a number.
-      const entityIds = (csvFlag(requireOpt(opts['entity-ids'], '--entity-ids')) ?? []).map(
-        (s: string) => {
-          const n = Number(s);
-          if (!Number.isInteger(n) || n <= 0)
-            throw new Error(`--entity-ids: '${s}' is not a positive integer`);
-          return n;
-        },
-      );
+      const entityIds = requireIdsCsvFlag(opts['entity-ids'], '--entity-ids').map((s: string) => {
+        const n = Number(s);
+        if (!Number.isInteger(n) || n <= 0)
+          throw new Error(`--entity-ids: '${s}' is not a positive integer`);
+        return n;
+      });
       const action = asEnum(
         requireOpt(opts['action'], '--action'),
         BULK_EDIT_DASHBOARD_ACTIONS,

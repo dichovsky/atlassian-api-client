@@ -982,7 +982,12 @@ export class FieldsResource {
     fieldId: string,
     params: DeleteFieldParams & { readonly returnTask: true },
   ): Promise<TaskProgressBeanObject>;
-  /** Delete a custom field (asynchronous; see the `returnTask` overload). */
+  /**
+   * Delete a custom field (asynchronous; see the `returnTask` overload). Only a
+   * literal `returnTask: true` selects the task-typed overload: a
+   * `DeleteFieldParams` value whose `returnTask` is `true` at runtime is typed
+   * `Promise<void>` here but still resolves the task.
+   */
   delete(fieldId: string, params?: DeleteFieldParams): Promise<void>;
   async delete(
     fieldId: string,
