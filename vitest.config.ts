@@ -5,6 +5,8 @@ export default defineConfig({
     globals: false,
     environment: 'node',
     include: ['test/**/*.test.ts'],
+    // Refuses real network access outside loopback (X-NO-NETWORK).
+    setupFiles: ['test/setup/no-network.ts'],
     exclude: [
       'node_modules/**',
       'dist/**',

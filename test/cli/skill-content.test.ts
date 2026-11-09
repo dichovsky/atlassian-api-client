@@ -2,8 +2,15 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync, readdirSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { parseCommand } from '../../src/cli/router.js';
+import { getHelpText } from '../../src/cli/help.js';
 import { readSkillVersion } from '../../src/skill-installer/index.js';
+import {
+  commandProblems,
+  fencedCommands,
+  inlineCommands,
+  shellWords,
+  type DocCommand,
+} from '../helpers/skill-commands.js';
 
 const TEST_DIR = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(TEST_DIR, '..', '..');
@@ -32,6 +39,15 @@ const ALL_REFERENCE_DOCS = [
   AUTH_SAFETY_REF,
   PAYLOAD_RULES_REF,
   EXAMPLES_REF,
+];
+/** Repo-relative paths of ALL_REFERENCE_DOCS, index for index. */
+const ALL_REFERENCE_FILES = [
+  'skill/reference/confluence.md',
+  'skill/reference/jira.md',
+  ...JIRA_DOMAIN_FILES.map((f) => `skill/reference/jira/${f}`),
+  'skill/reference/auth-and-safety.md',
+  'skill/reference/payload-rules.md',
+  'skill/reference/examples.md',
 ];
 // Keep router text compact so the skill stays cheap and leaves room for task context.
 // 5000 characters is roughly 1250 prompt tokens using a 4 chars/token estimate.
@@ -308,15 +324,41 @@ describe('Reference content sanity checks', () => {
   });
 });
 
-describe('Example commands in skill docs parse correctly', () => {
-  const skillExamples = extractAtlasCommands(SKILL_MD);
+/** Fenced `atlas` commands of the reference doc at `index` of ALL_REFERENCE_DOCS. */
+function extractAtlasCommands(markdown: string, index: number): DocCommand[] {
+  return fencedCommands(markdown, ALL_REFERENCE_FILES[index] as string);
+}
+
+/** Every `atlas …` line of every `atlas --help` EXAMPLES block. */
+function helpExamples(): DocCommand[] {
+  return [undefined, 'confluence', 'jira', 'scopes', 'install-skill'].flatMap((level) => {
+    const block = /\nEXAMPLES:\n([\s\S]*?)(?:\n\n|$)/.exec(getHelpText(level))?.[1] ?? '';
+    return block
+      .split('\n')
+      .map((line) => line.trim())
+      .filter((line) => line.startsWith('atlas '))
+      .map((text) => ({
+        where: `src/cli/help.ts (${level ?? 'global'})`,
+        text,
+        argv: shellWords(text).slice(1),
+      }));
+  });
+}
+
+describe('Example commands in skill docs and help run as written', () => {
+  // Fenced examples (with `\` continuations and multi-line JSON joined) and
+  // inline `atlas …` code in prose and tables, from SKILL.md and every
+  // reference file, plus the `atlas --help` EXAMPLES.
+  const skillExamples = fencedCommands(SKILL_MD, 'skill/SKILL.md');
   const refExamples = ALL_REFERENCE_DOCS.flatMap(extractAtlasCommands);
-  const examples = [...new Set([...skillExamples, ...refExamples])];
-  const confluenceResources = extractDispatcherResources(
-    CONFLUENCE_SRC,
-    'executeConfluenceCommand',
-  );
-  const jiraResources = extractDispatcherResources(JIRA_SRC, 'executeJiraCommand');
+  const inline = [
+    ...inlineCommands(SKILL_MD, 'skill/SKILL.md'),
+    ...ALL_REFERENCE_DOCS.flatMap((text, i) =>
+      inlineCommands(text, ALL_REFERENCE_FILES[i] as string),
+    ),
+  ];
+  const all = [...skillExamples, ...refExamples, ...inline, ...helpExamples()];
+  const examples = [...new Map(all.map((c) => [c.text, c])).values()];
 
   it('finds at least 10 example commands', () => {
     expect(examples.length).toBeGreaterThanOrEqual(MIN_EXAMPLE_COMMANDS);
@@ -327,17 +369,28 @@ describe('Example commands in skill docs parse correctly', () => {
     expect(refExamples.length).toBeGreaterThan(0);
   });
 
+  it('reads continuation lines, inline code and the help examples', () => {
+    // Guards against an extractor regression that would silently check less.
+    expect(refExamples.length).toBeGreaterThan(1300);
+    expect(inline.length).toBeGreaterThan(40);
+    expect(helpExamples().length).toBeGreaterThan(500);
+    const continued = refExamples.find((c) => c.where === 'skill/reference/auth-and-safety.md:26');
+    expect(continued?.argv).toEqual([
+      'confluence',
+      'spaces',
+      'list',
+      '--base-url',
+      'https://confluence.internal.example',
+      '--allowed-hosts',
+      'confluence.internal.example',
+    ]);
+  });
+
   for (const example of examples) {
-    it(`parses: ${example}`, () => {
-      const tokens = tokenize(example);
-      const argv = ['node', ...tokens];
-      const parsed = parseCommand(argv);
-      expect(parsed.api).toMatch(/^(confluence|jira|install-skill|scopes)$/);
-      if (parsed.api === 'confluence') {
-        expect(confluenceResources).toContain(parsed.resource);
-      } else if (parsed.api === 'jira') {
-        expect(jiraResources).toContain(parsed.resource);
-      }
+    it(`parses: ${example.text}`, () => {
+      // An existing api/resource/action, flags the router accepts, and valid
+      // JSON in every JSON-valued flag.
+      expect(commandProblems(example.argv), example.where).toEqual([]);
     });
   }
 });
@@ -509,54 +562,6 @@ describe('Resource coverage drift check', () => {
 });
 
 // ─── helpers ────────────────────────────────────────────────────────────────
-
-/** Extract `atlas …` command lines from fenced shell code blocks. */
-function extractAtlasCommands(markdown: string): string[] {
-  const lines: string[] = [];
-  const blockRegex = /```(?:sh|bash)\n([\s\S]*?)```/g;
-  let match: RegExpExecArray | null;
-  while ((match = blockRegex.exec(markdown)) !== null) {
-    const body = match[1] as string;
-    for (const raw of body.split('\n')) {
-      const line = raw.trim();
-      if (!line.startsWith('atlas ')) continue;
-      // Skip lines with shell composition the tokenizer can't honour.
-      if (line.includes('|') || line.includes('&&') || line.includes('>')) continue;
-      // Skip lines that contain unresolved placeholders like <value-from-response>
-      if (/<[^>]+>/.test(line)) continue;
-      lines.push(line);
-    }
-  }
-  return lines;
-}
-
-/** Naive shell tokenizer that respects single and double quotes. */
-function tokenize(line: string): string[] {
-  const tokens: string[] = [];
-  let current = '';
-  let inSingle = false;
-  let inDouble = false;
-  for (const ch of line) {
-    if (ch === "'" && !inDouble) {
-      inSingle = !inSingle;
-      continue;
-    }
-    if (ch === '"' && !inSingle) {
-      inDouble = !inDouble;
-      continue;
-    }
-    if (ch === ' ' && !inSingle && !inDouble) {
-      if (current.length > 0) {
-        tokens.push(current);
-        current = '';
-      }
-      continue;
-    }
-    current += ch;
-  }
-  if (current.length > 0) tokens.push(current);
-  return tokens;
-}
 
 /** Extract `case 'X':` resource names from the dispatcher function body. */
 function extractDispatcherResources(source: string, functionName: string): string[] {

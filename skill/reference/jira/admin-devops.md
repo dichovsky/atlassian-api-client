@@ -38,6 +38,8 @@ App-scoped resource grouping three distinct API surfaces used by Forge and Atlas
 
 Most actions require Forge/Connect-issued credentials (OAuth 2.0 3LO scopes or Connect JWT). Basic auth with an API token will return `401`/`403` on every action.
 
+**Connect app (JWT) only** (`get-dynamic-modules`, `register-dynamic-modules`, `delete-dynamic-modules`): only Connect apps can call these. The CLI only sends basic or bearer auth, which Jira rejects here (expect 401/403); do not retry from the CLI, use the SDK's `createConnectJwtMiddleware` (see [`../auth-and-safety.md`](../auth-and-safety.md)).
+
 | Action                               | Positional       | Required flags        | Optional flags                                  |
 | ------------------------------------ | ---------------- | --------------------- | ----------------------------------------------- |
 | `get-field-context-configuration`    | `<fieldIdOrKey>` | —                     | filters (below), `--start-at`, `--max-results`  |
@@ -347,6 +349,7 @@ atlas jira configuration update-timetracking-options --working-hours-per-day 8 -
 **Notes:**
 
 - **App-only:** Jira accepts `list`, `register`, `refresh` and `delete` only from Connect and OAuth 2.0 apps, and `list-failed` only from Connect apps. A user API token (the default `basic` auth) is rejected; use `ATLASSIAN_AUTH_TYPE=bearer` with the OAuth 2.0 app's access token. `list-failed` needs Connect JWT auth, which the CLI does not provide (SDK only).
+- **Connect app (JWT) only** (`list-failed`): only Connect apps can call this. The CLI only sends basic or bearer auth, which Jira rejects here (expect 401/403); do not retry from the CLI, use the SDK's `createConnectJwtMiddleware` (see [`../auth-and-safety.md`](../auth-and-safety.md)).
 - Webhooks registered through the REST API expire after 30 days; `refresh` them before then. For non-public OAuth apps, Jira delivers a webhook only if the user who registered it owns the app.
 - `list` calls `GET /rest/api/3/webhook` and returns a paginated list of registered webhooks for the calling app.
 - `register` calls `POST /rest/api/3/webhook`. `--webhooks` is a JSON array of `{ jqlFilter, events, fieldIdsFilter?, issuePropertyKeysFilter? }` objects.
@@ -1718,7 +1721,7 @@ All eight actions share the same contract: `DELETE <product-base>/bulkByProperti
 | `delete-remote-links`      | —          | `--properties` | —                      |
 | `delete-security`          | —          | `--properties` | —                      |
 
-- `--properties`: the properties to match, sent as query params with AND logic (all must match): comma-separated `key=value` pairs (`accountId=account-123` or `accountId=acc-1,environment=prod`), or a JSON object when a value contains a comma (`--properties '{"tags":"a,b"}'`; values are strings or numbers). A repeated key is rejected rather than silently replacing the first; an empty key or an empty value is rejected too.
+- `--properties`: the properties to match, sent as query params with AND logic (all must match): comma-separated `key=value` pairs (`accountId=account-123` or `accountId=acc-1,environment=prod`), or a JSON object when a value contains a comma (`--properties '{"tags":"a,b"}'`; values are strings or numbers). A repeated key is rejected rather than silently replacing the first; an empty key or an empty value is rejected too. The reserved keys `_updateSequenceId` and `_updateSequenceNumber` are refused: they are the update-sequence guard, not properties (use `--update-sequence-id` on `delete-devinfo`).
 - `--update-sequence-id <n>` (`delete-devinfo` only) — positive integer, sent as `_updateSequenceId`: only dev-info data with an `updateSequenceId` less than or equal to it is deleted. Every other action rejects it: Jira no longer supports the guard on feature flags, builds, deployments and remote links, and the security, operations and DevOps-component deletes never had one.
 - **Connect app (JWT) only** (`delete-operations`): only Connect apps that define the `jiraOperationsInfoProvider` module can call this. The CLI only sends basic or bearer auth, which Jira rejects here (expect 401/403); do not retry from the CLI, use the SDK's `createConnectJwtMiddleware` (see [`../auth-and-safety.md`](../auth-and-safety.md)).
 - **Connect app (JWT) only** (`delete-devops-components`): only Connect apps that define the `jiraDevOpsComponentProvider` module can call this. The CLI only sends basic or bearer auth, which Jira rejects here (expect 401/403); do not retry from the CLI, use the SDK's `createConnectJwtMiddleware` (see [`../auth-and-safety.md`](../auth-and-safety.md)).
