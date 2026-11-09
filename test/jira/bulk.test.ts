@@ -1,8 +1,12 @@
 import { describe, it, expect, expectTypeOf, beforeEach } from 'vitest';
 import { BulkResource } from '../../src/jira/resources/bulk.js';
-import type { Task } from '../../src/jira/resources/task.js';
-// Root import: the options type of the public overloads must be importable by consumers.
-import type { BulkIssuePropertyOptions } from '../../src/index.js';
+// Root import: the option and result types of the public overloads must be importable by consumers.
+import type {
+  BulkDeleteIssuePropertyData,
+  BulkIssuePropertyOptions,
+  JiraClient,
+  Task,
+} from '../../src/index.js';
 import { ValidationError } from '../../src/core/errors.js';
 import { MockTransport } from '../helpers/mock-transport.js';
 import type {
@@ -190,6 +194,37 @@ describe('BulkResource', () => {
       expectTypeOf(() => bulk.deletePropertyBulk('p', {}, options)).returns.toEqualTypeOf<
         Promise<Task | undefined>
       >();
+    });
+
+    it('consumer fakes: a Promise<void> annotation breaks; unannotated or re-declared overloads compile', async () => {
+      // Pins the migration note, using root imports only.
+      type Bulk = JiraClient['bulk'];
+      const annotated: Pick<Bulk, 'deletePropertyBulk'> = {
+        // @ts-expect-error a Promise<void> annotation does not satisfy the returnTask overload
+        deletePropertyBulk: async (): Promise<void> => undefined,
+      };
+      const unannotated: Pick<Bulk, 'deletePropertyBulk'> = {
+        deletePropertyBulk: async () => undefined,
+      };
+      class Redeclared implements Pick<Bulk, 'deletePropertyBulk'> {
+        deletePropertyBulk(
+          propertyKey: string,
+          data: BulkDeleteIssuePropertyData,
+          options?: BulkIssuePropertyOptions & { readonly returnTask?: false },
+        ): Promise<void>;
+        deletePropertyBulk(
+          propertyKey: string,
+          data: BulkDeleteIssuePropertyData,
+          options?: BulkIssuePropertyOptions,
+        ): Promise<Task | undefined>;
+        async deletePropertyBulk(): Promise<Task | void> {
+          return undefined;
+        }
+      }
+
+      for (const fake of [annotated, unannotated, new Redeclared()]) {
+        await expect(fake.deletePropertyBulk('p', {})).resolves.toBeUndefined();
+      }
     });
   });
 

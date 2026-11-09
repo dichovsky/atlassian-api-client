@@ -526,6 +526,8 @@ export type {
   BulkSetIssuePropertyData,
   BulkDeleteIssuePropertyData,
   BulkIssuePropertyOptions,
+  // Result of setPropertyBulk / deletePropertyBulk with { returnTask: true }
+  Task,
   BulkIssueIsWatchingResult,
   // Workflows, field contexts, invalid-JQL audit log, Forge panels
   WorkflowCopyRequest,
