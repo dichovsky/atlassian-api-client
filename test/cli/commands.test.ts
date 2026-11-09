@@ -24011,11 +24011,9 @@ describe('executeJiraCommand', () => {
         cmd('issuesecurityschemes', 'remove-level', ['10001', '10100'], {}),
         GLOBALS,
       );
-      expect(jiraIssueSecuritySchemesMock.removeLevel).toHaveBeenCalledWith(
-        '10001',
-        '10100',
-        expect.any(Object),
-      );
+      expect(jiraIssueSecuritySchemesMock.removeLevel).toHaveBeenCalledWith('10001', '10100', {
+        returnTask: true,
+      });
       expect(result).toEqual({ deleted: true });
     });
 
@@ -24238,6 +24236,7 @@ describe('executeJiraCommand', () => {
       );
       expect(jiraIssueSecuritySchemesMock.associateToProject).toHaveBeenCalledWith(
         expect.objectContaining({ projectId: '10100', schemeId: '10001' }),
+        { returnTask: true },
       );
       expect(result).toEqual({ updated: true });
     });
@@ -24257,6 +24256,7 @@ describe('executeJiraCommand', () => {
         expect.objectContaining({
           oldToNewSecurityLevelMappings: [{ oldLevelId: '10100', newLevelId: '10101' }],
         }),
+        { returnTask: true },
       );
     });
 

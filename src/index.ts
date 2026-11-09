@@ -516,6 +516,10 @@ export type {
   ListFieldsParams,
   DeleteFieldParams,
   TaskProgressBeanObject,
+  // issueSecuritySchemes.associateToProject / removeLevel resolve the task with { returnTask: true }
+  AssociateSchemesToProjectsData,
+  AssociateSchemesToProjectsOptions,
+  RemoveSecurityLevelParams,
   Webhook,
   RegisterWebhookData,
   RegisteredWebhooks,

@@ -210,6 +210,8 @@ export class PrioritySchemeResource {
   /**
    * B644: List priority schemes with offset pagination.
    * GET /rest/api/3/priorityscheme
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   async list(params?: ListPrioritySchemesParams): Promise<OffsetPaginatedResponse<PriorityScheme>> {
     if (params?.maxResults !== undefined) validatePageSize(params.maxResults, 'maxResults');
@@ -224,6 +226,8 @@ export class PrioritySchemeResource {
 
   /**
    * B644: Iterate every priority scheme. Delegates to {@link paginateOffset}.
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   async *listAll(
     params?: Omit<ListPrioritySchemesParams, 'startAt'>,
@@ -241,6 +245,8 @@ export class PrioritySchemeResource {
   /**
    * B645: Create a new priority scheme.
    * POST /rest/api/3/priorityscheme
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   async create(data: CreatePrioritySchemeData): Promise<PrioritySchemeId> {
     const body: Record<string, unknown> = {
@@ -264,6 +270,8 @@ export class PrioritySchemeResource {
    * DELETE /rest/api/3/priorityscheme/{schemeId}
    *
    * Only available for schemes with no associated projects.
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   async delete(schemeId: string): Promise<void> {
     await this.transport.request<undefined>({
@@ -275,6 +283,8 @@ export class PrioritySchemeResource {
   /**
    * B647: Update a priority scheme. Returns the async task envelope per spec.
    * PUT /rest/api/3/priorityscheme/{schemeId}
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   async update(
     schemeId: string,
@@ -298,6 +308,8 @@ export class PrioritySchemeResource {
   /**
    * B648: List priorities in a scheme (paginated).
    * GET /rest/api/3/priorityscheme/{schemeId}/priorities
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   async listPriorities(
     schemeId: string,
@@ -315,6 +327,8 @@ export class PrioritySchemeResource {
 
   /**
    * B648: Iterate every priority in a scheme. Delegates to {@link paginateOffset}.
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   async *listPrioritiesAll(
     schemeId: string,
@@ -333,6 +347,8 @@ export class PrioritySchemeResource {
   /**
    * B649: List projects associated with a priority scheme (paginated).
    * GET /rest/api/3/priorityscheme/{schemeId}/projects
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   async listProjects(
     schemeId: string,
@@ -353,6 +369,8 @@ export class PrioritySchemeResource {
 
   /**
    * B649: Iterate every project in a scheme. Delegates to {@link paginateOffset}.
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   async *listProjectsAll(
     schemeId: string,
@@ -378,6 +396,8 @@ export class PrioritySchemeResource {
    * The body describes priorities/projects being added or removed; the
    * response lists priorities that would require a mapping to apply the
    * change safely.
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   async suggestedMappings(
     data?: SuggestedMappingsData,
@@ -400,6 +420,8 @@ export class PrioritySchemeResource {
   /**
    * B651: List priorities available for adding to a scheme.
    * GET /rest/api/3/priorityscheme/priorities/available
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   async listAvailablePriorities(
     params: ListAvailablePrioritiesParams,
@@ -420,6 +442,8 @@ export class PrioritySchemeResource {
   /**
    * B651: Iterate every available priority for a scheme. Delegates to
    * {@link paginateOffset}.
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   async *listAvailablePrioritiesAll(
     params: Omit<ListAvailablePrioritiesParams, 'startAt'>,

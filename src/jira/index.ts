@@ -959,6 +959,7 @@ export type {
   SetDefaultLevelsData,
   OldToNewSecurityLevelMapping,
   AssociateSchemesToProjectsData,
+  AssociateSchemesToProjectsOptions,
   ListSecurityLevelMembersParams,
   RemoveSecurityLevelParams,
   GetSecurityLevelsParams,

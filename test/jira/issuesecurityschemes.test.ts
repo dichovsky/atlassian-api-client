@@ -332,6 +332,25 @@ describe('IssueSecuritySchemesResource', () => {
 
       expect(transport.lastCall?.options.query?.['replaceWith']).toBeUndefined();
     });
+
+    it('resolves the removal task with returnTask: true and never sends returnTask', async () => {
+      const task = { id: '10641', self: `${BASE_URL}/task/10641`, status: 'ENQUEUED' };
+      transport.respondWith(task);
+
+      const result = await resource.removeLevel('10001', '10100', {
+        replaceWith: '10101',
+        returnTask: true,
+      });
+
+      expect(result).toEqual(task);
+      expect(transport.lastCall?.options.query).toEqual({ replaceWith: '10101' });
+    });
+
+    it('resolves void without returnTask even when Jira returns the task', async () => {
+      transport.respondWith({ id: '10641' });
+
+      await expect(resource.removeLevel('10001', '10100')).resolves.toBeUndefined();
+    });
   });
 
   // ── B547: updateLevel ──────────────────────────────────────────────────────
@@ -731,6 +750,28 @@ describe('IssueSecuritySchemesResource', () => {
       await resource.associateToProject({ projectId: '10100', schemeId: '10001' });
 
       expect(transport.lastCall?.options.body).not.toHaveProperty('oldToNewSecurityLevelMappings');
+    });
+
+    it('resolves the association task with returnTask: true and never sends returnTask', async () => {
+      const task = { id: '10641', self: `${BASE_URL}/task/10641`, status: 'ENQUEUED' };
+      transport.respondWith(task);
+
+      const result = await resource.associateToProject(
+        { projectId: '10100', schemeId: '10001' },
+        { returnTask: true },
+      );
+
+      expect(result).toEqual(task);
+      expect(transport.lastCall?.options.body).toEqual({ projectId: '10100', schemeId: '10001' });
+      expect(transport.lastCall?.options.query).toBeUndefined();
+    });
+
+    it('resolves void without returnTask even when Jira returns the task', async () => {
+      transport.respondWith({ id: '10641' });
+
+      await expect(
+        resource.associateToProject({ projectId: '10100', schemeId: '10001' }),
+      ).resolves.toBeUndefined();
     });
   });
 

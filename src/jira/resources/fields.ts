@@ -1376,7 +1376,9 @@ export class FieldsResource {
   // ── Field admin methods (B414, B432, B442, B443, B444, B445, B447) ──────────
 
   /** Get project associations for a custom field (paginated). B414
-   * GET /rest/api/3/field/{fieldId}/association/project */
+   * GET /rest/api/3/field/{fieldId}/association/project
+   *
+   * @experimental Atlassian marks this operation as experimental. */
   async listFieldProjectAssociations(
     fieldId: string,
     params?: ListFieldProjectAssociationsParams,

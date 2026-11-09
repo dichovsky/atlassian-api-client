@@ -3,6 +3,7 @@ import { encodePathSegment } from '../../core/path.js';
 import type { OffsetPaginatedResponse } from '../../core/pagination.js';
 import { paginateOffset, validatePageSize } from '../../core/pagination.js';
 import { appendRepeatedParams } from '../../core/query.js';
+import type { TaskProgressBeanObject } from './workflowscheme.js';
 
 // ─── Response types ────────────────────────────────────────────────────────
 
@@ -164,6 +165,15 @@ export interface AssociateSchemesToProjectsData {
   readonly oldToNewSecurityLevelMappings?: OldToNewSecurityLevelMapping[];
 }
 
+/** Options for {@link IssueSecuritySchemesResource.associateToProject}. */
+export interface AssociateSchemesToProjectsOptions {
+  /**
+   * Client-side only (never sent): resolve with the association task
+   * (`TaskProgressBeanObject`) instead of `void`.
+   */
+  readonly returnTask?: boolean;
+}
+
 // ─── Query param interfaces ───────────────────────────────────────────────
 
 /** Query parameters for GET /rest/api/3/issuesecurityschemes/{issueSecuritySchemeId}/members (B543). */
@@ -179,6 +189,11 @@ export interface ListSecurityLevelMembersParams {
 export interface RemoveSecurityLevelParams {
   /** Optional: replace deleted level with this level ID. */
   readonly replaceWith?: string;
+  /**
+   * Client-side only (never sent): resolve with the removal task
+   * (`TaskProgressBeanObject`) instead of `void`.
+   */
+  readonly returnTask?: boolean;
 }
 
 /** Query parameters for GET /rest/api/3/issuesecurityschemes/level (B550). */
@@ -374,20 +389,38 @@ export class IssueSecuritySchemesResource {
    * B546: Remove a security level from an issue security scheme.
    * DELETE /rest/api/3/issuesecurityschemes/{schemeId}/level/{levelId}
    *
+   * Asynchronous: Jira answers 303 to the removal task, which the transport
+   * follows. With `returnTask: true` this resolves that task (poll it with
+   * `client.task.get(task.id)`), or `undefined` when Jira answers without one
+   * (a 204; the spec documents only the 303).
+   *
    * @experimental Atlassian marks this operation as experimental.
    */
+  removeLevel(
+    schemeId: string,
+    levelId: string,
+    params: RemoveSecurityLevelParams & { readonly returnTask: true },
+  ): Promise<TaskProgressBeanObject | undefined>;
+  /**
+   * B546: Remove a security level (asynchronous; see the `returnTask` overload).
+   * DELETE /rest/api/3/issuesecurityschemes/{schemeId}/level/{levelId}
+   *
+   * @experimental Atlassian marks this operation as experimental.
+   */
+  removeLevel(schemeId: string, levelId: string, params?: RemoveSecurityLevelParams): Promise<void>;
   async removeLevel(
     schemeId: string,
     levelId: string,
     params?: RemoveSecurityLevelParams,
-  ): Promise<void> {
+  ): Promise<TaskProgressBeanObject | void> {
     const query: Record<string, string | undefined> = {};
     if (params?.replaceWith !== undefined) query['replaceWith'] = params.replaceWith;
-    await this.transport.request<undefined>({
+    const response = await this.transport.request<TaskProgressBeanObject>({
       method: 'DELETE',
       path: `${this.baseUrl}/issuesecurityschemes/${encodePathSegment(schemeId)}/level/${encodePathSegment(levelId)}`,
       query,
     });
+    return params?.returnTask === true ? response.data : undefined;
   }
 
   /**
@@ -586,9 +619,32 @@ export class IssueSecuritySchemesResource {
    * B554: Associate security schemes to projects.
    * PUT /rest/api/3/issuesecurityschemes/project
    *
+   * Asynchronous: Jira answers 303 to the association task, which the
+   * transport follows. With `returnTask: true` this resolves that task (poll
+   * it with `client.task.get(task.id)`), or `undefined` when Jira answers
+   * without one (a 204; the spec documents only the 303).
+   *
    * @experimental Atlassian marks this operation as experimental.
    */
-  async associateToProject(data: AssociateSchemesToProjectsData): Promise<void> {
+  associateToProject(
+    data: AssociateSchemesToProjectsData,
+    options: AssociateSchemesToProjectsOptions & { readonly returnTask: true },
+  ): Promise<TaskProgressBeanObject | undefined>;
+  /**
+   * B554: Associate security schemes to projects (asynchronous; see the
+   * `returnTask` overload).
+   * PUT /rest/api/3/issuesecurityschemes/project
+   *
+   * @experimental Atlassian marks this operation as experimental.
+   */
+  associateToProject(
+    data: AssociateSchemesToProjectsData,
+    options?: AssociateSchemesToProjectsOptions,
+  ): Promise<void>;
+  async associateToProject(
+    data: AssociateSchemesToProjectsData,
+    options?: AssociateSchemesToProjectsOptions,
+  ): Promise<TaskProgressBeanObject | void> {
     const body: Record<string, unknown> = {
       projectId: data.projectId,
       schemeId: data.schemeId,
@@ -596,11 +652,12 @@ export class IssueSecuritySchemesResource {
     if (data.oldToNewSecurityLevelMappings !== undefined) {
       body['oldToNewSecurityLevelMappings'] = data.oldToNewSecurityLevelMappings;
     }
-    await this.transport.request<undefined>({
+    const response = await this.transport.request<TaskProgressBeanObject>({
       method: 'PUT',
       path: `${this.baseUrl}/issuesecurityschemes/project`,
       body,
     });
+    return options?.returnTask === true ? response.data : undefined;
   }
 
   /**
