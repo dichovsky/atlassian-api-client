@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "4.1.0"
   },
-  "sourceHash": "802cf1d1590bbabe5b221b91c1562e800fe71335c35fc43eccea783956e968a6",
+  "sourceHash": "746dc1abf59d624cb157585f28392a59a1107506b01b2e76dc07bbe08e1435c4",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -989,6 +989,15 @@
       "typeOnly": true
     },
     {
+      "name": "CreateIssueParams",
+      "kind": "interface",
+      "file": "src/jira/resources/issues.ts",
+      "line": 553,
+      "signature": "export interface CreateIssueParams { readonly updateHistory?: boolean; }",
+      "jsdoc": "Optional query parameters for POST /rest/api/3/issue (createIssue).",
+      "typeOnly": true
+    },
+    {
       "name": "CreatePageData",
       "kind": "interface",
       "file": "src/confluence/types/pages.ts",
@@ -1853,6 +1862,15 @@
       "typeOnly": true
     },
     {
+      "name": "FieldContextDefaultValue",
+      "kind": "type",
+      "file": "src/jira/resources/fields.ts",
+      "line": 581,
+      "signature": "export type FieldContextDefaultValue = | FieldContextDefaultValueCascadingOption | FieldContextDefaultValueMultipleOptio…",
+      "jsdoc": "Polymorphic union for CustomFieldContextDefaultValue. Discriminated by the `type` string literal. 28 variants typed exactly per spec snapshot 2026-11-08. FieldContextDefaultValueUnknown at the end covers future variants.",
+      "typeOnly": true
+    },
+    {
       "name": "FieldContextDefaultValueLongText",
       "kind": "interface",
       "file": "src/jira/resources/fields.ts",
@@ -2113,6 +2131,15 @@
       "typeOnly": true
     },
     {
+      "name": "GetEditMetaParams",
+      "kind": "interface",
+      "file": "src/jira/resources/issues.ts",
+      "line": 562,
+      "signature": "export interface GetEditMetaParams { readonly overrideScreenSecurity?: boolean; readonly overrideEditableFlag?: boolean;…",
+      "jsdoc": "Optional query parameters for GET /rest/api/3/issue/{issueIdOrKey}/editmeta.",
+      "typeOnly": true
+    },
+    {
       "name": "GetEmbedParams",
       "kind": "interface",
       "file": "src/confluence/types/embeds.ts",
@@ -2176,6 +2203,24 @@
       "typeOnly": true
     },
     {
+      "name": "GetProjectParams",
+      "kind": "interface",
+      "file": "src/jira/resources/projects.ts",
+      "line": 351,
+      "signature": "export interface GetProjectParams { readonly expand?: string[]; readonly properties?: readonly string[]; }",
+      "jsdoc": "Query parameters for `GET /rest/api/3/project/{projectIdOrKey}`.",
+      "typeOnly": true
+    },
+    {
+      "name": "GetProjectsFieldsParams",
+      "kind": "interface",
+      "file": "src/jira/resources/projects.ts",
+      "line": 369,
+      "signature": "export interface GetProjectsFieldsParams { readonly projectId: readonly (number | string)[]; readonly workTypeId: readon…",
+      "jsdoc": "Parameters for `GET /rest/api/3/projects/fields` (B706).",
+      "typeOnly": true
+    },
+    {
       "name": "GetSpaceParams",
       "kind": "interface",
       "file": "src/confluence/types/spaces.ts",
@@ -2191,15 +2236,6 @@
       "line": 76,
       "signature": "export interface GetTaskParams { readonly 'body-format'?: TaskBodyFormat; }",
       "jsdoc": "Parameters for retrieving a single Confluence task.",
-      "typeOnly": true
-    },
-    {
-      "name": "GetUserParams",
-      "kind": "interface",
-      "file": "src/jira/resources/users.ts",
-      "line": 35,
-      "signature": "export interface GetUserParams { readonly expand?: string; }",
-      "jsdoc": "Query parameters for GET /rest/api/3/user and GET /rest/api/3/myself.",
       "typeOnly": true
     },
     {
@@ -2396,6 +2432,16 @@
       "signature": "export interface JiraClientConfig extends ClientConfig { readonly softwareIntegrationProxy?: JiraSoftwareIntegrationProx…",
       "jsdoc": "Configuration accepted by {@link JiraClient}.",
       "typeOnly": true
+    },
+    {
+      "name": "JiraGetUserParams",
+      "kind": "interface",
+      "file": "src/jira/resources/users.ts",
+      "line": 35,
+      "signature": "export interface GetUserParams { readonly expand?: string; }",
+      "jsdoc": "Query parameters for GET /rest/api/3/user and GET /rest/api/3/myself.",
+      "typeOnly": true,
+      "aliasOf": "GetUserParams"
     },
     {
       "name": "JiraLabel",
@@ -3326,6 +3372,15 @@
       "typeOnly": true
     },
     {
+      "name": "LoadProjectAvatarParams",
+      "kind": "interface",
+      "file": "src/jira/resources/projects.ts",
+      "line": 359,
+      "signature": "export interface LoadProjectAvatarParams { readonly x?: number; readonly y?: number; readonly size?: number; }",
+      "jsdoc": "Crop region for {@link ProjectsResource.loadAvatar}; each value defaults to 0.",
+      "typeOnly": true
+    },
+    {
       "name": "Logger",
       "kind": "interface",
       "file": "src/core/types.ts",
@@ -3643,6 +3698,15 @@
       "line": 34,
       "signature": "export interface Project { readonly id: string; readonly key: string; readonly name: string; readonly self: string; read…",
       "jsdoc": "Jira Project with metadata.",
+      "typeOnly": true
+    },
+    {
+      "name": "ProjectFieldBean",
+      "kind": "interface",
+      "file": "src/jira/resources/projects.ts",
+      "line": 381,
+      "signature": "export interface ProjectFieldBean { readonly projectId?: number; readonly workTypeId?: number; readonly fieldId?: string…",
+      "jsdoc": "A field of a work type in a project. Spec: `ProjectFieldBean`.",
       "typeOnly": true
     },
     {
@@ -4664,6 +4728,15 @@
       "line": 75,
       "signature": "export interface WorkflowTransition { readonly id: string; readonly name: string; readonly description?: string; readonl…",
       "jsdoc": "A workflow transition connecting two statuses in a Jira workflow.",
+      "typeOnly": true
+    },
+    {
+      "name": "WorklogBulkOutcome",
+      "kind": "interface",
+      "file": "src/jira/resources/issues.ts",
+      "line": 96,
+      "signature": "export interface WorklogBulkOutcome { readonly partial: boolean; readonly details?: unknown; }",
+      "jsdoc": "Outcome of a bulk worklog delete or move, resolved when the call passes `returnOutcome: true`. Jira answers 204 when it processed every worklog and 200 with a message when it processed only some (spec: bulkDeleteWorklogs, bulkMoveWorklogs; the 200 body has no schema).",
       "typeOnly": true
     },
     {
@@ -20446,7 +20519,7 @@
               "original": "SearchUsersParams"
             },
             {
-              "exported": "GetUserParams",
+              "exported": "JiraGetUserParams",
               "original": "GetUserParams"
             },
             {
@@ -20872,6 +20945,38 @@
             {
               "exported": "RemoveFieldParametersResultEntry",
               "original": "RemoveFieldParametersResultEntry"
+            },
+            {
+              "exported": "CreateIssueParams",
+              "original": "CreateIssueParams"
+            },
+            {
+              "exported": "GetEditMetaParams",
+              "original": "GetEditMetaParams"
+            },
+            {
+              "exported": "WorklogBulkOutcome",
+              "original": "WorklogBulkOutcome"
+            },
+            {
+              "exported": "GetProjectParams",
+              "original": "GetProjectParams"
+            },
+            {
+              "exported": "LoadProjectAvatarParams",
+              "original": "LoadProjectAvatarParams"
+            },
+            {
+              "exported": "GetProjectsFieldsParams",
+              "original": "GetProjectsFieldsParams"
+            },
+            {
+              "exported": "ProjectFieldBean",
+              "original": "ProjectFieldBean"
+            },
+            {
+              "exported": "FieldContextDefaultValue",
+              "original": "FieldContextDefaultValue"
             }
           ]
         }
@@ -23856,6 +23961,18 @@
             {
               "exported": "DeleteAllWorklogsParams",
               "original": "DeleteAllWorklogsParams"
+            },
+            {
+              "exported": "CreateIssueParams",
+              "original": "CreateIssueParams"
+            },
+            {
+              "exported": "GetEditMetaParams",
+              "original": "GetEditMetaParams"
+            },
+            {
+              "exported": "WorklogBulkOutcome",
+              "original": "WorklogBulkOutcome"
             }
           ]
         },
@@ -25329,6 +25446,22 @@
             {
               "exported": "ActorsMap",
               "original": "ActorsMap"
+            },
+            {
+              "exported": "GetProjectParams",
+              "original": "GetProjectParams"
+            },
+            {
+              "exported": "LoadProjectAvatarParams",
+              "original": "LoadProjectAvatarParams"
+            },
+            {
+              "exported": "GetProjectsFieldsParams",
+              "original": "GetProjectsFieldsParams"
+            },
+            {
+              "exported": "ProjectFieldBean",
+              "original": "ProjectFieldBean"
             }
           ]
         },

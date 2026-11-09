@@ -12,6 +12,8 @@ npm install
 npm run validate
 ```
 
+Use Node.js 24 or later (`.nvmrc` holds the version CI uses). The gate also runs these tools from `PATH`: `git` (`filemode:check` reads the index), `python3` (the API gap analyzer behind `api-coverage` and `test:api-gap`), and `bash` and `jq`, because `test/scripts/publish-workflow.test.ts` runs the publish workflow's step scripts with `bash` and those scripts call `jq`.
+
 ## Scripts
 
 | Script                     | Purpose                                                                                                                                                                                                                      |
@@ -45,13 +47,21 @@ npm run validate
 | `npm run validate`         | The full publish gate: `clean`, `validate:quality`, `test:coverage`, `test:api-gap`, then `validate:package` (filemode, toolchain, both typechecks, codemap, lint, format, 100% coverage, API-gap suite, build, and exports) |
 
 TypeScript 7 powers production type-checking and builds. The `typescript` dependency intentionally
-remains on the TypeScript 6 compatibility package because `typescript-eslint`, the codemap generator,
-and the public-JSDoc test still consume the TypeScript 6 compiler API. Use the npm scripts above instead
-of a bare `tsc`; the bridge can be removed once those tools support TypeScript 7's stable API.
+remains on the TypeScript 6 compatibility package because these still need it: `typescript-eslint`, the
+codemap generator (`scripts/generate-codemap.js`), the public-JSDoc test
+(`test/docs/jsdoc-public-exports.test.ts`) and the CLI write-property reachability test
+(`test/cli/cli-write-property-reachability.test.ts`) use the TypeScript 6 compiler API, and
+`npm run typecheck:ts6` runs its `tsc6` compiler. Use the npm scripts above instead of a bare `tsc`; the
+bridge can be removed once those tools support TypeScript 7's stable API.
 
 The Python-backed API gap tests are separate from V8 coverage because they do not execute `src/**/*.ts`.
-`npm run validate` still requires both suites. CI runs quality, coverage, analyzer, and package checks as
-parallel jobs and keeps the aggregate `CI` check as the required gate.
+`npm run validate` still requires both suites.
+
+CI runs five parallel jobs: `quality` (`npm run validate:quality`), `coverage` (`npm run test:coverage`),
+`api_gap` (`npm run test:api-gap`), `package` (`npm run validate:package`), and `node_floor`, which runs
+`npm run build` and `npm run test:unit` on Node.js 24.0.0, the `engines.node` floor; the other jobs use
+the version in `.nvmrc`. The aggregate `CI` job passes only when all five pass, and it is the required
+check.
 
 ## Code Standards
 

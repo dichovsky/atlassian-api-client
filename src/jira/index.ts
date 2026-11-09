@@ -96,6 +96,9 @@ export type {
   GetTransitionsParams,
   GetAgileIssueParams,
   DeleteAllWorklogsParams,
+  CreateIssueParams,
+  GetEditMetaParams,
+  WorklogBulkOutcome,
 } from './resources/issues.js';
 export { ProjectsResource } from './resources/projects.js';
 export type {
@@ -109,6 +112,10 @@ export type {
   DeleteProjectParams,
   RecentProjectsParams,
   ActorsMap,
+  GetProjectParams,
+  LoadProjectAvatarParams,
+  GetProjectsFieldsParams,
+  ProjectFieldBean,
 } from './resources/projects.js';
 export { SearchResource } from './resources/search.js';
 export type {
