@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "4.1.0"
   },
-  "sourceHash": "ee8ea45ca306dcb09680f20c42498c5a4d33d308cd6ddad98b6d1122f510382f",
+  "sourceHash": "dcecb1818e78468c3bda32b7daf49f590fdca32f387fa50023b9497e3d873bbc",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -37425,12 +37425,12 @@
           "kind": "interface",
           "line": 274,
           "exported": true,
-          "signature": "export interface CreateProjectData { readonly key: string; readonly name: string; readonly projectTypeKey: string; reado…"
+          "signature": "export interface CreateProjectData { readonly key: string; readonly name: string; readonly projectTypeKey?: string; read…"
         },
         {
           "name": "ProjectIdentifiers",
           "kind": "interface",
-          "line": 308,
+          "line": 309,
           "exported": true,
           "signature": "export interface ProjectIdentifiers { readonly id: number; readonly key: string; readonly self: string; }",
           "jsdoc": "Identifiers for a newly created project, returned by `POST /rest/api/3/project` (B652). Spec: `ProjectIdentifiers` (201, additionalProperties:false)."
@@ -37438,28 +37438,28 @@
         {
           "name": "UpdateProjectData",
           "kind": "interface",
-          "line": 317,
+          "line": 318,
           "exported": true,
           "signature": "export interface UpdateProjectData { readonly key?: string; readonly name?: string; readonly description?: string; reado…"
         },
         {
           "name": "DeleteProjectParams",
           "kind": "interface",
-          "line": 333,
+          "line": 334,
           "exported": true,
           "signature": "export interface DeleteProjectParams { readonly enableUndo?: boolean; }"
         },
         {
           "name": "RecentProjectsParams",
           "kind": "interface",
-          "line": 337,
+          "line": 338,
           "exported": true,
           "signature": "export interface RecentProjectsParams { readonly maxResults?: number; readonly expand?: string[]; readonly properties?: …"
         },
         {
           "name": "GetProjectParams",
           "kind": "interface",
-          "line": 349,
+          "line": 351,
           "exported": true,
           "signature": "export interface GetProjectParams { readonly expand?: string[]; readonly properties?: readonly string[]; }",
           "jsdoc": "Query parameters for `GET /rest/api/3/project/{projectIdOrKey}`."
@@ -37467,7 +37467,7 @@
         {
           "name": "LoadProjectAvatarParams",
           "kind": "interface",
-          "line": 357,
+          "line": 359,
           "exported": true,
           "signature": "export interface LoadProjectAvatarParams { readonly x?: number; readonly y?: number; readonly size?: number; }",
           "jsdoc": "Crop region for {@link ProjectsResource.loadAvatar}; each value defaults to 0."
@@ -37475,7 +37475,7 @@
         {
           "name": "GetProjectsFieldsParams",
           "kind": "interface",
-          "line": 367,
+          "line": 369,
           "exported": true,
           "signature": "export interface GetProjectsFieldsParams { readonly projectId: readonly (number | string)[]; readonly workTypeId: readon…",
           "jsdoc": "Parameters for `GET /rest/api/3/projects/fields` (B706)."
@@ -37483,7 +37483,7 @@
         {
           "name": "ProjectFieldBean",
           "kind": "interface",
-          "line": 379,
+          "line": 381,
           "exported": true,
           "signature": "export interface ProjectFieldBean { readonly projectId?: number; readonly workTypeId?: number; readonly fieldId?: string…",
           "jsdoc": "A field of a work type in a project. Spec: `ProjectFieldBean`."
@@ -37491,333 +37491,333 @@
         {
           "name": "roleIdSegment",
           "kind": "function",
-          "line": 391,
+          "line": 393,
           "signature": "function roleIdSegment(roleId: number): string",
           "jsdoc": "Path segment for a project role ID; rejects anything but a positive decimal integer. Untyped callers may still pass the ID as a decimal string, as 4.0.0 allowed."
         },
         {
           "name": "isBlobLike",
           "kind": "function",
-          "line": 404,
+          "line": 406,
           "signature": "function isBlobLike(value: unknown): value is Pick<Blob, 'arrayBuffer' | 'type'>",
           "jsdoc": "Realm-independent Blob check: a Blob from another realm or a polyfill fails `instanceof Blob`. Native fetch sends such an object as the text \"[object File]\", so callers must copy it into a native Blob before sending."
         },
         {
           "name": "ProjectsResource",
           "kind": "class",
-          "line": 414,
+          "line": 416,
           "exported": true,
           "signature": "export class ProjectsResource",
           "members": [
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 415
+              "line": 417
             },
             {
               "name": "list",
               "kind": "method",
-              "line": 421
+              "line": 423
             },
             {
               "name": "get",
               "kind": "method",
-              "line": 454
+              "line": 456
             },
             {
               "name": "listAll",
               "kind": "method",
-              "line": 473
+              "line": 475
             },
             {
               "name": "listLegacy",
               "kind": "method",
-              "line": 500
+              "line": 502
             },
             {
               "name": "create",
               "kind": "method",
-              "line": 529
+              "line": 531
             },
             {
               "name": "delete",
               "kind": "method",
-              "line": 563
+              "line": 565
             },
             {
               "name": "update",
               "kind": "method",
-              "line": 575
+              "line": 577
             },
             {
               "name": "recent",
               "kind": "method",
-              "line": 609
+              "line": 611
             },
             {
               "name": "listTypes",
               "kind": "method",
-              "line": 627
+              "line": 629
             },
             {
               "name": "getType",
               "kind": "method",
-              "line": 636
+              "line": 638
             },
             {
               "name": "getAccessibleType",
               "kind": "method",
-              "line": 645
+              "line": 647
             },
             {
               "name": "listAccessibleTypes",
               "kind": "method",
-              "line": 654
+              "line": 656
             },
             {
               "name": "getEmail",
               "kind": "method",
-              "line": 663
+              "line": 665
             },
             {
               "name": "setEmail",
               "kind": "method",
-              "line": 672
+              "line": 674
             },
             {
               "name": "getHierarchy",
               "kind": "method",
-              "line": 683
+              "line": 685
             },
             {
               "name": "archive",
               "kind": "method",
-              "line": 692
+              "line": 694
             },
             {
               "name": "setAvatar",
               "kind": "method",
-              "line": 700
+              "line": 702
             },
             {
               "name": "deleteAvatar",
               "kind": "method",
-              "line": 709
+              "line": 711
             },
             {
               "name": "loadAvatar",
               "kind": "method",
-              "line": 727
+              "line": 731
             },
             {
               "name": "loadAvatar",
               "kind": "method",
-              "line": 736
+              "line": 740
             },
             {
               "name": "loadAvatar",
               "kind": "method",
-              "line": 743
+              "line": 747
             },
             {
               "name": "getAvatars",
               "kind": "method",
-              "line": 770
+              "line": 774
             },
             {
               "name": "restore",
               "kind": "method",
-              "line": 781
+              "line": 785
             },
             {
               "name": "listRoles",
               "kind": "method",
-              "line": 790
+              "line": 794
             },
             {
               "name": "getClassificationConfig",
               "kind": "method",
-              "line": 799
+              "line": 803
             },
             {
               "name": "deleteClassificationLevel",
               "kind": "method",
-              "line": 808
+              "line": 812
             },
             {
               "name": "getClassificationLevel",
               "kind": "method",
-              "line": 816
+              "line": 820
             },
             {
               "name": "setClassificationLevel",
               "kind": "method",
-              "line": 825
+              "line": 829
             },
             {
               "name": "listComponents",
               "kind": "method",
-              "line": 836
+              "line": 840
             },
             {
               "name": "deleteRoleActors",
               "kind": "method",
-              "line": 856
+              "line": 860
             },
             {
               "name": "getRole",
               "kind": "method",
-              "line": 874
+              "line": 878
             },
             {
               "name": "listAllComponents",
               "kind": "method",
-              "line": 896
+              "line": 900
             },
             {
               "name": "deleteAsync",
               "kind": "method",
-              "line": 911
+              "line": 915
             },
             {
               "name": "getFeatures",
               "kind": "method",
-              "line": 920
+              "line": 924
             },
             {
               "name": "setFeatureState",
               "kind": "method",
-              "line": 929
+              "line": 933
             },
             {
               "name": "addRoleActors",
               "kind": "method",
-              "line": 943
+              "line": 947
             },
             {
               "name": "setRoleActors",
               "kind": "method",
-              "line": 961
+              "line": 965
             },
             {
               "name": "listProperties",
               "kind": "method",
-              "line": 975
+              "line": 979
             },
             {
               "name": "getRoleDetails",
               "kind": "method",
-              "line": 984
+              "line": 988
             },
             {
               "name": "deleteProperty",
               "kind": "method",
-              "line": 1009
+              "line": 1013
             },
             {
               "name": "getProperty",
               "kind": "method",
-              "line": 1017
+              "line": 1021
             },
             {
               "name": "getStatuses",
               "kind": "method",
-              "line": 1029
+              "line": 1033
             },
             {
               "name": "listVersions",
               "kind": "method",
-              "line": 1038
+              "line": 1042
             },
             {
               "name": "listAllVersions",
               "kind": "method",
-              "line": 1059
+              "line": 1063
             },
             {
               "name": "getIssueSecurityScheme",
               "kind": "method",
-              "line": 1075
+              "line": 1079
             },
             {
               "name": "getNotificationScheme",
               "kind": "method",
-              "line": 1084
+              "line": 1088
             },
             {
               "name": "getPermissionScheme",
               "kind": "method",
-              "line": 1100
+              "line": 1104
             },
             {
               "name": "setPermissionScheme",
               "kind": "method",
-              "line": 1116
+              "line": 1120
             },
             {
               "name": "getSecurityLevels",
               "kind": "method",
-              "line": 1133
+              "line": 1137
             },
             {
               "name": "listCategories",
               "kind": "method",
-              "line": 1144
+              "line": 1148
             },
             {
               "name": "createCategory",
               "kind": "method",
-              "line": 1153
+              "line": 1157
             },
             {
               "name": "deleteCategory",
               "kind": "method",
-              "line": 1166
+              "line": 1170
             },
             {
               "name": "getCategory",
               "kind": "method",
-              "line": 1174
+              "line": 1178
             },
             {
               "name": "setProperty",
               "kind": "method",
-              "line": 1183
+              "line": 1187
             },
             {
               "name": "updateCategory",
               "kind": "method",
-              "line": 1192
+              "line": 1196
             },
             {
               "name": "getProjectsFields",
               "kind": "method",
-              "line": 1215
+              "line": 1219
             },
             {
               "name": "getProjectsFields",
               "kind": "method",
-              "line": 1220
+              "line": 1224
             },
             {
               "name": "getProjectsFields",
               "kind": "method",
-              "line": 1223
+              "line": 1227
             },
             {
               "name": "validateProjectKey",
               "kind": "method",
-              "line": 1257
+              "line": 1261
             },
             {
               "name": "getValidProjectKey",
               "kind": "method",
-              "line": 1271
+              "line": 1275
             },
             {
               "name": "getValidProjectName",
               "kind": "method",
-              "line": 1285
+              "line": 1289
             }
           ]
         }
