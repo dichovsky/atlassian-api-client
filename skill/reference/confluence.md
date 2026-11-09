@@ -428,7 +428,7 @@ atlas confluence comments update-property 77777 --property-id prop-1 --key revie
 | `thumbnail`       | `<attachmentId>` | —                                                       | `--width`, `--height`, `--version-number`, `--file`, `--force`            |
 
 - To upload an attachment via the CLI, use `atlas confluence pages upload-attachment <pageId> --file <path>` (optional: `--filename` to override the on-disk name, `--media-type` to override MIME sniffing). The handler reads the file from disk and dispatches to `client.attachments.upload(pageId, filename, blob, mime?)`. See the `pages` section for full flag details. To call the SDK directly, pass the file content as a `Blob`; Node ESM callers can wrap a `Buffer` or `Uint8Array` in a `Blob` first. **Note:** upload uses the Confluence REST v1 endpoint (`POST /wiki/rest/api/content/{pageId}/child/attachment`) because the v2 API has no write path for attachments; the `X-Atlassian-Token: nocheck` header is set automatically. The return type is `UploadAttachmentResult` (a `{ results: UploadAttachmentResultItem[] }` envelope), not the v2 cursor-paginated shape.
-- `<attachmentId>` is the `id` that `list` returns (e.g. `att123456`); the spec pattern is `(att)?[0-9]+`, so the bare number also works. `delete` types the ID as an integer, so pass the bare number there (`123456`). `--property-id` is the numeric property `id` from `list-properties`.
+- `<attachmentId>` is the `id` that `list` returns (e.g. `att123456`); the spec pattern is `(att)?[0-9]+`, so the bare number also works. `delete` and `labels` type the ID as an integer, so pass the bare number there (`123456`, not `att123456`). `--property-id` is the numeric property `id` from `list-properties`.
 - `list` and `list-all` each return one page of results; pass the `cursor=…` value from `_links.next` back as `--cursor` for the next page.
 - `list` hits `GET /pages/{pageId}/attachments`; it supports the same attachment `--sort`, comma-separated `--status`, `--media-type`, and `--filename` filters as the current v2 contract. `list-all` hits the tenant-wide `GET /attachments`. `--status` accepts a single value or comma-separated list of `current`, `archived`, `trashed`.
 - Descending `--sort` values start with `-`, so attach them with `=` (`--sort=-created-date`); `--sort -created-date` is rejected as an ambiguous option.
@@ -464,6 +464,7 @@ atlas confluence attachments get-property att123456 --property-id 98765
 atlas confluence attachments update-property att123456 --property-id 98765 --key reviewed --value true --version-number 2 --message "Checked"
 atlas confluence attachments thumbnail att123456 --width 200 --height 200 --file ./att123456-thumb.png
 atlas confluence attachments delete-property att123456 --property-id 98765
+atlas confluence attachments labels 123456 --prefix global --sort name --limit 25
 atlas confluence attachments delete 123456 --purge
 ```
 

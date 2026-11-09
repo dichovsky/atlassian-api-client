@@ -4360,8 +4360,9 @@ function bulkCursor(
  * spec filter keys (IssueFilterForBulkPropertySet / ...Delete, both
  * `additionalProperties: false`). Jira changes every editable issue the filter
  * does not exclude, so a filter that cannot narrow the change — an unknown
- * (misspelt) key, `{}`, an `entityIds` that is not a non-empty array, or a
- * non-boolean `hasProperty` — is refused before the request. `undefined` when
+ * (misspelt) key, `{}` or a lone null `currentValue`, an `entityIds` that is
+ * not a non-empty array, or a non-boolean `hasProperty` — is refused before
+ * the request. `undefined` when
  * `--filter` is absent.
  */
 function bulkPropertyFilter(
@@ -4384,11 +4385,6 @@ function bulkPropertyFilter(
         : `${prefix} accepts only entityIds and currentValue (got ${unknown.join(', ')}${unknown.includes('hasProperty') ? '; hasProperty is set-property only' : ''})`,
     );
   }
-  if (keys.length === 0) {
-    throw new Error(
-      `${prefix} names no criterion; omit --filter to change every issue you can edit`,
-    );
-  }
   const ids = filter['entityIds'];
   if (ids !== undefined && (!Array.isArray(ids) || ids.length === 0)) {
     throw new Error(`${prefix} entityIds must be a non-empty array of issue IDs`);
@@ -4396,6 +4392,13 @@ function bulkPropertyFilter(
   const hasProperty = filter['hasProperty'];
   if (hasProperty !== undefined && typeof hasProperty !== 'boolean') {
     throw new Error(`${prefix} hasProperty must be true or false`);
+  }
+  // `{}`, or a lone `currentValue: null` (the only null left by the checks
+  // above), which Jira may read as no filter at all.
+  if (keys.every((k) => filter[k] === null)) {
+    throw new Error(
+      `${prefix} names no criterion; omit --filter to change every issue you can edit`,
+    );
   }
   return filter;
 }

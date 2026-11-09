@@ -11,6 +11,7 @@ import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
+import { runAtlas } from '../e2e/helpers/cli-runner.js';
 import { runCliWire, type CliWireResult, type WireRequest } from '../helpers/cli-wire.js';
 import { MockTransport } from '../helpers/mock-transport.js';
 import { ValidationError } from '../../src/core/errors.js';
@@ -142,15 +143,44 @@ describe('space-roles list --space-id refuses a blank value (X-SR-SPACEID)', () 
 // ── X-ATT-IDS ───────────────────────────────────────────────────────────────
 
 describe('attachments examples use IDs the spec accepts (X-ATT-IDS)', () => {
-  // Spec: GET/PUT/DELETE attachment IDs are `(att)?[0-9]+`, except DELETE
-  // /attachments/{id}, which types the ID as an int64; property IDs are int64.
+  // Spec: attachment IDs are `(att)?[0-9]+`, except DELETE /attachments/{id}
+  // and GET /attachments/{id}/labels, which type the ID as an int64; property
+  // IDs are int64.
+  const INT64_ACTIONS = ['delete', 'labels'];
   const commands = sectionCommands(CONF, 'attachments').map((c) => tokenize(c).slice(1));
   const withId = commands.filter((argv) => argv[3] !== undefined && !argv[3].startsWith('--'));
 
+  it('only delete and labels type the attachment ID as an integer in the pinned spec', () => {
+    interface Param {
+      in?: string;
+      name?: string;
+      schema?: { type?: string };
+    }
+    const spec = JSON.parse(
+      readFileSync(resolve(import.meta.dirname, '..', '..', 'spec', 'confluence-v2.json'), 'utf8'),
+    ) as { paths: Record<string, Record<string, { parameters?: Param[] }>> };
+    const int64 = Object.entries(spec.paths)
+      .filter(([path]) => path.startsWith('/attachments/{'))
+      .flatMap(([path, ops]) =>
+        Object.entries(ops)
+          .filter(([, op]) =>
+            (op.parameters ?? []).some(
+              (p) =>
+                p.in === 'path' &&
+                (p.name === 'id' || p.name === 'attachment-id') &&
+                p.schema?.type === 'integer',
+            ),
+          )
+          .map(([method]) => `${method.toUpperCase()} ${path}`),
+      );
+    expect(int64.sort()).toEqual(['DELETE /attachments/{id}', 'GET /attachments/{id}/labels']);
+  });
+
   it('every example attachment ID matches the spec pattern', () => {
-    expect(withId.length).toBeGreaterThanOrEqual(9);
+    expect(withId.length).toBeGreaterThanOrEqual(10);
+    expect(withId.map((argv) => argv[2])).toEqual(expect.arrayContaining(INT64_ACTIONS));
     for (const argv of withId) {
-      const pattern = argv[2] === 'delete' ? /^[0-9]+$/ : /^(att)?[0-9]+$/;
+      const pattern = INT64_ACTIONS.includes(argv[2] as string) ? /^[0-9]+$/ : /^(att)?[0-9]+$/;
       expect(argv[3], argv.join(' ')).toMatch(pattern);
     }
   });
@@ -166,7 +196,7 @@ describe('attachments examples use IDs the spec accepts (X-ATT-IDS)', () => {
 
   it('the skill explains the ID forms', () => {
     expect(section(CONF, 'attachments')).toContain(
-      '`<attachmentId>` is the `id` that `list` returns (e.g. `att123456`); the spec pattern is `(att)?[0-9]+`, so the bare number also works. `delete` types the ID as an integer, so pass the bare number there (`123456`). `--property-id` is the numeric property `id` from `list-properties`.',
+      '`<attachmentId>` is the `id` that `list` returns (e.g. `att123456`); the spec pattern is `(att)?[0-9]+`, so the bare number also works. `delete` and `labels` type the ID as an integer, so pass the bare number there (`123456`, not `att123456`). `--property-id` is the numeric property `id` from `list-properties`.',
     );
   });
 
@@ -182,6 +212,15 @@ describe('attachments examples use IDs the spec accepts (X-ATT-IDS)', () => {
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
+  });
+
+  it('the labels example sends the bare number and its filters', async () => {
+    const req = only(
+      await runCliWire(example(CONF, 'attachments', 'confluence attachments labels', '--prefix')),
+    );
+    expect(req.method).toBe('GET');
+    expect(req.path).toBe(`${V2}/attachments/123456/labels`);
+    expect(Object.fromEntries(req.query)).toEqual({ prefix: 'global', sort: 'name', limit: '25' });
   });
 
   it('the delete example sends the bare number', async () => {
@@ -262,6 +301,25 @@ describe('bulk property filters that would not narrow the change are refused', (
     );
   });
 
+  it.each([
+    ['set-property', setArgv],
+    ['delete-property', deleteArgv],
+  ])('%s refuses a lone null currentValue (it names no criterion)', async (action, argv) => {
+    refused(
+      await runCliWire(withFlag(argv, '--filter', '{"currentValue":null}')),
+      `bulk ${action} --filter names no criterion; omit --filter to change every issue you can edit`,
+    );
+  });
+
+  it('a null currentValue beside entityIds is still sent', async () => {
+    const del = only(
+      await runCliWire(
+        withFlag(deleteArgv, '--filter', '{"entityIds":[10100],"currentValue":null}'),
+      ),
+    );
+    expect(del.body).toEqual({ entityIds: [10100], currentValue: null });
+  });
+
   it('set-property refuses a non-boolean hasProperty', async () => {
     refused(
       await runCliWire(withFlag(setArgv, '--filter', '{"hasProperty":null}')),
@@ -279,10 +337,10 @@ describe('bulk property filters that would not narrow the change are refused', (
   it('the skill documents the refusals', () => {
     const text = section(ADMIN, 'bulk');
     expect(text).toContain(
-      "For `set-property` it is a JSON object with `entityIds` (numeric issue IDs), `currentValue` (only issues whose property has this value) and `hasProperty` (`true`: only issues that have the property; `false`: only issues without it), sent as the body's `filter`; any other key (a misspelt `entityId`, say) is rejected before sending.",
+      "For `set-property` it is a JSON object with `entityIds` (numeric issue IDs), `currentValue` (only issues whose property has this value) and `hasProperty` (`true`: only issues that have the property; `false`: only issues without it), sent as the body's `filter`; any other key (a misspelt `entityId`, say) or a non-boolean `hasProperty` is rejected before sending.",
     );
     expect(text).toContain(
-      'On both actions a `--filter` that names no criterion (`{}`, which Jira reads as every issue you can edit), an `entityIds` that is not a non-empty array (`[]` or `null`, whose meaning Jira does not define) or a non-boolean `hasProperty` is rejected before sending.',
+      'On both actions a `--filter` that names no criterion (`{}`, which Jira reads as every issue you can edit, or a lone `"currentValue": null`, which Jira may read the same way) or an `entityIds` that is not a non-empty array (`[]` or `null`, whose meaning Jira does not define) is rejected before sending.',
     );
   });
 });
@@ -339,8 +397,40 @@ describe('every binary download can save its bytes (X-CONF-THUMB)', () => {
   // downloadThumbnail and universalAvatar.getAvatarImageByType / ByID / ByOwner.
   const dir = mkdtempSync(join(tmpdir(), 'atlas-binary-'));
   afterAll(() => rmSync(dir, { recursive: true, force: true }));
-  // NUL, CR/LF and a multi-byte character: any text-mode handling would change them.
-  const BODY = '\u0089PNG\r\n\u001a\n\u0000ÿ end';
+  // Not valid UTF-8 (lone 0x89 / 0xFF / 0x80 bytes) plus NUL and CR/LF: a text
+  // round trip (text() then a utf8 write) would replace or drop them.
+  const BODY = Uint8Array.from([
+    0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0xff, 0xfe, 0x80,
+  ]);
+
+  /**
+   * runCliWire answers with UTF-8 text only, which a text round trip would
+   * preserve, so this drives the same argv → transport path with a fetch stub
+   * that answers with the raw bytes.
+   */
+  async function runBinary(
+    argv: string[],
+  ): Promise<{ urls: string[]; methods: string[]; code: number; stderr: string }> {
+    const urls: string[] = [];
+    const methods: string[] = [];
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = (async (input: string | URL | Request, init?: RequestInit) => {
+      urls.push(input instanceof Request ? input.url : String(input));
+      methods.push((init?.method ?? 'GET').toUpperCase());
+      return new Response(BODY, { status: 200 });
+    }) as typeof fetch;
+    try {
+      const run = await runAtlas(argv);
+      return { urls, methods, code: run.code, stderr: run.stderr };
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  }
+
+  it('the body is not valid UTF-8, so a text round trip would change it', () => {
+    const roundTrip = Buffer.from(new TextDecoder().decode(BODY), 'utf8');
+    expect(roundTrip.equals(Buffer.from(BODY))).toBe(false);
+  });
 
   it.each([
     [
@@ -375,11 +465,12 @@ describe('every binary download can save its bytes (X-CONF-THUMB)', () => {
     ],
   ])('%s writes the exact response bytes', async (label, argv, path) => {
     const file = join(dir, `${label.replaceAll(' ', '-')}.bin`);
-    const req = only(await runCliWire([...argv, file], { respond: { body: BODY } }));
-    expect(req.method).toBe('GET');
-    expect(req.path).toBe(path);
-    const expected = Buffer.from(BODY, 'utf8');
-    expect(readFileSync(file).equals(expected)).toBe(true);
+    const run = await runBinary([...argv, file]);
+    expect(run.stderr).toBe('');
+    expect(run.code).toBe(0);
+    expect(run.methods).toEqual(['GET']);
+    expect(run.urls.map((u) => new URL(u).pathname)).toEqual([path]);
+    expect(readFileSync(file).equals(Buffer.from(BODY))).toBe(true);
   });
 });
 
