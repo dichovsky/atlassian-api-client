@@ -144,7 +144,7 @@ const hang: Answer = (_call, init) =>
 const thenAnswer =
   (first: Answer, rest: Answer): Answer =>
   (call, init) =>
-    (call.url.startsWith(TENANT) && call.method !== 'GET' ? first : rest)(call, init);
+    (new URL(call.url).origin === TENANT && call.method !== 'GET' ? first : rest)(call, init);
 
 const redirectTo = (code: number, location: string): Answer => status(code, { location });
 
