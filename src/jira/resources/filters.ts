@@ -97,14 +97,27 @@ export interface ListFiltersParams {
   readonly isSubstringMatch?: boolean;
 }
 
+/**
+ * One `sharePermissions` / `editPermissions` entry of a filter create or
+ * update body. The spec shape is the nested `SharePermission`
+ * ({@link FilterSharePermission}): `{ type: 'group', group: { groupId } }`,
+ * `{ type: 'project', project: { id } }`,
+ * `{ type: 'projectRole', project: { id }, role: { id } }`,
+ * `{ type: 'user', user: { accountId } }`, `{ type: 'global' }` or
+ * `{ type: 'authenticated' }`. The flat {@link AddFilterSharePermissionData}
+ * form is accepted for 4.x compatibility only; it is the `add-permission`
+ * shape and is not part of the `Filter` schema.
+ */
+export type FilterSharePermissionWrite = FilterSharePermission | AddFilterSharePermissionData;
+
 /** Request body for creating a new Jira saved filter. */
 export interface CreateFilterData {
   readonly name: string;
   readonly description?: string;
   readonly jql?: string;
   readonly favourite?: boolean;
-  readonly sharePermissions?: AddFilterSharePermissionData[];
-  readonly editPermissions?: AddFilterSharePermissionData[];
+  readonly sharePermissions?: FilterSharePermissionWrite[];
+  readonly editPermissions?: FilterSharePermissionWrite[];
 }
 
 /** Request body for updating an existing Jira saved filter. */
@@ -113,8 +126,8 @@ export interface UpdateFilterData {
   readonly description?: string;
   readonly jql?: string;
   readonly favourite?: boolean;
-  readonly sharePermissions?: AddFilterSharePermissionData[];
-  readonly editPermissions?: AddFilterSharePermissionData[];
+  readonly sharePermissions?: FilterSharePermissionWrite[];
+  readonly editPermissions?: FilterSharePermissionWrite[];
 }
 
 /**
@@ -131,25 +144,16 @@ export interface DefaultShareScopeResponse {
 }
 
 /**
- * Write shape for share permission entries on a filter. Used by:
- *
- * - `POST /rest/api/3/filter/{id}/permission`
- * - `sharePermissions` / `editPermissions` arrays on
- *   `POST /rest/api/3/filter` and `PUT /rest/api/3/filter/{id}`
+ * Flat write shape for `POST /rest/api/3/filter/{id}/permission`
+ * (`SharePermissionInputBean` schema). Filter create/update bodies use the
+ * nested shape instead — see {@link FilterSharePermissionWrite}.
  *
  * `type` is required; the other fields are conditionally required by Jira
  * depending on the permission kind (e.g. `project` requires `projectId`,
  * `group` requires `groupname` or `groupId`, `user` requires `accountId`,
- * `projectRole` requires `projectId` + `projectRoleId`).
- *
- * The accepted `type` union is broader than the response shape
- * {@link FilterSharePermission} — write values `projectRole` and
- * `authenticated` are normalised by Jira and surface back as `project` and
- * `loggedin` respectively when the filter is read.
- */
-/**
- * Write shape for share permission entries on a filter
- * (`SharePermissionInputBean` schema).
+ * `projectRole` requires `projectId` + `projectRoleId`). Write values
+ * `projectRole` and `authenticated` surface back as `project` and `loggedin`
+ * when the filter is read.
  *
  * The spec write enum is: `user`, `project`, `group`, `projectRole`, `global`,
  * `authenticated`. Use `authenticated` to create a "logged-in users" permission;
@@ -311,11 +315,8 @@ export class FiltersResource {
   /**
    * Replace the column configuration for a filter.
    *
-   * Callers pass an array of column keys, which the transport JSON-encodes as
-   * a `{ "columns": ["key1", "key2", ...] }` request body. Jira's
-   * documentation calls for repeated `columns` form fields, but Cloud accepts
-   * the JSON object form, which matches how every other resource in this
-   * library serialises array payloads.
+   * Sends `{ "columns": ["key1", "key2", ...] }` as JSON, per the spec; an
+   * empty array clears the filter's columns.
    */
   async setColumns(id: string, columns: string[]): Promise<void> {
     await this.transport.request<undefined>({

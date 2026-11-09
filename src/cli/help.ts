@@ -639,12 +639,12 @@ EXAMPLES:
   atlas jira workflows list-history --workflow-id c5ef565c-1b1e-427e-bc3b-e677b0dc027c --expand includeIntermediateWorkflows
   atlas jira workflows get-rule-config --types postfunction,condition
   atlas jira workflows get-rule-config --types postfunction --workflow-names "My Workflow" --max-results 10
-  atlas jira workflows update-rule-config --workflows '[{"workflowId":{"name":"My Workflow"},"postFunctions":[{"id":"rule-id","configuration":{"value":"{}"}}]}]'
+  atlas jira workflows update-rule-config --workflows '[{"workflowId":{"name":"My Workflow"},"postFunctions":[{"id":"rule-id","key":"my-app__my-post-function","configuration":{"value":"{}"}}]}]'
   atlas jira workflows delete-rule-config --workflows '[{"workflowId":{"name":"My Workflow"},"workflowRuleIds":["rule-id"]}]'
   atlas jira workflows preview --body '{"projectId":"10001","workflowIds":["3215e5cd-f09f-4c8a-921b-dca92bd1e9aa"]}'
   atlas jira workflows search --query-string "Default" --is-active true
-  atlas jira workflows update --body '{"workflows":[{"id":"3215e5cd-f09f-4c8a-921b-dca92bd1e9aa","description":"Updated"}]}'
-  atlas jira workflows validate-update --body '{"payload":{"workflows":[{"id":"3215e5cd-f09f-4c8a-921b-dca92bd1e9aa","description":"Updated"}]}}'
+  atlas jira workflows update --body '{"statuses":[{"id":"10000","name":"To Do","statusCategory":"TODO","statusReference":"10000"}],"workflows":[{"id":"3215e5cd-f09f-4c8a-921b-dca92bd1e9aa","version":{"id":"6a7f4b1e-3c2d-4e5f-8a9b-0c1d2e3f4a5b","versionNumber":3},"statuses":[{"statusReference":"10000","properties":{}}],"transitions":[{"id":"1","name":"Create","type":"INITIAL","toStatusReference":"10000"}]}]}'
+  atlas jira workflows validate-update --body '{"payload":{"statuses":[{"id":"10000","name":"To Do","statusCategory":"TODO","statusReference":"10000"}],"workflows":[{"id":"3215e5cd-f09f-4c8a-921b-dca92bd1e9aa","version":{"id":"6a7f4b1e-3c2d-4e5f-8a9b-0c1d2e3f4a5b","versionNumber":3},"statuses":[{"statusReference":"10000","properties":{}}],"transitions":[{"id":"1","name":"Create","type":"INITIAL","toStatusReference":"10000"}]}]},"validationOptions":{"levels":["ERROR","WARNING"]}}'
   atlas jira workflowscheme list --max-results 50
   atlas jira workflowscheme list --all
   atlas jira workflowscheme get 10001
@@ -777,10 +777,10 @@ EXAMPLES:
   atlas jira migration search-workflow-rules --transfer-id <uuid> --workflow-entity-id <uuid> --rule-ids <uuid1>,<uuid2>
   atlas jira dashboards list --max-results 25
   atlas jira dashboards get 10001
-  atlas jira dashboards search --dashboard-name "Sprint" --order-by -favorite_count
+  atlas jira dashboards search --dashboard-name "Sprint" --order-by=-favorite_count
   atlas jira dashboards list-gadgets 10001
   atlas jira dashboards add-gadget 10001 --module-key com.atlassian.jira.gadgets:filter-results-gadget --row 1 --column 1
-  atlas jira dashboards bulk-edit --entity-ids 10001,10002 --action delete
+  atlas jira dashboards bulk-edit --entity-ids 10001,10002 --action changeOwner --new-owner 5b10a2844c20165700ede21g --autofix-name true
   atlas jira labels list
   atlas jira labels list --start-at 0 --max-results 50
   atlas jira issue-comments list PROJ-123

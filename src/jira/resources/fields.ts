@@ -4,6 +4,7 @@ import { encodePathSegment } from '../../core/path.js';
 import type { OffsetPaginatedResponse } from '../../core/pagination.js';
 import { validatePageSize } from '../../core/pagination.js';
 import { appendRepeatedParams } from '../../core/query.js';
+import type { TaskProgressBeanObject } from './workflowscheme.js';
 
 /** JsonTypeBean — the schema of a Jira field. */
 export interface FieldSchema {
@@ -898,6 +899,15 @@ export interface GetFieldContextMappingsParams {
   readonly maxResults?: number;
 }
 
+/** Options for {@link FieldsResource.delete}. */
+export interface DeleteFieldParams {
+  /**
+   * Client-side only (never sent): resolve with the deletion task
+   * (`TaskProgressBeanObject`) instead of `void`.
+   */
+  readonly returnTask?: boolean;
+}
+
 export class FieldsResource {
   constructor(
     private readonly transport: Transport,
@@ -962,12 +972,33 @@ export class FieldsResource {
     });
   }
 
-  /** Delete a custom field. */
-  async delete(fieldId: string): Promise<void> {
-    await this.transport.request<undefined>({
+  /**
+   * Delete a custom field (in the trash or not). Deletion is asynchronous:
+   * Jira answers 303 to the deletion task, which the transport follows. With
+   * `returnTask: true` this resolves that task (poll it with
+   * `client.task.get(task.id)`), or `undefined` when Jira answers without one
+   * (a 204 or an empty 200; the spec documents only the 303); otherwise `void`.
+   */
+  delete(
+    fieldId: string,
+    params: DeleteFieldParams & { readonly returnTask: true },
+  ): Promise<TaskProgressBeanObject | undefined>;
+  /**
+   * Delete a custom field (asynchronous; see the `returnTask` overload). Only a
+   * literal `returnTask: true` selects the task-typed overload: a
+   * `DeleteFieldParams` value whose `returnTask` is `true` at runtime is typed
+   * `Promise<void>` here but still resolves the task.
+   */
+  delete(fieldId: string, params?: DeleteFieldParams): Promise<void>;
+  async delete(
+    fieldId: string,
+    params?: DeleteFieldParams,
+  ): Promise<TaskProgressBeanObject | void> {
+    const response = await this.transport.request<TaskProgressBeanObject>({
       method: 'DELETE',
       path: `${this.baseUrl}/field/${encodePathSegment(fieldId)}`,
     });
+    return params?.returnTask === true ? response.data : undefined;
   }
 
   /** List contexts for a custom field (paginated). B415 */
