@@ -802,6 +802,12 @@ describe('SpacesResource', () => {
         limit: 10,
       });
     });
+
+    it('passes a tenant-defined role-type through (spec: open string)', async () => {
+      transport.respondWith({ results: [], _links: {} });
+      await spaces.listRoleAssignments('SP-1', { 'role-type': 'tenant-type' });
+      expect(transport.lastCall?.options.query).toMatchObject({ 'role-type': 'tenant-type' });
+    });
   });
 
   describe('listRoleAssignmentsAll() (B207)', () => {

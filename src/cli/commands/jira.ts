@@ -298,14 +298,9 @@ async function executeIssues(client: JiraClient, cmd: ParsedCommand): Promise<un
       });
       // `--summary` is required, so `fields` is always present.
       const fields = data['fields'] as Record<string, unknown>;
-      // Either the flag or `--body` fields.project / fields.issuetype (by ID) will do;
-      // a JSON `null` or `""` counts as missing (Jira answers 400).
-      if (!fields['project']) {
-        throw new Error('Missing required option: --project');
-      }
-      if (!fields['issuetype']) {
-        throw new Error('Missing required option: --type');
-      }
+      // Either the flag or `--body` fields.project / fields.issuetype (by ID) will do.
+      requireIssueRef(fields, 'project', 'key', '--project');
+      requireIssueRef(fields, 'issuetype', 'name', '--type');
       return client.issues.create(data as { fields: Record<string, unknown> }, {
         updateHistory: asBoolFlag(opts['update-history']),
       });
@@ -1826,10 +1821,14 @@ async function executePriorities(client: JiraClient, cmd: ParsedCommand): Promis
     case 'move': {
       const idsRaw = requireOpt(opts['ids'], '--ids');
       const ids = splitCsvIds(idsRaw);
-      const after = asString(opts['after']);
-      const position = asString(opts['position']);
+      const after = nonBlankOpt(opts['after'], '--after');
+      const position = nonBlankOpt(opts['position'], '--position');
       if (after !== undefined && position !== undefined) {
         throw new Error('priorities move accepts either --after or --position, not both');
+      }
+      // Spec ReorderIssuePriorities: `after` is required if `position` isn't provided.
+      if (after === undefined && position === undefined) {
+        throw new Error('priorities move requires one of: --after, --position');
       }
       await client.priorities.move({
         ids,
@@ -2836,9 +2835,14 @@ function parsePositiveDecimalIntegerArg(value: string, name: string): string {
   return value;
 }
 
+/** `Number()` of a flag value, but NaN for an empty or blank one (`Number('')` is 0). */
+function numberArg(value: string): number {
+  return value.trim() === '' ? NaN : Number(value);
+}
+
 function asNonNegativeInt(value: string | boolean | undefined, name: string): number | undefined {
   if (typeof value !== 'string') return undefined;
-  const n = Number(value);
+  const n = numberArg(value);
   if (!Number.isInteger(n) || n < 0) {
     throw new Error(`${name} must be a non-negative integer, got: ${value}`);
   }
@@ -4175,7 +4179,7 @@ function parseCsv(value: string | boolean | undefined): string[] | undefined {
 }
 
 function parseIntArg(value: string, name: string): number {
-  const n = Number(value);
+  const n = numberArg(value);
   if (!Number.isInteger(n)) {
     throw new Error(`${name} must be an integer, got: ${value}`);
   }
@@ -4183,7 +4187,7 @@ function parseIntArg(value: string, name: string): number {
 }
 
 function parseNonNegativeIntArg(value: string, name: string): number {
-  const n = Number(value);
+  const n = numberArg(value);
   if (!Number.isInteger(n) || n < 0) {
     throw new Error(`${name} must be a non-negative integer, got: ${value}`);
   }
@@ -4254,6 +4258,33 @@ function parseJsonObjectFlag(raw: string, flag: string): Record<string, unknown>
 
 function isJsonObject(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
+/**
+ * `issues create` `fields.project` / `fields.issuetype` must be an object
+ * naming the item by `id` (string or number) or by `alt` (`key` / `name`);
+ * Jira answers 400 to `{}`, a number or a string. Absent, `null` or `""`
+ * counts as missing.
+ */
+function requireIssueRef(
+  fields: Record<string, unknown>,
+  field: 'project' | 'issuetype',
+  alt: 'key' | 'name',
+  flag: string,
+): void {
+  const ref = fields[field];
+  if (ref === undefined || ref === null || ref === '') {
+    throw new Error(`Missing required option: ${flag}`);
+  }
+  const named =
+    isJsonObject(ref) &&
+    (typeof ref['id'] === 'number' ||
+      [ref['id'], ref[alt]].some((v) => typeof v === 'string' && v !== ''));
+  if (!named) {
+    throw new Error(
+      `--body fields.${field} must be an object with an "id" or "${alt}" (or pass ${flag})`,
+    );
+  }
 }
 
 /**
@@ -7249,11 +7280,7 @@ async function executeScreens(client: JiraClient, cmd: ParsedCommand): Promise<u
         'screenId',
       );
       const tabId = parsePositiveIntArg(requireArg(cmd.positionalArgs[1], 'tabId'), 'tabId');
-      const posStr = requireArg(cmd.positionalArgs[2], 'pos');
-      const posNum = Number(posStr);
-      if (!Number.isInteger(posNum) || posNum < 0) {
-        throw new Error(`pos must be a non-negative integer, got: ${posStr}`);
-      }
+      const posNum = parseNonNegativeIntArg(requireArg(cmd.positionalArgs[2], 'pos'), 'pos');
       await client.screens.moveTab(screenId, tabId, posNum);
       return { moved: true };
     }
@@ -7455,7 +7482,7 @@ const PLANNING_STYLES: readonly PlanningStyle[] = ['Scrum', 'Kanban'];
 
 function asFiniteNumber(value: string | boolean | undefined, name: string): number | undefined {
   if (typeof value !== 'string') return undefined;
-  const n = Number(value);
+  const n = numberArg(value);
   if (!Number.isFinite(n)) throw new Error(`${name} must be a finite number, got: ${value}`);
   return n;
 }
@@ -8110,6 +8137,10 @@ async function executeWorkflowScheme(client: JiraClient, cmd: ParsedCommand): Pr
       });
       if (projectIds === undefined || projectIds.length === 0) {
         throw new Error('Missing required option: --project-id');
+      }
+      // Spec getWorkflowSchemeProjectAssociations: projectId maxItems 100.
+      if (projectIds.length > 100) {
+        throw new Error(`--project-id accepts at most 100 project IDs, got: ${projectIds.length}`);
       }
       return client.workflowScheme.getProjectAssociations({ projectId: projectIds });
     }

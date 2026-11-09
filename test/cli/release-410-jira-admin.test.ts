@@ -4,7 +4,7 @@
  * (`skill/reference/**`) — the text an agent builds commands from — and run
  * through the real argv → router → client → transport path with a fake fetch.
  */
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -996,6 +996,14 @@ describe('universal-avatar (F243, F244)', () => {
     ['view-by-id', 'project', '1010', '--output', ' '],
     ['view-by-owner', 'project', '10001', '--output='],
   ])('%s with an empty --output is refused before the download', async (...argv) => {
+    // Run in a scratch cwd: a regression would write a file named " " there, not in the repo.
+    const scratch = mkdtempSync(join(tmpdir(), 'atlas-blank-output-'));
+    const cwd = process.cwd();
+    process.chdir(scratch);
+    onTestFinished(() => {
+      process.chdir(cwd);
+      rmSync(scratch, { recursive: true, force: true });
+    });
     const run = await runCliWire(['jira', 'universal-avatar', ...argv], {
       respond: { body: 'PNGBYTES' },
     });
@@ -1003,6 +1011,7 @@ describe('universal-avatar (F243, F244)', () => {
     expect(run.stderr).toContain('Missing value for --output');
     expect(run.stderr).not.toContain('ENOENT');
     expect(run.requests).toHaveLength(0);
+    expect(readdirSync(scratch)).toEqual([]);
   });
 
   it.each([
