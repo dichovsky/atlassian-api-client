@@ -88,7 +88,10 @@ export class AppResource {
     });
   }
 
-  /** Iterate over every app property across all pages. */
+  /**
+   * Iterate over every app property across all pages.
+   * @experimental Forge `asApp()` only.
+   */
   async *listPropertiesAll(
     params?: Omit<ListAppPropertiesParams, 'cursor'>,
   ): AsyncGenerator<AppProperty> {

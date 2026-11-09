@@ -534,6 +534,8 @@ atlas confluence admin-key delete
 
 ## `app`
 
+> **Experimental:** Atlassian marks every `app` action `x-experimental`; their shapes may change without notice.
+
 App properties are an **experimental, Forge-only** key-value API scoped to the
 calling Forge app, **not** to any page, space, user, or Connect app. Atlassian
 requires Forge `asApp()` for all four `/app/properties` operations. The
@@ -688,6 +690,8 @@ atlas confluence custom-content operations cc-1
 
 ## `data-policies`
 
+> **Experimental:** Atlassian marks both `data-policies` actions `x-experimental`; their shapes may change without notice.
+
 | Action         | Positional | Required flags | Optional flags                                     |
 | -------------- | ---------- | -------------- | -------------------------------------------------- |
 | `get-metadata` | —          | —              | —                                                  |
@@ -733,6 +737,8 @@ atlas confluence data-policies list-spaces --ids 100,200,300
 ```
 
 ## `space-permissions`
+
+> **Experimental:** Atlassian marks every action except `list` `x-experimental`; their shapes may change without notice.
 
 | Action                             | Positional | Required flags | Optional flags        |
 | ---------------------------------- | ---------- | -------------- | --------------------- |
@@ -990,6 +996,8 @@ atlas confluence tasks update 123456 --status incomplete
 
 ## `users`
 
+> **Experimental:** Atlassian marks both `users` actions `x-experimental`; their shapes may change without notice.
+
 Experimental single-user access controls. Atlassian marks both operations in
 this resource experimental. Bulk account-ID resolution lives under the
 separate `users-bulk` resource below.
@@ -1056,6 +1064,8 @@ atlas confluence users-bulk lookup --account-ids acc-1,acc-2 \
 ```
 
 ## `databases`
+
+> **Experimental:** Atlassian marks `fields`, `views`, `entries` and `get-entry` `x-experimental`; their shapes may change without notice.
 
 Databases are first-class v2 content. The CLI exposes the full surface: lifecycle (`create`/`get`/`delete`), hierarchy navigation (`ancestors`/`descendants`/`direct-children`/`operations`), classification level (`get-`/`update-`/`reset-classification-level`), content properties (`list-properties`, `create-property`, `get-property`, `update-property`, `delete-property`), restriction state and direct permissions (`get-`/`set-restriction-state`, `list-`/`add-`/`set-`/`delete-permissions`), and the experimental data endpoints (`fields`, `views`, `entries`, `get-entry`). Pagination is cursor-based for `descendants`, `direct-children`, `list-properties`, `list-permissions`, `fields`, `views`, and `entries`; `ancestors` returns a bare `{ results }` and is re-called with the highest ancestor's ID instead of a cursor.
 

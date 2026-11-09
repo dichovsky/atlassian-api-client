@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "4.1.0"
   },
-  "sourceHash": "a3f14af5c2f0b44fe3c940dd17dc61f534873cfee1a6066c4fc4c2af3b505d32",
+  "sourceHash": "9eb8a8445b47242479a211be1d5c45804d762cca1601a92245e2e1b7a1b53d8d",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -10044,7 +10044,7 @@
             {
               "name": "listPropertiesAll",
               "kind": "method",
-              "line": 92
+              "line": 95
             }
           ]
         }
