@@ -3125,7 +3125,7 @@ async function executeGroups(client: JiraClient, cmd: ParsedCommand): Promise<un
         'Atlassian removed the userName filter (the server ignores it); exclude groups with --exclude-id',
       );
       const exclude = parseCsv(opts['exclude']);
-      const excludeId = parseCsv(opts['exclude-id']);
+      const excludeId = filterCsv(opts['exclude-id'], '--exclude-id', 'group id');
       if (exclude !== undefined && excludeId !== undefined) {
         throw new Error('groups picker accepts --exclude or --exclude-id, not both');
       }
@@ -3408,7 +3408,7 @@ async function executeClassificationLevels(
 ): Promise<unknown> {
   switch (cmd.action) {
     case 'list': {
-      const statuses = csvFlag(cmd.options['status'])?.map(
+      const statuses = filterCsv(cmd.options['status'], '--status', 'status')?.map(
         (s) =>
           asEnum(s, CLASSIFICATION_STATUSES, 'status') as (typeof CLASSIFICATION_STATUSES)[number],
       );
@@ -3735,14 +3735,34 @@ function asIssueTypeKind(value: string | boolean | undefined): 'subtask' | 'stan
 }
 
 /**
+ * A CSV filter flag that, when given, names at least one value (`''` or `' , '`
+ * is rejected): dropping it would send the request unfiltered.
+ */
+function filterCsv(
+  value: string | boolean | undefined,
+  name: string,
+  noun: string,
+): string[] | undefined {
+  const items = parseCsv(value);
+  if (value !== undefined && items === undefined)
+    throw new Error(`${name} must name at least one ${noun}`);
+  return items;
+}
+
+/** A string flag that may be omitted but not given blank (it would be sent as-is). */
+function nonBlankOpt(value: string | boolean | undefined, name: string): string | undefined {
+  const s = asString(value);
+  if (s?.trim() === '') throw new Error(`Missing value for ${name}`);
+  return s;
+}
+
+/**
  * A CSV of int64 ids, each exact like `--issue-id`, sent once each (spec
  * `uniqueItems`). A value naming no id is rejected: dropping it would send the
  * request unfiltered.
  */
 function exactUniqueIds(value: string | boolean | undefined, name: string): number[] | undefined {
-  const ids = parseCsv(value)?.map((s) => asExactPositiveInt(s, name) as number);
-  if (value !== undefined && ids === undefined)
-    throw new Error(`${name} must name at least one id`);
+  const ids = filterCsv(value, name, 'id')?.map((s) => asExactPositiveInt(s, name) as number);
   return ids && [...new Set(ids)];
 }
 
@@ -3764,8 +3784,8 @@ function appFieldContextConfigurationParams(opts: ParsedCommand['options']): {
   const id = exactUniqueIds(opts['ids'], '--ids');
   const fieldContextId = exactUniqueIds(opts['context-ids'], '--context-ids');
   const issueId = asExactPositiveInt(opts['issue-id'], '--issue-id');
-  const projectKeyOrId = asString(opts['project']);
-  const issueTypeId = asString(opts['issue-type-id']);
+  const projectKeyOrId = nonBlankOpt(opts['project'], '--project');
+  const issueTypeId = nonBlankOpt(opts['issue-type-id'], '--issue-type-id');
   const startAt = asNonNegativeInt(opts['start-at'], '--start-at');
   const maxResults = asPositiveInt(opts['max-results'], '--max-results');
   if ((projectKeyOrId === undefined) !== (issueTypeId === undefined)) {
@@ -4322,13 +4342,15 @@ async function executeIssueAttachments(client: JiraClient, cmd: ParsedCommand): 
 }
 
 /**
- * Print the image size, or write the image to `--output`. An existing file or
- * a missing directory is refused before the download; nothing is overwritten.
+ * Print the image size, or write the image to `--output`. A blank path, an
+ * existing file or a missing directory is refused before the download; nothing
+ * is overwritten.
  */
 async function avatarImageResult(
-  output: string | undefined,
+  outputFlag: string | boolean | undefined,
   download: () => Promise<ArrayBuffer>,
 ): Promise<{ bytes: number; path?: string }> {
+  const output = nonBlankOpt(outputFlag, '--output');
   if (output === undefined) return { bytes: (await download()).byteLength };
   const { access, stat, writeFile } = await import('node:fs/promises');
   const { dirname } = await import('node:path');
@@ -4388,7 +4410,7 @@ async function executeUniversalAvatar(client: JiraClient, cmd: ParsedCommand): P
       const type = requireArg(cmd.positionalArgs[0], 'type');
       const size = asString(opts['size']);
       const format = asString(opts['image-format']);
-      return avatarImageResult(asString(opts['output']), () =>
+      return avatarImageResult(opts['output'], () =>
         client.universalAvatar.getAvatarImageByType(type as AvatarEntityType, {
           ...(size !== undefined && { size: size as AvatarViewSize }),
           ...(format !== undefined && { format: format as AvatarViewFormat }),
@@ -4401,7 +4423,7 @@ async function executeUniversalAvatar(client: JiraClient, cmd: ParsedCommand): P
       const id = parsePositiveIntArg(idRaw, 'id');
       const size = asString(opts['size']);
       const format = asString(opts['image-format']);
-      return avatarImageResult(asString(opts['output']), () =>
+      return avatarImageResult(opts['output'], () =>
         client.universalAvatar.getAvatarImageByID(type as AvatarEntityType, id, {
           ...(size !== undefined && { size: size as AvatarViewSize }),
           ...(format !== undefined && { format: format as AvatarViewFormat }),
@@ -4413,7 +4435,7 @@ async function executeUniversalAvatar(client: JiraClient, cmd: ParsedCommand): P
       const entityId = requireArg(cmd.positionalArgs[1], 'entityId');
       const size = asString(opts['size']);
       const format = asString(opts['image-format']);
-      return avatarImageResult(asString(opts['output']), () =>
+      return avatarImageResult(opts['output'], () =>
         client.universalAvatar.getAvatarImageByOwner(type as AvatarEntityType, entityId, {
           ...(size !== undefined && { size: size as AvatarViewSize }),
           ...(format !== undefined && { format: format as AvatarViewFormat }),

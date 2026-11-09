@@ -586,6 +586,30 @@ describe('app field-context configurations (F182, F189, F192)', () => {
     }
   });
 
+  it.each([
+    [['--project', 'P', '--issue-type-id', ''], '--issue-type-id'],
+    [['--project', '', '--issue-type-id', '10002'], '--project'],
+    [['--project', ' ', '--issue-type-id', '10002'], '--project'],
+    [['--project=', '--issue-type-id', '10002'], '--project'],
+  ])('%j: an empty half of the project filter is rejected, not sent', async (flags, flag) => {
+    for (const action of [
+      'get-field-context-configuration cf',
+      'list-field-context-configurations',
+    ]) {
+      const run = await runCliWire([
+        'jira',
+        'app',
+        ...action.split(' '),
+        '--field-ids-or-keys',
+        'cf',
+        ...flags,
+      ]);
+      expect(run.exitCode).toBe(1);
+      expect(run.stderr).toContain(`Missing value for ${flag}`);
+      expect(run.requests).toHaveLength(0);
+    }
+  });
+
   it('--ids and --context-ids send each id once (spec uniqueItems)', async () => {
     const ids = await runCliWire([
       'jira',
@@ -804,6 +828,16 @@ describe('classification-levels list (F186)', () => {
     expect(run.exitCode).toBe(1);
     expect(run.requests).toHaveLength(0);
   });
+
+  it.each(['', ' , '])(
+    '--status %j names no status and is rejected, not sent unfiltered',
+    async (value) => {
+      const run = await runCliWire(['jira', 'classification-levels', 'list', '--status', value]);
+      expect(run.exitCode).toBe(1);
+      expect(run.stderr).toContain('--status must name at least one status');
+      expect(run.requests).toHaveLength(0);
+    },
+  );
 });
 
 describe('license / avatar / migration closed values (F194, F250d)', () => {
@@ -958,6 +992,20 @@ describe('universal-avatar (F243, F244)', () => {
   });
 
   it.each([
+    ['view-by-type', 'project', '--output', ''],
+    ['view-by-id', 'project', '1010', '--output', ' '],
+    ['view-by-owner', 'project', '10001', '--output='],
+  ])('%s with an empty --output is refused before the download', async (...argv) => {
+    const run = await runCliWire(['jira', 'universal-avatar', ...argv], {
+      respond: { body: 'PNGBYTES' },
+    });
+    expect(run.exitCode).toBe(1);
+    expect(run.stderr).toContain('Missing value for --output');
+    expect(run.stderr).not.toContain('ENOENT');
+    expect(run.requests).toHaveLength(0);
+  });
+
+  it.each([
     ['jira', 'issue-attachments', 'download-content', '10000'],
     ['jira', 'issue-attachments', 'download-thumbnail', '10000'],
     ['confluence', 'attachments', 'thumbnail', 'att1'],
@@ -1023,6 +1071,24 @@ describe('groups picker (F187, F188)', () => {
     expect(run.stderr).toContain(message);
     expect(run.requests).toHaveLength(0);
   });
+
+  it.each(['', ' , '])(
+    '--exclude-id %j names no group and is rejected, not sent unfiltered',
+    async (value) => {
+      const run = await runCliWire([
+        'jira',
+        'groups',
+        'picker',
+        '--query',
+        'dev',
+        '--exclude-id',
+        value,
+      ]);
+      expect(run.exitCode).toBe(1);
+      expect(run.stderr).toContain('--exclude-id must name at least one group id');
+      expect(run.requests).toHaveLength(0);
+    },
+  );
 
   it('an --exclude that names no group does not conflict with --exclude-id', async () => {
     const run = await runCliWire([

@@ -121,7 +121,7 @@ atlas jira users list-search --start-at 50 --max-results 50
 
 - `--query` — fuzzy string to match against group names.
 - `--exclude` — **comma-separated** list of group **names** to exclude from results (sent as repeated `exclude=` params).
-- `--exclude-id` — **comma-separated** list of group **IDs** to exclude (repeated `excludeId=` params). Preferred, because a group's name can change. Use either `--exclude` or `--exclude-id`, not both (the CLI rejects the pair, as Jira does).
+- `--exclude-id` — **comma-separated** list of group **IDs** to exclude (repeated `excludeId=` params). Preferred, because a group's name can change. Use either `--exclude` or `--exclude-id`, not both (the CLI rejects the pair, as Jira does). An `--exclude-id` that names no ID (`''`, `','`) is rejected rather than sent unfiltered.
 - `--case-insensitive [true|false]` — match group names case-insensitively (server default `false`).
 - `--max-results` — maximum number of groups returned (default 20).
 - `--user-name` is rejected: Atlassian removed the `userName` filter and the server ignores it.
