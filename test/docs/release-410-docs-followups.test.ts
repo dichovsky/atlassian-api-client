@@ -279,9 +279,11 @@ describe('README and ARCHITECTURE describe the retries the transport makes', () 
     expect(nonRetryable).toContain(
       '`UND_ERR_INVALID_ARG`, `UND_ERR_NOT_SUPPORTED` and `UND_ERR_REQ_CONTENT_LENGTH_MISMATCH`',
     );
-    expect(nonRetryable).toContain(
-      '- TLS rejections (`CERT_*`, `ERR_TLS_*`) and a closed or destroyed dispatcher',
-    );
+    // The rule is "any code outside the transient list", not only these prefixes.
+    expect(nonRetryable).toContain('- A coded transport failure outside the transient list');
+    for (const code of ['`ERR_SSL_*`', '`EPROTO`', '`SELF_SIGNED_CERT_IN_CHAIN`', '`EMFILE`']) {
+      expect(nonRetryable).toContain(code);
+    }
   });
 });
 

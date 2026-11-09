@@ -213,6 +213,7 @@ describe('CONTRIBUTING describes the CI jobs and gate prerequisites that exist',
       devDeps.split('\n').find((line) => line.startsWith('| `typescript` ')) ?? '';
     expect(typescriptRow).toContain('`typecheck:ts6`');
     expect(typescriptRow).toContain('write-property reachability test');
+    expect(typescriptRow).toContain('`test/helpers/sdk-routes.ts`');
   });
 });
 

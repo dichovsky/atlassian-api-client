@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "5.0.0"
   },
-  "sourceHash": "e5cb3e1086d3c2ae3b3219d65555b3615accd50c2ca199facc38ab29f9626b17",
+  "sourceHash": "8bb910ca9492e699cca7d3523b3b7390ff4172b161f2da1226d46f07d2e2a890",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -4738,6 +4738,15 @@
       "line": 804,
       "signature": "export interface WorkflowCopyRequest { readonly workflowId: string; readonly workflowName: string; readonly description?…",
       "jsdoc": "Request body for POST /rest/api/3/workflows/copy (`copyWorkflow`). Spec: `WorkflowCopyRequest`.",
+      "typeOnly": true
+    },
+    {
+      "name": "WorkflowCreateResponse",
+      "kind": "interface",
+      "file": "src/jira/resources/workflows.ts",
+      "line": 798,
+      "signature": "export interface WorkflowCreateResponse { readonly workflows?: JiraWorkflow[]; readonly statuses?: JiraWorkflowStatus[];…",
+      "jsdoc": "Response for POST /rest/api/3/workflows/create — B848.",
       "typeOnly": true
     },
     {
@@ -20858,6 +20867,10 @@
             {
               "exported": "WorkflowCopyRequest",
               "original": "WorkflowCopyRequest"
+            },
+            {
+              "exported": "WorkflowCreateResponse",
+              "original": "WorkflowCreateResponse"
             },
             {
               "exported": "AddIssueTypesToContextBody",

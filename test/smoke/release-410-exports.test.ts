@@ -58,6 +58,9 @@ import type {
   PolicySummaryResponse,
   StartAgentSessionsBatchData,
   WorkflowCopyRequest,
+  // What the 5.0.0-new workflows.copyWorkflow resolves (4.0.0's bulkCreate already
+  // returned it, but it was not importable from the root).
+  WorkflowCreateResponse,
   // X-EXPORTS-4B: the issue-security-scheme signatures changed after the exports unit
   AssociateSchemesToProjectsData,
   AssociateSchemesToProjectsOptions,
@@ -152,6 +155,12 @@ describe('X-EXPORTS-4B: the final-tree signature types are importable from the r
     >();
     expectTypeOf<RemoveSecurityLevelParams>().toEqualTypeOf<
       NonNullable<Parameters<SecuritySchemes['removeLevel']>[2]>
+    >();
+  });
+
+  it('WorkflowCreateResponse is what workflows.copyWorkflow resolves', () => {
+    expectTypeOf<WorkflowCreateResponse>().toEqualTypeOf<
+      Awaited<ReturnType<JiraClient['workflows']['copyWorkflow']>>
     >();
   });
 

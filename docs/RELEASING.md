@@ -62,13 +62,13 @@ The `Publish` preflight accepts a tag only when the GitHub API reports its signa
 
 ## Release
 
-1. Refresh the local view of `main` and confirm the recorded candidate is the exact protected `origin/main` tip. If the candidate changed after review, stop and review the new candidate before tagging.
+1. Refresh the local view of `main` and confirm the recorded merged commit is the exact protected `origin/main` tip. Every merge method (merge, squash or rebase) gives that commit a different SHA from the reviewed pull-request head, so also confirm that their trees are identical: `git diff --quiet <reviewed-head-sha> <merged-sha>` must exit 0. If either check fails, or the candidate changed after review, stop and review the new candidate before tagging.
 2. On that commit, repeat the checks the preflight and `npm publish` will make, because a pushed tag cannot be withdrawn:
 
    ```bash
    npm run release:check -- vX.Y.Z
    npm view atlassian-api-client@X.Y.Z version    # must fail with E404: the version is unpublished
-   npm view atlassian-api-client dist-tags.latest # must be lower than X.Y.Z
+   npm view atlassian-api-client dist-tags.latest # must be lower than X.Y.Z: npm 11 and later refuse to publish below latest without --tag
    ```
 
 3. Create and verify a signed annotated tag that points to the reviewed commit:

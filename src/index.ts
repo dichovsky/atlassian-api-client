@@ -547,6 +547,7 @@ export type {
   BulkIssueIsWatchingResult,
   // Workflows, field contexts, invalid-JQL audit log, Forge panels
   WorkflowCopyRequest,
+  WorkflowCreateResponse,
   AddIssueTypesToContextBody,
   FieldContextDefaultValueLongText,
   IssueTypeDefaultValueUpdate,
