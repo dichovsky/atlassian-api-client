@@ -274,7 +274,8 @@ export interface ListLegacyProjectsParams {
 export interface CreateProjectData {
   readonly key: string;
   readonly name: string;
-  readonly projectTypeKey: string;
+  /** Required unless `projectTemplateKey` is given; Jira then takes the type from the template. */
+  readonly projectTypeKey?: string;
   readonly description?: string;
   readonly leadAccountId?: string;
   readonly url?: string;
@@ -336,8 +337,9 @@ export interface DeleteProjectParams {
 
 export interface RecentProjectsParams {
   /**
-   * @deprecated `GET /project/recent` has no `maxResults` (Jira returns up to
-   * 20 projects); the value is ignored and not sent.
+   * @deprecated The spec documents no `maxResults` on `GET /project/recent`
+   * (it returns up to 20 projects), so the value is not sent. Slice the
+   * result to get fewer.
    */
   readonly maxResults?: number;
   readonly expand?: string[];
@@ -530,8 +532,8 @@ export class ProjectsResource {
     const body: Record<string, unknown> = {
       key: data.key,
       name: data.name,
-      projectTypeKey: data.projectTypeKey,
     };
+    if (data.projectTypeKey !== undefined) body['projectTypeKey'] = data.projectTypeKey;
     if (data.description !== undefined) body['description'] = data.description;
     if (data.leadAccountId !== undefined) body['leadAccountId'] = data.leadAccountId;
     if (data.url !== undefined) body['url'] = data.url;
@@ -720,7 +722,9 @@ export class ProjectsResource {
    * Upload a custom project avatar (B666).
    *
    * `content` is the raw JPEG, GIF or PNG image; its Blob `type` (e.g.
-   * `image/png`) becomes the `Content-Type`. Jira also requires
+   * `image/png`) becomes the `Content-Type`. Set it to `image/jpeg`,
+   * `image/gif` or `image/png`: this method does not check it, and Jira
+   * rejects an upload with any other type or none. Jira also requires
    * `X-Atlassian-Token: no-check`, which this method sends. The crop region is
    * defined by the `x`, `y`, `size` query params.
    */

@@ -471,6 +471,24 @@ describe('ProjectsResource', () => {
       });
     });
 
+    it('creates from a template alone, without projectTypeKey (spec requires only key/name)', async () => {
+      transport.respondWith({ id: 10004, key: 'KAN', self: `${BASE_URL}/project/10004` }, 201);
+
+      await projects.create({
+        key: 'KAN',
+        name: 'Kanban',
+        leadAccountId: 'lead-1',
+        projectTemplateKey: 'com.pyxis.greenhopper.jira:gh-simplified-kanban-classic',
+      });
+
+      expect(transport.lastCall?.options.body).toStrictEqual({
+        key: 'KAN',
+        name: 'Kanban',
+        leadAccountId: 'lead-1',
+        projectTemplateKey: 'com.pyxis.greenhopper.jira:gh-simplified-kanban-classic',
+      });
+    });
+
     it('includes all optional fields in body when provided', async () => {
       // Arrange
       transport.respondWith({ id: 10003, key: 'TEST', self: `${BASE_URL}/project/10003` }, 201);
