@@ -331,10 +331,10 @@ describe('FooterCommentsResource', () => {
       expect(transport.calls).toHaveLength(2);
     });
 
-    it('sends limit=0, which the spec allows for this endpoint (F067)', async () => {
-      transport.respondWith({ results: [], _links: {} });
-      await resource.listLikeUsersAll('77777', { limit: 0 }).next();
-      expect(transport.lastCall?.options.query).toEqual({ limit: 0 });
+    it('rejects limit=0 before any request: a zero-size page cannot drive iteration', async () => {
+      const iter = resource.listLikeUsersAll('77777', { limit: 0 });
+      await expect(iter.next()).rejects.toThrow('limit must be a positive integer, got: 0');
+      expect(transport.calls).toHaveLength(0);
     });
 
     it('throws ValidationError when limit is invalid before any request', async () => {

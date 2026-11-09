@@ -166,15 +166,14 @@ export class InlineCommentsResource {
   /**
    * Iterate every user who has liked an inline comment, across all pages.
    *
-   * The spec allows `limit=0` for this endpoint (minimum=0).
+   * Unlike {@link listLikeUsers}, `limit` must be at least 1: zero-size
+   * pages return no users, so they cannot drive an iteration.
    */
   async *listLikeUsersAll(
     commentId: string,
     params?: Omit<ListInlineCommentLikeUsersParams, 'cursor'>,
   ): AsyncGenerator<InlineCommentLikeUser> {
-    if (params?.limit !== undefined && (!Number.isInteger(params.limit) || params.limit < 0)) {
-      throw new ValidationError(`limit must be a non-negative integer, got: ${params.limit}`);
-    }
+    if (params?.limit !== undefined) validatePageSize(params.limit, 'limit');
     const query: Record<string, string | number | boolean | undefined> = {};
     if (params?.limit !== undefined) query['limit'] = params.limit;
     yield* paginateCursor<InlineCommentLikeUser>(

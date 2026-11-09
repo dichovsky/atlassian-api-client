@@ -428,6 +428,7 @@ atlas confluence comments update-property 77777 --property-id prop-1 --key revie
 | `thumbnail`       | `<attachmentId>` | —                                                       | `--width`, `--height`, `--version-number`, `--file`, `--force`            |
 
 - To upload an attachment via the CLI, use `atlas confluence pages upload-attachment <pageId> --file <path>` (optional: `--filename` to override the on-disk name, `--media-type` to override MIME sniffing). The handler reads the file from disk and dispatches to `client.attachments.upload(pageId, filename, blob, mime?)`. See the `pages` section for full flag details. To call the SDK directly, pass the file content as a `Blob`; Node ESM callers can wrap a `Buffer` or `Uint8Array` in a `Blob` first. **Note:** upload uses the Confluence REST v1 endpoint (`POST /wiki/rest/api/content/{pageId}/child/attachment`) because the v2 API has no write path for attachments; the `X-Atlassian-Token: nocheck` header is set automatically. The return type is `UploadAttachmentResult` (a `{ results: UploadAttachmentResultItem[] }` envelope), not the v2 cursor-paginated shape.
+- `<attachmentId>` is the `id` that `list` returns (e.g. `att123456`); the spec pattern is `(att)?[0-9]+`, so the bare number also works. `delete` and `labels` type the ID as an integer, so pass the bare number there (`123456`, not `att123456`). `--property-id` is the numeric property `id` from `list-properties`.
 - `list` and `list-all` each return one page of results; pass the `cursor=…` value from `_links.next` back as `--cursor` for the next page.
 - `list` hits `GET /pages/{pageId}/attachments`; it supports the same attachment `--sort`, comma-separated `--status`, `--media-type`, and `--filename` filters as the current v2 contract. `list-all` hits the tenant-wide `GET /attachments`. `--status` accepts a single value or comma-separated list of `current`, `archived`, `trashed`.
 - Descending `--sort` values start with `-`, so attach them with `=` (`--sort=-created-date`); `--sort -created-date` is rejected as an ambiguous option.
@@ -455,15 +456,16 @@ atlas confluence comments update-property 77777 --property-id prop-1 --key revie
 atlas confluence attachments list --page-id 12345 --status current,archived --sort=-created-date
 atlas confluence attachments list --page-id 12345 --media-type image/png --filename diagram.png --limit 5 --cursor "<value-from-response>"
 atlas confluence attachments list-all --media-type image/png --limit 50
-atlas confluence attachments get att-1 --include-labels --no-include-version
-atlas confluence attachments get att-1 --version-number 2 --include-properties --include-operations --include-versions --include-collaborators
-atlas confluence attachments versions att-1 --sort=-modified-date
-atlas confluence attachments create-property att-1 --key reviewed --value '{"ok":true}'
-atlas confluence attachments get-property att-1 --property-id prop-1
-atlas confluence attachments update-property att-1 --property-id prop-1 --key reviewed --value true --version-number 2 --message "Checked"
-atlas confluence attachments thumbnail att-1 --width 200 --height 200 --file ./att-1-thumb.png
-atlas confluence attachments delete-property att-1 --property-id prop-1
-atlas confluence attachments delete att-1 --purge
+atlas confluence attachments get att123456 --include-labels --no-include-version
+atlas confluence attachments get att123456 --version-number 2 --include-properties --include-operations --include-versions --include-collaborators
+atlas confluence attachments versions att123456 --sort=-modified-date
+atlas confluence attachments create-property att123456 --key reviewed --value '{"ok":true}'
+atlas confluence attachments get-property att123456 --property-id 98765
+atlas confluence attachments update-property att123456 --property-id 98765 --key reviewed --value true --version-number 2 --message "Checked"
+atlas confluence attachments thumbnail att123456 --width 200 --height 200 --file ./att123456-thumb.png
+atlas confluence attachments delete-property att123456 --property-id 98765
+atlas confluence attachments labels 123456 --prefix global --sort name --limit 25
+atlas confluence attachments delete 123456 --purge
 ```
 
 ## `labels`
@@ -904,7 +906,7 @@ Manages Confluence space roles (`/wiki/api/v2/space-roles`). Available on tenant
 | `update` | `<roleId>` | `--name`, `--description`, `--space-permissions` | `--anonymous-reassignment-role-id`, `--guest-reassignment-role-id`                       |
 | `delete` | `<roleId>` | —                                                | —                                                                                        |
 
-- `--space-id` restricts the listing to the roles available in that space (one space ID, sent as the `space-id` query parameter); omit it to list every role available on the tenant.
+- `--space-id` restricts the listing to the roles available in that space (one space ID, sent trimmed as the `space-id` query parameter); omit it to list every role available on the tenant. An empty or blank value (`--space-id ""`) is rejected before any request: the server reads an empty `space-id` as every role on the tenant.
 - `--role-type` filters by role type and is sent trimmed (`' SYSTEM '` goes out as `SYSTEM`): usually `SYSTEM` (platform-defined, not user-editable) or `CUSTOM` (tenant-created); the spec types it as an open string, so a tenant-defined type also passes through. An empty or blank value (`--role-type ""`) is rejected before any request.
 - `--principal-type` accepts `USER`, `GROUP`, or `ACCESS_CLASS` and restricts the listing to roles available for the named principal class.
 - `--principal-id` and `--principal-type` must be given **together** (the server returns 400 for either alone). With `--principal-type ACCESS_CLASS`, `--principal-id` is one of `anonymous-users`, `jsm-project-admins`, `authenticated-users`, `all-licensed-users`, `all-product-admins`; with `USER` it is an account ID, with `GROUP` a group ID.
