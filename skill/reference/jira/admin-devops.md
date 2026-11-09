@@ -28,6 +28,8 @@ Obtain the cloud ID from
 
 ## `app`
 
+> **Experimental:** Atlassian marks `list-field-context-configurations` `x-experimental`; its shape may change without notice.
+
 App-scoped resource grouping three distinct API surfaces used by Forge and Atlassian Connect apps:
 
 - **`/rest/api/3/app/field/...`** — app-defined custom field context/value (B326–B330).
@@ -165,6 +167,7 @@ atlas jira post-incident-reviews delete PIR-456
 | `delete` | `<vulnerabilityId>` | —              | —              |
 
 - OAuth granular scopes: `get` requires `read:security:jira`; `delete` requires `delete:security:jira`.
+- `delete` is asynchronous: `{"deleted":true}` means Jira accepted the request, not that the record is gone. Confirm with `atlas jira vulnerability get <vulnerabilityId>`.
 
 ```sh
 # Get a vulnerability by ID
@@ -331,6 +334,8 @@ atlas jira configuration update-timetracking-options --working-hours-per-day 8 -
 
 ## `webhooks`
 
+> **Experimental:** Atlassian marks `list-failed` `x-experimental`; its shape may change without notice.
+
 | Action        | Positionals | Required flags        | Optional flags                |
 | ------------- | ----------- | --------------------- | ----------------------------- |
 | `list`        | —           | —                     | `--start-at`, `--max-results` |
@@ -397,6 +402,8 @@ atlas jira server-info get
 ```
 
 ## `instance`
+
+> **Experimental:** Atlassian marks `get-license` `x-experimental`; its shape may change without notice.
 
 | Action        | Positional | Required flags | Optional flags |
 | ------------- | ---------- | -------------- | -------------- |
@@ -485,6 +492,8 @@ atlas jira auditing list --offset 100 --limit 50
 ```
 
 ## `events`
+
+> **Experimental:** Atlassian marks `list` `x-experimental`; its shape may change without notice.
 
 | Action | Positional | Required flags | Optional flags |
 | ------ | ---------- | -------------- | -------------- |
@@ -598,6 +607,8 @@ atlas jira agents start-batch --body '{"clientMutationId":"f47ac10b-58cc-4372-a5
 
 ## `license`
 
+> **Experimental:** Atlassian marks `get-approximate-count` and `get-approximate-count-for-product` `x-experimental`; their shapes may change without notice.
+
 | Action                              | Positional         | Required flags | Optional flags |
 | ----------------------------------- | ------------------ | -------------- | -------------- |
 | `get-approximate-count`             | —                  | —              | —              |
@@ -680,6 +691,8 @@ atlas jira flag delete flag-xyz
 
 ## `task`
 
+> **Experimental:** Atlassian marks `cancel` `x-experimental`; its shape may change without notice.
+
 | Action   | Positional | Required flags | Optional flags |
 | -------- | ---------- | -------------- | -------------- |
 | `get`    | `<taskId>` | —              | —              |
@@ -716,6 +729,8 @@ atlas jira avatar list-system project
 ```
 
 ## `classification-levels`
+
+> **Experimental:** Atlassian marks `list` `x-experimental`; its shape may change without notice.
 
 | Action | Positional | Required flags | Optional flags           |
 | ------ | ---------- | -------------- | ------------------------ |
@@ -773,6 +788,8 @@ atlas jira remote-link delete rl-123
 ```
 
 ## `service-registry`
+
+> **Experimental:** Atlassian marks `get` `x-experimental`; its shape may change without notice.
 
 **URL base:** `/rest/atlassian-connect/1` (Atlassian Connect API — not `/rest/api/3`).
 
@@ -880,6 +897,8 @@ atlas jira repository delete-entity my-repo-123 pull_request pr-1 --update-seque
 
 ## `dashboards`
 
+> **Experimental:** Atlassian marks `create`, `update`, `delete`, `copy`, `bulk-edit`, `list-gadgets`, `add-gadget`, `update-gadget`, `remove-gadget` and `list-available-gadgets` `x-experimental`; their shapes may change without notice.
+
 `list` accepts only `--filter` (`my` or `favourite`), `--start-at`, and `--max-results`; the removed `--order-by` and `--expand` flags are rejected with migration guidance because sorting and expansion belong to `search`. `get` and `delete` take `<dashboardId>`. `create`, `update <dashboardId>` and `copy <dashboardId>` send the spec `DashboardDetails` body, which requires all three of `--name`, `--share-permissions` and `--edit-permissions` (JSON arrays of share-permission objects; `'[]'` grants nobody beyond the owner); the CLI refuses a missing one before sending anything. `update` replaces the name, description and both permission lists, so pass the current values you want to keep. `--extend-admin-permissions true|false` on `create`/`update`/`copy` is sent as the `extendAdminPermissions` query param: `true` lets a user with the _Administer Jira_ global permission edit dashboards they do not own; omit it for the default (`false`). The actions below add the rest of the platform's dashboard surface (B391–B405).
 
 | Action                   | Positional                             | Required flags                                                                                                                | Optional flags                                                                                                                                                   |
@@ -917,6 +936,9 @@ atlas jira repository delete-entity my-repo-123 pull_request pr-1 --update-seque
 # List your favourite dashboards
 atlas jira dashboards list --filter favourite --max-results 25
 
+# Second page of your own dashboards
+atlas jira dashboards list --filter my --start-at 25 --max-results 25
+
 # Get / delete a dashboard
 atlas jira dashboards get 10001
 atlas jira dashboards delete 10001
@@ -929,6 +951,12 @@ atlas jira dashboards update 10001 --name "Renamed" --share-permissions '[{"type
 
 # Search for dashboards by name, most-favourited first
 atlas jira dashboards search --dashboard-name "Sprint" --order-by=-favorite_count --status active --max-results 25
+
+# Archived dashboards of one owner shared with a group and a project, page 3, with descriptions
+atlas jira dashboards search --account-id 5b10a2844c20165700ede21g --group-id 276f955c-63d7-42c8-9520-92d01dca0625 --project-id 10000 --status archived --order-by name --start-at 50 --max-results 25 --expand description,owner
+
+# Legacy filters (prefer --account-id / --group-id): owner username and group name
+atlas jira dashboards search --owner jsmith --group-name developers
 
 # Collect every dashboard owned by a user
 atlas jira dashboards search-all --account-id 5b10a2844c20165700ede21g --order-by name --max-pages 5
@@ -1005,7 +1033,31 @@ the CLI does NOT auto-poll, callers drive the cadence.
 | `submit-remote-links`      | —               | `--value`                          | —                                                      |
 | `submit-security`          | —               | `--value`                          | —                                                      |
 
-`--issues` accepts either a JSON array of issue-update objects (for `create-issues`, where each element is `{ fields: {...}, update?: {...} }`) or a comma-separated list of issue IDs/keys (for `delete-issues`, `get-fields`, `unwatch-issues`, `watch-issues`, `get-transitions`; spaces around the commas are trimmed). `get-fields` and `get-transitions` are cursor-paginated: pass the previous response's `endingBefore` / `startingAfter` cursor as `--ending-before` / `--starting-after` to page back or forward. `--actions` is a comma-separated list of bulk-edit actions. `--value` is a JSON string: an object for `edit-fields` (`editedFieldsInput`), `move-issues` (`targetToSourcesMapping`), and `set-property` (the property value); an array for `transition-issues` (`bulkTransitionInputs`); and the raw provider payload for every DevOps `submit-*` variant. `set-property` takes exactly one of `--value` (a constant JSON value) or `--expression` (EXPERIMENTAL: a Jira expression, string, evaluated per issue with `issue` and `user` in context). `--filter` for `set-property` / `delete-property` is a JSON object restricting which issues are affected (`entityIds`, `currentValue`, `hasProperty`). `--send-notification true|false` (for `delete-issues`, `edit-fields`, `move-issues`, `transition-issues`) controls the bulk-change notification email; the server default is `true`, so pass `--send-notification false` to suppress it, omit for the default. Tri-state — the value is required.
+`--issues` accepts either a JSON array of issue-update objects (for `create-issues`, where each element is `{ fields: {...}, update?: {...} }`) or a comma-separated list of issue IDs/keys (for `delete-issues`, `get-fields`, `unwatch-issues`, `watch-issues`, `get-transitions`; spaces around the commas are trimmed). `get-fields` and `get-transitions` are cursor-paginated: pass the previous response's `endingBefore` / `startingAfter` cursor as `--ending-before` / `--starting-after` to page back or forward. `--actions` is a comma-separated list of the **field IDs** to edit (spec `selectedActions`), as returned by `bulk get-fields` (`fields[].id`, e.g. `priority`, `labels`, `components`, `customfield_10010`). `--value` is a JSON string: an object for `edit-fields` (`editedFieldsInput`), `move-issues` (`targetToSourcesMapping`), and `set-property` (the property value); an array for `transition-issues` (`bulkTransitionInputs`); and the raw provider payload for every DevOps `submit-*` variant. `set-property` takes exactly one of `--value` (a constant JSON value) or `--expression` (EXPERIMENTAL: a Jira expression, string, evaluated per issue with `issue` and `user` in context). `--filter` restricts which issues are affected; all given criteria are ANDed. For `set-property` it is a JSON object with `entityIds` (numeric issue IDs), `currentValue` (only issues whose property has this value) and `hasProperty` (`true`: only issues that have the property; `false`: only issues without it), sent as the body's `filter`. For `delete-property` it accepts **only** `entityIds` and `currentValue` and is sent as the request body itself; `hasProperty` (set-property only) or any other key is rejected before sending. Without `--filter`, every issue you can edit is affected. `--send-notification true|false` (for `delete-issues`, `edit-fields`, `move-issues`, `transition-issues`) controls the bulk-change notification email; the server default is `true`, so pass `--send-notification false` to suppress it, omit for the default. Tri-state — the value is required.
+
+**`move-issues` `--value`** is the `targetToSourcesMapping` object. Each key names a destination as `<projectKeyOrId>,<issueTypeId>[,<parentIdOrKey>]`: the target project, the target issue type ID, and the parent issue, which is needed only when that issue type is a subtask type. Use one key per destination. If you repeat a key, Jira processes only one of them and reports no error. Each value lists the issues to move in `issueIdsOrKeys` and carries four booleans that Jira requires:
+
+- `inferFieldDefaults`: `true` keeps the source values for fields that are mandatory in the target. `false` means you must pass `targetMandatoryFields: [{"fields":{"<fieldId>":{"type":"raw","value":["<value>"],"retain":false}}}]`. Use `"type":"adf"` with an ADF document `value` for rich-text fields such as `description`.
+- `inferStatusDefaults`: `true` moves an issue whose status does not exist in the target workflow to that workflow's initial status. `false` means you must pass `targetStatus: [{"statuses":{"<targetStatusId>":["<sourceStatusId>",...]}}]` for each such status.
+- `inferSubtaskTypeDefault`: `true` moves subtasks with their parent and gives them the target's default subtask type. `false` means you move them yourself.
+- `inferClassificationDefaults`: `true` gives unclassified issues the target project's default classification. `false` means you must pass `targetClassification: [{"classifications":{"<targetClassificationId>":["<sourceClassificationId>",...]}}]`, where `"-1"` stands for issues with no classification.
+
+Leave a `target*` list out when its `infer*` flag is `true`.
+
+**`edit-fields` `--value`** is the `editedFieldsInput` object. List each field you edit in `--actions` as well. Its keys depend on the field type:
+
+- `priority`: `{"priorityId":"3"}`
+- `labelsFields`: `[{"fieldId":"labels","bulkEditMultiSelectFieldOption":"ADD","labels":[{"name":"triaged"}]}]`. The option is one of `ADD`, `REMOVE`, `REPLACE` or `REMOVE_ALL`.
+- `multiselectComponents`: a single object, not an array, `{"fieldId":"components","bulkEditMultiSelectFieldOption":"REPLACE","components":[{"componentId":10000}]}`
+- `multipleSelectFields`: `[{"fieldId":"customfield_10010","options":[{"optionId":10001}]}]`
+- `singleSelectFields`: `[{"fieldId":"customfield_10011","option":{"optionId":10002}}]`
+- `singleLineTextFields`: `[{"fieldId":"customfield_10012","text":"..."}]`
+- `clearableNumberFields`: `[{"fieldId":"customfield_10013","value":3}]`
+- `urlFields`: `[{"fieldId":"customfield_10014","url":"https://..."}]`
+- `issueType`: `{"issueTypeId":"10001"}`
+- `status`: `{"statusId":"10002"}`
+
+The spec also defines `richTextFields`, `datePickerFields`, `dateTimePickerFields`, `colorFields`, `cascadingSelectFields`, `multipleGroupPickerFields`, `singleGroupPickerFields`, `multipleSelectClearableUserPickerFields`, `singleSelectClearableUserPickerFields`, `multipleVersionPickerFields`, `singleVersionPickerFields`, `originalEstimateField` and `timeTrackingField` (schema `JiraIssueFields`). One request edits at most 1000 issues and 200 fields.
 
 `set-property` and `delete-property` run as an asynchronous Jira task (transactional: all eligible issues change, or none). Jira answers `303 See Other` to the task, which the CLI follows, and the command prints the task progress (`{ id, status, progress, self, ... }`). Poll it with `atlas jira task get <id>` until `status` is terminal (`COMPLETE`, `FAILED`, `CANCELLED` or `DEAD`) — not `bulk get-status`, which only tracks the `{ taskId }` jobs above.
 
@@ -1043,8 +1095,17 @@ atlas jira bulk edit-fields \
   --actions priority \
   --value '{"priority":{"priorityId":"3"}}'
 
-# Bulk move issues to PROJ / issuetype 10001
-atlas jira bulk move-issues --value '{"PROJ,10001":{"issueIdsOrKeys":["ISSUE-1"]}}'
+# Add a label to two issues (labels is the field ID from bulk get-fields)
+atlas jira bulk edit-fields \
+  --issues PROJ-1,PROJ-2 \
+  --actions labels \
+  --value '{"labelsFields":[{"fieldId":"labels","bulkEditMultiSelectFieldOption":"ADD","labels":[{"name":"triaged"}]}]}'
+
+# Bulk move issues to PROJ / issuetype 10001, letting Jira infer the defaults
+atlas jira bulk move-issues --value '{"PROJ,10001":{"issueIdsOrKeys":["ISSUE-1"],"inferFieldDefaults":true,"inferStatusDefaults":true,"inferSubtaskTypeDefault":true,"inferClassificationDefaults":true}}'
+
+# Bulk move mapping source status 10001 to target status 10002 and setting a mandatory field
+atlas jira bulk move-issues --value '{"OPS,10004":{"issueIdsOrKeys":["ISSUE-2","ISSUE-3"],"inferFieldDefaults":false,"inferStatusDefaults":false,"inferSubtaskTypeDefault":true,"inferClassificationDefaults":true,"targetStatus":[{"statuses":{"10002":["10001"]}}],"targetMandatoryFields":[{"fields":{"labels":{"type":"raw","value":["moved"],"retain":false}}}]}}' --send-notification false
 
 # List available transitions for two issues
 atlas jira bulk get-transitions --issues EPIC-1,TASK-1
@@ -1072,6 +1133,10 @@ atlas jira bulk set-property summary-copy --expression 'issue.summary'
 atlas jira bulk delete-property my-flag \
   --filter '{"currentValue":"deprecated value"}'
 
+# Bulk delete a property from two issues only, and only where it still has that value
+atlas jira bulk delete-property my-flag \
+  --filter '{"entityIds":[10100,10002],"currentValue":"deprecated value"}'
+
 # Bulk delete a property from ALL eligible issues (no filter)
 atlas jira bulk delete-property my-flag
 
@@ -1093,6 +1158,8 @@ atlas jira bulk submit-security --value '{"vulnerabilities":[{"schemaVersion":"1
 ```
 
 ## `filters`
+
+> **Experimental:** Atlassian marks `change-owner` `x-experimental`; its shape may change without notice.
 
 Saved JQL filters, their owners, share permissions, favourites, and
 per-user default share scope.
@@ -1207,6 +1274,28 @@ Config field association scheme management (B367–B381). Covers the `/rest/api/
 
 **Note:** This resource is distinct from `fieldconfiguration` (`/rest/api/3/fieldconfiguration`) and `fieldconfigurationscheme` (`/rest/api/3/fieldconfigurationscheme`). It implements the newer field _association_ scheme API under `/rest/api/3/config/fieldschemes`.
 
+| Action                      | Positional       | Required flags                            | Optional flags                                            |
+| --------------------------- | ---------------- | ----------------------------------------- | --------------------------------------------------------- |
+| `list`                      | —                | —                                         | `--project-ids`, `--query`, `--start-at`, `--max-results` |
+| `create`                    | —                | `--name`                                  | `--description`                                           |
+| `get`                       | `<id>`           | —                                         | —                                                         |
+| `update`                    | `<id>`           | at least one of `--name`, `--description` | —                                                         |
+| `delete`                    | `<id>`           | —                                         | —                                                         |
+| `clone`                     | `<id>`           | `--name`                                  | `--description`                                           |
+| `list-fields`               | `<id>`           | —                                         | `--field-id`, `--start-at`, `--max-results`               |
+| `get-field-parameters`      | `<id> <fieldId>` | —                                         | —                                                         |
+| `list-projects`             | `<id>`           | —                                         | `--project-ids`, `--query`, `--start-at`, `--max-results` |
+| `get-projects-with-schemes` | —                | `--project-ids`                           | `--start-at`, `--max-results`                             |
+| `remove-field-associations` | —                | `--body`                                  | —                                                         |
+| `update-field-associations` | —                | `--body`                                  | —                                                         |
+| `remove-field-parameters`   | —                | `--body`                                  | —                                                         |
+| `update-field-parameters`   | —                | `--body`                                  | —                                                         |
+| `associate-projects`        | —                | `--body`                                  | —                                                         |
+
+- `<id>` is the numeric scheme ID. `clone` copies the scheme under the new `--name`, with an optional `--description` for the copy.
+- `--project-ids` (comma-separated numeric project IDs) and `--field-id` (comma-separated field IDs) are sent as repeated `projectId` / `fieldId` params.
+- `--start-at` is 0-based. `--max-results` is 1-100: the spec maximum is 100, and a larger value is rejected before the request.
+
 **Paginated endpoints** (support `--start-at`, `--max-results`):
 
 - `list` — GET /config/fieldschemes
@@ -1243,8 +1332,9 @@ atlas jira config get 10001
 atlas jira config update 10001 --name "Renamed Scheme" --description "Updated"
 atlas jira config delete 10001
 
-# Clone a scheme
+# Clone a scheme, optionally describing the copy
 atlas jira config clone 10001 --name "Clone of My Scheme"
+atlas jira config clone 10001 --name "Clone of My Scheme" --description "Copied for Q3"
 
 # List fields in a scheme (paginated)
 atlas jira config list-fields 10001 --start-at 0 --max-results 50
@@ -1329,6 +1419,9 @@ Advanced Roadmaps plans management (B625–B640). Covers the `/rest/api/3/plans/
 atlas jira plans list --max-results 50
 atlas jira plans list --include-trashed --include-archived
 
+# Include archived plans but not trashed ones (an explicit false is sent as false)
+atlas jira plans list --include-archived true --include-trashed false
+
 # Next page: pass the previous page's nextPageCursor
 atlas jira plans list --max-results 50 --cursor "<nextPageCursor>"
 
@@ -1342,6 +1435,9 @@ atlas jira plans create --name "Q3 Plan" --issue-sources '[{"type":"Board","valu
 # Create a plan with releases, a custom field filter, exclusions and an editor
 atlas jira plans create --name "Q4 Plan" --issue-sources '[{"type":"Project","value":10100}]' --scheduling '{"estimation":"Days","inferredDates":"ReleaseDates"}' --cross-project-releases '[{"name":"Q4 release","releaseIds":[10200,10201]}]' --custom-fields '[{"customFieldId":10050,"filter":true}]' --exclusion-rules '{"numberOfDaysToShowCompletedIssues":30,"issueTypeIds":[10003]}' --plan-permissions '[{"type":"Edit","holder":{"type":"AccountId","value":"5b10ac8d82e05b22cc7d4ef5"}}]'
 
+# Create a plan with a lead, letting a group (named by group ID) view it
+atlas jira plans create --name "Q1 Plan" --issue-sources '[{"type":"Filter","value":10300}]' --scheduling '{"estimation":"Hours"}' --lead-account-id 5b10ac8d82e05b22cc7d4ef5 --plan-permissions '[{"type":"View","holder":{"type":"Group","value":"276f955c-63d7-42c8-9520-92d01dca0625"}}]' --use-group-id
+
 # Duplicate a plan
 atlas jira plans duplicate 10001 --name "Copy of Q3 Plan"
 
@@ -1354,6 +1450,7 @@ atlas jira plans update 10001 --body '[{"op":"replace","path":"/name","value":"R
 
 # List teams for a plan
 atlas jira plans list-teams 10001 --max-results 20
+atlas jira plans list-teams 10001 --max-results 20 --cursor "<nextPageCursor>"
 
 # Add an Atlassian team
 atlas jira plans add-atlassian-team 10001 --atlassian-team-id team-abc-123 --planning-style Scrum --sprint-length 14

@@ -15,7 +15,11 @@ export class EventsResource {
     private readonly baseUrl: string,
   ) {}
 
-  /** List all Jira events (issue events used in workflow conditions and post-functions). */
+  /**
+   * List all Jira events (issue events used in workflow conditions and post-functions).
+   *
+   * @experimental Atlassian marks this operation as experimental.
+   */
   async list(): Promise<JiraEvent[]> {
     const response = await this.transport.request<JiraEvent[]>({
       method: 'GET',

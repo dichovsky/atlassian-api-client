@@ -248,13 +248,16 @@ describe('bulk (F167, F176, F180, F169)', () => {
   });
 
   it('delete-property prints the task too', async () => {
-    const run = await runCliWire(example(ADMIN, 'jira bulk delete-property my-flag', '--filter'), {
-      respond: asyncTask,
-    });
+    const run = await runCliWire(
+      example(ADMIN, 'jira bulk delete-property my-flag', `--filter '{"currentValue"`),
+      {
+        respond: asyncTask,
+      },
+    );
     expect(run.exitCode).toBe(0);
     const [del] = run.requests as [WireRequest];
     expect(del.method).toBe('DELETE');
-    expect(del.body).toEqual({ filter: { currentValue: 'deprecated value' } });
+    expect(del.body).toEqual({ currentValue: 'deprecated value' });
     expect(JSON.parse(run.stdout)).toMatchObject({ id: '10010' });
   });
 

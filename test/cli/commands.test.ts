@@ -19108,7 +19108,7 @@ describe('executeJiraCommand', () => {
 
       expect(jiraBulkMock.deletePropertyBulk).toHaveBeenCalledWith(
         'my-flag',
-        { filter: { currentValue: 'deprecated' } },
+        { currentValue: 'deprecated' },
         { returnTask: true },
       );
     });

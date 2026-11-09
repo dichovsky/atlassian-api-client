@@ -391,7 +391,11 @@ export class FiltersResource {
 
   // ── Owner (B457) ────────────────────────────────────────────────────────────
 
-  /** Reassign a filter to a new owner. */
+  /**
+   * Reassign a filter to a new owner.
+   *
+   * @experimental Atlassian marks this operation as experimental.
+   */
   async changeOwner(id: string, accountId: string): Promise<void> {
     await this.transport.request<undefined>({
       method: 'PUT',

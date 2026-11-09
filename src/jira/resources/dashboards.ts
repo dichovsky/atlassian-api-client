@@ -352,7 +352,11 @@ export class DashboardsResource {
     return response.data;
   }
 
-  /** Create a new dashboard. */
+  /**
+   * Create a new dashboard.
+   *
+   * @experimental Atlassian marks this operation as experimental.
+   */
   async create(data: CreateDashboardData, params?: DashboardWriteParams): Promise<Dashboard> {
     const query = dashboardWriteQuery(params);
     const response = await this.transport.request<Dashboard>({
@@ -364,7 +368,11 @@ export class DashboardsResource {
     return response.data;
   }
 
-  /** Update a dashboard. */
+  /**
+   * Update a dashboard.
+   *
+   * @experimental Atlassian marks this operation as experimental.
+   */
   async update(
     id: string,
     data: UpdateDashboardData,
@@ -380,7 +388,11 @@ export class DashboardsResource {
     return response.data;
   }
 
-  /** Delete a dashboard. */
+  /**
+   * Delete a dashboard.
+   *
+   * @experimental Atlassian marks this operation as experimental.
+   */
   async delete(id: string): Promise<void> {
     await this.transport.request<undefined>({
       method: 'DELETE',
@@ -393,6 +405,8 @@ export class DashboardsResource {
    *
    * Supports optional filtering by `moduleKey`, `uri`, and `gadgetId` — all
    * are `type: array` query parameters (repeated, not CSV). See {@link ListGadgetsParams}.
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   async listGadgets(
     dashboardId: string,
@@ -415,7 +429,11 @@ export class DashboardsResource {
     return response.data;
   }
 
-  /** B392: Add a gadget to a dashboard. */
+  /**
+   * B392: Add a gadget to a dashboard.
+   *
+   * @experimental Atlassian marks this operation as experimental.
+   */
   async addGadget(dashboardId: string, data: AddDashboardGadgetData): Promise<DashboardGadget> {
     const body: Record<string, unknown> = {};
     if (data.moduleKey !== undefined) body['moduleKey'] = data.moduleKey;
@@ -434,7 +452,11 @@ export class DashboardsResource {
     return response.data;
   }
 
-  /** B394: Update a gadget on a dashboard. PUT returns 204. */
+  /**
+   * B394: Update a gadget on a dashboard. PUT returns 204.
+   *
+   * @experimental Atlassian marks this operation as experimental.
+   */
   async updateGadget(
     dashboardId: string,
     gadgetId: number,
@@ -454,7 +476,11 @@ export class DashboardsResource {
     });
   }
 
-  /** B393: Remove a gadget from a dashboard. */
+  /**
+   * B393: Remove a gadget from a dashboard.
+   *
+   * @experimental Atlassian marks this operation as experimental.
+   */
   async removeGadget(dashboardId: string, gadgetId: number): Promise<void> {
     if (!Number.isInteger(gadgetId) || gadgetId < 0) {
       throw new ValidationError('gadgetId must be a non-negative integer');
@@ -536,6 +562,8 @@ export class DashboardsResource {
   /**
    * B402: Copy a dashboard. `data` is required — the spec mandates `name`,
    * `sharePermissions`, and `editPermissions` in the `DashboardDetails` body.
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   async copy(
     id: string,
@@ -558,7 +586,11 @@ export class DashboardsResource {
     return response.data;
   }
 
-  /** B403: Apply a bulk edit action to many dashboards. */
+  /**
+   * B403: Apply a bulk edit action to many dashboards.
+   *
+   * @experimental Atlassian marks this operation as experimental.
+   */
   async bulkEdit(data: BulkEditDashboardsData): Promise<BulkEditDashboardsResponse> {
     if (!Array.isArray(data.entityIds) || data.entityIds.length === 0) {
       throw new ValidationError('entityIds must be a non-empty array');
@@ -592,6 +624,8 @@ export class DashboardsResource {
    * @param params - @deprecated Ignored. `GET /dashboard/gadgets` accepts no query parameters.
    *   Retained only for backward compatibility — passing params has no effect on the wire call.
    *   For per-dashboard gadget filtering use {@link listGadgets} instead.
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   async listAvailableGadgets(
     // params is @deprecated and intentionally ignored — endpoint takes no query params
