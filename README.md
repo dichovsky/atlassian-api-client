@@ -154,7 +154,20 @@ const client = new JiraClient({
   },
 });
 
-await client.bulk.submitBuilds({ builds: [] });
+await client.bulk.submitBuilds({
+  builds: [
+    {
+      pipelineId: 'pipe-1',
+      buildNumber: 42,
+      updateSequenceNumber: 1700000000000,
+      displayName: 'Build 42',
+      url: 'https://ci.example.com/pipe-1/42',
+      state: 'successful',
+      lastUpdated: '2026-11-08T10:00:00Z',
+      associations: [{ associationType: 'issueIdOrKeys', values: ['PROJ-1'] }],
+    },
+  ],
+});
 ```
 
 Builds, Deployments, and Feature Flag ingestion use proxy version `0.1`.
@@ -270,7 +283,9 @@ const client = new JiraClient({
 });
 ```
 
-Retries use exponential backoff with jitter. Retryable: 429, 500, 502, 503, 504, and network errors.
+Retries use exponential backoff with jitter. Retryable: 429, 500, 502, 503, 504, and transient network errors (connection reset or refused, DNS failure, connect timeout, socket closed; for GET also a response-headers or body timeout). A write (POST, PUT, PATCH, DELETE) is not sent again in these cases, where the server may already have applied it: its success response is cut off mid-body, its response headers time out, or anything fails on the GET that follows its 303 (or a POST's 301/302). A write answered 500, 502, 503 or 504, or whose connection fails before any response (connection reset, socket closed), is still retried as in 4.0.0, so the server may receive it more than once. Client-side `fetch` argument errors, TLS errors, the request timeout (`TimeoutError`) and refused redirects are not retried.
+
+GET requests follow redirects natively. A POST, PUT, PATCH or DELETE is sent with `redirect: 'manual'`, and the client follows its redirect only to an `https://` URL on the default port, whose host passes `allowedHosts`, with no username or password. A refused 303 (or a POST's 301/302) throws `HttpError` with the 3xx `status` and the `ValidationError` as `cause`: the server may already have applied the write, so check its state before sending it again. A refused 307/308 (or a 301/302 on PUT, PATCH or DELETE) throws `ValidationError`, and nothing was applied. A custom `config.fetch` must honour `RequestInit.redirect`.
 
 ## Response Body Size Cap
 
@@ -393,8 +408,10 @@ const confluence = new ConfluenceClient({
 ```
 
 Signs every request with an HS256 JWT per the Atlassian Connect spec (QSH, iss, iat, exp claims).
-The QSH canonical URI is the request path relative to the product base URL: protocol, host,
-`contextPath`, and query string are discarded and a trailing slash is stripped.
+The QSH canonical URI is the request path relative to the product base URL: protocol, host, port, `contextPath`, and query string are discarded, a trailing slash is stripped, and `&` is percent-encoded.
+The middleware hashes `RequestOptions.path` before the transport resolves it against `baseUrl`.
+Every library resource passes the absolute request URL, so this matters only when you call `HttpTransport.request()` yourself: pass an absolute URL there too.
+A relative path such as `'/pages'` is hashed as-is, not as the `/api/v2/pages` the request is sent to, and Atlassian rejects the token with a 401.
 
 #### Verifying inbound asymmetric (RS256) JWTs
 
@@ -487,19 +504,23 @@ Protects against cascading failures from an unhealthy downstream. After `failure
 const confluenceBreaker = createCircuitBreakerMiddleware();
 const jiraBreaker = createCircuitBreakerMiddleware();
 
-const confluenceClient = new ConfluenceClient({ ..., middleware: [confluenceBreaker] });
-const jiraClient = new JiraClient({ ..., middleware: [jiraBreaker] });
+// `config` is your usual { baseUrl, auth } client configuration.
+const confluenceClient = new ConfluenceClient({ ...config, middleware: [confluenceBreaker] });
+const jiraClient = new JiraClient({ ...config, middleware: [jiraBreaker] });
 ```
 
 **Recommended compose order:** place the circuit breaker outermost (first in the array) so an open breaker short-circuits before spending a rate-limit token or running OAuth refresh logic:
 
 ```typescript
-middleware: [
-  createCircuitBreakerMiddleware({ failureThreshold: 5, resetTimeoutMs: 30_000 }),
-  createOAuthRefreshMiddleware(...),
-  createCacheMiddleware(),
-  createBatchMiddleware(),
-]
+const client = new JiraClient({
+  ...config,
+  middleware: [
+    createCircuitBreakerMiddleware({ failureThreshold: 5, resetTimeoutMs: 30_000 }),
+    createOAuthRefreshMiddleware(oauthConfig), // see OAuth 2.0 Token Refresh
+    createCacheMiddleware(),
+    createBatchMiddleware(),
+  ],
+});
 ```
 
 **Retry interaction:** `executeWithRetry` never retries a `CircuitBreakerOpenError`. There are two reasons: (a) burning through retry attempts wastes quota before surfacing the open state to the caller, and (b) if the reset timer elapses mid-retry-loop, the first retry after timeout would consume the single HALF_OPEN trial attempt.
@@ -677,17 +698,19 @@ export ATLASSIAN_AUTH_TYPE=bearer
 export ATLASSIAN_API_TOKEN=your-system-to-system-oauth-token
 export ATLASSIAN_SOFTWARE_CLOUD_ID=11111111-2222-3333-4444-555555555555
 
-atlas jira bulk submit-builds --value '{"builds":[]}'
+atlas jira bulk submit-builds --value '{"builds":[{"pipelineId":"pipe-1","buildNumber":42,"updateSequenceNumber":1700000000000,"displayName":"Build 42","url":"https://ci.example.com/pipe-1/42","state":"successful","lastUpdated":"2026-11-08T10:00:00Z","associations":[{"associationType":"issueIdOrKeys","values":["PROJ-1"]}]}]}'
 
 # Equivalent per-command opt-in
 atlas jira bulk submit-deployments \
   --software-cloud-id 11111111-2222-3333-4444-555555555555 \
-  --value '{"deployments":[]}'
+  --value '{"deployments":[{"deploymentSequenceNumber":7,"updateSequenceNumber":1700000000000,"displayName":"Deploy 7","url":"https://ci.example.com/deploy/7","description":"Release 1.2","lastUpdated":"2026-11-08T10:00:00Z","state":"successful","pipeline":{"id":"pipe-1","displayName":"Main","url":"https://ci.example.com/pipe-1"},"environment":{"id":"prod","displayName":"Production","type":"production"},"associations":[{"associationType":"issueIdOrKeys","values":["PROJ-1"]}]}]}'
 
 atlas jira bulk submit-feature-flags \
   --software-cloud-id 11111111-2222-3333-4444-555555555555 \
-  --value '{"flags":[]}'
+  --value '{"flags":[{"id":"flag-1","key":"new-checkout","updateSequenceId":1700000000000,"summary":{"status":{"enabled":true},"lastUpdated":"2026-11-08T10:00:00Z"},"details":[{"url":"https://flags.example.com/new-checkout","lastUpdated":"2026-11-08T10:00:00Z","environment":{"name":"production"},"status":{"enabled":true}}],"associations":[{"associationType":"issueIdOrKeys","values":["PROJ-1"]}]}]}'
 ```
+
+Full payload schemas for these and the other DevOps submit actions are in the bundled skill (`skill/reference/jira/admin-devops.md`).
 
 ### Self-hosted / non-Atlassian baseUrl
 
@@ -861,6 +884,8 @@ const client = new ConfluenceClient({
 
 For OAuth refresh, also pass `fetch: proxyFetch` inside `createOAuthRefreshMiddleware({ ... })`.
 
+A custom `fetch` must pass `RequestInit.redirect` through, as this one does: the transport sends writes with `redirect: 'manual'` and checks each redirect itself (see [Retry & Timeout](#retry--timeout)).
+
 ### OAuth 2.0 with token persistence
 
 `createOAuthRefreshMiddleware` injects the access token on every request and refreshes automatically on a 401. A shared in-flight refresh promise prevents token-endpoint stampedes; the `retryJitterMs` and `failureCooldownMs` knobs (see the [OAuth 2.0 Token Refresh](#oauth-20-token-refresh) section) extend that protection to the post-refresh retry burst and the auth-server-outage loop. Use `onTokenRefreshed` to persist new tokens so worker restarts don't lose them.
@@ -923,7 +948,7 @@ const client = new JiraClient({
   baseUrl: 'https://yourcompany.atlassian.net',
   auth: { type: 'bearer', token: accessToken },
   middleware: [
-    createOAuthRefreshMiddleware({/* … */}),
+    createOAuthRefreshMiddleware(oauthConfig), // see OAuth 2.0 with token persistence
     createCacheMiddleware({ ttl: 30_000, maxSize: 500 }),
     createBatchMiddleware(),
   ],

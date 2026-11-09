@@ -881,7 +881,7 @@ describe('workflowscheme', () => {
       );
     }
     expect(skillSection('schemes.md', 'workflowscheme')).toContain(
-      '`list-by-project --project-id` takes positive integer project IDs up to 9007199254740991 (CSV; Jira accepts at most 100)',
+      '`list-by-project --project-id` takes positive integer project IDs up to 9007199254740991 (CSV, at most 100 IDs; more is rejected before any request)',
     );
     const { req } = await onlyRequest([
       'jira',

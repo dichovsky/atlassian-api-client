@@ -1436,14 +1436,14 @@ describe('executeConfluenceCommand', () => {
     it('pages list calls client.pages.list with params', async () => {
       // Arrange
       confluencePagesMock.list.mockResolvedValue({ results: [] });
-      const parsed = cmd('pages', 'list', [], { 'space-id': 'SPACE1', limit: '25' });
+      const parsed = cmd('pages', 'list', [], { 'space-id': '12345', limit: '25' });
 
       // Act
       await executeConfluenceCommand(parsed, GLOBALS);
 
       // Assert
       expect(confluencePagesMock.list).toHaveBeenCalledWith(
-        expect.objectContaining({ spaceId: 'SPACE1', limit: 25 }),
+        expect.objectContaining({ spaceId: '12345', limit: 25 }),
       );
     });
 
@@ -2620,7 +2620,7 @@ describe('executeConfluenceCommand', () => {
     it.each(['10abc', 'not-a-number'])('spaces list rejects malformed ID %s', async (ids) => {
       await expect(
         executeConfluenceCommand(cmd('spaces', 'list', [], { ids }), GLOBALS),
-      ).rejects.toThrow(`--ids must contain only decimal integer space IDs, got: ${ids}`);
+      ).rejects.toThrow(`--ids must contain only decimal integer IDs, got: ${ids}`);
       expect(confluenceSpacesMock.list).not.toHaveBeenCalled();
     });
 
@@ -2951,13 +2951,16 @@ describe('executeConfluenceCommand', () => {
       );
     });
 
-    it('spaces role-assignments rejects invalid role-type', async () => {
-      await expect(
-        executeConfluenceCommand(
-          cmd('spaces', 'role-assignments', ['SP-1'], { 'role-type': 'OTHER' }),
-          GLOBALS,
-        ),
-      ).rejects.toThrow(/--role-type/);
+    it('spaces role-assignments passes a tenant-defined role-type through (spec: open string)', async () => {
+      confluenceSpacesMock.listRoleAssignments.mockResolvedValue({ results: [] });
+      await executeConfluenceCommand(
+        cmd('spaces', 'role-assignments', ['SP-1'], { 'role-type': ' OTHER ' }),
+        GLOBALS,
+      );
+      expect(confluenceSpacesMock.listRoleAssignments).toHaveBeenCalledWith(
+        'SP-1',
+        expect.objectContaining({ 'role-type': 'OTHER' }),
+      );
     });
 
     it('spaces set-role-assignments requires --value', async () => {
@@ -3177,14 +3180,14 @@ describe('executeConfluenceCommand', () => {
     it('blog-posts list with space-id and limit', async () => {
       // Arrange
       confluenceBlogPostsMock.list.mockResolvedValue({ results: [] });
-      const parsed = cmd('blog-posts', 'list', [], { 'space-id': 'S1', limit: '5' });
+      const parsed = cmd('blog-posts', 'list', [], { 'space-id': '67890', limit: '5' });
 
       // Act
       await executeConfluenceCommand(parsed, GLOBALS);
 
       // Assert
       expect(confluenceBlogPostsMock.list).toHaveBeenCalledWith(
-        expect.objectContaining({ spaceId: 'S1', limit: 5 }),
+        expect.objectContaining({ spaceId: '67890', limit: 5 }),
       );
     });
 
@@ -5791,7 +5794,7 @@ describe('executeConfluenceCommand', () => {
       confluenceCustomContentMock.list.mockResolvedValue({ results: [], _links: {} });
       const parsed = cmd('custom-content', 'list', [], {
         type: 'ai.atlassian.collection',
-        'space-id': 'sp-1',
+        'space-id': '654321',
         sort: 'created-date',
         limit: '25',
       });
@@ -5804,7 +5807,7 @@ describe('executeConfluenceCommand', () => {
       >;
       expect(args).toMatchObject({
         type: 'ai.atlassian.collection',
-        'space-id': ['sp-1'],
+        'space-id': ['654321'],
         sort: 'created-date',
         limit: 25,
       });

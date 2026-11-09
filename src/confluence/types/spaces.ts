@@ -275,7 +275,12 @@ export interface ListSpacePermissionAssignmentsParams {
 /** Parameters for `GET /spaces/{id}/role-assignments` (B207). */
 export interface ListSpaceRoleAssignmentsParams {
   readonly 'role-id'?: string;
-  readonly 'role-type'?: SpaceRoleType;
+  /**
+   * Restrict to roles of a specific type. The OpenAPI spec declares this as an
+   * open `string` (not a fixed enum): `'SYSTEM'` or `'CUSTOM'` for the two
+   * platform-defined categories, or a tenant-defined value.
+   */
+  readonly 'role-type'?: SpaceRoleType | (string & {});
   readonly 'principal-id'?: string;
   readonly 'principal-type'?: SpaceRolePrincipalType;
   readonly cursor?: string;

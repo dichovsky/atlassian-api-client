@@ -467,7 +467,7 @@ export type {
   JqlSearchGetParams,
   LegacySearchGetParams,
   SearchUsersParams,
-  GetUserParams,
+  GetUserParams as JiraGetUserParams,
   OffsetPaginatedResponse,
   IssueComment,
   IssueAttachment,
@@ -579,4 +579,14 @@ export type {
   ExpressionEvaluateData,
   RemoveFieldParametersResult,
   RemoveFieldParametersResultEntry,
+  // 4.1.0 issue and project method parameters and results
+  CreateIssueParams,
+  GetEditMetaParams,
+  WorklogBulkOutcome,
+  GetProjectParams,
+  LoadProjectAvatarParams,
+  GetProjectsFieldsParams,
+  ProjectFieldBean,
+  // Union typing the field-context default-value request bodies above
+  FieldContextDefaultValue,
 } from './jira/index.js';

@@ -394,9 +394,13 @@ export interface ListLabelsParams {
 /** Request body for creating a Jira user (B798). */
 export interface CreateUserData {
   readonly emailAddress: string;
+  /** @deprecated No longer available (spec): an existing display name is not changed. */
   readonly displayName?: string;
+  /** @deprecated No longer available (spec, user-privacy migration). */
   readonly name?: string;
+  /** @deprecated No longer available (spec): an existing password is not changed. */
   readonly password?: string;
+  /** @deprecated Deprecated, do not use (spec); use `products`. */
   readonly applicationKeys?: string[];
   /**
    * Products the new user can access: `jira-core`, `jira-servicedesk`,
@@ -409,6 +413,7 @@ export interface CreateUserData {
 /** Parameters for searching assignable users across multiple projects (B799). */
 export interface AssignableMultiProjectSearchParams {
   readonly query?: string;
+  /** @deprecated No longer available (spec, user-privacy migration); use `query` or `accountId`. */
   readonly username?: string;
   readonly accountId?: string;
   readonly projectKeys?: string[];
@@ -422,6 +427,7 @@ export interface AssignableSearchParams {
   readonly project?: string;
   readonly query?: string;
   readonly sessionId?: string;
+  /** @deprecated No longer available (spec, user-privacy migration); use `query` or `accountId`. */
   readonly username?: string;
   readonly accountId?: string;
   /** Key of the issue to find assignable users for. */
@@ -504,7 +510,9 @@ export interface UserGroupEntry {
 /** Parameters for getting groups for a user (B808). */
 export interface GetUserGroupsParams {
   readonly accountId: string;
+  /** @deprecated No longer available (spec, user-privacy migration); use `accountId`. */
   readonly username?: string;
+  /** @deprecated No longer available (spec, user-privacy migration); use `accountId`. */
   readonly key?: string;
 }
 
@@ -516,6 +524,7 @@ export interface GetPermissionUsersParams {
   readonly issueKey?: string;
   readonly query?: string;
   readonly permissions?: string[];
+  /** @deprecated No longer available (spec, user-privacy migration); use `query` or `accountId`. */
   readonly username?: string;
   readonly accountId?: string;
   readonly startAt?: number;
@@ -542,6 +551,7 @@ export interface UserPickerParams {
   readonly query: string;
   readonly maxResults?: number;
   readonly showAvatar?: boolean;
+  /** @deprecated No longer available (spec, user-privacy migration); use `excludeAccountIds`. */
   readonly exclude?: string[];
   readonly excludeAccountIds?: string[];
   readonly avatarSize?: string;
@@ -567,6 +577,7 @@ export interface UserProperty {
 
 /** Parameters identifying a user by key or account ID (used across property endpoints). */
 export interface UserIdentifierParams {
+  /** @deprecated No longer available (spec, user-privacy migration); use `accountId`. */
   readonly userKey?: string;
   readonly accountId?: string;
 }
@@ -612,6 +623,7 @@ export interface ViewIssueSearchUsersParams {
   readonly projectKey?: string;
   readonly query?: string;
   readonly maxResults?: number;
+  /** @deprecated No longer available (spec, user-privacy migration); use `query` or `accountId`. */
   readonly username?: string;
   readonly accountId?: string;
   readonly startAt?: number;
@@ -627,7 +639,9 @@ export interface ListAllUsersParams {
 
 /** Parameters for GET /rest/api/3/users/search (B819). */
 export interface SearchAllUsersParams {
+  /** @deprecated Not declared by the spec for GET /users/search; Jira does not filter on it. */
   readonly query?: string;
+  /** @deprecated Not declared by the spec for GET /users/search; Jira does not filter on it. */
   readonly username?: string;
   readonly startAt?: number;
   readonly maxResults?: number;
