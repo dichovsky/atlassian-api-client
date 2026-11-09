@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "4.1.0"
   },
-  "sourceHash": "0b14181b57503beb00f02df88efe123414ab38a9a685de04efe75c853a5407a3",
+  "sourceHash": "c069bae42f14171535a64e8cfe9c1fa5f2d9ab47da4e8ebdcaef331c77aa213c",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -2472,6 +2472,16 @@
       "typeOnly": true
     },
     {
+      "name": "JiraTask",
+      "kind": "interface",
+      "file": "src/jira/resources/task.ts",
+      "line": 5,
+      "signature": "export interface Task { readonly id: string; readonly self: string; readonly description?: string; readonly status: 'ENQ…",
+      "jsdoc": "A Jira long-running task (TaskProgressBeanObject schema).",
+      "typeOnly": true,
+      "aliasOf": "Task"
+    },
+    {
       "name": "JqlAutocompleteData",
       "kind": "interface",
       "file": "src/jira/resources/jql.ts",
@@ -4280,15 +4290,6 @@
       "line": 125,
       "signature": "export interface Status { readonly id: string; readonly name: string; readonly self?: string; readonly description?: str…",
       "jsdoc": "Jira Status (e.g. Open, In Progress, Done).",
-      "typeOnly": true
-    },
-    {
-      "name": "Task",
-      "kind": "interface",
-      "file": "src/jira/resources/task.ts",
-      "line": 5,
-      "signature": "export interface Task { readonly id: string; readonly self: string; readonly description?: string; readonly status: 'ENQ…",
-      "jsdoc": "A Jira long-running task (TaskProgressBeanObject schema).",
       "typeOnly": true
     },
     {
@@ -20799,7 +20800,7 @@
               "original": "BulkIssuePropertyOptions"
             },
             {
-              "exported": "Task",
+              "exported": "JiraTask",
               "original": "Task"
             },
             {

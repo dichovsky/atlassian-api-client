@@ -5,7 +5,7 @@ import type {
   BulkDeleteIssuePropertyData,
   BulkIssuePropertyOptions,
   JiraClient,
-  Task,
+  JiraTask as Task,
 } from '../../src/index.js';
 import { ValidationError } from '../../src/core/errors.js';
 import { MockTransport } from '../helpers/mock-transport.js';

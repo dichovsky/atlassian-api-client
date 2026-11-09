@@ -31,7 +31,7 @@ import type {
   // X-EX2: generic name, prefixed at the root
   JiraGetUserParams,
   // X-EX3: names the 4.1.0 release notes say are exported from the root
-  Task,
+  JiraTask,
   BulkIssuePropertyOptions,
   BulkSetIssuePropertyData,
   BulkDeleteIssuePropertyData,
@@ -118,12 +118,20 @@ describe('X-EX2: the generic GetUserParams name is exported only Jira-prefixed',
     // @ts-expect-error -- root exports it only as JiraGetUserParams (X-EX2).
     expectTypeOf<Root.GetUserParams>().not.toBeNever();
   });
+
+  it('has no unprefixed Task root export: the Jira task type is JiraTask', () => {
+    // @ts-expect-error -- root exports it only as JiraTask, like ConfluenceTask.
+    expectTypeOf<Root.Task>().not.toBeNever();
+    expectTypeOf<JiraTask>().toEqualTypeOf<
+      NonNullable<Awaited<ReturnType<JiraClient['bulk']['setPropertyBulk']>>>
+    >();
+  });
 });
 
 describe('X-EX3: every type the 4.1.0 release notes name resolves at the root', () => {
   it('compiles a consumer that names each of them', () => {
     type Named = [
-      Task,
+      JiraTask,
       BulkIssuePropertyOptions,
       BulkSetIssuePropertyData,
       BulkDeleteIssuePropertyData,

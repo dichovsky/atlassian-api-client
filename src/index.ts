@@ -537,8 +537,9 @@ export type {
   BulkSetIssuePropertyData,
   BulkDeleteIssuePropertyData,
   BulkIssuePropertyOptions,
-  // Result of setPropertyBulk / deletePropertyBulk with { returnTask: true }
-  Task,
+  // Result of setPropertyBulk / deletePropertyBulk with { returnTask: true };
+  // Jira-prefixed at the root because the name is generic (cf. ConfluenceTask)
+  Task as JiraTask,
   BulkIssueIsWatchingResult,
   // Workflows, field contexts, invalid-JQL audit log, Forge panels
   WorkflowCopyRequest,
