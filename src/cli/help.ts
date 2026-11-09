@@ -38,10 +38,23 @@ BOOLEAN FLAGS (flags that work bare, with no value):
   after such a flag is its value (put a positional true/false after --).
   Flags documented with values (e.g. --validate-query) always need one.
 
+AUTH:
+  Pass credentials through the environment, not --email/--token: flags end
+  up in shell history, CI logs and process lists.
+    export ATLASSIAN_BASE_URL=https://myco.atlassian.net
+    export ATLASSIAN_EMAIL=user@co.com
+    read -rs ATLASSIAN_API_TOKEN && export ATLASSIAN_API_TOKEN
+    export ATLASSIAN_AUTH_TYPE=bearer   (for an OAuth 2.0 token; no email)
+
+PER-ACTION FLAGS:
+  Each action's required and optional flags, payload shapes and examples are
+  in the bundled skill: run atlas install-skill --print for its directory,
+  then read reference/confluence.md or reference/jira.md.
+
 EXAMPLES:
-  atlas confluence pages list --base-url https://myco.atlassian.net -e user@co.com -t TOKEN
-  atlas jira issues get PROJ-123 --auth-type bearer --token OAUTH_TOKEN
-  atlas jira bulk submit-builds --software-cloud-id CLOUD_ID --auth-type bearer --value '{"builds":[]}'
+  atlas confluence pages list --space-id 123456 --limit 25
+  atlas jira issues get PROJ-123
+  atlas jira bulk submit-builds --software-cloud-id CLOUD_ID --auth-type bearer --value '{"builds":[{"pipelineId":"ci","buildNumber":1,"displayName":"CI #1","url":"https://ci.example.com/1","state":"successful","lastUpdated":"2026-01-01T00:00:00Z","updateSequenceNumber":1}]}'
   atlas jira search --jql "project = PROJ"
   atlas confluence spaces list --base-url https://jira.internal.example --allowed-hosts jira.internal.example
   atlas install-skill --local
@@ -87,7 +100,9 @@ OPTIONS:
   --local          Install into <cwd>/.claude/skills/ instead of ~/.claude/skills/
   --path <dir>     Install into a custom directory (overrides --local)
   --force          Overwrite an existing install of a different version
-  --dry-run        List files that would be copied; do not write
+  --dry-run        List files that would be copied; do not write. Runs the
+                   same checks as a real install, so it exits 2 where the
+                   install would (add --force to see the overwrite)
   --print          Print the bundled source directory and exit
 
 DEFAULT TARGET:
@@ -98,6 +113,12 @@ EXIT CODES:
   1   generic failure
   2   target exists with a different version (rerun with --force)
   3   permission denied writing to target
+
+EXAMPLES:
+  atlas install-skill --local
+  atlas install-skill --dry-run
+  atlas install-skill --force
+  atlas install-skill --path ./skills --dry-run --force
 `;
 
 const CONFLUENCE_HELP = `atlas confluence - Confluence Cloud REST API v2
@@ -138,8 +159,16 @@ API STATUS:
   delete-permissions with no --operation/--principal-* filters removes ALL
   direct permissions; --allow-self-lockout is only sent when you pass it.
 
+PER-ACTION FLAGS:
+  Each action's flags are in the bundled skill (atlas install-skill --print
+  shows its directory): reference/confluence.md. Required: a top-level inline
+  comment needs --text-selection, --text-selection-match-count and
+  --text-selection-match-index.
+
 EXAMPLES:
   atlas confluence pages list --space-id 123
+  atlas confluence comments create --comment-type inline --page-id 456 --body "<p>Typo?</p>" --text-selection "teh" --text-selection-match-count 1 --text-selection-match-index 0
+  atlas confluence comments create --parent-comment-id 77777 --body "<p>Agreed</p>"
   atlas confluence pages list --space-id 123 --status current,archived --sort=-modified-date
   atlas confluence pages update 456 --title "Draft" --version-number 3 --body "h1. Hi" --body-representation wiki --status draft
   atlas confluence pages get 456 --body-format view --include-labels
@@ -381,9 +410,20 @@ DEPRECATED JIRA SOFTWARE ISSUE LISTS:
   boards backlog, get-issues, issues-without-epic, epic-issues, sprint-issues;
   sprints get-issues; epic issues, issues-none. Prefer the matching enhanced action.
 
+PER-ACTION FLAGS:
+  Each action's flags are in the bundled skill (atlas install-skill --print
+  shows its directory): reference/jira.md routes to reference/jira/*.md.
+  Required: users create --email-address and --products; a Done screen that
+  asks for a resolution needs issues transition --resolution.
+
 EXAMPLES:
   atlas jira issues get PROJ-123
   atlas jira issues create --project PROJ --type Bug --summary "Fix this"
+  atlas jira issues create --project PROJ --type Sub-task --summary "Write tests" --parent PROJ-123
+  atlas jira issues transition PROJ-124 --transition-id 31 --resolution Done
+  atlas jira issues update PROJ-124 --body '{"fields":{"labels":["qa"]}}' --notify-users false --return-issue
+  atlas jira issues delete PROJ-124 --delete-subtasks
+  atlas jira users create --email-address new.hire@example.com --products jira-software
   atlas jira search search --jql "project = PROJ AND status = Open"
   atlas jira search approximate-count --jql "project = PROJ"
   atlas jira search jql-get --jql "project = PROJ" --max-results 50 --properties release.owner --fields-by-keys --fail-fast

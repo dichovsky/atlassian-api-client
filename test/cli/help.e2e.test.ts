@@ -150,7 +150,7 @@ describe('CLI --help e2e', () => {
         expect(actions.length).toBeGreaterThan(0);
       });
 
-      it(`${api} ${resource}: every dispatcher action is documented in help text`, () => {
+      it(`${api} ${resource}: help lists exactly the dispatcher actions`, () => {
         const source = api === 'confluence' ? confluenceSource : jiraSource;
         const actions = actionsForResource(source, resource);
         if (actions.length === 0) return;
@@ -159,12 +159,16 @@ describe('CLI --help e2e', () => {
         const helpBlock = extractApiHelpBlock(helpSource, api);
         const lineMatch = helpBlock.match(new RegExp(`^\\s{2,}${resource}\\s+.*$`, 'm'));
         expect(lineMatch, `help line for ${api} ${resource}`).not.toBeNull();
-        const helpLine = (lineMatch?.[0] ?? '').toLowerCase();
-        for (const action of actions) {
-          expect(helpLine, `action '${action}' in help line for '${api} ${resource}'`).toContain(
-            action.toLowerCase(),
-          );
-        }
+        // Compare whole action names both ways: a substring check would let
+        // `get` pass for `get-foo` and miss stale actions left in the help.
+        const helpActions = (lineMatch?.[0] ?? '')
+          .trim()
+          .replace(/^\S+\s+/, '')
+          .split(',')
+          .map((a) => a.trim());
+        expect([...new Set(helpActions)].sort(), `help actions for ${api} ${resource}`).toEqual(
+          [...new Set(actions)].sort(),
+        );
       });
     }
   });

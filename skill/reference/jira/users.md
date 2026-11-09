@@ -49,7 +49,7 @@
 - `list-properties`, `get-property`, `delete-property`, `set-property` manage arbitrary key-value data stored on a user; scope with `--account-id` or `--user-key`.
 - `search-query` and `search-query-key` run a **structured user query**; `--query` is required. Statements: `is assignee of PROJ` (any issue in project PROJ), `is assignee of (PROJ-1, PROJ-2)`, and the same issue-list form for `is reporter of`, `is watcher of`, `is voter of`, `is commenter of` and `is transitioner of`; plus `[propertyKey].path is "value"` (e.g. `[location].office.city is "Sydney"`). Combine statements with `AND` / `OR`. Jira filters only the users in the `--start-at`/`--max-results` window, so a page usually holds fewer matches than `--max-results`. `search-query` returns a page of users; `search-query-key` returns a page of user keys. To translate legacy usernames or keys to account IDs use `bulk-migration`.
 - `viewissue-search` returns users with browse permission for an issue (`--issue-key`) or a project (`--project-key`, case-sensitive); one of the two is required.
-- `list` returns a page of all users (active, inactive and deleted with an Atlassian account; `--max-results` up to 1000). Needs the _Browse users and groups_ global permission. `--expand` takes the same comma-separated keys as `get`.
+- `list` returns a page of all users (active, inactive and deleted with an Atlassian account; `--max-results` up to 1000). Needs the _Browse users and groups_ global permission. `--expand` is passed through as given (comma-separated); the spec does not list its values for this endpoint, so the `get` keys (`groups`, `applicationRoles`) are the likely ones, not a documented contract.
 - `list-search` hits `GET /users/search`, which also returns a page of **all** users: it has no name or username filter, so the CLI rejects `--query` and `--user-name`. To find users by name or email use `users search --query` or `users picker --query`.
 
 ```sh
@@ -97,7 +97,7 @@ atlas jira users viewissue-search --project-key PROJ --query jane
 # Find users assignable to an issue during a transition
 atlas jira users assignable --issue-key PROJ-42 --query jane --action-descriptor-id 31 --account-type atlassian
 
-# List all users (Browse users and groups permission), with groups expanded
+# List all users (Browse users and groups permission); --expand is passed through as given
 atlas jira users list --start-at 0 --max-results 50 --expand groups
 
 # Same listing via GET /users/search (no name filter)
