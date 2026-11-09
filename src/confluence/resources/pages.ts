@@ -7,6 +7,7 @@ import {
 } from './content-permissions.js';
 import type { CursorPaginatedResponse } from '../../core/pagination.js';
 import { paginateCursor, validatePageSize } from '../../core/pagination.js';
+import { ValidationError } from '../../core/errors.js';
 import { appendScalarOrArrayParam } from '../../core/query.js';
 import { withSpaceIdParam } from './query.js';
 import type {
@@ -520,13 +521,18 @@ export class PagesResource {
   /**
    * List the users who liked a page (single page).
    *
+   * The spec allows `limit=0` for this endpoint (minimum=0), so the
+   * `validatePageSize` helper (minimum=1) is not applied here.
+   *
    * @see https://developer.atlassian.com/cloud/confluence/rest/v2/api-group-page/#api-pages-id-likes-users-get
    */
   async listLikeUsers(
     id: string,
     params?: ListPageLikeUsersParams,
   ): Promise<CursorPaginatedResponse<PageLikeUser>> {
-    if (params?.limit !== undefined) validatePageSize(params.limit, 'limit');
+    if (params?.limit !== undefined && (!Number.isInteger(params.limit) || params.limit < 0)) {
+      throw new ValidationError(`limit must be a non-negative integer, got: ${params.limit}`);
+    }
     const query: Record<string, string | number | undefined> = {};
     if (params?.cursor !== undefined) query['cursor'] = params.cursor;
     if (params?.limit !== undefined) query['limit'] = params.limit;
@@ -540,6 +546,9 @@ export class PagesResource {
 
   /**
    * Iterate over every like author across all pages.
+   *
+   * Unlike {@link listLikeUsers}, `limit` must be at least 1: zero-size
+   * pages return no users, so they cannot drive an iteration.
    *
    * @see https://developer.atlassian.com/cloud/confluence/rest/v2/api-group-page/#api-pages-id-likes-users-get
    */
