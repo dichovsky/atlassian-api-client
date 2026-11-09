@@ -372,6 +372,7 @@ const GLOBAL_OPTIONS = {
   archived: { type: 'boolean' as const },
   category: { type: 'string' as const },
   driver: { type: 'string' as const },
+  'related-work-id': { type: 'string' as const },
   // config field association schemes options (B367-B381)
   'field-id': { type: 'string' as const },
   // screens options (B746-B761)
@@ -417,6 +418,9 @@ const GLOBAL_OPTIONS = {
   'email-address': { type: 'string' as const },
   'component-source': { type: 'string' as const },
   'classification-id': { type: 'string' as const },
+  // projects get-role-details / get-projects-fields (release 4.1.0)
+  'exclude-other-service-roles': { type: 'boolean' as const },
+  'work-type-ids': { type: 'string' as const },
   // issues get/get-agile/create/transitions query flags (release 4.1.0)
   'include-unavailable-transitions': { type: 'boolean' as const },
   'skip-remote-only-condition': { type: 'boolean' as const },
@@ -532,6 +536,7 @@ const GLOBAL_OPTIONS = {
   'inward-issue': { type: 'string' as const },
   'outward-issue': { type: 'string' as const },
   'link-type': { type: 'string' as const },
+  'link-type-id': { type: 'string' as const },
   // project-template options (B653-B657)
   template: { type: 'string' as const },
   'template-name': { type: 'string' as const },

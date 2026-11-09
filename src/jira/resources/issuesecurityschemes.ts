@@ -151,15 +151,16 @@ export interface SetDefaultLevelsData {
 /** An old-to-new security level mapping entry for associate-to-project (B554). */
 export interface OldToNewSecurityLevelMapping {
   /** Required: the new issue security level ID; null clears the assigned old level. */
-  readonly newLevelId: string;
+  readonly newLevelId: string | null;
   /** Required: the old issue security level ID; null remaps all issues without any assigned levels. */
-  readonly oldLevelId: string;
+  readonly oldLevelId: string | null;
 }
 
 /** Request body for PUT /rest/api/3/issuesecurityschemes/project (B554). */
 export interface AssociateSchemesToProjectsData {
   readonly projectId: string;
-  readonly schemeId: string;
+  /** The issue security scheme ID; `null` clears the project's association. */
+  readonly schemeId: string | null;
   readonly oldToNewSecurityLevelMappings?: OldToNewSecurityLevelMapping[];
 }
 
@@ -253,6 +254,8 @@ export class IssueSecuritySchemesResource {
   /**
    * B540: Create an issue security scheme.
    * POST /rest/api/3/issuesecurityschemes
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   async create(data: CreateIssueSecuritySchemeData): Promise<CreatedIssueSecurityScheme> {
     const body: Record<string, unknown> = { name: data.name };
@@ -281,6 +284,8 @@ export class IssueSecuritySchemesResource {
   /**
    * B542: Update an issue security scheme.
    * PUT /rest/api/3/issuesecurityschemes/{id}
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   async update(id: string, data: UpdateIssueSecuritySchemeData): Promise<void> {
     const body: Record<string, unknown> = {};
@@ -339,6 +344,8 @@ export class IssueSecuritySchemesResource {
   /**
    * B544: Delete an issue security scheme.
    * DELETE /rest/api/3/issuesecurityschemes/{schemeId}
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   async delete(schemeId: string): Promise<void> {
     await this.transport.request<undefined>({
@@ -350,6 +357,8 @@ export class IssueSecuritySchemesResource {
   /**
    * B545: Add security levels to an issue security scheme.
    * PUT /rest/api/3/issuesecurityschemes/{schemeId}/level
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   async addLevels(schemeId: string, data: AddSecuritySchemeLevelsData): Promise<void> {
     const body: Record<string, unknown> = {};
@@ -364,6 +373,8 @@ export class IssueSecuritySchemesResource {
   /**
    * B546: Remove a security level from an issue security scheme.
    * DELETE /rest/api/3/issuesecurityschemes/{schemeId}/level/{levelId}
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   async removeLevel(
     schemeId: string,
@@ -382,6 +393,8 @@ export class IssueSecuritySchemesResource {
   /**
    * B547: Update a security level in an issue security scheme.
    * PUT /rest/api/3/issuesecurityschemes/{schemeId}/level/{levelId}
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   async updateLevel(
     schemeId: string,
@@ -401,6 +414,8 @@ export class IssueSecuritySchemesResource {
   /**
    * B548: Add members to a security level.
    * PUT /rest/api/3/issuesecurityschemes/{schemeId}/level/{levelId}/member
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   async addLevelMembers(
     schemeId: string,
@@ -419,6 +434,8 @@ export class IssueSecuritySchemesResource {
   /**
    * B549: Remove a member from a security level.
    * DELETE /rest/api/3/issuesecurityschemes/{schemeId}/level/{levelId}/member/{memberId}
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   async removeLevelMember(schemeId: string, levelId: string, memberId: string): Promise<void> {
     await this.transport.request<undefined>({
@@ -430,6 +447,8 @@ export class IssueSecuritySchemesResource {
   /**
    * B550: Get security levels (paginated).
    * GET /rest/api/3/issuesecurityschemes/level
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   async listLevels(
     params?: GetSecurityLevelsParams,
@@ -446,6 +465,8 @@ export class IssueSecuritySchemesResource {
 
   /**
    * B550: Iterate every security level. Delegates to {@link paginateOffset}.
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   async *listLevelsAll(
     params?: Omit<GetSecurityLevelsParams, 'startAt'>,
@@ -467,6 +488,8 @@ export class IssueSecuritySchemesResource {
   /**
    * B551: Set default security levels for issue security schemes.
    * PUT /rest/api/3/issuesecurityschemes/level/default
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   async setDefaultLevels(data: SetDefaultLevelsData): Promise<void> {
     await this.transport.request<undefined>({
@@ -479,6 +502,8 @@ export class IssueSecuritySchemesResource {
   /**
    * B552: Get security level members (paginated).
    * GET /rest/api/3/issuesecurityschemes/level/member
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   async listLevelMembers(
     params?: GetSecurityLevelMembersParams,
@@ -498,6 +523,8 @@ export class IssueSecuritySchemesResource {
 
   /**
    * B552: Iterate every security level member. Delegates to {@link paginateOffset}.
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   async *listLevelMembersAll(
     params?: Omit<GetSecurityLevelMembersParams, 'startAt'>,
@@ -519,6 +546,8 @@ export class IssueSecuritySchemesResource {
   /**
    * B553: Get project-to-scheme mappings (paginated).
    * GET /rest/api/3/issuesecurityschemes/project
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   async listProjects(
     params?: SearchProjectsUsingSecuritySchemesParams,
@@ -537,6 +566,8 @@ export class IssueSecuritySchemesResource {
 
   /**
    * B553: Iterate every project-to-scheme mapping. Delegates to {@link paginateOffset}.
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   async *listProjectsAll(
     params?: Omit<SearchProjectsUsingSecuritySchemesParams, 'startAt'>,
@@ -554,6 +585,8 @@ export class IssueSecuritySchemesResource {
   /**
    * B554: Associate security schemes to projects.
    * PUT /rest/api/3/issuesecurityschemes/project
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   async associateToProject(data: AssociateSchemesToProjectsData): Promise<void> {
     const body: Record<string, unknown> = {
@@ -573,6 +606,8 @@ export class IssueSecuritySchemesResource {
   /**
    * B555: Search issue security schemes (paginated).
    * GET /rest/api/3/issuesecurityschemes/search
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   async search(
     params?: SearchSecuritySchemesParams,
@@ -591,6 +626,8 @@ export class IssueSecuritySchemesResource {
 
   /**
    * B555: Iterate every issue security scheme from search. Delegates to {@link paginateOffset}.
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   async *searchAll(
     params?: Omit<SearchSecuritySchemesParams, 'startAt'>,

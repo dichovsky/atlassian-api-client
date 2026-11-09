@@ -78,6 +78,8 @@ export class FieldConfigurationResource {
   /**
    * B908: List field configurations with offset pagination.
    * GET /rest/api/3/fieldconfiguration
+   *
+   * @deprecated Atlassian deprecates this operation; use field schemes (`JiraClient.config`, `/rest/api/3/config/fieldschemes`) instead.
    */
   async list(
     params?: ListFieldConfigurationsParams,
@@ -94,6 +96,8 @@ export class FieldConfigurationResource {
 
   /**
    * B908: Iterate every field configuration. Delegates to {@link paginateOffset}.
+   *
+   * @deprecated Atlassian deprecates this operation; use field schemes (`JiraClient.config`, `/rest/api/3/config/fieldschemes`) instead.
    */
   async *listAll(
     params?: Omit<ListFieldConfigurationsParams, 'startAt'>,
@@ -111,6 +115,8 @@ export class FieldConfigurationResource {
   /**
    * B909: Create a field configuration.
    * POST /rest/api/3/fieldconfiguration
+   *
+   * @deprecated Atlassian deprecates this operation; use field schemes (`JiraClient.config`, `/rest/api/3/config/fieldschemes`) instead.
    */
   async create(data: CreateFieldConfigurationData): Promise<FieldConfiguration> {
     const body: Record<string, unknown> = { name: data.name };
@@ -126,6 +132,8 @@ export class FieldConfigurationResource {
   /**
    * B910: Delete a field configuration. Returns void (204 No Content).
    * DELETE /rest/api/3/fieldconfiguration/{id}
+   *
+   * @deprecated Atlassian deprecates this operation; use field schemes (`JiraClient.config`, `/rest/api/3/config/fieldschemes`) instead.
    */
   async delete(id: number): Promise<void> {
     await this.transport.request<undefined>({
@@ -137,6 +145,8 @@ export class FieldConfigurationResource {
   /**
    * B911: Update a field configuration. Returns void (204 No Content).
    * PUT /rest/api/3/fieldconfiguration/{id}
+   *
+   * @deprecated Atlassian deprecates this operation; use field schemes (`JiraClient.config`, `/rest/api/3/config/fieldschemes`) instead.
    */
   async update(id: number, data: UpdateFieldConfigurationData): Promise<void> {
     const body: Record<string, unknown> = { name: data.name };
@@ -151,6 +161,8 @@ export class FieldConfigurationResource {
   /**
    * B912: List fields in a field configuration with offset pagination.
    * GET /rest/api/3/fieldconfiguration/{id}/fields
+   *
+   * @deprecated Atlassian deprecates this operation; use field schemes (`JiraClient.config`, `/rest/api/3/config/fieldschemes`) instead.
    */
   async listFields(
     id: number,
@@ -168,6 +180,8 @@ export class FieldConfigurationResource {
 
   /**
    * B912: Iterate every field item in a configuration. Delegates to {@link paginateOffset}.
+   *
+   * @deprecated Atlassian deprecates this operation; use field schemes (`JiraClient.config`, `/rest/api/3/config/fieldschemes`) instead.
    */
   async *listAllFields(
     id: number,
@@ -186,6 +200,8 @@ export class FieldConfigurationResource {
   /**
    * B913: Update fields in a field configuration. Returns void (204 No Content).
    * PUT /rest/api/3/fieldconfiguration/{id}/fields
+   *
+   * @deprecated Atlassian deprecates this operation; use field schemes (`JiraClient.config`, `/rest/api/3/config/fieldschemes`) instead.
    */
   async updateFields(id: number, data: UpdateFieldConfigurationItemsData): Promise<void> {
     await this.transport.request<undefined>({

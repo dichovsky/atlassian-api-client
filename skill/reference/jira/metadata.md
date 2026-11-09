@@ -141,19 +141,24 @@ atlas jira status-category get done
 
 Issue resolution management (B931, B712-B718). `list` is deprecated by Atlassian — prefer `search`.
 
-| Action        | Positional | Required flags                            | Optional flags                                           |
-| ------------- | ---------- | ----------------------------------------- | -------------------------------------------------------- |
-| `list`        | —          | —                                         | — (deprecated; no filtering)                             |
-| `get`         | `<id>`     | —                                         | —                                                        |
-| `create`      | —          | `--name`                                  | `--description`                                          |
-| `update`      | `<id>`     | at least one of `--name`, `--description` | —                                                        |
-| `delete`      | `<id>`     | `--replace-with`                          | —                                                        |
-| `set-default` | `<id>`     | —                                         | —                                                        |
-| `move`        | —          | `--ids`                                   | `--after` or `--position`                                |
-| `search`      | —          | —                                         | `--only-default`, `--start-at`, `--max-results`, `--ids` |
+> **Experimental:** Atlassian marks `create`, `update`, `delete`, `set-default`, `move` and `search` `x-experimental`; their shapes may change without notice.
+
+| Action        | Positional         | Required flags   | Optional flags                                           |
+| ------------- | ------------------ | ---------------- | -------------------------------------------------------- |
+| `list`        | —                  | —                | — (deprecated; no filtering)                             |
+| `get`         | `<id>`             | —                | —                                                        |
+| `create`      | —                  | `--name`         | `--description`                                          |
+| `update`      | `<id>`             | `--name`         | `--description`                                          |
+| `delete`      | `<id>`             | `--replace-with` | —                                                        |
+| `set-default` | `<id>` (or `null`) | —                | —                                                        |
+| `move`        | —                  | `--ids`          | `--after` or `--position`                                |
+| `search`      | —                  | —                | `--only-default`, `--start-at`, `--max-results`, `--ids` |
 
 - `--ids` is comma-separated (for `move` and `search`).
 - `--replace-with` is the ID of the replacement resolution when deleting a resolution that is in use.
+- `update` replaces the resolution: `--name` is always required (send the current name to change only `--description`).
+- `delete` is asynchronous: it prints the deletion task (`{ id, self, status, progress, ... }`). Poll it with `atlas jira task get <id>` until `status` is `COMPLETE`.
+- `set-default null` erases the default resolution setting (sends JSON `null`).
 - `--after` / `--position` for `move`: use `--after <id>` to place after a specific resolution, or `--position <First|Last>` for a named position (mutually exclusive).
 - `--only-default`: boolean flag; when set only the default resolution is returned.
 
@@ -165,6 +170,7 @@ atlas jira resolutions create --name "Won't Fix" --description "Not a bug"
 atlas jira resolutions update 10001 --name "Fixed" --description "Issue was fixed"
 atlas jira resolutions delete 10001 --replace-with 10000
 atlas jira resolutions set-default 10001
+atlas jira resolutions set-default null
 atlas jira resolutions move --ids 10001,10002 --after 10000
 atlas jira resolutions move --ids 10001,10002 --position First
 atlas jira resolutions search --only-default
@@ -224,10 +230,11 @@ Jira expression validation and evaluation at `/rest/api/3/expression/{analyse,ev
 - `--context-variables` (on `analyse`) is a **JSON object** mapping variable names to type strings, e.g. `'{"value":"User","listOfStrings":"List<String>"}'`.
 - `--check` (on `analyse`) enables type-checking; values per Atlassian docs include `syntax` (default), `type`, `complexity`.
 - `--expression` (on `eval`/`evaluate`) is a single Jira expression string.
-- `--context` (on `eval`/`evaluate`) is a **JSON object** matching the `JiraExpressionEvalContextBean` shape (board, custom, customerRequest, issue, issues.jql, project, serviceDesk, sprint).
+- `--context` (on `eval`/`evaluate`) is a **JSON object** with the keys board, custom, customerRequest, issue, issues.jql, project, serviceDesk, sprint: `JiraExpressionEvalContextBean` for `eval`, `JiraExpressionEvaluateContextBean` for `evaluate`.
 - `--expand` (on `eval`/`evaluate`) is a comma-separated list of expansion keys (e.g. `meta.complexity`).
 - `eval` uses the legacy strongly-consistent offset-paginated search and is currently being removed by Atlassian.
-- `evaluate` is the current replacement; it uses enhanced eventually-consistent search with a scrolling `nextPageToken` view.
+- `evaluate` is the current replacement; it uses enhanced eventually-consistent search with a scrolling `nextPageToken` view. Its `issues.jql` context takes only `query`, `maxResults` and `nextPageToken` (no `startAt` / `validation`).
+- Paging `evaluate` over JQL: the response's `meta.issues.jql` carries `nextPageToken` (and `isLast`). Send the same `--expression` and `query` again with `"nextPageToken":"<token>"` added to `issues.jql`; stop when `isLast` is `true` or no token comes back.
 
 ```sh
 # Validate two expressions
@@ -249,6 +256,11 @@ atlas jira expression evaluate \
   --expression "issues.map(i => i.key)" \
   --context '{"issues":{"jql":{"query":"project = ACJIRA","maxResults":100}}}' \
   --expand meta.complexity
+
+# Fetch the next page: pass back meta.issues.jql.nextPageToken from the previous response
+atlas jira expression evaluate \
+  --expression "issues.map(i => i.key)" \
+  --context '{"issues":{"jql":{"query":"project = ACJIRA","maxResults":100,"nextPageToken":"<token>"}}}'
 
 # Legacy strongly-consistent endpoint (deprecated)
 atlas jira expression eval \

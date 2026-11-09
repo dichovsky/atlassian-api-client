@@ -79,29 +79,9 @@ const KNOWN_GAPS: Readonly<
     unset: ['replaceWith'],
     reason: 'deprecated: not in the deletePriority spec; the CLI rejects --replace-with',
   },
-  'jira.projects.create': {
-    unset: [
-      'projectTemplateKey',
-      'workflowScheme',
-      'issueTypeScheme',
-      'issueTypeScreenScheme',
-      'issueSecurityScheme',
-      'fieldScheme',
-      'fieldConfigurationScheme',
-    ],
-    reason: 'template and per-project schemes not exposed; Jira defaults apply',
-  },
-  'jira.projects.update': {
-    unset: [
-      'key',
-      'categoryId',
-      'avatarId',
-      'permissionScheme',
-      'notificationScheme',
-      'issueSecurityScheme',
-      'releasedProjectKeys',
-    ],
-    reason: 'key, category, avatar and scheme changes are not exposed on update',
+  'jira.projects.recent': {
+    unset: ['maxResults'],
+    reason: 'read (GET); deprecated: not a spec param, the SDK no longer sends it',
   },
   'jira.sprints.update': {
     unset: ['id', 'self', 'createdDate', 'originBoardId', 'completeDate'],
@@ -118,14 +98,6 @@ const KNOWN_GAPS: Readonly<
   'jira.users.createUser': {
     unset: ['name', 'password', 'applicationKeys'],
     reason: 'removed or deprecated in the NewUserDetails spec',
-  },
-  'jira.version.create': {
-    unset: ['expand'],
-    reason: 'response expansion only',
-  },
-  'jira.version.update': {
-    unset: ['expand'],
-    reason: 'response expansion only',
   },
 };
 
