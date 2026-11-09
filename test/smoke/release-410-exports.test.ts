@@ -9,12 +9,15 @@
  * `toEqualTypeOf`, and a reappearing unprefixed `GetUserParams` fails the
  * `@ts-expect-error` below with TS2578.
  */
-import { describe, expect, expectTypeOf, it } from 'vitest';
+import { describe, expectTypeOf, it } from 'vitest';
 import type * as Root from '../../src/index.js';
 import type {
   JiraClient,
   OffsetPaginatedResponse,
-  // X-EX1: types of 4.1.0 signatures (not used by any 4.0.0 signature)
+  // X-EX1: types that only 4.1.0 signatures name. FieldContextDefaultValue was
+  // reachable in 4.0.0 only through FieldContextDefaultValuePage; the 4.1.0
+  // root exports IssueTypeDefaultValueUpdate / AddIssueTypesToContextBody
+  // name it directly.
   CreateIssueParams,
   GetEditMetaParams,
   WorklogBulkOutcome,
@@ -153,7 +156,8 @@ describe('X-EX3: every type the 4.1.0 release notes name resolves at the root', 
       GetProjectParams,
       ProjectFieldBean,
     ];
-    const named: Partial<Named> = [];
-    expect(named).toEqual([]);
+    // An unresolved name already fails typecheck (TS2305); this also fails
+    // if any of them resolves to `any`, which would hide the type.
+    expectTypeOf<Named[number]>().not.toBeAny();
   });
 });
