@@ -330,7 +330,8 @@ export class HttpTransport implements Transport {
           }
           throw error;
         }
-        // Already classified by fetchWithCheckedRedirects (the GET after a write).
+        // Passed through as is: fetchWithCheckedRedirects made it for the GET after
+        // a write, or a custom `config.fetch` threw it, and its `retryable` decides.
         if (error instanceof NetworkError) throw error;
         if (isTransportFailure(error)) {
           // A headers timeout fires after the whole request was sent, so the

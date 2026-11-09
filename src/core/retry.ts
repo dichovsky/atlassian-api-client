@@ -126,7 +126,8 @@ const NOT_RETRYABLE = new WeakSet<object>();
  * that instance unretried for every later request that rejects with it. This
  * is deliberate: a per-attempt flag would need async-context tracking, and a
  * middleware that calls `next()` from another request's context would then
- * lose the flag and send the write again. A stale mark only skips a retry.
+ * lose the flag and send the write again. A stale mark only skips a retry or
+ * a token refresh.
  */
 export function notRetryable<T extends object>(error: T): T {
   NOT_RETRYABLE.add(error);

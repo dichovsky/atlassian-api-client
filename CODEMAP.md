@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "4.1.0"
   },
-  "sourceHash": "a58e3aabf7f773234fea744940a01f4fcf210903d11a3f583960bf5c1bc3caf5",
+  "sourceHash": "28e55bd9993d9887216ae367772d1e45b2bb17eb0d1d90e16dbbec502c500ce6",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -3718,7 +3718,7 @@
       "name": "RetryConfig",
       "kind": "interface",
       "file": "src/core/retry.ts",
-      "line": 174,
+      "line": 175,
       "signature": "export interface RetryConfig { readonly retries: number; readonly retryDelay: number; readonly maxRetryDelay: number; }",
       "jsdoc": "Configuration consumed by {@link executeWithRetry}. A {@link ResolvedConfig} satisfies this shape structurally, so the transport can pass its own config object without adapting.",
       "typeOnly": true
@@ -4580,7 +4580,7 @@
       "name": "executeWithRetry",
       "kind": "function",
       "file": "src/core/retry.ts",
-      "line": 205,
+      "line": 206,
       "signature": "export async function executeWithRetry<T>( operation: () => Promise<T>, config: RetryConfig, signal?: AbortSignal, ): Pr…",
       "jsdoc": "Run an async operation with retry, exponential backoff, and abort-aware sleep."
     },
@@ -17563,7 +17563,7 @@
         {
           "name": "notRetryable",
           "kind": "function",
-          "line": 131,
+          "line": 132,
           "exported": true,
           "signature": "export function notRetryable<T extends object>(error: T): T",
           "jsdoc": "Mark `error` so {@link executeWithRetry} throws it instead of running the operation again: the transport uses this for an error status on the GET a write was redirected to, because a retry would send the write again."
@@ -17571,7 +17571,7 @@
         {
           "name": "isNotRetryable",
           "kind": "function",
-          "line": 141,
+          "line": 142,
           "exported": true,
           "signature": "export function isNotRetryable(error: unknown): boolean",
           "jsdoc": "Whether `error` was marked by {@link notRetryable}. Anything that sends a request again after an error (the retry loop, the OAuth refresh middleware) must check this first."
@@ -17579,14 +17579,14 @@
         {
           "name": "hasCode",
           "kind": "function",
-          "line": 146,
+          "line": 147,
           "signature": "function hasCode(error: unknown, accept: (code: string) => boolean): boolean",
           "jsdoc": "Walk the error + `cause` chain for a string system `code` that `accept` matches."
         },
         {
           "name": "sleep",
           "kind": "function",
-          "line": 163,
+          "line": 164,
           "exported": true,
           "signature": "export function sleep(ms: number): Promise<void>",
           "jsdoc": "Sleep for the given number of milliseconds."
@@ -17594,7 +17594,7 @@
         {
           "name": "RetryConfig",
           "kind": "interface",
-          "line": 174,
+          "line": 175,
           "exported": true,
           "signature": "export interface RetryConfig { readonly retries: number; readonly retryDelay: number; readonly maxRetryDelay: number; }",
           "jsdoc": "Configuration consumed by {@link executeWithRetry}. A {@link ResolvedConfig} satisfies this shape structurally, so the transport can pass its own config object without adapting."
@@ -17602,7 +17602,7 @@
         {
           "name": "executeWithRetry",
           "kind": "function",
-          "line": 205,
+          "line": 206,
           "exported": true,
           "signature": "export async function executeWithRetry<T>( operation: () => Promise<T>, config: RetryConfig, signal?: AbortSignal, ): Pr…",
           "jsdoc": "Run an async operation with retry, exponential backoff, and abort-aware sleep."
@@ -17610,44 +17610,44 @@
         {
           "name": "shouldRetry",
           "kind": "function",
-          "line": 227,
+          "line": 228,
           "signature": "function shouldRetry(error: unknown, attempt: number, retries: number): boolean"
         },
         {
           "name": "RETRY_DELAY_HARD_CEILING",
           "kind": "variable",
-          "line": 257,
+          "line": 258,
           "signature": "const RETRY_DELAY_HARD_CEILING = 60_000;",
           "jsdoc": "Hard ceiling applied when a retry delay is unschedulable. `resolveConfig` rejects invalid values up front — this constant is defence-in-depth for callers that bypass `resolveConfig` (e.g. custom transports building a structural `RetryConfig`). Without it, Node coerces `NaN`, `Infinity`, and values above its timer ceiling to near-immediate timers."
         },
         {
           "name": "MAX_TIMER_DELAY",
           "kind": "variable",
-          "line": 258,
+          "line": 259,
           "signature": "const MAX_TIMER_DELAY = 2_147_483_647;"
         },
         {
           "name": "effectiveMaxDelay",
           "kind": "function",
-          "line": 260,
+          "line": 261,
           "signature": "function effectiveMaxDelay(maxRetryDelay: number): number"
         },
         {
           "name": "effectiveBaseDelay",
           "kind": "function",
-          "line": 266,
+          "line": 267,
           "signature": "function effectiveBaseDelay(retryDelay: number, ceiling: number): number"
         },
         {
           "name": "getRetryDelay",
           "kind": "function",
-          "line": 272,
+          "line": 273,
           "signature": "function getRetryDelay( error: unknown, attempt: number, retryDelay: number, maxRetryDelay: number, ): number"
         },
         {
           "name": "sleepWithAbort",
           "kind": "function",
-          "line": 304,
+          "line": 305,
           "exported": true,
           "signature": "export async function sleepWithAbort(delayMs: number, signal?: AbortSignal): Promise<void>",
           "jsdoc": "Sleep for `delayMs` milliseconds, rejecting with the signal's normalised abort reason if `signal` fires before the timer. Exported so other middleware (e.g. OAuth refresh jitter) can share a single abort-aware sleep implementation rather than duplicating timer + listener cleanup. Listener is registered with `{ once: true }` AND explicitly removed on the resolve path so it never outlives the sleep."
@@ -17655,7 +17655,7 @@
         {
           "name": "getAbortReason",
           "kind": "function",
-          "line": 329,
+          "line": 330,
           "signature": "function getAbortReason(signal: AbortSignal): Error"
         }
       ],
@@ -17836,75 +17836,75 @@
         {
           "name": "isHeadersLike",
           "kind": "function",
-          "line": 443,
+          "line": 444,
           "signature": "function isHeadersLike(value: unknown): value is Headers",
           "jsdoc": "Duck-type check for a WHATWG `Headers`-shaped value."
         },
         {
           "name": "DEFAULT_INBOUND_HEADERS",
           "kind": "variable",
-          "line": 465,
+          "line": 466,
           "signature": "const DEFAULT_INBOUND_HEADERS: readonly string[] = ['X-AREQUESTID', 'X-Request-Id'];",
           "jsdoc": "Default inbound response headers to check for a server-assigned request id (B011). `X-AREQUESTID` is Atlassian's actual header; `X-Request-Id` is the conventional RFC draft / de-facto standard fallback."
         },
         {
           "name": "captureRequestId",
           "kind": "function",
-          "line": 472,
+          "line": 473,
           "signature": "function captureRequestId(headers: Headers, candidates: readonly string[]): string | undefined",
           "jsdoc": "Read the first matching request-id header from the response. Returns the header value, or `undefined` when none of the candidates are present. `Headers.get()` is case-insensitive per the WHATWG Fetch spec."
         },
         {
           "name": "parseBodyWithTimeoutHandling",
           "kind": "function",
-          "line": 480,
+          "line": 481,
           "signature": "async function parseBodyWithTimeoutHandling<T>( parse: () => Promise<T>, timeoutSignal: AbortSignal, timeoutMs: number, …"
         },
         {
           "name": "toNetworkError",
           "kind": "function",
-          "line": 512,
+          "line": 513,
           "signature": "function toNetworkError(error: unknown, retryable: boolean): NetworkError",
           "jsdoc": "Wrap a transport failure in the taxonomy. {@link isTransportFailure} also matches non-Error shapes (a thrown `{ code }` object), whose `.message` is `undefined`, so fall back to the class default and keep the original value as `cause` without claiming it is an Error."
         },
         {
           "name": "REDIRECT_STATUSES",
           "kind": "variable",
-          "line": 518,
+          "line": 519,
           "signature": "const REDIRECT_STATUSES: ReadonlySet<number> = new Set([301, 302, 303, 307, 308]);",
           "jsdoc": "Statuses `fetch` treats as redirects (WHATWG Fetch \"redirect status\")."
         },
         {
           "name": "MAX_REDIRECTS",
           "kind": "variable",
-          "line": 521,
+          "line": 522,
           "signature": "const MAX_REDIRECTS = 20;",
           "jsdoc": "The hop limit `fetch` applies when it follows redirects itself."
         },
         {
           "name": "OutgoingRequest",
           "kind": "interface",
-          "line": 523,
+          "line": 524,
           "signature": "interface OutgoingRequest { readonly method: string; readonly headers: Record<string, string>; readonly body: FormData |…"
         },
         {
           "name": "fetchWithCheckedRedirects",
           "kind": "function",
-          "line": 562,
+          "line": 563,
           "signature": "async function fetchWithCheckedRedirects( doFetch: typeof fetch, url: string, request: OutgoingRequest, allowedHosts: re…",
           "jsdoc": "Send a request, following a redirect only to a target the request could have been sent to directly."
         },
         {
           "name": "computeAuthIdentity",
           "kind": "function",
-          "line": 644,
+          "line": 645,
           "signature": "function computeAuthIdentity(authHeaders: Record<string, string>): string",
           "jsdoc": "Hash the auth provider's `Authorization` header value into the short stable identifier exposed as {@link RequestOptions.authIdentity}. Uses the first 16 hex chars (64 bits) of SHA-256 — wide enough for accidental collisions to vanish in practice, narrow enough to keep cache/batch keys compact, and one-way so a logging/metrics middleware that persists `RequestOptions` never accidentally writes the credential to a log sink."
         },
         {
           "name": "assertOverrideBaseUrl",
           "kind": "function",
-          "line": 663,
+          "line": 664,
           "signature": "function assertOverrideBaseUrl(baseUrl: string, allowedHosts: readonly string[]): void",
           "jsdoc": "Validate a baseUrl override (deprecated constructor overload) against the same `allowedHosts` policy `resolveConfig` already applied to `config.baseUrl`. Without this, an override could silently relocate every relative-path request to a foreign host with the configured `Authorization` header attached. PR review of round 3."
         }
