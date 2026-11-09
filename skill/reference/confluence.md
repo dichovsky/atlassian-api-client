@@ -80,10 +80,10 @@ Lifecycle (`list` / `get` / `create` / `update` / `delete`) plus the full `/page
 | `delete-permissions`          | `<pageId>` | —                                                       | `--operation`, `--principal-type`, `--principal-id`, `--allow-self-lockout`                                                                                                                                                                                                                                                                                  |
 
 - `list` filters: `--space-id` (one decimal integer space ID, sent trimmed; a comma-separated list such as `1,2`, an empty value or a non-decimal one such as `abc` is rejected before any request), `--id` (comma-separated decimal integer page IDs; `abc` or `0x10` is rejected before any request), `--title` (exact title), `--status` (comma-separated subset of `current`, `archived`, `deleted`, `trashed`), `--subtype` (`live` or `page`), `--sort` (`id`, `-id`, `created-date`, `-created-date`, `modified-date`, `-modified-date`, `title`, `-title`) and `--body-format` (`storage` or `atlas_doc_format`). `--id` and `--status` are sent as repeated query parameters. Unknown values are rejected before any request.
-- `get --body-format` accepts `storage`, `atlas_doc_format`, `view`, `export_view`, `anonymous_export_view`, `styled_view`, or `editor`. `--status` accepts a comma-separated subset of `current`, `archived`, `trashed`, `deleted`, `historical`, `draft`; `--historical-version` selects a positive version number. The `--include-*` flags inline the named optional response block. `--no-include-version` (or `--include-version false`) is the meaningful override for the version block because Atlassian includes it by default; it is mutually exclusive with `--include-version`.
+- `get --body-format` accepts `storage`, `atlas_doc_format`, `view`, `export_view`, `anonymous_export_view`, `styled_view`, or `editor`. `--status` accepts a comma-separated subset of `current`, `archived`, `trashed`, `deleted`, `historical`, `draft`; `--historical-version` selects a positive version number. `--get-draft` retrieves the draft revision when present. The `--include-*` flags inline the named optional response block; `--include-<name> false` is the same as omitting the flag. `--no-include-version` (or `--include-version false`) is the meaningful override for the version block because Atlassian includes it by default; it is mutually exclusive with `--include-version`.
 - `create --status` accepts `current` or `draft` (omission means current). `--title` is required for current/default creation but optional with `--status draft`. `--parent-id` maps to the request body's `parentId`; `--subtype` accepts only `live`.
 - For a simple body, pass `--body '<p>Storage XML</p>'`; it defaults to `storage`, or choose `--body-representation storage|atlas_doc_format|wiki`. To construct either exact OpenAPI body shape, use `--body-json` with a flat `PageBodyWrite` object or a nested `PageNestedBodyWrite` object, for example `--body-json '{"atlas_doc_format":{"representation":"atlas_doc_format","value":"{\"type\":\"doc\"}"}}'`. Do not combine `--body-json` with `--body` or `--body-representation`.
-- `create --embedded` tags the page for NCS, `--private` restricts it to the creator, and `--root-level` creates it outside the space homepage tree. Do not combine a root-level request with `--parent-id`.
+- `create --embedded` tags the page for NCS, `--private` restricts it to the creator, and `--root-level` creates it outside the space homepage tree. Do not combine a root-level request with `--parent-id`. `--embedded false`, `--private false` and `--root-level false` are the same as omitting the flag (the server default is false).
 - `--body-format` on `custom-content` accepts `raw`, `storage`, or `atlas_doc_format`.
 - `--version-number` for `update` and `update-property` must be a positive integer exactly one greater than the current version (Confluence enforces optimistic concurrency; mismatches return 409). `--message` on either sets the new version's message. `update-title` does **not** require optimistic concurrency — no `version.number` field.
 - `update` sends `--body` (an empty string is allowed) as `--body-representation` `storage` (default), `atlas_doc_format`, or `wiki`, and `--status` `current` (default) or `draft`. Changing a current page to `draft` replaces any existing draft; `--status current` on a trashed or deleted page restores it (only the status changes). `--body-json` is not accepted on `update`.
@@ -95,6 +95,7 @@ Lifecycle (`list` / `get` / `create` / `update` / `delete`) plus the full `/page
 - `get-classification-level --status` accepts `current` (default), `draft`, or `archived`. `update-classification-level` / `reset-classification-level` `--status` accepts `current` (default) or `draft` — page classification can be updated per-revision-stream (unlike blog-post classification which is locked to `current`). `--level-id` on update sends the chosen classification id.
 - `custom-content --type` is required (Confluence resolves the custom-content namespace from this value). `--sort` accepts `CustomContentSortOrder`: `id`, `-id`, `created-date`, `-created-date`, `modified-date`, `-modified-date`, `title`, `-title`.
 - `likes-count` returns the bare `{ count }` envelope and is not paginated.
+- `likes-users --limit` takes a non-negative integer; 0 is the spec minimum, and the 250 maximum (server default 25) is enforced by the server, not the CLI. Other list actions require `--limit` of at least 1 (server max 250).
 - `redact --value` accepts the full `RedactPageData` payload as JSON: `createdAt` (required), optional `versionNumber` (redact a historical version instead of the current one) and `cleanHistory`, and `body.redactions[]` / `title.redactions[]`, each `{ "pointer", "from", "to", "reason"? }` where `pointer` is a JSON pointer to the text node and `from`/`to` are zero-based character offsets (`to` exclusive). `createdAt` must be the timestamp of the version being redacted — read it first with `pages get <pageId>` (`version.createdAt`); a stale value returns 400. The CLI fast-fails when `createdAt` is missing. `--created-at` (ISO-8601) and `--clean-history` override the same keys in `--value`, including an explicit `--clean-history false`; omit the flag to keep the `--value` setting. Requires Atlassian Guard Premium on the target tenant.
 - `update-title` targets the `/title` sub-resource (separate from full `update`). Use when you only want to rename the page without touching the body or bumping the page version — handy for bulk renames.
 - Content-property `--value` is parsed as JSON when possible, falling back to the raw string (same semantics as `app upsert-property`).
@@ -113,6 +114,11 @@ Lifecycle (`list` / `get` / `create` / `update` / `delete`) plus the full `/page
 atlas confluence pages list --space-id 654321 --limit 25
 atlas confluence pages list --space-id 654321 --status current,archived --subtype live --sort=-modified-date
 atlas confluence pages get 12345
+atlas confluence pages get 12345 --body-format atlas_doc_format --status current,historical --historical-version 3 --no-include-version
+atlas confluence pages get 12345 --get-draft --body-format storage
+atlas confluence pages get 12345 --include-labels --include-properties --include-operations --include-likes --include-versions --include-collaborators --include-direct-children --include-favorited-by-current-user-status --include-webresources
+atlas confluence pages create --space-id 654321 --status draft --parent-id 67890 --subtype live --body-json '{"storage":{"representation":"storage","value":"<p>Draft</p>"}}' --embedded --private
+atlas confluence pages create --space-id 654321 --title "Top level" --body "<p>Hi</p>" --root-level
 atlas confluence pages update 12345 --title "Renamed" --version-number 2 --body "<p>v2</p>"
 atlas confluence pages update 12345 --title "Renamed" --version-number 3 --body "<p>v3</p>" --parent-id 67890 --owner-id 5b10a2844c20165700ede21g
 atlas confluence pages update 12345 --title "Draft" --version-number 4 --body "h1. Draft" --body-representation wiki --status draft --message "Reworked intro"
@@ -290,8 +296,9 @@ The remaining actions wrap the `/blogposts/{id}/…` sub-resource family — con
 - `footer-comments` / `inline-comments` `--body-format` accepts `storage` or `atlas_doc_format`. `--status` is a comma-separated subset of `current`, `deleted`, `trashed`, `historical`, `draft` (no `archived`, unlike `pages`). Inline comments additionally accept `--resolution-status`, a comma-separated subset of `resolved`, `open`, `dangling`, `reopened`. Multi-value filters are sent as repeated params. `--sort` is `CommentSortOrder`: `created-date`, `-created-date`, `modified-date`, `-modified-date`.
 - `labels --prefix` accepts `my`, `team`, `global`, `system`. `--sort` is `LabelSortOrder`: `created-date`, `-created-date`, `id`, `-id`, `name`, `-name`. The SDK shares this collection with `labels.listForBlogPost` — both call `GET /blogposts/{id}/labels`.
 - `likes-count` returns the bare `{ count }` envelope and is not paginated.
+- `likes-users --limit` takes a non-negative integer; 0 is the spec minimum, and the 250 maximum (server default 25) is enforced by the server, not the CLI. Other list actions require `--limit` of at least 1 (server max 250).
 - `redact --value` accepts the full `RedactBlogPostData` payload as JSON: `createdAt` (required), optional `versionNumber` (redact a historical version instead of the current one) and `cleanHistory` (squash historical versions that contain the redacted text), and `body.redactions[]` / `title.redactions[]`, each `{ "pointer", "from", "to", "reason"? }` where `pointer` is a JSON pointer to the text node and `from`/`to` are zero-based character offsets (`to` exclusive). `createdAt` must be the timestamp of the version being redacted: read it first with `blog-posts get <id> --include-version` (`version.createdAt`); a stale value returns 400 (`createdAt field is out of date`). The CLI fast-fails when `createdAt` is missing. `--created-at` (ISO-8601) and `--clean-history` override the same keys in `--value`, including an explicit `--clean-history false`; omit the flag to keep the `--value` setting. Requires Atlassian Guard Premium on the target tenant.
-- `versions --sort` is the narrow `VersionSortOrder`: only `modified-date` / `-modified-date`. `version --version-number` fetches a single past version by number; the response includes the body and audit metadata.
+- `versions --sort` is the narrow `VersionSortOrder`: only `modified-date` / `-modified-date`. `versions --body-format` accepts `storage` or `atlas_doc_format`. `version --version-number` fetches a single past version by number; the response includes the body and audit metadata.
 - All list endpoints are cursor-paginated — extract `cursor=…` from `_links.next` and pass it back as `--cursor`.
 - Descending `--sort` values start with `-`, so attach them with `=` (`--sort=-created-date`); `--sort -created-date` is rejected as an ambiguous option.
 
@@ -341,6 +348,7 @@ atlas confluence blog-posts operations 99999
 
 # Versions
 atlas confluence blog-posts versions 99999 --sort=-modified-date
+atlas confluence blog-posts versions 99999 --body-format storage --sort=modified-date --limit 10 --cursor "<value-from-response>"
 atlas confluence blog-posts version 99999 --version-number 2
 
 # Restriction state and direct permissions
@@ -445,11 +453,16 @@ atlas confluence comments update-property 77777 --property-id prop-1 --key revie
 
 ```sh
 atlas confluence attachments list --page-id 12345 --status current,archived --sort=-created-date
+atlas confluence attachments list --page-id 12345 --media-type image/png --filename diagram.png --limit 5 --cursor "<value-from-response>"
 atlas confluence attachments list-all --media-type image/png --limit 50
 atlas confluence attachments get att-1 --include-labels --no-include-version
+atlas confluence attachments get att-1 --version-number 2 --include-properties --include-operations --include-versions --include-collaborators
 atlas confluence attachments versions att-1 --sort=-modified-date
+atlas confluence attachments create-property att-1 --key reviewed --value '{"ok":true}'
+atlas confluence attachments get-property att-1 --property-id prop-1
 atlas confluence attachments update-property att-1 --property-id prop-1 --key reviewed --value true --version-number 2 --message "Checked"
 atlas confluence attachments thumbnail att-1 --width 200 --height 200 --file ./att-1-thumb.png
+atlas confluence attachments delete-property att-1 --property-id prop-1
 atlas confluence attachments delete att-1 --purge
 ```
 
@@ -891,6 +904,7 @@ Manages Confluence space roles (`/wiki/api/v2/space-roles`). Available on tenant
 | `update` | `<roleId>` | `--name`, `--description`, `--space-permissions` | `--anonymous-reassignment-role-id`, `--guest-reassignment-role-id`                       |
 | `delete` | `<roleId>` | —                                                | —                                                                                        |
 
+- `--space-id` restricts the listing to the roles available in that space (one space ID, sent as the `space-id` query parameter); omit it to list every role available on the tenant.
 - `--role-type` filters by role type and is sent trimmed (`' SYSTEM '` goes out as `SYSTEM`): usually `SYSTEM` (platform-defined, not user-editable) or `CUSTOM` (tenant-created); the spec types it as an open string, so a tenant-defined type also passes through. An empty or blank value (`--role-type ""`) is rejected before any request.
 - `--principal-type` accepts `USER`, `GROUP`, or `ACCESS_CLASS` and restricts the listing to roles available for the named principal class.
 - `--principal-id` and `--principal-type` must be given **together** (the server returns 400 for either alone). With `--principal-type ACCESS_CLASS`, `--principal-id` is one of `anonymous-users`, `jsm-project-admins`, `authenticated-users`, `all-licensed-users`, `all-product-admins`; with `USER` it is an account ID, with `GROUP` a group ID.
@@ -907,6 +921,9 @@ atlas confluence space-roles list --principal-id acc-123 --principal-type=USER
 
 # Roles available to every licensed user (access class)
 atlas confluence space-roles list --principal-type ACCESS_CLASS --principal-id all-licensed-users
+
+# Roles available in one space, one page at a time (cursor from _links.next)
+atlas confluence space-roles list --space-id 654321 --limit 50 --cursor "<value-from-response>"
 
 # Fetch a single role
 atlas confluence space-roles get role-1

@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "4.1.0"
   },
-  "sourceHash": "b19215792c6959a1cb8ee4ced572c38b24231468f6a7e881f6a32da9083ee3db",
+  "sourceHash": "6b0b511d520e0003416c0886e7100f9be4ab1885940dc479a80b93d1134c5600",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -10277,7 +10277,7 @@
         {
           "name": "BlogPostsResource",
           "kind": "class",
-          "line": 75,
+          "line": 76,
           "exported": true,
           "signature": "export class BlogPostsResource",
           "jsdoc": "Resource for Confluence v2 blog posts.",
@@ -10285,227 +10285,228 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 76
+              "line": 77
             },
             {
               "name": "list",
               "kind": "method",
-              "line": 84
+              "line": 85
             },
             {
               "name": "get",
               "kind": "method",
-              "line": 112
+              "line": 113
             },
             {
               "name": "create",
               "kind": "method",
-              "line": 161
+              "line": 162
             },
             {
               "name": "update",
               "kind": "method",
-              "line": 182
+              "line": 183
             },
             {
               "name": "delete",
               "kind": "method",
-              "line": 192
+              "line": 193
             },
             {
               "name": "listAll",
               "kind": "method",
-              "line": 204
+              "line": 205
             },
             {
               "name": "listProperties",
               "kind": "method",
-              "line": 231
+              "line": 232
             },
             {
               "name": "listPropertiesAll",
               "kind": "method",
-              "line": 255
+              "line": 256
             },
             {
               "name": "createProperty",
               "kind": "method",
-              "line": 276
+              "line": 277
             },
             {
               "name": "getProperty",
               "kind": "method",
-              "line": 293
+              "line": 294
             },
             {
               "name": "updateProperty",
               "kind": "method",
-              "line": 310
+              "line": 311
             },
             {
               "name": "deleteProperty",
               "kind": "method",
-              "line": 328
+              "line": 329
             },
             {
               "name": "listAttachments",
               "kind": "method",
-              "line": 342
+              "line": 343
             },
             {
               "name": "listAttachmentsAll",
               "kind": "method",
-              "line": 364
+              "line": 365
             },
             {
               "name": "getClassificationLevel",
               "kind": "method",
-              "line": 383
+              "line": 384
             },
             {
               "name": "updateClassificationLevel",
               "kind": "method",
-              "line": 405
+              "line": 406
             },
             {
               "name": "resetClassificationLevel",
               "kind": "method",
-              "line": 424
+              "line": 425
             },
             {
               "name": "listCustomContent",
               "kind": "method",
-              "line": 442
+              "line": 443
             },
             {
               "name": "listCustomContentAll",
               "kind": "method",
-              "line": 461
+              "line": 462
             },
             {
               "name": "listFooterComments",
               "kind": "method",
-              "line": 481
+              "line": 482
             },
             {
               "name": "listFooterCommentsAll",
               "kind": "method",
-              "line": 503
+              "line": 504
             },
             {
               "name": "listInlineComments",
               "kind": "method",
-              "line": 522
+              "line": 523
             },
             {
               "name": "listInlineCommentsAll",
               "kind": "method",
-              "line": 544
+              "line": 545
             },
             {
               "name": "getLikeCount",
               "kind": "method",
-              "line": 566
+              "line": 567
             },
             {
               "name": "listLikeUsers",
               "kind": "method",
-              "line": 579
+              "line": 583
             },
             {
               "name": "listLikeUsersAll",
               "kind": "method",
-              "line": 600
+              "line": 609
             },
             {
               "name": "getOperations",
               "kind": "method",
-              "line": 621
+              "line": 630
             },
             {
               "name": "redact",
               "kind": "method",
-              "line": 642
+              "line": 651
             },
             {
               "name": "listLabels",
               "kind": "method",
-              "line": 663
+              "line": 672
             },
             {
               "name": "listLabelsAll",
               "kind": "method",
-              "line": 686
+              "line": 695
             },
             {
               "name": "listVersions",
               "kind": "method",
-              "line": 713
+              "line": 722
             },
             {
               "name": "listVersionsAll",
               "kind": "method",
-              "line": 736
+              "line": 745
             },
             {
               "name": "getRestrictionState",
               "kind": "method",
-              "line": 758
+              "line": 767
             },
             {
               "name": "setRestrictionState",
               "kind": "method",
-              "line": 772
+              "line": 781
             },
             {
               "name": "listPermissions",
               "kind": "method",
-              "line": 790
+              "line": 799
             },
             {
               "name": "listPermissionsAll",
               "kind": "method",
-              "line": 805
+              "line": 814
             },
             {
               "name": "addPermissions",
               "kind": "method",
-              "line": 821
+              "line": 830
             },
             {
               "name": "setPermissions",
               "kind": "method",
-              "line": 839
+              "line": 848
             },
             {
               "name": "deletePermissions",
               "kind": "method",
-              "line": 860
+              "line": 869
             },
             {
               "name": "buildAttachments",
               "kind": "method",
-              "line": 874
+              "line": 883
             },
             {
               "name": "buildComments",
               "kind": "method",
-              "line": 893
+              "line": 902
             },
             {
               "name": "buildInlineComments",
               "kind": "method",
-              "line": 912
+              "line": 921
             },
             {
               "name": "buildCustomContentQuery",
               "kind": "method",
-              "line": 928
+              "line": 937
             }
           ]
         }
       ],
       "imports": [
+        "../../core/errors.js",
         "../../core/pagination.js",
         "../../core/path.js",
         "../../core/query.js",
@@ -11749,7 +11750,7 @@
         {
           "name": "PagesResource",
           "kind": "class",
-          "line": 82,
+          "line": 83,
           "exported": true,
           "signature": "export class PagesResource",
           "jsdoc": "Resource for Confluence v2 pages.",
@@ -11757,232 +11758,233 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 83
+              "line": 84
             },
             {
               "name": "list",
               "kind": "method",
-              "line": 91
+              "line": 92
             },
             {
               "name": "get",
               "kind": "method",
-              "line": 109
+              "line": 110
             },
             {
               "name": "create",
               "kind": "method",
-              "line": 126
+              "line": 127
             },
             {
               "name": "update",
               "kind": "method",
-              "line": 137
+              "line": 138
             },
             {
               "name": "delete",
               "kind": "method",
-              "line": 147
+              "line": 148
             },
             {
               "name": "listAll",
               "kind": "method",
-              "line": 156
+              "line": 157
             },
             {
               "name": "listAncestors",
               "kind": "method",
-              "line": 178
+              "line": 179
             },
             {
               "name": "listDescendants",
               "kind": "method",
-              "line": 199
+              "line": 200
             },
             {
               "name": "listDescendantsAll",
               "kind": "method",
-              "line": 218
+              "line": 219
             },
             {
               "name": "listDirectChildren",
               "kind": "method",
-              "line": 241
+              "line": 242
             },
             {
               "name": "listDirectChildrenAll",
               "kind": "method",
-              "line": 260
+              "line": 261
             },
             {
               "name": "listChildren",
               "kind": "method",
-              "line": 287
+              "line": 288
             },
             {
               "name": "listChildrenAll",
               "kind": "method",
-              "line": 310
+              "line": 311
             },
             {
               "name": "getClassificationLevel",
               "kind": "method",
-              "line": 332
+              "line": 333
             },
             {
               "name": "updateClassificationLevel",
               "kind": "method",
-              "line": 356
+              "line": 357
             },
             {
               "name": "resetClassificationLevel",
               "kind": "method",
-              "line": 375
+              "line": 376
             },
             {
               "name": "listCustomContent",
               "kind": "method",
-              "line": 393
+              "line": 394
             },
             {
               "name": "listCustomContentAll",
               "kind": "method",
-              "line": 412
+              "line": 413
             },
             {
               "name": "listFooterComments",
               "kind": "method",
-              "line": 437
+              "line": 438
             },
             {
               "name": "listFooterCommentsAll",
               "kind": "method",
-              "line": 455
+              "line": 456
             },
             {
               "name": "listInlineComments",
               "kind": "method",
-              "line": 472
+              "line": 473
             },
             {
               "name": "listInlineCommentsAll",
               "kind": "method",
-              "line": 490
+              "line": 491
             },
             {
               "name": "getLikeCount",
               "kind": "method",
-              "line": 512
+              "line": 513
             },
             {
               "name": "listLikeUsers",
               "kind": "method",
-              "line": 525
+              "line": 529
             },
             {
               "name": "listLikeUsersAll",
               "kind": "method",
-              "line": 546
+              "line": 555
             },
             {
               "name": "getOperations",
               "kind": "method",
-              "line": 567
+              "line": 576
             },
             {
               "name": "redact",
               "kind": "method",
-              "line": 588
+              "line": 597
             },
             {
               "name": "updateTitle",
               "kind": "method",
-              "line": 609
+              "line": 618
             },
             {
               "name": "listProperties",
               "kind": "method",
-              "line": 632
+              "line": 641
             },
             {
               "name": "listPropertiesAll",
               "kind": "method",
-              "line": 656
+              "line": 665
             },
             {
               "name": "createProperty",
               "kind": "method",
-              "line": 677
+              "line": 686
             },
             {
               "name": "getProperty",
               "kind": "method",
-              "line": 691
+              "line": 700
             },
             {
               "name": "updateProperty",
               "kind": "method",
-              "line": 708
+              "line": 717
             },
             {
               "name": "deleteProperty",
               "kind": "method",
-              "line": 726
+              "line": 735
             },
             {
               "name": "getRestrictionState",
               "kind": "method",
-              "line": 739
+              "line": 748
             },
             {
               "name": "setRestrictionState",
               "kind": "method",
-              "line": 753
+              "line": 762
             },
             {
               "name": "listPermissions",
               "kind": "method",
-              "line": 771
+              "line": 780
             },
             {
               "name": "listPermissionsAll",
               "kind": "method",
-              "line": 786
+              "line": 795
             },
             {
               "name": "addPermissions",
               "kind": "method",
-              "line": 802
+              "line": 811
             },
             {
               "name": "setPermissions",
               "kind": "method",
-              "line": 820
+              "line": 829
             },
             {
               "name": "deletePermissions",
               "kind": "method",
-              "line": 841
+              "line": 850
             },
             {
               "name": "buildCustomContentQuery",
               "kind": "method",
-              "line": 852
+              "line": 861
             },
             {
               "name": "buildFooterComments",
               "kind": "method",
-              "line": 868
+              "line": 877
             },
             {
               "name": "buildInlineComments",
               "kind": "method",
-              "line": 887
+              "line": 896
             }
           ]
         }
       ],
       "imports": [
+        "../../core/errors.js",
         "../../core/pagination.js",
         "../../core/path.js",
         "../../core/query.js",
