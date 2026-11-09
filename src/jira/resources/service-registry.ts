@@ -49,6 +49,8 @@ export class ServiceRegistryResource {
    *
    * The `serviceIds` query parameter is **required** (`type: array`, min 1, max 20).
    * Sent as repeated params: `?serviceIds=a&serviceIds=b`.
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   async get(serviceIds: readonly string[]): Promise<ServiceRegistryEntry[]> {
     if (!Array.isArray(serviceIds) || serviceIds.length === 0) {

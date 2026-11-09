@@ -4,6 +4,8 @@
 
 ## `users`
 
+> **Experimental:** Atlassian marks `bulk` and `bulk-migration` `x-experimental`; their shapes may change without notice.
+
 | Action                     | Positional      | Required flags                                  | Optional flags                                                                                                                                                   |
 | -------------------------- | --------------- | ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `get`                      | `<accountId>`   | —                                               | `--expand`                                                                                                                                                       |
@@ -46,8 +48,8 @@
 - `users set-columns` accepts `--columns` as a comma-separated list of column names; `--account-id` scopes the update to a specific user (admin only).
 - `permission-search` returns users who have **all** the given permissions; `--permissions` (required) is a comma-separated list of permission keys (e.g. `BROWSE_PROJECTS,EDIT_ISSUES`). Scope with `--project-key` or `--issue-key`. The spec contradicts itself on `--query` / `--account-id`: the parameters say one is required, the operation says that without a search string it returns all users with the permissions. Pass one of them if Jira answers 400.
 - `picker` is a typeahead search for user selection UIs; `--exclude-account-ids` is comma-separated (sent as repeated params). `--exclude` (legacy usernames) is still sent but Atlassian says it is **no longer available**; use `--exclude-account-ids`.
-- `list-properties`, `get-property`, `delete-property`, `set-property` manage arbitrary key-value data stored on a user; scope with `--account-id` or `--user-key`.
-- `search-query` and `search-query-key` run a **structured user query**; `--query` is required. Statements: `is assignee of PROJ` (any issue in project PROJ), `is assignee of (PROJ-1, PROJ-2)`, and the same issue-list form for `is reporter of`, `is watcher of`, `is voter of`, `is commenter of` and `is transitioner of`; plus `[propertyKey].path is "value"` (e.g. `[location].office.city is "Sydney"`). Combine statements with `AND` / `OR`. Jira filters only the users in the `--start-at`/`--max-results` window, so a page usually holds fewer matches than `--max-results`. `search-query` returns a page of users; `search-query-key` returns a page of user keys. To translate legacy usernames or keys to account IDs use `bulk-migration`.
+- `list-properties`, `get-property`, `delete-property`, `set-property` manage arbitrary key-value data stored on a user; scope with `--account-id`.
+- **Legacy identifiers are ignored:** Atlassian marks these parameters "no longer available", so the CLI still sends them but Jira ignores them and you get unfiltered or wrongly scoped results: `--user-name` on `assignable` and `assignable-multi-project`, `--user-name` and `--key` on `groups`, and `--user-key` on `list-properties`, `get-property`, `set-property` and `delete-property`. Use `--account-id` instead. The exception is `bulk-migration`, where `--user-name` and `--key` are the input that gets translated to account IDs.- `search-query` and `search-query-key` run a **structured user query**; `--query` is required. Statements: `is assignee of PROJ` (any issue in project PROJ), `is assignee of (PROJ-1, PROJ-2)`, and the same issue-list form for `is reporter of`, `is watcher of`, `is voter of`, `is commenter of` and `is transitioner of`; plus `[propertyKey].path is "value"` (e.g. `[location].office.city is "Sydney"`). Combine statements with `AND` / `OR`. Jira filters only the users in the `--start-at`/`--max-results` window, so a page usually holds fewer matches than `--max-results`. `search-query` returns a page of users; `search-query-key` returns a page of user keys. To translate legacy usernames or keys to account IDs use `bulk-migration`.
 - `viewissue-search` returns users with browse permission for an issue (`--issue-key`) or a project (`--project-key`, case-sensitive); one of the two is required.
 - `list` returns a page of all users (active, inactive and deleted with an Atlassian account; `--max-results` up to 1000). Needs the _Browse users and groups_ global permission. `--expand` is passed through as given (comma-separated); the spec does not list its values for this endpoint, so the `get` keys (`groups`, `applicationRoles`) are the likely ones, not a documented contract.
 - `list-search` hits `GET /users/search`, which also returns a page of **all** users: it has no name or username filter, so the CLI rejects `--query` and `--user-name`. To find users by name or email use `users search --query` or `users picker --query`.
@@ -88,6 +90,9 @@ atlas jira users search-query-key --query "is watcher of (PROJ-42) OR is reporte
 # Translate legacy usernames to account IDs
 atlas jira users bulk-migration --user-name jsmith,adoe
 
+# Fetch two users by account ID
+atlas jira users bulk --account-ids 5b10a2844c20165700ede21g,5b10ac8d82e05b22cc7d4ef5
+
 # Find users who can view an issue
 atlas jira users viewissue-search --issue-key PROJ-42 --query jane
 
@@ -105,6 +110,8 @@ atlas jira users list-search --start-at 50 --max-results 50
 ```
 
 ## `groups`
+
+> **Experimental:** Atlassian marks `list-bulk` `x-experimental`; its shape may change without notice.
 
 | Action         | Positional | Required flags | Optional flags                                                                                      |
 | -------------- | ---------- | -------------- | --------------------------------------------------------------------------------------------------- |
@@ -224,4 +231,7 @@ atlas jira group-user-picker pick --query eng --field-id customfield_10050 --pro
 
 # Include AI agents and scope to issue types
 atlas jira group-user-picker pick --query agent --include-ai-agents --field-id customfield_10050 --issue-type-id 10000,10001
+
+# Every option: two projects, retina avatars, case-insensitive groups, no AI agents, no Connect users
+atlas jira group-user-picker pick --query eng --max-results 10 --show-avatar --avatar-size small@2x --field-id customfield_10050 --project-id 10001,10002 --issue-type-id 10000 --case-insensitive --include-ai-agents false --exclude-connect-users true
 ```

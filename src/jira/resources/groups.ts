@@ -298,6 +298,8 @@ export class GroupsResource {
    * GET /rest/api/3/group/bulk
    *
    * Returns the raw page envelope. For full iteration use {@link listAllBulk}.
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   async listBulk(
     params?: ListBulkGroupsParams,
@@ -316,6 +318,8 @@ export class GroupsResource {
    * B470: Iterate every group returned by `/group/bulk`. Delegates to
    * {@link paginateOffset} so advancement uses delivered row count (never
    * the server-echoed `maxResults`) and `maxPages` safety guards apply.
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   async *listAllBulk(
     params?: Omit<ListBulkGroupsParams, 'startAt'>,

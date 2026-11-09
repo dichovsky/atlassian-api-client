@@ -171,7 +171,11 @@ export class WebhooksResource {
     return response.data;
   }
 
-  /** List failed webhook deliveries (paginated by timestamp cursor). */
+  /**
+   * List failed webhook deliveries (paginated by timestamp cursor).
+   *
+   * @experimental Atlassian marks this operation as experimental.
+   */
   async listFailed(params?: ListFailedWebhooksParams): Promise<FailedWebhooks> {
     if (params?.maxResults !== undefined) validatePageSize(params.maxResults, 'maxResults');
     const query: Record<string, string | number | boolean | undefined> = {};
@@ -192,6 +196,8 @@ export class WebhooksResource {
    * Pagination uses Atlassian's `after` filter (strictly greater than `failureTime`).
    * If multiple failures share the same `failureTime` across a page boundary, the
    * second occurrence may be skipped — this is server-side semantics, not a client bug.
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   async *listAllFailed(params?: ListFailedWebhooksParams): AsyncGenerator<FailedWebhook> {
     let after = params?.after;

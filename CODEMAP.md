@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "4.1.0"
   },
-  "sourceHash": "c069bae42f14171535a64e8cfe9c1fa5f2d9ab47da4e8ebdcaef331c77aa213c",
+  "sourceHash": "4ed4dd9740e65dc39d5d0023468bb2abe005c49513a8c2cbb50af6a10bb86a5d",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -359,9 +359,9 @@
       "name": "BulkDeleteIssuePropertyData",
       "kind": "interface",
       "file": "src/jira/resources/bulk.ts",
-      "line": 79,
-      "signature": "export interface BulkDeleteIssuePropertyData { readonly filter?: { readonly entityIds?: number[]; readonly currentValue?…",
-      "jsdoc": "Request body for bulk-deleting a property from multiple Jira issues. Spec: IssueFilterForBulkPropertyDelete",
+      "line": 81,
+      "signature": "export interface BulkDeleteIssuePropertyData { readonly entityIds?: number[]; readonly currentValue?: unknown; readonly …",
+      "jsdoc": "Filter for bulk-deleting a property from multiple Jira issues. The request body IS this filter (spec: IssueFilterForBulkPropertyDelete, top-level `entityIds` / `currentValue` only). Both criteria are ANDed; with neither, every issue the caller can edit loses the property.",
       "typeOnly": true
     },
     {
@@ -395,7 +395,7 @@
       "name": "BulkIssuePropertyOptions",
       "kind": "interface",
       "file": "src/jira/resources/bulk.ts",
-      "line": 88,
+      "line": 99,
       "signature": "export interface BulkIssuePropertyOptions { readonly returnTask?: boolean; }",
       "jsdoc": "Options for {@link BulkResource.setPropertyBulk} and {@link BulkResource.deletePropertyBulk}.",
       "typeOnly": true
@@ -27743,52 +27743,52 @@
             {
               "name": "listFieldContextConfigurations",
               "kind": "method",
-              "line": 341
+              "line": 343
             },
             {
               "name": "updateFieldValue",
               "kind": "method",
-              "line": 369
+              "line": 371
             },
             {
               "name": "bulkUpdateFieldValue",
               "kind": "method",
-              "line": 391
+              "line": 393
             },
             {
               "name": "getDynamicModules",
               "kind": "method",
-              "line": 414
+              "line": 416
             },
             {
               "name": "registerDynamicModules",
               "kind": "method",
-              "line": 426
+              "line": 428
             },
             {
               "name": "deleteDynamicModules",
               "kind": "method",
-              "line": 445
+              "line": 447
             },
             {
               "name": "listForgeProperties",
               "kind": "method",
-              "line": 463
+              "line": 465
             },
             {
               "name": "getForgeProperty",
               "kind": "method",
-              "line": 475
+              "line": 477
             },
             {
               "name": "setForgeProperty",
               "kind": "method",
-              "line": 488
+              "line": 490
             },
             {
               "name": "deleteForgeProperty",
               "kind": "method",
-              "line": 500
+              "line": 502
             }
           ]
         }
@@ -28633,15 +28633,15 @@
         {
           "name": "BulkDeleteIssuePropertyData",
           "kind": "interface",
-          "line": 79,
+          "line": 81,
           "exported": true,
-          "signature": "export interface BulkDeleteIssuePropertyData { readonly filter?: { readonly entityIds?: number[]; readonly currentValue?…",
-          "jsdoc": "Request body for bulk-deleting a property from multiple Jira issues. Spec: IssueFilterForBulkPropertyDelete"
+          "signature": "export interface BulkDeleteIssuePropertyData { readonly entityIds?: number[]; readonly currentValue?: unknown; readonly …",
+          "jsdoc": "Filter for bulk-deleting a property from multiple Jira issues. The request body IS this filter (spec: IssueFilterForBulkPropertyDelete, top-level `entityIds` / `currentValue` only). Both criteria are ANDed; with neither, every issue the caller can edit loses the property."
         },
         {
           "name": "BulkIssuePropertyOptions",
           "kind": "interface",
-          "line": 88,
+          "line": 99,
           "exported": true,
           "signature": "export interface BulkIssuePropertyOptions { readonly returnTask?: boolean; }",
           "jsdoc": "Options for {@link BulkResource.setPropertyBulk} and {@link BulkResource.deletePropertyBulk}."
@@ -28649,7 +28649,7 @@
         {
           "name": "SubmittedBulkOperation",
           "kind": "interface",
-          "line": 100,
+          "line": 111,
           "exported": true,
           "signature": "export interface SubmittedBulkOperation { readonly taskId: string; }",
           "jsdoc": "Async task identifier returned by every bulk POST endpoint (B345, B347, B348, B350, B351, B352). Callers poll `GET /rest/api/3/bulk/queue/{taskId}` (B353) until `status` is COMPLETE or FAILED — polling is intentionally NOT auto-driven inside the POST methods so the caller controls the cadence/timeout."
@@ -28657,21 +28657,21 @@
         {
           "name": "BulkDeleteIssuesInput",
           "kind": "interface",
-          "line": 106,
+          "line": 117,
           "exported": true,
           "signature": "export interface BulkDeleteIssuesInput { readonly selectedIssueIdsOrKeys: string[]; readonly sendBulkNotification?: bool…"
         },
         {
           "name": "BulkGetIssueFieldsParams",
           "kind": "interface",
-          "line": 113,
+          "line": 124,
           "exported": true,
           "signature": "export interface BulkGetIssueFieldsParams { readonly issueIdsOrKeys: string; readonly searchText?: string; readonly endi…"
         },
         {
           "name": "BulkEditableField",
           "kind": "interface",
-          "line": 121,
+          "line": 132,
           "exported": true,
           "signature": "export interface BulkEditableField { readonly id: string; readonly name: string; readonly type: string; readonly descrip…",
           "jsdoc": "Spec: IssueBulkEditField"
@@ -28679,7 +28679,7 @@
         {
           "name": "BulkEditableFieldsResponse",
           "kind": "interface",
-          "line": 135,
+          "line": 146,
           "exported": true,
           "signature": "export interface BulkEditableFieldsResponse { readonly fields: BulkEditableField[]; readonly endingBefore?: string; read…",
           "jsdoc": "Spec: BulkEditGetFields"
@@ -28687,28 +28687,28 @@
         {
           "name": "BulkEditIssueFieldsInput",
           "kind": "interface",
-          "line": 148,
+          "line": 159,
           "exported": true,
           "signature": "export interface BulkEditIssueFieldsInput { readonly editedFieldsInput: Record<string, unknown>; readonly selectedAction…"
         },
         {
           "name": "BulkMoveIssuesInput",
           "kind": "interface",
-          "line": 157,
+          "line": 168,
           "exported": true,
           "signature": "export interface BulkMoveIssuesInput { readonly sendBulkNotification?: boolean; readonly targetToSourcesMapping: Record<…"
         },
         {
           "name": "BulkGetTransitionsParams",
           "kind": "interface",
-          "line": 164,
+          "line": 175,
           "exported": true,
           "signature": "export interface BulkGetTransitionsParams { readonly issueIdsOrKeys: string; readonly endingBefore?: string; readonly st…"
         },
         {
           "name": "BulkAvailableTransitionTarget",
           "kind": "interface",
-          "line": 173,
+          "line": 184,
           "exported": true,
           "signature": "export interface BulkAvailableTransitionTarget { readonly statusId: number; readonly statusName: string; }",
           "jsdoc": "Spec: IssueTransitionStatus"
@@ -28716,7 +28716,7 @@
         {
           "name": "BulkAvailableTransition",
           "kind": "interface",
-          "line": 180,
+          "line": 191,
           "exported": true,
           "signature": "export interface BulkAvailableTransition { readonly to: BulkAvailableTransitionTarget; readonly transitionId: number; re…",
           "jsdoc": "Spec: SimplifiedIssueTransition"
@@ -28724,7 +28724,7 @@
         {
           "name": "BulkAvailableTransitionsForIssues",
           "kind": "interface",
-          "line": 188,
+          "line": 199,
           "exported": true,
           "signature": "export interface BulkAvailableTransitionsForIssues { readonly isTransitionsFiltered: boolean; readonly issues: string[];…",
           "jsdoc": "Spec: IssueBulkTransitionForWorkflow"
@@ -28732,7 +28732,7 @@
         {
           "name": "BulkAvailableTransitionsResponse",
           "kind": "interface",
-          "line": 195,
+          "line": 206,
           "exported": true,
           "signature": "export interface BulkAvailableTransitionsResponse { readonly availableTransitions: BulkAvailableTransitionsForIssues[]; …",
           "jsdoc": "Spec: BulkTransitionGetAvailableTransitions"
@@ -28740,28 +28740,28 @@
         {
           "name": "BulkTransitionInput",
           "kind": "interface",
-          "line": 205,
+          "line": 216,
           "exported": true,
           "signature": "export interface BulkTransitionInput { readonly selectedIssueIdsOrKeys: string[]; readonly transitionId: string; }"
         },
         {
           "name": "BulkTransitionIssuesInput",
           "kind": "interface",
-          "line": 210,
+          "line": 221,
           "exported": true,
           "signature": "export interface BulkTransitionIssuesInput { readonly bulkTransitionInputs: BulkTransitionInput[]; readonly sendBulkNoti…"
         },
         {
           "name": "BulkWatchIssuesInput",
           "kind": "interface",
-          "line": 217,
+          "line": 228,
           "exported": true,
           "signature": "export interface BulkWatchIssuesInput { readonly selectedIssueIdsOrKeys: string[]; }"
         },
         {
           "name": "BulkOperationSubmittedBy",
           "kind": "interface",
-          "line": 224,
+          "line": 235,
           "exported": true,
           "signature": "export interface BulkOperationSubmittedBy { readonly accountId?: string; readonly accountType?: string; readonly active?…",
           "jsdoc": "Spec: BulkOperationProgress — submittedBy references the full User schema."
@@ -28769,7 +28769,7 @@
         {
           "name": "BulkOperationProgress",
           "kind": "interface",
-          "line": 236,
+          "line": 247,
           "exported": true,
           "signature": "export interface BulkOperationProgress { readonly taskId: string; readonly status: | 'ENQUEUED' | 'RUNNING' | 'COMPLETE'…",
           "jsdoc": "Spec: BulkOperationProgress"
@@ -28777,7 +28777,7 @@
         {
           "name": "DevopsBulkErrorMessage",
           "kind": "interface",
-          "line": 275,
+          "line": 286,
           "exported": true,
           "signature": "export interface DevopsBulkErrorMessage { readonly message: string; readonly errorTraceId?: string; }",
           "jsdoc": "Shared error message shape used across DevOps bulk responses."
@@ -28785,98 +28785,98 @@
         {
           "name": "DevopsBuildKey",
           "kind": "interface",
-          "line": 283,
+          "line": 294,
           "exported": true,
           "signature": "export interface DevopsBuildKey { readonly pipelineId: string; readonly buildNumber: number; }"
         },
         {
           "name": "DevopsRejectedBuild",
           "kind": "interface",
-          "line": 288,
+          "line": 299,
           "exported": true,
           "signature": "export interface DevopsRejectedBuild { readonly key: DevopsBuildKey; readonly errors: DevopsBulkErrorMessage[]; }"
         },
         {
           "name": "SubmitBuildsResponse",
           "kind": "interface",
-          "line": 293,
+          "line": 304,
           "exported": true,
           "signature": "export interface SubmitBuildsResponse { readonly acceptedBuilds?: DevopsBuildKey[]; readonly rejectedBuilds?: DevopsReje…"
         },
         {
           "name": "DevopsDeploymentKey",
           "kind": "interface",
-          "line": 303,
+          "line": 314,
           "exported": true,
           "signature": "export interface DevopsDeploymentKey { readonly pipelineId: string; readonly environmentId: string; readonly deploymentS…"
         },
         {
           "name": "DevopsRejectedDeployment",
           "kind": "interface",
-          "line": 309,
+          "line": 320,
           "exported": true,
           "signature": "export interface DevopsRejectedDeployment { readonly key: DevopsDeploymentKey; readonly errors: DevopsBulkErrorMessage[]…"
         },
         {
           "name": "SubmitDeploymentsResponse",
           "kind": "interface",
-          "line": 314,
+          "line": 325,
           "exported": true,
           "signature": "export interface SubmitDeploymentsResponse { readonly acceptedDeployments?: DevopsDeploymentKey[]; readonly rejectedDepl…"
         },
         {
           "name": "DevopsDevinfoEntityIds",
           "kind": "interface",
-          "line": 324,
+          "line": 335,
           "exported": true,
           "signature": "export interface DevopsDevinfoEntityIds { readonly commits?: string[]; readonly branches?: string[]; readonly pullReques…"
         },
         {
           "name": "SubmitDevInfoResponse",
           "kind": "interface",
-          "line": 330,
+          "line": 341,
           "exported": true,
           "signature": "export interface SubmitDevInfoResponse { readonly acceptedDevinfoEntities?: Record<string, DevopsDevinfoEntityIds>; read…"
         },
         {
           "name": "SubmitDevopsComponentsResponse",
           "kind": "interface",
-          "line": 347,
+          "line": 358,
           "exported": true,
           "signature": "export interface SubmitDevopsComponentsResponse { readonly acceptedComponents?: unknown[]; readonly failedComponents?: u…"
         },
         {
           "name": "SubmitFeatureFlagsResponse",
           "kind": "interface",
-          "line": 355,
+          "line": 366,
           "exported": true,
           "signature": "export interface SubmitFeatureFlagsResponse { readonly acceptedFeatureFlags?: unknown[]; readonly failedFeatureFlags?: u…"
         },
         {
           "name": "SubmitOperationsResponse",
           "kind": "interface",
-          "line": 364,
+          "line": 375,
           "exported": true,
           "signature": "export interface SubmitOperationsResponse { readonly acceptedIncidents?: unknown[]; readonly failedIncidents?: unknown[]…"
         },
         {
           "name": "SubmitRemoteLinksResponse",
           "kind": "interface",
-          "line": 372,
+          "line": 383,
           "exported": true,
           "signature": "export interface SubmitRemoteLinksResponse { readonly acceptedRemoteLinks?: unknown[]; readonly rejectedRemoteLinks?: un…"
         },
         {
           "name": "SubmitSecurityResponse",
           "kind": "interface",
-          "line": 380,
+          "line": 391,
           "exported": true,
           "signature": "export interface SubmitSecurityResponse { readonly acceptedVulnerabilities?: unknown[]; readonly failedVulnerabilities?:…"
         },
         {
           "name": "DevopsBulkAcceptedEntity",
           "kind": "type",
-          "line": 392,
+          "line": 403,
           "exported": true,
           "signature": "export type DevopsBulkAcceptedEntity = DevopsBuildKey;",
           "jsdoc": "@deprecated Use SubmitBuildsResponse, SubmitDeploymentsResponse, or per-API response types."
@@ -28884,7 +28884,7 @@
         {
           "name": "DevopsBulkFailedEntity",
           "kind": "interface",
-          "line": 395,
+          "line": 406,
           "exported": true,
           "signature": "export interface DevopsBulkFailedEntity { readonly key?: string; readonly errors?: DevopsBulkErrorMessage[]; }",
           "jsdoc": "@deprecated Use DevopsRejectedBuild, DevopsRejectedDeployment, or per-API error types."
@@ -28892,7 +28892,7 @@
         {
           "name": "DevopsBulkSubmitResponse",
           "kind": "interface",
-          "line": 405,
+          "line": 416,
           "exported": true,
           "signature": "export interface DevopsBulkSubmitResponse { readonly acceptedBuilds?: DevopsBuildKey[]; readonly acceptedDeployments?: D…",
           "jsdoc": "@deprecated Use per-API response types: SubmitBuildsResponse, SubmitDeploymentsResponse, SubmitDevInfoResponse, SubmitDevopsComponentsResponse, SubmitFeatureFlagsResponse, SubmitOperationsResponse, SubmitRemoteLinksResponse, SubmitSecurityResponse."
@@ -28900,7 +28900,7 @@
         {
           "name": "BulkResourceBaseUrls",
           "kind": "interface",
-          "line": 421,
+          "line": 432,
           "exported": true,
           "signature": "export interface BulkResourceBaseUrls { readonly builds: string; readonly deployments: string; readonly devInfo: string;…",
           "jsdoc": "Extra base URLs accepted alongside the v3 `baseUrl`. Each maps 1:1 to one of the DevOps integration APIs that exposes a POST `/bulk` ingest endpoint (B952, B956, B961, B967, B971, B980, B989, B993). They're injected from `JiraClient` so the resource stays transport-agnostic and the prefixes live in a single place."
@@ -28908,39 +28908,34 @@
         {
           "name": "BulkResource",
           "kind": "class",
-          "line": 432,
+          "line": 443,
           "exported": true,
           "signature": "export class BulkResource",
           "members": [
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 433
+              "line": 444
             },
             {
               "name": "createBulk",
               "kind": "method",
-              "line": 440
+              "line": 451
             },
             {
               "name": "setPropertyBulk",
               "kind": "method",
-              "line": 450
+              "line": 461
             },
             {
               "name": "setPropertyBulk",
               "kind": "method",
-              "line": 463
+              "line": 474
             },
             {
               "name": "setPropertyBulk",
               "kind": "method",
-              "line": 468
-            },
-            {
-              "name": "deletePropertyBulk",
-              "kind": "method",
-              "line": 482
+              "line": 479
             },
             {
               "name": "deletePropertyBulk",
@@ -28950,97 +28945,102 @@
             {
               "name": "deletePropertyBulk",
               "kind": "method",
-              "line": 498
+              "line": 504
+            },
+            {
+              "name": "deletePropertyBulk",
+              "kind": "method",
+              "line": 509
             },
             {
               "name": "deleteIssuesBulk",
               "kind": "method",
-              "line": 518
+              "line": 536
             },
             {
               "name": "getIssueFieldsBulk",
               "kind": "method",
-              "line": 533
+              "line": 551
             },
             {
               "name": "editIssueFieldsBulk",
               "kind": "method",
-              "line": 553
+              "line": 571
             },
             {
               "name": "moveIssuesBulk",
               "kind": "method",
-              "line": 569
+              "line": 587
             },
             {
               "name": "getAvailableTransitionsBulk",
               "kind": "method",
-              "line": 584
+              "line": 602
             },
             {
               "name": "transitionIssuesBulk",
               "kind": "method",
-              "line": 605
+              "line": 623
             },
             {
               "name": "unwatchIssuesBulk",
               "kind": "method",
-              "line": 621
+              "line": 639
             },
             {
               "name": "watchIssuesBulk",
               "kind": "method",
-              "line": 637
+              "line": 655
             },
             {
               "name": "getBulkOperationStatus",
               "kind": "method",
-              "line": 652
+              "line": 670
             },
             {
               "name": "submitBuilds",
               "kind": "method",
-              "line": 668
+              "line": 686
             },
             {
               "name": "submitDeployments",
               "kind": "method",
-              "line": 680
+              "line": 698
             },
             {
               "name": "submitDevInfo",
               "kind": "method",
-              "line": 692
+              "line": 710
             },
             {
               "name": "submitDevopsComponents",
               "kind": "method",
-              "line": 704
+              "line": 722
             },
             {
               "name": "submitFeatureFlags",
               "kind": "method",
-              "line": 720
+              "line": 738
             },
             {
               "name": "submitOperations",
               "kind": "method",
-              "line": 732
+              "line": 750
             },
             {
               "name": "submitRemoteLinks",
               "kind": "method",
-              "line": 744
+              "line": 762
             },
             {
               "name": "submitSecurity",
               "kind": "method",
-              "line": 756
+              "line": 774
             },
             {
               "name": "requireDevopsBaseUrls",
               "kind": "method",
-              "line": 765
+              "line": 783
             }
           ]
         }
@@ -29171,7 +29171,7 @@
             {
               "name": "list",
               "kind": "method",
-              "line": 56
+              "line": 58
             }
           ]
         }
@@ -30167,100 +30167,100 @@
             {
               "name": "create",
               "kind": "method",
-              "line": 356
+              "line": 360
             },
             {
               "name": "update",
               "kind": "method",
-              "line": 368
+              "line": 376
             },
             {
               "name": "delete",
               "kind": "method",
-              "line": 384
+              "line": 396
             },
             {
               "name": "listGadgets",
               "kind": "method",
-              "line": 397
+              "line": 411
             },
             {
               "name": "addGadget",
               "kind": "method",
-              "line": 419
+              "line": 437
             },
             {
               "name": "updateGadget",
               "kind": "method",
-              "line": 438
+              "line": 460
             },
             {
               "name": "removeGadget",
               "kind": "method",
-              "line": 458
+              "line": 484
             },
             {
               "name": "listItemProperties",
               "kind": "method",
-              "line": 469
+              "line": 495
             },
             {
               "name": "getItemProperty",
               "kind": "method",
-              "line": 483
+              "line": 509
             },
             {
               "name": "setItemProperty",
               "kind": "method",
-              "line": 501
+              "line": 527
             },
             {
               "name": "deleteItemProperty",
               "kind": "method",
-              "line": 520
+              "line": 546
             },
             {
               "name": "copy",
               "kind": "method",
-              "line": 540
+              "line": 568
             },
             {
               "name": "bulkEdit",
               "kind": "method",
-              "line": 562
+              "line": 594
             },
             {
               "name": "listAvailableGadgets",
               "kind": "method",
-              "line": 596
+              "line": 630
             },
             {
               "name": "search",
               "kind": "method",
-              "line": 609
+              "line": 643
             },
             {
               "name": "searchAll",
               "kind": "method",
-              "line": 651
+              "line": 685
             },
             {
               "name": "listAll",
               "kind": "method",
-              "line": 694
+              "line": 728
             }
           ]
         },
         {
           "name": "DEFAULT_MAX_PAGES",
           "kind": "variable",
-          "line": 746,
+          "line": 780,
           "signature": "const DEFAULT_MAX_PAGES = 10_000;"
         },
         {
           "name": "dashboardWriteQuery",
           "kind": "function",
-          "line": 749,
+          "line": 783,
           "signature": "function dashboardWriteQuery(params: DashboardWriteParams | undefined): Record<string, boolean>",
           "jsdoc": "The `extendAdminPermissions` query shared by dashboard create/update/copy."
         }
@@ -30544,7 +30544,7 @@
             {
               "name": "list",
               "kind": "method",
-              "line": 19
+              "line": 23
             }
           ]
         }
@@ -32144,42 +32144,42 @@
             {
               "name": "changeOwner",
               "kind": "method",
-              "line": 395
+              "line": 399
             },
             {
               "name": "listPermissions",
               "kind": "method",
-              "line": 406
+              "line": 410
             },
             {
               "name": "addPermission",
               "kind": "method",
-              "line": 415
+              "line": 419
             },
             {
               "name": "getPermission",
               "kind": "method",
-              "line": 428
+              "line": 432
             },
             {
               "name": "deletePermission",
               "kind": "method",
-              "line": 437
+              "line": 441
             },
             {
               "name": "getDefaultShareScope",
               "kind": "method",
-              "line": 447
+              "line": 451
             },
             {
               "name": "setDefaultShareScope",
               "kind": "method",
-              "line": 456
+              "line": 460
             },
             {
               "name": "listAll",
               "kind": "method",
-              "line": 466
+              "line": 470
             }
           ]
         }
@@ -32598,52 +32598,52 @@
             {
               "name": "listBulk",
               "kind": "method",
-              "line": 302
+              "line": 304
             },
             {
               "name": "listAllBulk",
               "kind": "method",
-              "line": 320
+              "line": 324
             },
             {
               "name": "listMembers",
               "kind": "method",
-              "line": 340
+              "line": 344
             },
             {
               "name": "listAllMembers",
               "kind": "method",
-              "line": 357
+              "line": 361
             },
             {
               "name": "removeUser",
               "kind": "method",
-              "line": 377
+              "line": 381
             },
             {
               "name": "addUser",
               "kind": "method",
-              "line": 396
+              "line": 400
             }
           ]
         },
         {
           "name": "buildBulkQuery",
           "kind": "function",
-          "line": 413,
+          "line": 417,
           "signature": "function buildBulkQuery( params: ListBulkGroupsParams | undefined, ): Record<string, string | number | boolean | undefin…"
         },
         {
           "name": "buildBulkPath",
           "kind": "function",
-          "line": 427,
+          "line": 431,
           "signature": "function buildBulkPath(basePath: string, params: ListBulkGroupsParams | undefined): string",
           "jsdoc": "Append the repeated `groupId` and `groupName` (`type: array`) params to the bulk path."
         },
         {
           "name": "buildMemberQuery",
           "kind": "function",
-          "line": 433,
+          "line": 437,
           "signature": "function buildMemberQuery( params: ListGroupMembersParams | undefined, ): Record<string, string | number | boolean | und…"
         }
       ],
@@ -33007,7 +33007,7 @@
             {
               "name": "getLicense",
               "kind": "method",
-              "line": 23
+              "line": 27
             }
           ]
         }
@@ -35871,12 +35871,12 @@
             {
               "name": "getApproximateCount",
               "kind": "method",
-              "line": 28
+              "line": 32
             },
             {
               "name": "getApproximateCountForProduct",
               "kind": "method",
-              "line": 37
+              "line": 45
             }
           ]
         }
@@ -39884,7 +39884,7 @@
             {
               "name": "get",
               "kind": "method",
-              "line": 53
+              "line": 55
             }
           ]
         }
@@ -40436,7 +40436,7 @@
             {
               "name": "cancel",
               "kind": "method",
-              "line": 45
+              "line": 47
             }
           ]
         }
@@ -40756,97 +40756,97 @@
             {
               "name": "bulkGet",
               "kind": "method",
-              "line": 151
+              "line": 155
             },
             {
               "name": "bulkMigration",
               "kind": "method",
-              "line": 166
+              "line": 174
             },
             {
               "name": "resetColumns",
               "kind": "method",
-              "line": 192
+              "line": 200
             },
             {
               "name": "getColumns",
               "kind": "method",
-              "line": 203
+              "line": 211
             },
             {
               "name": "setColumns",
               "kind": "method",
-              "line": 215
+              "line": 223
             },
             {
               "name": "getEmail",
               "kind": "method",
-              "line": 227
+              "line": 235
             },
             {
               "name": "bulkGetEmails",
               "kind": "method",
-              "line": 237
+              "line": 245
             },
             {
               "name": "getGroups",
               "kind": "method",
-              "line": 247
+              "line": 255
             },
             {
               "name": "getPermissionUsers",
               "kind": "method",
-              "line": 262
+              "line": 270
             },
             {
               "name": "picker",
               "kind": "method",
-              "line": 281
+              "line": 289
             },
             {
               "name": "listProperties",
               "kind": "method",
-              "line": 300
+              "line": 308
             },
             {
               "name": "deleteProperty",
               "kind": "method",
-              "line": 313
+              "line": 321
             },
             {
               "name": "getProperty",
               "kind": "method",
-              "line": 325
+              "line": 333
             },
             {
               "name": "setProperty",
               "kind": "method",
-              "line": 338
+              "line": 346
             },
             {
               "name": "searchQuery",
               "kind": "method",
-              "line": 355
+              "line": 363
             },
             {
               "name": "searchQueryKey",
               "kind": "method",
-              "line": 369
+              "line": 377
             },
             {
               "name": "viewIssueSearch",
               "kind": "method",
-              "line": 384
+              "line": 392
             },
             {
               "name": "list",
               "kind": "method",
-              "line": 402
+              "line": 410
             },
             {
               "name": "listSearch",
               "kind": "method",
-              "line": 421
+              "line": 429
             }
           ]
         }
@@ -41290,12 +41290,12 @@
             {
               "name": "listFailed",
               "kind": "method",
-              "line": 175
+              "line": 179
             },
             {
               "name": "listAllFailed",
               "kind": "method",
-              "line": 196
+              "line": 202
             }
           ]
         }

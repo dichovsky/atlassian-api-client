@@ -52,6 +52,8 @@ export class ClassificationLevelsResource {
    * GET /rest/api/3/classification-levels
    *
    * @param params - Optional filters: `status` (repeated), `orderBy`.
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   async list(params?: ListClassificationLevelsParams): Promise<ClassificationLevel[]> {
     // `status` is `type:array` → repeated params baked into the path; `orderBy`

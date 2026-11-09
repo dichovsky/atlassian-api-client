@@ -455,7 +455,7 @@ EXAMPLES:
   atlas jira license get-approximate-count
   atlas jira license get-approximate-count-for-product jira-software
   atlas jira settings get-columns
-  atlas jira settings set-columns --columns '[{"label":"Key","value":"issuekey"}]'
+  atlas jira settings set-columns --columns issuekey,summary
   atlas jira redact start --value '[{"contentItem":{"entityId":"summary","entityType":"issuefieldvalue","id":"10000"},"externalId":"51101de6-d001-429d-a095-b2b96dd57fcb","reason":"PII","redactionPosition":{"expectedText":"<sha256-base64>","from":0,"to":5}}]'
   atlas jira redact get-status job-abc123
   atlas jira flag get flag-xyz
@@ -468,7 +468,7 @@ EXAMPLES:
   atlas jira latest bulk-worklog --value '[{"issueId":10001,"worklogId":20001}]'
   atlas jira remote-link get rl-123
   atlas jira remote-link delete rl-123
-  atlas jira service-registry get
+  atlas jira service-registry get --service-ids svc-id-1,svc-id-2
   atlas jira addons list-properties my-connect-app
   atlas jira addons get-property my-connect-app my-setting
   atlas jira addons set-property my-connect-app my-setting --value '{"enabled":true}'
@@ -618,7 +618,7 @@ EXAMPLES:
   atlas jira config get 10001
   atlas jira config update 10001 --name "Renamed Scheme" --description "Updated"
   atlas jira config delete 10001
-  atlas jira config clone 10001 --name "Clone of My Scheme"
+  atlas jira config clone 10001 --name "Clone of My Scheme" --description "Copied for Q3"
   atlas jira config list-fields 10001 --start-at 0 --max-results 50
   atlas jira config list-fields 10001 --field-id customfield_10001,customfield_10002
   atlas jira config get-field-parameters 10001 customfield_10001
