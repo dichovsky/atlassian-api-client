@@ -4470,18 +4470,18 @@ async function executeBulk(client: JiraClient, cmd: ParsedCommand): Promise<unkn
       // B525 DELETE /rest/api/3/issue/properties/{propertyKey}
       const propertyKey = requireArg(cmd.positionalArgs[0], 'propertyKey');
       const filterRaw = opts['filter'];
+      // Spec IssueFilterForBulkPropertyDelete: the body IS the filter (entityIds / currentValue only).
       const filter =
-        filterRaw !== undefined
-          ? (parseJsonObjectFlag(
-              String(filterRaw),
-              '--filter',
-            ) as BulkDeleteIssuePropertyData['filter'])
-          : undefined;
-      return client.bulk.deletePropertyBulk(
-        propertyKey,
-        { ...(filter !== undefined && { filter }) },
-        { returnTask: true },
-      );
+        filterRaw !== undefined ? parseJsonObjectFlag(String(filterRaw), '--filter') : {};
+      const unknown = Object.keys(filter).filter((k) => k !== 'entityIds' && k !== 'currentValue');
+      if (unknown.length > 0) {
+        throw new Error(
+          `bulk delete-property --filter accepts only entityIds and currentValue (got ${unknown.join(', ')}; hasProperty is set-property only)`,
+        );
+      }
+      return client.bulk.deletePropertyBulk(propertyKey, filter as BulkDeleteIssuePropertyData, {
+        returnTask: true,
+      });
     }
     case 'submit-builds':
       return client.bulk.submitBuilds(

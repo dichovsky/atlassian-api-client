@@ -73,10 +73,21 @@ export interface BulkSetIssuePropertyData {
 }
 
 /**
- * Request body for bulk-deleting a property from multiple Jira issues.
- * Spec: IssueFilterForBulkPropertyDelete
+ * Filter for bulk-deleting a property from multiple Jira issues. The request
+ * body IS this filter (spec: IssueFilterForBulkPropertyDelete, top-level
+ * `entityIds` / `currentValue` only). Both criteria are ANDed; with neither,
+ * every issue the caller can edit loses the property.
  */
 export interface BulkDeleteIssuePropertyData {
+  /** Only these issues are eligible (numeric issue IDs; spec: int64). */
+  readonly entityIds?: number[];
+  /** Only issues whose property currently has this value are eligible. */
+  readonly currentValue?: unknown;
+  /**
+   * @deprecated The 4.0.0 shape. Jira does not accept a nested `filter`, so
+   * its keys are sent at the top level of the body. Pass `entityIds` /
+   * `currentValue` directly; combining `filter` with them is rejected.
+   */
   readonly filter?: {
     /** List of issues to perform the bulk delete operation on (spec: int64). */
     readonly entityIds?: number[];
@@ -500,10 +511,17 @@ export class BulkResource {
     data: BulkDeleteIssuePropertyData,
     options?: BulkIssuePropertyOptions,
   ): Promise<Task | void> {
+    const { filter, ...criteria } = data;
+    if (filter !== undefined && Object.values(criteria).some((v) => v !== undefined)) {
+      throw new ValidationError(
+        'deletePropertyBulk: pass entityIds/currentValue either at the top level or in the deprecated filter, not both',
+      );
+    }
     const response = await this.transport.request<Task>({
       method: 'DELETE',
       path: `${this.baseUrl}/issue/properties/${encodePathSegment(propertyKey)}`,
-      body: data,
+      // Flatten the deprecated 4.0.0 `{ filter }` shape: the spec body is the filter itself.
+      body: { ...filter, ...criteria },
     });
     return options?.returnTask === true ? response.data : undefined;
   }

@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { describe, it, expect, expectTypeOf, beforeEach } from 'vitest';
 import { BulkResource } from '../../src/jira/resources/bulk.js';
 // Root import: the option and result types of the public overloads must be importable by consumers.
@@ -318,16 +320,46 @@ describe('BulkResource', () => {
       });
     });
 
-    it('passes filter data with integer entityIds (spec: int64)', async () => {
+    it('sends the filter criteria at the top level of the body (spec: IssueFilterForBulkPropertyDelete)', async () => {
       // Arrange — entityIds are numbers per spec (int64), not strings
       transport.respondWith(undefined);
-      const data = { filter: { entityIds: [10001], currentValue: 'old' } };
 
       // Act
-      await bulk.deletePropertyBulk('myProperty', data);
+      await bulk.deletePropertyBulk('myProperty', { entityIds: [10001], currentValue: 'old' });
 
       // Assert
-      expect(transport.lastCall?.options.body).toMatchObject(data);
+      expect(transport.lastCall?.options.body).toEqual({ entityIds: [10001], currentValue: 'old' });
+    });
+
+    it('flattens the deprecated 4.0.0 { filter } shape instead of nesting it', async () => {
+      transport.respondWith(undefined);
+
+      await bulk.deletePropertyBulk('p', { filter: { entityIds: [1], currentValue: 'x' } });
+
+      expect(transport.lastCall?.options.body).toEqual({ entityIds: [1], currentValue: 'x' });
+    });
+
+    it('rejects the deprecated filter combined with top-level criteria, before sending', async () => {
+      await expect(
+        bulk.deletePropertyBulk('p', { filter: { entityIds: [1] }, currentValue: 'x' }),
+      ).rejects.toThrow(ValidationError);
+      expect(transport.calls).toHaveLength(0);
+    });
+
+    it('sends only keys the spec delete filter declares', async () => {
+      transport.respondWith(undefined);
+      const spec = JSON.parse(
+        readFileSync(resolve(import.meta.dirname, '../../spec/jira-platform-v3.json'), 'utf8'),
+      ) as { components: { schemas: Record<string, { properties: Record<string, unknown> }> } };
+      const allowed = Object.keys(
+        spec.components.schemas['IssueFilterForBulkPropertyDelete']?.properties ?? {},
+      );
+
+      await bulk.deletePropertyBulk('p', { filter: { entityIds: [1], currentValue: 'x' } });
+
+      expect(allowed.sort()).toEqual(['currentValue', 'entityIds']);
+      const sent = Object.keys(transport.lastCall?.options.body as object);
+      expect(sent.filter((k) => !allowed.includes(k))).toEqual([]);
     });
 
     it('encodes propertyKey in the path', async () => {
