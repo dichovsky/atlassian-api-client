@@ -60,7 +60,7 @@ import type {
   WorklogBulkOutcome,
 } from '../../jira/resources/issues.js';
 import type { Issue } from '../../jira/types.js';
-import type { WebhookRegistration } from '../../jira/resources/webhooks.js';
+import type { WebhookEvent, WebhookRegistration } from '../../jira/resources/webhooks.js';
 import type { ApplicationKey } from '../../jira/resources/license.js';
 import type {
   ProjectAccessLevel,
@@ -2408,6 +2408,56 @@ async function executeDataPolicy(client: JiraClient, cmd: ParsedCommand): Promis
   }
 }
 
+/** Spec `WebhookDetails.events` enum; the `Record` keeps it in step with `WebhookEvent`. */
+const WEBHOOK_EVENTS = Object.keys({
+  'jira:issue_created': true,
+  'jira:issue_updated': true,
+  'jira:issue_deleted': true,
+  comment_created: true,
+  comment_updated: true,
+  comment_deleted: true,
+  issue_property_set: true,
+  issue_property_deleted: true,
+  sprint_created: true,
+  sprint_updated: true,
+  sprint_closed: true,
+  sprint_deleted: true,
+  sprint_started: true,
+  'jira:version_released': true,
+  'jira:version_unreleased': true,
+  'jira:version_created': true,
+  'jira:version_moved': true,
+  'jira:version_updated': true,
+  'jira:version_merged': true,
+  'jira:version_deleted': true,
+} satisfies Record<WebhookEvent, true>);
+
+/** `--webhooks` for `register`: each entry an object whose `events` are spec values. */
+function webhookRegistrationsFlag(raw: string): WebhookRegistration[] {
+  const entries = parseJsonArrayFlag(raw, '--webhooks');
+  entries.forEach((entry, i) => {
+    if (!isJsonObject(entry)) throw new Error(`--webhooks[${i}] must be a JSON object`);
+    const events = entry['events'];
+    if (!Array.isArray(events) || !events.every((e) => WEBHOOK_EVENTS.includes(e as string))) {
+      throw new Error(
+        `--webhooks[${i}].events must be a JSON array of: ${WEBHOOK_EVENTS.join(', ')}`,
+      );
+    }
+  });
+  return entries as WebhookRegistration[];
+}
+
+/** `--webhook-ids` for `refresh`/`delete`: a JSON array of integer IDs. */
+function webhookIdsFlag(value: string | boolean | undefined): number[] {
+  const raw = asString(value);
+  if (raw === undefined) throw new Error('--webhook-ids is required');
+  const ids = parseJsonArrayFlag(raw, '--webhook-ids');
+  if (!ids.every((id) => Number.isInteger(id))) {
+    throw new Error('--webhook-ids must be a JSON array of integer webhook IDs');
+  }
+  return ids as number[];
+}
+
 async function executeWebhooks(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
   const opts = cmd.options;
 
@@ -2423,14 +2473,10 @@ async function executeWebhooks(client: JiraClient, cmd: ParsedCommand): Promise<
       if (url === undefined) throw new Error('--url is required');
       const rawWebhooks = asString(opts['webhooks']);
       if (rawWebhooks === undefined) throw new Error('--webhooks is required');
-      const webhooks = parseJsonArrayFlag(rawWebhooks, '--webhooks') as WebhookRegistration[];
-      return client.webhooks.register({ url, webhooks });
+      return client.webhooks.register({ url, webhooks: webhookRegistrationsFlag(rawWebhooks) });
     }
     case 'refresh': {
-      const rawIds = asString(opts['webhook-ids']);
-      if (rawIds === undefined) throw new Error('--webhook-ids is required');
-      const webhookIds = parseJsonArrayFlag(rawIds, '--webhook-ids') as number[];
-      return client.webhooks.refresh(webhookIds);
+      return client.webhooks.refresh(webhookIdsFlag(opts['webhook-ids']));
     }
     case 'list-failed': {
       const maxResults = asPositiveInt(opts['max-results'], '--max-results');
@@ -2442,10 +2488,7 @@ async function executeWebhooks(client: JiraClient, cmd: ParsedCommand): Promise<
       });
     }
     case 'delete': {
-      const rawIds = asString(opts['webhook-ids']);
-      if (rawIds === undefined) throw new Error('--webhook-ids is required');
-      const webhookIds = parseJsonArrayFlag(rawIds, '--webhook-ids') as number[];
-      await client.webhooks.delete(webhookIds);
+      await client.webhooks.delete(webhookIdsFlag(opts['webhook-ids']));
       return { deleted: true };
     }
     default:
@@ -4520,6 +4563,17 @@ function asFilterShareType(
   );
 }
 
+/** `orderBy` values of `GET /filter/search` (spec enum). */
+const FILTER_SEARCH_ORDER_BY = [
+  'description',
+  'favourite_count',
+  'id',
+  'is_favourite',
+  'name',
+  'owner',
+  'is_shared',
+].flatMap((key) => [key, `-${key}`, `+${key}`]);
+
 /** `sharePermissions` / `editPermissions` element type of a filter write body. */
 type FilterPermissionList = NonNullable<
   Parameters<JiraClient['filters']['create']>[0]['sharePermissions']
@@ -4575,12 +4629,13 @@ async function executeFilters(client: JiraClient, cmd: ParsedCommand): Promise<u
       const projectId = asPositiveInt(opts['project-id'], '--project-id');
       const overrideSharePermissions = asBoolFlag(opts['override-share-permissions']);
       const isSubstringMatch = asBoolFlag(opts['is-substring-match']);
+      const orderBy = asEnum(opts['order-by'], FILTER_SEARCH_ORDER_BY, 'order-by');
       return client.filters.list({
         startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
         ...(asString(opts['expand']) !== undefined && { expand: asString(opts['expand']) }),
         ...(ids !== undefined && { id: ids }),
-        ...(asString(opts['order-by']) !== undefined && { orderBy: asString(opts['order-by']) }),
+        ...(orderBy !== undefined && { orderBy }),
         ...(filterName !== undefined && { filterName }),
         ...(accountId !== undefined && { accountId }),
         ...(owner !== undefined && { owner }),
@@ -7665,17 +7720,12 @@ async function executeFields(client: JiraClient, cmd: ParsedCommand): Promise<un
       // B446: GET /rest/api/3/field/search
       const startAt = asNonNegativeInt(opts['start-at'], '--start-at');
       const maxResults = asPositiveInt(opts['max-results'], '--max-results');
-      const typeRaw = asString(opts['type']);
-      const type =
-        typeRaw !== undefined
-          ? typeRaw.split(',').map((s) => {
-              const t = s.trim();
-              if (t !== 'custom' && t !== 'system') {
-                throw new Error(`--type must contain only 'custom' or 'system', got: ${t}`);
-              }
-              return t;
-            })
-          : undefined;
+      const type = idsCsvFlag(opts['type'], '--type')?.map((t) => {
+        if (t !== 'custom' && t !== 'system') {
+          throw new Error(`--type must contain only 'custom' or 'system', got: ${t}`);
+        }
+        return t;
+      });
       const id = idsCsvFlag(opts['id'], '--id');
       const query = asString(opts['query']);
       const orderBy = asString(opts['order-by']);
@@ -7705,8 +7755,10 @@ async function executeFields(client: JiraClient, cmd: ParsedCommand): Promise<un
     }
     case 'field-delete': {
       // Asynchronous: print the deletion task so it can be polled with `task get`.
+      // Off-spec 204 / empty 200 (no task): acknowledge as 4.0.0 did.
       const fieldId = requireArg(cmd.positionalArgs[0], 'fieldId');
-      return client.fields.delete(fieldId, { returnTask: true });
+      const task: unknown = await client.fields.delete(fieldId, { returnTask: true });
+      return task ?? { deleted: true };
     }
     case 'context-list': {
       const fieldId = requireOpt(opts['field-id'], '--field-id');
@@ -9101,6 +9153,15 @@ function dashboardPermissionsFlag(
   return parseJsonArrayFlag(requireOpt(value, flag), flag) as DashboardSharePermission[];
 }
 
+/** A `list-gadgets` CSV filter; given but empty is refused (no filter would return every gadget). */
+function gadgetFilterFlag(value: string | boolean | undefined, name: string): string[] | undefined {
+  const raw = asString(value);
+  if (raw === undefined) return undefined;
+  const values = splitCsvIds(raw);
+  if (values.length === 0) throw new Error(`${name} must contain at least one value`);
+  return values;
+}
+
 function requireBoolOpt(value: string | boolean | undefined, name: string): boolean {
   const flag = asBoolFlag(value);
   if (flag === undefined) throw new Error(`Missing required option: ${name} (true|false)`);
@@ -9168,9 +9229,11 @@ async function executeDashboards(client: JiraClient, cmd: ParsedCommand): Promis
     // ── gadgets ─────────────────────────────────────────────────────────────
     case 'list-gadgets': {
       const dashboardId = requireArg(cmd.positionalArgs[0], 'dashboardId');
-      const moduleKey = csvFlag(opts['module-key']);
-      const uri = csvFlag(opts['uri']);
-      const gadgetId = asIntArray(opts['gadget-id'], '--gadget-id');
+      const moduleKey = gadgetFilterFlag(opts['module-key'], '--module-key');
+      const uri = gadgetFilterFlag(opts['uri'], '--uri');
+      const gadgetId = gadgetFilterFlag(opts['gadget-id'], '--gadget-id')?.map((s) =>
+        parsePositiveIntArg(s, '--gadget-id'),
+      );
       return client.dashboards.listGadgets(dashboardId, {
         ...(moduleKey !== undefined && { moduleKey }),
         ...(uri !== undefined && { uri }),

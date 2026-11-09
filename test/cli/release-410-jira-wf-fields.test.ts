@@ -4,6 +4,7 @@
  * F267). Every case drives real argv through {@link runCliWire}, so router
  * registration, boolean parsing and positional capture are exercised.
  */
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { runCliWire, type CliWireOptions, type WireRequest } from '../helpers/cli-wire.js';
 
@@ -915,5 +916,130 @@ describe('changed actions percent-encode their path ids', () => {
     const req = await onlyRequest(args);
     expect(req.method).toBe(method);
     expect(new URL(req.url).pathname).toBe(encodedPath);
+  });
+});
+
+// ── review round 1 ────────────────────────────────────────────────────────────
+
+describe('webhooks client-side checks (F161)', () => {
+  const URL_FLAG = ['--url', 'https://example.com/hook'];
+  it.each([
+    [
+      ['webhooks', 'delete', '--webhook-ids', '["a"]'],
+      /--webhook-ids must be a JSON array of integer/,
+    ],
+    [
+      ['webhooks', 'refresh', '--webhook-ids', '[null]'],
+      /--webhook-ids must be a JSON array of integer/,
+    ],
+    [
+      ['webhooks', 'refresh', '--webhook-ids', '[1.5]'],
+      /--webhook-ids must be a JSON array of integer/,
+    ],
+    [
+      [
+        'webhooks',
+        'register',
+        ...URL_FLAG,
+        '--webhooks',
+        '[{"jqlFilter":"project = P","events":["jira:issue_created","bogus_event"]}]',
+      ],
+      /--webhooks\[0\]\.events must be a JSON array of: jira:issue_created, .*jira:version_deleted/,
+    ],
+    [
+      ['webhooks', 'register', ...URL_FLAG, '--webhooks', '[{"jqlFilter":"project = P"}]'],
+      /--webhooks\[0\]\.events must be a JSON array of/,
+    ],
+    [
+      ['webhooks', 'register', ...URL_FLAG, '--webhooks', '[{"jqlFilter":"p","events":"x"}]'],
+      /--webhooks\[0\]\.events must be a JSON array of/,
+    ],
+    [
+      ['webhooks', 'register', ...URL_FLAG, '--webhooks', '[null]'],
+      /--webhooks\[0\] must be a JSON object/,
+    ],
+  ])('%j', async (args, message) => {
+    await rejected(args, message);
+  });
+
+  it('register still sends every spec event', async () => {
+    const spec = JSON.parse(
+      readFileSync(new URL('../../spec/jira-platform-v3.json', import.meta.url), 'utf8'),
+    ) as { components: { schemas: Record<string, { properties: Record<string, unknown> }> } };
+    const { events: eventsSchema } = spec.components.schemas['WebhookDetails']!.properties as {
+      events: { items: { enum: string[] } };
+    };
+    const events = eventsSchema.items.enum;
+    expect(events).toHaveLength(20);
+    const req = await onlyRequest([
+      'webhooks',
+      'register',
+      ...URL_FLAG,
+      '--webhooks',
+      JSON.stringify([{ jqlFilter: 'project = P', events }]),
+    ]);
+    expect(req.method).toBe('POST');
+    expect(req.path).toBe(`${J}/webhook`);
+    expect(req.body).toEqual({
+      url: 'https://example.com/hook',
+      webhooks: [{ jqlFilter: 'project = P', events }],
+    });
+  });
+});
+
+describe('fields field-delete when Jira answers without the task', () => {
+  it.each([{ status: 204 }, { status: 200, body: null }])(
+    'prints {"deleted": true} for %j, not null',
+    async (respond) => {
+      const run = await runCliWire(['jira', 'fields', 'field-delete', 'customfield_10001'], {
+        respond,
+      });
+      expect(run.stderr).toBe('');
+      expect(run.exitCode).toBe(0);
+      expect(run.requests.map((r) => `${r.method} ${r.path}`)).toEqual([
+        `DELETE ${J}/field/customfield_10001`,
+      ]);
+      expect(JSON.parse(run.stdout)).toEqual({ deleted: true });
+    },
+  );
+});
+
+describe('dashboards list-gadgets refuses an empty filter', () => {
+  it.each([
+    ['--module-key', ''],
+    ['--uri', ''],
+    ['--gadget-id', ','],
+    ['--module-key', ' , '],
+  ])('%s %j', async (flag, value) => {
+    await rejected(
+      ['dashboards', 'list-gadgets', '10001', flag, value],
+      new RegExp(`${flag} must contain at least one value`),
+    );
+  });
+});
+
+describe('fields field-list --type drops blank entries', () => {
+  it('sends custom for "custom,"', async () => {
+    const req = await onlyRequest(['fields', 'field-list', '--type', 'custom,']);
+    expect(req.path).toBe(`${J}/field/search`);
+    expect(query(req)).toEqual({ type: ['custom'] });
+  });
+
+  it('refuses a list with no type', async () => {
+    await rejected(['fields', 'field-list', '--type', ','], /--type must contain at least one/);
+  });
+});
+
+describe('filters search --order-by is checked against the spec enum', () => {
+  it('rejects an unknown value', async () => {
+    await rejected(
+      ['filters', 'search', '--order-by', 'favorite_count'],
+      /--order-by must be one of: description, .*\+is_shared, got: favorite_count/,
+    );
+  });
+
+  it.each(['is_shared', '+owner', '-favourite_count'])('sends %s', async (orderBy) => {
+    const req = await onlyRequest(['filters', 'search', `--order-by=${orderBy}`]);
+    expect(req.query.get('orderBy')).toBe(orderBy);
   });
 });

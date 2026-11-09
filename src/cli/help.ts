@@ -639,8 +639,8 @@ EXAMPLES:
   atlas jira workflows delete-rule-config --workflows '[{"workflowId":{"name":"My Workflow"},"workflowRuleIds":["rule-id"]}]'
   atlas jira workflows preview --body '{"projectId":"10001","workflowIds":["3215e5cd-f09f-4c8a-921b-dca92bd1e9aa"]}'
   atlas jira workflows search --query-string "Default" --is-active true
-  atlas jira workflows update --body '{"workflows":[{"id":"3215e5cd-f09f-4c8a-921b-dca92bd1e9aa","version":{"id":"9a1b2c3d-0000-4000-8000-000000000001","versionNumber":3},"statuses":[...],"transitions":[...]}]}'
-  atlas jira workflows validate-update --body '{"payload":{"workflows":[{"id":"3215e5cd-f09f-4c8a-921b-dca92bd1e9aa","version":{"id":"9a1b2c3d-0000-4000-8000-000000000001","versionNumber":3},"statuses":[...],"transitions":[...]}]}}'
+  atlas jira workflows update --body '{"statuses":[{"id":"10000","name":"To Do","statusCategory":"TODO","statusReference":"10000"}],"workflows":[{"id":"3215e5cd-f09f-4c8a-921b-dca92bd1e9aa","version":{"id":"6a7f4b1e-3c2d-4e5f-8a9b-0c1d2e3f4a5b","versionNumber":3},"statuses":[{"statusReference":"10000","properties":{}}],"transitions":[{"id":"1","name":"Create","type":"INITIAL","toStatusReference":"10000"}]}]}'
+  atlas jira workflows validate-update --body '{"payload":{"statuses":[{"id":"10000","name":"To Do","statusCategory":"TODO","statusReference":"10000"}],"workflows":[{"id":"3215e5cd-f09f-4c8a-921b-dca92bd1e9aa","version":{"id":"6a7f4b1e-3c2d-4e5f-8a9b-0c1d2e3f4a5b","versionNumber":3},"statuses":[{"statusReference":"10000","properties":{}}],"transitions":[{"id":"1","name":"Create","type":"INITIAL","toStatusReference":"10000"}]}]},"validationOptions":{"levels":["ERROR","WARNING"]}}'
   atlas jira workflowscheme list --max-results 50
   atlas jira workflowscheme list --all
   atlas jira workflowscheme get 10001

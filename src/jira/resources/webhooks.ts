@@ -75,6 +75,10 @@ export interface WebhookRegistration {
   readonly events: WebhookEvent[];
 }
 
+/**
+ * Result of one webhook registration (spec `RegisteredWebhook`): the new
+ * webhook's ID, or the errors explaining why it was not registered.
+ */
 export interface WebhookRegistrationResult {
   readonly createdWebhookId?: number;
   readonly errors?: string[];

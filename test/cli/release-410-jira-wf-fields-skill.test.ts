@@ -155,6 +155,17 @@ describe('documented write bodies carry the spec-required fields (F143, F147, F1
     }
   });
 
+  it('help workflows update / validate-update examples are runnable and complete', async () => {
+    for (const action of ['update', 'validate-update']) {
+      const lines = helpExamples.filter((l) => l.startsWith(`atlas jira workflows ${action} `));
+      expect(lines.length, action).toBeGreaterThan(0);
+      for (const line of lines) {
+        const body = (await runCliWire(tokenize(line).slice(1))).requests[0]?.body;
+        expectWorkflowUpdate(action === 'update' ? body : (body as { payload: unknown }).payload);
+      }
+    }
+  });
+
   it('workflows update-rule-config rules carry their key', async () => {
     for (const body of await bodiesOf('atlas jira workflows update-rule-config ')) {
       const { workflows } = body as { workflows: { postFunctions?: object[] }[] };

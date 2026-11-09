@@ -226,6 +226,10 @@ export interface ParsedJqlQuery {
   readonly warnings?: string[];
 }
 
+/**
+ * A JQL query to sanitize (spec `JqlQueryToSanitize`) for `accountId`; without
+ * it the query is sanitized for an anonymous user.
+ */
 export interface JqlQueryToSanitize {
   readonly query: string;
   readonly accountId?: string;
@@ -274,6 +278,7 @@ export interface JqlSuggestionsParams {
   readonly predicateValue?: string;
 }
 
+/** One field auto-complete suggestion (spec `AutoCompleteSuggestion`). */
 export interface JqlSuggestion {
   readonly value: string;
   readonly displayName?: string;

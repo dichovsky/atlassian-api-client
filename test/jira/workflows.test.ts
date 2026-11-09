@@ -889,6 +889,17 @@ describe('WorkflowsResource', () => {
       expect(transport.calls).toHaveLength(0);
     });
 
+    it.each(['true', 'false', 1, null])(
+      'throws ValidationError and sends no request for a non-boolean draft %j',
+      async (draft: unknown) => {
+        const params = { types: ['postfunction'], draft } as unknown as Parameters<
+          typeof workflows.getTransitionRuleConfigs
+        >[0];
+        await expect(workflows.getTransitionRuleConfigs(params)).rejects.toThrow(/CHANGE-3147/);
+        expect(transport.calls).toHaveLength(0);
+      },
+    );
+
     it('accepts draft=false (published, the only state left) and does not send it (F257)', async () => {
       transport.respondWith(ruleConfigPage);
       await workflows.getTransitionRuleConfigs({ types: ['postfunction'], draft: false });
@@ -1104,6 +1115,18 @@ describe('WorkflowsResource', () => {
       await expect(workflows.deleteTransitionRuleConfigs(body)).rejects.toThrow(/CHANGE-3147/);
       expect(transport.calls).toHaveLength(0);
     });
+
+    it.each(['true', 'false', 0, null])(
+      'throws ValidationError and sends no request for a non-boolean workflowId.draft %j',
+      async (draft: unknown) => {
+        const body = {
+          workflows: [{ workflowId: { name: 'W', draft }, workflowRuleIds: ['b'] }],
+        } as unknown as Parameters<typeof workflows.deleteTransitionRuleConfigs>[0];
+        await expect(workflows.deleteTransitionRuleConfigs(body)).rejects.toThrow(ValidationError);
+        await expect(workflows.deleteTransitionRuleConfigs(body)).rejects.toThrow(/CHANGE-3147/);
+        expect(transport.calls).toHaveLength(0);
+      },
+    );
 
     it('strips draft=false before sending (F257)', async () => {
       transport.respondWith({ updateResults: [] });

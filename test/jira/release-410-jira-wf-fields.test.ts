@@ -1,13 +1,14 @@
 /**
  * Release 4.1.0 unit jira-wf-fields: SDK wire and type regressions for
- * dashboards (F144), filters (F145), fields (F155) and the jira barrel
- * (F153, F165).
+ * dashboards (F144), filters (F145), fields (F155) and the package-root
+ * type exports (F153, F165).
  */
 import { beforeEach, describe, expect, expectTypeOf, it } from 'vitest';
 import { DashboardsResource } from '../../src/jira/resources/dashboards.js';
 import { FieldsResource } from '../../src/jira/resources/fields.js';
 import { FiltersResource } from '../../src/jira/resources/filters.js';
 import type {
+  AddFilterSharePermissionData,
   CreateFilterData,
   DashboardWriteParams,
   DeleteFieldParams,
@@ -17,10 +18,10 @@ import type {
   JqlSuggestion,
   ListGadgetsParams,
   SanitizedJqlQuery,
+  TaskProgressBeanObject,
   UpdateFilterData,
   WebhookRegistrationResult,
-} from '../../src/jira/index.js';
-import type { TaskProgressBeanObject } from '../../src/jira/resources/workflowscheme.js';
+} from '../../src/index.js';
 import { MockTransport } from '../helpers/mock-transport.js';
 
 const BASE_URL = 'https://test.atlassian.net/rest/api/3';
@@ -148,8 +149,10 @@ describe('fields.delete returns the async deletion task on request (F155)', () =
   });
 });
 
-describe('jira barrel exports the public param and element types (F153, F165)', () => {
+describe('the package root exports the public param and element types (F153, F165)', () => {
   it('names them', () => {
+    expectTypeOf<AddFilterSharePermissionData>().toExtend<FilterSharePermissionWrite>();
+    expectTypeOf<TaskProgressBeanObject>().toHaveProperty('status');
     expectTypeOf<ListGadgetsParams['gadgetId']>().toEqualTypeOf<number[] | undefined>();
     expectTypeOf<FilterQueryParams['overrideSharePermissions']>().toEqualTypeOf<
       boolean | undefined

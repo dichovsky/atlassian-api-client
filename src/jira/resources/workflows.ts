@@ -126,10 +126,10 @@ function draftRemovedMessage(where: string): string {
 /**
  * Drop the removed `workflowId.draft` (2026-11-02) from workflow-rule
  * entries. `draft: false` (published, the only state left) is stripped so
- * 4.0.0 callers and `workflowId` round-trips keep working; `draft: true` asks
- * for something that no longer exists and is rejected. Non-object entries
- * (e.g. `null` from untyped CLI JSON) are rejected; other shape errors are
- * left to the server.
+ * 4.0.0 callers and `workflowId` round-trips keep working; any other value
+ * (`true`, or a non-boolean such as `"true"` from untyped CLI JSON) asks for
+ * something that no longer exists and is rejected. Non-object entries (e.g.
+ * `null`) are rejected; other shape errors are left to the server.
  */
 function withoutDraftWorkflowIds<T extends { readonly workflowId: WorkflowIdRef }>(
   entries: readonly T[],
@@ -140,10 +140,10 @@ function withoutDraftWorkflowIds<T extends { readonly workflowId: WorkflowIdRef 
     }
     const typed = entry as T;
     const workflowId = typed.workflowId as WorkflowIdRef | null | undefined;
-    if (workflowId?.draft === true) {
+    if (workflowId?.draft === undefined) return typed;
+    if ((workflowId.draft as unknown) !== false) {
       throw new ValidationError(draftRemovedMessage('workflowId.draft'));
     }
-    if (workflowId?.draft === undefined) return typed;
     const { draft: _draft, ...rest } = workflowId;
     return { ...typed, workflowId: rest };
   });
@@ -444,8 +444,9 @@ export class WorkflowsResource {
     if (!params.types || params.types.length === 0) {
       throw new ValidationError('types is required for getTransitionRuleConfigs');
     }
-    // `draft: false` is the only state left and is simply not sent.
-    if (params.draft === true) {
+    // `draft: false` is the only state left and is simply not sent; any other
+    // value (incl. a non-boolean from untyped input) is refused.
+    if (params.draft !== undefined && (params.draft as unknown) !== false) {
       throw new ValidationError(draftRemovedMessage('draft'));
     }
     if (params.maxResults !== undefined) validatePageSize(params.maxResults, 'maxResults');
