@@ -90,8 +90,7 @@ src/
 │   │   ├── custom-content.ts    # /wiki/api/v2/custom-content
 │   │   ├── whiteboards.ts       # /wiki/api/v2/whiteboards
 │   │   ├── tasks.ts             # /wiki/api/v2/tasks
-│   │   ├── versions.ts          # /wiki/api/v2/pages|blogposts/*/versions
-│   │   └── index.ts             # Resources barrel
+│   │   └── versions.ts          # /wiki/api/v2/pages|blogposts/*/versions
 │   ├── client.ts                # ConfluenceClient class
 │   └── index.ts                 # Confluence barrel export
 ├── jira/                        # Jira Cloud Platform REST API v3
@@ -221,7 +220,7 @@ interface ClientConfig {
   maxResponseBytes?: number; // Optional cap for buffered bodies
   allowedHosts?: readonly string[]; // Explicit self-hosted/proxy opt-in
   transport?: Transport; // Optional: injectable transport
-  fetch?: typeof fetch; // Optional transport fetch implementation
+  fetch?: typeof fetch; // Optional transport fetch implementation; must honour `RequestInit.redirect`
   logger?: Logger;
   middleware?: Middleware[];
   requestId?: RequestIdOptions; // X-Request-Id propagation (inbound capture is always on)
@@ -287,7 +286,7 @@ delay = min(baseDelay * 2^attempt + random_jitter, maxDelay)
 
 - HTTP 429 (Too Many Requests) — uses `Retry-After` header if present, with `0..retryDelay` jitter added on top of the server-advertised floor. If `maxRetryDelay` leaves headroom above that floor, the added jitter is capped to stay within that headroom and prevent synchronized retry stampedes
 - HTTP 500, 502, 503, 504 (server errors)
-- Network errors (connection reset, DNS failure)
+- Transient network errors (connection reset or refused, DNS failure, connect timeout, socket closed). A response-headers timeout (`UND_ERR_HEADERS_TIMEOUT`) and a failure while reading a success body are retried only for GET. A write answered 500, 502, 503 or 504, or whose connection fails before any response, is still retried, so the server may receive it more than once.
 - `OAuthError` with `refreshStatus` in the 5xx range (transient token-endpoint failures)
 
 **Non-retryable:**
@@ -295,6 +294,10 @@ delay = min(baseDelay * 2^attempt + random_jitter, maxDelay)
 - HTTP 400, 401, 403, 404, 409 (client errors)
 - Timeout errors (already represents a long wait)
 - `OAuthError` with `refreshStatus` in the 4xx range (misconfigured OAuth)
+- A write (POST, PUT, PATCH, DELETE) in these cases, where the server may already have applied it: its response headers timed out, its success body failed mid-read, or anything failed on the GET that follows its 303 (or a POST's 301/302). That covers a transport failure (`NetworkError`, `retryable: false`), any status including 5xx and 429, and a 401 under `createOAuthRefreshMiddleware`, which rethrows without refreshing the token. A write answered 500, 502, 503 or 504, or whose connection fails before any response, is still retried (see above)
+- A redirect the client refuses on a write (off `allowedHosts`, a non-https scheme such as plain `http://`, a non-default port, a URL with a username or password, an unparseable `Location`): `HttpError` with the 3xx status for a 303 or a POST's 301/302, `ValidationError` for a 307/308 or a 301/302 on PUT, PATCH or DELETE
+- Client-side `fetch` argument errors (raw `TypeError`), including undici's `UND_ERR_INVALID_ARG`, `UND_ERR_NOT_SUPPORTED` and `UND_ERR_REQ_CONTENT_LENGTH_MISMATCH`
+- TLS rejections (`CERT_*`, `ERR_TLS_*`) and a closed or destroyed dispatcher (`NetworkError`, `retryable: false`)
 
 ### Rate Limiting (`src/core/retry.ts`, `src/core/rate-limiter.ts`)
 
@@ -658,20 +661,20 @@ The package uses only Node.js built-ins available in the supported runtime (Node
 
 ### Dev Dependencies
 
-| Package                      | Purpose                                                                                                           |
-| ---------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| `@typescript/native`         | TypeScript 7 (aliased from `npm:typescript`) — the build and type-check compiler (`npm run tsc:7`)                |
-| `typescript`                 | TypeScript 6 API bridge (aliased from `npm:@typescript/typescript6`) for `typescript-eslint`, codemap, JSDoc test |
-| `@types/node`                | Node.js type definitions                                                                                          |
-| `vitest`                     | Test framework                                                                                                    |
-| `@vitest/coverage-v8`        | V8-based coverage                                                                                                 |
-| `eslint`, `@eslint/js`       | Linting                                                                                                           |
-| `typescript-eslint`          | TypeScript ESLint rules + parser (unified)                                                                        |
-| `globals`                    | Global-variable definitions for the ESLint config                                                                 |
-| `prettier`                   | Code formatting                                                                                                   |
-| `fast-check`                 | Property-based testing (B014)                                                                                     |
-| `conventional-changelog-cli` | Changelog generation (`npm run changelog`)                                                                        |
-| `rimraf`                     | Cross-platform clean (`npm run clean`)                                                                            |
+| Package                      | Purpose                                                                                                                                                                                       |
+| ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@typescript/native`         | TypeScript 7 (aliased from `npm:typescript`) — the build and type-check compiler (`npm run tsc:7`)                                                                                            |
+| `typescript`                 | TypeScript 6 bridge (aliased from `npm:@typescript/typescript6`): compiler API for `typescript-eslint`, codemap, JSDoc test, CLI write-property reachability test; `tsc6` for `typecheck:ts6` |
+| `@types/node`                | Node.js type definitions                                                                                                                                                                      |
+| `vitest`                     | Test framework                                                                                                                                                                                |
+| `@vitest/coverage-v8`        | V8-based coverage                                                                                                                                                                             |
+| `eslint`, `@eslint/js`       | Linting                                                                                                                                                                                       |
+| `typescript-eslint`          | TypeScript ESLint rules + parser (unified)                                                                                                                                                    |
+| `globals`                    | Global-variable definitions for the ESLint config                                                                                                                                             |
+| `prettier`                   | Code formatting                                                                                                                                                                               |
+| `fast-check`                 | Property-based testing (B014)                                                                                                                                                                 |
+| `conventional-changelog-cli` | Changelog generation (`npm run changelog`)                                                                                                                                                    |
+| `rimraf`                     | Cross-platform clean (`npm run clean`)                                                                                                                                                        |
 
 ---
 
