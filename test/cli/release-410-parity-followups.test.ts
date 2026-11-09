@@ -152,27 +152,40 @@ describe('attachments examples use IDs the spec accepts (X-ATT-IDS)', () => {
 
   it('only delete and labels type the attachment ID as an integer in the pinned spec', () => {
     interface Param {
+      $ref?: string;
       in?: string;
       name?: string;
       schema?: { type?: string };
     }
     const spec = JSON.parse(
       readFileSync(resolve(import.meta.dirname, '..', '..', 'spec', 'confluence-v2.json'), 'utf8'),
-    ) as { paths: Record<string, Record<string, { parameters?: Param[] }>> };
-    const int64 = Object.entries(spec.paths)
-      .filter(([path]) => path.startsWith('/attachments/{'))
-      .flatMap(([path, ops]) =>
-        Object.entries(ops)
-          .filter(([, op]) =>
-            (op.parameters ?? []).some(
-              (p) =>
-                p.in === 'path' &&
-                (p.name === 'id' || p.name === 'attachment-id') &&
-                p.schema?.type === 'integer',
-            ),
-          )
-          .map(([method]) => `${method.toUpperCase()} ${path}`),
-      );
+    ) as {
+      paths: Record<string, Record<string, { parameters?: Param[] } | Param[]>>;
+      components?: { parameters?: Record<string, Param> };
+    };
+    const deref = (p: Param): Param =>
+      p.$ref === undefined
+        ? p
+        : (spec.components?.parameters?.[p.$ref.replace('#/components/parameters/', '')] ?? p);
+    const int64: string[] = [];
+    let checked = 0;
+    for (const [path, item] of Object.entries(spec.paths)) {
+      if (!path.startsWith('/attachments/{')) continue;
+      // Path-level parameters apply to every operation unless the operation redefines them.
+      const shared = ((item['parameters'] as Param[] | undefined) ?? []).map(deref);
+      for (const [method, op] of Object.entries(item)) {
+        if (method === 'parameters') continue;
+        const own = ((op as { parameters?: Param[] }).parameters ?? []).map(deref);
+        const id = [...own, ...shared].find(
+          (p) => p.in === 'path' && (p.name === 'id' || p.name === 'attachment-id'),
+        );
+        // Every attachment operation must expose its ID, so a re-pin that moves it cannot pass silently.
+        expect(id, `${method} ${path}`).toBeDefined();
+        checked++;
+        if (id?.schema?.type === 'integer') int64.push(`${method.toUpperCase()} ${path}`);
+      }
+    }
+    expect(checked).toBeGreaterThanOrEqual(10);
     expect(int64.sort()).toEqual(['DELETE /attachments/{id}', 'GET /attachments/{id}/labels']);
   });
 

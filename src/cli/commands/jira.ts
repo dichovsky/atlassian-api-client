@@ -4362,8 +4362,7 @@ function bulkCursor(
  * does not exclude, so a filter that cannot narrow the change — an unknown
  * (misspelt) key, `{}` or a lone null `currentValue`, an `entityIds` that is
  * not a non-empty array, or a non-boolean `hasProperty` — is refused before
- * the request. `undefined` when
- * `--filter` is absent.
+ * the request. `undefined` when `--filter` is absent.
  */
 function bulkPropertyFilter(
   raw: string | boolean | undefined,
