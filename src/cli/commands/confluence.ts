@@ -3566,14 +3566,16 @@ function includeVersionFlag(
 
 /**
  * Project the CLI flag bag onto a `GetBlogPostParams` query bag. Returns
- * `undefined` when no spec-mapped flag is present so the caller can short-circuit
+ * `undefined` when no spec-mapped flag is set so the caller can short-circuit
  * to the no-arg `blogPosts.get(id)` overload (avoids sending an empty `query={}`
  * object to the transport).
  *
- * Boolean include-* flags are only forwarded when explicitly set on the
- * command line — `node:util.parseArgs` returns `true` when the flag is
- * present and `undefined` when omitted, so absence maps cleanly to "leave
- * the server default in place".
+ * `--historical-version` maps to the `version` query param. `--get-draft` and
+ * every `--include-*` flag except `--include-version` default to false on the
+ * server, so they are sent only when true; an explicit false is left off.
+ * `include-version` defaults to true, so an explicit false
+ * (`--no-include-version` or `--include-version false`) is sent as `false`
+ * (see {@link includeVersionFlag}).
  */
 function buildGetBlogPostParams(
   opts: Record<string, string | boolean | undefined>,

@@ -369,7 +369,14 @@ export function runInstall(
   // place and continue to the install loop (which then writes a regular
   // file). Without unlink, we hard-error so the symlink is never
   // dereferenced.
-  if (!options.dryRun && fs.exists(destSkillPath) && fs.isSymlink?.(destSkillPath) === true) {
+  //
+  // F350: --dry-run runs every check of the real install and skips only the
+  // writes and unlinks, so it reports the outcome (and exit code) the real
+  // install would have, except a failure only a real write can detect:
+  // permission denied (exit 3) or another filesystem error such as a
+  // read-only mount, a full disk or a path through a file (exit 1).
+  const skillMdIsSymlink = fs.exists(destSkillPath) && fs.isSymlink?.(destSkillPath) === true;
+  if (skillMdIsSymlink) {
     if (!options.force) {
       throw new InstallSkillError(
         `Refusing to read symlink at ${destSkillPath} for the idempotency check. ` +
@@ -387,14 +394,17 @@ export function runInstall(
       );
     }
     const unlinkFn = fs.unlink;
-    writeWithPermissionGuard(destSkillPath, () => {
-      unlinkFn(destSkillPath);
-    });
+    if (!options.dryRun) {
+      writeWithPermissionGuard(destSkillPath, () => {
+        unlinkFn(destSkillPath);
+      });
+    }
   }
 
   // Idempotency: if SKILL.md exists at target with the same stamped version, no-op.
-  // After the symlink-strip above, this branch is only reached for a regular file.
-  if (!options.dryRun && fs.exists(destSkillPath)) {
+  // A symlinked SKILL.md was stripped above (or would be, in a dry run), so
+  // this branch is only reached for a regular file.
+  if (!skillMdIsSymlink && fs.exists(destSkillPath)) {
     const existing = fs.readFile(destSkillPath);
     const existingVersion = readSkillVersion(existing);
     if (existingVersion === version) {
@@ -414,22 +424,14 @@ export function runInstall(
     }
   }
 
-  if (options.dryRun) {
-    return {
-      action: 'dry-run',
-      source,
-      target: options.target,
-      files,
-      version,
-    };
-  }
-
   for (const rel of files) {
     const src = join(source, rel);
     const dest = join(options.target, rel);
-    writeWithPermissionGuard(dest, () => {
-      fs.mkdir(dirname(dest));
-    });
+    if (!options.dryRun) {
+      writeWithPermissionGuard(dest, () => {
+        fs.mkdir(dirname(dest));
+      });
+    }
 
     // B030: refuse to follow a pre-planted symlink at the destination.
     // Without --force this is a hard error; with --force we unlink the
@@ -455,9 +457,11 @@ export function runInstall(
         );
       }
       const unlinkFn = fs.unlink;
-      writeWithPermissionGuard(dest, () => {
-        unlinkFn(dest);
-      });
+      if (!options.dryRun) {
+        writeWithPermissionGuard(dest, () => {
+          unlinkFn(dest);
+        });
+      }
     }
 
     // B030 containment: after any unlink-and-replace, verify the resolved
@@ -465,6 +469,7 @@ export function runInstall(
     // Catches symlinked parent directories that would write outside the
     // intended root even when `dest` itself is not a symlink. (PR review.)
     assertDestUnderTarget(dest, targetRealpath, fs);
+    if (options.dryRun) continue;
 
     const content = fs.readFile(src);
     const stamped = rel === 'SKILL.md' ? stampVersion(content, version) : content;
@@ -474,7 +479,7 @@ export function runInstall(
   }
 
   return {
-    action: 'copied',
+    action: options.dryRun ? 'dry-run' : 'copied',
     source,
     target: options.target,
     files,
@@ -509,11 +514,24 @@ function resolveTargetRealpath(target: string, fs: FilesystemDeps): string {
     );
   }
 
-  let probe = target;
+  return realpathViaExistingAncestor(target, fs.exists, fs.realpath) ?? target;
+}
+
+/**
+ * Canonical form of `path`, which may not exist yet: `realpath` of its
+ * deepest existing ancestor plus the still-missing tail. `undefined` when no
+ * ancestor exists within 32 levels.
+ */
+function realpathViaExistingAncestor(
+  path: string,
+  exists: (path: string) => boolean,
+  realpath: (path: string) => string,
+): string | undefined {
+  let probe = path;
   const tail: string[] = [];
   for (let i = 0; i < 32; i++) {
-    if (fs.exists(probe)) {
-      const resolved = fs.realpath(probe);
+    if (exists(probe)) {
+      const resolved = realpath(probe);
       return tail.length === 0 ? resolved : join(resolved, ...tail.reverse());
     }
     const parent = dirname(probe);
@@ -521,7 +539,7 @@ function resolveTargetRealpath(target: string, fs: FilesystemDeps): string {
     tail.push(probe.slice(parent.length + (parent.endsWith(sep) ? 0 : 1)));
     probe = parent;
   }
-  return target;
+  return undefined;
 }
 
 /**
@@ -542,18 +560,9 @@ function resolveTargetRealpath(target: string, fs: FilesystemDeps): string {
  */
 function assertDestUnderTarget(dest: string, targetRealpath: string, fs: FilesystemDeps): void {
   if (fs.realpath === undefined) return;
-  let resolvedParent: string | undefined;
-  let probe = dirname(dest);
-  // Walk up until we find an existing directory (so realpath can follow it).
-  for (let i = 0; i < 32; i++) {
-    if (fs.exists(probe)) {
-      resolvedParent = fs.realpath(probe);
-      break;
-    }
-    const next = dirname(probe);
-    if (next === probe) break;
-    probe = next;
-  }
+  // The parent exists after the install's mkdir; a dry run skips the mkdir,
+  // so resolve the directories it would create under their existing ancestor.
+  const resolvedParent = realpathViaExistingAncestor(dirname(dest), fs.exists, fs.realpath);
   if (resolvedParent === undefined) return;
 
   // `realpathSync` and our `resolveTargetRealpath` both strip trailing
