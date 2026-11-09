@@ -12,7 +12,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterAll, beforeAll, describe, expect, expectTypeOf, it } from 'vitest';
 import type {
-  GetUserParams,
+  JiraGetUserParams as GetUserParams,
   IssueCommentExpandParams,
   JiraClient,
   ListIssueTypesForProjectParams,
