@@ -139,11 +139,22 @@ describe('fields.delete returns the async deletion task on request (F155)', () =
     ).resolves.toBeUndefined();
   });
 
+  it('resolves undefined with returnTask: true when Jira answers without the task (204)', async () => {
+    const fields = new FieldsResource(transport, BASE_URL);
+    transport.respondWith(undefined, 204);
+
+    await expect(fields.delete('customfield_10001', { returnTask: true })).resolves.toBeUndefined();
+    expect(transport.lastCall?.options).toMatchObject({
+      method: 'DELETE',
+      path: `${BASE_URL}/field/customfield_10001`,
+    });
+  });
+
   it('types the overloads', () => {
     const fields = new FieldsResource(transport, BASE_URL);
-    expectTypeOf(() =>
-      fields.delete('x', { returnTask: true }),
-    ).returns.resolves.toEqualTypeOf<TaskProgressBeanObject>();
+    expectTypeOf(() => fields.delete('x', { returnTask: true })).returns.resolves.toEqualTypeOf<
+      TaskProgressBeanObject | undefined
+    >();
     expectTypeOf(() => fields.delete('x')).returns.resolves.toBeVoid();
     expectTypeOf<DeleteFieldParams>().toEqualTypeOf<{ readonly returnTask?: boolean }>();
   });

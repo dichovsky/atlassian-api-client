@@ -1100,3 +1100,141 @@ describe('fields field-list --type names types, not IDs', () => {
     );
   });
 });
+
+// ── review round 3 ────────────────────────────────────────────────────────────
+
+describe('fields: every CSV ID flag refuses a list that names nothing (skill rule)', () => {
+  it.each(
+    [
+      ['field-list', '--project-ids', ','],
+      ['field-list', '--project-ids', ''],
+      ['context-list', '--field-id', 'cf', '--context-id', ','],
+      ['context-issuetype-mapping', '--field-id', 'cf', '--context-id', ' , '],
+      ['context-default-list', '--field-id', 'cf', '--context-id', ','],
+      ['context-default-get', '--field-id', 'cf', '--context-id', ''],
+      ['context-default-get', '--field-id', 'cf', '--issue-type-ids', ','],
+      ['context-project-mapping', '--field-id', 'cf', '--context-id', ','],
+    ].map((args) => [JSON.stringify(args), args] as const),
+  )('%s', async (_label, args) => {
+    const flag = args.at(-2) as string;
+    await rejected(['fields', ...args], new RegExp(`${flag} must contain at least one ID`));
+  });
+
+  it('field-list --project-ids drops blanks and sends repeated projectIds', async () => {
+    const req = await onlyRequest(['fields', 'field-list', '--project-ids', '10000, ,10001,']);
+    expect(req.method).toBe('GET');
+    expect(req.path).toBe(`${J}/field/search`);
+    expect(query(req)).toEqual({ projectIds: ['10000', '10001'] });
+  });
+
+  it('context-default-get drops blanks in --context-id and --issue-type-ids', async () => {
+    const req = await onlyRequest([
+      'fields',
+      'context-default-get',
+      '--field-id',
+      'customfield_10001',
+      '--context-id',
+      '10100,',
+      '--issue-type-ids',
+      ' ,10000',
+    ]);
+    expect(req.path).toBe(`${J}/field/customfield_10001/context/defaultValues`);
+    expect(query(req)).toEqual({ contextId: ['10100'], issueTypeId: ['10000'] });
+  });
+
+  it.each([
+    'context-list',
+    'context-issuetype-mapping',
+    'context-default-list',
+    'context-project-mapping',
+  ])('%s --context-id keeps its positive-integer check', async (action) => {
+    await rejected(
+      ['fields', action, '--field-id', 'cf', '--context-id', '10100,0'],
+      /--context-id must be a comma-separated list of positive integers/,
+    );
+  });
+
+  it('field-list --project-ids keeps its integer check', async () => {
+    await rejected(
+      ['fields', 'field-list', '--project-ids', '10000,x'],
+      /--project-ids must contain integers, got: x/,
+    );
+  });
+});
+
+describe('workflows get-rule-config sends no blank --keys / --workflow-names / --with-tags', () => {
+  it('drops blank entries', async () => {
+    const req = await onlyRequest([
+      'workflows',
+      'get-rule-config',
+      '--types',
+      'postfunction',
+      '--keys',
+      'k1, ,k2,',
+      '--workflow-names',
+      'My Workflow,',
+      '--with-tags',
+      ',t1',
+    ]);
+    expect(req.method).toBe('GET');
+    expect(req.path).toBe(`${J}/workflow/rule/config`);
+    expect(query(req)).toEqual({
+      types: ['postfunction'],
+      keys: ['k1', 'k2'],
+      workflowNames: ['My Workflow'],
+      withTags: ['t1'],
+    });
+  });
+
+  it.each(['--keys', '--workflow-names', '--with-tags'])(
+    'refuses %s that names nothing',
+    async (flag) => {
+      await rejected(
+        ['workflows', 'get-rule-config', '--types', 'postfunction', flag, ','],
+        new RegExp(`${flag} must contain at least one value`),
+      );
+    },
+  );
+});
+
+describe('empty filter flags are refused instead of returning everything', () => {
+  it.each([',', ''])('workflows list --workflow-names %j', async (value) => {
+    await rejected(
+      ['workflows', 'list', '--workflow-names', value],
+      /--workflow-names must contain at least one value/,
+    );
+  });
+
+  it.each([',', ' , ', ''])('filters search --ids %j', async (value) => {
+    await rejected(['filters', 'search', '--ids', value], /--ids must contain at least one ID/);
+  });
+
+  it('filters search --ids still drops blank entries', async () => {
+    const req = await onlyRequest(['filters', 'search', '--ids', '10001,,10002']);
+    expect(query(req)).toEqual({ id: ['10001', '10002'] });
+  });
+});
+
+describe('jql sanitize --queries checks accountId (spec: nullable string)', () => {
+  it.each(['[{"query":"a","accountId":5}]', '[{"query":"a","accountId":["x"]}]'])(
+    'refuses %s',
+    async (queries) => {
+      await rejected(
+        ['jql', 'sanitize', '--queries', queries],
+        /--queries must be a JSON array of \{query, accountId\?\} objects/,
+      );
+    },
+  );
+
+  it('sends a string or null accountId unchanged', async () => {
+    const queries = [
+      { query: 'assignee = currentUser()', accountId: '612345:abc' },
+      { query: 'project = P', accountId: null },
+      { query: 'project = Q' },
+    ];
+    const req = await onlyRequest(['jql', 'sanitize', '--queries', JSON.stringify(queries)]);
+    expect(req.method).toBe('POST');
+    expect(req.path).toBe(`${J}/jql/sanitize`);
+    expect(req.body).toEqual({ queries });
+  });
+});

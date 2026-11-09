@@ -62,8 +62,8 @@ JQL query and precomputation API (B587–B596). Covers autocomplete, parse, sani
 - `match-issues` (B593): `POST /rest/api/3/jql/match` — check which issues match JQL queries. `--issue-ids` is a CSV of up to 50 integer IDs; `--jqls` is a JSON array of up to 10 query strings. Issues are matched only where you can browse them.
 - `parse` (B594): `POST /rest/api/3/jql/parse` — parse JQL queries. `--queries` is a JSON array of query strings; `--validation` is `strict` (default: all errors, no structure on failure), `warn` (errors plus the structure if well formed) or `none`. Other values are refused before sending.
 - `migrate-queries` (B595): `POST /rest/api/3/jql/pdcleaner` — convert user identifiers to account IDs in JQL. `--query-strings` is a JSON array of query strings.
-- `sanitize` (B596): `POST /rest/api/3/jql/sanitize` — sanitize JQL queries. `--queries` is a JSON array of `{query, accountId?}` objects.
-- The JSON-array flags are checked before sending: `--jqls`, `--queries` (parse) and `--query-strings` must hold only strings, and sanitize `--queries` only `{query: "<string>", accountId?}` objects.
+- `sanitize` (B596): `POST /rest/api/3/jql/sanitize` — sanitize JQL queries. `--queries` is a JSON array of `{query, accountId?}` objects; without `accountId` (or with `null`) a query is sanitized for an anonymous user.
+- The JSON-array flags are checked before sending: `--jqls`, `--queries` (parse) and `--query-strings` must hold only strings, and sanitize `--queries` only `{query: "<string>", accountId?: "<string>" | null}` objects.
 - `invalid-jqls-access-log` (**experimental**, `x-experimental`): `GET /rest/api/3/invalid-jqls-access-log` — lists JQL searches Jira can no longer support, newest first, retained for three days. Use the entries to find the saved filters and the apps, automations, scripts or REST integrations that run them. Needs the **Administer Jira** global permission; returns 403 on the Free plan and 404 until invalid-JQL audit logging is enabled for the site.
   - `--user-account-id` restricts entries to one external account ID.
   - `--max-results` is 1-100 (server default 50); other values give HTTP 400.

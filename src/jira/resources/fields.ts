@@ -976,12 +976,13 @@ export class FieldsResource {
    * Delete a custom field (in the trash or not). Deletion is asynchronous:
    * Jira answers 303 to the deletion task, which the transport follows. With
    * `returnTask: true` this resolves that task (poll it with
-   * `client.task.get(task.id)`); otherwise `void`.
+   * `client.task.get(task.id)`), or `undefined` when Jira answers without one
+   * (a 204 or an empty 200; the spec documents only the 303); otherwise `void`.
    */
   delete(
     fieldId: string,
     params: DeleteFieldParams & { readonly returnTask: true },
-  ): Promise<TaskProgressBeanObject>;
+  ): Promise<TaskProgressBeanObject | undefined>;
   /**
    * Delete a custom field (asynchronous; see the `returnTask` overload). Only a
    * literal `returnTask: true` selects the task-typed overload: a

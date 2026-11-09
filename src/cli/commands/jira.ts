@@ -4615,14 +4615,7 @@ async function executeFilters(client: JiraClient, cmd: ParsedCommand): Promise<u
 
   switch (cmd.action) {
     case 'search': {
-      const idsRaw = asString(opts['ids']);
-      const ids = idsRaw
-        ? idsRaw
-            .split(',')
-            .map((s) => s.trim())
-            .filter((s) => s.length > 0)
-            .map((s) => parsePositiveIntArg(s, '--ids'))
-        : undefined;
+      const ids = idsCsvFlag(opts['ids'], '--ids')?.map((s) => parsePositiveIntArg(s, '--ids'));
       const filterName = asString(opts['filter-name']);
       const accountId = asString(opts['account-id']);
       const owner = asString(opts['owner']);
@@ -7126,7 +7119,7 @@ async function executeWorkflows(client: JiraClient, cmd: ParsedCommand): Promise
       return client.workflows.list({
         startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
-        workflowName: csvFlag(opts['workflow-names']),
+        workflowName: idsCsvFlag(opts['workflow-names'], '--workflow-names', 'value'),
         expand: asString(opts['expand']),
         queryString: asString(opts['query-string']),
         orderBy: asString(opts['order-by']),
@@ -7257,18 +7250,13 @@ async function executeWorkflows(client: JiraClient, cmd: ParsedCommand): Promise
         }
         return t as (typeof WORKFLOW_RULE_TYPES)[number];
       });
-      const keysRaw = asString(opts['keys']);
-      const workflowNamesRaw = asString(opts['workflow-names']);
-      const withTagsRaw = asString(opts['with-tags']);
       return client.workflows.getTransitionRuleConfigs({
         startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
         types,
-        keys: keysRaw ? keysRaw.split(',').map((k) => k.trim()) : undefined,
-        workflowNames: workflowNamesRaw
-          ? workflowNamesRaw.split(',').map((n) => n.trim())
-          : undefined,
-        withTags: withTagsRaw ? withTagsRaw.split(',').map((t) => t.trim()) : undefined,
+        keys: idsCsvFlag(opts['keys'], '--keys', 'value'),
+        workflowNames: idsCsvFlag(opts['workflow-names'], '--workflow-names', 'value'),
+        withTags: idsCsvFlag(opts['with-tags'], '--with-tags', 'value'),
         expand: asString(opts['expand']),
       });
     }
@@ -7718,6 +7706,16 @@ function requireIdsCsvFlag(value: string | boolean | undefined, name: string): s
   return idsCsvFlag(requireOpt(value, name), name) as string[];
 }
 
+/** {@link idsCsvFlag} for integer IDs; `parse` keeps the flag's own integer check. */
+function intIdsCsvFlag(
+  value: string | boolean | undefined,
+  name: string,
+  parse: (value: string | boolean | undefined, name: string) => number[] | undefined = asIntArray,
+): number[] | undefined {
+  idsCsvFlag(value, name);
+  return parse(value, name);
+}
+
 async function executeFields(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
   const opts = cmd.options;
 
@@ -7736,7 +7734,7 @@ async function executeFields(client: JiraClient, cmd: ParsedCommand): Promise<un
       const query = asString(opts['query']);
       const orderBy = asString(opts['order-by']);
       const expand = asString(opts['expand']);
-      const projectIds = parseIntCsv(opts['project-ids'], '--project-ids');
+      const projectIds = intIdsCsvFlag(opts['project-ids'], '--project-ids', parseIntCsv);
       return client.fields.list({
         ...(startAt !== undefined && { startAt }),
         ...(maxResults !== undefined && { maxResults }),
@@ -7763,7 +7761,7 @@ async function executeFields(client: JiraClient, cmd: ParsedCommand): Promise<un
       // Asynchronous: print the deletion task so it can be polled with `task get`.
       // Off-spec 204 / empty 200 (no task): acknowledge as 4.0.0 did.
       const fieldId = requireArg(cmd.positionalArgs[0], 'fieldId');
-      const task: unknown = await client.fields.delete(fieldId, { returnTask: true });
+      const task = await client.fields.delete(fieldId, { returnTask: true });
       return task ?? { deleted: true };
     }
     case 'context-list': {
@@ -7772,7 +7770,7 @@ async function executeFields(client: JiraClient, cmd: ParsedCommand): Promise<un
       const maxResults = asPositiveInt(opts['max-results'], '--max-results');
       const isAnyIssueType = asBoolFlag(opts['is-any-issue-type']);
       const isGlobalContext = asBoolFlag(opts['is-global-context']);
-      const contextId = asIntArray(opts['context-id'], '--context-id');
+      const contextId = intIdsCsvFlag(opts['context-id'], '--context-id');
       return client.fields.listContexts(fieldId, {
         ...(startAt !== undefined && { startAt }),
         ...(maxResults !== undefined && { maxResults }),
@@ -7953,7 +7951,7 @@ async function executeFields(client: JiraClient, cmd: ParsedCommand): Promise<un
       const fieldId = requireOpt(opts['field-id'], '--field-id');
       const startAt = asNonNegativeInt(opts['start-at'], '--start-at');
       const maxResults = asPositiveInt(opts['max-results'], '--max-results');
-      const contextId = asIntArray(opts['context-id'], '--context-id');
+      const contextId = intIdsCsvFlag(opts['context-id'], '--context-id');
       return client.fields.listContextIssueTypeMappings(fieldId, {
         ...(contextId !== undefined && { contextId }),
         ...(startAt !== undefined && { startAt }),
@@ -7964,7 +7962,7 @@ async function executeFields(client: JiraClient, cmd: ParsedCommand): Promise<un
       const fieldId = requireOpt(opts['field-id'], '--field-id');
       const startAt = asNonNegativeInt(opts['start-at'], '--start-at');
       const maxResults = asPositiveInt(opts['max-results'], '--max-results');
-      const contextId = asIntArray(opts['context-id'], '--context-id');
+      const contextId = intIdsCsvFlag(opts['context-id'], '--context-id');
       return client.fields.listContextDefaultValues(fieldId, {
         ...(contextId !== undefined && { contextId }),
         ...(startAt !== undefined && { startAt }),
@@ -7975,8 +7973,8 @@ async function executeFields(client: JiraClient, cmd: ParsedCommand): Promise<un
       const fieldId = requireOpt(opts['field-id'], '--field-id');
       const startAt = asNonNegativeInt(opts['start-at'], '--start-at');
       const maxResults = asPositiveInt(opts['max-results'], '--max-results');
-      const contextId = asIntArray(opts['context-id'], '--context-id');
-      const issueTypeId = parseCsv(opts['issue-type-ids']);
+      const contextId = intIdsCsvFlag(opts['context-id'], '--context-id');
+      const issueTypeId = idsCsvFlag(opts['issue-type-ids'], '--issue-type-ids');
       return client.fields.getContextDefaultValues(fieldId, {
         ...(contextId !== undefined && { contextId }),
         ...(issueTypeId !== undefined && { issueTypeId }),
@@ -8049,7 +8047,7 @@ async function executeFields(client: JiraClient, cmd: ParsedCommand): Promise<un
       const fieldId = requireOpt(opts['field-id'], '--field-id');
       const startAt = asNonNegativeInt(opts['start-at'], '--start-at');
       const maxResults = asPositiveInt(opts['max-results'], '--max-results');
-      const contextId = asIntArray(opts['context-id'], '--context-id');
+      const contextId = intIdsCsvFlag(opts['context-id'], '--context-id');
       return client.fields.listContextProjectMappings(fieldId, {
         ...(contextId !== undefined && { contextId }),
         ...(startAt !== undefined && { startAt }),
@@ -8373,7 +8371,14 @@ async function executeJql(client: JiraClient, cmd: ParsedCommand): Promise<unkno
     case 'sanitize': {
       const queriesRaw = requireOpt(opts['queries'], '--queries');
       const queries = parseJsonArrayFlag(queriesRaw, '--queries');
-      if (!queries.every((q) => isJsonObject(q) && typeof q['query'] === 'string')) {
+      // Spec JqlQueryToSanitize: query is a string; accountId a nullable string.
+      const isQuery = (q: unknown): boolean =>
+        isJsonObject(q) &&
+        typeof q['query'] === 'string' &&
+        (q['accountId'] === undefined ||
+          q['accountId'] === null ||
+          typeof q['accountId'] === 'string');
+      if (!queries.every(isQuery)) {
         throw new Error('--queries must be a JSON array of {query, accountId?} objects');
       }
       return client.jql.sanitize({ queries: queries as { query: string; accountId?: string }[] });
@@ -9159,15 +9164,6 @@ function dashboardPermissionsFlag(
   return parseJsonArrayFlag(requireOpt(value, flag), flag) as DashboardSharePermission[];
 }
 
-/** A `list-gadgets` CSV filter; given but empty is refused (no filter would return every gadget). */
-function gadgetFilterFlag(value: string | boolean | undefined, name: string): string[] | undefined {
-  const raw = asString(value);
-  if (raw === undefined) return undefined;
-  const values = splitCsvIds(raw);
-  if (values.length === 0) throw new Error(`${name} must contain at least one value`);
-  return values;
-}
-
 function requireBoolOpt(value: string | boolean | undefined, name: string): boolean {
   const flag = asBoolFlag(value);
   if (flag === undefined) throw new Error(`Missing required option: ${name} (true|false)`);
@@ -9235,9 +9231,10 @@ async function executeDashboards(client: JiraClient, cmd: ParsedCommand): Promis
     // ── gadgets ─────────────────────────────────────────────────────────────
     case 'list-gadgets': {
       const dashboardId = requireArg(cmd.positionalArgs[0], 'dashboardId');
-      const moduleKey = gadgetFilterFlag(opts['module-key'], '--module-key');
-      const uri = gadgetFilterFlag(opts['uri'], '--uri');
-      const gadgetId = gadgetFilterFlag(opts['gadget-id'], '--gadget-id')?.map((s) =>
+      // A given but empty filter is refused: no filter would return every gadget.
+      const moduleKey = idsCsvFlag(opts['module-key'], '--module-key', 'value');
+      const uri = idsCsvFlag(opts['uri'], '--uri', 'value');
+      const gadgetId = idsCsvFlag(opts['gadget-id'], '--gadget-id', 'value')?.map((s) =>
         parsePositiveIntArg(s, '--gadget-id'),
       );
       return client.dashboards.listGadgets(dashboardId, {
