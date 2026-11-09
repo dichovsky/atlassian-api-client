@@ -3,8 +3,11 @@
  * (F206, F207, F218, F229, F230, F231).
  */
 import { describe, expect, expectTypeOf, it } from 'vitest';
+import type * as Root from '../../src/index.js';
 import { ConfigResource } from '../../src/jira/resources/config.js';
+import type * as Config from '../../src/jira/resources/config.js';
 import { ExpressionResource } from '../../src/jira/resources/expression.js';
+import type * as Expression from '../../src/jira/resources/expression.js';
 import { IssueSecuritySchemesResource } from '../../src/jira/resources/issuesecurityschemes.js';
 import { PlansResource } from '../../src/jira/resources/plans.js';
 import { ProjectTemplateResource } from '../../src/jira/resources/project-template.js';
@@ -121,5 +124,17 @@ describe('projectTemplate.createWithCustomTemplate (F231)', () => {
       template: {},
     });
     expect(result).toBeUndefined();
+  });
+});
+
+// package.json exposes only `.`, so a type is importable only when src/index.ts
+// forwards it (review round 3).
+describe('new public types are exported from the package root', () => {
+  it('forwards the expression and config types this unit added', () => {
+    expectTypeOf<Root.ExpressionEvaluateJqlContext>().toEqualTypeOf<Expression.ExpressionEvaluateJqlContext>();
+    expectTypeOf<Root.ExpressionEvaluateContext>().toEqualTypeOf<Expression.ExpressionEvaluateContext>();
+    expectTypeOf<Root.ExpressionEvaluateData>().toEqualTypeOf<Expression.ExpressionEvaluateData>();
+    expectTypeOf<Root.RemoveFieldParametersResult>().toEqualTypeOf<Config.RemoveFieldParametersResult>();
+    expectTypeOf<Root.RemoveFieldParametersResultEntry>().toEqualTypeOf<Config.RemoveFieldParametersResultEntry>();
   });
 });
