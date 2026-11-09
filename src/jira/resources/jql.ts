@@ -342,7 +342,11 @@ export class JqlResource {
     return response.data;
   }
 
-  /** Sanitize JQL queries. */
+  /**
+   * Sanitize JQL queries. POST /rest/api/3/jql/sanitize
+   *
+   * @experimental Atlassian marks this operation as experimental.
+   */
   async sanitize(data: SanitizeJqlQueriesData): Promise<SanitizedJqlQueries> {
     const response = await this.transport.request<SanitizedJqlQueries>({
       method: 'POST',

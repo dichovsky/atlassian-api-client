@@ -1175,13 +1175,19 @@ export class IssuesResource {
    * as `const p = { returnOutcome: true }` is typed `Promise<void>`, although the outcome is
    * still resolved at runtime when the value is `true`. A subclass or hand-typed fake must
    * implement both overloads (a lone `Promise<void>` signature no longer type-checks).
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   deleteAllWorklogs(
     issueIdOrKey: string,
     ids: number[],
     params: DeleteAllWorklogsParams & { readonly returnOutcome: true },
   ): Promise<WorklogBulkOutcome>;
-  /** Bulk delete worklogs for an issue (B505); resolves `void` unless `returnOutcome` is `true`. */
+  /**
+   * Bulk delete worklogs for an issue (B505); resolves `void` unless `returnOutcome` is `true`.
+   *
+   * @experimental Atlassian marks this operation as experimental.
+   */
   deleteAllWorklogs(
     issueIdOrKey: string,
     ids: number[],
@@ -1393,13 +1399,19 @@ export class IssuesResource {
    * as `const p = { returnOutcome: true }` is typed `Promise<void>`, although the outcome is
    * still resolved at runtime when the value is `true`. A subclass or hand-typed fake must
    * implement both overloads (a lone `Promise<void>` signature no longer type-checks).
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   moveWorklog(
     issueIdOrKey: string,
     data: WorklogMoveData,
     params: MoveWorklogParams & { readonly returnOutcome: true },
   ): Promise<WorklogBulkOutcome>;
-  /** Move worklogs to another issue (B515); resolves `void` unless `returnOutcome` is `true`. */
+  /**
+   * Move worklogs to another issue (B515); resolves `void` unless `returnOutcome` is `true`.
+   *
+   * @experimental Atlassian marks this operation as experimental.
+   */
   moveWorklog(
     issueIdOrKey: string,
     data: WorklogMoveData,
@@ -1430,6 +1442,8 @@ export class IssuesResource {
   /**
    * Archive issues by IDs (synchronous) (B516).
    * PUT /rest/api/3/issue/archive
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   async archiveIssues(issueIdsOrKeys: string[]): Promise<IssueArchiveResult> {
     const response = await this.transport.request<IssueArchiveResult>({
@@ -1445,6 +1459,8 @@ export class IssuesResource {
    * POST /rest/api/3/issue/archive
    * Spec: operationId archiveIssuesAsync — responds 202 with a status-URL string, not IssueArchiveResult (#206).
    * The returned string is the URL to poll the archival task's status.
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   async archiveIssuesByJql(jql: string): Promise<string> {
     const response = await this.transport.request<string>({
@@ -1458,6 +1474,8 @@ export class IssuesResource {
   /**
    * Unarchive issues (B528).
    * PUT /rest/api/3/issue/unarchive
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   async unarchiveIssues(issueIdsOrKeys: string[]): Promise<IssueArchiveResult> {
     const response = await this.transport.request<IssueArchiveResult>({
@@ -1556,6 +1574,8 @@ export class IssuesResource {
   /**
    * Get issue limit report (B522).
    * GET /rest/api/3/issue/limit/report
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   async getLimitReport(params?: GetIssueLimitReportParams): Promise<IssueLimitReport> {
     const query: Record<string, boolean | undefined> = {};
@@ -1685,6 +1705,8 @@ export class IssuesResource {
    * Export archived issues (B538).
    * PUT /rest/api/3/issues/archive/export   (note: plural "issues")
    * Spec: responds 202 with ExportArchivedIssuesTaskProgressResponse { taskId, status, progress, submittedTime, payload, fileUrl }.
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   async exportArchivedIssues(data: IssueArchiveExportData): Promise<ExportArchivedIssuesResult> {
     const response = await this.transport.request<ExportArchivedIssuesResult>({

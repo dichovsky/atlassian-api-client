@@ -264,7 +264,8 @@ const GLOBAL_OPTIONS = {
   'image-format': { type: 'string' as const },
   x: { type: 'string' as const },
   y: { type: 'string' as const },
-  // universal-avatar view-by-*: file to write the image bytes to (scoped in parseCommand)
+  // universal-avatar view-by-*, issue-attachments download-*: file to write the
+  // downloaded bytes to (scoped in parseCommand)
   output: { type: 'string' as const },
   // bulk options (B345-B353 + DevOps bulk POST variants)
   // Tri-state filter (B1063): `sendBulkNotification` defaults to `true` on the
@@ -753,10 +754,15 @@ export function parseCommand(argv: string[]): ParsedCommand & {
 
   if (
     options['output'] !== undefined &&
-    !(api === 'jira' && resource === 'universal-avatar' && action.startsWith('view-by-'))
+    !(
+      api === 'jira' &&
+      ((resource === 'universal-avatar' && action.startsWith('view-by-')) ||
+        (resource === 'issue-attachments' &&
+          ['download-content', 'download-thumbnail'].includes(action)))
+    )
   ) {
     throw new Error(
-      '--output is supported only by Jira universal-avatar view-by-type, view-by-id and view-by-owner',
+      '--output is supported only by Jira universal-avatar view-by-type, view-by-id and view-by-owner, and issue-attachments download-content and download-thumbnail',
     );
   }
 

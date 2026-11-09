@@ -139,6 +139,8 @@ export class IssueAttachmentsResource {
    * (entry sizes are pre-formatted strings).
    * Maps to `GET /rest/api/3/attachment/{id}/expand/human`.
    * @see https://developer.atlassian.com/cloud/jira/platform/rest/v3/api-group-issue-attachments/#api-rest-api-3-attachment-id-expand-human-get
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   async expandHuman(attachmentId: string): Promise<AttachmentArchiveMetadataReadable> {
     const response = await this.transport.request<AttachmentArchiveMetadataReadable>({
@@ -153,6 +155,8 @@ export class IssueAttachmentsResource {
    * are numeric bytes).
    * Maps to `GET /rest/api/3/attachment/{id}/expand/raw`.
    * @see https://developer.atlassian.com/cloud/jira/platform/rest/v3/api-group-issue-attachments/#api-rest-api-3-attachment-id-expand-raw-get
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   async expandRaw(attachmentId: string): Promise<AttachmentArchive> {
     const response = await this.transport.request<AttachmentArchive>({

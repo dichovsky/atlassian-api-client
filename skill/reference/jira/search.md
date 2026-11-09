@@ -20,8 +20,8 @@ atlas jira search search --jql "project = PROJ AND status = Open" --expand names
 atlas jira search approximate-count --jql "project = PROJ"
 atlas jira search jql-get --jql "project = PROJ" --max-results 50 --properties release.owner --fields-by-keys --reconcile-issues 10001,10002 --fail-fast
 atlas jira search jql-post --jql "project = PROJ AND assignee = currentUser()" --fields summary,status --expand names --properties release.owner --include-archived-projects
-atlas jira search get --jql "project = PROJ" --start-at 50 --validate-query warn --expand names --properties release.owner --fail-fast
-atlas jira search legacy-post --jql "project = PROJ" --start-at 50 --validate-query strict --fields-by-keys
+atlas jira search get --jql "project = PROJ" --start-at 50 --validate-query warn --fields summary,status --expand names --properties release.owner --fail-fast
+atlas jira search legacy-post --jql "project = PROJ" --start-at 50 --validate-query strict --fields-by-keys --expand names,schema
 ```
 
 - `search` (also selected when the action is omitted or written as `query`), `jql-get`, and `jql-post` use current `/search/jql` with cursor pagination. Pass the response `nextPageToken` through `--next-page-token` to continue. `--max-results` must be a positive integer. All three current actions reject legacy `--start-at` and `--validate-query`; use `search get` or `search legacy-post` only when migrating old offset-based automation.
@@ -34,6 +34,8 @@ atlas jira search legacy-post --jql "project = PROJ" --start-at 50 --validate-qu
 ## `jql`
 
 JQL query and precomputation API (B587–B596). Covers autocomplete, parse, sanitize, match, precomputation management, and personal data migration.
+
+> **Experimental:** Atlassian marks `sanitize` and `invalid-jqls-access-log` `x-experimental`; their shapes may change without notice.
 
 | Action                      | Positionals | Required flags          | Optional flags                                                           |
 | --------------------------- | ----------- | ----------------------- | ------------------------------------------------------------------------ |
@@ -52,7 +54,7 @@ JQL query and precomputation API (B587–B596). Covers autocomplete, parse, sani
 **Notes:**
 
 - `autocomplete-data` (B587): `GET /rest/api/3/jql/autocompletedata` — returns field names, function names, and reserved words for JQL autocompletion.
-- `autocomplete-data-post` (B588): `POST /rest/api/3/jql/autocompletedata` — same as GET but lets you filter by `--project-ids` (CSV of int IDs) and include collapsed fields via `--include-collapsed-fields`.
+- `autocomplete-data-post` (B588): `POST /rest/api/3/jql/autocompletedata` — same as GET but lets you filter by `--project-ids` (CSV of int IDs) and include collapsed fields via `--include-collapsed-fields` (bare or `true` sends `true`, `false` sends `false`, omitted sends nothing).
 - `autocomplete-suggestions` (B589): `GET /rest/api/3/jql/autocompletedata/suggestions` — every flag is optional and sent only when given. `--field-name` alone lists the field's values; add `--field-value` to match values containing that text; `--field-name` + `--predicate-name` (a `CHANGED` predicate: `by`, `from` or `to`) lists predicate values, narrowed by `--predicate-value`.
 - **App-only precomputation actions:** `get-precomputations`, `update-precomputations` and `get-precomputations-by-id` serve the custom JQL functions of a Forge or Connect app: Jira accepts them only from that app, and an app sees only its own functions. A user API token (the default `basic` auth) is rejected; from the CLI they need `ATLASSIAN_AUTH_TYPE=bearer` with a token issued to the app.
 - `get-precomputations` (B590): `GET /rest/api/3/jql/function/computation` — paginated list of app function precomputations. `--function-key` accepts a CSV of function keys (repeated `functionKey` params; Forge `ari:cloud:ecosystem::extension/<appId>/<envId>/static/<key>`, Connect `<appKey>__<moduleKey>`).

@@ -228,6 +228,8 @@ export class IssueTypeResource {
   /**
    * List the issue types assigned to a project (B565). GET /issuetype/project.
    * `params.level` filters by hierarchy level: `-1` subtask, `0` base, `1` epic.
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   async listForProject(
     projectId: number,

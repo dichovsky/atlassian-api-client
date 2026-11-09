@@ -1017,9 +1017,9 @@ describe('universal-avatar (F243, F244)', () => {
     expect(readdirSync(scratch)).toEqual([]);
   });
 
+  // issue-attachments download-content / download-thumbnail accept --output
+  // (release-410-parity-jira-core.test.ts, M3-1).
   it.each([
-    ['jira', 'issue-attachments', 'download-content', '10000'],
-    ['jira', 'issue-attachments', 'download-thumbnail', '10000'],
     ['confluence', 'attachments', 'thumbnail', 'att1'],
     ['jira', 'universal-avatar', 'list', 'project', '10001'],
     ['jira', 'universal-avatar', 'store', 'project', '10001'],
