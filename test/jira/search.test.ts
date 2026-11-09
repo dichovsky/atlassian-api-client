@@ -287,6 +287,34 @@ describe('SearchResource', () => {
         expand: ['changelog'],
       });
     });
+
+    it('forwards properties, validateQuery and fieldsByKeys on every page (as search() does)', async () => {
+      transport
+        .respondWith({ issues: [makeIssue('1', 'P-1')], startAt: 0, maxResults: 1, total: 2 })
+        .respondWith({ issues: [makeIssue('2', 'P-2')], startAt: 1, maxResults: 1, total: 2 });
+
+      for await (const _ of search.searchAll({
+        jql: 'a',
+        properties: ['p'],
+        validateQuery: 'none',
+        fieldsByKeys: true,
+        maxResults: 1,
+      })) {
+        // consume
+      }
+
+      expect(transport.calls).toHaveLength(2);
+      for (const [i, call] of transport.calls.entries()) {
+        expect(call.options.body).toEqual({
+          jql: 'a',
+          properties: ['p'],
+          validateQuery: 'none',
+          fieldsByKeys: true,
+          startAt: i,
+          maxResults: 1,
+        });
+      }
+    });
   });
 
   // ── approximateCount ──────────────────────────────────────────────────────

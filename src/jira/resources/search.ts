@@ -137,6 +137,9 @@ export class SearchResource {
     const body: Record<string, unknown> = { jql: params.jql };
     if (params.fields !== undefined) body['fields'] = params.fields;
     if (params.expand !== undefined) body['expand'] = params.expand;
+    if (params.validateQuery !== undefined) body['validateQuery'] = params.validateQuery;
+    if (params.properties !== undefined) body['properties'] = params.properties;
+    if (params.fieldsByKeys !== undefined) body['fieldsByKeys'] = params.fieldsByKeys;
     yield* paginateSearch<Issue>(this.transport, `${this.baseUrl}/search`, body, params.maxResults);
   }
 
