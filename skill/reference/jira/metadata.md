@@ -13,7 +13,7 @@
 | `create`      | —          | `--name`, `--status-color`, one of `--avatar-id` or `--icon-url` | `--description`                                                                                         |
 | `update`      | `<id>`     | at least one of the optional flags                               | `--name`, `--description`, `--status-color`, `--avatar-id` or `--icon-url`                              |
 | `delete`      | `<id>`     | —                                                                | —                                                                                                       |
-| `set-default` | —          | `--id`                                                           | —                                                                                                       |
+| `set-default` | —          | `--id` (or `--id null`)                                          | —                                                                                                       |
 | `move`        | —          | `--ids`, one of `--after` or `--position`                        | —                                                                                                       |
 | `search`      | —          | —                                                                | `--ids`, `--project-id`, `--priority-name`, `--only-default`, `--expand`, `--start-at`, `--max-results` |
 
@@ -21,7 +21,8 @@
 - Set the icon with `--avatar-id`, a positive integer avatar ID. `--icon-url` was sunset by Atlassian on 16 Mar 2025 and replaced by `avatarId` ([CHANGE-1525](https://developer.atlassian.com/changelog/#CHANGE-1525)); the CLI still sends it because the API schema accepts it, but do not rely on it. Its values are an HTTP(S) URL or `/images/icons/priorities/<name>.png` (`<name>`: `blocker`, `critical`, `high`, `highest`, `low`, `lowest`, `major`, `medium`, `minor`, `trivial`, or the same with `_new`). The two are mutually exclusive; `create` needs exactly one.
 - `update` changes only the fields you pass (the API requires none, but pass at least one).
 - `delete` is asynchronous: Jira accepts it as a task, and the CLI prints `{ "deleted": true }` once Jira accepted it, before the task has necessarily finished. This endpoint takes no replacement priority, so `--replace-with` is rejected; issues are remapped through priority schemes (`priority-schemes`).
-- `move`: `--ids` is comma-separated; place them `--after <id>` or at `--position First|Last`. Pass a non-empty value for exactly one of the two: neither, both, or an empty value is rejected before any request.
+- `set-default --id <id>` makes that priority the default; `set-default --id null` erases the default priority setting (sends JSON `null`, not the string `"null"`). The value is trimmed; an empty `--id` is rejected before any request.
+- `move`: `--ids` is comma-separated; place them `--after <id>` or at `--position First|Last`. Pass a non-empty value for exactly one of the two: neither, both, or an empty value is rejected before any request. Surrounding spaces are trimmed.
 - `search`: `--ids` and `--project-id` are comma-separated (sent as repeated `id=` / `projectId=` params); `--project-id` returns the priorities used in those projects. `--priority-name` matches the priority name. `--only-default true|false` returns only the default priority; Atlassian deprecated it and will remove it ([CHANGE-1655](https://developer.atlassian.com/cloud/jira/platform/changelog/#CHANGE-1655)). `--expand schemes` adds the first 15 priority schemes of each priority. Offset-paginated: `--start-at` (0-based), `--max-results`.
 
 ```sh
@@ -34,6 +35,7 @@ atlas jira priorities update <id> --name "Renamed" --description "Updated descri
 atlas jira priorities update <id> --status-color "#00875A"
 atlas jira priorities delete <id>
 atlas jira priorities set-default --id <id>
+atlas jira priorities set-default --id null
 atlas jira priorities move --ids 10001,10002 --after 10000
 atlas jira priorities move --ids 10001,10002 --position First
 atlas jira priorities search --priority-name High
@@ -48,21 +50,23 @@ Use them to translate human-readable names into IDs when constructing issue crea
 
 Single issue-type management (distinct from the read-only `issue-types` plural resource). Covers `/rest/api/3/issuetype` CRUD, avatar management, property storage, and project-scoped listing.
 
-| Action              | Positional                      | Required flags                                           | Optional flags                                                         |
-| ------------------- | ------------------------------- | -------------------------------------------------------- | ---------------------------------------------------------------------- |
-| `create`            | —                               | `--name`                                                 | `--description`, `--type` (`subtask`\|`standard`), `--hierarchy-level` |
-| `delete`            | `<id>`                          | —                                                        | `--alternative-id`                                                     |
-| `update`            | `<id>`                          | at least one of `--name`, `--description`, `--avatar-id` | —                                                                      |
-| `list-alternatives` | `<id>`                          | —                                                        | —                                                                      |
-| `load-avatar`       | `<id>`                          | `--file`, `--size`                                       | `--x`, `--y`, `--media-type`                                           |
-| `list-properties`   | `<issueTypeId>`                 | —                                                        | —                                                                      |
-| `delete-property`   | `<issueTypeId>` `<propertyKey>` | —                                                        | —                                                                      |
-| `get-property`      | `<issueTypeId>` `<propertyKey>` | —                                                        | —                                                                      |
-| `set-property`      | `<issueTypeId>` `<propertyKey>` | `--value` (JSON)                                         | —                                                                      |
-| `list-for-project`  | —                               | `--project-id`                                           | `--level`                                                              |
+> **Experimental:** Atlassian marks `list-for-project` `x-experimental`; its shape may change without notice.
 
-- `--type` must be `subtask` or `standard` (only relevant when creating; controls hierarchy).
-- `--hierarchy-level` is an integer; omit to use the server default for the chosen type. Pass a negative value with `=` (`--hierarchy-level=-1`): a separate `-1` is read as an option. An empty value (`--hierarchy-level=`) is rejected, not sent as `0`; the same holds for `--level`, `--x` and `--y`.
+| Action              | Positional                      | Required flags                                           | Optional flags                                              |
+| ------------------- | ------------------------------- | -------------------------------------------------------- | ----------------------------------------------------------- |
+| `create`            | —                               | `--name`                                                 | `--description`, `--hierarchy-level`, `--type` (deprecated) |
+| `delete`            | `<id>`                          | —                                                        | `--alternative-id`                                          |
+| `update`            | `<id>`                          | at least one of `--name`, `--description`, `--avatar-id` | —                                                           |
+| `list-alternatives` | `<id>`                          | —                                                        | —                                                           |
+| `load-avatar`       | `<id>`                          | `--file`, `--size`                                       | `--x`, `--y`, `--media-type`                                |
+| `list-properties`   | `<issueTypeId>`                 | —                                                        | —                                                           |
+| `delete-property`   | `<issueTypeId>` `<propertyKey>` | —                                                        | —                                                           |
+| `get-property`      | `<issueTypeId>` `<propertyKey>` | —                                                        | —                                                           |
+| `set-property`      | `<issueTypeId>` `<propertyKey>` | `--value` (JSON)                                         | —                                                           |
+| `list-for-project`  | —                               | `--project-id`                                           | `--level`                                                   |
+
+- `--hierarchy-level` (an integer) sets the hierarchy on `create`: `-1` for a sub-task type, `0` for a standard (base) type; Jira defaults to `0`. Pass a negative value with `=` (`--hierarchy-level=-1`): a separate `-1` is read as an option. An empty value (`--hierarchy-level=`) is rejected, not sent as `0`; the same holds for `--level`, `--x` and `--y`.
+- `--type` (`subtask` or `standard`) is **deprecated** by Atlassian in favour of `--hierarchy-level`; it is still sent when given, but use `--hierarchy-level` in new commands.
 - `--alternative-id` on `delete` reassigns issues from the deleted type to the specified alternative type.
 - `load-avatar` reads the image from `--file` (local path), crops to `--size` × `--size` starting at `--x`,`--y` (default 0,0). Jira accepts PNG, JPEG and GIF and needs the matching `Content-Type`: the CLI takes it from the file extension (`.png`, `.jpg`/`.jpeg`, `.gif`); for other file names pass `--media-type image/png|image/jpeg|image/gif`. Then set the returned avatar ID with `update --avatar-id`.
 - `list-for-project` requires `--project-id` as a positive integer. `--level` filters by hierarchy level: `-1` subtask, `0` base, `1` epic (write `--level=-1`).
@@ -70,10 +74,10 @@ Single issue-type management (distinct from the read-only `issue-types` plural r
 
 ```sh
 # Create a standard issue type
-atlas jira issuetype create --name "Feature" --description "A new product feature" --type standard
+atlas jira issuetype create --name "Feature" --description "A new product feature" --hierarchy-level 0
 
 # Create a sub-task type
-atlas jira issuetype create --name "Sub-task" --type subtask
+atlas jira issuetype create --name "Sub-task" --hierarchy-level=-1
 
 # Update an issue type (use issue-types list to resolve IDs)
 atlas jira issuetype update 10001 --name "Renamed Feature" --description "Updated description"

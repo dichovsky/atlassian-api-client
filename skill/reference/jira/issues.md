@@ -260,6 +260,8 @@ atlas jira issues rank --issues PROJ-1 --after PROJ-5
 
 ### Worklog (B505–B515)
 
+> **Experimental:** Atlassian marks `delete-all-worklogs` and `move-worklog` `x-experimental`; their shapes may change without notice.
+
 | Action                    | Positional                                 | Required flags | Optional flags                                                                                                                      |
 | ------------------------- | ------------------------------------------ | -------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
 | `delete-all-worklogs`     | `<issueIdOrKey>`                           | `--ids`        | `--adjust-estimate`, `--override-editable-flag`                                                                                     |
@@ -318,6 +320,8 @@ atlas jira issues move-worklog PROJ-42 --ids 10001,10002 --target-issue PROJ-43 
 
 ### Issue Archive/Unarchive (B516, B517, B528)
 
+> **Experimental:** Atlassian marks `archive-issues`, `archive-issues-jql` and `unarchive-issues` `x-experimental`; their shapes may change without notice.
+
 | Action               | Positional | Required flags | Optional flags |
 | -------------------- | ---------- | -------------- | -------------- |
 | `archive-issues`     | —          | `--ids`        | —              |
@@ -351,12 +355,14 @@ atlas jira issues get-create-meta-issuetype PROJ 10001 --start-at 0 --max-result
 
 ### Issue Limit Reports
 
+> **Experimental:** Atlassian marks `get-limit-report` and `get-adf-limit-report` `x-experimental`; their shapes may change without notice.
+
 | Action                 | Positional | Required flags | Optional flags                              |
 | ---------------------- | ---------- | -------------- | ------------------------------------------- |
 | `get-limit-report`     | —          | —              | `--is-returning-keys`                       |
 | `get-adf-limit-report` | —          | —              | `--is-returning-keys`, `--field-type` (CSV) |
 
-`get-limit-report` reports per-issue entity count limits. The experimental
+`get-limit-report` reports per-issue entity count limits.
 `get-adf-limit-report` reports ADF byte-size breaches; `--field-type` accepts
 `comment_adf`, `worklog_adf`, `customfield_adf`, `description_adf`, and
 `environment_adf`. Use `--is-returning-keys` to key results by issue key instead
@@ -392,11 +398,13 @@ of numeric ID.
 
 ### Archive Export (B538)
 
+> **Experimental:** Atlassian marks `export-archived` `x-experimental`; its shape may change without notice.
+
 | Action            | Positional | Required flags | Optional flags                                                                                 |
 | ----------------- | ---------- | -------------- | ---------------------------------------------------------------------------------------------- |
 | `export-archived` | —          | —              | `--archived-by`, `--date-after`, `--date-before`, `--issue-types`, `--projects`, `--reporters` |
 
-- List-valued filters are comma-separated.
+- List-valued filters are comma-separated, and each takes Jira IDs or keys, not display names or emails: `--archived-by` and `--reporters` are account IDs (find them with `atlas jira users search --query <name>`), `--issue-types` are issue type IDs (`atlas jira issue-types list`), and `--projects` are project keys. Names are sent unchanged, so the export matches nothing or Jira rejects it.
 - `--date-after` and `--date-before` use `YYYY-MM-DD` and must be supplied together.
 - The endpoint always produces a CSV download link sent by email; it has no JQL or format selector. Legacy `--jql` and `--export-type` are rejected so an old command cannot silently widen or misrepresent the export.
 - This is async (202); the CLI returns the task envelope `{ taskId?, status?, progress?, submittedTime?, payload?, fileUrl? }`. Poll a returned task ID with `atlas jira task get <taskId>`.
@@ -453,6 +461,9 @@ atlas jira issues get-adf-limit-report --field-type comment_adf,worklog_adf --is
 
 # Export archived issues from a project and date range
 atlas jira issues export-archived --projects PROJ --date-after 2026-01-01 --date-before 2026-01-31
+
+# Export archived bugs (issue type ID 10004) that two reporters raised (account IDs)
+atlas jira issues export-archived --projects PROJ --issue-types 10004 --reporters 5b10ac8d82e05b22cc7d4ef5,5b10a2844c20165700ede21g
 ```
 
 ## `changelog`
@@ -483,20 +494,22 @@ atlas jira changelog bulk-fetch --issues PROJ-1 --max-results 50 --next-page-tok
 
 Covers the platform's `/rest/api/3/attachment` surface (B336, B337, B338–B342) plus the issue-scoped `list` (via `GET /issue/{key}?fields=attachment`) and `upload` (`POST /issue/{key}/attachments`).
 
-| Action               | Positional       | Required flags | Optional flags                                               |
-| -------------------- | ---------------- | -------------- | ------------------------------------------------------------ |
-| `list`               | `<issueIdOrKey>` | —              | —                                                            |
-| `get`                | `<attachmentId>` | —              | —                                                            |
-| `delete`             | `<attachmentId>` | —              | —                                                            |
-| `expand-human`       | `<attachmentId>` | —              | —                                                            |
-| `expand-raw`         | `<attachmentId>` | —              | —                                                            |
-| `download-content`   | `<attachmentId>` | —              | `--redirect`                                                 |
-| `get-meta`           | —                | —              | —                                                            |
-| `download-thumbnail` | `<attachmentId>` | —              | `--redirect`, `--fallback-to-default`, `--width`, `--height` |
-| `upload`             | `<issueIdOrKey>` | `--file`       | `--filename`, `--media-type`                                 |
+> **Experimental:** Atlassian marks `expand-human` and `expand-raw` `x-experimental`; their shapes may change without notice.
+
+| Action               | Positional       | Required flags | Optional flags                                                           |
+| -------------------- | ---------------- | -------------- | ------------------------------------------------------------------------ |
+| `list`               | `<issueIdOrKey>` | —              | —                                                                        |
+| `get`                | `<attachmentId>` | —              | —                                                                        |
+| `delete`             | `<attachmentId>` | —              | —                                                                        |
+| `expand-human`       | `<attachmentId>` | —              | —                                                                        |
+| `expand-raw`         | `<attachmentId>` | —              | —                                                                        |
+| `download-content`   | `<attachmentId>` | —              | `--redirect`, `--output`                                                 |
+| `get-meta`           | —                | —              | —                                                                        |
+| `download-thumbnail` | `<attachmentId>` | —              | `--redirect`, `--fallback-to-default`, `--width`, `--height`, `--output` |
+| `upload`             | `<issueIdOrKey>` | `--file`       | `--filename`, `--media-type`                                             |
 
 - `expand-human` / `expand-raw` are only meaningful for archive-typed attachments (zip, tar, etc.). `human` returns each entry's `size` as a pre-formatted string (`"2.5 kB"`); `raw` returns it as a byte count.
-- `download-content` and `download-thumbnail` buffer the binary response into memory. The CLI prints a `{ "bytes": N }` summary instead of the raw bytes — use the SDK (`client.issueAttachments.downloadContent`) when you need the actual `ArrayBuffer`.
+- `download-content` and `download-thumbnail` buffer the binary response into memory. `--output <path>` writes the bytes to that file and prints `{ "bytes": N, "path": "<path>" }`; without `--output` the CLI prints only `{ "bytes": N }`. `--output` never overwrites: an existing file, a blank path, or a path whose directory does not exist is refused before the download.
 - `--redirect false` asks the server to return the binary body inline instead of a `303` redirect to its media-CDN (server default `true`). The runtime `fetch` follows the redirect transparently either way, so the CLI behaviour is identical; the flag is exposed for API parity. Tri-state — pass a value.
 - `--fallback-to-default true|false` (thumbnail only) controls whether the server returns a generic placeholder image when the attachment has no renderable preview (server default `true`); pass `false` to get a `404` instead. Tri-state — pass a value.
 - `upload` reads the file from disk into a `Blob` and POSTs multipart form data with `X-Atlassian-Token: no-check` (Jira requires this to bypass XSRF validation). `--filename` defaults to the basename of `--file`.
@@ -514,7 +527,10 @@ atlas jira issue-attachments list PROJ-1
 atlas jira issue-attachments expand-human 10001
 atlas jira issue-attachments expand-raw 10001
 
-# Download the file bytes (CLI prints { bytes: N } — use the SDK for the buffer).
+# Save the attachment to ./report.pdf (prints { bytes, path }; never overwrites a file)
+atlas jira issue-attachments download-content 10001 --output ./report.pdf
+
+# Without --output the CLI prints only { bytes: N }.
 # `--redirect true|false` is a tri-state filter (server default true). Pass
 # `false` to receive the binary body inline; omit for the default. Value required.
 atlas jira issue-attachments download-content 10001
@@ -523,14 +539,17 @@ atlas jira issue-attachments download-content 10001 --redirect false
 # Instance-level attachment settings
 atlas jira issue-attachments get-meta
 
-# Render a 200x200 thumbnail with a placeholder fallback.
+# Save a 200x200 thumbnail with a placeholder fallback to ./thumb.png.
 # `--fallback-to-default true|false` is a tri-state filter (server default true).
 # Pass `false` to get a 404 instead of a placeholder; omit for the default. Value required.
 atlas jira issue-attachments download-thumbnail 10001 \
-  --width 200 --height 200 --fallback-to-default true
+  --width 200 --height 200 --fallback-to-default true --redirect false --output ./thumb.png
 
 # Upload a file from disk to an issue
 atlas jira issue-attachments upload PROJ-1 --file ./screenshot.png --media-type image/png
+
+# Upload under another name (--filename) with an explicit type (--media-type)
+atlas jira issue-attachments upload PROJ-1 --file ./screenshot.png --filename login-error.png --media-type image/png
 ```
 
 ## `issue-comments`
@@ -625,6 +644,9 @@ atlas jira issuelinktype create --name "Blocks" --inward "is blocked by" --outwa
 
 # Update an issue link type — B537
 atlas jira issuelinktype update 10001 --name "Clones" --inward "is cloned by" --outward "clones"
+
+# Change only the outward label (the other fields are not sent)
+atlas jira issuelinktype update 10001 --outward "clones"
 
 # Delete an issue link type — B535
 atlas jira issuelinktype delete 10001
