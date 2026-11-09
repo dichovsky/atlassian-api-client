@@ -185,7 +185,10 @@ export interface ListSecurityLevelMembersParams {
   readonly expand?: string;
 }
 
-/** Query parameters for DELETE /rest/api/3/issuesecurityschemes/{schemeId}/level/{levelId} (B546). */
+/**
+ * Options for DELETE /rest/api/3/issuesecurityschemes/{schemeId}/level/{levelId}
+ * (B546): the `replaceWith` query parameter plus the client-side `returnTask`.
+ */
 export interface RemoveSecurityLevelParams {
   /** Optional: replace deleted level with this level ID. */
   readonly replaceWith?: string;
@@ -392,7 +395,7 @@ export class IssueSecuritySchemesResource {
    * Asynchronous: Jira answers 303 to the removal task, which the transport
    * follows. With `returnTask: true` this resolves that task (poll it with
    * `client.task.get(task.id)`), or `undefined` when Jira answers without one
-   * (a 204; the spec documents only the 303).
+   * (a 204 or an empty 200; the spec documents only the 303).
    *
    * @experimental Atlassian marks this operation as experimental.
    */
@@ -404,6 +407,10 @@ export class IssueSecuritySchemesResource {
   /**
    * B546: Remove a security level (asynchronous; see the `returnTask` overload).
    * DELETE /rest/api/3/issuesecurityschemes/{schemeId}/level/{levelId}
+   *
+   * Only a literal `returnTask: true` selects the task-typed overload: a
+   * `RemoveSecurityLevelParams` value whose `returnTask` is `true` at runtime
+   * is typed `Promise<void>` here but still resolves the task.
    *
    * @experimental Atlassian marks this operation as experimental.
    */
@@ -622,7 +629,7 @@ export class IssueSecuritySchemesResource {
    * Asynchronous: Jira answers 303 to the association task, which the
    * transport follows. With `returnTask: true` this resolves that task (poll
    * it with `client.task.get(task.id)`), or `undefined` when Jira answers
-   * without one (a 204; the spec documents only the 303).
+   * without one (a 204 or an empty 200; the spec documents only the 303).
    *
    * @experimental Atlassian marks this operation as experimental.
    */
@@ -634,6 +641,10 @@ export class IssueSecuritySchemesResource {
    * B554: Associate security schemes to projects (asynchronous; see the
    * `returnTask` overload).
    * PUT /rest/api/3/issuesecurityschemes/project
+   *
+   * Only a literal `returnTask: true` selects the task-typed overload: an
+   * `AssociateSchemesToProjectsOptions` value whose `returnTask` is `true` at
+   * runtime is typed `Promise<void>` here but still resolves the task.
    *
    * @experimental Atlassian marks this operation as experimental.
    */

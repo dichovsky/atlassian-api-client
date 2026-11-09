@@ -6986,7 +6986,7 @@ async function executeIssueSecuritySchemes(
       const levelId = requireArg(cmd.positionalArgs[1], 'levelId');
       const replaceWith = asString(opts['replace-with']);
       // Asynchronous: print the removal task so it can be polled with `task get`.
-      // Off-spec 204 (no task): acknowledge as 4.0.0 did.
+      // Off-spec 204 or empty 200 (no task): acknowledge as 4.0.0 did.
       const task = await client.issueSecuritySchemes.removeLevel(schemeId, levelId, {
         ...(replaceWith !== undefined && { replaceWith }),
         returnTask: true,
@@ -7083,7 +7083,7 @@ async function executeIssueSecuritySchemes(
         }),
       };
       // Asynchronous: print the association task so it can be polled with `task get`.
-      // Off-spec 204 (no task): acknowledge as 4.0.0 did.
+      // Off-spec 204 or empty 200 (no task): acknowledge as 4.0.0 did.
       const task = await client.issueSecuritySchemes.associateToProject(data, {
         returnTask: true,
       });

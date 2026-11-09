@@ -1,5 +1,9 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { IssueSecuritySchemesResource } from '../../src/jira/resources/issuesecurityschemes.js';
+import {
+  IssueSecuritySchemesResource,
+  type AssociateSchemesToProjectsOptions,
+  type RemoveSecurityLevelParams,
+} from '../../src/jira/resources/issuesecurityschemes.js';
 import { MockTransport } from '../helpers/mock-transport.js';
 
 const BASE_URL = 'https://test.atlassian.net/rest/api/3';
@@ -350,6 +354,15 @@ describe('IssueSecuritySchemesResource', () => {
       transport.respondWith({ id: '10641' });
 
       await expect(resource.removeLevel('10001', '10100')).resolves.toBeUndefined();
+    });
+
+    it('a non-literal params value with returnTask true is typed void but resolves the task', async () => {
+      transport.respondWith({ id: '10641' });
+      const params: RemoveSecurityLevelParams = { returnTask: true };
+
+      await expect(resource.removeLevel('10001', '10100', params)).resolves.toEqual({
+        id: '10641',
+      });
     });
   });
 
@@ -772,6 +785,15 @@ describe('IssueSecuritySchemesResource', () => {
       await expect(
         resource.associateToProject({ projectId: '10100', schemeId: '10001' }),
       ).resolves.toBeUndefined();
+    });
+
+    it('a non-literal options value with returnTask true is typed void but resolves the task', async () => {
+      transport.respondWith({ id: '10641' });
+      const options: AssociateSchemesToProjectsOptions = { returnTask: true };
+
+      await expect(
+        resource.associateToProject({ projectId: '10100', schemeId: '10001' }, options),
+      ).resolves.toEqual({ id: '10641' });
     });
   });
 

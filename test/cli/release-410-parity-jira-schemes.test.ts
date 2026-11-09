@@ -196,10 +196,12 @@ describe('issuesecurityschemes asynchronous actions print the task (X-ISS-ASYNC)
     expect(run.requests.map(wire)).toEqual([request, 'GET /task/10641']);
     expect(JSON.parse(run.stdout)).toEqual(TASK);
 
-    // Off-spec 204 (no task): acknowledge as 4.0.0 did.
-    const noTask = await ok(fromSkill(command), { status: 204 });
-    expect(noTask.requests.map(wire)).toEqual([request]);
-    expect(JSON.parse(noTask.stdout)).toEqual(withoutTask);
+    // Off-spec 204 or empty 200 (no task): acknowledge as 4.0.0 did.
+    for (const answer of [{ status: 204 }, { status: 200, body: null }]) {
+      const noTask = await ok(fromSkill(command), answer);
+      expect(noTask.requests.map(wire)).toEqual([request]);
+      expect(JSON.parse(noTask.stdout)).toEqual(withoutTask);
+    }
   });
 
   it('the SDK resolves the task only for a literal returnTask: true; the root names every type', () => {
@@ -227,6 +229,7 @@ describe('issuesecurityschemes asynchronous actions print the task (X-ISS-ASYNC)
     const text = section('issuesecurityschemes');
     expect(text).toMatch(/`associate-to-project` and `remove-level` are \*\*asynchronous\*\*/);
     expect(text).toContain('atlas jira task get');
+    expect(text).toContain('If Jira answers with no task (a 204 or an empty 200)');
   });
 });
 
@@ -1745,6 +1748,23 @@ const SPEC_OPS: readonly SpecOp[] = (() => {
   );
 })();
 
+/**
+ * Whether a `> **Experimental:**` note in the resource's schemes.md section
+ * covers `action`: it names the action, or says "every" without listing the
+ * action after "except".
+ */
+function experimentalNoteCovers(resource: string, action: string): boolean {
+  const name = `\`${action}\``;
+  return section(resource)
+    .split('\n')
+    .filter((line) => line.startsWith('> **Experimental:**'))
+    .some((line) => {
+      if (!/\bevery\b/.test(line)) return line.includes(name);
+      const except = /\bexcept\b(.*?)`x-experimental`/.exec(line)?.[1] ?? '';
+      return !except.includes(name);
+    });
+}
+
 /** The most literal spec operation the request matches (fewest path params). */
 function specOpFor(req: WireRequest): SpecOp | undefined {
   return SPEC_OPS.filter((op) => op.method === req.method && op.pattern.test(req.path)).sort(
@@ -1785,16 +1805,23 @@ describe('every schemes.md example sends exactly the documented request', () => 
       }
       if (op?.experimental === true) {
         const [, , resource, action] = command.split(' ');
-        const notes = section(resource as string)
-          .split('\n')
-          .filter((line) => line.startsWith('> **Experimental:**'));
-        const marked = notes.some(
-          (line) => line.includes(`\`${action}\``) || /\bevery\b/.test(line),
-        );
-        expect(marked, `${resource} ${action} is marked Experimental in the skill`).toBe(true);
+        expect(
+          experimentalNoteCovers(resource as string, action as string),
+          `${resource} ${action} is marked Experimental in the skill`,
+        ).toBe(true);
       }
     },
   );
+
+  it('an "every … except" Experimental note does not cover the excepted actions', () => {
+    for (const action of ['get-all', 'get', 'list-members']) {
+      expect(experimentalNoteCovers('issuesecurityschemes', action), action).toBe(false);
+    }
+    expect(experimentalNoteCovers('issuesecurityschemes', 'remove-level')).toBe(true);
+    expect(experimentalNoteCovers('priority-schemes', 'get')).toBe(true);
+    expect(experimentalNoteCovers('screens', 'list')).toBe(false);
+    expect(experimentalNoteCovers('screens', 'list-all-tabs')).toBe(true);
+  });
 });
 
 describe('boolean flags send an explicit false and nothing when omitted', () => {

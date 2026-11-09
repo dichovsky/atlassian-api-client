@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "4.1.0"
   },
-  "sourceHash": "dd72a6c2a41813f35dbf55ef6341829c528d0e4a053010f0370f0e893b07e250",
+  "sourceHash": "b19215792c6959a1cb8ee4ced572c38b24231468f6a7e881f6a32da9083ee3db",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -3865,9 +3865,9 @@
       "name": "RemoveSecurityLevelParams",
       "kind": "interface",
       "file": "src/jira/resources/issuesecurityschemes.ts",
-      "line": 189,
+      "line": 192,
       "signature": "export interface RemoveSecurityLevelParams { readonly replaceWith?: string; readonly returnTask?: boolean; }",
-      "jsdoc": "Query parameters for DELETE /rest/api/3/issuesecurityschemes/{schemeId}/level/{levelId} (B546).",
+      "jsdoc": "Options for DELETE /rest/api/3/issuesecurityschemes/{schemeId}/level/{levelId} (B546): the `replaceWith` query parameter plus the client-side `returnTask`.",
       "typeOnly": true
     },
     {
@@ -34562,15 +34562,15 @@
         {
           "name": "RemoveSecurityLevelParams",
           "kind": "interface",
-          "line": 189,
+          "line": 192,
           "exported": true,
           "signature": "export interface RemoveSecurityLevelParams { readonly replaceWith?: string; readonly returnTask?: boolean; }",
-          "jsdoc": "Query parameters for DELETE /rest/api/3/issuesecurityschemes/{schemeId}/level/{levelId} (B546)."
+          "jsdoc": "Options for DELETE /rest/api/3/issuesecurityschemes/{schemeId}/level/{levelId} (B546): the `replaceWith` query parameter plus the client-side `returnTask`."
         },
         {
           "name": "GetSecurityLevelsParams",
           "kind": "interface",
-          "line": 200,
+          "line": 203,
           "exported": true,
           "signature": "export interface GetSecurityLevelsParams { readonly startAt?: number; readonly maxResults?: number; readonly id?: string…",
           "jsdoc": "Query parameters for GET /rest/api/3/issuesecurityschemes/level (B550)."
@@ -34578,7 +34578,7 @@
         {
           "name": "GetSecurityLevelMembersParams",
           "kind": "interface",
-          "line": 211,
+          "line": 214,
           "exported": true,
           "signature": "export interface GetSecurityLevelMembersParams { readonly startAt?: number; readonly maxResults?: number; readonly id?: …",
           "jsdoc": "Query parameters for GET /rest/api/3/issuesecurityschemes/level/member (B552)."
@@ -34586,7 +34586,7 @@
         {
           "name": "SearchProjectsUsingSecuritySchemesParams",
           "kind": "interface",
-          "line": 224,
+          "line": 227,
           "exported": true,
           "signature": "export interface SearchProjectsUsingSecuritySchemesParams { readonly startAt?: number; readonly maxResults?: number; rea…",
           "jsdoc": "Query parameters for GET /rest/api/3/issuesecurityschemes/project (B553)."
@@ -34594,7 +34594,7 @@
         {
           "name": "SearchSecuritySchemesParams",
           "kind": "interface",
-          "line": 234,
+          "line": 237,
           "exported": true,
           "signature": "export interface SearchSecuritySchemesParams { readonly startAt?: number; readonly maxResults?: number; readonly id?: st…",
           "jsdoc": "Query parameters for GET /rest/api/3/issuesecurityschemes/search (B555)."
@@ -34602,7 +34602,7 @@
         {
           "name": "IssueSecuritySchemesResource",
           "kind": "class",
-          "line": 251,
+          "line": 254,
           "exported": true,
           "signature": "export class IssueSecuritySchemesResource",
           "jsdoc": "Jira Issue Security Schemes resource — B539-B555.",
@@ -34610,202 +34610,202 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 252
+              "line": 255
             },
             {
               "name": "getAll",
               "kind": "method",
-              "line": 261
+              "line": 264
             },
             {
               "name": "create",
               "kind": "method",
-              "line": 275
+              "line": 278
             },
             {
               "name": "get",
               "kind": "method",
-              "line": 291
+              "line": 294
             },
             {
               "name": "update",
               "kind": "method",
-              "line": 305
+              "line": 308
             },
             {
               "name": "listMembers",
               "kind": "method",
-              "line": 320
+              "line": 323
             },
             {
               "name": "listMembersAll",
               "kind": "method",
-              "line": 342
+              "line": 345
             },
             {
               "name": "delete",
               "kind": "method",
-              "line": 365
+              "line": 368
             },
             {
               "name": "addLevels",
               "kind": "method",
-              "line": 378
+              "line": 381
             },
             {
               "name": "removeLevel",
               "kind": "method",
-              "line": 399
+              "line": 402
             },
             {
               "name": "removeLevel",
               "kind": "method",
-              "line": 410
+              "line": 417
             },
             {
               "name": "removeLevel",
               "kind": "method",
-              "line": 411
+              "line": 418
             },
             {
               "name": "updateLevel",
               "kind": "method",
-              "line": 432
+              "line": 439
             },
             {
               "name": "addLevelMembers",
               "kind": "method",
-              "line": 453
+              "line": 460
             },
             {
               "name": "removeLevelMember",
               "kind": "method",
-              "line": 473
+              "line": 480
             },
             {
               "name": "listLevels",
               "kind": "method",
-              "line": 486
+              "line": 493
             },
             {
               "name": "listLevelsAll",
               "kind": "method",
-              "line": 504
+              "line": 511
             },
             {
               "name": "setDefaultLevels",
               "kind": "method",
-              "line": 527
+              "line": 534
             },
             {
               "name": "listLevelMembers",
               "kind": "method",
-              "line": 541
+              "line": 548
             },
             {
               "name": "listLevelMembersAll",
               "kind": "method",
-              "line": 562
+              "line": 569
             },
             {
               "name": "listProjects",
               "kind": "method",
-              "line": 585
+              "line": 592
             },
             {
               "name": "listProjectsAll",
               "kind": "method",
-              "line": 605
+              "line": 612
             },
             {
               "name": "associateToProject",
               "kind": "method",
-              "line": 629
+              "line": 636
             },
             {
               "name": "associateToProject",
               "kind": "method",
-              "line": 640
+              "line": 651
             },
             {
               "name": "associateToProject",
               "kind": "method",
-              "line": 644
+              "line": 655
             },
             {
               "name": "search",
               "kind": "method",
-              "line": 669
+              "line": 680
             },
             {
               "name": "searchAll",
               "kind": "method",
-              "line": 689
+              "line": 700
             }
           ]
         },
         {
           "name": "buildListMembersQuery",
           "kind": "function",
-          "line": 705,
+          "line": 716,
           "signature": "function buildListMembersQuery( params: ListSecurityLevelMembersParams | undefined, ): Record<string, string | number | …"
         },
         {
           "name": "buildListMembersPath",
           "kind": "function",
-          "line": 718,
+          "line": 729,
           "signature": "function buildListMembersPath( basePath: string, params: ListSecurityLevelMembersParams | undefined, ): string",
           "jsdoc": "Append the repeated `issueSecurityLevelId` (`type: array`) param to a members path."
         },
         {
           "name": "buildGetSecurityLevelsQuery",
           "kind": "function",
-          "line": 725,
+          "line": 736,
           "signature": "function buildGetSecurityLevelsQuery( params: GetSecurityLevelsParams | undefined, ): Record<string, string | number | b…"
         },
         {
           "name": "buildGetSecurityLevelsPath",
           "kind": "function",
-          "line": 738,
+          "line": 749,
           "signature": "function buildGetSecurityLevelsPath( basePath: string, params: GetSecurityLevelsParams | undefined, ): string",
           "jsdoc": "Append the repeated `id` and `schemeId` (`type: array`) params to a levels path."
         },
         {
           "name": "buildGetSecurityLevelMembersQuery",
           "kind": "function",
-          "line": 747,
+          "line": 758,
           "signature": "function buildGetSecurityLevelMembersQuery( params: GetSecurityLevelMembersParams | undefined, ): Record<string, string …"
         },
         {
           "name": "buildGetSecurityLevelMembersPath",
           "kind": "function",
-          "line": 760,
+          "line": 771,
           "signature": "function buildGetSecurityLevelMembersPath( basePath: string, params: GetSecurityLevelMembersParams | undefined, ): strin…",
           "jsdoc": "Append the repeated `id`, `schemeId` and `levelId` (`type: array`) params to a level-member path."
         },
         {
           "name": "buildListProjectsQuery",
           "kind": "function",
-          "line": 770,
+          "line": 781,
           "signature": "function buildListProjectsQuery( params: SearchProjectsUsingSecuritySchemesParams | undefined, ): Record<string, string …"
         },
         {
           "name": "buildListProjectsPath",
           "kind": "function",
-          "line": 782,
+          "line": 793,
           "signature": "function buildListProjectsPath( basePath: string, params: SearchProjectsUsingSecuritySchemesParams | undefined, ): strin…",
           "jsdoc": "Append the repeated `issueSecuritySchemeId` and `projectId` (`type: array`) params to a project path."
         },
         {
           "name": "buildSearchQuery",
           "kind": "function",
-          "line": 791,
+          "line": 802,
           "signature": "function buildSearchQuery( params: SearchSecuritySchemesParams | undefined, ): Record<string, string | number | boolean …"
         },
         {
           "name": "buildSearchPath",
           "kind": "function",
-          "line": 803,
+          "line": 814,
           "signature": "function buildSearchPath( basePath: string, params: SearchSecuritySchemesParams | undefined, ): string",
           "jsdoc": "Append the repeated `id` and `projectId` (`type: array`) params to a scheme-search path."
         }

@@ -453,7 +453,7 @@ Issue security scheme management (B539–B555). Covers the full `/rest/api/3/iss
 - `--default-values` (`set-default-levels`) is a JSON array of `{ "issueSecuritySchemeId": "<id>", "defaultLevelId": "<id>" }`.
 - `--expand` (`list-members`, `list-level-members`) is a comma-separated list of `all`, `field`, `group`, `projectRole`, `user`: each adds the details of that kind of member (`all` adds every kind).
 - On the list actions (`list-members`, `list-levels`, `list-level-members`, `list-projects`, `search`), `--id`, `--scheme-id`, `--level-id`, `--issue-security-level-id`, `--issue-security-scheme-id` and `--project-ids` are comma-separated and sent as repeated query params. (`associate-to-project --scheme-id` is one scheme ID, or `null`.)
-- `associate-to-project` and `remove-level` are **asynchronous**: Jira answers with a task, and the CLI prints it (`{ "id", "self", "status", ... }`). Poll it with `atlas jira task get <id>` until `status` is `COMPLETE`. Both get HTTP 409 while a level-removal task is still running. If Jira answers with no task (204), the CLI prints `{"updated": true}` (`associate-to-project`) or `{"deleted": true}` (`remove-level`).
+- `associate-to-project` and `remove-level` are **asynchronous**: Jira answers with a task, and the CLI prints it (`{ "id", "self", "status", ... }`). Poll it with `atlas jira task get <id>` until `status` is `COMPLETE`. Both get HTTP 409 while a level-removal task is still running. If Jira answers with no task (a 204 or an empty 200), the CLI prints `{"updated": true}` (`associate-to-project`) or `{"deleted": true}` (`remove-level`).
 
 ```sh
 # List all schemes
