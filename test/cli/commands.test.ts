@@ -19925,7 +19925,7 @@ describe('executeJiraCommand', () => {
     it('filters get calls client.filters.get with positional id', async () => {
       jiraFiltersMock.get.mockResolvedValue({ id: '10001' });
       const result = await executeJiraCommand(cmd('filters', 'get', ['10001']), GLOBALS);
-      expect(jiraFiltersMock.get).toHaveBeenCalledWith('10001');
+      expect(jiraFiltersMock.get).toHaveBeenCalledWith('10001', {});
       expect(result).toMatchObject({ id: '10001' });
     });
 
@@ -19948,20 +19948,23 @@ describe('executeJiraCommand', () => {
         }),
         GLOBALS,
       );
-      expect(jiraFiltersMock.create).toHaveBeenCalledWith({
-        name: 'My Filter',
-        description: 'desc',
-        jql: 'project = PROJ',
-        favourite: true,
-        sharePermissions: [{ type: 'global' }],
-        editPermissions: [{ type: 'project', project: { id: '10000' } }],
-      });
+      expect(jiraFiltersMock.create).toHaveBeenCalledWith(
+        {
+          name: 'My Filter',
+          description: 'desc',
+          jql: 'project = PROJ',
+          favourite: true,
+          sharePermissions: [{ type: 'global' }],
+          editPermissions: [{ type: 'project', project: { id: '10000' } }],
+        },
+        {},
+      );
     });
 
     it('filters create with only --name omits optional body fields', async () => {
       jiraFiltersMock.create.mockResolvedValue({ id: '1' });
       await executeJiraCommand(cmd('filters', 'create', [], { name: 'F' }), GLOBALS);
-      expect(jiraFiltersMock.create).toHaveBeenCalledWith({ name: 'F' });
+      expect(jiraFiltersMock.create).toHaveBeenCalledWith({ name: 'F' }, {});
     });
 
     it('filters create throws when --name missing', async () => {
@@ -19985,10 +19988,11 @@ describe('executeJiraCommand', () => {
         cmd('filters', 'update', ['10001'], { name: 'New', jql: 'project = NEW' }),
         GLOBALS,
       );
-      expect(jiraFiltersMock.update).toHaveBeenCalledWith('10001', {
-        name: 'New',
-        jql: 'project = NEW',
-      });
+      expect(jiraFiltersMock.update).toHaveBeenCalledWith(
+        '10001',
+        { name: 'New', jql: 'project = NEW' },
+        {},
+      );
     });
 
     it('filters update with --edit-permissions forwards parsed JSON', async () => {
@@ -20000,10 +20004,11 @@ describe('executeJiraCommand', () => {
         }),
         GLOBALS,
       );
-      expect(jiraFiltersMock.update).toHaveBeenCalledWith('10001', {
-        favourite: false,
-        editPermissions: [],
-      });
+      expect(jiraFiltersMock.update).toHaveBeenCalledWith(
+        '10001',
+        { favourite: false, editPermissions: [] },
+        {},
+      );
     });
 
     it('filters update forwards --description and --share-permissions', async () => {
@@ -20015,10 +20020,11 @@ describe('executeJiraCommand', () => {
         }),
         GLOBALS,
       );
-      expect(jiraFiltersMock.update).toHaveBeenCalledWith('10001', {
-        description: 'updated',
-        sharePermissions: [{ type: 'global' }],
-      });
+      expect(jiraFiltersMock.update).toHaveBeenCalledWith(
+        '10001',
+        { description: 'updated', sharePermissions: [{ type: 'global' }] },
+        {},
+      );
     });
 
     it('filters update requires at least one body flag', async () => {
@@ -26480,14 +26486,15 @@ describe('executeJiraCommand', () => {
       expect(result).toEqual(field);
     });
 
-    it('field-delete calls client.fields.delete and returns deleted flag', async () => {
-      jiraFieldsMock.delete.mockResolvedValue(undefined);
+    it('field-delete calls client.fields.delete and returns the deletion task', async () => {
+      const task = { id: '10020', status: 'ENQUEUED' };
+      jiraFieldsMock.delete.mockResolvedValue(task);
       const result = await executeJiraCommand(
         cmd('fields', 'field-delete', ['customfield_10001']),
         GLOBALS,
       );
-      expect(jiraFieldsMock.delete).toHaveBeenCalledWith('customfield_10001');
-      expect(result).toEqual({ deleted: true });
+      expect(jiraFieldsMock.delete).toHaveBeenCalledWith('customfield_10001', { returnTask: true });
+      expect(result).toBe(task);
     });
 
     it('context-list calls client.fields.listContexts with field-id', async () => {
@@ -27519,8 +27526,8 @@ describe('executeJiraCommand', () => {
           'option-id': '1',
           'replace-with': '3',
           jql: 'project=PROJ',
-          'override-screen-security': 'true',
-          'override-editable-flag': 'false',
+          'override-screen-security': true,
+          'override-editable-flag': false,
         }),
         GLOBALS,
       );
@@ -27905,10 +27912,10 @@ describe('executeJiraCommand', () => {
     });
 
     // B589: GET /jql/autocompletedata/suggestions
-    it('autocomplete-suggestions requires --field-name', async () => {
-      await expect(
-        executeJiraCommand(cmd('jql', 'autocomplete-suggestions'), GLOBALS),
-      ).rejects.toThrow('--field-name');
+    it('autocomplete-suggestions sends no params when none are given (all optional)', async () => {
+      jiraJqlMock.getFieldReferenceSuggestions.mockResolvedValue({ results: [] });
+      await executeJiraCommand(cmd('jql', 'autocomplete-suggestions'), GLOBALS);
+      expect(jiraJqlMock.getFieldReferenceSuggestions).toHaveBeenCalledWith({});
     });
 
     it('autocomplete-suggestions calls getFieldReferenceSuggestions with fieldName', async () => {
@@ -30188,16 +30195,19 @@ describe('executeJiraCommand', () => {
           name: 'New',
           description: 'desc',
           'share-permissions': '[{"type":"global"}]',
-          'edit-permissions': '[{"type":"loggedin"}]',
+          'edit-permissions': '[{"type":"authenticated"}]',
         }),
         GLOBALS,
       );
-      expect(jiraDashboardsMock.create).toHaveBeenCalledWith({
-        name: 'New',
-        description: 'desc',
-        sharePermissions: [{ type: 'global' }],
-        editPermissions: [{ type: 'loggedin' }],
-      });
+      expect(jiraDashboardsMock.create).toHaveBeenCalledWith(
+        {
+          name: 'New',
+          description: 'desc',
+          sharePermissions: [{ type: 'global' }],
+          editPermissions: [{ type: 'authenticated' }],
+        },
+        {},
+      );
     });
 
     it('create throws when --name is missing', async () => {
@@ -30224,19 +30234,33 @@ describe('executeJiraCommand', () => {
       ).rejects.toThrow();
     });
 
-    it('update calls client.dashboards.update with dashboardId + name + share-permissions', async () => {
+    it('update calls client.dashboards.update with dashboardId + name + both permission lists', async () => {
       jiraDashboardsMock.update.mockResolvedValue({ id: '10001', name: 'Renamed' });
       await executeJiraCommand(
         cmd('dashboards', 'update', ['10001'], {
           name: 'Renamed',
           'share-permissions': '[{"type":"global"}]',
+          'edit-permissions': '[]',
         }),
         GLOBALS,
       );
-      expect(jiraDashboardsMock.update).toHaveBeenCalledWith('10001', {
-        name: 'Renamed',
-        sharePermissions: [{ type: 'global' }],
-      });
+      expect(jiraDashboardsMock.update).toHaveBeenCalledWith(
+        '10001',
+        { name: 'Renamed', sharePermissions: [{ type: 'global' }], editPermissions: [] },
+        {},
+      );
+    });
+
+    it('update throws when --edit-permissions is missing (spec-required)', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('dashboards', 'update', ['10001'], {
+            name: 'Renamed',
+            'share-permissions': '[{"type":"global"}]',
+          }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('Missing required option: --edit-permissions');
     });
 
     it('update forwards --edit-permissions when provided', async () => {
@@ -30245,13 +30269,14 @@ describe('executeJiraCommand', () => {
         cmd('dashboards', 'update', ['10001'], {
           name: 'X',
           'share-permissions': '[{"type":"global"}]',
-          'edit-permissions': '[{"type":"loggedin"}]',
+          'edit-permissions': '[{"type":"authenticated"}]',
         }),
         GLOBALS,
       );
       expect(jiraDashboardsMock.update).toHaveBeenCalledWith(
         '10001',
-        expect.objectContaining({ editPermissions: [{ type: 'loggedin' }] }),
+        expect.objectContaining({ editPermissions: [{ type: 'authenticated' }] }),
+        {},
       );
     });
 
@@ -30286,7 +30311,7 @@ describe('executeJiraCommand', () => {
         cmd('dashboards', 'list-gadgets', ['10001']),
         GLOBALS,
       );
-      expect(jiraDashboardsMock.listGadgets).toHaveBeenCalledWith('10001');
+      expect(jiraDashboardsMock.listGadgets).toHaveBeenCalledWith('10001', {});
       expect(result).toMatchObject({ gadgets: [] });
     });
 
@@ -30550,15 +30575,19 @@ describe('executeJiraCommand', () => {
         cmd('dashboards', 'copy', ['10001'], {
           name: 'Copy of Sprint',
           'share-permissions': '[{"type":"global"}]',
-          'edit-permissions': '[{"type":"loggedin"}]',
+          'edit-permissions': '[{"type":"authenticated"}]',
         }),
         GLOBALS,
       );
-      expect(jiraDashboardsMock.copy).toHaveBeenCalledWith('10001', {
-        name: 'Copy of Sprint',
-        sharePermissions: [{ type: 'global' }],
-        editPermissions: [{ type: 'loggedin' }],
-      });
+      expect(jiraDashboardsMock.copy).toHaveBeenCalledWith(
+        '10001',
+        {
+          name: 'Copy of Sprint',
+          sharePermissions: [{ type: 'global' }],
+          editPermissions: [{ type: 'authenticated' }],
+        },
+        {},
+      );
       expect(result).toMatchObject({ id: '20001' });
     });
 
@@ -30567,7 +30596,7 @@ describe('executeJiraCommand', () => {
         executeJiraCommand(
           cmd('dashboards', 'copy', ['10001'], {
             'share-permissions': '[{"type":"global"}]',
-            'edit-permissions': '[{"type":"loggedin"}]',
+            'edit-permissions': '[{"type":"authenticated"}]',
           }),
           GLOBALS,
         ),
@@ -30581,16 +30610,20 @@ describe('executeJiraCommand', () => {
           name: 'Copy',
           description: 'a copy',
           'share-permissions': '[{"type":"global"}]',
-          'edit-permissions': '[{"type":"loggedin"}]',
+          'edit-permissions': '[{"type":"authenticated"}]',
         }),
         GLOBALS,
       );
-      expect(jiraDashboardsMock.copy).toHaveBeenCalledWith('10001', {
-        name: 'Copy',
-        description: 'a copy',
-        sharePermissions: [{ type: 'global' }],
-        editPermissions: [{ type: 'loggedin' }],
-      });
+      expect(jiraDashboardsMock.copy).toHaveBeenCalledWith(
+        '10001',
+        {
+          name: 'Copy',
+          description: 'a copy',
+          sharePermissions: [{ type: 'global' }],
+          editPermissions: [{ type: 'authenticated' }],
+        },
+        {},
+      );
     });
 
     it('copy throws when dashboardId is missing', async () => {
@@ -30605,14 +30638,16 @@ describe('executeJiraCommand', () => {
       const result = await executeJiraCommand(
         cmd('dashboards', 'bulk-edit', [], {
           'entity-ids': '10001,10002',
-          action: 'delete',
+          action: 'changeOwner',
+          'new-owner': 'acc-1',
+          'autofix-name': false,
         }),
         GLOBALS,
       );
       expect(jiraDashboardsMock.bulkEdit).toHaveBeenCalledWith(
         expect.objectContaining({
           entityIds: [10001, 10002],
-          action: 'delete',
+          action: 'changeOwner',
         }),
       );
       expect(result).toMatchObject({ status: 'ok' });
@@ -30621,7 +30656,7 @@ describe('executeJiraCommand', () => {
     it('bulk-edit rejects a non-integer --entity-ids (B1055/2a guard)', async () => {
       await expect(
         executeJiraCommand(
-          cmd('dashboards', 'bulk-edit', [], { 'entity-ids': 'abc', action: 'delete' }),
+          cmd('dashboards', 'bulk-edit', [], { 'entity-ids': 'abc', action: 'changeOwner' }),
           GLOBALS,
         ),
       ).rejects.toThrow('is not a positive integer');
@@ -30630,7 +30665,7 @@ describe('executeJiraCommand', () => {
     it('bulk-edit rejects a non-positive --entity-ids (B1055/2a guard)', async () => {
       await expect(
         executeJiraCommand(
-          cmd('dashboards', 'bulk-edit', [], { 'entity-ids': '0', action: 'delete' }),
+          cmd('dashboards', 'bulk-edit', [], { 'entity-ids': '0', action: 'changeOwner' }),
           GLOBALS,
         ),
       ).rejects.toThrow('is not a positive integer');
@@ -30639,11 +30674,16 @@ describe('executeJiraCommand', () => {
     it('bulk-edit treats an empty --entity-ids token list as no entity ids', async () => {
       jiraDashboardsMock.bulkEdit.mockResolvedValue({ status: 'ok' });
       await executeJiraCommand(
-        cmd('dashboards', 'bulk-edit', [], { 'entity-ids': ',', action: 'delete' }),
+        cmd('dashboards', 'bulk-edit', [], {
+          'entity-ids': ',',
+          action: 'changeOwner',
+          'new-owner': 'acc-1',
+          'autofix-name': true,
+        }),
         GLOBALS,
       );
       expect(jiraDashboardsMock.bulkEdit).toHaveBeenCalledWith(
-        expect.objectContaining({ entityIds: [], action: 'delete' }),
+        expect.objectContaining({ entityIds: [], action: 'changeOwner' }),
       );
     });
 
@@ -30676,7 +30716,7 @@ describe('executeJiraCommand', () => {
           'entity-ids': '10001',
           action: 'addPermission',
           'share-permissions': '[{"type":"global"}]',
-          'edit-permissions': '[{"type":"loggedin"}]',
+          'edit-permissions': '[{"type":"authenticated"}]',
         }),
         GLOBALS,
       );
@@ -30684,7 +30724,7 @@ describe('executeJiraCommand', () => {
         expect.objectContaining({
           permissionDetails: {
             sharePermissions: [{ type: 'global' }],
-            editPermissions: [{ type: 'loggedin' }],
+            editPermissions: [{ type: 'authenticated' }],
           },
         }),
       );
@@ -30692,7 +30732,7 @@ describe('executeJiraCommand', () => {
 
     it('bulk-edit throws when --entity-ids is missing', async () => {
       await expect(
-        executeJiraCommand(cmd('dashboards', 'bulk-edit', [], { action: 'delete' }), GLOBALS),
+        executeJiraCommand(cmd('dashboards', 'bulk-edit', [], { action: 'changeOwner' }), GLOBALS),
       ).rejects.toThrow('--entity-ids');
     });
 

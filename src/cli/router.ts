@@ -334,6 +334,9 @@ const GLOBAL_OPTIONS = {
   favourite: { type: 'boolean' as const },
   'edit-permissions': { type: 'string' as const },
   'share-permissions': { type: 'string' as const },
+  'filter-name': { type: 'string' as const },
+  'is-substring-match': { type: 'boolean' as const },
+  'override-share-permissions': { type: 'boolean' as const },
   // issue-type-screen-schemes options (B576-B586)
   mappings: { type: 'string' as const },
   'scheme-id': { type: 'string' as const },
@@ -562,6 +565,7 @@ const GLOBAL_OPTIONS = {
   'new-owner': { type: 'string' as const },
   'autofix-name': { type: 'boolean' as const },
   'extend-admin-permissions': { type: 'boolean' as const },
+  'gadget-id': { type: 'string' as const },
   'module-keys': { type: 'string' as const },
   'dashboard-name': { type: 'string' as const },
   owner: { type: 'string' as const },
