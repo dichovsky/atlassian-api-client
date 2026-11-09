@@ -343,7 +343,7 @@ Manage Agile epics. Supports get, partial update (POST patch semantics), issue a
 
 - `epicIdOrKey` accepts either a numeric ID (`42`) or an epic key (`PROJ-42`).
 - `update` uses **POST** (Atlassian patch semantics) — only the supplied fields are changed. Safe for single-field edits.
-- `--color` accepts the color key string, e.g. `color_1`, `color_2`. Check your Atlassian instance for valid values.
+- `--color` is one of the spec's color keys `color_1` … `color_14`; any other value is rejected before the request.
 - `--done true|false` sets the epic's `done` field (`--done true` marks it done, `--done false` not-done); omit to leave it unchanged. Tri-state — the value is required.
 - `--issues` is **comma-separated** issue keys or IDs, e.g. `--issues PROJ-1,PROJ-2`.
 - `rank` requires exactly one of `--before` or `--after` (mutually exclusive).

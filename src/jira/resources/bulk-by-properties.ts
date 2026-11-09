@@ -183,7 +183,9 @@ function buildQuery(
       'bulkByProperties requires at least one property to match — refusing to send an unfiltered bulk delete',
     );
   }
-  const query: Record<string, string> = {};
+  // Null prototype: a `__proto__` key stays a filter instead of hitting the
+  // setter and leaving an unfiltered bulk delete.
+  const query: Record<string, string> = Object.create(null);
   for (const [k, v] of entries) {
     query[k] = String(v);
   }

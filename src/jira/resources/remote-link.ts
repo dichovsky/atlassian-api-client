@@ -90,8 +90,9 @@ export class RemoteLinkResource {
    * DELETE /rest/remotelinks/1.0/remotelink/{remoteLinkId}
    *
    * @param remoteLinkId - The ID of the Remote Link to delete.
-   * @param updateSequenceNumber - Deprecated. Only data with an `updateSequenceNumber` ≤ this
-   *   value will be deleted.
+   * @param updateSequenceNumber - Deprecated: the spec says this guard is "no longer
+   *   supported", so Jira ignores it (formerly: only data with an `updateSequenceNumber` ≤ this
+   *   value was deleted). The CLI rejects it.
    */
   async delete(remoteLinkId: string, updateSequenceNumber?: number): Promise<void> {
     const query: Record<string, string | number | undefined> = {};

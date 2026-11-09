@@ -63,10 +63,6 @@ const KNOWN_GAPS: Readonly<
     unset: ['spaceId'],
     reason: 'the API cannot move a page between spaces',
   },
-  'jira.bulkByProperties.deleteDevInfoByProperties': {
-    unset: ['_updateSequenceId'],
-    reason: 'optional sequence guard not exposed',
-  },
   'jira.bulkByProperties.deleteFeatureFlagsByProperties': {
     unset: ['_updateSequenceId'],
     reason: 'deprecated: the server no longer supports it',

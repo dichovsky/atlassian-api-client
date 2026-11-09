@@ -1,5 +1,12 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, expectTypeOf, beforeEach } from 'vitest';
 import { BulkResource } from '../../src/jira/resources/bulk.js';
+// Root import: the option and result types of the public overloads must be importable by consumers.
+import type {
+  BulkDeleteIssuePropertyData,
+  BulkIssuePropertyOptions,
+  JiraClient,
+  Task,
+} from '../../src/index.js';
 import { ValidationError } from '../../src/core/errors.js';
 import { MockTransport } from '../helpers/mock-transport.js';
 import type {
@@ -132,6 +139,94 @@ describe('BulkResource', () => {
   });
 
   // ── setPropertyBulk ───────────────────────────────────────────────────────
+
+  describe('setPropertyBulk() / deletePropertyBulk() task result (F180)', () => {
+    const task = { id: '10010', status: 'ENQUEUED', progress: 0, self: 'https://x/task/10010' };
+
+    it('resolves the followed task with returnTask: true', async () => {
+      transport.respondWith(task).respondWith(task);
+
+      const set = await bulk.setPropertyBulk('p', { value: 1 }, { returnTask: true });
+      const del = await bulk.deletePropertyBulk('p', {}, { returnTask: true });
+
+      expect(set).toEqual(task);
+      expect(del).toEqual(task);
+      // Typed `Task | undefined`: Jira may answer without a body (see below).
+      expectTypeOf(() =>
+        bulk.setPropertyBulk('p', { value: 1 }, { returnTask: true }),
+      ).returns.resolves.toEqualTypeOf<Task | undefined>();
+      expectTypeOf(() =>
+        bulk.deletePropertyBulk('p', {}, { returnTask: true }),
+      ).returns.resolves.toEqualTypeOf<Task | undefined>();
+    });
+
+    it('resolves undefined with returnTask: true when Jira answers without a body', async () => {
+      transport.respondWith(undefined, 204).respondWith(undefined, 204);
+
+      await expect(
+        bulk.setPropertyBulk('p', { value: 1 }, { returnTask: true }),
+      ).resolves.toBeUndefined();
+      await expect(bulk.deletePropertyBulk('p', {}, { returnTask: true })).resolves.toBeUndefined();
+    });
+
+    it('stays void without it', async () => {
+      transport.respondWith(task).respondWith(task);
+
+      await expect(bulk.setPropertyBulk('p', { value: 1 })).resolves.toBeUndefined();
+      await expect(
+        bulk.deletePropertyBulk('p', {}, { returnTask: false }),
+      ).resolves.toBeUndefined();
+      expectTypeOf(() => bulk.setPropertyBulk('p', { value: 1 })).returns.toEqualTypeOf<
+        Promise<void>
+      >();
+      expectTypeOf(() => bulk.deletePropertyBulk('p', {})).returns.toEqualTypeOf<Promise<void>>();
+    });
+
+    it('a non-literal options value is typed Task | undefined, matching runtime', async () => {
+      transport.respondWith(task).respondWith(task);
+      const options: BulkIssuePropertyOptions = { returnTask: Math.random() >= 0 };
+
+      expect(await bulk.setPropertyBulk('p', { value: 1 }, options)).toEqual(task);
+      expect(await bulk.deletePropertyBulk('p', {}, options)).toEqual(task);
+      expectTypeOf(() => bulk.setPropertyBulk('p', { value: 1 }, options)).returns.toEqualTypeOf<
+        Promise<Task | undefined>
+      >();
+      expectTypeOf(() => bulk.deletePropertyBulk('p', {}, options)).returns.toEqualTypeOf<
+        Promise<Task | undefined>
+      >();
+    });
+
+    it('consumer fakes: a Promise<void> annotation breaks; unannotated or re-declared overloads compile', async () => {
+      // Pins the migration note, using root imports only.
+      type Bulk = JiraClient['bulk'];
+      const annotated: Pick<Bulk, 'deletePropertyBulk'> = {
+        // @ts-expect-error a Promise<void> annotation does not satisfy the returnTask overload
+        deletePropertyBulk: async (): Promise<void> => undefined,
+      };
+      const unannotated: Pick<Bulk, 'deletePropertyBulk'> = {
+        deletePropertyBulk: async () => undefined,
+      };
+      class Redeclared implements Pick<Bulk, 'deletePropertyBulk'> {
+        deletePropertyBulk(
+          propertyKey: string,
+          data: BulkDeleteIssuePropertyData,
+          options?: BulkIssuePropertyOptions & { readonly returnTask?: false },
+        ): Promise<void>;
+        deletePropertyBulk(
+          propertyKey: string,
+          data: BulkDeleteIssuePropertyData,
+          options?: BulkIssuePropertyOptions,
+        ): Promise<Task | undefined>;
+        async deletePropertyBulk(): Promise<Task | void> {
+          return undefined;
+        }
+      }
+
+      for (const fake of [annotated, unannotated, new Redeclared()]) {
+        await expect(fake.deletePropertyBulk('p', {})).resolves.toBeUndefined();
+      }
+    });
+  });
 
   describe('setPropertyBulk()', () => {
     it('calls PUT /issue/properties/{propertyKey} with the data', async () => {

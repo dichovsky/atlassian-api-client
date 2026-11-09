@@ -70,9 +70,10 @@ export class ApplicationPropertiesResource {
   /**
    * GET /rest/api/3/application-properties — list application properties,
    * optionally filtered by `key`, `permissionLevel`, or a `keyFilter` regex.
-   * When `key` is supplied the server returns a single matching property (as
-   * an object, not in an array per the spec description); when omitted all
-   * editable properties are returned as an array.
+   * Always resolves an array: the spec's 200 schema is an array, but its
+   * description says a `key` lookup returns the single property as an object,
+   * so a bare object response is wrapped in a one-element array, and an
+   * empty body resolves `[]`.
    */
   async list(
     params: ListApplicationPropertiesParams = {},
@@ -82,12 +83,16 @@ export class ApplicationPropertiesResource {
       ...(params.permissionLevel !== undefined && { permissionLevel: params.permissionLevel }),
       ...(params.keyFilter !== undefined && { keyFilter: params.keyFilter }),
     };
-    const response = await this.transport.request<readonly ApplicationProperty[]>({
+    const response = await this.transport.request<
+      readonly ApplicationProperty[] | ApplicationProperty
+    >({
       method: 'GET',
       path: `${this.baseUrl}/application-properties`,
       query,
     });
-    return response.data;
+    const data = response.data as readonly ApplicationProperty[] | ApplicationProperty | null;
+    if (data === undefined || data === null) return [];
+    return Array.isArray(data) ? data : [data as ApplicationProperty];
   }
 
   /**

@@ -17,13 +17,17 @@ Jira project components — flat `/rest/api/3/component` surface (B361–B366).
 
 - `--project-ids-or-keys` is comma-separated (e.g. `--project-ids-or-keys HSP,PROJ`).
 - `--assignee-type` must be one of: `PROJECT_DEFAULT`, `COMPONENT_LEAD`, `PROJECT_LEAD`, `UNASSIGNED`.
-- `--lead-user-name` is deprecated by Atlassian — prefer `--lead-account-id`.
-- `create` requires either `--project` (project key) or `--project-id` (numeric id) for the component owner.
+- `--lead-user-name` was removed by Atlassian ("no longer available"); Jira ignores it. Use `--lead-account-id`.
+- `create` requires `--project` with the owning project's **key** (Jira cannot change it later; there is no numeric-ID alternative).
+- `--order-by` (`list`) is one of `name`, `+name`, `-name`, `description`, `+description`, `-description`. Write the descending forms with `=`: `--order-by=-name`.
 - `delete --move-issues-to <id>` reassigns issues currently using the deleted component to another component instead of leaving them component-less.
 
 ```sh
 # List all components across two projects, paginated
 atlas jira component list --project-ids-or-keys HSP,PROJ --max-results 25
+
+# Components named like "auth", sorted by name descending
+atlas jira component list --project-ids-or-keys HSP --query auth --order-by=-name
 
 # Create a component owned by project HSP
 atlas jira component create --name "Auth" --project HSP --lead-account-id 5b10a2844c20165700ede21g --assignee-type PROJECT_LEAD
