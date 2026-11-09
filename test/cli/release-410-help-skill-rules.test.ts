@@ -429,7 +429,7 @@ describe('write failures the skill tells agents to read back first (X-HS8)', () 
     expect(run.stderr).toMatch(/^Error: .*Issue does not exist/);
     expect(run.stderr).not.toContain('may already have applied it');
     expect(AUTH_SAFETY).toContain(
-      'so a write that fails with a `404`, a `429` or a `5xx` may have been applied too',
+      'so a write that fails with any API error may have been applied if the server redirected it',
     );
   });
 

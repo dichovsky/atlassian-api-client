@@ -159,7 +159,7 @@ describe('install-skill --dry-run reports what the real install would do (F350)'
     },
   );
 
-  it('a permission failure is the one outcome it cannot predict: install exits 3, dry run 0', () => {
+  it('a permission failure is a write-time outcome it cannot predict: install exits 3, dry run 0', () => {
     const denied = (): never => {
       throw Object.assign(new Error('denied'), { code: 'EACCES' });
     };
@@ -180,6 +180,27 @@ describe('install-skill --dry-run reports what the real install would do (F350)'
       }),
     );
     expect(runInstall(SKILL, VERSION, { ...opts, dryRun: true }, readOnly).action).toBe('dry-run');
+  });
+
+  it('another write-time filesystem error is not predicted either: install exits 1, dry run 0', () => {
+    writeFileSync(join(root, 'afile'), 'not a directory');
+    const target = join(root, 'afile', 'skills');
+    const run = (dryRun: boolean) => {
+      const err: string[] = [];
+      const options = { path: target, ...(dryRun ? { 'dry-run': true } : {}) };
+      const code = executeInstallSkill(
+        { api: 'install-skill', resource: '', action: '', positionalArgs: [], options },
+        () => undefined,
+        (l) => err.push(l),
+      );
+      return { code, err: err.join('\n') };
+    };
+    const real = run(false);
+    expect(real.code).toBe(1);
+    expect(real.err).toContain('ENOTDIR');
+    const dry = run(true);
+    expect(dry.code).toBe(0);
+    expect(dry.err).toMatch(/^Would install \d+ files to /);
   });
 
   it('install-skill --help says --force does not lift the containment check', () => {
