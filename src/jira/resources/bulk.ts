@@ -469,7 +469,8 @@ export class BulkResource {
    * transport follows; with `returnTask: true` this resolves that task's
    * progress (poll it with `TaskResource.get`), otherwise `undefined`. If Jira
    * answers without a body (the spec declares only the 303) the call resolves
-   * `undefined` even with `returnTask: true`.
+   * `undefined` even with `returnTask: true`. An empty `filter.entityIds` is
+   * refused with a `ValidationError` before the request.
    */
   setPropertyBulk(
     propertyKey: string,
@@ -481,6 +482,11 @@ export class BulkResource {
     data: BulkSetIssuePropertyData,
     options?: BulkIssuePropertyOptions,
   ): Promise<Task | void> {
+    if (data.filter?.entityIds?.length === 0) {
+      throw new ValidationError(
+        'setPropertyBulk: filter.entityIds must not be empty; omit it to target every issue the caller can edit',
+      );
+    }
     const response = await this.transport.request<Task>({
       method: 'PUT',
       path: `${this.baseUrl}/issue/properties/${encodePathSegment(propertyKey)}`,
@@ -498,7 +504,8 @@ export class BulkResource {
   /**
    * Delete a property from a bulk set of issues. Async like
    * {@link setPropertyBulk}: `returnTask: true` resolves the task progress
-   * (`undefined` if Jira answers without a body).
+   * (`undefined` if Jira answers without a body). An empty `entityIds` is
+   * refused with a `ValidationError` before the request.
    * Spec: requestBody.required = true — body is required (not optional).
    */
   deletePropertyBulk(
@@ -515,6 +522,12 @@ export class BulkResource {
     if (filter !== undefined && Object.values(criteria).some((v) => v !== undefined)) {
       throw new ValidationError(
         'deletePropertyBulk: pass entityIds/currentValue either at the top level or in the deprecated filter, not both',
+      );
+    }
+    // Jira does not say whether an empty list means no issue or every issue; the delete is bulk.
+    if ((filter ?? criteria).entityIds?.length === 0) {
+      throw new ValidationError(
+        'deletePropertyBulk: entityIds must not be empty; omit it to target every issue the caller can edit',
       );
     }
     const response = await this.transport.request<Task>({

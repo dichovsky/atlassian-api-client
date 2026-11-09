@@ -4355,6 +4355,53 @@ function bulkCursor(
   return cursor;
 }
 
+/**
+ * `bulk set-property|delete-property --filter`: a JSON object holding only the
+ * spec filter keys (IssueFilterForBulkPropertySet / ...Delete, both
+ * `additionalProperties: false`). Jira changes every editable issue the filter
+ * does not exclude, so a filter that cannot narrow the change — an unknown
+ * (misspelt) key, `{}` or a lone null `currentValue`, an `entityIds` that is
+ * not a non-empty array, or a non-boolean `hasProperty` — is refused before
+ * the request. `undefined` when `--filter` is absent.
+ */
+function bulkPropertyFilter(
+  raw: string | boolean | undefined,
+  action: 'set-property' | 'delete-property',
+): Record<string, unknown> | undefined {
+  if (raw === undefined) return undefined;
+  const filter = parseJsonObjectFlag(String(raw), '--filter');
+  const prefix = `bulk ${action} --filter`;
+  const keys = Object.keys(filter);
+  const allowed =
+    action === 'set-property'
+      ? ['entityIds', 'currentValue', 'hasProperty']
+      : ['entityIds', 'currentValue'];
+  const unknown = keys.filter((k) => !allowed.includes(k));
+  if (unknown.length > 0) {
+    throw new Error(
+      action === 'set-property'
+        ? `${prefix} accepts only entityIds, currentValue and hasProperty (got ${unknown.join(', ')})`
+        : `${prefix} accepts only entityIds and currentValue (got ${unknown.join(', ')}${unknown.includes('hasProperty') ? '; hasProperty is set-property only' : ''})`,
+    );
+  }
+  const ids = filter['entityIds'];
+  if (ids !== undefined && (!Array.isArray(ids) || ids.length === 0)) {
+    throw new Error(`${prefix} entityIds must be a non-empty array of issue IDs`);
+  }
+  const hasProperty = filter['hasProperty'];
+  if (hasProperty !== undefined && typeof hasProperty !== 'boolean') {
+    throw new Error(`${prefix} hasProperty must be true or false`);
+  }
+  // `{}`, or a lone `currentValue: null` (the only null left by the checks
+  // above), which Jira may read as no filter at all.
+  if (keys.every((k) => filter[k] === null)) {
+    throw new Error(
+      `${prefix} names no criterion; omit --filter to change every issue you can edit`,
+    );
+  }
+  return filter;
+}
+
 async function executeBulk(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
   const opts = cmd.options;
 
@@ -4455,14 +4502,8 @@ async function executeBulk(client: JiraClient, cmd: ParsedCommand): Promise<unkn
         throw new Error('bulk set-property requires exactly one of --value or --expression');
       }
       const value = valueRaw !== undefined ? parseJsonValueFlag(valueRaw, '--value') : undefined;
-      const filterRaw = opts['filter'];
-      const filter =
-        filterRaw !== undefined
-          ? (parseJsonObjectFlag(
-              String(filterRaw),
-              '--filter',
-            ) as BulkSetIssuePropertyData['filter'])
-          : undefined;
+      const filter = bulkPropertyFilter(opts['filter'], 'set-property') as
+        BulkSetIssuePropertyData['filter'] | undefined;
       return client.bulk.setPropertyBulk(
         propertyKey,
         {
@@ -4476,16 +4517,8 @@ async function executeBulk(client: JiraClient, cmd: ParsedCommand): Promise<unkn
     case 'delete-property': {
       // B525 DELETE /rest/api/3/issue/properties/{propertyKey}
       const propertyKey = requireArg(cmd.positionalArgs[0], 'propertyKey');
-      const filterRaw = opts['filter'];
-      // Spec IssueFilterForBulkPropertyDelete: the body IS the filter (entityIds / currentValue only).
-      const filter =
-        filterRaw !== undefined ? parseJsonObjectFlag(String(filterRaw), '--filter') : {};
-      const unknown = Object.keys(filter).filter((k) => k !== 'entityIds' && k !== 'currentValue');
-      if (unknown.length > 0) {
-        throw new Error(
-          `bulk delete-property --filter accepts only entityIds and currentValue (got ${unknown.join(', ')}${unknown.includes('hasProperty') ? '; hasProperty is set-property only' : ''})`,
-        );
-      }
+      // Spec IssueFilterForBulkPropertyDelete: the body IS the filter; none means every issue.
+      const filter = bulkPropertyFilter(opts['filter'], 'delete-property') ?? {};
       return client.bulk.deletePropertyBulk(propertyKey, filter as BulkDeleteIssuePropertyData, {
         returnTask: true,
       });
