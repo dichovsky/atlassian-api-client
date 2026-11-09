@@ -1,11 +1,14 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, expectTypeOf, beforeEach } from 'vitest';
 import {
   ProjectsResource,
+  type GetProjectsFieldsParams,
   type ListAllProjectVersionsParams,
+  type ProjectFieldBean,
   type ListLegacyProjectsParams,
 } from '../../src/jira/resources/projects.js';
 import { MockTransport } from '../helpers/mock-transport.js';
 import { ValidationError } from '../../src/core/errors.js';
+import type { OffsetPaginatedResponse } from '../../src/core/pagination.js';
 
 const BASE_URL = 'https://test.atlassian.net/rest/api/3';
 
@@ -184,6 +187,19 @@ describe('ProjectsResource', () => {
       // Assert
       expect(transport.lastCall?.options.query).toMatchObject({
         expand: 'description,issueTypes',
+      });
+    });
+
+    it('accepts a params object: expand as CSV, properties as repeated params', async () => {
+      // Spec GET /project/{key}: `expand` is type:string (CSV), `properties` is type:array.
+      transport.respondWith(makeProject('10001', 'PROJ'));
+
+      await projects.get('PROJ', { expand: ['lead'], properties: ['p.one', 'p two'] });
+
+      expect(transport.lastCall?.options).toEqual({
+        method: 'GET',
+        path: `${BASE_URL}/project/PROJ?properties=p.one&properties=p%20two`,
+        query: { expand: 'lead' },
       });
     });
   });
@@ -455,6 +471,24 @@ describe('ProjectsResource', () => {
       });
     });
 
+    it('creates from a template alone, without projectTypeKey (spec requires only key/name)', async () => {
+      transport.respondWith({ id: 10004, key: 'KAN', self: `${BASE_URL}/project/10004` }, 201);
+
+      await projects.create({
+        key: 'KAN',
+        name: 'Kanban',
+        leadAccountId: 'lead-1',
+        projectTemplateKey: 'com.pyxis.greenhopper.jira:gh-simplified-kanban-classic',
+      });
+
+      expect(transport.lastCall?.options.body).toStrictEqual({
+        key: 'KAN',
+        name: 'Kanban',
+        leadAccountId: 'lead-1',
+        projectTemplateKey: 'com.pyxis.greenhopper.jira:gh-simplified-kanban-classic',
+      });
+    });
+
     it('includes all optional fields in body when provided', async () => {
       // Arrange
       transport.respondWith({ id: 10003, key: 'TEST', self: `${BASE_URL}/project/10003` }, 201);
@@ -573,6 +607,14 @@ describe('ProjectsResource', () => {
         path: `${BASE_URL}/project/PROJ`,
       });
       expect(transport.lastCall?.options.body).toMatchObject({ name: 'Updated Name' });
+      expect(transport.lastCall?.options.query).toEqual({});
+    });
+
+    it('sends expand as a CSV query param when provided', async () => {
+      transport.respondWith(makeProject('10001', 'PROJ'));
+      await projects.update('PROJ', { key: 'NEW' }, { expand: ['lead', 'issueTypes'] });
+      expect(transport.lastCall?.options.query).toEqual({ expand: 'lead,issueTypes' });
+      expect(transport.lastCall?.options.body).toEqual({ key: 'NEW' });
     });
 
     it('only includes provided optional fields in body', async () => {
@@ -658,18 +700,20 @@ describe('ProjectsResource', () => {
       });
     });
 
-    it('passes maxResults and expand params', async () => {
-      // Arrange
+    it('sends only the spec params: expand as CSV, properties repeated, no maxResults', async () => {
+      // Spec GET /project/recent defines only `expand` and `properties[]`.
       transport.respondWith([]);
 
-      // Act
-      await projects.recent({ maxResults: 5, expand: ['description'] });
-
-      // Assert
-      expect(transport.lastCall?.options.query).toMatchObject({
+      await projects.recent({
         maxResults: 5,
-        expand: 'description',
+        expand: ['description', 'lead'],
+        properties: ['a', 'b c'],
       });
+
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/project/recent?properties=a&properties=b%20c`,
+      );
+      expect(transport.lastCall?.options.query).toEqual({ expand: 'description,lead' });
     });
   });
 
@@ -903,27 +947,61 @@ describe('ProjectsResource', () => {
   // ── loadAvatar ────────────────────────────────────────────────────────────
 
   describe('loadAvatar()', () => {
-    it('sends POST /project/:key/avatar2 with body', async () => {
+    it('sends the image Blob as the raw body with X-Atlassian-Token: no-check', async () => {
+      // Spec: POST /project/{key}/avatar2 takes the raw image (`*/*`) and needs the XSRF header.
       const payload = { id: 'av-new' };
       transport.respondWith(payload);
-      const result = await projects.loadAvatar('PROJ', { data: 'base64...' });
-      expect(transport.lastCall?.options).toMatchObject({
+      const image = new Blob(['png-bytes'], { type: 'image/png' });
+      const result = await projects.loadAvatar('PROJ', image);
+      expect(transport.lastCall?.options).toEqual({
         method: 'POST',
         path: `${BASE_URL}/project/PROJ/avatar2`,
+        query: {},
+        binaryBody: image,
+        headers: { 'X-Atlassian-Token': 'no-check' },
       });
       expect(result).toMatchObject({ id: 'av-new' });
+    });
+
+    it('rejects a non-Blob body before sending a request', async () => {
+      await expect(projects.loadAvatar('PROJ', { data: 'base64...' })).rejects.toThrow(
+        ValidationError,
+      );
+      // Duck-typed but not tagged Blob/File: fetch would not send it as raw bytes.
+      const arrayBuffer = () => Promise.resolve(new ArrayBuffer(0));
+      for (const body of [null, 'png-bytes', { arrayBuffer }, { type: 'image/png', arrayBuffer }]) {
+        await expect(projects.loadAvatar('PROJ', body)).rejects.toThrow(ValidationError);
+      }
+      expect(transport.calls).toHaveLength(0);
+    });
+
+    it('copies a Blob from another realm or polyfill into a native Blob', async () => {
+      // Native fetch sends a non-native Blob as the text "[object File]", so its
+      // bytes and type must be copied into a native Blob before sending.
+      transport.respondWith({ id: 'av-foreign' });
+      const foreign = {
+        type: 'image/png',
+        size: 3,
+        arrayBuffer: () => Promise.resolve(new Uint8Array([1, 2, 3]).buffer),
+        [Symbol.toStringTag]: 'File',
+      };
+      await projects.loadAvatar('PROJ', foreign);
+      const sent = transport.lastCall?.options.binaryBody;
+      expect(sent).toBeInstanceOf(Blob);
+      expect(sent?.type).toBe('image/png');
+      expect(new Uint8Array(await sent!.arrayBuffer())).toEqual(new Uint8Array([1, 2, 3]));
     });
 
     it('sends x, y, size crop region query params when provided', async () => {
       // Spec: POST /project/{key}/avatar2 accepts x, y, size query params for crop region.
       transport.respondWith({ id: 'av-crop' });
-      await projects.loadAvatar('PROJ', {}, { x: 10, y: 20, size: 64 });
+      await projects.loadAvatar('PROJ', new Blob(['x']), { x: 10, y: 20, size: 64 });
       expect(transport.lastCall?.options.query).toMatchObject({ x: 10, y: 20, size: 64 });
     });
 
     it('omits crop params when not provided', async () => {
       transport.respondWith({ id: 'av-no-crop' });
-      await projects.loadAvatar('PROJ', {});
+      await projects.loadAvatar('PROJ', new Blob(['x']));
       expect(transport.lastCall?.options.query).not.toHaveProperty('x');
       expect(transport.lastCall?.options.query).not.toHaveProperty('y');
       expect(transport.lastCall?.options.query).not.toHaveProperty('size');
@@ -1075,6 +1153,37 @@ describe('ProjectsResource', () => {
       await projects.getRole('PROJ', 10001);
       expect(transport.lastCall?.options.query?.['excludeInactiveUsers']).toBeUndefined();
     });
+  });
+
+  // ── role ID validation (all four /project/{key}/role/{id} methods) ───────
+
+  describe('role ID validation', () => {
+    const traversal = '1/../../../../myself?x=' as unknown as number;
+    const calls: readonly [string, (roleId: number) => Promise<unknown>][] = [
+      ['getRole', (roleId) => projects.getRole('PROJ', roleId)],
+      ['deleteRoleActors', (roleId) => projects.deleteRoleActors('PROJ', roleId, { user: 'a' })],
+      ['addRoleActors', (roleId) => projects.addRoleActors('PROJ', roleId, { user: ['a'] })],
+      ['setRoleActors', (roleId) => projects.setRoleActors('PROJ', roleId, {})],
+    ];
+
+    it.each(calls)(
+      '%s rejects a traversal, non-integer, or non-positive roleId',
+      async (_, call) => {
+        for (const roleId of [traversal, 1.5, 0, -1, Number.NaN]) {
+          await expect(call(roleId)).rejects.toThrow(ValidationError);
+        }
+        expect(transport.calls).toHaveLength(0);
+      },
+    );
+
+    it.each(calls)(
+      '%s still accepts a decimal roleId string from untyped callers (4.0.0 compat)',
+      async (_, call) => {
+        transport.respondWith({});
+        await call('10360' as unknown as number);
+        expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/project/PROJ/role/10360`);
+      },
+    );
   });
 
   // ── addRoleActors ─────────────────────────────────────────────────────────
@@ -1303,11 +1412,18 @@ describe('ProjectsResource', () => {
       const payload = [{ id: 'comp-1', name: 'Backend' }];
       transport.respondWith(payload);
       const result = await projects.listAllComponents('PROJ');
-      expect(transport.lastCall?.options).toMatchObject({
+      expect(transport.lastCall?.options).toEqual({
         method: 'GET',
         path: `${BASE_URL}/project/PROJ/components`,
+        query: {},
       });
       expect(result).toEqual(payload);
+    });
+
+    it('sends componentSource when provided', async () => {
+      transport.respondWith([]);
+      await projects.listAllComponents('PROJ', { componentSource: 'compass' });
+      expect(transport.lastCall?.options.query).toEqual({ componentSource: 'compass' });
     });
   });
 
@@ -1561,11 +1677,18 @@ describe('ProjectsResource', () => {
       transport.respondWith({ id: 10001 });
       const result = await projects.setPermissionScheme('PROJ', { id: 10001 });
       expect(result).toMatchObject({ id: 10001 });
-      expect(transport.lastCall?.options).toMatchObject({
+      expect(transport.lastCall?.options).toEqual({
         method: 'PUT',
         path: `${BASE_URL}/project/PROJ/permissionscheme`,
         body: { id: 10001 },
+        query: {},
       });
+    });
+
+    it('sends expand when provided', async () => {
+      transport.respondWith({ id: 10001 });
+      await projects.setPermissionScheme('PROJ', { id: 10001 }, { expand: 'permissions,user' });
+      expect(transport.lastCall?.options.query).toEqual({ expand: 'permissions,user' });
     });
   });
 
@@ -1684,14 +1807,60 @@ describe('ProjectsResource', () => {
   // ── getProjectsFields ─────────────────────────────────────────────────────
 
   describe('getProjectsFields()', () => {
-    it('sends GET /projects/fields', async () => {
-      transport.respondWith([{ id: 'f1' }, { id: 'f2' }]);
-      const result = await projects.getProjectsFields();
-      expect(result).toHaveLength(2);
-      expect(transport.lastCall?.options).toMatchObject({
-        method: 'GET',
-        path: `${BASE_URL}/projects/fields`,
+    it('sends the required ids as repeated params and returns the page', async () => {
+      // Spec GET /projects/fields: projectId[] and workTypeId[] required, fieldId[] optional.
+      const page = {
+        values: [{ projectId: 1, workTypeId: 10, fieldId: 'summary', isRequired: true }],
+        startAt: 0,
+        maxResults: 50,
+        isLast: true,
+      };
+      transport.respondWith(page);
+      const result = await projects.getProjectsFields({
+        projectId: [1, '2'],
+        workTypeId: [10],
+        fieldId: ['summary', 'customfield_1'],
+        startAt: 0,
+        maxResults: 50,
       });
+      expect(result).toEqual(page);
+      expect(transport.lastCall?.options).toEqual({
+        method: 'GET',
+        path: `${BASE_URL}/projects/fields?projectId=1&projectId=2&workTypeId=10&fieldId=summary&fieldId=customfield_1`,
+        query: { startAt: 0, maxResults: 50 },
+      });
+    });
+
+    it('types the params call as a page and keeps ReturnType/Parameters on that form', () => {
+      // The deprecated zero-arg overload is declared first, so type utilities
+      // (which read the last overload) infer the supported page form.
+      const call = () => projects.getProjectsFields({ projectId: [1], workTypeId: [2] });
+      expectTypeOf(call).returns.toEqualTypeOf<
+        Promise<OffsetPaginatedResponse<ProjectFieldBean>>
+      >();
+      expectTypeOf<ReturnType<ProjectsResource['getProjectsFields']>>().toEqualTypeOf<
+        Promise<OffsetPaginatedResponse<ProjectFieldBean>>
+      >();
+      expectTypeOf<Parameters<ProjectsResource['getProjectsFields']>>().toEqualTypeOf<
+        [params: GetProjectsFieldsParams]
+      >();
+    });
+
+    it('rejects a call without projectId or workTypeId before sending a request', async () => {
+      await expect(projects.getProjectsFields()).rejects.toThrow(ValidationError);
+      await expect(projects.getProjectsFields({ projectId: [], workTypeId: [1] })).rejects.toThrow(
+        ValidationError,
+      );
+      await expect(projects.getProjectsFields({ projectId: [1], workTypeId: [] })).rejects.toThrow(
+        ValidationError,
+      );
+      // Untyped (JS) callers that omit the arrays entirely.
+      for (const params of [{}, { projectId: [1] }]) {
+        await expect(
+          projects.getProjectsFields(params as unknown as GetProjectsFieldsParams),
+        ).rejects.toThrow(ValidationError);
+      }
+      expect(transport.calls).toHaveLength(0);
     });
   });
 
