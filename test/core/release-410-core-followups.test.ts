@@ -191,6 +191,11 @@ describe('a write answered with a body-dropping redirect the client will not fol
     // 4.0.0's native follow rejected these with a TypeError and resent the write.
     ['an ftp: Location', 'ftp://test.atlassian.net/x'],
     ['a data: Location', 'data:text/plain,hi'],
+    ['a port fetch blocks', 'https://test.atlassian.net:6000/x'],
+    // An allowed host, but fetch refuses to build a request for a URL with
+    // userinfo, so following it would fail outside the error taxonomy.
+    ['a Location with a username and password', 'https://u:p@test.atlassian.net/x'],
+    ['a Location with only a username', 'https://u@test.atlassian.net/x'],
   ])('treats a 303 to %s as accepted too', async (_label, location) => {
     const fetchMock = vi.fn(() =>
       Promise.resolve(new Response(null, { status: 303, headers: { location } })),
@@ -203,6 +208,28 @@ describe('a write answered with a body-dropping redirect the client will not fol
     expect(error).toBeInstanceOf(HttpError);
     expect((error as HttpError).status).toBe(303);
     expect((error as HttpError).message).toMatch(/answered the PUT request/);
+    expect((error as HttpError).message).not.toMatch(/u:p|u@/);
+    expect(((error as HttpError).cause as Error).message).not.toMatch(/u:p|u@/);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('refuses a 307 to a Location with a username or password with a ValidationError that does not echo it', async () => {
+    const fetchMock = vi.fn(() =>
+      Promise.resolve(
+        new Response(null, {
+          status: 307,
+          headers: { location: 'https://u:p@test.atlassian.net/x' },
+        }),
+      ),
+    );
+
+    const error = await transport(fetchMock as typeof fetch)
+      .request({ method: 'POST', path: '/rest/api/3/x', body: { a: 1 } })
+      .catch((e: unknown) => e);
+
+    expect(error).toBeInstanceOf(ValidationError);
+    expect((error as ValidationError).message).toMatch(/username or password/);
+    expect((error as ValidationError).message).not.toMatch(/u:p/);
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 

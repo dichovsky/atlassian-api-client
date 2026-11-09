@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "4.1.0"
   },
-  "sourceHash": "ee1a45f2a82fb3e3fe48820b397c276262f78a60240f5160e7b76b007455ef66",
+  "sourceHash": "bc9233727c3679d5901b12c6c075aa38fbb16c878740ba505d3a9fed91c37132",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -17588,82 +17588,82 @@
         {
           "name": "resolveRedirectTarget",
           "kind": "function",
-          "line": 108,
+          "line": 110,
           "exported": true,
           "signature": "export function resolveRedirectTarget( location: string, from: string, allowedHosts: readonly string[], ): string",
-          "jsdoc": "Resolve a redirect `Location` against the URL that received it and hold the target to the policy {@link buildUrl} applies to the original request: HTTPS, a host on `allowedHosts`, the default port."
+          "jsdoc": "Resolve a redirect `Location` against the URL that received it and hold the target to the policy {@link buildUrl} applies to the original request: HTTPS, a host on `allowedHosts`, the default port. It also refuses a target with a username or password: `fetch` cannot request such a URL, and the userinfo is a credential the server chose, so it is neither followed nor echoed."
         },
         {
           "name": "assertHostAllowed",
           "kind": "function",
-          "line": 129,
+          "line": 136,
           "signature": "function assertHostAllowed(hostname: string, allowedHosts: readonly string[]): void"
         },
         {
           "name": "assertDefaultPort",
           "kind": "function",
-          "line": 146,
+          "line": 153,
           "signature": "function assertDefaultPort(url: URL): void",
           "jsdoc": "Refuse non-default ports on the resolved URL. `URL.port` is the empty string for the scheme's default port (443 for https, 80 for http), and a non-empty value otherwise. Since `allowedHosts` entries forbid ports by design (PR review of round 3), the only way to authorize a non- default port would be to weaken the allowlist to \"any port on this host\" — which is exactly the broadening this guard prevents (PR review of round 4)."
         },
         {
           "name": "renderOriginForError",
           "kind": "function",
-          "line": 167,
+          "line": 174,
           "signature": "function renderOriginForError(path: string): string",
           "jsdoc": "Render a logging-safe `scheme://host` view of an absolute URL string. Used by the http-downgrade validation error so a userinfo segment (`http://user:pw@…`) or query string (`?token=…`) smuggled into `path` does not get echoed verbatim into log sinks when the thrown error is caught and serialised."
         },
         {
           "name": "SENSITIVE_SEGMENT_NAMES",
           "kind": "variable",
-          "line": 182,
+          "line": 189,
           "signature": "const SENSITIVE_SEGMENT_NAMES: ReadonlySet<string> = new Set([ 'token', 'key', 'secret', 'auth', 'password', 'pwd', 'api…",
           "jsdoc": "B035: Names that indicate the *next* path segment carries a credential (e.g. `/auth/AAAA-real-token-BBBB/refresh`). Match is whole-segment, case-insensitive, so `/code/SPACE-1` (Jira issue key) stays untouched because `code` is deliberately excluded."
         },
         {
           "name": "SENSITIVE_MARKER_REGEX",
           "kind": "variable",
-          "line": 210,
+          "line": 217,
           "signature": "const SENSITIVE_MARKER_REGEX = /(token|key|secret|auth|password|pwd|apikey|api_key|access_token|refresh_token|bearer|jwt…",
           "jsdoc": "B035: Marker names redacted in `name=VALUE` form anywhere inside a path segment. Covers query-style markers smuggled into the path AND matrix params (`;jsessionid=ABC`) since the regex matches `name=` regardless of preceding separator."
         },
         {
           "name": "DOT_CHAIN_REGEX",
           "kind": "variable",
-          "line": 224,
+          "line": 231,
           "signature": "const DOT_CHAIN_REGEX = /[A-Za-z0-9_-]+(?:\\.[A-Za-z0-9_-]+)*/g;",
           "jsdoc": "B035: JWT compact-serialization shape — three base64url segments joined by dots, starting with `eyJ` (base64 of `{\"`, the canonical JWT header start). Catches bearer JWTs accidentally embedded in path even when no `name=` marker is present. False-positive risk is vanishingly small because Atlassian opaque IDs are not base64-shaped and never start with `eyJ`."
         },
         {
           "name": "USERINFO_REGEX",
           "kind": "variable",
-          "line": 232,
+          "line": 239,
           "signature": "const USERINFO_REGEX = /\\/\\/[^/@\\s]+@/g;",
           "jsdoc": "B035: `user:pass@host` userinfo embedded in an absolute URL. The happy path resolves via `new URL(...).pathname` which already drops userinfo; this regex protects the fallback branch used when URL parsing throws on malformed input, so a logged broken URL containing creds is still scrubbed."
         },
         {
           "name": "redactSensitiveMarkers",
           "kind": "function",
-          "line": 234,
+          "line": 241,
           "signature": "function redactSensitiveMarkers(value: string): string"
         },
         {
           "name": "redactJwtShapes",
           "kind": "function",
-          "line": 244,
+          "line": 251,
           "signature": "function redactJwtShapes(value: string): string",
           "jsdoc": "Replace each `eyJ<run>.<run>.<run>` with `***.jwt.***`, with the same output as `value.replace(/eyJ[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+/g, …)` in linear time. A match starts at the first `eyJ` of a run that has a character after it, takes that run and the next two whole, and the scan resumes after them."
         },
         {
           "name": "redactSensitiveSegments",
           "kind": "function",
-          "line": 262,
+          "line": 269,
           "signature": "function redactSensitiveSegments(pathname: string): string"
         },
         {
           "name": "sanitizePathForLogging",
           "kind": "function",
-          "line": 289,
+          "line": 296,
           "exported": true,
           "signature": "export function sanitizePathForLogging(path: string): string",
           "jsdoc": "Produce a logging-safe rendering of `path`."
@@ -17671,21 +17671,21 @@
         {
           "name": "stripQueryAndFragment",
           "kind": "function",
-          "line": 306,
+          "line": 313,
           "signature": "function stripQueryAndFragment(value: string): string",
           "jsdoc": "Cut `value` at its query or fragment exactly as `value.replace(/[?#].*$/, '')` did, in linear time: that regex backtracks quadratically on a long run of `?` that ends in a line break. Because `.` stops at a line terminator and `$` only matches at the end, the cut is the first `?` or `#` after the last line terminator, and nothing is cut if none follows it."
         },
         {
           "name": "FORBIDDEN_CALLER_HEADERS",
           "kind": "variable",
-          "line": 328,
+          "line": 335,
           "signature": "const FORBIDDEN_CALLER_HEADERS: ReadonlySet<string> = new Set([ 'authorization', 'proxy-authorization', 'cookie', 'set-c…",
           "jsdoc": "Header names (lower-cased) that callers MUST NOT supply via `RequestOptions.headers`. The transport authenticates exclusively via `config.auth`; any header in this list could either override that identity or smuggle a different one (B029):"
         },
         {
           "name": "buildHeaders",
           "kind": "function",
-          "line": 368,
+          "line": 375,
           "exported": true,
           "signature": "export function buildHeaders( callerHeaders: Readonly<Record<string, string>> | undefined, authHeaders: Readonly<Record<…",
           "jsdoc": "Merge caller-supplied headers with the auth provider's headers."
@@ -17693,7 +17693,7 @@
         {
           "name": "FetchBody",
           "kind": "interface",
-          "line": 421,
+          "line": 428,
           "exported": true,
           "signature": "export interface FetchBody { readonly body: FormData | Blob | string | undefined; readonly withJsonBody: boolean; readon…",
           "jsdoc": "Outcome of {@link buildFetchBody}."
@@ -17701,7 +17701,7 @@
         {
           "name": "buildFetchBody",
           "kind": "function",
-          "line": 437,
+          "line": 444,
           "exported": true,
           "signature": "export function buildFetchBody(options: RequestOptions): FetchBody",
           "jsdoc": "Resolve `RequestOptions.body` / `formData` / `binaryBody` into a `fetch`-ready body."

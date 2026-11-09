@@ -99,7 +99,9 @@ export function buildUrl(
 /**
  * Resolve a redirect `Location` against the URL that received it and hold the
  * target to the policy {@link buildUrl} applies to the original request: HTTPS,
- * a host on `allowedHosts`, the default port.
+ * a host on `allowedHosts`, the default port. It also refuses a target with a
+ * username or password: `fetch` cannot request such a URL, and the userinfo is
+ * a credential the server chose, so it is neither followed nor echoed.
  *
  * @returns The absolute target URL.
  * @throws {ValidationError} when `location` does not parse or the target fails
@@ -119,6 +121,11 @@ export function resolveRedirectTarget(
   if (url.protocol !== 'https:') {
     throw new ValidationError(
       `Refusing to follow a redirect to ${url.protocol}//${url.hostname}: only https:// targets are accepted.`,
+    );
+  }
+  if (url.username !== '' || url.password !== '') {
+    throw new ValidationError(
+      `Refusing to follow a redirect to https://${url.hostname}: the Location carries a username or password.`,
     );
   }
   assertHostAllowed(url.hostname, allowedHosts);
