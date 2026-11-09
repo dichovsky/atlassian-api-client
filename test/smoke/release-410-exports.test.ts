@@ -58,10 +58,48 @@ import type {
   PolicySummaryResponse,
   StartAgentSessionsBatchData,
   WorkflowCopyRequest,
+  // X-EXPORTS-4B: the issue-security-scheme signatures changed after the exports unit
+  AssociateSchemesToProjectsData,
+  AssociateSchemesToProjectsOptions,
+  RemoveSecurityLevelParams,
+  // Re-run of the X-EX1 audit on the final tree: every other type a 5.0.0-new or
+  // -changed signature introduced that the root exports.
+  BulkAgentSessionsResponse,
+  BulkForgePanelPinStatusData,
+  BulkForgePanelPinStatusResponse,
+  BulkPolicyOperationResponse,
+  ContentPermissionOutput,
+  ContentPermissionWriteParams,
+  ContentPermissionsResponse,
+  DatabaseConditionalParams,
+  DatabaseEntry,
+  DatabaseEntryListResponse,
+  DatabaseEntrySingleResponse,
+  DatabaseField,
+  DatabaseFieldListResponse,
+  DatabaseView,
+  DatabaseViewListResponse,
+  DeleteContentPermissionsParams,
+  GetInvalidJqlAuditEntriesParams,
+  InvalidJqlAuditPage,
+  ListContentPermissionsParams,
+  ListDatabaseEntriesParams,
+  ListDatabasePageParams,
+  ListIssueTypesForProjectParams,
+  ListPoliciesParams,
+  PolicyIdsData,
+  PolicyProjectIdsData,
+  RestrictionStateResponse,
+  SetRestrictionStateData,
+  StartAgentSessionsUniformData,
+  StatePolicyDocument,
+  StatePolicyRule,
+  UpdateContextDefaultValuesBody,
 } from '../../src/index.js';
 
 type Issues = JiraClient['issues'];
 type Projects = JiraClient['projects'];
+type SecuritySchemes = JiraClient['issueSecuritySchemes'];
 
 describe('X-EX1: 4.1.0 signature types are importable from the package root', () => {
   it('issues.create / getEditMeta params', () => {
@@ -101,6 +139,57 @@ describe('X-EX1: 4.1.0 signature types are importable from the package root', ()
     expectTypeOf<FieldContextDefaultValue>().toEqualTypeOf<
       NonNullable<AddIssueTypesToContextBody['defaultValue']>
     >();
+  });
+});
+
+describe('X-EXPORTS-4B: the final-tree signature types are importable from the root', () => {
+  it('issueSecuritySchemes.associateToProject / removeLevel params', () => {
+    expectTypeOf<AssociateSchemesToProjectsData>().toEqualTypeOf<
+      Parameters<SecuritySchemes['associateToProject']>[0]
+    >();
+    expectTypeOf<AssociateSchemesToProjectsOptions>().toEqualTypeOf<
+      NonNullable<Parameters<SecuritySchemes['associateToProject']>[1]>
+    >();
+    expectTypeOf<RemoveSecurityLevelParams>().toEqualTypeOf<
+      NonNullable<Parameters<SecuritySchemes['removeLevel']>[2]>
+    >();
+  });
+
+  it('compiles a consumer that names every other new signature type', () => {
+    type Named = [
+      BulkAgentSessionsResponse,
+      BulkForgePanelPinStatusData,
+      BulkForgePanelPinStatusResponse,
+      BulkPolicyOperationResponse,
+      ContentPermissionOutput,
+      ContentPermissionWriteParams,
+      ContentPermissionsResponse,
+      DatabaseConditionalParams,
+      DatabaseEntry,
+      DatabaseEntryListResponse,
+      DatabaseEntrySingleResponse,
+      DatabaseField,
+      DatabaseFieldListResponse,
+      DatabaseView,
+      DatabaseViewListResponse,
+      DeleteContentPermissionsParams,
+      GetInvalidJqlAuditEntriesParams,
+      InvalidJqlAuditPage,
+      ListContentPermissionsParams,
+      ListDatabaseEntriesParams,
+      ListDatabasePageParams,
+      ListIssueTypesForProjectParams,
+      ListPoliciesParams,
+      PolicyIdsData,
+      PolicyProjectIdsData,
+      RestrictionStateResponse,
+      SetRestrictionStateData,
+      StartAgentSessionsUniformData,
+      StatePolicyDocument,
+      StatePolicyRule,
+      UpdateContextDefaultValuesBody,
+    ];
+    expectTypeOf<Named[number]>().not.toBeAny();
   });
 });
 

@@ -1,14 +1,24 @@
 /**
  * Permanent enforcement of this repo's CLI/skill parity rule (CLAUDE.md):
  * every public method on a wired Jira/Confluence resource class must be
- * reachable from the `atlas` CLI (Test A), and every CLI action must be
- * documented in the skill reference docs (Test B).
+ * reachable from the `atlas` CLI (Test A), every CLI action must be
+ * documented in the skill reference docs (Test B), and every action the skill
+ * documents — in the resource × action matrix, an action table's first cell,
+ * or any `atlas <api> <resource> <action>` example or inline command — must be
+ * a CLI action (Test C).
  */
 import { describe, it, expect } from 'vitest';
 import { readFileSync, readdirSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseCases, actionsForResource } from '../helpers/dispatcher-map.js';
+import {
+  actionProblem,
+  actionTableRows,
+  actionsOf,
+  fencedCommands,
+  inlineCommands,
+} from '../helpers/skill-commands.js';
 
 const TEST_DIR = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(TEST_DIR, '..', '..');
@@ -328,3 +338,46 @@ describeDocToCliReachability(
   confluenceCliSource,
   readFileSync(CONFLUENCE_MD, 'utf8'),
 );
+
+/** SKILL.md and every skill reference file, repo-relative. */
+const SKILL_FILES = [
+  'skill/SKILL.md',
+  ...readdirSync(resolve(REPO_ROOT, 'skill', 'reference'))
+    .filter((f) => f.endsWith('.md'))
+    .map((f) => `skill/reference/${f}`),
+  ...readdirSync(JIRA_DOMAIN_DIR)
+    .filter((f) => f.endsWith('.md'))
+    .map((f) => `skill/reference/jira/${f}`),
+];
+
+describe('every atlas command in the skill names a CLI action', () => {
+  it('reads every skill file', () => {
+    expect(SKILL_FILES.length).toBeGreaterThanOrEqual(14);
+  });
+
+  it.each(SKILL_FILES)('%s', (file) => {
+    const text = readFileSync(resolve(REPO_ROOT, file), 'utf8');
+    const orphans = [...fencedCommands(text, file), ...inlineCommands(text, file)].flatMap(
+      (command) => {
+        const problem = actionProblem(command.argv);
+        return problem === undefined ? [] : [`${command.where} ${problem}: ${command.text}`];
+      },
+    );
+    expect(orphans, 'documented commands with no CLI action').toEqual([]);
+  });
+});
+
+describe('every action-table row names an action of its section', () => {
+  it.each(SKILL_FILES.filter((f) => f.startsWith('skill/reference/')))('%s', (file) => {
+    const text = readFileSync(resolve(REPO_ROOT, file), 'utf8');
+    const api = file.endsWith('confluence.md') ? 'confluence' : 'jira';
+    const orphans = actionTableRows(text, file).flatMap(({ where, resources, actions }) => {
+      const known = new Set(resources.flatMap((r) => actionsOf(api, r)));
+      if (actions.length === 0) return [`${where} names no action`];
+      return actions
+        .filter((a) => !known.has(a))
+        .map((a) => `${where} ${a} (${resources.join(', ')})`);
+    });
+    expect(orphans, 'documented actions with no CLI action').toEqual([]);
+  });
+});

@@ -1,28 +1,32 @@
 /**
- * CLI write-property reachability — the "functionally reachable" half of the
- * CLI/skill parity rule (CLAUDE.md) that the method-name check in
- * `api-skill-parity.test.ts` can't see. A write action can call the right SDK
- * method and still never send a property it needs: `issues transition` sent
+ * CLI input reachability — the "functionally reachable" half of the CLI/skill
+ * parity rule (CLAUDE.md) that the method-name check in
+ * `api-skill-parity.test.ts` can't see. An action can call the right SDK
+ * method and still never send an input it needs: `issues transition` sent
  * only `{ transition: { id } }`, so a subtask whose close screen requires
- * `fields.resolution` could not be closed from the CLI.
+ * `fields.resolution` could not be closed from the CLI, and `users search`
+ * could never page past its first page.
  *
- * The TypeScript checker resolves every `client.<resource>.<method>(…)` write
- * call in the CLI command files. For each object-typed SDK parameter it
- * compares the parameter's top-level properties with the keys the CLI fills
- * in, unioned over every call site of that method. Keys are read from object
- * literals (incl. spreads, conditional spreads and literal/constant computed
- * keys), `const` initializers plus the `x.k =` / `x['k'] =` writes that run
- * before the read, object-rest bindings (`...rest` carries the source minus
- * the keys destructured beside it), and the `return`s of same-file helpers. A
- * value parsed from JSON (`--body '{…}'` → `any` / `unknown` /
- * `Record<string, …>`) passes every property; any other untraced value passes
- * only the keys of an inferred object-literal type — none for a declared type
- * (a typed parameter or helper return). An unresolvable key adds nothing, so
- * the analyzer fails closed.
+ * The TypeScript checker resolves every `client.<resource>.<method>(…)` call
+ * in the CLI command files — reads and writes alike, whatever the method is
+ * called. For each object-typed SDK parameter it compares the parameter's
+ * top-level properties with the keys the CLI fills in, unioned over every
+ * call site of that method; any other parameter (a positional scalar such as
+ * `projects.get(key, expand)`) counts as reached when some call site passes
+ * it. Keys are read from object literals (incl. spreads, conditional spreads
+ * and literal/constant computed keys), `const` initializers plus the `x.k =` /
+ * `x['k'] =` writes that run before the read, object-rest bindings (`...rest`
+ * carries the source minus the keys destructured beside it), and the
+ * `return`s of same-file helpers. A value parsed from JSON (`--body '{…}'` →
+ * `any` / `unknown` / `Record<string, …>`) passes every property; any other
+ * untraced value passes only the keys of an inferred object-literal type —
+ * none for a declared type (a typed parameter or helper return). An
+ * unresolvable key adds nothing, so the analyzer fails closed.
  *
- * Only key presence is checked, not values. Accepted gaps live in KNOWN_GAPS;
- * the test fails on a new gap and on a stale entry. The fixtures at the end
- * pin the analyzer on shapes it once got wrong.
+ * Only key presence is checked, not values. Accepted gaps live in KNOWN_GAPS,
+ * each with a reason from a fixed set of categories; the test fails on a new
+ * gap and on a stale entry. The fixtures at the end pin the analyzer on shapes
+ * it once got wrong.
  */
 import { describe, expect, it } from 'vitest';
 import path, { dirname, relative, resolve } from 'node:path';
@@ -36,20 +40,28 @@ const CLI_FILES = {
   confluence: resolve(REPO_ROOT, 'src', 'cli', 'commands', 'confluence.ts'),
 } as const;
 
-/** Read-only by name; every other method is a write whose inputs must be reachable. */
-const READ_METHOD = /^(get|list|search|find|count|check|is|has|export|validate|picker)/;
+/** Why an SDK input may stay CLI-unreachable; every KNOWN_GAPS reason starts with one. */
+const REASON_CATEGORIES = [
+  'API constraint',
+  'deprecated',
+  'no gap',
+  'not an API param',
+  'removed',
+  'server-managed',
+] as const;
 
 /**
- * Accepted gaps: `api.resource.method` → SDK properties no CLI call site sets.
- * A new gap must be wired (a flag, or a JSON-valued flag such as `--body`) or
- * added here with a one-line reason.
+ * Accepted gaps: `api.resource.method` → SDK inputs (object-parameter
+ * properties or positional parameters) no CLI call site sets. A new gap must
+ * be wired (a flag, or a JSON-valued flag such as `--body`) or added here with
+ * a `<category>: <reason>` line.
  */
 const KNOWN_GAPS: Readonly<
   Record<string, { readonly unset: readonly string[]; readonly reason: string }>
 > = {
   'confluence.blogPosts.update': {
     unset: ['spaceId'],
-    reason: 'the API cannot move a post between spaces',
+    reason: 'API constraint: the API cannot move a post between spaces',
   },
   'confluence.databases.resetClassificationLevel': {
     unset: ['status'],
@@ -61,11 +73,29 @@ const KNOWN_GAPS: Readonly<
   },
   'confluence.pages.update': {
     unset: ['spaceId'],
-    reason: 'the API cannot move a page between spaces',
+    reason: 'API constraint: the API cannot move a page between spaces',
+  },
+  'confluence.spaces.listProperties': {
+    unset: ['sort'],
+    reason:
+      'not an API param: getSpaceProperties defines no sort; the SDK never sends it and the CLI rejects --sort',
   },
   'jira.bulkByProperties.deleteFeatureFlagsByProperties': {
     unset: ['_updateSequenceId'],
-    reason: 'deprecated: the server no longer supports it',
+    reason:
+      'deprecated: deleteFeatureFlagsByProperty marks _updateSequenceId "no longer supported"; the CLI rejects --update-sequence-id',
+  },
+  'jira.dashboards.listAvailableGadgets': {
+    unset: ['dashboardId', 'gadgetId', 'moduleKey', 'uri'],
+    reason: 'deprecated: getAllAvailableDashboardGadgets takes no parameters; the SDK ignores them',
+  },
+  'jira.dashboards.searchAll': {
+    unset: ['logger'],
+    reason: 'not an API param: a client-side pagination logger',
+  },
+  'jira.groups.picker': {
+    unset: ['userName'],
+    reason: 'deprecated: findGroups says userName "is no longer available"',
   },
   'jira.priorities.delete': {
     unset: ['replaceWith'],
@@ -73,7 +103,12 @@ const KNOWN_GAPS: Readonly<
   },
   'jira.projects.recent': {
     unset: ['maxResults'],
-    reason: 'read (GET); deprecated: not a spec param, the SDK no longer sends it',
+    reason: 'not an API param: getRecent defines no maxResults; the SDK no longer sends it',
+  },
+  'jira.remoteLink.delete': {
+    unset: ['updateSequenceNumber'],
+    reason:
+      'deprecated: the spec says the _updateSequenceNumber guard is "no longer supported"; the CLI rejects --update-sequence-id',
   },
   'jira.sprints.update': {
     unset: ['id', 'self', 'createdDate', 'originBoardId', 'completeDate'],
@@ -83,13 +118,27 @@ const KNOWN_GAPS: Readonly<
     unset: ['id', 'self', 'createdDate', 'originBoardId', 'completeDate'],
     reason: 'server-managed: identity fields, and completeDate is set on close',
   },
-  'jira.users.viewIssueSearch': {
-    unset: ['username'],
-    reason: 'read (GET, name not read-prefixed); username is removed upstream',
-  },
   'jira.users.createUser': {
     unset: ['name', 'password', 'applicationKeys'],
-    reason: 'removed or deprecated in the NewUserDetails spec',
+    reason: 'removed: removed or deprecated in the NewUserDetails spec',
+  },
+  'jira.users.getPermissionUsers': {
+    unset: ['username'],
+    reason: 'deprecated: findUsersWithAllPermissions says username "is no longer available"',
+  },
+  'jira.users.listSearch': {
+    unset: ['query', 'username'],
+    reason:
+      'not an API param: getAllUsers defines neither; the CLI rejects --query and --user-name',
+  },
+  'jira.users.viewIssueSearch': {
+    unset: ['username'],
+    reason: 'deprecated: findUsersWithBrowsePermission says username "is no longer available"',
+  },
+  'jira.workflows.getTransitionRuleConfigs': {
+    unset: ['draft'],
+    reason:
+      'removed: Atlassian removed the draft selector on 2026-11-02 (CHANGE-3147, HTTP 400); the CLI rejects --draft',
   },
 };
 
@@ -331,19 +380,19 @@ interface Slot {
   keys: Keys;
 }
 
-interface WriteMethod {
+interface CalledMethod {
   readonly callSites: string[];
   readonly slots: Map<string, Slot>;
 }
 
-/** `api.resource.method` → its write call sites in `files` and per-parameter reached keys. */
-function analyzeWriteCalls(
+/** `api.resource.method` → its call sites in `files` and per-parameter reached keys. */
+function analyzeCalls(
   program: ts.Program,
   files: Readonly<Record<string, string>>,
   sdkDir: string,
-): Map<string, WriteMethod> {
+): Map<string, CalledMethod> {
   const checker = program.getTypeChecker();
-  const methods = new Map<string, WriteMethod>();
+  const methods = new Map<string, CalledMethod>();
 
   for (const [api, file] of Object.entries(files)) {
     const source = program.getSourceFile(file);
@@ -355,8 +404,7 @@ function analyzeWriteCalls(
       if (
         !ts.isPropertyAccessExpression(resource) ||
         !ts.isIdentifier(resource.expression) ||
-        resource.expression.text !== 'client' ||
-        READ_METHOD.test(node.expression.name.text)
+        resource.expression.text !== 'client'
       ) {
         return;
       }
@@ -369,11 +417,17 @@ function analyzeWriteCalls(
       const signature = checker.getResolvedSignature(node);
       signature?.getParameters().forEach((param, i) => {
         const paramType = checker.getTypeOfSymbolAtLocation(param, node);
+        const arg = node.arguments[i];
         const properties = sdkProperties(checker, paramType, sdkDir);
-        if (!properties) return;
+        if (!properties) {
+          // A scalar/positional parameter: reached when some call site passes it.
+          const slot = method.slots.get(param.name) ?? { properties: [param.name], keys: NONE };
+          method.slots.set(param.name, slot);
+          if (arg) slot.keys = union(slot.keys, just(param.name));
+          return;
+        }
         const slot = method.slots.get(param.name) ?? { properties, keys: NONE };
         method.slots.set(param.name, slot);
-        const arg = node.arguments[i];
         if (arg) slot.keys = union(slot.keys, keysOf(checker, arg, new Set()));
       });
     };
@@ -382,8 +436,8 @@ function analyzeWriteCalls(
   return methods;
 }
 
-/** `api.resource.method` → SDK properties no call site of that method sets. */
-function unreachedProperties(methods: Map<string, WriteMethod>): Map<string, string[]> {
+/** `api.resource.method` → SDK inputs no call site of that method sets. */
+function unreachedProperties(methods: Map<string, CalledMethod>): Map<string, string[]> {
   const gaps = new Map<string, string[]>();
   for (const [key, { slots }] of methods) {
     const unset = [...slots.values()].flatMap(({ properties, keys }) =>
@@ -411,14 +465,14 @@ function cliProgram(): ts.Program {
 
 // ─── Tests ─────────────────────────────────────────────────────────────────
 
-const methods = analyzeWriteCalls(cliProgram(), CLI_FILES, SRC_DIR);
+const methods = analyzeCalls(cliProgram(), CLI_FILES, SRC_DIR);
 const gaps = unreachedProperties(methods);
 
-describe('CLI write calls can send every property their SDK method accepts', () => {
-  it('finds the CLI write call sites', () => {
+describe('CLI calls can send every input their SDK method accepts', () => {
+  it('finds the CLI call sites', () => {
     // Guards against a refactor (e.g. renaming the `client` parameter) that
     // would leave nothing to analyze and make the checks below vacuous.
-    expect(methods.size).toBeGreaterThan(300);
+    expect(methods.size).toBeGreaterThan(900);
   });
 
   it('has no unreachable property beyond KNOWN_GAPS', () => {
@@ -429,7 +483,7 @@ describe('CLI write calls can send every property their SDK method accepts', () 
     );
     expect(
       fresh,
-      'these SDK properties are unreachable from the CLI: wire a flag or a JSON-valued flag (e.g. --body), or add them to KNOWN_GAPS with a reason',
+      'these SDK inputs are unreachable from the CLI: wire a flag or a JSON-valued flag (e.g. --body), or add them to KNOWN_GAPS with a reason',
     ).toEqual([]);
   });
 
@@ -438,6 +492,15 @@ describe('CLI write calls can send every property their SDK method accepts', () 
       unset.filter((p) => !gaps.get(key)?.includes(p)).map((p) => `${key}.${p}`),
     );
     expect(stale, 'these are now reachable (or gone): remove them from KNOWN_GAPS').toEqual([]);
+  });
+
+  it('gives every KNOWN_GAPS entry a categorized reason', () => {
+    const unreasoned = Object.entries(KNOWN_GAPS)
+      .filter(([, { reason }]) => !REASON_CATEGORIES.some((c) => reason.startsWith(`${c}: `)))
+      .map(([key]) => key);
+    expect(unreasoned, `reasons must start with one of: ${REASON_CATEGORIES.join(', ')}`).toEqual(
+      [],
+    );
   });
 });
 
@@ -450,9 +513,12 @@ const FIXTURE_DIR = '/fixture/src';
 const FIXTURE_SDK = `
 interface TransitionData { transition?: { id: string }; fields?: Record<string, unknown>; update?: Record<string, unknown> }
 interface ActorsData { user?: string[]; group?: string[]; groupId?: string[] }
+interface SearchParams { query?: string; startAt?: number }
 declare const client: {
   issues: { transition(key: string, data: TransitionData): Promise<void> };
   roles: { addActors(roleId: number, data: ActorsData): Promise<void> };
+  users: { search(params?: SearchParams): Promise<void> };
+  links: { del(id: string, seq?: number): Promise<void> };
 };
 declare const flag: string;
 export {};
@@ -517,6 +583,23 @@ void fields;
 void client.issues.transition('K-1', { ...rest, update: update as Record<string, unknown> });`,
     gaps: { 'issues.transition': ['fields'] },
   },
+  'a read is checked like a write, whatever its name (F287)': {
+    code: `void client.users.search({ query: flag });`,
+    gaps: { 'users.search': ['startAt'] },
+  },
+  'an omitted positional scalar parameter is a gap (F288)': {
+    code: `void client.links.del('1');`,
+    gaps: { 'links.del': ['seq'] },
+  },
+  'a positional scalar passed at any call site is reached': {
+    code: `void client.links.del('1');
+void client.links.del('2', 7);`,
+    gaps: {},
+  },
+  'an omitted object parameter leaves every property unset': {
+    code: `void client.users.search();`,
+    gaps: { 'users.search': ['query', 'startAt'] },
+  },
   'a declared-type parameter sets nothing': {
     code: `export function send(data: TransitionData): Promise<void> {
   return client.issues.transition('K-1', data);
@@ -549,7 +632,7 @@ function fixtureProgram(files: Readonly<Record<string, string>>): ts.Program {
   return ts.createProgram(Object.keys(files), options, host);
 }
 
-describe('the write-property analyzer', () => {
+describe('the input-reachability analyzer', () => {
   const ids = Object.keys(FIXTURES).map((title, i) => ({ title, id: `f${i}` }));
   const files = Object.fromEntries(ids.map(({ id }) => [id, `${FIXTURE_DIR}/${id}.ts`]));
   const sources = Object.fromEntries(
@@ -559,7 +642,7 @@ describe('the write-property analyzer', () => {
     ]),
   );
   const program = fixtureProgram(sources);
-  const fixtureGaps = unreachedProperties(analyzeWriteCalls(program, files, FIXTURE_DIR));
+  const fixtureGaps = unreachedProperties(analyzeCalls(program, files, FIXTURE_DIR));
 
   it('compiles every fixture', () => {
     const errors = ts

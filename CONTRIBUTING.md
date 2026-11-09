@@ -50,7 +50,8 @@ TypeScript 7 powers production type-checking and builds. The `typescript` depend
 remains on the TypeScript 6 compatibility package because these still need it: `typescript-eslint`, the
 codemap generator (`scripts/generate-codemap.js`), the public-JSDoc test
 (`test/docs/jsdoc-public-exports.test.ts`), the CLI write-property reachability test
-(`test/cli/cli-write-property-reachability.test.ts`) and the skill TypeScript-snippet test
+(`test/cli/cli-write-property-reachability.test.ts`), the SDK/CLI route map
+(`test/helpers/sdk-routes.ts`) and the skill TypeScript-snippet test
 (`test/cli/release-410-help-skill-docs.test.ts`) use the TypeScript 6 compiler API, and
 `npm run typecheck:ts6` runs its `tsc6` compiler. Use the npm scripts above instead of a bare `tsc`; the
 bridge can be removed once those tools support TypeScript 7's stable API.
