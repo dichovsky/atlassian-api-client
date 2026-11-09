@@ -852,8 +852,8 @@ describe('universal-avatar (F243, F244)', () => {
   });
 
   it.each([
-    [['--file', 'x.bmp'], 'Cannot tell the image type'],
-    [['--file', 'avatar-upload'], 'Cannot tell the image type'],
+    [['--file', 'x.bmp'], 'cannot tell the image type'],
+    [['--file', 'avatar-upload'], 'cannot tell the image type'],
     [['--file', 'x.png', '--media-type', 'image/svg+xml'], '--media-type must be one of'],
   ])('store rejects %j before any request', async (flags, message) => {
     const run = await runCliWire([

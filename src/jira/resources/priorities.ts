@@ -6,27 +6,45 @@ import { ValidationError } from '../../core/errors.js';
 import { appendRepeatedParams } from '../../core/query.js';
 import type { Priority } from '../types.js';
 
-/** Request body for POST /rest/api/3/priority. */
+/**
+ * Request body for POST /rest/api/3/priority. Spec `CreatePriorityDetails`
+ * requires `name` and `statusColor`, plus exactly one of `avatarId` or `iconUrl`.
+ * Prefer `avatarId`: Atlassian sunset `iconUrl` on 16 Mar 2025 (CHANGE-1525).
+ */
 export interface CreatePriorityData {
   readonly name: string;
   readonly description?: string;
+  /**
+   * HTTP(S) icon URL or a built-in path such as `/images/icons/priorities/high.png`.
+   * Sunset on 16 Mar 2025 and replaced by `avatarId` (CHANGE-1525); kept
+   * because the spec schema still accepts it.
+   */
   readonly iconUrl?: string;
+  /** Status color in 3- or 6-digit hex, e.g. `#FF0000`. */
   readonly statusColor?: string;
+  /** Avatar ID for the priority (replaces the sunset `iconUrl`); mutually exclusive with it. */
+  readonly avatarId?: number;
 }
 
-/** Request body for PUT /rest/api/3/priority/{id}. */
+/**
+ * Request body for PUT /rest/api/3/priority/{id}. Spec `UpdatePriorityDetails`
+ * has no required fields: send only what changes, but at least one field.
+ * `iconUrl` and `avatarId` are mutually exclusive.
+ */
 export interface UpdatePriorityData {
-  readonly name: string;
+  readonly name?: string;
   readonly description?: string;
+  /** Sunset on 16 Mar 2025 and replaced by `avatarId` (CHANGE-1525); prefer `avatarId`. */
   readonly iconUrl?: string;
   readonly statusColor?: string;
+  readonly avatarId?: number;
 }
 
 /** Query parameters for DELETE /rest/api/3/priority/{id}. */
 export interface DeletePriorityParams {
   /**
-   * ID of the priority to migrate issues to when deleting.
-   * Required when the priority is in use by existing issues.
+   * @deprecated Not part of the Jira spec: `deletePriority` declares no query
+   * parameters, so this has no documented effect. Still sent when given.
    */
   readonly replaceWith?: string;
 }
@@ -56,9 +74,14 @@ export interface SearchPrioritiesParams {
   readonly startAt?: number;
   /** Maximum number of priorities to return per page. */
   readonly maxResults?: number;
-  /** Filter to specific priority IDs. */
+  /** Filter to specific priority IDs (repeated `id=` params). */
   readonly id?: string[];
-  /** When true, only the default priority is returned. */
+  /** Filter to priorities used by these project IDs (repeated `projectId=` params). */
+  readonly projectId?: string[];
+  /**
+   * When true, only the default priority is returned. Deprecated by Atlassian
+   * and due for removal (CHANGE-1655).
+   */
   readonly onlyDefault?: boolean;
   /** Text to match against priority name. */
   readonly priorityName?: string;
@@ -95,10 +118,12 @@ export class PrioritiesResource {
    * POST /rest/api/3/priority
    */
   async create(data: CreatePriorityData): Promise<Priority> {
+    rejectIconAndAvatar(data, 'create');
     const body: Record<string, unknown> = { name: data.name };
     if (data.description !== undefined) body['description'] = data.description;
     if (data.iconUrl !== undefined) body['iconUrl'] = data.iconUrl;
     if (data.statusColor !== undefined) body['statusColor'] = data.statusColor;
+    if (data.avatarId !== undefined) body['avatarId'] = data.avatarId;
 
     const response = await this.transport.request<Priority>({
       method: 'POST',
@@ -112,18 +137,21 @@ export class PrioritiesResource {
    * B927: Update a priority.
    * PUT /rest/api/3/priority/{id}
    *
-   * Returns void (204 No Content on success).
+   * Returns void (204 No Content on success). Only the given fields change.
    */
   async update(id: string, data: UpdatePriorityData): Promise<void> {
-    if (data.name === undefined || data.name === null || data.name === '') {
-      throw new ValidationError(
-        'priorities.update requires name (Jira spec: name is required for PUT /priority/{id})',
-      );
-    }
-    const body: Record<string, unknown> = { name: data.name };
+    rejectIconAndAvatar(data, 'update');
+    const body: Record<string, unknown> = {};
+    if (data.name !== undefined) body['name'] = data.name;
     if (data.description !== undefined) body['description'] = data.description;
     if (data.iconUrl !== undefined) body['iconUrl'] = data.iconUrl;
     if (data.statusColor !== undefined) body['statusColor'] = data.statusColor;
+    if (data.avatarId !== undefined) body['avatarId'] = data.avatarId;
+    if (Object.keys(body).length === 0) {
+      throw new ValidationError(
+        'priorities.update requires at least one of name, description, iconUrl, statusColor or avatarId',
+      );
+    }
 
     await this.transport.request<undefined>({
       method: 'PUT',
@@ -136,8 +164,9 @@ export class PrioritiesResource {
    * B641: Delete a priority.
    * DELETE /rest/api/3/priority/{id}
    *
-   * If the priority is used by existing issues `replaceWith` must be
-   * provided; the server will reject the request without it in that case.
+   * Asynchronous on the server: Jira answers 303 to a task, which the
+   * transport follows. Resolving means Jira accepted the delete, not that it
+   * finished.
    */
   async delete(id: string, params?: DeletePriorityParams): Promise<void> {
     const query: Record<string, string | number | boolean | undefined> = {};
@@ -198,7 +227,11 @@ export class PrioritiesResource {
     const query = buildSearchQuery(params);
     const response = await this.transport.request<OffsetPaginatedResponse<Priority>>({
       method: 'GET',
-      path: appendRepeatedParams(`${this.baseUrl}/priority/search`, 'id', params?.id),
+      path: appendRepeatedParams(
+        appendRepeatedParams(`${this.baseUrl}/priority/search`, 'id', params?.id),
+        'projectId',
+        params?.projectId,
+      ),
       query,
     });
     return response.data;
@@ -213,7 +246,11 @@ export class PrioritiesResource {
     const query = buildSearchQuery({ ...params, startAt: undefined, maxResults: undefined });
     yield* paginateOffset<Priority>(
       this.transport,
-      appendRepeatedParams(`${this.baseUrl}/priority/search`, 'id', params?.id),
+      appendRepeatedParams(
+        appendRepeatedParams(`${this.baseUrl}/priority/search`, 'id', params?.id),
+        'projectId',
+        params?.projectId,
+      ),
       query,
       params?.maxResults,
     );
@@ -222,14 +259,21 @@ export class PrioritiesResource {
 
 // ─── Internal helpers ──────────────────────────────────────────────────────────
 
+/** Spec: `iconUrl` and `avatarId` cannot both be defined. */
+function rejectIconAndAvatar(data: { iconUrl?: string; avatarId?: number }, op: string): void {
+  if (data.iconUrl !== undefined && data.avatarId !== undefined) {
+    throw new ValidationError(`priorities.${op} accepts iconUrl or avatarId, not both`);
+  }
+}
+
 function buildSearchQuery(
   params: SearchPrioritiesParams | undefined,
 ): Record<string, string | number | boolean | undefined> {
   const query: Record<string, string | number | boolean | undefined> = {};
   if (params?.startAt !== undefined) query['startAt'] = params.startAt;
   if (params?.maxResults !== undefined) query['maxResults'] = params.maxResults;
-  // `id` is a `type: array` query parameter (repeated `id=a&id=b`), built into
-  // the path via `appendRepeatedParams` at each call site — not CSV-joined.
+  // `id` / `projectId` are `type: array` query params (repeated `id=a&id=b`),
+  // built into the path via `appendRepeatedParams` at each call site.
   if (params?.onlyDefault !== undefined) query['onlyDefault'] = params.onlyDefault;
   if (params?.priorityName !== undefined) query['priorityName'] = params.priorityName;
   if (params?.expand !== undefined) query['expand'] = params.expand;

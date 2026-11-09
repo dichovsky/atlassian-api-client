@@ -114,6 +114,14 @@ describe('IssueCommentsResource', () => {
         path: `${BASE_URL}/issue/PROJ-1/comment/1001`,
       });
     });
+
+    it('forwards expand (spec getComment)', async () => {
+      transport.respondWith(makeComment('1001'));
+
+      await resource.get('PROJ-1', '1001', { expand: 'renderedBody' });
+
+      expect(transport.lastCall?.options.query).toEqual({ expand: 'renderedBody' });
+    });
   });
 
   // ── create ────────────────────────────────────────────────────────────────
@@ -153,6 +161,14 @@ describe('IssueCommentsResource', () => {
         visibility: { type: 'role', value: 'Administrators' },
       });
     });
+
+    it('forwards expand (spec addComment)', async () => {
+      transport.respondWith(makeComment('1004'));
+
+      await resource.create('PROJ-1', { body: {} }, { expand: 'renderedBody' });
+
+      expect(transport.lastCall?.options.query).toEqual({ expand: 'renderedBody' });
+    });
   });
 
   // ── update ────────────────────────────────────────────────────────────────
@@ -173,6 +189,23 @@ describe('IssueCommentsResource', () => {
         method: 'PUT',
         path: `${BASE_URL}/issue/PROJ-1/comment/1001`,
         body: data,
+      });
+    });
+
+    it('forwards notifyUsers, overrideEditableFlag and expand (spec updateComment)', async () => {
+      transport.respondWith(makeComment('1001'));
+
+      await resource.update(
+        'PROJ-1',
+        '1001',
+        { body: {} },
+        { notifyUsers: false, overrideEditableFlag: true, expand: 'renderedBody' },
+      );
+
+      expect(transport.lastCall?.options.query).toEqual({
+        notifyUsers: false,
+        overrideEditableFlag: true,
+        expand: 'renderedBody',
       });
     });
   });
@@ -461,6 +494,11 @@ describe('IssueCommentsResource', () => {
       await expect(resource.bulkFetch({ ids: [1001, 0] })).rejects.toThrow(
         /must contain only positive integers/,
       );
+      expect(transport.calls).toHaveLength(0);
+    });
+
+    it('throws ValidationError when an id is above Number.MAX_SAFE_INTEGER (int64 precision loss)', async () => {
+      await expect(resource.bulkFetch({ ids: [2 ** 53] })).rejects.toThrow(/safe integer range/);
       expect(transport.calls).toHaveLength(0);
     });
 

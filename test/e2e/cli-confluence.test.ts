@@ -347,11 +347,12 @@ const matrix: readonly MatrixRow[] = [
   },
   {
     name: 'spaces list-properties',
-    argv: ['confluence', 'spaces', 'list-properties', '654321', '--sort', 'key'],
+    argv: ['confluence', 'spaces', 'list-properties', '654321', '--key', 'k'],
     routes: [{ method: 'GET', path: `${P}/spaces/654321/properties`, body: F.spacePropertyList }],
     expectCall: { method: 'GET', pathname: `${P}/spaces/654321/properties` },
+    // GET /spaces/{space-id}/properties defines no sort parameter.
     expectQuery: (query) => {
-      expect(query.sort).toBe('key');
+      expect(query).toEqual({ key: 'k' });
     },
   },
   {
@@ -813,10 +814,13 @@ const matrix: readonly MatrixRow[] = [
     expectCall: { method: 'GET', pathname: `${P}/labels` },
     expectStdout: ['"name": "release"'],
     expectQuery: (query) => {
-      expect(query.prefix).toBe('global,team');
-      expect(query['label-id']).toBe('10,20');
       expect(query.sort).toBe('-name');
       expect(query.limit).toBe('50');
+    },
+    expectUrl: (url) => {
+      expect(url).toContain('label-id=10&label-id=20');
+      expect(url).toContain('prefix=global&prefix=team');
+      expect(url).not.toContain('%2C');
     },
   },
   {
@@ -857,9 +861,11 @@ const matrix: readonly MatrixRow[] = [
     expectCall: { method: 'GET', pathname: `${P}/labels/lbl-100/blogposts` },
     expectStdout: ['"id": "bp-300"'],
     expectQuery: (query) => {
-      expect(query['space-id']).toBe('654321,777');
       expect(query['body-format']).toBe('atlas_doc_format');
       expect(query.sort).toBe('-id');
+    },
+    expectUrl: (url) => {
+      expect(url).toContain('space-id=654321&space-id=777');
     },
   },
   {
