@@ -683,6 +683,7 @@ response.
 - `deleted` — GET /rest/api/3/worklog/deleted. Returns `ChangedWorklogs`.
 - `list` — POST /rest/api/3/worklog/list. `--ids` is a CSV of worklog IDs (1–1000). Returns a bare array of `Worklog` objects.
 - `updated` — GET /rest/api/3/worklog/updated. Returns `ChangedWorklogs`.
+- `--since` is a UNIX timestamp in **epoch milliseconds** (default `0`); only worklogs changed after it are returned.
 
 ```sh
 # Get IDs of all worklogs deleted since a timestamp

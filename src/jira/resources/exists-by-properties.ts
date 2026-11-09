@@ -45,7 +45,8 @@ export class ExistsByPropertiesResource {
    * GET /rest/devinfo/0.10/existsByProperties
    */
   async get(params?: ExistsByPropertiesParams): Promise<ExistsByPropertiesResponse> {
-    const query: Record<string, string | number> = {};
+    // Null prototype: a `__proto__` property key is sent, not swallowed by the setter.
+    const query: Record<string, string | number> = Object.create(null);
     if (params) {
       for (const [key, value] of Object.entries(params)) {
         if (value !== undefined) {

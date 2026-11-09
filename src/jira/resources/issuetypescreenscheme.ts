@@ -305,6 +305,7 @@ export class IssueTypeScreenSchemeResource {
   ): AsyncGenerator<ProjectDetails> {
     if (params?.maxResults !== undefined) validatePageSize(params.maxResults, 'maxResults');
     const query: Record<string, string | number | boolean | undefined> = {};
+    if (params?.query !== undefined) query['query'] = params.query;
     yield* paginateOffset<ProjectDetails>(
       this.transport,
       `${this.baseUrl}/issuetypescreenscheme/${encodePathSegment(schemeId)}/project`,

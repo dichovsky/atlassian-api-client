@@ -108,7 +108,7 @@ atlas jira users list-search --start-at 50 --max-results 50
 
 | Action         | Positional | Required flags | Optional flags                                                                                      |
 | -------------- | ---------- | -------------- | --------------------------------------------------------------------------------------------------- |
-| `picker`       | —          | —              | `--query`, `--exclude`, `--max-results`, `--user-name`                                              |
+| `picker`       | —          | —              | `--query`, `--exclude` or `--exclude-id`, `--case-insensitive`, `--max-results`                     |
 | `get`          | —          | —              | `--group-name`, `--group-id`, `--expand`                                                            |
 | `create`       | —          | `--name`       | —                                                                                                   |
 | `delete`       | —          | —              | `--group-name`, `--group-id`, `--swap-group`, `--swap-group-id`                                     |
@@ -120,9 +120,11 @@ atlas jira users list-search --start-at 50 --max-results 50
 ### `picker`
 
 - `--query` — fuzzy string to match against group names.
-- `--exclude` — **comma-separated** list of group **names** to exclude from results (sent as repeated `exclude=` params). Note: to exclude by group ID, use the spec's `excludeId` parameter (not yet exposed by this client).
+- `--exclude` — **comma-separated** list of group **names** to exclude from results (sent as repeated `exclude=` params).
+- `--exclude-id` — **comma-separated** list of group **IDs** to exclude (repeated `excludeId=` params). Preferred, because a group's name can change. Use either `--exclude` or `--exclude-id`, not both (the CLI rejects the pair, as Jira does). An `--exclude-id` that names no ID (`''`, `','`) is rejected rather than sent unfiltered.
+- `--case-insensitive [true|false]` — match group names case-insensitively (server default `false`).
 - `--max-results` — maximum number of groups returned (default 20).
-- `--user-name` — account ID of a user whose groups should be excluded.
+- `--user-name` is rejected: Atlassian removed the `userName` filter and the server ignores it.
 - Endpoint: `GET /rest/api/3/groups/picker`.
 
 ### `get`, `create`, `delete`
@@ -130,6 +132,7 @@ atlas jira users list-search --start-at 50 --max-results 50
 - `--group-name` — group name (Atlassian deprecates this in favour of `--group-id`).
 - `--group-id` — stable group identifier; preferred over `--group-name`.
 - `--expand` (`get` only) — comma-separated expand keys; `users` inlines the first member page.
+- `get` (`GET /rest/api/3/group`) is **deprecated** by Atlassian; to list a group's users use `list-members`.
 - `--name` (`create` only) — name of the new group; **required**.
 - `--swap-group` / `--swap-group-id` (`delete` only) — reassign deleted group's restrictions to the swap target.
 - Endpoints: `GET /rest/api/3/group`, `POST /rest/api/3/group`, `DELETE /rest/api/3/group`.
@@ -146,7 +149,7 @@ atlas jira users list-search --start-at 50 --max-results 50
 ### `list-members`
 
 - `--group-name` / `--group-id` — identify the group whose members are listed.
-- `--include-inactive-users` — when `true`, deactivated users are included.
+- `--include-inactive-users [true|false]` — `--include-inactive-users` (or `true`) includes deactivated users; omit it or pass `false` to leave them out.
 - `--start-at`, `--max-results` — offset pagination controls.
 - Endpoint: `GET /rest/api/3/group/member`.
 
@@ -162,6 +165,9 @@ atlas jira groups picker --query dev
 
 # Find up to 10 groups excluding a group by name
 atlas jira groups picker --query dev --max-results 10 --exclude developers
+
+# Case-insensitive match, excluding two groups by ID
+atlas jira groups picker --query DEV --case-insensitive --exclude-id grp-1,grp-2
 
 # Fetch a group and inline its first page of users
 atlas jira groups get --group-id grp-1 --expand users
@@ -193,14 +199,15 @@ atlas jira groups remove-user --group-id grp-1 --account-id 5b10ac8d82e05b22cc7d
 
 - `--query` — string to match against both group names and user display names.
 - `--max-results` — maximum results per section (default 50).
-- `--show-avatar` — when `true`, avatar URLs are included in user results.
+- `--show-avatar [true|false]` — `--show-avatar` (or `true`) includes avatar URLs in user results; omit it or pass `false` to leave them out.
 - `--field-id` — the custom field ID this picker is for (e.g. `customfield_10050`). **Required for both `--project-id` and `--issue-type-id` to have any effect**; the CLI rejects either scoped flag without it.
 - `--project-id` — **comma-separated** project IDs to scope user results to project members (sent as repeated params on the wire: `?projectId=a&projectId=b`). **Only effective when `--field-id` is also provided.**
 - `--issue-type-id` — comma-separated issue type IDs, also sent as repeated params. **Only effective when `--field-id` is also provided.**
 - `--avatar-size` — one of `xsmall`, `small`, `medium`, `large`, `xlarge`, `xxlarge`, or `xxxlarge`, optionally suffixed with `@2x` or `@3x`.
-- `--case-insensitive` — use case-insensitive group matching.
-- `--include-ai-agents` — include AI agents in user results.
-- `--exclude-connect-users` — when `true`, Atlassian Connect users are excluded.
+- `--case-insensitive [true|false]` — use case-insensitive group matching.
+- `--include-ai-agents [true|false]` — include AI agents in user results.
+- `--exclude-connect-users [true|false]` — `true` excludes Atlassian Connect users.
+- The boolean flags above take an optional `true`/`false` value; the bare flag means `true`.
 - Removed `--project-role` is parsed only to return a migration error; Atlassian removed it from this endpoint. Use `--field-id` with `--project-id` for project-scoped user results. There is no direct role-name replacement.
 - `--exclude-account-ids` belongs to `users picker` and is rejected here; the combined picker has no equivalent filter.
 - Endpoint: `GET /rest/api/3/groupuserpicker`.

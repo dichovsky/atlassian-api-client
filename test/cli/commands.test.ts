@@ -15871,7 +15871,7 @@ describe('executeJiraCommand', () => {
       // Assert
       expect(jiraAnnouncementBannerMock.update).toHaveBeenCalledWith({
         message: 'Maintenance tonight',
-        visibility: 'PUBLIC',
+        visibility: 'public',
       });
       expect(result).toEqual({ updated: true });
     });
@@ -15952,7 +15952,7 @@ describe('executeJiraCommand', () => {
       // Assert
       expect(jiraAnnouncementBannerMock.update).toHaveBeenCalledWith({
         message: 'All flags',
-        visibility: 'PRIVATE',
+        visibility: 'private',
         isDismissible: true,
         isEnabled: false,
       });
@@ -15968,7 +15968,7 @@ describe('executeJiraCommand', () => {
     it('announcement-banner update rejects invalid --visibility', async () => {
       const parsed = cmd('announcement-banner', 'update', [], { visibility: 'UNKNOWN' });
       await expect(executeJiraCommand(parsed, GLOBALS)).rejects.toThrow(
-        '--visibility must be one of: PUBLIC, PRIVATE',
+        '--visibility must be one of: public, private',
       );
     });
 
@@ -18121,30 +18121,38 @@ describe('executeJiraCommand', () => {
   // ── exists-by-properties ──────────────────────────────────────────────────
 
   describe('exists-by-properties resource', () => {
-    it('exists-by-properties get calls client.existsByProperties.get() with no params', async () => {
-      jiraExistsByPropertiesMock.get.mockResolvedValue({ exists: true });
-
-      const result = await executeJiraCommand(cmd('exists-by-properties', 'get'), GLOBALS);
-
-      expect(result).toEqual({ exists: true });
-      expect(jiraExistsByPropertiesMock.get).toHaveBeenCalledWith({
-        entityType: undefined,
-        entityId: undefined,
-      });
+    it('exists-by-properties get requires --properties (the server 400s without one)', async () => {
+      await expect(executeJiraCommand(cmd('exists-by-properties', 'get'), GLOBALS)).rejects.toThrow(
+        'exists-by-properties get requires --properties',
+      );
+      expect(jiraExistsByPropertiesMock.get).not.toHaveBeenCalled();
     });
 
-    it('exists-by-properties get passes entity-type flag', async () => {
-      jiraExistsByPropertiesMock.get.mockResolvedValue({ exists: false });
+    it('exists-by-properties get passes the properties and _updateSequenceId', async () => {
+      jiraExistsByPropertiesMock.get.mockResolvedValue({ hasDataMatchingProperties: false });
 
-      await executeJiraCommand(
-        cmd('exists-by-properties', 'get', [], { 'entity-type': 'repository' }),
+      const result = await executeJiraCommand(
+        cmd('exists-by-properties', 'get', [], {
+          properties: 'accountId=123',
+          'update-sequence-id': '5',
+        }),
         GLOBALS,
       );
 
+      expect(result).toEqual({ hasDataMatchingProperties: false });
       expect(jiraExistsByPropertiesMock.get).toHaveBeenCalledWith({
-        entityType: 'repository',
-        entityId: undefined,
+        accountId: '123',
+        _updateSequenceId: 5,
       });
+    });
+
+    it('exists-by-properties get rejects the removed --entity-type with guidance', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('exists-by-properties', 'get', [], { 'entity-type': 'repository' }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--entity-type is not supported by exists-by-properties get');
     });
 
     it('exists-by-properties unknown action throws', async () => {
@@ -18220,7 +18228,7 @@ describe('executeJiraCommand', () => {
       jiraRepositoryMock.deleteEntity.mockResolvedValue(undefined);
 
       await executeJiraCommand(
-        cmd('repository', 'delete-entity', ['repo-1', 'pullRequest', 'pr-1'], {
+        cmd('repository', 'delete-entity', ['repo-1', 'pull_request', 'pr-1'], {
           'update-sequence-id': '99',
         }),
         GLOBALS,
@@ -18228,7 +18236,7 @@ describe('executeJiraCommand', () => {
 
       expect(jiraRepositoryMock.deleteEntity).toHaveBeenCalledWith(
         'repo-1',
-        'pullRequest',
+        'pull_request',
         'pr-1',
         { updateSequenceId: 99 },
       );
@@ -18262,7 +18270,10 @@ describe('executeJiraCommand', () => {
       );
 
       expect(result).toEqual({ id: 'cfg-1', contextId: '10100' });
-      expect(jiraAppMock.getFieldContextConfiguration).toHaveBeenCalledWith('customfield_10042');
+      expect(jiraAppMock.getFieldContextConfiguration).toHaveBeenCalledWith(
+        'customfield_10042',
+        {},
+      );
     });
 
     it('app get-field-context-configuration requires fieldIdOrKey', async () => {
@@ -18999,18 +19010,20 @@ describe('executeJiraCommand', () => {
     });
 
     // B526
-    it('bulk set-property calls setPropertyBulk() with propertyKey + value', async () => {
-      jiraBulkMock.setPropertyBulk.mockResolvedValue(undefined);
+    it('bulk set-property calls setPropertyBulk() with propertyKey + value and returns the task', async () => {
+      jiraBulkMock.setPropertyBulk.mockResolvedValue({ id: '10010', status: 'ENQUEUED' });
 
       const result = await executeJiraCommand(
         cmd('bulk', 'set-property', ['my-flag'], { value: '{"owner":"admin"}' }),
         GLOBALS,
       );
 
-      expect(result).toBeUndefined();
-      expect(jiraBulkMock.setPropertyBulk).toHaveBeenCalledWith('my-flag', {
-        value: { owner: 'admin' },
-      });
+      expect(result).toEqual({ id: '10010', status: 'ENQUEUED' });
+      expect(jiraBulkMock.setPropertyBulk).toHaveBeenCalledWith(
+        'my-flag',
+        { value: { owner: 'admin' } },
+        { returnTask: true },
+      );
     });
 
     it('bulk set-property forwards --filter when supplied', async () => {
@@ -19024,10 +19037,11 @@ describe('executeJiraCommand', () => {
         GLOBALS,
       );
 
-      expect(jiraBulkMock.setPropertyBulk).toHaveBeenCalledWith('my-flag', {
-        value: 'active',
-        filter: { entityIds: [10001, 10002] },
-      });
+      expect(jiraBulkMock.setPropertyBulk).toHaveBeenCalledWith(
+        'my-flag',
+        { value: 'active', filter: { entityIds: [10001, 10002] } },
+        { returnTask: true },
+      );
     });
 
     it('bulk set-property throws when --value is missing', async () => {
@@ -19042,10 +19056,11 @@ describe('executeJiraCommand', () => {
         cmd('bulk', 'set-property', ['my-flag'], { expression: 'issue.summary' }),
         GLOBALS,
       );
-      expect(jiraBulkMock.setPropertyBulk).toHaveBeenCalledWith('my-flag', {
-        value: undefined,
-        expression: 'issue.summary',
-      });
+      expect(jiraBulkMock.setPropertyBulk).toHaveBeenCalledWith(
+        'my-flag',
+        { value: undefined, expression: 'issue.summary' },
+        { returnTask: true },
+      );
     });
 
     it('bulk set-property rejects --value with --expression', async () => {
@@ -19066,12 +19081,16 @@ describe('executeJiraCommand', () => {
 
     // B525
     it('bulk delete-property calls deletePropertyBulk() with propertyKey and no filter', async () => {
-      jiraBulkMock.deletePropertyBulk.mockResolvedValue(undefined);
+      jiraBulkMock.deletePropertyBulk.mockResolvedValue({ id: '10011', status: 'ENQUEUED' });
 
       const result = await executeJiraCommand(cmd('bulk', 'delete-property', ['my-flag']), GLOBALS);
 
-      expect(result).toBeUndefined();
-      expect(jiraBulkMock.deletePropertyBulk).toHaveBeenCalledWith('my-flag', {});
+      expect(result).toEqual({ id: '10011', status: 'ENQUEUED' });
+      expect(jiraBulkMock.deletePropertyBulk).toHaveBeenCalledWith(
+        'my-flag',
+        {},
+        { returnTask: true },
+      );
     });
 
     it('bulk delete-property forwards --filter when supplied', async () => {
@@ -19084,9 +19103,11 @@ describe('executeJiraCommand', () => {
         GLOBALS,
       );
 
-      expect(jiraBulkMock.deletePropertyBulk).toHaveBeenCalledWith('my-flag', {
-        filter: { currentValue: 'deprecated' },
-      });
+      expect(jiraBulkMock.deletePropertyBulk).toHaveBeenCalledWith(
+        'my-flag',
+        { filter: { currentValue: 'deprecated' } },
+        { returnTask: true },
+      );
     });
 
     it('bulk delete-property throws when propertyKey positional is missing', async () => {
@@ -19711,24 +19732,35 @@ describe('executeJiraCommand', () => {
       expect(result).toEqual({ selected: true });
     });
 
-    it('configuration select-timetracking passes name but never the read-only url', async () => {
+    it('configuration select-timetracking passes name', async () => {
       // Arrange
       jiraConfigurationMock.selectTimeTracking.mockResolvedValue(undefined);
       const parsed = cmd('configuration', 'select-timetracking', [], {
         key: 'com.acme',
         name: 'Acme',
-        url: 'https://acme.example/track',
       });
 
       // Act
       await executeJiraCommand(parsed, GLOBALS);
 
-      // Assert: spec TimeTrackingProvider.url is readOnly.
+      // Assert
       expect(jiraConfigurationMock.selectTimeTracking).toHaveBeenCalledWith({
         key: 'com.acme',
         name: 'Acme',
       });
-      expect(jiraConfigurationMock.selectTimeTracking.mock.calls[0]?.[0]).not.toHaveProperty('url');
+    });
+
+    it('configuration select-timetracking rejects the read-only --url (F284)', async () => {
+      const parsed = cmd('configuration', 'select-timetracking', [], {
+        key: 'com.acme',
+        url: 'https://acme.example/track',
+      });
+
+      // Spec TimeTrackingProvider.url is readOnly: fail fast instead of dropping it.
+      await expect(executeJiraCommand(parsed, GLOBALS)).rejects.toThrow(
+        '--url is not supported by configuration select-timetracking',
+      );
+      expect(jiraConfigurationMock.selectTimeTracking).not.toHaveBeenCalled();
     });
 
     it('configuration list-timetracking-providers calls client.configuration.listTimeTrackingProviders()', async () => {

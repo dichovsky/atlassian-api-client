@@ -231,6 +231,7 @@ const GLOBAL_OPTIONS = {
   exclude: { type: 'string' as const },
   'exclude-account-ids': { type: 'string' as const },
   'exclude-connect-users': { type: 'boolean' as const },
+  'exclude-id': { type: 'string' as const },
   'show-avatar': { type: 'boolean' as const },
   'case-insensitive': { type: 'boolean' as const },
   'include-ai-agents': { type: 'boolean' as const },
@@ -263,6 +264,8 @@ const GLOBAL_OPTIONS = {
   'image-format': { type: 'string' as const },
   x: { type: 'string' as const },
   y: { type: 'string' as const },
+  // universal-avatar view-by-*: file to write the image bytes to (scoped in parseCommand)
+  output: { type: 'string' as const },
   // bulk options (B345-B353 + DevOps bulk POST variants)
   // Tri-state filter (B1063): `sendBulkNotification` defaults to `true` on the
   // wire, so suppressing notifications is only reachable via
@@ -745,6 +748,15 @@ export function parseCommand(argv: string[]): ParsedCommand & {
   ) {
     throw new Error(
       '--include-archived-projects is supported only by current Jira JQL search (`search`, `query`, `jql-get`, or `jql-post`)',
+    );
+  }
+
+  if (
+    options['output'] !== undefined &&
+    !(api === 'jira' && resource === 'universal-avatar' && action.startsWith('view-by-'))
+  ) {
+    throw new Error(
+      '--output is supported only by Jira universal-avatar view-by-type, view-by-id and view-by-owner',
     );
   }
 

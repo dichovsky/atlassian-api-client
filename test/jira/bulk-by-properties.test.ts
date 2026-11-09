@@ -81,6 +81,13 @@ describe('BulkByPropertiesResource', () => {
       );
       expect(transport.lastCall).toBeUndefined();
     });
+
+    it('keeps a __proto__ property key instead of dropping it into an unfiltered delete', async () => {
+      transport.respondWith(undefined, 202);
+      await resource.deleteBuildsByProperties({ properties: JSON.parse('{"__proto__":"x"}') });
+
+      expect(Object.entries(transport.lastCall?.options.query ?? {})).toEqual([['__proto__', 'x']]);
+    });
   });
 
   // ── deleteDeploymentsByProperties (B957) ──────────────────────────────────

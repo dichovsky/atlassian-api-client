@@ -139,7 +139,7 @@ export class RepositoryResource {
    * DELETE /rest/devinfo/0.10/repository/{repositoryId}/{entityType}/{entityId}
    *
    * @param repositoryId - The ID of the repository.
-   * @param entityType - The type of entity (e.g. `commit`, `branch`, `pullRequest`).
+   * @param entityType - The type of entity: `commit`, `branch`, or `pull_request`.
    * @param entityId - The ID of the entity to delete.
    * @param params - Optional `_updateSequenceId` query parameter.
    */

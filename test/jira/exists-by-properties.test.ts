@@ -57,6 +57,14 @@ describe('ExistsByPropertiesResource', () => {
       });
     });
 
+    it('keeps a __proto__ property key as a query param', async () => {
+      transport.respondWith({ hasDataMatchingProperties: false });
+
+      await existsByProperties.get(JSON.parse('{"__proto__":"x"}'));
+
+      expect(Object.entries(transport.lastCall?.options.query ?? {})).toEqual([['__proto__', 'x']]);
+    });
+
     it('omits undefined values from query', async () => {
       // Arrange
       transport.respondWith({ hasDataMatchingProperties: false });

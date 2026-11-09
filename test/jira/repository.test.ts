@@ -164,7 +164,7 @@ describe('RepositoryResource', () => {
       transport.respondWith(undefined);
 
       // Act
-      await repository.deleteEntity('repo-1', 'pullRequest', 'pr-1', { updateSequenceId: 99 });
+      await repository.deleteEntity('repo-1', 'pull_request', 'pr-1', { updateSequenceId: 99 });
 
       // Assert
       expect(transport.lastCall?.options.query).toEqual({ _updateSequenceId: '99' });

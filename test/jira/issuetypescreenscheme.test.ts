@@ -427,6 +427,33 @@ describe('IssueTypeScreenSchemeResource', () => {
 
       expect(results.map((p) => p.id)).toEqual(['p1', 'p2']);
     });
+
+    it('forwards the query filter on every page (F183)', async () => {
+      transport
+        .respondWith({
+          values: [makeProjectDetails('p1')],
+          startAt: 0,
+          maxResults: 1,
+          isLast: false,
+        })
+        .respondWith({
+          values: [makeProjectDetails('p2')],
+          startAt: 1,
+          maxResults: 1,
+          isLast: true,
+        });
+
+      const results: { id: string }[] = [];
+      for await (const p of resource.listProjectAll('10001', { query: 'abc', maxResults: 1 })) {
+        results.push(p);
+      }
+
+      expect(results.map((p) => p.id)).toEqual(['p1', 'p2']);
+      expect(transport.calls.map((c) => c.options.query)).toEqual([
+        { query: 'abc', startAt: 0, maxResults: 1 },
+        { query: 'abc', startAt: 1, maxResults: 1 },
+      ]);
+    });
   });
 
   // ── listMapping (B584) ──────────────────────────────────────────────────────

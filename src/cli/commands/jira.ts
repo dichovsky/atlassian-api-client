@@ -2390,6 +2390,9 @@ async function executeSprints(client: JiraClient, cmd: ParsedCommand): Promise<u
   }
 }
 
+/** Spec `ColorKey` enum for `epic update --color`. */
+const EPIC_COLOR_KEYS = Array.from({ length: 14 }, (_, i) => `color_${i + 1}`);
+
 async function executeEpic(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
   const opts = cmd.options;
 
@@ -2403,7 +2406,7 @@ async function executeEpic(client: JiraClient, cmd: ParsedCommand): Promise<unkn
       if (name !== undefined) data['name'] = name;
       const summary = asString(opts['summary']);
       if (summary !== undefined) data['summary'] = summary;
-      const color = asString(opts['color']);
+      const color = asEnum(opts['color'], EPIC_COLOR_KEYS, 'color');
       if (color !== undefined) data['color'] = { key: color };
       const done = asBoolFlag(opts['done']);
       if (done !== undefined) data['done'] = done;
@@ -2678,13 +2681,15 @@ function asFeatureState(raw: string): 'ENABLED' | 'DISABLED' | 'COMING_SOON' {
   return raw;
 }
 
+/** `--visibility`: case-insensitive input; the spec's values are lowercase `public` / `private`. */
 function asAnnouncementBannerVisibility(
   value: string | boolean | undefined,
-): 'PUBLIC' | 'PRIVATE' | undefined {
+): 'public' | 'private' | undefined {
   const s = asString(value);
   if (s === undefined) return undefined;
-  if (s === 'PUBLIC' || s === 'PRIVATE') return s;
-  throw new Error(`--visibility must be one of: PUBLIC, PRIVATE. Got: ${s}`);
+  const lower = s.toLowerCase();
+  if (lower === 'public' || lower === 'private') return lower;
+  throw new Error(`--visibility must be one of: public, private. Got: ${s}`);
 }
 
 function asSprintState(
@@ -2795,6 +2800,21 @@ function asPositiveInt(value: string | boolean | undefined, name: string): numbe
   const n = Number(value);
   if (!Number.isInteger(n) || n <= 0) {
     throw new Error(`${name} must be a positive integer, got: ${value}`);
+  }
+  return n;
+}
+
+/**
+ * A positive int64 the SDK sends as a number: decimal digits only (no `0x10`
+ * or `1e3`) and within `Number.MAX_SAFE_INTEGER`, so it reaches the wire exactly.
+ */
+function asExactPositiveInt(value: string | boolean | undefined, name: string): number | undefined {
+  if (typeof value !== 'string') return undefined;
+  const n = Number(value);
+  if (!/^\s*\d+\s*$/.test(value) || !Number.isSafeInteger(n) || n <= 0) {
+    throw new Error(
+      `${name} must be a positive integer up to ${Number.MAX_SAFE_INTEGER}, got: ${value}`,
+    );
   }
   return n;
 }
@@ -3128,13 +3148,29 @@ async function executeForge(client: JiraClient, cmd: ParsedCommand): Promise<unk
     case 'bulk-panel-action': {
       const moduleId = requireOpt(opts['module-id'], '--module-id');
       const valueRaw = requireOpt(opts['value'], '--value');
-      let projectList: { action: 'PIN' | 'UNPIN'; projectIdOrKey: string }[];
+      let projectList: unknown;
       try {
-        projectList = JSON.parse(valueRaw) as typeof projectList;
+        projectList = JSON.parse(valueRaw);
       } catch {
         throw new Error('--value must be valid JSON (array of project pin action objects)');
       }
-      return client.forge.bulkPanelAction({ moduleId, projectList });
+      if (
+        !Array.isArray(projectList) ||
+        !projectList.every(
+          (p: unknown) =>
+            isJsonObject(p) &&
+            (p['action'] === 'PIN' || p['action'] === 'UNPIN') &&
+            typeof p['projectIdOrKey'] === 'string',
+        )
+      ) {
+        throw new Error(
+          '--value must be a JSON array of {"action":"PIN"|"UNPIN","projectIdOrKey":"<id or key>"} objects',
+        );
+      }
+      return client.forge.bulkPanelAction({
+        moduleId,
+        projectList: projectList as { action: 'PIN' | 'UNPIN'; projectIdOrKey: string }[],
+      });
     }
     case 'bulk-pin-status': {
       const moduleId = requireOpt(opts['module-id'], '--module-id');
@@ -3149,6 +3185,21 @@ async function executeForge(client: JiraClient, cmd: ParsedCommand): Promise<unk
         `Unknown forge action: ${cmd.action}. Actions: bulk-panel-action, bulk-pin-status`,
       );
   }
+}
+
+/**
+ * `--body` for `policies set-project-policies` / `validate-project`. The SDK
+ * forwards only `policyIds`, so a body without a `policyIds` string array (a
+ * typo such as `policyId`) would otherwise become `{}` — an empty full
+ * replacement of the project's policy set.
+ */
+function policyIdsBody(opts: ParsedCommand['options']): Record<string, unknown> {
+  const body = parseJsonObjectFlag(requireOpt(opts['body'], '--body'), '--body');
+  const ids: unknown = body['policyIds'];
+  if (!Array.isArray(ids) || !ids.every((id: unknown) => typeof id === 'string')) {
+    throw new Error('--body must be {"policyIds":["<policyId>",...]} ([] clears the set)');
+  }
+  return body;
 }
 
 async function executePolicies(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
@@ -3173,7 +3224,7 @@ async function executePolicies(client: JiraClient, cmd: ParsedCommand): Promise<
         parseCsv(opts['rule-type-ids']),
       );
     case 'set-project-policies': {
-      const body = parseJsonObjectFlag(requireOpt(opts['body'], '--body'), '--body');
+      const body = policyIdsBody(opts);
       await client.policies.setProjectPolicies(
         requireArg(cmd.positionalArgs[0], 'projectIdOrKey'),
         body as unknown as Parameters<typeof client.policies.setProjectPolicies>[1],
@@ -3181,7 +3232,7 @@ async function executePolicies(client: JiraClient, cmd: ParsedCommand): Promise<
       return { updated: true };
     }
     case 'validate-project': {
-      const body = parseJsonObjectFlag(requireOpt(opts['body'], '--body'), '--body');
+      const body = policyIdsBody(opts);
       await client.policies.validateProjectPolicies(
         requireArg(cmd.positionalArgs[0], 'projectIdOrKey'),
         body as unknown as Parameters<typeof client.policies.validateProjectPolicies>[1],
@@ -3282,18 +3333,23 @@ async function executeGroups(client: JiraClient, cmd: ParsedCommand): Promise<un
 
   switch (cmd.action) {
     case 'picker': {
-      const excludeRaw = asString(opts['exclude']);
-      const exclude = excludeRaw
-        ? excludeRaw
-            .split(',')
-            .map((s) => s.trim())
-            .filter((s) => s.length > 0)
-        : undefined;
+      rejectRemovedOptions(
+        opts,
+        'groups picker',
+        ['user-name'],
+        'Atlassian removed the userName filter (the server ignores it); exclude groups with --exclude-id',
+      );
+      const exclude = parseCsv(opts['exclude']);
+      const excludeId = filterCsv(opts['exclude-id'], '--exclude-id', 'group id');
+      if (exclude !== undefined && excludeId !== undefined) {
+        throw new Error('groups picker accepts --exclude or --exclude-id, not both');
+      }
       return client.groups.picker({
         query: asString(opts['query']),
         exclude,
+        excludeId,
+        caseInsensitive: asBoolFlag(opts['case-insensitive']),
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
-        userName: asString(opts['user-name']),
       });
     }
     case 'get': {
@@ -3426,14 +3482,26 @@ async function executeSecurityLevel(client: JiraClient, cmd: ParsedCommand): Pro
   }
 }
 
+const LICENSE_APPLICATION_KEYS = [
+  'jira-core',
+  'jira-product-discovery',
+  'jira-software',
+  'jira-servicedesk',
+] as const satisfies readonly ApplicationKey[];
+
 async function executeLicense(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
   switch (cmd.action) {
     case 'get-approximate-count':
       return client.license.getApproximateCount();
-    case 'get-approximate-count-for-product':
-      return client.license.getApproximateCountForProduct(
-        requireArg(cmd.positionalArgs[0], 'applicationKey') as ApplicationKey,
-      );
+    case 'get-approximate-count-for-product': {
+      const applicationKey = requireArg(cmd.positionalArgs[0], 'applicationKey');
+      if (!(LICENSE_APPLICATION_KEYS as readonly string[]).includes(applicationKey)) {
+        throw new Error(
+          `applicationKey must be one of: ${LICENSE_APPLICATION_KEYS.join(', ')}, got: ${applicationKey}`,
+        );
+      }
+      return client.license.getApproximateCountForProduct(applicationKey as ApplicationKey);
+    }
     default:
       throw new Error(
         `Unknown license action: ${cmd.action}. Actions: get-approximate-count, get-approximate-count-for-product`,
@@ -3473,6 +3541,11 @@ async function executeRedact(client: JiraClient, cmd: ParsedCommand): Promise<un
       } catch {
         throw new Error('--value must be valid JSON (array of redaction objects)');
       }
+      if (!Array.isArray(redactions)) {
+        throw new Error(
+          '--value must be a JSON array of redaction objects, not {"redactions":...}',
+        );
+      }
       return client.redact.start({ redactions });
     }
     case 'get-status':
@@ -3482,11 +3555,21 @@ async function executeRedact(client: JiraClient, cmd: ParsedCommand): Promise<un
   }
 }
 
+/** Guidance for DevOps deletes whose `_updateSequenceId`/`_updateSequenceNumber` guard Jira dropped. */
+const NO_SEQUENCE_GUARD_GUIDANCE =
+  'Jira no longer supports the update-sequence guard on this delete, so it would be ignored; omit it';
+
 async function executeFlag(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
   switch (cmd.action) {
     case 'get':
       return client.flag.get(requireArg(cmd.positionalArgs[0], 'featureFlagId'));
     case 'delete':
+      rejectRemovedOptions(
+        cmd.options,
+        'flag delete',
+        ['update-sequence-id'],
+        NO_SEQUENCE_GUARD_GUIDANCE,
+      );
       await client.flag.delete(requireArg(cmd.positionalArgs[0], 'featureFlagId'));
       return { deleted: true };
     default:
@@ -3506,10 +3589,17 @@ async function executeTask(client: JiraClient, cmd: ParsedCommand): Promise<unkn
   }
 }
 
+const SYSTEM_AVATAR_TYPES = ['issuetype', 'project', 'user', 'priority'] as const;
+
 async function executeAvatar(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
   switch (cmd.action) {
-    case 'list-system':
-      return client.avatar.listSystem(requireArg(cmd.positionalArgs[0], 'type'));
+    case 'list-system': {
+      const type = requireArg(cmd.positionalArgs[0], 'type');
+      if (!(SYSTEM_AVATAR_TYPES as readonly string[]).includes(type)) {
+        throw new Error(`type must be one of: ${SYSTEM_AVATAR_TYPES.join(', ')}, got: ${type}`);
+      }
+      return client.avatar.listSystem(type);
+    }
     default:
       throw new Error(`Unknown avatar action: ${cmd.action}. Actions: list-system`);
   }
@@ -3524,13 +3614,27 @@ async function executeCustomFieldOption(client: JiraClient, cmd: ParsedCommand):
   }
 }
 
+const CLASSIFICATION_STATUSES = ['PUBLISHED', 'ARCHIVED', 'DRAFT'] as const;
+const CLASSIFICATION_ORDER_BY = ['rank', '-rank', '+rank'] as const;
+
 async function executeClassificationLevels(
   client: JiraClient,
   cmd: ParsedCommand,
 ): Promise<unknown> {
   switch (cmd.action) {
-    case 'list':
-      return client.classificationLevels.list();
+    case 'list': {
+      const statuses = filterCsv(cmd.options['status'], '--status', 'status')?.map(
+        (s) =>
+          asEnum(s, CLASSIFICATION_STATUSES, 'status') as (typeof CLASSIFICATION_STATUSES)[number],
+      );
+      // Spec `uniqueItems`: send each status once.
+      const status = statuses && [...new Set(statuses)];
+      const orderBy = asEnum(cmd.options['order-by'], CLASSIFICATION_ORDER_BY, 'order-by');
+      return client.classificationLevels.list({
+        ...(status !== undefined && { status }),
+        ...(orderBy !== undefined && { orderBy }),
+      });
+    }
     default:
       throw new Error(`Unknown classification-levels action: ${cmd.action}. Actions: list`);
   }
@@ -3549,6 +3653,9 @@ async function executeLatest(client: JiraClient, cmd: ParsedCommand): Promise<un
       } catch {
         throw new Error('--value must be valid JSON (array of { issueId, worklogId } pairs)');
       }
+      if (!Array.isArray(requests)) {
+        throw new Error('--value must be a JSON array of { issueId, worklogId } pairs');
+      }
       return client.latest.bulkWorklog({ requests });
     }
     default:
@@ -3561,6 +3668,12 @@ async function executeRemoteLink(client: JiraClient, cmd: ParsedCommand): Promis
     case 'get':
       return client.remoteLink.get(requireArg(cmd.positionalArgs[0], 'remoteLinkId'));
     case 'delete':
+      rejectRemovedOptions(
+        cmd.options,
+        'remote-link delete',
+        ['update-sequence-id'],
+        NO_SEQUENCE_GUARD_GUIDANCE,
+      );
       await client.remoteLink.delete(requireArg(cmd.positionalArgs[0], 'remoteLinkId'));
       return { deleted: true };
     default:
@@ -3610,15 +3723,79 @@ async function executeAddons(client: JiraClient, cmd: ParsedCommand): Promise<un
   }
 }
 
+/**
+ * Parse a DevOps `--properties` filter (`exists-by-properties`,
+ * `bulk-by-properties`): `key=value[,key=value]` pairs, or a JSON object of
+ * string/number values when a value contains a comma. The server ANDs the
+ * keys, so a repeated key is rejected rather than replacing the earlier one.
+ */
+function devopsPropertiesFlag(raw: string, command: string): Record<string, string> {
+  const pairs: [string, string][] = [];
+  if (raw.trim().startsWith('{')) {
+    for (const [key, value] of Object.entries(parseJsonObjectFlag(raw, '--properties'))) {
+      if (typeof value !== 'string' && typeof value !== 'number') {
+        throw new Error(`${command} --properties: value of "${key}" must be a string or number`);
+      }
+      pairs.push([key, String(value)]);
+    }
+  } else {
+    for (const pair of raw.split(',')) {
+      const eqIdx = pair.indexOf('=');
+      if (eqIdx === -1) {
+        throw new Error(`${command} --properties: invalid pair "${pair}", expected key=value`);
+      }
+      pairs.push([pair.slice(0, eqIdx).trim(), pair.slice(eqIdx + 1).trim()]);
+    }
+  }
+  for (const [key, value] of pairs) {
+    if (key.trim() === '') throw new Error(`${command} --properties: empty key`);
+    if (value === '') throw new Error(`${command} --properties: empty value for "${key}"`);
+  }
+  if (pairs.length === 0) {
+    throw new Error(`${command} --properties: at least one property is required`);
+  }
+  const keys = pairs.map(([key]) => key);
+  const duplicate = keys.find((key, i) => keys.indexOf(key) !== i);
+  if (duplicate !== undefined) {
+    throw new Error(`${command} --properties: duplicate key "${duplicate}"`);
+  }
+  const reserved = keys.find(
+    (key) => key === '_updateSequenceId' || key === '_updateSequenceNumber',
+  );
+  if (reserved !== undefined) {
+    throw new Error(
+      `${command} --properties: "${reserved}" is the update-sequence guard, not a property; use --update-sequence-id where supported`,
+    );
+  }
+  return Object.fromEntries(pairs);
+}
+
 async function executeExistsByProperties(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
   const opts = cmd.options;
 
   switch (cmd.action) {
-    case 'get':
+    case 'get': {
+      rejectRemovedOptions(
+        opts,
+        'exists-by-properties get',
+        ['entity-type', 'entity-id'],
+        'it was sent as a property filter, so pass it in --properties instead, e.g. --properties entityType=repository,entityId=123',
+      );
+      const raw = asString(opts['properties']);
+      if (raw === undefined) {
+        throw new Error(
+          'exists-by-properties get requires --properties (key=value[,key=value] or a JSON object)',
+        );
+      }
+      const updateSequenceId = asExactPositiveInt(
+        opts['update-sequence-id'],
+        '--update-sequence-id',
+      );
       return client.existsByProperties.get({
-        entityType: asString(opts['entity-type']),
-        entityId: asString(opts['entity-id']),
+        ...devopsPropertiesFlag(raw, 'exists-by-properties'),
+        ...(updateSequenceId !== undefined && { _updateSequenceId: updateSequenceId }),
       });
+    }
     default:
       throw new Error(`Unknown exists-by-properties action: ${cmd.action}. Actions: get`);
   }
@@ -3772,6 +3949,80 @@ function asIssueTypeKind(value: string | boolean | undefined): 'subtask' | 'stan
   throw new Error(`--type must be one of: subtask, standard. Got: ${s}`);
 }
 
+/**
+ * A CSV filter flag that, when given, names at least one value (`''` or `' , '`
+ * is rejected): dropping it would send the request unfiltered.
+ */
+function filterCsv(
+  value: string | boolean | undefined,
+  name: string,
+  noun: string,
+): string[] | undefined {
+  const items = parseCsv(value);
+  if (value !== undefined && items === undefined)
+    throw new Error(`${name} must name at least one ${noun}`);
+  return items;
+}
+
+/** A string flag that may be omitted but not given blank (it would be sent as-is). */
+function nonBlankOpt(value: string | boolean | undefined, name: string): string | undefined {
+  const s = asString(value);
+  if (s?.trim() === '') throw new Error(`Missing value for ${name}`);
+  return s;
+}
+
+/**
+ * A CSV of int64 ids, each exact like `--issue-id`, sent once each (spec
+ * `uniqueItems`). A value naming no id is rejected: dropping it would send the
+ * request unfiltered.
+ */
+function exactUniqueIds(value: string | boolean | undefined, name: string): number[] | undefined {
+  const ids = filterCsv(value, name, 'id')?.map((s) => asExactPositiveInt(s, name) as number);
+  return ids && [...new Set(ids)];
+}
+
+/**
+ * Filters and pagination shared by `app get-field-context-configuration` and
+ * `list-field-context-configurations`. `id` and `fieldContextId` are spec
+ * `type:array` (repeated params); Jira accepts one filter group per request,
+ * and `projectKeyOrId` only together with `issueTypeId`.
+ */
+function appFieldContextConfigurationParams(opts: ParsedCommand['options']): {
+  id?: number[];
+  fieldContextId?: number[];
+  issueId?: number;
+  projectKeyOrId?: string;
+  issueTypeId?: string;
+  startAt?: number;
+  maxResults?: number;
+} {
+  const id = exactUniqueIds(opts['ids'], '--ids');
+  const fieldContextId = exactUniqueIds(opts['context-ids'], '--context-ids');
+  const issueId = asExactPositiveInt(opts['issue-id'], '--issue-id');
+  const projectKeyOrId = nonBlankOpt(opts['project'], '--project');
+  const issueTypeId = nonBlankOpt(opts['issue-type-id'], '--issue-type-id');
+  const startAt = asNonNegativeInt(opts['start-at'], '--start-at');
+  const maxResults = asPositiveInt(opts['max-results'], '--max-results');
+  if ((projectKeyOrId === undefined) !== (issueTypeId === undefined)) {
+    throw new Error('--project and --issue-type-id must be given together');
+  }
+  const groups = [id, fieldContextId, issueId, projectKeyOrId].filter((v) => v !== undefined);
+  if (groups.length > 1) {
+    throw new Error(
+      'Use one filter: --ids, --context-ids, --issue-id, or --project with --issue-type-id',
+    );
+  }
+  return {
+    ...(id !== undefined && { id }),
+    ...(fieldContextId !== undefined && { fieldContextId }),
+    ...(issueId !== undefined && { issueId }),
+    ...(projectKeyOrId !== undefined && { projectKeyOrId }),
+    ...(issueTypeId !== undefined && { issueTypeId }),
+    ...(startAt !== undefined && { startAt }),
+    ...(maxResults !== undefined && { maxResults }),
+  };
+}
+
 async function executeApp(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
   const opts = cmd.options;
 
@@ -3779,9 +4030,26 @@ async function executeApp(client: JiraClient, cmd: ParsedCommand): Promise<unkno
     case 'get-field-context-configuration':
       return client.app.getFieldContextConfiguration(
         requireArg(cmd.positionalArgs[0], 'fieldIdOrKey'),
+        appFieldContextConfigurationParams(opts),
       );
     case 'update-field-context-configuration': {
       const fieldIdOrKey = requireArg(cmd.positionalArgs[0], 'fieldIdOrKey');
+      const bodyRaw = asString(opts['body']);
+      if (bodyRaw !== undefined) {
+        // Several entries at once: the full spec body { configurations: [...] }.
+        if (['id', 'configuration', 'schema'].some((flag) => opts[flag] !== undefined)) {
+          throw new Error('Use --body or --id/--configuration/--schema, not both');
+        }
+        const body = parseJsonObjectFlag(bodyRaw, '--body');
+        if (!Array.isArray(body['configurations'])) {
+          throw new Error('--body must be {"configurations":[{"id":"<id>",...},...]}');
+        }
+        await client.app.updateFieldContextConfiguration(
+          fieldIdOrKey,
+          body as unknown as Parameters<typeof client.app.updateFieldContextConfiguration>[1],
+        );
+        return { updated: true };
+      }
       // The spec body is { configurations: [{ id, configuration?, schema? }] };
       // `id` (the configuration ID) is required. Build the single-entry array the
       // CLI exposes from --id + --configuration/--schema.
@@ -3817,6 +4085,9 @@ async function executeApp(client: JiraClient, cmd: ParsedCommand): Promise<unkno
           '--value must be valid JSON (array of update objects with issueIds and value)',
         );
       }
+      if (!Array.isArray(updates)) {
+        throw new Error('--value must be a JSON array of {issueIds, value} objects');
+      }
       await client.app.updateFieldValue(fieldIdOrKey, { updates }, fieldValueEventParams(opts));
       return { updated: true };
     }
@@ -3825,12 +4096,9 @@ async function executeApp(client: JiraClient, cmd: ParsedCommand): Promise<unkno
       if (fieldIdsOrKeys === undefined) {
         throw new Error('list-field-context-configurations requires --field-ids-or-keys');
       }
-      // `--context-ids` filters by field-context ID via the spec `fieldContextId`
-      // query param (type:array) — NOT a request-body field.
-      const fieldContextId = asIntArray(opts['context-ids'], '--context-ids');
       return client.app.listFieldContextConfigurations(
         { fieldIdsOrKeys },
-        fieldContextId !== undefined ? { fieldContextId } : {},
+        appFieldContextConfigurationParams(opts),
       );
     }
     case 'bulk-update-field-value': {
@@ -3842,6 +4110,9 @@ async function executeApp(client: JiraClient, cmd: ParsedCommand): Promise<unkno
         throw new Error(
           '--value must be valid JSON (array of {customField, issueIds, value} objects)',
         );
+      }
+      if (!Array.isArray(updates)) {
+        throw new Error('--value must be a JSON array of {customField, issueIds, value} objects');
       }
       await client.app.bulkUpdateFieldValue({ updates }, fieldValueEventParams(opts));
       return { updated: true };
@@ -3855,6 +4126,9 @@ async function executeApp(client: JiraClient, cmd: ParsedCommand): Promise<unkno
         modules = JSON.parse(valueRaw) as typeof modules;
       } catch {
         throw new Error('--value must be valid JSON (array of module objects)');
+      }
+      if (!Array.isArray(modules)) {
+        throw new Error('--value must be a JSON array of module objects, not {"modules":...}');
       }
       await client.app.registerDynamicModules({ modules });
       return { registered: true };
@@ -4026,6 +4300,23 @@ function parseJsonArrayFlag(raw: string, flag: string): unknown[] {
   return parsed;
 }
 
+/** `--issues` for `bulk get-fields` / `get-transitions`: a type:string CSV, trimmed like the other bulk actions. */
+function bulkIssuesCsv(opts: ParsedCommand['options']): string {
+  const ids = csvFlag(opts['issues']);
+  if (ids === undefined) throw new Error('Missing required option: --issues');
+  return ids.join(',');
+}
+
+/** A `bulk get-*` page cursor; an empty one is a caller mistake, not the first page. */
+function bulkCursor(
+  opts: ParsedCommand['options'],
+  flag: 'ending-before' | 'starting-after',
+): string | undefined {
+  const cursor = asString(opts[flag]);
+  if (cursor?.trim() === '') throw new Error(`--${flag} must not be empty`);
+  return cursor;
+}
+
 async function executeBulk(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
   const opts = cmd.options;
 
@@ -4051,12 +4342,12 @@ async function executeBulk(client: JiraClient, cmd: ParsedCommand): Promise<unkn
       });
     }
     case 'get-fields': {
-      const issueIdsOrKeys = requireOpt(opts['issues'], '--issues');
+      const issueIdsOrKeys = bulkIssuesCsv(opts);
       return client.bulk.getIssueFieldsBulk({
         issueIdsOrKeys,
         searchText: asString(opts['search-text']),
-        endingBefore: asString(opts['ending-before']),
-        startingAfter: asString(opts['starting-after']),
+        endingBefore: bulkCursor(opts, 'ending-before'),
+        startingAfter: bulkCursor(opts, 'starting-after'),
       });
     }
     case 'edit-fields': {
@@ -4086,8 +4377,13 @@ async function executeBulk(client: JiraClient, cmd: ParsedCommand): Promise<unkn
       });
     }
     case 'get-transitions': {
-      const issueIdsOrKeys = requireOpt(opts['issues'], '--issues');
-      return client.bulk.getAvailableTransitionsBulk({ issueIdsOrKeys });
+      const endingBefore = bulkCursor(opts, 'ending-before');
+      const startingAfter = bulkCursor(opts, 'starting-after');
+      return client.bulk.getAvailableTransitionsBulk({
+        issueIdsOrKeys: bulkIssuesCsv(opts),
+        ...(endingBefore !== undefined && { endingBefore }),
+        ...(startingAfter !== undefined && { startingAfter }),
+      });
     }
     case 'transition-issues': {
       const bulkTransitionInputs = parseJsonArrayFlag(
@@ -4129,12 +4425,15 @@ async function executeBulk(client: JiraClient, cmd: ParsedCommand): Promise<unkn
               '--filter',
             ) as BulkSetIssuePropertyData['filter'])
           : undefined;
-      await client.bulk.setPropertyBulk(propertyKey, {
-        value,
-        ...(expression !== undefined && { expression }),
-        ...(filter !== undefined && { filter }),
-      });
-      return undefined;
+      return client.bulk.setPropertyBulk(
+        propertyKey,
+        {
+          value,
+          ...(expression !== undefined && { expression }),
+          ...(filter !== undefined && { filter }),
+        },
+        { returnTask: true },
+      );
     }
     case 'delete-property': {
       // B525 DELETE /rest/api/3/issue/properties/{propertyKey}
@@ -4147,10 +4446,11 @@ async function executeBulk(client: JiraClient, cmd: ParsedCommand): Promise<unkn
               '--filter',
             ) as BulkDeleteIssuePropertyData['filter'])
           : undefined;
-      await client.bulk.deletePropertyBulk(propertyKey, {
-        ...(filter !== undefined && { filter }),
-      });
-      return undefined;
+      return client.bulk.deletePropertyBulk(
+        propertyKey,
+        { ...(filter !== undefined && { filter }) },
+        { returnTask: true },
+      );
     }
     case 'submit-builds':
       return client.bulk.submitBuilds(
@@ -4256,6 +4556,34 @@ async function executeIssueAttachments(client: JiraClient, cmd: ParsedCommand): 
   }
 }
 
+/**
+ * Print the image size, or write the image to `--output`. A blank path, an
+ * existing file or a missing directory is refused before the download; nothing
+ * is overwritten.
+ */
+async function avatarImageResult(
+  outputFlag: string | boolean | undefined,
+  download: () => Promise<ArrayBuffer>,
+): Promise<{ bytes: number; path?: string }> {
+  const output = nonBlankOpt(outputFlag, '--output');
+  if (output === undefined) return { bytes: (await download()).byteLength };
+  const { access, stat, writeFile } = await import('node:fs/promises');
+  const { dirname } = await import('node:path');
+  const taken = await access(output).then(
+    () => true,
+    () => false,
+  );
+  if (taken) throw new Error(`--output ${output} already exists; choose a new file`);
+  const inDirectory = await stat(dirname(output)).then(
+    (s) => s.isDirectory(),
+    () => false,
+  );
+  if (!inDirectory) throw new Error(`--output ${output}: its directory does not exist`);
+  const buffer = await download();
+  await writeFile(output, new Uint8Array(buffer), { flag: 'wx' });
+  return { bytes: buffer.byteLength, path: output };
+}
+
 async function executeUniversalAvatar(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
   const opts = cmd.options;
 
@@ -4275,9 +4603,10 @@ async function executeUniversalAvatar(client: JiraClient, cmd: ParsedCommand): P
       const yRaw = asString(opts['y']);
       const x = xRaw !== undefined ? parseNonNegativeIntArg(xRaw, '--x') : undefined;
       const y = yRaw !== undefined ? parseNonNegativeIntArg(yRaw, '--y') : undefined;
+      const mediaType = avatarImageType(filePath, opts['media-type']);
       const { readFile } = await import('node:fs/promises');
       const buffer = await readFile(filePath);
-      const blob = new Blob([new Uint8Array(buffer)]);
+      const blob = new Blob([new Uint8Array(buffer)], { type: mediaType });
       return client.universalAvatar.storeAvatar(type as AvatarEntityType, entityId, blob, {
         size,
         ...(x !== undefined && { x }),
@@ -4296,11 +4625,12 @@ async function executeUniversalAvatar(client: JiraClient, cmd: ParsedCommand): P
       const type = requireArg(cmd.positionalArgs[0], 'type');
       const size = asString(opts['size']);
       const format = asString(opts['image-format']);
-      const buffer = await client.universalAvatar.getAvatarImageByType(type as AvatarEntityType, {
-        ...(size !== undefined && { size: size as AvatarViewSize }),
-        ...(format !== undefined && { format: format as AvatarViewFormat }),
-      });
-      return { bytes: buffer.byteLength };
+      return avatarImageResult(opts['output'], () =>
+        client.universalAvatar.getAvatarImageByType(type as AvatarEntityType, {
+          ...(size !== undefined && { size: size as AvatarViewSize }),
+          ...(format !== undefined && { format: format as AvatarViewFormat }),
+        }),
+      );
     }
     case 'view-by-id': {
       const type = requireArg(cmd.positionalArgs[0], 'type');
@@ -4308,26 +4638,24 @@ async function executeUniversalAvatar(client: JiraClient, cmd: ParsedCommand): P
       const id = parsePositiveIntArg(idRaw, 'id');
       const size = asString(opts['size']);
       const format = asString(opts['image-format']);
-      const buffer = await client.universalAvatar.getAvatarImageByID(type as AvatarEntityType, id, {
-        ...(size !== undefined && { size: size as AvatarViewSize }),
-        ...(format !== undefined && { format: format as AvatarViewFormat }),
-      });
-      return { bytes: buffer.byteLength };
+      return avatarImageResult(opts['output'], () =>
+        client.universalAvatar.getAvatarImageByID(type as AvatarEntityType, id, {
+          ...(size !== undefined && { size: size as AvatarViewSize }),
+          ...(format !== undefined && { format: format as AvatarViewFormat }),
+        }),
+      );
     }
     case 'view-by-owner': {
       const type = requireArg(cmd.positionalArgs[0], 'type');
       const entityId = requireArg(cmd.positionalArgs[1], 'entityId');
       const size = asString(opts['size']);
       const format = asString(opts['image-format']);
-      const buffer = await client.universalAvatar.getAvatarImageByOwner(
-        type as AvatarEntityType,
-        entityId,
-        {
+      return avatarImageResult(opts['output'], () =>
+        client.universalAvatar.getAvatarImageByOwner(type as AvatarEntityType, entityId, {
           ...(size !== undefined && { size: size as AvatarViewSize }),
           ...(format !== undefined && { format: format as AvatarViewFormat }),
-        },
+        }),
       );
-      return { bytes: buffer.byteLength };
     }
     default:
       throw new Error(
@@ -4542,9 +4870,15 @@ async function executeConfiguration(client: JiraClient, cmd: ParsedCommand): Pro
     case 'get-timetracking':
       return client.configuration.getTimeTracking();
     case 'select-timetracking': {
+      // Spec: TimeTrackingProvider.url is readOnly, so it is never sent.
+      rejectRemovedOptions(
+        opts,
+        'configuration select-timetracking',
+        ['url'],
+        'url is read-only in the spec; omit it',
+      );
       const key = requireOpt(opts['key'], '--key');
       const name = asString(opts['name']);
-      // Spec: TimeTrackingProvider.url is readOnly, so it is not sent.
       await client.configuration.selectTimeTracking({
         key,
         ...(name !== undefined && { name }),
@@ -4988,6 +5322,15 @@ const ISSUE_TYPE_SCREEN_SCHEMES_ACTIONS = [
   'assign-to-project',
 ];
 
+const ISSUE_TYPE_SCREEN_SCHEME_ORDER_BY = [
+  'name',
+  '-name',
+  '+name',
+  'id',
+  '-id',
+  '+id',
+] as const satisfies readonly IssueTypeScreenSchemeOrderBy[];
+
 async function executeIssueTypeScreenSchemes(
   client: JiraClient,
   cmd: ParsedCommand,
@@ -5004,7 +5347,7 @@ async function executeIssueTypeScreenSchemes(
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
         id: ids,
         queryString: asString(opts['query']),
-        orderBy: asString(opts['order-by']) as IssueTypeScreenSchemeOrderBy,
+        orderBy: asEnum(opts['order-by'], ISSUE_TYPE_SCREEN_SCHEME_ORDER_BY, 'order-by'),
         expand: asString(opts['expand']),
       });
     }
@@ -5072,6 +5415,7 @@ async function executeIssueTypeScreenSchemes(
       return client.issueTypeScreenSchemes.listProject(schemeId, {
         startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+        query: asString(opts['query']),
       });
     }
     case 'list-mapping': {
@@ -9009,7 +9353,7 @@ async function executeUiModifications(client: JiraClient, cmd: ParsedCommand): P
       const contextsRaw = asString(opts['contexts']);
       const contexts =
         contextsRaw !== undefined
-          ? (JSON.parse(contextsRaw) as Record<string, unknown>[])
+          ? (parseJsonArrayFlag(contextsRaw, '--contexts') as Record<string, unknown>[])
           : undefined;
       return client.uiModifications.create({
         name,
@@ -9026,7 +9370,7 @@ async function executeUiModifications(client: JiraClient, cmd: ParsedCommand): P
       const contextsRaw = asString(opts['contexts']);
       const contexts =
         contextsRaw !== undefined
-          ? (JSON.parse(contextsRaw) as Record<string, unknown>[])
+          ? (parseJsonArrayFlag(contextsRaw, '--contexts') as Record<string, unknown>[])
           : undefined;
       if (
         name === undefined &&
@@ -9103,6 +9447,9 @@ async function executePermissions(client: JiraClient, cmd: ParsedCommand): Promi
 
 // ── repository (B964-B966) ───────────────────────────────────────────────────
 
+/** DELETE /rest/devinfo/0.10/repository/{repositoryId}/{entityType}/{entityId} path enum. */
+const REPOSITORY_ENTITY_TYPES = ['commit', 'branch', 'pull_request'] as const;
+
 async function executeRepository(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
   const opts = cmd.options;
 
@@ -9111,27 +9458,34 @@ async function executeRepository(client: JiraClient, cmd: ParsedCommand): Promis
       return client.repository.get(requireArg(cmd.positionalArgs[0], 'repositoryId'));
     case 'delete': {
       const repositoryId = requireArg(cmd.positionalArgs[0], 'repositoryId');
-      const updateSequenceIdRaw = asString(opts['update-sequence-id']);
+      const updateSequenceId = asExactPositiveInt(
+        opts['update-sequence-id'],
+        '--update-sequence-id',
+      );
       await client.repository.delete(
         repositoryId,
-        updateSequenceIdRaw !== undefined
-          ? { updateSequenceId: Number(updateSequenceIdRaw) }
-          : undefined,
+        updateSequenceId !== undefined ? { updateSequenceId } : undefined,
       );
       return { deleted: true };
     }
     case 'delete-entity': {
       const repositoryId = requireArg(cmd.positionalArgs[0], 'repositoryId');
       const entityType = requireArg(cmd.positionalArgs[1], 'entityType');
+      if (!(REPOSITORY_ENTITY_TYPES as readonly string[]).includes(entityType)) {
+        throw new Error(
+          `entityType must be one of: ${REPOSITORY_ENTITY_TYPES.join(', ')}, got: ${entityType}`,
+        );
+      }
       const entityId = requireArg(cmd.positionalArgs[2], 'entityId');
-      const updateSequenceIdRaw = asString(opts['update-sequence-id']);
+      const updateSequenceId = asExactPositiveInt(
+        opts['update-sequence-id'],
+        '--update-sequence-id',
+      );
       await client.repository.deleteEntity(
         repositoryId,
         entityType,
         entityId,
-        updateSequenceIdRaw !== undefined
-          ? { updateSequenceId: Number(updateSequenceIdRaw) }
-          : undefined,
+        updateSequenceId !== undefined ? { updateSequenceId } : undefined,
       );
       return { deleted: true };
     }
@@ -9213,6 +9567,12 @@ async function executePipelines(client: JiraClient, cmd: ParsedCommand): Promise
       const pipelineId = requireArg(cmd.positionalArgs[0], 'pipelineId');
       const buildNumberStr = requireArg(cmd.positionalArgs[1], 'buildNumber');
       const buildNumber = parseIntArg(buildNumberStr, 'buildNumber');
+      rejectRemovedOptions(
+        cmd.options,
+        'pipelines delete-build',
+        ['update-sequence-id'],
+        NO_SEQUENCE_GUARD_GUIDANCE,
+      );
       await client.pipelines.deleteBuild(pipelineId, buildNumber);
       return { deleted: true };
     }
@@ -9228,6 +9588,12 @@ async function executePipelines(client: JiraClient, cmd: ParsedCommand): Promise
       const environmentId = requireArg(cmd.positionalArgs[1], 'environmentId');
       const dsnStr = requireArg(cmd.positionalArgs[2], 'deploymentSequenceNumber');
       const deploymentSequenceNumber = parseIntArg(dsnStr, 'deploymentSequenceNumber');
+      rejectRemovedOptions(
+        cmd.options,
+        'pipelines delete-deployment',
+        ['update-sequence-id'],
+        NO_SEQUENCE_GUARD_GUIDANCE,
+      );
       await client.pipelines.deleteDeployment(pipelineId, environmentId, deploymentSequenceNumber);
       return { deleted: true };
     }
@@ -9266,8 +9632,8 @@ async function executeLinkedWorkspaces(client: JiraClient, cmd: ParsedCommand): 
     case 'list-operations':
       return client.linkedWorkspaces.listOperations();
     case 'bulk-delete-operations': {
-      const workspaceIds = requireOpt(opts['workspace-ids'], '--workspace-ids');
-      await client.linkedWorkspaces.bulkDeleteOperations(workspaceIds);
+      const workspaceIds = splitCsvIds(requireOpt(opts['workspace-ids'], '--workspace-ids'));
+      await client.linkedWorkspaces.bulkDeleteOperations(workspaceIds.join(','));
       return { deleted: true };
     }
     case 'bulk-create-operations': {
@@ -9279,8 +9645,8 @@ async function executeLinkedWorkspaces(client: JiraClient, cmd: ParsedCommand): 
     case 'get-security':
       return client.linkedWorkspaces.getSecurity(requireArg(cmd.positionalArgs[0], 'workspaceId'));
     case 'bulk-delete-security': {
-      const workspaceIds = requireOpt(opts['workspace-ids'], '--workspace-ids');
-      await client.linkedWorkspaces.bulkDeleteSecurity(workspaceIds);
+      const workspaceIds = splitCsvIds(requireOpt(opts['workspace-ids'], '--workspace-ids'));
+      await client.linkedWorkspaces.bulkDeleteSecurity(workspaceIds.join(','));
       return { deleted: true };
     }
     case 'bulk-create-security': {
@@ -9317,28 +9683,23 @@ async function executeBulkByProperties(client: JiraClient, cmd: ParsedCommand): 
    * collected into the record. At least one property must be provided.
    */
   function buildParams(): Parameters<typeof client.bulkByProperties.deleteBuildsByProperties>[0] {
+    // Only devinfo keeps a supported `_updateSequenceId` guard (spec: feature
+    // flags/builds/deployments/remote links "no longer supported", the rest none).
+    if (cmd.action !== 'delete-devinfo') {
+      rejectRemovedOptions(
+        opts,
+        `bulk-by-properties ${cmd.action}`,
+        ['update-sequence-id'],
+        'only delete-devinfo supports the update-sequence guard (Jira ignores it here); omit it',
+      );
+    }
     const propertiesRaw = asString(opts['properties']);
     if (!propertiesRaw) {
       throw new Error(
         'bulk-by-properties requires --properties in the form key=value[,key2=value2]',
       );
     }
-    const properties: Record<string, string> = {};
-    for (const pair of propertiesRaw.split(',')) {
-      const eqIdx = pair.indexOf('=');
-      if (eqIdx === -1) {
-        throw new Error(
-          `bulk-by-properties --properties: invalid pair "${pair}", expected key=value`,
-        );
-      }
-      const k = pair.slice(0, eqIdx).trim();
-      const v = pair.slice(eqIdx + 1).trim();
-      if (!k) {
-        throw new Error(`bulk-by-properties --properties: empty key in pair "${pair}"`);
-      }
-      properties[k] = v;
-    }
-    return { properties };
+    return { properties: devopsPropertiesFlag(propertiesRaw, 'bulk-by-properties') };
   }
 
   switch (cmd.action) {
@@ -9351,7 +9712,14 @@ async function executeBulkByProperties(client: JiraClient, cmd: ParsedCommand): 
       return { deleted: true };
     }
     case 'delete-devinfo': {
-      await client.bulkByProperties.deleteDevInfoByProperties(buildParams());
+      const updateSequenceId = asExactPositiveInt(
+        opts['update-sequence-id'],
+        '--update-sequence-id',
+      );
+      await client.bulkByProperties.deleteDevInfoByProperties({
+        ...buildParams(),
+        ...(updateSequenceId !== undefined && { _updateSequenceId: updateSequenceId }),
+      });
       return { deleted: true };
     }
     case 'delete-devops-components': {
@@ -9751,6 +10119,18 @@ const MIGRATION_ACTIONS = [
   'search-workflow-rules',
 ] as const;
 
+const MIGRATION_ENTITY_TYPES = [
+  'IssueProperty',
+  'CommentProperty',
+  'DashboardItemProperty',
+  'IssueTypeProperty',
+  'ProjectProperty',
+  'UserProperty',
+  'WorklogProperty',
+  'BoardProperty',
+  'SprintProperty',
+] as const satisfies readonly MigrationEntityType[];
+
 async function executeMigration(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
   const opts = cmd.options;
 
@@ -9783,10 +10163,19 @@ async function executeMigration(client: JiraClient, cmd: ParsedCommand): Promise
     case 'update-properties': {
       // B949: PUT /migration/properties/{entityType} — requires --transfer-id, positional entityType, and --value (JSON array)
       const transferId = requireOpt(opts['transfer-id'], '--transfer-id');
-      const entityType = requireArg(cmd.positionalArgs[0], 'entityType') as MigrationEntityType;
+      const entityType = requireArg(cmd.positionalArgs[0], 'entityType');
+      if (!(MIGRATION_ENTITY_TYPES as readonly string[]).includes(entityType)) {
+        throw new Error(
+          `entityType must be one of: ${MIGRATION_ENTITY_TYPES.join(', ')}, got: ${entityType}`,
+        );
+      }
       const valueRaw = requireOpt(opts['value'], '--value');
       const properties = parseJsonArrayFlag(valueRaw, '--value') as EntityPropertyDetails[];
-      await client.migration.updateEntityProperties(transferId, entityType, properties);
+      await client.migration.updateEntityProperties(
+        transferId,
+        entityType as MigrationEntityType,
+        properties,
+      );
       return { updated: true };
     }
     case 'search-workflow-rules': {
