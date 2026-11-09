@@ -123,13 +123,30 @@ function draftRemovedMessage(where: string): string {
   return `${where} was removed by Atlassian on 2026-11-02 (CHANGE-3147); the API now rejects it with HTTP 400. Omit it.`;
 }
 
-/** Reject workflow-rule entries whose `workflowId.draft` is set (removed 2026-11-02). */
-function assertNoDraftWorkflowIds(
-  entries: readonly { readonly workflowId: WorkflowIdRef }[],
-): void {
-  if (entries.some((entry) => entry.workflowId?.draft !== undefined)) {
-    throw new ValidationError(draftRemovedMessage('workflowId.draft'));
-  }
+/**
+ * Drop the removed `workflowId.draft` (2026-11-02) from workflow-rule
+ * entries. `draft: false` (published, the only state left) is stripped so
+ * 4.0.0 callers and `workflowId` round-trips keep working; any other value
+ * (`true`, or a non-boolean such as `"true"` from untyped CLI JSON) asks for
+ * something that no longer exists and is rejected. Non-object entries (e.g.
+ * `null`) are rejected; other shape errors are left to the server.
+ */
+function withoutDraftWorkflowIds<T extends { readonly workflowId: WorkflowIdRef }>(
+  entries: readonly T[],
+): T[] {
+  return entries.map((entry: unknown, i) => {
+    if (entry === null || typeof entry !== 'object' || Array.isArray(entry)) {
+      throw new ValidationError(`workflows[${i}] must be an object`);
+    }
+    const typed = entry as T;
+    const workflowId = typed.workflowId as WorkflowIdRef | null | undefined;
+    if (workflowId?.draft === undefined) return typed;
+    if ((workflowId.draft as unknown) !== false) {
+      throw new ValidationError(draftRemovedMessage('workflowId.draft'));
+    }
+    const { draft: _draft, ...rest } = workflowId;
+    return { ...typed, workflowId: rest };
+  });
 }
 
 export class WorkflowsResource {
@@ -427,7 +444,9 @@ export class WorkflowsResource {
     if (!params.types || params.types.length === 0) {
       throw new ValidationError('types is required for getTransitionRuleConfigs');
     }
-    if (params.draft !== undefined) {
+    // `draft: false` is the only state left and is simply not sent; any other
+    // value (incl. a non-boolean from untyped input) is refused.
+    if (params.draft !== undefined && (params.draft as unknown) !== false) {
       throw new ValidationError(draftRemovedMessage('draft'));
     }
     if (params.maxResults !== undefined) validatePageSize(params.maxResults, 'maxResults');
@@ -470,11 +489,10 @@ export class WorkflowsResource {
     if (!body.workflows || body.workflows.length === 0) {
       throw new ValidationError('workflows array is required for updateTransitionRuleConfigs');
     }
-    assertNoDraftWorkflowIds(body.workflows);
     const resp = await this.transport.request<WorkflowTransitionRulesUpdateErrors>({
       method: 'PUT',
       path: `${this.baseUrl}/workflow/rule/config`,
-      body,
+      body: { ...body, workflows: withoutDraftWorkflowIds(body.workflows) },
     });
     return resp.data;
   }
@@ -501,11 +519,10 @@ export class WorkflowsResource {
     if (!body.workflows || body.workflows.length === 0) {
       throw new ValidationError('workflows array is required for deleteTransitionRuleConfigs');
     }
-    assertNoDraftWorkflowIds(body.workflows);
     const resp = await this.transport.request<WorkflowTransitionRulesUpdateErrors>({
       method: 'PUT',
       path: `${this.baseUrl}/workflow/rule/config/delete`,
-      body,
+      body: { ...body, workflows: withoutDraftWorkflowIds(body.workflows) },
     });
     return resp.data;
   }
@@ -928,8 +945,9 @@ export interface WorkflowTransitionRuleConfigParams {
   readonly withTags?: string[];
   /**
    * @deprecated Removed by Atlassian on 2026-11-02 (CHANGE-3147): requests that
-   * include `draft` now fail with HTTP 400. `getTransitionRuleConfigs` throws a
-   * `ValidationError` when it is set and never sends it.
+   * include `draft` now fail with HTTP 400, so it is never sent.
+   * `getTransitionRuleConfigs` ignores `false` (published, the only state left)
+   * and throws a `ValidationError` for `true`.
    */
   readonly draft?: boolean;
   readonly expand?: string;
@@ -963,7 +981,8 @@ export interface WorkflowIdRef {
   /**
    * @deprecated Removed by Atlassian on 2026-11-02 (CHANGE-3147); responses no
    * longer carry it. `updateTransitionRuleConfigs` and `deleteTransitionRuleConfigs`
-   * throw a `ValidationError` when a request `workflowId` sets it.
+   * strip `draft: false` before sending and throw a `ValidationError` for
+   * `draft: true`.
    */
   readonly draft?: boolean;
 }

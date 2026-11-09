@@ -634,15 +634,15 @@ atlas jira issuelinktype delete 10001
 
 Issue link instance management (B530-B532). Covers create/get/delete of link instances under `/rest/api/3/issueLink`. Distinct from `issuelinktype` which manages link type definitions.
 
-| Action   | Positional | Required flags                                     | Optional flags |
-| -------- | ---------- | -------------------------------------------------- | -------------- |
-| `create` | —          | `--link-type`, `--inward-issue`, `--outward-issue` | `--comment`    |
-| `get`    | `<linkId>` | —                                                  | —              |
-| `delete` | `<linkId>` | —                                                  | —              |
+| Action   | Positional | Required flags                                                                    | Optional flags |
+| -------- | ---------- | --------------------------------------------------------------------------------- | -------------- |
+| `create` | —          | `--link-type` or `--link-type-id` (not both), `--inward-issue`, `--outward-issue` | `--comment`    |
+| `get`    | `<linkId>` | —                                                                                 | —              |
+| `delete` | `<linkId>` | —                                                                                 | —              |
 
-- `--link-type`: name of the link type (e.g. "Blocks", "Duplicate").
-- `--inward-issue`: key of the inward issue (e.g. "HSP-1").
-- `--outward-issue`: key of the outward issue (e.g. "MKY-1").
+- `--link-type`: name of the link type (e.g. "Blocks", "Duplicate"); sent as `{"name": ...}`.
+- `--link-type-id`: ID of the link type (e.g. "10000", from `atlas jira issuelinktype list`); sent as `{"id": ...}`. Use it when names are renamed or duplicated.
+- `--inward-issue` / `--outward-issue`: key (e.g. "HSP-1") or ID (e.g. "10001") of the inward / outward issue. A value of all digits is sent as `{"id": ...}`, anything else as `{"key": ...}`.
 - `--comment`: JSON object added as a comment on the outward issue, in Jira's `Comment` shape: `{"body": <ADF doc>, "visibility"?: {"type": "group"|"role", "value"|"identifier": ...}}`.
 - `create` returns `{ created: true }` — the spec 201 response has an empty body.
 - `delete` returns `{ deleted: true }` (spec 204).
@@ -654,6 +654,9 @@ atlas jira issue-link create --link-type "Blocks" --inward-issue "HSP-1" --outwa
 # Create a link and comment on the outward issue in the same call
 atlas jira issue-link create --link-type "Blocks" --inward-issue "HSP-1" --outward-issue "MKY-1" \
   --comment '{"body":{"type":"doc","version":1,"content":[{"type":"paragraph","content":[{"type":"text","text":"Blocked by HSP-1"}]}]}}'
+
+# Link by issue ID and link-type ID
+atlas jira issue-link create --link-type-id 10000 --inward-issue 10001 --outward-issue 10002
 
 # Get an issue link by ID — B532
 atlas jira issue-link get 10001

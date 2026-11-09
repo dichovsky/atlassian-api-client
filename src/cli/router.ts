@@ -334,6 +334,9 @@ const GLOBAL_OPTIONS = {
   favourite: { type: 'boolean' as const },
   'edit-permissions': { type: 'string' as const },
   'share-permissions': { type: 'string' as const },
+  'filter-name': { type: 'string' as const },
+  'is-substring-match': { type: 'boolean' as const },
+  'override-share-permissions': { type: 'boolean' as const },
   // issue-type-screen-schemes options (B576-B586)
   mappings: { type: 'string' as const },
   'scheme-id': { type: 'string' as const },
@@ -369,6 +372,7 @@ const GLOBAL_OPTIONS = {
   archived: { type: 'boolean' as const },
   category: { type: 'string' as const },
   driver: { type: 'string' as const },
+  'related-work-id': { type: 'string' as const },
   // config field association schemes options (B367-B381)
   'field-id': { type: 'string' as const },
   // screens options (B746-B761)
@@ -532,6 +536,7 @@ const GLOBAL_OPTIONS = {
   'inward-issue': { type: 'string' as const },
   'outward-issue': { type: 'string' as const },
   'link-type': { type: 'string' as const },
+  'link-type-id': { type: 'string' as const },
   // project-template options (B653-B657)
   template: { type: 'string' as const },
   'template-name': { type: 'string' as const },
@@ -565,6 +570,7 @@ const GLOBAL_OPTIONS = {
   'new-owner': { type: 'string' as const },
   'autofix-name': { type: 'boolean' as const },
   'extend-admin-permissions': { type: 'boolean' as const },
+  'gadget-id': { type: 'string' as const },
   'module-keys': { type: 'string' as const },
   'dashboard-name': { type: 'string' as const },
   owner: { type: 'string' as const },

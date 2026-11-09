@@ -317,15 +317,19 @@ atlas jira configuration update-timetracking-options --working-hours-per-day 8 -
 
 **Notes:**
 
+- **App-only:** Jira accepts `list`, `register`, `refresh` and `delete` only from Connect and OAuth 2.0 apps, and `list-failed` only from Connect apps. A user API token (the default `basic` auth) is rejected; use `ATLASSIAN_AUTH_TYPE=bearer` with the OAuth 2.0 app's access token. `list-failed` needs Connect JWT auth, which the CLI does not provide (SDK only).
+- Webhooks registered through the REST API expire after 30 days; `refresh` them before then. For non-public OAuth apps, Jira delivers a webhook only if the user who registered it owns the app.
 - `list` calls `GET /rest/api/3/webhook` and returns a paginated list of registered webhooks for the calling app.
 - `register` calls `POST /rest/api/3/webhook`. `--webhooks` is a JSON array of `{ jqlFilter, events, fieldIdsFilter?, issuePropertyKeysFilter? }` objects.
-- `refresh` calls `PUT /rest/api/3/webhook/refresh`. `--webhook-ids` is a JSON array of numeric webhook IDs (e.g. `[10000,10001]`). Extends webhook expiry and returns `{ expirationDate }` (milliseconds since epoch, int64).
+  `events` values: `jira:issue_created`, `jira:issue_updated`, `jira:issue_deleted`, `comment_created`, `comment_updated`, `comment_deleted`, `issue_property_set`, `issue_property_deleted`, `sprint_created`, `sprint_updated`, `sprint_closed`, `sprint_deleted`, `sprint_started`, `jira:version_released`, `jira:version_unreleased`, `jira:version_created`, `jira:version_moved`, `jira:version_updated`, `jira:version_merged`, `jira:version_deleted`.
+  Each `--webhooks` entry must be a JSON object with a `jqlFilter` string (required by the spec) and a non-empty `events` array of these values; anything else is refused before sending.
+- `refresh` calls `PUT /rest/api/3/webhook/refresh`. `--webhook-ids` is a JSON array of positive integer webhook IDs (e.g. `[10000,10001]`; other elements, including `0` and negative numbers, are refused before sending, on `delete` too). Extends webhook expiry and returns `{ expirationDate }` (milliseconds since epoch, int64).
 - `list-failed` calls `GET /rest/api/3/webhook/failed` and returns a page of failed webhook deliveries.
-- `delete` calls `DELETE /rest/api/3/webhook`. `--webhook-ids` is a JSON array of numeric webhook IDs to remove permanently.
+- `delete` calls `DELETE /rest/api/3/webhook`. `--webhook-ids` is a JSON array of positive integer webhook IDs to remove permanently.
 - `--after` accepts a Unix timestamp in **milliseconds** (e.g. `--after 1700000000000`). Only deliveries with a failure time after this value are returned.
 - `--max-results` caps the number of results in a single page.
 - The SDK exposes `listFailed()` (single page) and `listAllFailed()` (async generator) on `client.webhooks`.
-- `list-failed` returns a `FailedWebhooks` page `{ maxResults, next?, values }` — cursor pagination via the `next` URL; there is no `startAt`/`isLast`/`total`.
+- `list-failed` returns a `FailedWebhooks` page `{ maxResults, next?, values }`, oldest failure first, and keeps failures for about 72 hours. For the next page pass the last entry's `failureTime` as `--after` (the CLI cannot follow the `next` URL); there is no `startAt`/`isLast`/`total`.
 
 ```sh
 # List registered webhooks (paginated)
@@ -836,50 +840,69 @@ atlas jira repository delete-entity my-repo-123 pullRequest pr-1 --update-sequen
 
 ## `dashboards`
 
-`list` accepts only `--filter` (`my` or `favourite`), `--start-at`, and `--max-results`; the removed `--order-by` and `--expand` flags are rejected with migration guidance because sorting and expansion belong to `search`. `get` and `delete` take `<dashboardId>`. `create` requires `--name` and `--share-permissions` (a JSON array of share-permission objects, e.g. `'[{"type":"global"}]'`), with optional `--description` and `--edit-permissions` (JSON); `update <dashboardId>` takes the same flags. The actions below add the rest of the platform's dashboard surface (B391–B405).
+`list` accepts only `--filter` (`my` or `favourite`), `--start-at`, and `--max-results`; the removed `--order-by` and `--expand` flags are rejected with migration guidance because sorting and expansion belong to `search`. `get` and `delete` take `<dashboardId>`. `create`, `update <dashboardId>` and `copy <dashboardId>` send the spec `DashboardDetails` body, which requires all three of `--name`, `--share-permissions` and `--edit-permissions` (JSON arrays of share-permission objects; `'[]'` grants nobody beyond the owner); the CLI refuses a missing one before sending anything. `update` replaces the name, description and both permission lists, so pass the current values you want to keep. `--extend-admin-permissions true|false` on `create`/`update`/`copy` is sent as the `extendAdminPermissions` query param: `true` lets a user with the _Administer Jira_ global permission edit dashboards they do not own; omit it for the default (`false`). The actions below add the rest of the platform's dashboard surface (B391–B405).
 
-```sh
-atlas jira dashboards create --name "Team board" --share-permissions '[{"type":"global"}]' --description "Sprint health"
-atlas jira dashboards update 10001 --name "Renamed" --share-permissions '[{"type":"authenticated"}]'
-```
+| Action                   | Positional                             | Required flags                                                                                                                | Optional flags                                                                                                                                                   |
+| ------------------------ | -------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `list`                   | —                                      | —                                                                                                                             | `--filter`, `--start-at`, `--max-results`                                                                                                                        |
+| `get`                    | `<dashboardId>`                        | —                                                                                                                             | —                                                                                                                                                                |
+| `create`                 | —                                      | `--name`, `--share-permissions` (JSON), `--edit-permissions` (JSON)                                                           | `--description`, `--extend-admin-permissions`                                                                                                                    |
+| `update`                 | `<dashboardId>`                        | `--name`, `--share-permissions` (JSON), `--edit-permissions` (JSON)                                                           | `--description`, `--extend-admin-permissions`                                                                                                                    |
+| `delete`                 | `<dashboardId>`                        | —                                                                                                                             | —                                                                                                                                                                |
+| `list-gadgets`           | `<dashboardId>`                        | —                                                                                                                             | `--module-key` (csv), `--uri` (csv), `--gadget-id` (csv ints)                                                                                                    |
+| `add-gadget`             | `<dashboardId>`                        | —                                                                                                                             | `--module-key` or `--uri`, `--color`, `--row` + `--column`, `--title`, `--ignore-uri-and-module-key-validation`                                                  |
+| `update-gadget`          | `<dashboardId> <gadgetId>`             | —                                                                                                                             | `--title`, `--color`, `--row` + `--column`                                                                                                                       |
+| `remove-gadget`          | `<dashboardId> <gadgetId>`             | —                                                                                                                             | —                                                                                                                                                                |
+| `list-item-properties`   | `<dashboardId> <itemId>`               | —                                                                                                                             | —                                                                                                                                                                |
+| `get-item-property`      | `<dashboardId> <itemId> <propertyKey>` | —                                                                                                                             | —                                                                                                                                                                |
+| `set-item-property`      | `<dashboardId> <itemId> <propertyKey>` | `--value` (JSON)                                                                                                              | —                                                                                                                                                                |
+| `delete-item-property`   | `<dashboardId> <itemId> <propertyKey>` | —                                                                                                                             | —                                                                                                                                                                |
+| `copy`                   | `<dashboardId>`                        | `--name`, `--share-permissions` (JSON), `--edit-permissions` (JSON)                                                           | `--description`, `--extend-admin-permissions`                                                                                                                    |
+| `bulk-edit`              | —                                      | `--entity-ids` (csv ints), `--action`; plus `--new-owner` + `--autofix-name`, or `--share-permissions` + `--edit-permissions` | `--extend-admin-permissions`                                                                                                                                     |
+| `list-available-gadgets` | —                                      | —                                                                                                                             | —                                                                                                                                                                |
+| `search`                 | —                                      | —                                                                                                                             | `--dashboard-name`, `--account-id`, `--owner`, `--group-name`, `--group-id`, `--project-id`, `--order-by`, `--status`, `--start-at`, `--max-results`, `--expand` |
+| `search-all`             | —                                      | —                                                                                                                             | (same as `search` minus `--start-at`) plus `--max-pages`                                                                                                         |
 
-| Action                   | Positional                             | Required flags                                                      | Optional flags                                                                                                                                                   |
-| ------------------------ | -------------------------------------- | ------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `list`                   | —                                      | —                                                                   | `--filter`, `--start-at`, `--max-results`                                                                                                                        |
-| `list-gadgets`           | `<dashboardId>`                        | —                                                                   | —                                                                                                                                                                |
-| `add-gadget`             | `<dashboardId>`                        | —                                                                   | `--module-key`, `--uri`, `--color`, `--row` + `--column`, `--title`, `--ignore-uri-and-module-key-validation`                                                    |
-| `update-gadget`          | `<dashboardId> <gadgetId>`             | —                                                                   | `--title`, `--color`, `--row` + `--column`                                                                                                                       |
-| `remove-gadget`          | `<dashboardId> <gadgetId>`             | —                                                                   | —                                                                                                                                                                |
-| `list-item-properties`   | `<dashboardId> <itemId>`               | —                                                                   | —                                                                                                                                                                |
-| `get-item-property`      | `<dashboardId> <itemId> <propertyKey>` | —                                                                   | —                                                                                                                                                                |
-| `set-item-property`      | `<dashboardId> <itemId> <propertyKey>` | `--value` (JSON)                                                    | —                                                                                                                                                                |
-| `delete-item-property`   | `<dashboardId> <itemId> <propertyKey>` | —                                                                   | —                                                                                                                                                                |
-| `copy`                   | `<dashboardId>`                        | `--name`, `--share-permissions` (JSON), `--edit-permissions` (JSON) | `--description`                                                                                                                                                  |
-| `bulk-edit`              | —                                      | `--entity-ids` (csv ints), `--action`                               | `--new-owner`, `--autofix-name`, `--extend-admin-permissions`, `--share-permissions`, `--edit-permissions`                                                       |
-| `list-available-gadgets` | —                                      | —                                                                   | —                                                                                                                                                                |
-| `search`                 | —                                      | —                                                                   | `--dashboard-name`, `--account-id`, `--owner`, `--group-name`, `--group-id`, `--project-id`, `--order-by`, `--status`, `--start-at`, `--max-results`, `--expand` |
-| `search-all`             | —                                      | —                                                                   | (same as `search` minus `--start-at`) plus `--max-pages`                                                                                                         |
-
-- `--row` and `--column` must be supplied together (gadget position).
-- `--action` for `bulk-edit` is one of: `changeOwner`, `changePermission`, `addPermission`, `removePermission`, `changePermissionAndAddPermission`, `delete`.
-- `--order-by` for `search` accepts `description`, `favorite_count`, `id`, `is_favorite`, `name`, `owner` (each may be prefixed with `+` or `-`).
-- `--status` for `search` is one of: `active`, `archived`, `deleted`.
-- `--share-permissions` / `--edit-permissions` are **JSON arrays** of share-permission objects: `[{"type":"global"}]`, `[{"type":"user","user":{"accountId":"..."}}]`, etc.
+- `--share-permissions` / `--edit-permissions` are **JSON arrays** of nested `SharePermission` objects: `{"type":"global"}`, `{"type":"authenticated"}` (all logged-in users), `{"type":"user","user":{"accountId":"..."}}`, `{"type":"group","group":{"groupId":"..."}}` (or `"name"`), `{"type":"project","project":{"id":"10000"}}`, `{"type":"projectRole","project":{"id":"10000"},"role":{"id":10002}}`. In requests use `authenticated`, never `loggedin` (`loggedin` is how Jira reports it back).
+- `bulk-edit` edits at most 100 dashboards per call (`--entity-ids`, comma-separated positive integers; a list that names no ID, such as `,`, is refused before sending). `--action` is one of `changeOwner`, `changePermission`, `addPermission`, `removePermission`; anything else is refused before sending. `changeOwner` requires `--new-owner <accountId>` and `--autofix-name true|false` (rename the dashboard if the new owner already has one with that name) and refuses the permission flags; the three permission actions require both `--share-permissions` and `--edit-permissions` and refuse `--new-owner`/`--autofix-name`. `--extend-admin-permissions true|false` is sent in the body.
+- `list-gadgets` filters are repeated query params: `--module-key a,b` → `moduleKey=a&moduleKey=b`; `--uri` and `--gadget-id` (positive integers) likewise. Without them every gadget on the dashboard is returned; a filter flag given with no value (`--uri ''`) is refused. Values are split on commas, so a gadget URI that contains a comma cannot be passed from the CLI (use `client.dashboards.listGadgets`).
+- `add-gadget`: give `--module-key` **or** `--uri`, not both (Jira rejects the pair; `--ignore-uri-and-module-key-validation` skips Jira's check that the gadget exists, for apps that are not installed). `--color` is one of `blue`, `red`, `yellow`, `green`, `cyan`, `purple`, `gray`, `white`. `--row` and `--column` (0-based) must be supplied together.
+- `--order-by` for `search`/`search-all` is one of `description`, `favorite_count`, `id`, `is_favorite`, `name`, `owner`, each optionally prefixed with `+` (ascending) or `-` (descending). Attach a value that starts with `-` with `=`: `--order-by=-favorite_count` (`--order-by -favorite_count` is a parse error).
+- `--status` for `search`/`search-all` is one of: `active`, `archived`, `deleted`. `--filter` for `list` is `my` or `favourite`. Other values are refused before sending.
+- `search` filters: `--account-id` (owner; not with the deprecated `--owner`), `--group-id` (shared with a group; not with `--group-name`), `--project-id` (positive integer). `--expand` is a CSV such as `description,owner,viewUrl,favourite,favouritedCount,sharePermissions,editPermissions`.
 - `set-item-property` `--value` is parsed as JSON (strings must be quoted: `--value '"hello"'`).
 - `search-all` collects every result into a single array; `--max-pages` (default 10 000) caps iteration on misbehaving servers.
 
 ```sh
-# Search for dashboards by name
-atlas jira dashboards search --dashboard-name "Sprint" --order-by=-favorite_count --max-results 25
+# List your favourite dashboards
+atlas jira dashboards list --filter favourite --max-results 25
 
-# List gadgets on a dashboard
+# Get / delete a dashboard
+atlas jira dashboards get 10001
+atlas jira dashboards delete 10001
+
+# Create a dashboard: name, share-permissions and edit-permissions are all required
+atlas jira dashboards create --name "Team board" --description "Sprint health" --share-permissions '[{"type":"global"}]' --edit-permissions '[{"type":"user","user":{"accountId":"5b10a2844c20165700ede21g"}}]'
+
+# Update (replaces name and both permission lists); as an admin, on someone else's dashboard
+atlas jira dashboards update 10001 --name "Renamed" --share-permissions '[{"type":"authenticated"}]' --edit-permissions '[]' --extend-admin-permissions true
+
+# Search for dashboards by name, most-favourited first
+atlas jira dashboards search --dashboard-name "Sprint" --order-by=-favorite_count --status active --max-results 25
+
+# Collect every dashboard owned by a user
+atlas jira dashboards search-all --account-id 5b10a2844c20165700ede21g --order-by name --max-pages 5
+
+# List gadgets on a dashboard, optionally filtered by module key or gadget ID
 atlas jira dashboards list-gadgets 10001
+atlas jira dashboards list-gadgets 10001 --module-key com.atlassian.jira.gadgets:filter-results-gadget
+atlas jira dashboards list-gadgets 10001 --gadget-id 10050,10051
 
 # Add a gadget at row 1, column 1
-atlas jira dashboards add-gadget 10001 --module-key com.atlassian.jira.gadgets:filter-results-gadget --row 1 --column 1 --title "My Gadget"
+atlas jira dashboards add-gadget 10001 --module-key com.atlassian.jira.gadgets:filter-results-gadget --row 1 --column 1 --title "My Gadget" --color blue
 
-# Rename a gadget
-atlas jira dashboards update-gadget 10001 5 --title "Renamed"
+# Rename / recolour a gadget
+atlas jira dashboards update-gadget 10001 5 --title "Renamed" --color green
 
 # Remove a gadget
 atlas jira dashboards remove-gadget 10001 5
@@ -890,14 +913,14 @@ atlas jira dashboards get-item-property 10001 itm-1 my-key
 atlas jira dashboards set-item-property 10001 itm-1 my-key --value '{"enabled":true}'
 atlas jira dashboards delete-item-property 10001 itm-1 my-key
 
-# Copy a dashboard — name, share-permissions, edit-permissions are required by the spec
-atlas jira dashboards copy 10001 --name "Copy of Sprint" --share-permissions '[{"type":"global"}]' --edit-permissions '[{"type":"loggedin"}]'
+# Copy a dashboard: name, share-permissions, edit-permissions are required by the spec
+atlas jira dashboards copy 10001 --name "Copy of Sprint" --share-permissions '[{"type":"global"}]' --edit-permissions '[{"type":"authenticated"}]'
 
-# Bulk-delete dashboards (entity-ids are integers, comma-separated)
-atlas jira dashboards bulk-edit --entity-ids 10001,10002 --action delete
+# Bulk transfer ownership (changeOwner needs --new-owner and --autofix-name)
+atlas jira dashboards bulk-edit --entity-ids 10001,10002 --action changeOwner --new-owner 5b10a2844c20165700ede21g --autofix-name true
 
-# Bulk transfer ownership
-atlas jira dashboards bulk-edit --entity-ids 10001 --action changeOwner --new-owner acc-1 --autofix-name
+# Bulk replace permissions (permission actions need both lists), as an admin
+atlas jira dashboards bulk-edit --entity-ids 10001,10002 --action changePermission --share-permissions '[{"type":"authenticated"}]' --edit-permissions '[]' --extend-admin-permissions true
 
 # List gadget catalogue (no filters — returns all available gadgets)
 atlas jira dashboards list-available-gadgets
@@ -1003,40 +1026,77 @@ atlas jira bulk submit-feature-flags --value '{"flags":[]}'
 Saved JQL filters, their owners, share permissions, favourites, and
 per-user default share scope.
 
-| Action                    | Positional                  | Required flags         | Optional flags                                                                                 |
-| ------------------------- | --------------------------- | ---------------------- | ---------------------------------------------------------------------------------------------- |
-| `search`                  | —                           | —                      | `--start-at`, `--max-results`, `--expand`, `--ids`, `--order-by`                               |
-| `get`                     | `<filterId>`                | —                      | —                                                                                              |
-| `create`                  | —                           | `--name`               | `--description`, `--jql`, `--favourite`, `--share-permissions`, `--edit-permissions`           |
-| `update`                  | `<filterId>`                | at least one body flag | `--name`, `--description`, `--jql`, `--favourite`, `--share-permissions`, `--edit-permissions` |
-| `delete`                  | `<filterId>`                | —                      | —                                                                                              |
-| `list-favourites`         | —                           | —                      | `--expand`                                                                                     |
-| `list-my`                 | —                           | —                      | `--expand`, `--include-favourites`                                                             |
-| `add-favourite`           | `<filterId>`                | —                      | `--expand`                                                                                     |
-| `remove-favourite`        | `<filterId>`                | —                      | `--expand`                                                                                     |
-| `change-owner`            | `<filterId>`                | `--account-id`         | —                                                                                              |
-| `get-columns`             | `<filterId>`                | —                      | —                                                                                              |
-| `set-columns`             | `<filterId>`                | `--columns`            | —                                                                                              |
-| `reset-columns`           | `<filterId>`                | —                      | —                                                                                              |
-| `list-permissions`        | `<filterId>`                | —                      | —                                                                                              |
-| `add-permission`          | `<filterId>`                | `--share-type`         | `--project-id`, `--group-name`, `--group-id`, `--role-id`, `--account-id`, `--rights`          |
-| `get-permission`          | `<filterId> <permissionId>` | —                      | —                                                                                              |
-| `delete-permission`       | `<filterId> <permissionId>` | —                      | —                                                                                              |
-| `get-default-share-scope` | —                           | —                      | —                                                                                              |
-| `set-default-share-scope` | —                           | `--share-scope`        | —                                                                                              |
+| Action                    | Positional                  | Required flags         | Optional flags                                                                                                                                                                                                     |
+| ------------------------- | --------------------------- | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `search`                  | —                           | —                      | `--filter-name`, `--is-substring-match`, `--account-id`, `--owner`, `--group-id`, `--group-name`, `--project-id`, `--ids`, `--order-by`, `--expand`, `--override-share-permissions`, `--start-at`, `--max-results` |
+| `get`                     | `<filterId>`                | —                      | `--expand`, `--override-share-permissions`                                                                                                                                                                         |
+| `create`                  | —                           | `--name`               | `--description`, `--jql`, `--favourite`, `--share-permissions`, `--edit-permissions`, `--expand`, `--override-share-permissions`                                                                                   |
+| `update`                  | `<filterId>`                | at least one body flag | `--name`, `--description`, `--jql`, `--favourite`, `--share-permissions`, `--edit-permissions`, `--expand`, `--override-share-permissions`                                                                         |
+| `delete`                  | `<filterId>`                | —                      | —                                                                                                                                                                                                                  |
+| `list-favourites`         | —                           | —                      | `--expand`                                                                                                                                                                                                         |
+| `list-my`                 | —                           | —                      | `--expand`, `--include-favourites`                                                                                                                                                                                 |
+| `add-favourite`           | `<filterId>`                | —                      | `--expand`                                                                                                                                                                                                         |
+| `remove-favourite`        | `<filterId>`                | —                      | `--expand`                                                                                                                                                                                                         |
+| `change-owner`            | `<filterId>`                | `--account-id`         | —                                                                                                                                                                                                                  |
+| `get-columns`             | `<filterId>`                | —                      | —                                                                                                                                                                                                                  |
+| `set-columns`             | `<filterId>`                | `--columns`            | —                                                                                                                                                                                                                  |
+| `reset-columns`           | `<filterId>`                | —                      | —                                                                                                                                                                                                                  |
+| `list-permissions`        | `<filterId>`                | —                      | —                                                                                                                                                                                                                  |
+| `add-permission`          | `<filterId>`                | `--share-type`         | `--project-id`, `--group-name`, `--group-id`, `--role-id`, `--account-id`, `--rights`                                                                                                                              |
+| `get-permission`          | `<filterId> <permissionId>` | —                      | —                                                                                                                                                                                                                  |
+| `delete-permission`       | `<filterId> <permissionId>` | —                      | —                                                                                                                                                                                                                  |
+| `get-default-share-scope` | —                           | —                      | —                                                                                                                                                                                                                  |
+| `set-default-share-scope` | —                           | `--share-scope`        | —                                                                                                                                                                                                                  |
 
+- `search` (`GET /filter/search`) sends each filter flag as its query param: `--filter-name` (case-insensitive match on the name; `--is-substring-match true` makes it a plain substring match, `false` uses full-text syntax), `--account-id` (owner; not with the deprecated `--owner`), `--group-id` (shared with a group; not with `--group-name`), `--project-id` (positive integer; shared with a project), `--ids` (comma-separated numeric filter IDs, sent as repeated `id` params, at most 200; blank entries are dropped, and a list that names no ID, such as `,`, is refused). With no filter flags every filter you can see is returned.
+- `--order-by` for `search` is one of `description`, `favourite_count`, `id`, `is_favourite`, `is_shared`, `name`, `owner`, each optionally prefixed with `+` or `-`; other values are refused before sending. Attach a value that starts with `-` with `=`: `--order-by=-name`.
+- `--expand` is a CSV of response expansions, e.g. `description,favourite,favouritedCount,jql,owner,searchUrl,sharePermissions,editPermissions,isWritable,approximateLastUsed,subscriptions,viewUrl` for `search` and `sharedUsers,subscriptions` for `get`/`create`/`update`.
+- `--override-share-permissions true|false` (experimental; _Administer Jira_ only) on `search`, `get`, `create` and `update` returns or edits filters regardless of their share permissions. Omit it for the default (`false`).
+- `--favourite true|false` (`--favourite` alone means `true`) on `create`/`update` sets whether the filter is one of your favourites; `update 10001 --name "..." --favourite false` un-favourites it.
+- `update` sends only the flags you give, but the spec's `Filter` body marks `name` as required, so include `--name` (the current name if unchanged).
+- `--share-permissions` and `--edit-permissions` (on `create`/`update`) are **JSON arrays** of nested `SharePermission` objects — not the flat `add-permission` flags:
+
+  | `type`          | Other keys                                      | Example                                                                       |
+  | --------------- | ----------------------------------------------- | ----------------------------------------------------------------------------- |
+  | `global`        | —                                               | `{"type":"global"}`                                                           |
+  | `authenticated` | — (all logged-in users; reported as `loggedin`) | `{"type":"authenticated"}`                                                    |
+  | `user`          | `user.accountId`                                | `{"type":"user","user":{"accountId":"5b10a2844c20165700ede21g"}}`             |
+  | `group`         | `group.groupId` (or `group.name`)               | `{"type":"group","group":{"groupId":"276f955c-63d7-42c8-9520-92d01dca0625"}}` |
+  | `project`       | `project.id`                                    | `{"type":"project","project":{"id":"10000"}}`                                 |
+  | `projectRole`   | `project.id` + `role.id`                        | `{"type":"projectRole","project":{"id":"10000"},"role":{"id":10002}}`         |
+
+  Pass `'[]'` to clear a list. The spec's prose for `projectRole` also mentions `projectId` + `projectRoleId`, but its schema has only the nested `project` / `role` objects used above (not verified against a live site); if Jira rejects a `projectRole` entry, add it with `add-permission --share-type projectRole --project-id <id> --role-id <id>` instead.
+
+- `add-permission --share-type` ∈ `user`, `group`, `project`, `projectRole`, `global`, `authenticated`. Each kind expects additional flags: `project` → `--project-id`; `projectRole` → `--project-id` + `--role-id`; `group` → `--group-name` or `--group-id`; `user` → `--account-id`. `loggedin` is a response-only name: the CLI sends it as `authenticated`. `--rights` is a positive integer passed through as `rights`.
 - `--share-scope` ∈ `GLOBAL`, `AUTHENTICATED`, `PRIVATE`.
-- `--share-type` ∈ `user`, `group`, `project`, `projectRole`, `global`, `loggedin`, `authenticated`. Each kind expects additional flags: `project` → `--project-id`; `projectRole` → `--project-id` + `--role-id`; `group` → `--group-name` or `--group-id`; `user` → `--account-id`.
-- `--ids` (on `search`) is a **comma-separated** list of numeric filter IDs.
-- `--columns` (on `set-columns`) is a **comma-separated** list of column field keys (e.g. `issuekey,summary,assignee`); the Jira endpoint expects repeated form fields, which the transport handles.
-- `--share-permissions` and `--edit-permissions` (on `create`/`update`) are **JSON arrays** of `FilterSharePermission` objects.
+- `--columns` (on `set-columns`) is a **comma-separated** list of navigable field keys (e.g. `issuekey,summary,assignee`); the CLI sends it as the JSON body `{"columns":[...]}` (at least one key; use `reset-columns` to go back to the defaults).
+- `list-my --include-favourites true|false` adds your favourite filters to the ones you own.
 
 ```sh
-# Search filters
-atlas jira filters search --order-by name --max-results 50
+# Search filters by name (substring match), sorted by name
+atlas jira filters search --filter-name sprint --is-substring-match true --order-by name --max-results 50
 
-# Get a filter by ID
-atlas jira filters get 10001
+# Filters owned by a user and shared with a project, with expansions
+atlas jira filters search --account-id 5b10a2844c20165700ede21g --project-id 10000 --expand description,owner,jql
+
+# Specific filters, as an admin ignoring share permissions
+atlas jira filters search --ids 10001,10002 --override-share-permissions true
+
+# Get a filter by ID, with the users it is shared with
+atlas jira filters get 10001 --expand sharedUsers
+
+# Create a filter shared with a group and editable by one user
+atlas jira filters create --name "Open bugs" --jql "project = PROJ AND type = Bug" --favourite true --share-permissions '[{"type":"group","group":{"groupId":"276f955c-63d7-42c8-9520-92d01dca0625"}}]' --edit-permissions '[{"type":"user","user":{"accountId":"5b10a2844c20165700ede21g"}}]'
+
+# Update a filter's JQL and sharing, and un-favourite it
+atlas jira filters update 10001 --name "Open bugs" --jql "project = PROJ AND type = Bug AND resolution = Unresolved" --favourite false --share-permissions '[{"type":"projectRole","project":{"id":"10000"},"role":{"id":10002}}]'
+
+# Delete a filter
+atlas jira filters delete 10001
+
+# Your filters (plus favourites) and your favourite filters
+atlas jira filters list-my --include-favourites true --expand jql
+atlas jira filters list-favourites --expand jql
 
 # Mark / unmark favourite
 atlas jira filters add-favourite 10001
@@ -1045,14 +1105,18 @@ atlas jira filters remove-favourite 10001
 # Reassign filter owner
 atlas jira filters change-owner 10001 --account-id 5b10a2844c20165700ede21g
 
-# Replace the filter's saved column configuration
+# Read and replace the filter's saved column configuration
+atlas jira filters get-columns 10001
 atlas jira filters set-columns 10001 --columns issuekey,summary,assignee,status
 
 # Reset to the system default columns
 atlas jira filters reset-columns 10001
 
-# Share with a project role
+# Share with a project role (flat add-permission flags)
 atlas jira filters add-permission 10001 --share-type projectRole --project-id 10000 --role-id 10100
+
+# Share with all logged-in users
+atlas jira filters add-permission 10001 --share-type authenticated
 
 # List/get/delete a single permission
 atlas jira filters list-permissions 10001
@@ -1067,6 +1131,8 @@ atlas jira filters set-default-share-scope --share-scope PRIVATE
 ## `config`
 
 Config field association scheme management (B367–B381). Covers the `/rest/api/3/config/fieldschemes` surface: paginated listing, CRUD, clone, per-scheme field associations, per-field parameter overrides, and project association management.
+
+> **Experimental:** every operation is marked `x-experimental` by Atlassian; shapes may change without notice. All actions need the **Administer Jira** global permission.
 
 **Note:** This resource is distinct from `fieldconfiguration` (`/rest/api/3/fieldconfiguration`) and `fieldconfigurationscheme` (`/rest/api/3/fieldconfigurationscheme`). It implements the newer field _association_ scheme API under `/rest/api/3/config/fieldschemes`.
 
@@ -1084,6 +1150,16 @@ Config field association scheme management (B367–B381). Covers the `/rest/api/
 - `remove-field-parameters` — DELETE /config/fieldschemes/fields/parameters: `Record<fieldId, [{schemeId?, workTypeIds?, parameters?}]>`
 - `update-field-parameters` — PUT /config/fieldschemes/fields/parameters: `Record<fieldId, [{schemeIds?, parameters?, workTypeParameters?}]>`
 - `associate-projects` — PUT /config/fieldschemes/projects: `Record<schemeId, {projectIds: number[]}>`
+
+**Field parameter shapes:**
+
+- `update-field-parameters` entry: `{ "schemeIds": [<scheme id>, ...], "parameters"?: <params>, "workTypeParameters"?: [<work type params>, ...] }`. `parameters` sets the field's defaults across all work types in those schemes; `workTypeParameters` overrides them per work type (issue type).
+- `<params>`: `{ "description"?: "<text>", "isRequired"?: <boolean>, "rendererType"?: "jira-text-renderer" | "atlassian-wiki-renderer" }` — an omitted key keeps its current value.
+- `<work type params>`: `{ "workTypeId": <issue type id>, "description"?, "isRequired"?, "rendererType"? }` (same keys as `<params>`).
+- `remove-field-parameters` entry: `{ "schemeId": <scheme id>, "workTypeIds": [<issue type id>, ...], "parameters": ["description" | "isRequired" | "rendererType", ...] }` — removes those per-work-type overrides. At most 100 removals per request (work types × parameter names, summed over entries).
+- `update-field-parameters` takes at most 100 field IDs per request, 50 entries per field and 50 scheme IDs per entry.
+
+**Output of the body endpoints:** Jira answers 200 (all applied), 207 (some entries failed) or 204 (no body). On 200/207 the CLI prints Jira's `{ "results": [ { "fieldId", "schemeId", "success", "error"?, ... } ] }` as-is — check every `success`; an entry with `success: false` was **not** applied and `error` says why. When Jira sends no body (204, and a 200 from `remove-field-parameters`) it prints `{ "updated": true }` (or `{ "deleted": true }` for the `remove-*` actions).
 
 ```sh
 # List all schemes (paginated)
@@ -1122,6 +1198,9 @@ atlas jira config remove-field-parameters --body '{"customfield_10001":[{"scheme
 # Update per-field parameter overrides
 atlas jira config update-field-parameters --body '{"customfield_10001":[{"schemeIds":[10001],"parameters":{"isRequired":true}}]}'
 
+# Default description for all work types, required + wiki renderer only for issue type 10002
+atlas jira config update-field-parameters --body '{"customfield_10001":[{"schemeIds":[10001,10002],"parameters":{"description":"Customer impact"},"workTypeParameters":[{"workTypeId":10002,"isRequired":true,"rendererType":"atlassian-wiki-renderer"}]}]}'
+
 # Get project→scheme mappings for given projects (projectId required)
 atlas jira config get-projects-with-schemes --project-ids 10100,10101
 
@@ -1133,9 +1212,20 @@ atlas jira config associate-projects --body '{"10001":{"projectIds":[10100,10101
 
 Advanced Roadmaps plans management (B625–B640). Covers the `/rest/api/3/plans/plan` surface: cursor-paginated plan listing, CRUD, archive/trash/duplicate, and team management (Atlassian teams and plan-only teams).
 
-**Pagination:** `list` and `list-teams` use cursor pagination (`--cursor`, `--max-results`).
+> **Experimental:** every operation is marked `x-experimental` by Atlassian; shapes may change without notice.
 
-**Update/patch endpoints (B628, B635, B639):** accept a JSON-patch object via `--body`.
+**Pagination:** `list` and `list-teams` use cursor pagination. Each page is `{ values: [...], nextPageCursor?, last?, cursor?, size?, total? }`; pass the page's `nextPageCursor` as `--cursor` to get the next page, and stop when `last` is `true` or `nextPageCursor` is absent.
+
+**Update/patch endpoints (B628, B635, B639):** `--body` is an RFC 6902 **JSON Patch array** of operations, e.g. `[{"op":"replace","path":"/name","value":"Renamed"}]` (sent as `application/json-patch+json`). Each operation needs `op` (`add`, `remove`, `replace`, `move`, `copy`, `test`) and a JSON-pointer `path`; several operations can go in one array. A single operation object is accepted and sent wrapped in an array. These actions print `{ "updated": true }`.
+
+**`create` JSON flags** (`create` and `duplicate` print the new plan ID, a number):
+
+- `--issue-sources` (required): `[{ "type": "Board" | "Project" | "Filter", "value": <board, project or filter id> }, ...]`.
+- `--scheduling` (required): `{ "estimation": "StoryPoints" | "Days" | "Hours", "dependencies"?: "Sequential" | "Concurrent", "inferredDates"?: "None" | "SprintDates" | "ReleaseDates", "startDate"?: <date field>, "endDate"?: <date field> }` — `estimation` is required. `<date field>` is `{ "type": "DueDate" | "TargetStartDate" | "TargetEndDate" | "DateCustomField", "dateCustomFieldId"?: <id, for DateCustomField> }`.
+- `--cross-project-releases`: `[{ "name": "<release name>", "releaseIds"?: [<version id>, ...] }, ...]`.
+- `--custom-fields`: `[{ "customFieldId": <id>, "filter"?: <boolean> }, ...]`.
+- `--exclusion-rules`: `{ "numberOfDaysToShowCompletedIssues"?: <int>, "issueIds"?: [...], "issueTypeIds"?: [...], "releaseIds"?: [...], "workStatusCategoryIds"?: [...], "workStatusIds"?: [...] }` (all ID lists are numeric).
+- `--plan-permissions`: `[{ "type": "View" | "Edit", "holder": { "type": "Group" | "AccountId", "value": "<group name or ID, or account ID>" } }, ...]`; pass `--use-group-id` when `value` is a group ID.
 
 **Enum values:**
 
@@ -1144,29 +1234,32 @@ Advanced Roadmaps plans management (B625–B640). Covers the `/rest/api/3/plans/
 - `--scheduling` dependencies: `Sequential`, `Concurrent`
 - `--scheduling` inferredDates: `None`, `SprintDates`, `ReleaseDates`
 
-| Action                  | Positional                  | Required flags                                                         | Optional flags                                                                                                                  |
-| ----------------------- | --------------------------- | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| `list`                  | —                           | —                                                                      | `--cursor`, `--max-results`, `--include-trashed`, `--include-archived`                                                          |
-| `create`                | —                           | `--name`, `--issue-sources` (JSON array), `--scheduling` (JSON object) | `--use-group-id`, `--cross-project-releases`, `--custom-fields`, `--exclusion-rules`, `--lead-account-id`, `--plan-permissions` |
-| `get`                   | `planId`                    | —                                                                      | `--use-group-id`                                                                                                                |
-| `update`                | `planId`                    | `--body` (JSON-patch object)                                           | `--use-group-id`                                                                                                                |
-| `archive`               | `planId`                    | —                                                                      | —                                                                                                                               |
-| `duplicate`             | `planId`                    | `--name`                                                               | —                                                                                                                               |
-| `trash`                 | `planId`                    | —                                                                      | —                                                                                                                               |
-| `list-teams`            | `planId`                    | —                                                                      | `--cursor`, `--max-results`                                                                                                     |
-| `add-atlassian-team`    | `planId`                    | `--atlassian-team-id`, `--planning-style`                              | `--capacity`, `--issue-source-id`, `--sprint-length`                                                                            |
-| `delete-atlassian-team` | `planId`, `atlassianTeamId` | —                                                                      | —                                                                                                                               |
-| `get-atlassian-team`    | `planId`, `atlassianTeamId` | —                                                                      | —                                                                                                                               |
-| `update-atlassian-team` | `planId`, `atlassianTeamId` | `--body` (JSON-patch object)                                           | —                                                                                                                               |
-| `create-plan-only-team` | `planId`                    | `--name`, `--planning-style`                                           | `--capacity`, `--issue-source-id`, `--member-account-ids` (CSV), `--sprint-length`                                              |
-| `delete-plan-only-team` | `planId`, `planOnlyTeamId`  | —                                                                      | —                                                                                                                               |
-| `get-plan-only-team`    | `planId`, `planOnlyTeamId`  | —                                                                      | —                                                                                                                               |
-| `update-plan-only-team` | `planId`, `planOnlyTeamId`  | `--body` (JSON-patch object)                                           | —                                                                                                                               |
+| Action                  | Positional                  | Required flags                                                         | Optional flags                                                                                                                                                                       |
+| ----------------------- | --------------------------- | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `list`                  | —                           | —                                                                      | `--cursor`, `--max-results`, `--include-trashed`, `--include-archived`                                                                                                               |
+| `create`                | —                           | `--name`, `--issue-sources` (JSON array), `--scheduling` (JSON object) | `--use-group-id`, `--cross-project-releases` (JSON array), `--custom-fields` (JSON array), `--exclusion-rules` (JSON object), `--lead-account-id`, `--plan-permissions` (JSON array) |
+| `get`                   | `planId`                    | —                                                                      | `--use-group-id`                                                                                                                                                                     |
+| `update`                | `planId`                    | `--body` (JSON Patch array)                                            | `--use-group-id`                                                                                                                                                                     |
+| `archive`               | `planId`                    | —                                                                      | —                                                                                                                                                                                    |
+| `duplicate`             | `planId`                    | `--name`                                                               | —                                                                                                                                                                                    |
+| `trash`                 | `planId`                    | —                                                                      | —                                                                                                                                                                                    |
+| `list-teams`            | `planId`                    | —                                                                      | `--cursor`, `--max-results`                                                                                                                                                          |
+| `add-atlassian-team`    | `planId`                    | `--atlassian-team-id`, `--planning-style`                              | `--capacity`, `--issue-source-id`, `--sprint-length`                                                                                                                                 |
+| `delete-atlassian-team` | `planId`, `atlassianTeamId` | —                                                                      | —                                                                                                                                                                                    |
+| `get-atlassian-team`    | `planId`, `atlassianTeamId` | —                                                                      | —                                                                                                                                                                                    |
+| `update-atlassian-team` | `planId`, `atlassianTeamId` | `--body` (JSON Patch array)                                            | —                                                                                                                                                                                    |
+| `create-plan-only-team` | `planId`                    | `--name`, `--planning-style`                                           | `--capacity`, `--issue-source-id`, `--member-account-ids` (CSV), `--sprint-length`                                                                                                   |
+| `delete-plan-only-team` | `planId`, `planOnlyTeamId`  | —                                                                      | —                                                                                                                                                                                    |
+| `get-plan-only-team`    | `planId`, `planOnlyTeamId`  | —                                                                      | —                                                                                                                                                                                    |
+| `update-plan-only-team` | `planId`, `planOnlyTeamId`  | `--body` (JSON Patch array)                                            | —                                                                                                                                                                                    |
 
 ```sh
 # List all plans (cursor pagination)
 atlas jira plans list --max-results 50
 atlas jira plans list --include-trashed --include-archived
+
+# Next page: pass the previous page's nextPageCursor
+atlas jira plans list --max-results 50 --cursor "<nextPageCursor>"
 
 # Get a plan
 atlas jira plans get 10001
@@ -1174,6 +1267,9 @@ atlas jira plans get 10001 --use-group-id
 
 # Create a plan (issueSources and scheduling are required)
 atlas jira plans create --name "Q3 Plan" --issue-sources '[{"type":"Board","value":1}]' --scheduling '{"estimation":"StoryPoints","dependencies":"Sequential","startDate":{"type":"TargetStartDate"},"endDate":{"type":"TargetEndDate"}}'
+
+# Create a plan with releases, a custom field filter, exclusions and an editor
+atlas jira plans create --name "Q4 Plan" --issue-sources '[{"type":"Project","value":10100}]' --scheduling '{"estimation":"Days","inferredDates":"ReleaseDates"}' --cross-project-releases '[{"name":"Q4 release","releaseIds":[10200,10201]}]' --custom-fields '[{"customFieldId":10050,"filter":true}]' --exclusion-rules '{"numberOfDaysToShowCompletedIssues":30,"issueTypeIds":[10003]}' --plan-permissions '[{"type":"Edit","holder":{"type":"AccountId","value":"5b10ac8d82e05b22cc7d4ef5"}}]'
 
 # Duplicate a plan
 atlas jira plans duplicate 10001 --name "Copy of Q3 Plan"
@@ -1183,7 +1279,7 @@ atlas jira plans archive 10001
 atlas jira plans trash 10001
 
 # Update a plan (JSON-patch)
-atlas jira plans update 10001 --body '{"op":"replace","path":"/name","value":"Renamed Plan"}'
+atlas jira plans update 10001 --body '[{"op":"replace","path":"/name","value":"Renamed Plan"},{"op":"replace","path":"/scheduling/estimation","value":"Days"}]'
 
 # List teams for a plan
 atlas jira plans list-teams 10001 --max-results 20
@@ -1196,7 +1292,7 @@ atlas jira plans get-atlassian-team 10001 team-abc-123
 atlas jira plans delete-atlassian-team 10001 team-abc-123
 
 # Update an Atlassian team (JSON-patch)
-atlas jira plans update-atlassian-team 10001 team-abc-123 --body '{"op":"replace","path":"/sprintLength","value":21}'
+atlas jira plans update-atlassian-team 10001 team-abc-123 --body '[{"op":"replace","path":"/sprintLength","value":21}]'
 
 # Create a plan-only team
 atlas jira plans create-plan-only-team 10001 --name "My Team" --planning-style Kanban --member-account-ids acc-1,acc-2
@@ -1206,7 +1302,7 @@ atlas jira plans get-plan-only-team 10001 2001
 atlas jira plans delete-plan-only-team 10001 2001
 
 # Update a plan-only team (JSON-patch)
-atlas jira plans update-plan-only-team 10001 2001 --body '{"op":"replace","path":"/name","value":"Renamed Team"}'
+atlas jira plans update-plan-only-team 10001 2001 --body '[{"op":"replace","path":"/name","value":"Renamed Team"}]'
 ```
 
 ## `universal-avatar`

@@ -88,8 +88,7 @@ export interface DeleteResolutionParams {
   /**
    * ID of the resolution to migrate issues to when deleting.
    * Required by the Jira v3 spec (replaceWith: required: true); kept optional
-   * here to avoid breaking existing CLI callers (DEFERRED-CLI: cli/commands/jira.ts
-   * passes replaceWith conditionally).
+   * here so the public signature stays unchanged (the CLI always sends it).
    */
   readonly replaceWith?: string;
 }
@@ -97,10 +96,10 @@ export interface DeleteResolutionParams {
 /** Request body for PUT /rest/api/3/resolution/default. */
 export interface SetDefaultResolutionData {
   /**
-   * ID of the resolution to set as the default.
-   * Pass null (as `"null"` per spec description) to clear the default.
+   * ID of the resolution to set as the default, or `null` to erase the
+   * default resolution setting (sent as JSON `null`).
    */
-  readonly id: string;
+  readonly id: string | null;
 }
 
 /** Request body for PUT /rest/api/3/resolution/move. */
@@ -178,6 +177,8 @@ export class ResolutionResource {
    * POST /rest/api/3/resolution
    *
    * Returns the ID of the new resolution (spec 201: ResolutionId).
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   async create(data: CreateResolutionData): Promise<ResolutionId> {
     const body: Record<string, unknown> = { name: data.name };
@@ -196,6 +197,8 @@ export class ResolutionResource {
    * PUT /rest/api/3/resolution/{id}
    *
    * Returns void (204 No Content on success).
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   async update(id: string, data: UpdateResolutionData): Promise<void> {
     if (data.name === undefined || data.name === null || data.name === '') {
@@ -222,6 +225,8 @@ export class ResolutionResource {
    * the task status.
    *
    * The `replaceWith` parameter is required by the Jira v3 spec.
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   async delete(id: string, params?: DeleteResolutionParams): Promise<ResolutionTaskProgress> {
     const query: Record<string, string | number | boolean | undefined> = {};
@@ -238,6 +243,8 @@ export class ResolutionResource {
   /**
    * B716: Set the default resolution.
    * PUT /rest/api/3/resolution/default
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   async setDefault(data: SetDefaultResolutionData): Promise<void> {
     await this.transport.request<undefined>({
@@ -250,6 +257,8 @@ export class ResolutionResource {
   /**
    * B717: Reorder resolutions.
    * PUT /rest/api/3/resolution/move
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   async moveResolutions(data: MoveResolutionData): Promise<void> {
     if (data.ids === undefined || data.ids.length === 0) {
@@ -278,6 +287,8 @@ export class ResolutionResource {
    *
    * Returns one page of results. For full iteration use {@link searchAll}.
    * Items are typed as {@link ResolutionJsonBean} (spec schema for this endpoint).
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   async search(
     params?: SearchResolutionsParams,
@@ -295,6 +306,8 @@ export class ResolutionResource {
   /**
    * B718: Iterate every resolution returned by the search endpoint across
    * all result pages. Delegates to {@link paginateOffset}.
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   async *searchAll(
     params?: Omit<SearchResolutionsParams, 'startAt'>,

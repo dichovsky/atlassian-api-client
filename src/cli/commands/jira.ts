@@ -1,7 +1,6 @@
 import type { GlobalOptions, ParsedCommand } from '../types.js';
 import { JiraClient } from '../../jira/client.js';
 import type {
-  AddFilterSharePermissionData,
   CreateStatusData,
   StatusScope,
   UpdateStatusData,
@@ -64,7 +63,7 @@ import type {
   WorklogBulkOutcome,
 } from '../../jira/resources/issues.js';
 import type { Issue } from '../../jira/types.js';
-import type { WebhookRegistration } from '../../jira/resources/webhooks.js';
+import type { WebhookEvent, WebhookRegistration } from '../../jira/resources/webhooks.js';
 import type { ApplicationKey } from '../../jira/resources/license.js';
 import type {
   ProjectAccessLevel,
@@ -2572,6 +2571,66 @@ async function executeDataPolicy(client: JiraClient, cmd: ParsedCommand): Promis
   }
 }
 
+/** Spec `WebhookDetails.events` enum; the `Record` keeps it in step with `WebhookEvent`. */
+const WEBHOOK_EVENTS = Object.keys({
+  'jira:issue_created': true,
+  'jira:issue_updated': true,
+  'jira:issue_deleted': true,
+  comment_created: true,
+  comment_updated: true,
+  comment_deleted: true,
+  issue_property_set: true,
+  issue_property_deleted: true,
+  sprint_created: true,
+  sprint_updated: true,
+  sprint_closed: true,
+  sprint_deleted: true,
+  sprint_started: true,
+  'jira:version_released': true,
+  'jira:version_unreleased': true,
+  'jira:version_created': true,
+  'jira:version_moved': true,
+  'jira:version_updated': true,
+  'jira:version_merged': true,
+  'jira:version_deleted': true,
+} satisfies Record<WebhookEvent, true>);
+
+/**
+ * `--webhooks` for `register`: each entry an object with the spec-required
+ * `jqlFilter` string and a non-empty `events` array of spec values.
+ */
+function webhookRegistrationsFlag(raw: string): WebhookRegistration[] {
+  const entries = parseJsonArrayFlag(raw, '--webhooks');
+  entries.forEach((entry, i) => {
+    if (!isJsonObject(entry)) throw new Error(`--webhooks[${i}] must be a JSON object`);
+    const events = entry['events'];
+    if (
+      !Array.isArray(events) ||
+      events.length === 0 ||
+      !events.every((e) => WEBHOOK_EVENTS.includes(e as string))
+    ) {
+      throw new Error(
+        `--webhooks[${i}].events must be a non-empty JSON array of: ${WEBHOOK_EVENTS.join(', ')}`,
+      );
+    }
+    if (typeof entry['jqlFilter'] !== 'string') {
+      throw new Error(`--webhooks[${i}].jqlFilter must be a JQL string (required)`);
+    }
+  });
+  return entries as WebhookRegistration[];
+}
+
+/** `--webhook-ids` for `refresh`/`delete`: a JSON array of positive integer IDs. */
+function webhookIdsFlag(value: string | boolean | undefined): number[] {
+  const raw = asString(value);
+  if (raw === undefined) throw new Error('--webhook-ids is required');
+  const ids = parseJsonArrayFlag(raw, '--webhook-ids');
+  if (!ids.every((id) => Number.isInteger(id) && (id as number) > 0)) {
+    throw new Error('--webhook-ids must be a JSON array of positive integer webhook IDs');
+  }
+  return ids as number[];
+}
+
 async function executeWebhooks(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
   const opts = cmd.options;
 
@@ -2587,14 +2646,10 @@ async function executeWebhooks(client: JiraClient, cmd: ParsedCommand): Promise<
       if (url === undefined) throw new Error('--url is required');
       const rawWebhooks = asString(opts['webhooks']);
       if (rawWebhooks === undefined) throw new Error('--webhooks is required');
-      const webhooks = parseJsonArrayFlag(rawWebhooks, '--webhooks') as WebhookRegistration[];
-      return client.webhooks.register({ url, webhooks });
+      return client.webhooks.register({ url, webhooks: webhookRegistrationsFlag(rawWebhooks) });
     }
     case 'refresh': {
-      const rawIds = asString(opts['webhook-ids']);
-      if (rawIds === undefined) throw new Error('--webhook-ids is required');
-      const webhookIds = parseJsonArrayFlag(rawIds, '--webhook-ids') as number[];
-      return client.webhooks.refresh(webhookIds);
+      return client.webhooks.refresh(webhookIdsFlag(opts['webhook-ids']));
     }
     case 'list-failed': {
       const maxResults = asPositiveInt(opts['max-results'], '--max-results');
@@ -2606,10 +2661,7 @@ async function executeWebhooks(client: JiraClient, cmd: ParsedCommand): Promise<
       });
     }
     case 'delete': {
-      const rawIds = asString(opts['webhook-ids']);
-      if (rawIds === undefined) throw new Error('--webhook-ids is required');
-      const webhookIds = parseJsonArrayFlag(rawIds, '--webhook-ids') as number[];
-      await client.webhooks.delete(webhookIds);
+      await client.webhooks.delete(webhookIdsFlag(opts['webhook-ids']));
       return { deleted: true };
     }
     default:
@@ -4573,12 +4625,13 @@ async function executeResolutions(client: JiraClient, cmd: ParsedCommand): Promi
       const id = requireArg(cmd.positionalArgs[0], 'id');
       // `replaceWith` is required by the spec — deleting without it returns 400.
       const replaceWith = requireOpt(opts['replace-with'], '--replace-with');
-      await client.resolutions.delete(id, { replaceWith });
-      return { deleted: true };
+      // Asynchronous: the deletion task to poll with `atlas jira task get <id>`.
+      return (await client.resolutions.delete(id, { replaceWith })) ?? { deleted: true };
     }
     case 'set-default': {
       const id = requireArg(cmd.positionalArgs[0], 'id');
-      await client.resolutions.setDefault({ id });
+      // `null` erases the default resolution (spec: JSON null, not a string).
+      await client.resolutions.setDefault({ id: id === 'null' ? null : id });
       return { updated: true };
     }
     case 'move': {
@@ -4656,36 +4709,66 @@ function requireFilterShareScope(
 
 function asFilterShareType(
   value: string | boolean | undefined,
-):
-  | 'user'
-  | 'group'
-  | 'project'
-  | 'projectRole'
-  | 'global'
-  | 'loggedin'
-  | 'authenticated'
-  | undefined {
+): 'user' | 'group' | 'project' | 'projectRole' | 'global' | 'authenticated' | undefined {
   const s = asString(value);
   if (s === undefined) return undefined;
+  // `loggedin` is the read-side name; requests must say `authenticated`.
+  if (s === 'loggedin') return 'authenticated';
   if (
     s === 'user' ||
     s === 'group' ||
     s === 'project' ||
     s === 'projectRole' ||
     s === 'global' ||
-    s === 'loggedin' ||
     s === 'authenticated'
   ) {
     return s;
   }
   throw new Error(
-    `--share-type must be one of: user, group, project, projectRole, global, loggedin, authenticated. Got: ${s}`,
+    `--share-type must be one of: user, group, project, projectRole, global, authenticated (loggedin is accepted as authenticated). Got: ${s}`,
   );
+}
+
+/** `orderBy` values of `GET /filter/search` (spec enum). */
+const FILTER_SEARCH_ORDER_BY = [
+  'description',
+  'favourite_count',
+  'id',
+  'is_favourite',
+  'name',
+  'owner',
+  'is_shared',
+].flatMap((key) => [key, `-${key}`, `+${key}`]);
+
+/** `sharePermissions` / `editPermissions` element type of a filter write body. */
+type FilterPermissionList = NonNullable<
+  Parameters<JiraClient['filters']['create']>[0]['sharePermissions']
+>;
+
+function filterPermissionsFlag(
+  value: string | boolean | undefined,
+  flag: string,
+): FilterPermissionList | undefined {
+  const raw = asString(value);
+  return raw === undefined ? undefined : (parseJsonArrayFlag(raw, flag) as FilterPermissionList);
+}
+
+/** `--expand` / `--override-share-permissions` for filters get/create/update. */
+function filterQueryParams(opts: ParsedCommand['options']): {
+  expand?: string;
+  overrideSharePermissions?: boolean;
+} {
+  const expand = asString(opts['expand']);
+  const overrideSharePermissions = asBoolFlag(opts['override-share-permissions']);
+  return {
+    ...(expand !== undefined && { expand }),
+    ...(overrideSharePermissions !== undefined && { overrideSharePermissions }),
+  };
 }
 
 function requireFilterShareType(
   value: string | boolean | undefined,
-): 'user' | 'group' | 'project' | 'projectRole' | 'global' | 'loggedin' | 'authenticated' {
+): 'user' | 'group' | 'project' | 'projectRole' | 'global' | 'authenticated' {
   const t = asFilterShareType(value);
   if (t === undefined) throw new Error('Missing required option: --share-type');
   return t;
@@ -4696,55 +4779,57 @@ async function executeFilters(client: JiraClient, cmd: ParsedCommand): Promise<u
 
   switch (cmd.action) {
     case 'search': {
-      const idsRaw = asString(opts['ids']);
-      const ids = idsRaw
-        ? idsRaw
-            .split(',')
-            .map((s) => s.trim())
-            .filter((s) => s.length > 0)
-            .map((s) => parsePositiveIntArg(s, '--ids'))
-        : undefined;
+      const ids = idsCsvFlag(opts['ids'], '--ids')?.map((s) => parsePositiveIntArg(s, '--ids'));
+      const filterName = asString(opts['filter-name']);
+      const accountId = asString(opts['account-id']);
+      const owner = asString(opts['owner']);
+      const groupname = asString(opts['group-name']);
+      const groupId = asString(opts['group-id']);
+      const projectId = asPositiveInt(opts['project-id'], '--project-id');
+      const overrideSharePermissions = asBoolFlag(opts['override-share-permissions']);
+      const isSubstringMatch = asBoolFlag(opts['is-substring-match']);
+      const orderBy = asEnum(opts['order-by'], FILTER_SEARCH_ORDER_BY, 'order-by');
       return client.filters.list({
         startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
         ...(asString(opts['expand']) !== undefined && { expand: asString(opts['expand']) }),
         ...(ids !== undefined && { id: ids }),
-        ...(asString(opts['order-by']) !== undefined && { orderBy: asString(opts['order-by']) }),
+        ...(orderBy !== undefined && { orderBy }),
+        ...(filterName !== undefined && { filterName }),
+        ...(accountId !== undefined && { accountId }),
+        ...(owner !== undefined && { owner }),
+        ...(groupname !== undefined && { groupname }),
+        ...(groupId !== undefined && { groupId }),
+        ...(projectId !== undefined && { projectId }),
+        ...(overrideSharePermissions !== undefined && { overrideSharePermissions }),
+        ...(isSubstringMatch !== undefined && { isSubstringMatch }),
       });
     }
     case 'get': {
       const id = requireArg(cmd.positionalArgs[0], 'filterId');
-      return client.filters.get(id);
+      return client.filters.get(id, filterQueryParams(opts));
     }
     case 'create': {
       const name = requireOpt(opts['name'], '--name');
       const description = asString(opts['description']);
       const jql = asString(opts['jql']);
       const favourite = asBoolFlag(opts['favourite']);
-      const sharePermissionsRaw = asString(opts['share-permissions']);
-      const editPermissionsRaw = asString(opts['edit-permissions']);
-      const sharePermissions =
-        sharePermissionsRaw !== undefined
-          ? (parseJsonArrayFlag(
-              sharePermissionsRaw,
-              '--share-permissions',
-            ) as AddFilterSharePermissionData[])
-          : undefined;
-      const editPermissions =
-        editPermissionsRaw !== undefined
-          ? (parseJsonArrayFlag(
-              editPermissionsRaw,
-              '--edit-permissions',
-            ) as AddFilterSharePermissionData[])
-          : undefined;
-      return client.filters.create({
-        name,
-        ...(description !== undefined && { description }),
-        ...(jql !== undefined && { jql }),
-        ...(favourite !== undefined && { favourite }),
-        ...(sharePermissions !== undefined && { sharePermissions }),
-        ...(editPermissions !== undefined && { editPermissions }),
-      });
+      const sharePermissions = filterPermissionsFlag(
+        opts['share-permissions'],
+        '--share-permissions',
+      );
+      const editPermissions = filterPermissionsFlag(opts['edit-permissions'], '--edit-permissions');
+      return client.filters.create(
+        {
+          name,
+          ...(description !== undefined && { description }),
+          ...(jql !== undefined && { jql }),
+          ...(favourite !== undefined && { favourite }),
+          ...(sharePermissions !== undefined && { sharePermissions }),
+          ...(editPermissions !== undefined && { editPermissions }),
+        },
+        filterQueryParams(opts),
+      );
     }
     case 'update': {
       const id = requireArg(cmd.positionalArgs[0], 'filterId');
@@ -4752,22 +4837,11 @@ async function executeFilters(client: JiraClient, cmd: ParsedCommand): Promise<u
       const description = asString(opts['description']);
       const jql = asString(opts['jql']);
       const favourite = asBoolFlag(opts['favourite']);
-      const sharePermissionsRaw = asString(opts['share-permissions']);
-      const editPermissionsRaw = asString(opts['edit-permissions']);
-      const sharePermissions =
-        sharePermissionsRaw !== undefined
-          ? (parseJsonArrayFlag(
-              sharePermissionsRaw,
-              '--share-permissions',
-            ) as AddFilterSharePermissionData[])
-          : undefined;
-      const editPermissions =
-        editPermissionsRaw !== undefined
-          ? (parseJsonArrayFlag(
-              editPermissionsRaw,
-              '--edit-permissions',
-            ) as AddFilterSharePermissionData[])
-          : undefined;
+      const sharePermissions = filterPermissionsFlag(
+        opts['share-permissions'],
+        '--share-permissions',
+      );
+      const editPermissions = filterPermissionsFlag(opts['edit-permissions'], '--edit-permissions');
       if (
         name === undefined &&
         description === undefined &&
@@ -4780,14 +4854,18 @@ async function executeFilters(client: JiraClient, cmd: ParsedCommand): Promise<u
           'update requires at least one of: --name, --description, --jql, --favourite, --share-permissions, --edit-permissions',
         );
       }
-      return client.filters.update(id, {
-        ...(name !== undefined && { name }),
-        ...(description !== undefined && { description }),
-        ...(jql !== undefined && { jql }),
-        ...(favourite !== undefined && { favourite }),
-        ...(sharePermissions !== undefined && { sharePermissions }),
-        ...(editPermissions !== undefined && { editPermissions }),
-      });
+      return client.filters.update(
+        id,
+        {
+          ...(name !== undefined && { name }),
+          ...(description !== undefined && { description }),
+          ...(jql !== undefined && { jql }),
+          ...(favourite !== undefined && { favourite }),
+          ...(sharePermissions !== undefined && { sharePermissions }),
+          ...(editPermissions !== undefined && { editPermissions }),
+        },
+        filterQueryParams(opts),
+      );
     }
     case 'delete': {
       const id = requireArg(cmd.positionalArgs[0], 'filterId');
@@ -5136,24 +5214,21 @@ async function executePermissionSchemes(client: JiraClient, cmd: ParsedCommand):
         requireArg(cmd.positionalArgs[0], 'schemeId'),
         'schemeId',
       );
-      const holderType = asString(opts['holder-type']);
+      // A grant needs a holder and a permission; Jira rejects an empty one.
+      const holderType = requireOpt(opts['holder-type'], '--holder-type');
       const holderParameter = asString(opts['holder-parameter']);
       const holderValue = asString(opts['holder-value']);
-      const permission = asString(opts['permission']);
+      const permission = requireOpt(opts['permission'], '--permission');
       const expand = asString(opts['expand']);
-      const holder =
-        holderType !== undefined
-          ? {
-              type: holderType,
-              ...(holderParameter !== undefined && { parameter: holderParameter }),
-              ...(holderValue !== undefined && { value: holderValue }),
-            }
-          : undefined;
       return client.permissionSchemes.createPermission(
         schemeId,
         {
-          ...(holder !== undefined && { holder }),
-          ...(permission !== undefined && { permission }),
+          holder: {
+            type: holderType,
+            ...(holderParameter !== undefined && { parameter: holderParameter }),
+            ...(holderValue !== undefined && { value: holderValue }),
+          },
+          permission,
         },
         expand !== undefined ? { expand } : undefined,
       );
@@ -5214,10 +5289,16 @@ async function executeIssueTypeSchemes(client: JiraClient, cmd: ParsedCommand): 
   switch (cmd.action) {
     case 'list': {
       const ids = parseCsv(opts['ids']);
+      const orderBy = asScreensOrderBy(opts['order-by']);
+      const expand = asString(opts['expand']);
+      const queryString = asString(opts['query-string']);
       return client.issueTypeSchemes.list({
         startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
         ...(ids !== undefined && { id: ids }),
+        ...(orderBy !== undefined && { orderBy }),
+        ...(expand !== undefined && { expand }),
+        ...(queryString !== undefined && { queryString }),
       });
     }
     case 'list-mapping': {
@@ -5229,7 +5310,8 @@ async function executeIssueTypeSchemes(client: JiraClient, cmd: ParsedCommand): 
       });
     }
     case 'list-project': {
-      const projectId = parseCsv(opts['project-ids']) ?? [];
+      const projectId = parseCsv(opts['project-ids']);
+      if (projectId === undefined) throw new Error('Missing required option: --project-ids');
       return client.issueTypeSchemes.listProject({
         startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
@@ -5299,6 +5381,9 @@ async function executeIssueTypeSchemes(client: JiraClient, cmd: ParsedCommand): 
       const after = asString(opts['after']);
       const positionRaw = asString(opts['position']);
       const position = positionRaw !== undefined ? asMovePosition(positionRaw) : undefined;
+      if (after === undefined && position === undefined) {
+        throw new Error('move-issue-types requires one of: --position, --after');
+      }
       await client.issueTypeSchemes.moveIssueTypes(schemeId, {
         issueTypeIds,
         ...(after !== undefined && { after }),
@@ -5363,16 +5448,11 @@ async function executeRoles(client: JiraClient, cmd: ParsedCommand): Promise<unk
       return client.roles.create(body);
     }
     case 'update': {
+      // PUT replaces the role: Jira requires both fields (use partial-update for one).
       const roleId = parsePositiveIntArg(requireArg(cmd.positionalArgs[0], 'roleId'), 'roleId');
-      const name = asString(opts['name']);
-      const description = asString(opts['description']);
-      if (name === undefined && description === undefined) {
-        throw new Error('update requires at least one of: --name, --description');
-      }
-      const body: { name?: string; description?: string } = {};
-      if (name !== undefined) body.name = name;
-      if (description !== undefined) body.description = description;
-      return client.roles.update(roleId, body);
+      const name = requireOpt(opts['name'], '--name');
+      const description = requireOpt(opts['description'], '--description');
+      return client.roles.update(roleId, { name, description });
     }
     case 'partial-update': {
       const roleId = parsePositiveIntArg(requireArg(cmd.positionalArgs[0], 'roleId'), 'roleId');
@@ -5380,6 +5460,10 @@ async function executeRoles(client: JiraClient, cmd: ParsedCommand): Promise<unk
       const description = asString(opts['description']);
       if (name === undefined && description === undefined) {
         throw new Error('partial-update requires at least one of: --name, --description');
+      }
+      // Jira updates only the name when both are sent.
+      if (name !== undefined && description !== undefined) {
+        throw new Error('partial-update changes one field: pass --name or --description, not both');
       }
       const body: { name?: string; description?: string } = {};
       if (name !== undefined) body.name = name;
@@ -5404,6 +5488,7 @@ async function executeRoles(client: JiraClient, cmd: ParsedCommand): Promise<unk
       if (userRaw === undefined && groupRaw === undefined && groupIdRaw === undefined) {
         throw new Error('add-actors requires at least one of: --user, --group, --group-id');
       }
+      rejectRoleActorMix(userRaw, groupRaw, groupIdRaw, 'add-actors cannot add users and groups');
       const data: { user?: string[]; group?: string[]; groupId?: string[] } = {};
       if (userRaw !== undefined)
         data.user = userRaw
@@ -5431,11 +5516,37 @@ async function executeRoles(client: JiraClient, cmd: ParsedCommand): Promise<unk
       if (accountId !== undefined) params.user = accountId;
       if (groupName !== undefined) params.group = groupName;
       if (groupId !== undefined) params.groupId = groupId;
-      await client.roles.deleteActors(roleId, Object.keys(params).length > 0 ? params : undefined);
-      return { deleted: true };
+      rejectRoleActorMix(
+        accountId,
+        groupName,
+        groupId,
+        'delete-actors cannot delete a user and a group',
+      );
+      // The role with its remaining default actors.
+      return (
+        (await client.roles.deleteActors(
+          roleId,
+          Object.keys(params).length > 0 ? params : undefined,
+        )) ?? { deleted: true }
+      );
     }
     default:
       throw new Error(`Unknown roles action: ${cmd.action}. Actions: ${ROLES_ACTIONS.join(', ')}`);
+  }
+}
+
+/** Jira rejects users and groups in one actor request, and a group by both name and ID. */
+function rejectRoleActorMix(
+  user: string | undefined,
+  groupName: string | undefined,
+  groupId: string | undefined,
+  mixMessage: string,
+): void {
+  if (user !== undefined && (groupName !== undefined || groupId !== undefined)) {
+    throw new Error(`${mixMessage} in the same request`);
+  }
+  if (groupName !== undefined && groupId !== undefined) {
+    throw new Error('pass either --group-name/--group or --group-id, not both');
   }
 }
 
@@ -5809,10 +5920,12 @@ async function executeNotificationSchemes(
       return { deleted: true };
     }
     case 'list-projects': {
+      const schemeIds = parseCsv(opts['scheme-ids']);
       const projectIds = parseCsv(opts['project-ids']);
       return client.notificationSchemes.listProjects({
         startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+        ...(schemeIds !== undefined && { notificationSchemeId: schemeIds }),
         ...(projectIds !== undefined && { projectId: projectIds }),
       });
     }
@@ -6081,7 +6194,7 @@ async function executeVersionResource(client: JiraClient, cmd: ParsedCommand): P
 
   switch (cmd.action) {
     case 'create': {
-      const name = asString(opts['name']);
+      const name = requireOpt(opts['name'], '--name');
       const description = asString(opts['description']);
       const archived = asBoolFlag(opts['archived']);
       const released = asBoolFlag(opts['released']);
@@ -6091,8 +6204,12 @@ async function executeVersionResource(client: JiraClient, cmd: ParsedCommand): P
       const projectId = asPositiveInt(opts['project-id'], '--project-id');
       const moveUnfixedIssuesTo = asString(opts['move-unfixed-issues-to']);
       const driver = asString(opts['driver']);
+      const expand = asString(opts['expand']);
+      if (projectId === undefined && project === undefined) {
+        throw new Error('create requires --project-id (or the deprecated --project key)');
+      }
       return client.version.create({
-        ...(name !== undefined && { name }),
+        name,
         ...(description !== undefined && { description }),
         ...(archived !== undefined && { archived }),
         ...(released !== undefined && { released }),
@@ -6102,6 +6219,7 @@ async function executeVersionResource(client: JiraClient, cmd: ParsedCommand): P
         ...(projectId !== undefined && { projectId }),
         ...(moveUnfixedIssuesTo !== undefined && { moveUnfixedIssuesTo }),
         ...(driver !== undefined && { driver }),
+        ...(expand !== undefined && { expand }),
       });
     }
     case 'get': {
@@ -6121,6 +6239,7 @@ async function executeVersionResource(client: JiraClient, cmd: ParsedCommand): P
       const projectId = asPositiveInt(opts['project-id'], '--project-id');
       const moveUnfixedIssuesTo = asString(opts['move-unfixed-issues-to']);
       const driver = asString(opts['driver']);
+      const expand = asString(opts['expand']);
       if (
         name === undefined &&
         description === undefined &&
@@ -6131,10 +6250,11 @@ async function executeVersionResource(client: JiraClient, cmd: ParsedCommand): P
         project === undefined &&
         projectId === undefined &&
         moveUnfixedIssuesTo === undefined &&
-        driver === undefined
+        driver === undefined &&
+        expand === undefined
       ) {
         throw new Error(
-          'update requires at least one of: --name, --description, --archived, --released, --start-date, --release-date, --project, --project-id, --move-unfixed-issues-to, --driver',
+          'update requires at least one of: --name, --description, --archived, --released, --start-date, --release-date, --project, --project-id, --move-unfixed-issues-to, --driver, --expand',
         );
       }
       return client.version.update(id, {
@@ -6148,6 +6268,7 @@ async function executeVersionResource(client: JiraClient, cmd: ParsedCommand): P
         ...(projectId !== undefined && { projectId }),
         ...(moveUnfixedIssuesTo !== undefined && { moveUnfixedIssuesTo }),
         ...(driver !== undefined && { driver }),
+        ...(expand !== undefined && { expand }),
       });
     }
     case 'delete': {
@@ -6173,6 +6294,9 @@ async function executeVersionResource(client: JiraClient, cmd: ParsedCommand): P
       const pos = posRaw !== undefined ? asVersionMovePosition(posRaw) : undefined;
       if (after === undefined && pos === undefined) {
         throw new Error('move requires at least one of: --after, --position');
+      }
+      if (after !== undefined && pos !== undefined) {
+        throw new Error('move accepts either --after or --position, not both');
       }
       return client.version.move(id, {
         ...(after !== undefined && { after }),
@@ -6200,10 +6324,12 @@ async function executeVersionResource(client: JiraClient, cmd: ParsedCommand): P
     }
     case 'update-related-work': {
       const id = requireArg(cmd.positionalArgs[0], 'id');
+      const relatedWorkId = requireOpt(opts['related-work-id'], '--related-work-id');
       const category = requireOpt(opts['category'], '--category');
       const title = asString(opts['title']);
       const url = asString(opts['url']);
       return client.version.updateRelatedWork(id, {
+        relatedWorkId,
         category,
         ...(title !== undefined && { title }),
         ...(url !== undefined && { url }),
@@ -6345,26 +6471,30 @@ async function executeConfig(client: JiraClient, cmd: ParsedCommand): Promise<un
     case 'remove-field-associations': {
       const raw = requireOpt(opts['body'], '--body');
       const body = parseJsonObjectFlag(raw, '--body') as RemoveFieldAssociationsBody;
-      await client.config.removeFieldAssociations(body);
-      return { deleted: true };
+      // 200/207 carry per-entry `results` (207 = some entries failed); 204 has none.
+      return (await client.config.removeFieldAssociations(body)) ?? { deleted: true };
     }
     case 'update-field-associations': {
       const raw = requireOpt(opts['body'], '--body');
       const body = parseJsonObjectFlag(raw, '--body') as UpdateFieldAssociationsBody;
-      await client.config.updateFieldAssociations(body);
-      return { updated: true };
+      // 200/207 carry per-entry `results` (207 = some entries failed); 204 has none.
+      return (await client.config.updateFieldAssociations(body)) ?? { updated: true };
     }
     case 'remove-field-parameters': {
       const raw = requireOpt(opts['body'], '--body');
       const body = parseJsonObjectFlag(raw, '--body') as RemoveFieldParametersBody;
-      await client.config.removeFieldParameters(body);
-      return { deleted: true };
+      // 207 carries per-entry `results` (some entries failed); 200/204 have none.
+      return (
+        (await client.config.removeFieldParameters(body, { returnResults: true })) ?? {
+          deleted: true,
+        }
+      );
     }
     case 'update-field-parameters': {
       const raw = requireOpt(opts['body'], '--body');
       const body = parseJsonObjectFlag(raw, '--body') as UpdateFieldParametersBody;
-      await client.config.updateFieldParameters(body);
-      return { updated: true };
+      // 200/207 carry per-entry `results` (207 = some entries failed); 204 has none.
+      return (await client.config.updateFieldParameters(body)) ?? { updated: true };
     }
     case 'get-projects-with-schemes': {
       const projectIds = parseIntCsv(opts['project-ids'], '--project-ids');
@@ -6380,8 +6510,8 @@ async function executeConfig(client: JiraClient, cmd: ParsedCommand): Promise<un
     case 'associate-projects': {
       const raw = requireOpt(opts['body'], '--body');
       const body = parseJsonObjectFlag(raw, '--body') as AssociateProjectsBody;
-      await client.config.associateProjects(body);
-      return { updated: true };
+      // 200/207 carry per-entry `results` (207 = some entries failed); 204 has none.
+      return (await client.config.associateProjects(body)) ?? { updated: true };
     }
     default:
       throw new Error(
@@ -6470,13 +6600,9 @@ async function executeIssueSecuritySchemes(
     }
     case 'add-levels': {
       const schemeId = requireArg(cmd.positionalArgs[0], 'schemeId');
-      const levelsRaw = asString(opts['levels']);
-      let levels: unknown[] | undefined;
-      if (levelsRaw !== undefined) {
-        levels = parseJsonArrayFlag(levelsRaw, '--levels');
-      }
+      const levels = parseJsonArrayFlag(requireOpt(opts['levels'], '--levels'), '--levels');
       await client.issueSecuritySchemes.addLevels(schemeId, {
-        ...(levels !== undefined && { levels: levels as SecuritySchemeLevelBean[] }),
+        levels: levels as SecuritySchemeLevelBean[],
       });
       return { updated: true };
     }
@@ -6506,13 +6632,9 @@ async function executeIssueSecuritySchemes(
     case 'add-level-members': {
       const schemeId = requireArg(cmd.positionalArgs[0], 'schemeId');
       const levelId = requireArg(cmd.positionalArgs[1], 'levelId');
-      const membersRaw = asString(opts['members']);
-      let members: unknown[] | undefined;
-      if (membersRaw !== undefined) {
-        members = parseJsonArrayFlag(membersRaw, '--members');
-      }
+      const members = parseJsonArrayFlag(requireOpt(opts['members'], '--members'), '--members');
       await client.issueSecuritySchemes.addLevelMembers(schemeId, levelId, {
-        ...(members !== undefined && { members: members as SecuritySchemeLevelMemberBean[] }),
+        members: members as SecuritySchemeLevelMemberBean[],
       });
       return { updated: true };
     }
@@ -6573,7 +6695,8 @@ async function executeIssueSecuritySchemes(
       const mappingsRaw = asString(opts['old-to-new-mappings']);
       const data: AssociateSchemesToProjectsData = {
         projectId,
-        schemeId,
+        // `null` clears the project's issue security scheme association.
+        schemeId: schemeId === 'null' ? null : schemeId,
         ...(mappingsRaw !== undefined && {
           oldToNewSecurityLevelMappings: parseJsonArrayFlag(
             mappingsRaw,
@@ -6767,6 +6890,9 @@ async function executeScreens(client: JiraClient, cmd: ParsedCommand): Promise<u
       const id = requireArg(cmd.positionalArgs[2], 'id');
       const position = asMoveFieldPosition(opts['position']);
       const after = asString(opts['after']);
+      if (position === undefined && after === undefined) {
+        throw new Error('move-field requires one of: --position, --after');
+      }
       await client.screens.moveField(screenId, tabId, id, {
         ...(position !== undefined && { position }),
         ...(after !== undefined && { after }),
@@ -6854,9 +6980,9 @@ async function executeScreenScheme(client: JiraClient, cmd: ParsedCommand): Prom
     case 'create': {
       const name = requireOpt(opts['name'], '--name');
       const defaultScreen = requireIntOpt(opts['default-screen'], '--default-screen');
-      const viewScreen = asNonNegativeInt(opts['view-screen'], '--view-screen');
-      const editScreen = asNonNegativeInt(opts['edit-screen'], '--edit-screen');
-      const createScreen = asNonNegativeInt(opts['create-screen'], '--create-screen');
+      const viewScreen = screenIdOpt(opts['view-screen'], '--view-screen');
+      const editScreen = screenIdOpt(opts['edit-screen'], '--edit-screen');
+      const createScreen = screenIdOpt(opts['create-screen'], '--create-screen');
       const description = asString(opts['description']);
       return client.screenScheme.create({
         name,
@@ -6873,10 +6999,11 @@ async function executeScreenScheme(client: JiraClient, cmd: ParsedCommand): Prom
       const screenSchemeId = requireArg(cmd.positionalArgs[0], 'screenSchemeId');
       const name = asString(opts['name']);
       const description = asString(opts['description']);
-      const defaultScreen = asNonNegativeInt(opts['default-screen'], '--default-screen');
-      const viewScreen = asNonNegativeInt(opts['view-screen'], '--view-screen');
-      const editScreen = asNonNegativeInt(opts['edit-screen'], '--edit-screen');
-      const createScreen = asNonNegativeInt(opts['create-screen'], '--create-screen');
+      const defaultScreen = screenIdOpt(opts['default-screen'], '--default-screen');
+      // `null` removes the view/edit/create association (the default stays required).
+      const viewScreen = nullableScreenIdOpt(opts['view-screen'], '--view-screen');
+      const editScreen = nullableScreenIdOpt(opts['edit-screen'], '--edit-screen');
+      const createScreen = nullableScreenIdOpt(opts['create-screen'], '--create-screen');
       const hasScreens =
         defaultScreen !== undefined ||
         viewScreen !== undefined ||
@@ -6889,14 +7016,15 @@ async function executeScreenScheme(client: JiraClient, cmd: ParsedCommand): Prom
       }
       // Spec: UpdateScreenTypes uses string IDs (not integers like create).
       // --default-screen is optional on update; a partial screens object is valid.
-      // Note: null removal (to disassociate a screen) is not yet supported here.
-      let screens: { default?: string; view?: string; edit?: string; create?: string } | undefined;
+      let screens:
+        | { default?: string; view?: string | null; edit?: string | null; create?: string | null }
+        | undefined;
       if (hasScreens) {
         screens = {
           ...(defaultScreen !== undefined && { default: String(defaultScreen) }),
-          ...(viewScreen !== undefined && { view: String(viewScreen) }),
-          ...(editScreen !== undefined && { edit: String(editScreen) }),
-          ...(createScreen !== undefined && { create: String(createScreen) }),
+          ...(viewScreen !== undefined && { view: viewScreen }),
+          ...(editScreen !== undefined && { edit: editScreen }),
+          ...(createScreen !== undefined && { create: createScreen }),
         };
       }
       await client.screenScheme.update(screenSchemeId, {
@@ -6930,13 +7058,32 @@ function asScreenSchemeOrderBy(
 }
 
 function requireIntOpt(value: string | boolean | undefined, name: string): number {
+  const n = screenIdOpt(value, name);
+  if (n === undefined) throw new Error(`${name} is required`);
+  return n;
+}
+
+/** A screen ID flag: decimal digits only, so `''` is rejected instead of becoming 0. */
+function screenIdOpt(value: string | boolean | undefined, name: string): number | undefined {
   const s = asString(value);
-  if (s === undefined) throw new Error(`${name} is required`);
+  if (s === undefined) return undefined;
+  if (!/^\d+$/.test(s)) throw new Error(`${name} must be a non-negative integer, got: ${s}`);
   const n = Number(s);
-  if (!Number.isInteger(n) || n < 0) {
-    throw new Error(`${name} must be a non-negative integer, got: ${s}`);
+  // Above 2^53 - 1, Number() rounds to a different ID.
+  if (!Number.isSafeInteger(n)) {
+    throw new Error(`${name} must be at most ${Number.MAX_SAFE_INTEGER}, got: ${s}`);
   }
   return n;
+}
+
+/** Like {@link screenIdOpt} for `screenscheme update`, where `null` removes the screen. */
+function nullableScreenIdOpt(
+  value: string | boolean | undefined,
+  name: string,
+): string | null | undefined {
+  if (value === 'null') return null;
+  const n = screenIdOpt(value, name);
+  return n === undefined ? undefined : String(n);
 }
 
 // ─── Plans (B625-B640) ─────────────────────────────────────────────────────
@@ -6967,6 +7114,26 @@ function asFiniteNumber(value: string | boolean | undefined, name: string): numb
   const n = Number(value);
   if (!Number.isFinite(n)) throw new Error(`${name} must be a finite number, got: ${value}`);
   return n;
+}
+
+type PlanJsonPatch = Extract<Parameters<JiraClient['plans']['update']>[1], unknown[]>;
+
+/**
+ * `--body` of the plans patch actions: an RFC 6902 JSON Patch array, or one
+ * operation object, which is wrapped into an array.
+ */
+function parseJsonPatchFlag(raw: string): PlanJsonPatch {
+  const parsed = parseJsonValueFlag(raw, '--body');
+  const ops = Array.isArray(parsed) ? parsed : [parsed];
+  const valid = ops.every(
+    (op) => isJsonObject(op) && typeof op['op'] === 'string' && typeof op['path'] === 'string',
+  );
+  if (ops.length === 0 || !valid) {
+    throw new Error(
+      '--body must be a JSON Patch: an array of {"op","path","value"} operations (or one such object)',
+    );
+  }
+  return ops as PlanJsonPatch;
 }
 
 async function executePlans(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
@@ -7035,8 +7202,7 @@ async function executePlans(client: JiraClient, cmd: ParsedCommand): Promise<unk
     }
     case 'update': {
       const planId = parsePositiveIntArg(requireArg(cmd.positionalArgs[0], 'planId'), 'planId');
-      const raw = requireOpt(opts['body'], '--body');
-      const patch = parseJsonObjectFlag(raw, '--body');
+      const patch = parseJsonPatchFlag(requireOpt(opts['body'], '--body'));
       const useGroupId =
         opts['use-group-id'] !== undefined ? (opts['use-group-id'] as boolean) : undefined;
       await client.plans.update(planId, patch, useGroupId);
@@ -7090,8 +7256,7 @@ async function executePlans(client: JiraClient, cmd: ParsedCommand): Promise<unk
     case 'update-atlassian-team': {
       const planId = parsePositiveIntArg(requireArg(cmd.positionalArgs[0], 'planId'), 'planId');
       const atlassianTeamId = requireArg(cmd.positionalArgs[1], 'atlassianTeamId');
-      const raw = requireOpt(opts['body'], '--body');
-      const patch = parseJsonObjectFlag(raw, '--body');
+      const patch = parseJsonPatchFlag(requireOpt(opts['body'], '--body'));
       await client.plans.updateAtlassianTeam(planId, atlassianTeamId, patch);
       return { updated: true };
     }
@@ -7139,8 +7304,7 @@ async function executePlans(client: JiraClient, cmd: ParsedCommand): Promise<unk
         requireArg(cmd.positionalArgs[1], 'planOnlyTeamId'),
         'planOnlyTeamId',
       );
-      const raw = requireOpt(opts['body'], '--body');
-      const patch = parseJsonObjectFlag(raw, '--body');
+      const patch = parseJsonPatchFlag(requireOpt(opts['body'], '--body'));
       await client.plans.updatePlanOnlyTeam(planId, planOnlyTeamId, patch);
       return { updated: true };
     }
@@ -7180,6 +7344,8 @@ const WORKFLOWS_ACTIONS = [
   'validate-update',
 ];
 
+const WORKFLOW_RULE_TYPES = ['postfunction', 'condition', 'validator'] as const;
+
 const REMOVED_WORKFLOW_TRANSITION_PROPERTY_ACTIONS = [
   'delete-transition-property',
   'get-transition-properties',
@@ -7203,6 +7369,7 @@ async function executeWorkflows(client: JiraClient, cmd: ParsedCommand): Promise
       return client.workflows.list({
         startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+        workflowName: idsCsvFlag(opts['workflow-names'], '--workflow-names', 'value'),
         expand: asString(opts['expand']),
         queryString: asString(opts['query-string']),
         orderBy: asString(opts['order-by']),
@@ -7325,23 +7492,21 @@ async function executeWorkflows(client: JiraClient, cmd: ParsedCommand): Promise
         ['draft'],
         'Atlassian removed the draft parameter on 2026-11-02 (CHANGE-3147) and the API now rejects it; omit --draft',
       );
-      const typesRaw = requireOpt(opts['types'], '--types');
-      const types = typesRaw
-        .split(',')
-        .map((t) => t.trim())
-        .filter(Boolean) as ('postfunction' | 'condition' | 'validator')[];
-      const keysRaw = asString(opts['keys']);
-      const workflowNamesRaw = asString(opts['workflow-names']);
-      const withTagsRaw = asString(opts['with-tags']);
+      const types = splitCsvIds(requireOpt(opts['types'], '--types')).map((t) => {
+        if (!(WORKFLOW_RULE_TYPES as readonly string[]).includes(t)) {
+          throw new Error(
+            `--types must contain only: ${WORKFLOW_RULE_TYPES.join(', ')}, got: ${t}`,
+          );
+        }
+        return t as (typeof WORKFLOW_RULE_TYPES)[number];
+      });
       return client.workflows.getTransitionRuleConfigs({
         startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
         types,
-        keys: keysRaw ? keysRaw.split(',').map((k) => k.trim()) : undefined,
-        workflowNames: workflowNamesRaw
-          ? workflowNamesRaw.split(',').map((n) => n.trim())
-          : undefined,
-        withTags: withTagsRaw ? withTagsRaw.split(',').map((t) => t.trim()) : undefined,
+        keys: idsCsvFlag(opts['keys'], '--keys', 'value'),
+        workflowNames: idsCsvFlag(opts['workflow-names'], '--workflow-names', 'value'),
+        withTags: idsCsvFlag(opts['with-tags'], '--with-tags', 'value'),
         expand: asString(opts['expand']),
       });
     }
@@ -7464,6 +7629,7 @@ async function executeWorkflowScheme(client: JiraClient, cmd: ParsedCommand): Pr
       const startAt = asNonNegativeInt(opts['start-at'], '--start-at');
       const maxResults = asPositiveInt(opts['max-results'], '--max-results');
       if (opts['all'] === true) {
+        if (startAt !== undefined) throw new Error('--start-at cannot be combined with --all');
         return drainWorkflowSchemes(
           client.workflowScheme.listAll({
             ...(maxResults !== undefined && { maxResults }),
@@ -7588,11 +7754,20 @@ async function executeWorkflowScheme(client: JiraClient, cmd: ParsedCommand): Pr
       });
     }
     case 'list-by-project': {
-      const projectIds = parseCsv(opts['project-id']);
+      // Decimal digits only: Number() accepts -5, 1e3 or 0x10 and rounds IDs above 2^53 - 1.
+      const projectIds = parseCsv(opts['project-id'])?.map((s) => {
+        const n = Number(s);
+        if (!/^\d+$/.test(s) || n === 0 || !Number.isSafeInteger(n)) {
+          throw new Error(
+            `--project-id must contain positive integers up to ${Number.MAX_SAFE_INTEGER}, got: ${s}`,
+          );
+        }
+        return n;
+      });
       if (projectIds === undefined || projectIds.length === 0) {
         throw new Error('Missing required option: --project-id');
       }
-      return client.workflowScheme.getProjectAssociations({ projectId: projectIds.map(Number) });
+      return client.workflowScheme.getProjectAssociations({ projectId: projectIds });
     }
     case 'assign-project': {
       const body = parseJsonObjectFlag(requireOpt(opts['body'], '--body'), '--body');
@@ -7774,6 +7949,33 @@ const FIELDS_ACTIONS = [
   'field-trash-list',
 ] as const;
 
+/** Split a CSV flag of IDs, dropping blanks; a given flag must name at least one `noun`. */
+function idsCsvFlag(
+  value: string | boolean | undefined,
+  name: string,
+  noun = 'ID',
+): string[] | undefined {
+  const raw = asString(value);
+  if (raw === undefined) return undefined;
+  const ids = splitCsvIds(raw);
+  if (ids.length === 0) throw new Error(`${name} must contain at least one ${noun}`);
+  return ids;
+}
+
+function requireIdsCsvFlag(value: string | boolean | undefined, name: string): string[] {
+  return idsCsvFlag(requireOpt(value, name), name) as string[];
+}
+
+/** {@link idsCsvFlag} for integer IDs; `parse` keeps the flag's own integer check. */
+function intIdsCsvFlag(
+  value: string | boolean | undefined,
+  name: string,
+  parse: (value: string | boolean | undefined, name: string) => number[] | undefined = asIntArray,
+): number[] | undefined {
+  idsCsvFlag(value, name);
+  return parse(value, name);
+}
+
 async function executeFields(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
   const opts = cmd.options;
 
@@ -7782,23 +7984,17 @@ async function executeFields(client: JiraClient, cmd: ParsedCommand): Promise<un
       // B446: GET /rest/api/3/field/search
       const startAt = asNonNegativeInt(opts['start-at'], '--start-at');
       const maxResults = asPositiveInt(opts['max-results'], '--max-results');
-      const typeRaw = asString(opts['type']);
-      const type =
-        typeRaw !== undefined
-          ? typeRaw.split(',').map((s) => {
-              const t = s.trim();
-              if (t !== 'custom' && t !== 'system') {
-                throw new Error(`--type must contain only 'custom' or 'system', got: ${t}`);
-              }
-              return t;
-            })
-          : undefined;
-      const idRaw = asString(opts['id']);
-      const id = idRaw !== undefined ? idRaw.split(',').map((s) => s.trim()) : undefined;
+      const type = idsCsvFlag(opts['type'], '--type', 'type (custom, system)')?.map((t) => {
+        if (t !== 'custom' && t !== 'system') {
+          throw new Error(`--type must contain only 'custom' or 'system', got: ${t}`);
+        }
+        return t;
+      });
+      const id = idsCsvFlag(opts['id'], '--id');
       const query = asString(opts['query']);
       const orderBy = asString(opts['order-by']);
       const expand = asString(opts['expand']);
-      const projectIds = parseIntCsv(opts['project-ids'], '--project-ids');
+      const projectIds = intIdsCsvFlag(opts['project-ids'], '--project-ids', parseIntCsv);
       return client.fields.list({
         ...(startAt !== undefined && { startAt }),
         ...(maxResults !== undefined && { maxResults }),
@@ -7822,9 +8018,11 @@ async function executeFields(client: JiraClient, cmd: ParsedCommand): Promise<un
       return client.fields.update(fieldId, body as Parameters<typeof client.fields.update>[1]);
     }
     case 'field-delete': {
+      // Asynchronous: print the deletion task so it can be polled with `task get`.
+      // Off-spec 204 / empty 200 (no task): acknowledge as 4.0.0 did.
       const fieldId = requireArg(cmd.positionalArgs[0], 'fieldId');
-      await client.fields.delete(fieldId);
-      return { deleted: true };
+      const task = await client.fields.delete(fieldId, { returnTask: true });
+      return task ?? { deleted: true };
     }
     case 'context-list': {
       const fieldId = requireOpt(opts['field-id'], '--field-id');
@@ -7832,7 +8030,7 @@ async function executeFields(client: JiraClient, cmd: ParsedCommand): Promise<un
       const maxResults = asPositiveInt(opts['max-results'], '--max-results');
       const isAnyIssueType = asBoolFlag(opts['is-any-issue-type']);
       const isGlobalContext = asBoolFlag(opts['is-global-context']);
-      const contextId = asIntArray(opts['context-id'], '--context-id');
+      const contextId = intIdsCsvFlag(opts['context-id'], '--context-id');
       return client.fields.listContexts(fieldId, {
         ...(startAt !== undefined && { startAt }),
         ...(maxResults !== undefined && { maxResults }),
@@ -7845,17 +8043,13 @@ async function executeFields(client: JiraClient, cmd: ParsedCommand): Promise<un
       const fieldId = requireOpt(opts['field-id'], '--field-id');
       const name = requireOpt(opts['name'], '--name');
       const description = asString(opts['description']);
-      const projectIdsRaw = asString(opts['project-ids']);
-      const issueTypeIdsRaw = asString(opts['issue-type-ids']);
+      const projectIds = idsCsvFlag(opts['project-ids'], '--project-ids');
+      const issueTypeIds = idsCsvFlag(opts['issue-type-ids'], '--issue-type-ids');
       const data: CreateFieldContextData = {
         name,
         ...(description !== undefined && { description }),
-        ...(projectIdsRaw !== undefined && {
-          projectIds: projectIdsRaw.split(',').map((s) => s.trim()),
-        }),
-        ...(issueTypeIdsRaw !== undefined && {
-          issueTypeIds: issueTypeIdsRaw.split(',').map((s) => s.trim()),
-        }),
+        ...(projectIds !== undefined && { projectIds }),
+        ...(issueTypeIds !== undefined && { issueTypeIds }),
       };
       return client.fields.createContext(fieldId, data);
     }
@@ -7867,6 +8061,9 @@ async function executeFields(client: JiraClient, cmd: ParsedCommand): Promise<un
       );
       const name = asString(opts['name']);
       const description = asString(opts['description']);
+      if (name === undefined && description === undefined) {
+        throw new Error('context-update requires at least one of: --name, --description');
+      }
       const data: UpdateFieldContextData = {
         ...(name !== undefined && { name }),
         ...(description !== undefined && { description }),
@@ -7962,11 +8159,13 @@ async function executeFields(client: JiraClient, cmd: ParsedCommand): Promise<un
         requireOpt(opts['context-id'], '--context-id'),
         '--context-id',
       );
-      const idsRaw = requireOpt(opts['option-ids'], '--option-ids');
-      const customFieldOptionIds = idsRaw.split(',').map((s) => s.trim());
+      const customFieldOptionIds = requireIdsCsvFlag(opts['option-ids'], '--option-ids');
       const positionRaw = asString(opts['position']);
       const position = positionRaw !== undefined ? asMovePosition(positionRaw) : undefined;
       const after = asString(opts['after']);
+      if (position === undefined && after === undefined) {
+        throw new Error('context-option-move requires --position or --after');
+      }
       const data: OrderFieldContextOptionsData = {
         customFieldOptionIds,
         ...(position !== undefined && { position }),
@@ -7981,13 +8180,11 @@ async function executeFields(client: JiraClient, cmd: ParsedCommand): Promise<un
         requireOpt(opts['context-id'], '--context-id'),
         '--context-id',
       );
-      const issueTypeIdsRaw = asString(opts['issue-type-ids']);
+      const issueTypeIds = idsCsvFlag(opts['issue-type-ids'], '--issue-type-ids');
       const isAnyIssueType = asBoolFlag(opts['is-any-issue-type']);
       const defaultValueRaw = asString(opts['default-value-json']);
       const data: AddIssueTypesToContextBody = {
-        ...(issueTypeIdsRaw !== undefined && {
-          issueTypeIds: issueTypeIdsRaw.split(',').map((s) => s.trim()),
-        }),
+        ...(issueTypeIds !== undefined && { issueTypeIds }),
         ...(isAnyIssueType !== undefined && { isAnyIssueType }),
         ...(defaultValueRaw !== undefined && {
           defaultValue: parseJsonObjectFlag(
@@ -8005,8 +8202,7 @@ async function executeFields(client: JiraClient, cmd: ParsedCommand): Promise<un
         requireOpt(opts['context-id'], '--context-id'),
         '--context-id',
       );
-      const issueTypeIdsRaw = requireOpt(opts['issue-type-ids'], '--issue-type-ids');
-      const issueTypeIds = issueTypeIdsRaw.split(',').map((s) => s.trim());
+      const issueTypeIds = requireIdsCsvFlag(opts['issue-type-ids'], '--issue-type-ids');
       const data: FieldContextIssueTypeIdsBody = { issueTypeIds };
       await client.fields.removeContextIssueTypes(fieldId, contextId, data);
       return { removed: true };
@@ -8015,7 +8211,7 @@ async function executeFields(client: JiraClient, cmd: ParsedCommand): Promise<un
       const fieldId = requireOpt(opts['field-id'], '--field-id');
       const startAt = asNonNegativeInt(opts['start-at'], '--start-at');
       const maxResults = asPositiveInt(opts['max-results'], '--max-results');
-      const contextId = asIntArray(opts['context-id'], '--context-id');
+      const contextId = intIdsCsvFlag(opts['context-id'], '--context-id');
       return client.fields.listContextIssueTypeMappings(fieldId, {
         ...(contextId !== undefined && { contextId }),
         ...(startAt !== undefined && { startAt }),
@@ -8026,7 +8222,7 @@ async function executeFields(client: JiraClient, cmd: ParsedCommand): Promise<un
       const fieldId = requireOpt(opts['field-id'], '--field-id');
       const startAt = asNonNegativeInt(opts['start-at'], '--start-at');
       const maxResults = asPositiveInt(opts['max-results'], '--max-results');
-      const contextId = asIntArray(opts['context-id'], '--context-id');
+      const contextId = intIdsCsvFlag(opts['context-id'], '--context-id');
       return client.fields.listContextDefaultValues(fieldId, {
         ...(contextId !== undefined && { contextId }),
         ...(startAt !== undefined && { startAt }),
@@ -8037,8 +8233,8 @@ async function executeFields(client: JiraClient, cmd: ParsedCommand): Promise<un
       const fieldId = requireOpt(opts['field-id'], '--field-id');
       const startAt = asNonNegativeInt(opts['start-at'], '--start-at');
       const maxResults = asPositiveInt(opts['max-results'], '--max-results');
-      const contextId = asIntArray(opts['context-id'], '--context-id');
-      const issueTypeId = parseCsv(opts['issue-type-ids']);
+      const contextId = intIdsCsvFlag(opts['context-id'], '--context-id');
+      const issueTypeId = idsCsvFlag(opts['issue-type-ids'], '--issue-type-ids');
       return client.fields.getContextDefaultValues(fieldId, {
         ...(contextId !== undefined && { contextId }),
         ...(issueTypeId !== undefined && { issueTypeId }),
@@ -8073,8 +8269,7 @@ async function executeFields(client: JiraClient, cmd: ParsedCommand): Promise<un
         requireOpt(opts['context-id'], '--context-id'),
         '--context-id',
       );
-      const projectIdsRaw = requireOpt(opts['project-ids'], '--project-ids');
-      const projectIds = projectIdsRaw.split(',').map((s) => s.trim());
+      const projectIds = requireIdsCsvFlag(opts['project-ids'], '--project-ids');
       const data: FieldContextProjectIdsBody = { projectIds };
       await client.fields.setContextProjects(fieldId, contextId, data);
       return { updated: true };
@@ -8086,8 +8281,7 @@ async function executeFields(client: JiraClient, cmd: ParsedCommand): Promise<un
         requireOpt(opts['context-id'], '--context-id'),
         '--context-id',
       );
-      const projectIdsRaw = requireOpt(opts['project-ids'], '--project-ids');
-      const projectIds = projectIdsRaw.split(',').map((s) => s.trim());
+      const projectIds = requireIdsCsvFlag(opts['project-ids'], '--project-ids');
       const data: FieldContextProjectIdsBody = { projectIds };
       await client.fields.removeContextProjects(fieldId, contextId, data);
       return { updated: true };
@@ -8113,7 +8307,7 @@ async function executeFields(client: JiraClient, cmd: ParsedCommand): Promise<un
       const fieldId = requireOpt(opts['field-id'], '--field-id');
       const startAt = asNonNegativeInt(opts['start-at'], '--start-at');
       const maxResults = asPositiveInt(opts['max-results'], '--max-results');
-      const contextId = asIntArray(opts['context-id'], '--context-id');
+      const contextId = intIdsCsvFlag(opts['context-id'], '--context-id');
       return client.fields.listContextProjectMappings(fieldId, {
         ...(contextId !== undefined && { contextId }),
         ...(startAt !== undefined && { startAt }),
@@ -8271,8 +8465,7 @@ async function executeFields(client: JiraClient, cmd: ParsedCommand): Promise<un
       // B447: GET /rest/api/3/field/search/trashed
       const startAt = asNonNegativeInt(opts['start-at'], '--start-at');
       const maxResults = asPositiveInt(opts['max-results'], '--max-results');
-      const idRaw = asString(opts['id']);
-      const id = idRaw !== undefined ? idRaw.split(',').map((s) => s.trim()) : undefined;
+      const id = idsCsvFlag(opts['id'], '--id');
       const query = asString(opts['query']);
       const expand = asString(opts['expand']);
       const orderBy = asString(opts['order-by']);
@@ -8306,6 +8499,16 @@ const JQL_ACTIONS = [
   'invalid-jqls-access-log',
 ] as const;
 
+const JQL_PARSE_VALIDATION = ['strict', 'warn', 'none'] as const;
+
+function jsonStringArrayFlag(raw: string, flag: string): string[] {
+  const values = parseJsonArrayFlag(raw, flag);
+  if (!values.every((v) => typeof v === 'string')) {
+    throw new Error(`${flag} must be a JSON array of strings`);
+  }
+  return values as string[];
+}
+
 async function executeJql(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
   const opts = cmd.options;
 
@@ -8329,12 +8532,12 @@ async function executeJql(client: JiraClient, cmd: ParsedCommand): Promise<unkno
 
     // B589: GET /jql/autocompletedata/suggestions
     case 'autocomplete-suggestions': {
-      const fieldName = requireOpt(opts['field-name'], '--field-name');
+      const fieldName = asString(opts['field-name']);
       const fieldValue = asString(opts['field-value']);
       const predicateName = asString(opts['predicate-name']);
       const predicateValue = asString(opts['predicate-value']);
       return client.jql.getFieldReferenceSuggestions({
-        fieldName,
+        ...(fieldName !== undefined && { fieldName }),
         ...(fieldValue !== undefined && { fieldValue }),
         ...(predicateName !== undefined && { predicateName }),
         ...(predicateValue !== undefined && { predicateValue }),
@@ -8369,11 +8572,14 @@ async function executeJql(client: JiraClient, cmd: ParsedCommand): Promise<unkno
       const skipNotFoundRaw = opts['skip-not-found'];
       const skipNotFoundPrecomputations =
         typeof skipNotFoundRaw === 'boolean' ? skipNotFoundRaw : undefined;
-      return client.jql.updatePrecomputations(
-        { values },
-        {
-          ...(skipNotFoundPrecomputations !== undefined && { skipNotFoundPrecomputations }),
-        },
+      // 204 (nothing to report) has no body.
+      return (
+        (await client.jql.updatePrecomputations(
+          { values },
+          {
+            ...(skipNotFoundPrecomputations !== undefined && { skipNotFoundPrecomputations }),
+          },
+        )) ?? { updated: true }
       );
     }
 
@@ -8395,15 +8601,15 @@ async function executeJql(client: JiraClient, cmd: ParsedCommand): Promise<unkno
       const issueIdsRaw = requireOpt(opts['issue-ids'], '--issue-ids');
       const issueIds = asIntArray(issueIdsRaw, '--issue-ids') ?? [];
       const jqlsRaw = requireOpt(opts['jqls'], '--jqls');
-      const jqls = parseJsonArrayFlag(jqlsRaw, '--jqls') as string[];
+      const jqls = jsonStringArrayFlag(jqlsRaw, '--jqls');
       return client.jql.matchIssues({ issueIds, jqls });
     }
 
     // B594: POST /jql/parse
     case 'parse': {
       const queriesRaw = requireOpt(opts['queries'], '--queries');
-      const queries = parseJsonArrayFlag(queriesRaw, '--queries') as string[];
-      const validation = asString(opts['validation']) as 'strict' | 'warn' | 'none' | undefined;
+      const queries = jsonStringArrayFlag(queriesRaw, '--queries');
+      const validation = asEnum(opts['validation'], JQL_PARSE_VALIDATION, 'validation');
       return client.jql.parse({
         queries,
         ...(validation !== undefined && { validation }),
@@ -8414,7 +8620,7 @@ async function executeJql(client: JiraClient, cmd: ParsedCommand): Promise<unkno
     case 'migrate-queries': {
       const queryStringsRaw = asString(opts['query-strings']);
       const queryStrings = queryStringsRaw
-        ? (parseJsonArrayFlag(queryStringsRaw, '--query-strings') as string[])
+        ? jsonStringArrayFlag(queryStringsRaw, '--query-strings')
         : undefined;
       return client.jql.migrateQueries({
         ...(queryStrings !== undefined && { queryStrings }),
@@ -8424,11 +8630,20 @@ async function executeJql(client: JiraClient, cmd: ParsedCommand): Promise<unkno
     // B596: POST /jql/sanitize
     case 'sanitize': {
       const queriesRaw = requireOpt(opts['queries'], '--queries');
-      const queries = parseJsonArrayFlag(queriesRaw, '--queries') as {
-        query: string;
-        accountId?: string;
-      }[];
-      return client.jql.sanitize({ queries });
+      const queries = parseJsonArrayFlag(queriesRaw, '--queries');
+      // Spec JqlQueryToSanitize: query is a string; accountId a nullable string.
+      const isQuery = (q: unknown): boolean =>
+        isJsonObject(q) &&
+        typeof q['query'] === 'string' &&
+        (q['accountId'] === undefined ||
+          q['accountId'] === null ||
+          typeof q['accountId'] === 'string');
+      if (!queries.every(isQuery)) {
+        throw new Error('--queries must be a JSON array of {query, accountId?} objects');
+      }
+      return client.jql.sanitize({
+        queries: queries as { query: string; accountId?: string | null }[],
+      });
     }
 
     // GET /invalid-jqls-access-log (experimental)
@@ -8571,11 +8786,22 @@ async function executeProjectTemplate(client: JiraClient, cmd: ParsedCommand): P
         ...(additionalProperties !== undefined && { additionalProperties }),
       };
 
-      await client.projectTemplate.createWithCustomTemplate({
+      const taskUrl = await client.projectTemplate.createWithCustomTemplate({
         details,
         template,
       });
-      return { queued: true };
+      // Asynchronous: poll the task with `atlas jira task get <taskId>`. The ID is the
+      // last path segment, ignoring a query string, fragment or trailing slash.
+      const taskId = taskUrl
+        ?.replace(/[?#].*$/, '')
+        .replace(/\/+$/, '')
+        .split('/')
+        .pop();
+      return {
+        queued: true,
+        ...(taskId !== undefined && taskId !== '' && { taskId }),
+        ...(taskUrl !== undefined && { taskUrl }),
+      };
     }
 
     // B654 PUT /rest/api/3/project-template/edit-template
@@ -8920,12 +9146,23 @@ async function executeRepository(client: JiraClient, cmd: ParsedCommand): Promis
 
 const ISSUE_LINK_ACTIONS = ['create', 'get', 'delete'] as const;
 
+/** An issue key always has a project prefix, so an all-digit value is an issue ID. */
+function linkedIssueRef(value: string): { id: string } | { key: string } {
+  return /^\d+$/.test(value) ? { id: value } : { key: value };
+}
+
 async function executeIssueLink(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
   const opts = cmd.options;
 
   switch (cmd.action) {
     case 'create': {
-      const linkType = requireOpt(opts['link-type'], '--link-type');
+      if (opts['link-type'] !== undefined && opts['link-type-id'] !== undefined) {
+        throw new Error('pass --link-type or --link-type-id, not both');
+      }
+      const type =
+        opts['link-type-id'] !== undefined
+          ? { id: requireOpt(opts['link-type-id'], '--link-type-id') }
+          : { name: requireOpt(opts['link-type'], '--link-type or --link-type-id') };
       const inwardIssue = requireOpt(opts['inward-issue'], '--inward-issue');
       const outwardIssue = requireOpt(opts['outward-issue'], '--outward-issue');
       const commentRaw = asString(opts['comment']);
@@ -8933,9 +9170,9 @@ async function executeIssueLink(client: JiraClient, cmd: ParsedCommand): Promise
       const comment =
         commentRaw !== undefined ? parseJsonObjectFlag(commentRaw, '--comment') : undefined;
       await client.issueLink.create({
-        type: { name: linkType },
-        inwardIssue: { key: inwardIssue },
-        outwardIssue: { key: outwardIssue },
+        type,
+        inwardIssue: linkedIssueRef(inwardIssue),
+        outwardIssue: linkedIssueRef(outwardIssue),
         ...(comment !== undefined && { comment }),
       });
       return { created: true };
@@ -9167,6 +9404,56 @@ const DASHBOARDS_ACTIONS = [
   'search-all',
 ] as const;
 
+const DASHBOARD_LIST_FILTERS = ['my', 'favourite'] as const;
+const DASHBOARD_SEARCH_STATUSES = ['active', 'archived', 'deleted'] as const;
+const DASHBOARD_ORDER_BY_VALUES = [
+  'description',
+  '-description',
+  '+description',
+  'favorite_count',
+  '-favorite_count',
+  '+favorite_count',
+  'id',
+  '-id',
+  '+id',
+  'is_favorite',
+  '-is_favorite',
+  '+is_favorite',
+  'name',
+  '-name',
+  '+name',
+  'owner',
+  '-owner',
+  '+owner',
+] as const satisfies readonly SearchDashboardsOrderBy[];
+const BULK_EDIT_DASHBOARD_ACTIONS = [
+  'changeOwner',
+  'changePermission',
+  'addPermission',
+  'removePermission',
+] as const satisfies readonly BulkEditDashboardsData['action'][];
+
+/** `--extend-admin-permissions` query for dashboards create/update/copy. */
+function dashboardWriteParams(opts: ParsedCommand['options']): {
+  extendAdminPermissions?: boolean;
+} {
+  const extendAdminPermissions = asBoolFlag(opts['extend-admin-permissions']);
+  return extendAdminPermissions === undefined ? {} : { extendAdminPermissions };
+}
+
+function dashboardPermissionsFlag(
+  value: string | boolean | undefined,
+  flag: string,
+): DashboardSharePermission[] {
+  return parseJsonArrayFlag(requireOpt(value, flag), flag) as DashboardSharePermission[];
+}
+
+function requireBoolOpt(value: string | boolean | undefined, name: string): boolean {
+  const flag = asBoolFlag(value);
+  if (flag === undefined) throw new Error(`Missing required option: ${name} (true|false)`);
+  return flag;
+}
+
 async function executeDashboards(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
   const opts = cmd.options;
 
@@ -9182,45 +9469,42 @@ async function executeDashboards(client: JiraClient, cmd: ParsedCommand): Promis
       return client.dashboards.list({
         startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
-        filter: asString(opts['filter']) as 'my' | 'favourite' | undefined,
+        filter: asEnum(opts['filter'], DASHBOARD_LIST_FILTERS, 'filter'),
       });
 
     case 'get':
       return client.dashboards.get(requireArg(cmd.positionalArgs[0], 'dashboardId'));
 
-    case 'create': {
-      const sharePermsRaw = requireOpt(opts['share-permissions'], '--share-permissions');
-      const editPermsRaw = asString(opts['edit-permissions']);
-      return client.dashboards.create({
-        name: requireOpt(opts['name'], '--name'),
-        description: asString(opts['description']),
-        sharePermissions: parseJsonArrayFlag(sharePermsRaw, '--share-permissions') as ReturnType<
-          typeof parseJsonArrayFlag
-        >,
-        ...(editPermsRaw !== undefined && {
-          editPermissions: parseJsonArrayFlag(editPermsRaw, '--edit-permissions') as ReturnType<
-            typeof parseJsonArrayFlag
-          >,
-        }),
-      } as Parameters<typeof client.dashboards.create>[0]);
-    }
+    // The spec body (DashboardDetails) requires name, sharePermissions, editPermissions.
+    case 'create':
+      return client.dashboards.create(
+        {
+          name: requireOpt(opts['name'], '--name'),
+          description: asString(opts['description']),
+          sharePermissions: dashboardPermissionsFlag(
+            opts['share-permissions'],
+            '--share-permissions',
+          ),
+          editPermissions: dashboardPermissionsFlag(opts['edit-permissions'], '--edit-permissions'),
+        },
+        dashboardWriteParams(opts),
+      );
 
     case 'update': {
       const dashId = requireArg(cmd.positionalArgs[0], 'dashboardId');
-      const sharePermsRaw = requireOpt(opts['share-permissions'], '--share-permissions');
-      const editPermsRaw = asString(opts['edit-permissions']);
-      return client.dashboards.update(dashId, {
-        name: requireOpt(opts['name'], '--name'),
-        description: asString(opts['description']),
-        sharePermissions: parseJsonArrayFlag(sharePermsRaw, '--share-permissions') as ReturnType<
-          typeof parseJsonArrayFlag
-        >,
-        ...(editPermsRaw !== undefined && {
-          editPermissions: parseJsonArrayFlag(editPermsRaw, '--edit-permissions') as ReturnType<
-            typeof parseJsonArrayFlag
-          >,
-        }),
-      } as Parameters<typeof client.dashboards.update>[1]);
+      return client.dashboards.update(
+        dashId,
+        {
+          name: requireOpt(opts['name'], '--name'),
+          description: asString(opts['description']),
+          sharePermissions: dashboardPermissionsFlag(
+            opts['share-permissions'],
+            '--share-permissions',
+          ),
+          editPermissions: dashboardPermissionsFlag(opts['edit-permissions'], '--edit-permissions'),
+        },
+        dashboardWriteParams(opts),
+      );
     }
 
     case 'delete': {
@@ -9229,8 +9513,20 @@ async function executeDashboards(client: JiraClient, cmd: ParsedCommand): Promis
     }
 
     // ── gadgets ─────────────────────────────────────────────────────────────
-    case 'list-gadgets':
-      return client.dashboards.listGadgets(requireArg(cmd.positionalArgs[0], 'dashboardId'));
+    case 'list-gadgets': {
+      const dashboardId = requireArg(cmd.positionalArgs[0], 'dashboardId');
+      // A given but empty filter is refused: no filter would return every gadget.
+      const moduleKey = idsCsvFlag(opts['module-key'], '--module-key', 'value');
+      const uri = idsCsvFlag(opts['uri'], '--uri', 'value');
+      const gadgetId = idsCsvFlag(opts['gadget-id'], '--gadget-id', 'value')?.map((s) =>
+        parsePositiveIntArg(s, '--gadget-id'),
+      );
+      return client.dashboards.listGadgets(dashboardId, {
+        ...(moduleKey !== undefined && { moduleKey }),
+        ...(uri !== undefined && { uri }),
+        ...(gadgetId !== undefined && { gadgetId }),
+      });
+    }
 
     case 'add-gadget': {
       const dashboardId = requireArg(cmd.positionalArgs[0], 'dashboardId');
@@ -9330,66 +9626,70 @@ async function executeDashboards(client: JiraClient, cmd: ParsedCommand): Promis
       // The spec body (DashboardDetails) requires name, sharePermissions, editPermissions.
       const dashboardId = requireArg(cmd.positionalArgs[0], 'dashboardId');
       const descRaw = asString(opts['description']);
-      return client.dashboards.copy(dashboardId, {
-        name: requireOpt(opts['name'], '--name'),
-        ...(descRaw !== undefined && { description: descRaw }),
-        sharePermissions: parseJsonArrayFlag(
-          requireOpt(opts['share-permissions'], '--share-permissions'),
-          '--share-permissions',
-        ) as DashboardSharePermission[],
-        editPermissions: parseJsonArrayFlag(
-          requireOpt(opts['edit-permissions'], '--edit-permissions'),
-          '--edit-permissions',
-        ) as DashboardSharePermission[],
-      });
+      return client.dashboards.copy(
+        dashboardId,
+        {
+          name: requireOpt(opts['name'], '--name'),
+          ...(descRaw !== undefined && { description: descRaw }),
+          sharePermissions: dashboardPermissionsFlag(
+            opts['share-permissions'],
+            '--share-permissions',
+          ),
+          editPermissions: dashboardPermissionsFlag(opts['edit-permissions'], '--edit-permissions'),
+        },
+        dashboardWriteParams(opts),
+      );
     }
 
     // ── bulk-edit ────────────────────────────────────────────────────────────
     case 'bulk-edit': {
       // entityIds spec type: integer[] — parse each CSV entry as a number.
-      const entityIds = (csvFlag(requireOpt(opts['entity-ids'], '--entity-ids')) ?? []).map(
-        (s: string) => {
-          const n = Number(s);
-          if (!Number.isInteger(n) || n <= 0)
-            throw new Error(`--entity-ids: '${s}' is not a positive integer`);
-          return n;
-        },
+      const entityIds = requireIdsCsvFlag(opts['entity-ids'], '--entity-ids').map((s: string) => {
+        const n = Number(s);
+        if (!Number.isInteger(n) || n <= 0)
+          throw new Error(`--entity-ids: '${s}' is not a positive integer`);
+        return n;
+      });
+      const action = asEnum(
+        requireOpt(opts['action'], '--action'),
+        BULK_EDIT_DASHBOARD_ACTIONS,
+        'action',
+      ) as BulkEditDashboardsData['action'];
+      // BulkChangeOwnerDetails needs newOwner + autofixName; PermissionDetails
+      // needs both lists. Flags that belong to the other kind are refused.
+      const isChangeOwner = action === 'changeOwner';
+      rejectRemovedOptions(
+        opts,
+        `dashboards bulk-edit --action ${action}`,
+        isChangeOwner ? ['share-permissions', 'edit-permissions'] : ['new-owner', 'autofix-name'],
+        isChangeOwner
+          ? 'they apply to the permission actions'
+          : 'they apply to --action changeOwner',
       );
-      const action = requireOpt(opts['action'], '--action');
-      const newOwnerRaw = asString(opts['new-owner']);
-      const autofixNameRaw = asBoolFlag(opts['autofix-name']);
-      const extendAdminRaw = asBoolFlag(opts['extend-admin-permissions']);
-      const sharePermsRaw = asString(opts['share-permissions']);
-      const editPermsRaw = asString(opts['edit-permissions']);
-      const data: BulkEditDashboardsData = {
+      const extendAdminPermissions = asBoolFlag(opts['extend-admin-permissions']);
+      return client.dashboards.bulkEdit({
         entityIds,
-        action: action as BulkEditDashboardsData['action'],
-        ...(newOwnerRaw !== undefined || autofixNameRaw !== undefined
-          ? {
-              changeOwnerDetails: {
-                ...(newOwnerRaw !== undefined && { newOwner: newOwnerRaw }),
-                ...(autofixNameRaw !== undefined && { autofixName: autofixNameRaw }),
-              } as BulkEditDashboardsData['changeOwnerDetails'],
-            }
-          : {}),
-        ...(extendAdminRaw !== undefined && { extendAdminPermissions: extendAdminRaw }),
-        ...((sharePermsRaw !== undefined || editPermsRaw !== undefined) && {
-          permissionDetails: {
-            ...(sharePermsRaw !== undefined && {
-              sharePermissions: parseJsonArrayFlag(
-                sharePermsRaw,
-                '--share-permissions',
-              ) as ReturnType<typeof parseJsonArrayFlag>,
-            }),
-            ...(editPermsRaw !== undefined && {
-              editPermissions: parseJsonArrayFlag(editPermsRaw, '--edit-permissions') as ReturnType<
-                typeof parseJsonArrayFlag
-              >,
-            }),
-          } as BulkEditDashboardsData['permissionDetails'],
+        action,
+        ...(isChangeOwner && {
+          changeOwnerDetails: {
+            newOwner: requireOpt(opts['new-owner'], '--new-owner'),
+            autofixName: requireBoolOpt(opts['autofix-name'], '--autofix-name'),
+          },
         }),
-      };
-      return client.dashboards.bulkEdit(data);
+        ...(!isChangeOwner && {
+          permissionDetails: {
+            sharePermissions: dashboardPermissionsFlag(
+              opts['share-permissions'],
+              '--share-permissions',
+            ),
+            editPermissions: dashboardPermissionsFlag(
+              opts['edit-permissions'],
+              '--edit-permissions',
+            ),
+          },
+        }),
+        ...(extendAdminPermissions !== undefined && { extendAdminPermissions }),
+      });
     }
 
     // ── list-available-gadgets ───────────────────────────────────────────────
@@ -9406,10 +9706,10 @@ async function executeDashboards(client: JiraClient, cmd: ParsedCommand): Promis
         groupname: asString(opts['group-name']),
         groupId: asString(opts['group-id']),
         projectId: asPositiveInt(opts['project-id'], '--project-id'),
-        orderBy: asString(opts['order-by']) as SearchDashboardsOrderBy | undefined,
+        orderBy: asEnum(opts['order-by'], DASHBOARD_ORDER_BY_VALUES, 'order-by'),
         startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
-        status: asString(opts['status']) as 'active' | 'archived' | 'deleted' | undefined,
+        status: asEnum(opts['status'], DASHBOARD_SEARCH_STATUSES, 'status'),
         expand: asString(opts['expand']),
       });
 
@@ -9424,9 +9724,9 @@ async function executeDashboards(client: JiraClient, cmd: ParsedCommand): Promis
           groupname: asString(opts['group-name']),
           groupId: asString(opts['group-id']),
           projectId: asPositiveInt(opts['project-id'], '--project-id'),
-          orderBy: asString(opts['order-by']) as SearchDashboardsOrderBy | undefined,
+          orderBy: asEnum(opts['order-by'], DASHBOARD_ORDER_BY_VALUES, 'order-by'),
           maxResults: asPositiveInt(opts['max-results'], '--max-results'),
-          status: asString(opts['status']) as 'active' | 'archived' | 'deleted' | undefined,
+          status: asEnum(opts['status'], DASHBOARD_SEARCH_STATUSES, 'status'),
           expand: asString(opts['expand']),
         },
         { maxPages },

@@ -305,6 +305,8 @@ export type {
   SearchDashboardsOrderBy,
   SearchDashboardsStatus,
   SearchDashboardsParams,
+  ListGadgetsParams,
+  DashboardWriteParams,
 } from './resources/dashboards.js';
 export { FiltersResource } from './resources/filters.js';
 export type {
@@ -319,6 +321,8 @@ export type {
   ListFiltersParams,
   CreateFilterData,
   UpdateFilterData,
+  FilterQueryParams,
+  FilterSharePermissionWrite,
 } from './resources/filters.js';
 export { FieldsResource } from './resources/fields.js';
 export type {
@@ -420,6 +424,7 @@ export type {
   FieldSchema,
   FieldSearcherKey,
   FieldOrderBy,
+  DeleteFieldParams,
 } from './resources/fields.js';
 export { WebhooksResource } from './resources/webhooks.js';
 export type {
@@ -433,6 +438,7 @@ export type {
   FailedWebhook,
   FailedWebhooks,
   ListFailedWebhooksParams,
+  WebhookRegistrationResult,
 } from './resources/webhooks.js';
 export { JqlResource } from './resources/jql.js';
 export type {
@@ -468,6 +474,9 @@ export type {
   InvalidJqlAuditEntry,
   InvalidJqlAuditPage,
   GetInvalidJqlAuditEntriesParams,
+  JqlQueryToSanitize,
+  SanitizedJqlQuery,
+  JqlSuggestion,
 } from './resources/jql.js';
 export { BulkResource } from './resources/bulk.js';
 export type {
@@ -842,6 +851,9 @@ export type {
   ExpressionEvalJqlContext,
   ExpressionEvalContext,
   EvaluateExpressionData,
+  ExpressionEvaluateJqlContext,
+  ExpressionEvaluateContext,
+  ExpressionEvaluateData,
   EvaluateExpressionParams,
   ExpressionMetric,
   ExpressionComplexity,
@@ -1008,6 +1020,8 @@ export type {
   UpdateFieldAssociationsBody,
   ParameterRemovalDetails,
   RemoveFieldParametersBody,
+  RemoveFieldParametersResult,
+  RemoveFieldParametersResultEntry,
   FieldSchemeParametersUpdate,
   UpdateFieldParametersBody,
   AssociateProjectsBody,

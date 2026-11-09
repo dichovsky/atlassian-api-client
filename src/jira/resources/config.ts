@@ -221,6 +221,26 @@ export interface FieldSchemeToProjectsResponse {
   readonly results: FieldSchemeToProjectsPartialFailure[];
 }
 
+/**
+ * A single result entry from DELETE /rest/api/3/config/fieldschemes/fields/parameters.
+ * Spec: `SuccessOrErrorResults`.
+ */
+export interface RemoveFieldParametersResultEntry {
+  readonly fieldId?: string;
+  readonly schemeId?: number;
+  readonly success?: boolean;
+  readonly workTypeIds?: number[];
+  readonly error?: { readonly code?: string; readonly message?: string };
+}
+
+/**
+ * Response from DELETE /rest/api/3/config/fieldschemes/fields/parameters.
+ * Spec: `RemoveFieldParametersResult`. Returned on 207 (partial failure).
+ */
+export interface RemoveFieldParametersResult {
+  readonly results?: RemoveFieldParametersResultEntry[];
+}
+
 // ─── Request body types ───────────────────────────────────────────────────
 
 /** Request body for POST /rest/api/3/config/fieldschemes and clone. */
@@ -348,6 +368,8 @@ export class ConfigResource {
   /**
    * B367: List field association schemes with offset pagination.
    * GET /rest/api/3/config/fieldschemes
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   async list(
     params?: ListFieldAssociationSchemesParams,
@@ -368,6 +390,8 @@ export class ConfigResource {
 
   /**
    * B367: Iterate every field association scheme. Delegates to {@link paginateOffset}.
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   async *listAll(
     params?: Omit<ListFieldAssociationSchemesParams, 'startAt'>,
@@ -387,6 +411,8 @@ export class ConfigResource {
   /**
    * B368: Create a field association scheme.
    * POST /rest/api/3/config/fieldschemes
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   async create(data: CreateFieldAssociationSchemeData): Promise<CreatedFieldAssociationScheme> {
     const body: Record<string, unknown> = { name: data.name };
@@ -402,6 +428,8 @@ export class ConfigResource {
   /**
    * B369: Delete a field association scheme by ID.
    * DELETE /rest/api/3/config/fieldschemes/{id}
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   async delete(id: number): Promise<DeletedFieldAssociationScheme> {
     const response = await this.transport.request<DeletedFieldAssociationScheme>({
@@ -414,6 +442,8 @@ export class ConfigResource {
   /**
    * B370: Get a field association scheme by ID.
    * GET /rest/api/3/config/fieldschemes/{id}
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   async get(id: number): Promise<FieldAssociationSchemeById> {
     const response = await this.transport.request<FieldAssociationSchemeById>({
@@ -426,6 +456,8 @@ export class ConfigResource {
   /**
    * B371: Update a field association scheme.
    * PUT /rest/api/3/config/fieldschemes/{id}
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   async update(
     id: number,
@@ -445,6 +477,8 @@ export class ConfigResource {
   /**
    * B372: Clone a field association scheme.
    * POST /rest/api/3/config/fieldschemes/{id}/clone
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   async clone(
     id: number,
@@ -463,6 +497,8 @@ export class ConfigResource {
   /**
    * B373: List fields associated with a scheme (paginated).
    * GET /rest/api/3/config/fieldschemes/{id}/fields
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   async listFields(
     id: number,
@@ -485,6 +521,8 @@ export class ConfigResource {
 
   /**
    * B373: Iterate every field in a scheme. Delegates to {@link paginateOffset}.
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   async *listFieldsAll(
     id: number,
@@ -506,6 +544,8 @@ export class ConfigResource {
   /**
    * B374: Get parameters for a specific field within a scheme.
    * GET /rest/api/3/config/fieldschemes/{id}/fields/{fieldId}/parameters
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   async getFieldParameters(
     id: number,
@@ -521,6 +561,8 @@ export class ConfigResource {
   /**
    * B375: List projects associated with a scheme (paginated).
    * GET /rest/api/3/config/fieldschemes/{id}/projects
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   async listProjects(
     id: number,
@@ -543,6 +585,8 @@ export class ConfigResource {
 
   /**
    * B375: Iterate every project associated with a scheme. Delegates to {@link paginateOffset}.
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   async *listProjectsAll(
     id: number,
@@ -572,6 +616,8 @@ export class ConfigResource {
    *
    * Returns result details on 200 (success) or 207 (partial failure).
    * Spec: `MinimalFieldSchemeToFieldsResponse`.
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   async removeFieldAssociations(
     body: RemoveFieldAssociationsBody,
@@ -591,6 +637,8 @@ export class ConfigResource {
    *
    * Returns result details on 200 (success) or 207 (partial failure).
    * Spec: `FieldSchemeToFieldsResponse`.
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   async updateFieldAssociations(
     body: UpdateFieldAssociationsBody,
@@ -604,16 +652,36 @@ export class ConfigResource {
   }
 
   /**
-   * B378: Remove field parameters from schemes.
+   * B378: Remove field parameters from schemes, resolving the per-entry
+   * results Jira sends with a 207 (partial failure). Resolves `undefined` on
+   * a body-less 200/204.
    * DELETE /rest/api/3/config/fieldschemes/fields/parameters
    * Body: Record<fieldId, [ParameterRemovalDetails]>
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
-  async removeFieldParameters(body: RemoveFieldParametersBody): Promise<void> {
-    await this.transport.request<undefined>({
+  removeFieldParameters(
+    body: RemoveFieldParametersBody,
+    options: { readonly returnResults: true },
+  ): Promise<RemoveFieldParametersResult | undefined>;
+  /**
+   * B378: Remove field parameters from schemes. Pass `{ returnResults: true }`
+   * to get the per-entry results.
+   * DELETE /rest/api/3/config/fieldschemes/fields/parameters
+   *
+   * @experimental Atlassian marks this operation as experimental.
+   */
+  removeFieldParameters(body: RemoveFieldParametersBody): Promise<void>;
+  async removeFieldParameters(
+    body: RemoveFieldParametersBody,
+    options?: { readonly returnResults: true },
+  ): Promise<RemoveFieldParametersResult | void> {
+    const response = await this.transport.request<RemoveFieldParametersResult | undefined>({
       method: 'DELETE',
       path: `${this.baseUrl}/config/fieldschemes/fields/parameters`,
       body,
     });
+    if (options?.returnResults === true) return response.data;
   }
 
   /**
@@ -623,6 +691,8 @@ export class ConfigResource {
    *
    * Returns result details on 200 (success) or 207 (partial failure).
    * Spec: `UpdateFieldSchemeParametersResponse`.
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   async updateFieldParameters(
     body: UpdateFieldParametersBody,
@@ -639,6 +709,8 @@ export class ConfigResource {
    * B380: Get projects associated with field schemes (paginated).
    * GET /rest/api/3/config/fieldschemes/projects
    * Note: projectId is required.
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   async getProjectsWithSchemes(
     params: GetProjectsWithFieldSchemesParams,
@@ -659,6 +731,8 @@ export class ConfigResource {
 
   /**
    * B380: Iterate every project-scheme mapping. Delegates to {@link paginateOffset}.
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   async *getProjectsWithSchemesAll(
     params: Omit<GetProjectsWithFieldSchemesParams, 'startAt'>,
@@ -682,6 +756,8 @@ export class ConfigResource {
    *
    * Returns result details on 200 (success) or 207 (partial failure).
    * Spec: `FieldSchemeToProjectsResponse`.
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   async associateProjects(body: AssociateProjectsBody): Promise<FieldSchemeToProjectsResponse> {
     const response = await this.transport.request<FieldSchemeToProjectsResponse>({

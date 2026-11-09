@@ -71,14 +71,6 @@ const KNOWN_GAPS: Readonly<
     unset: ['_updateSequenceId'],
     reason: 'deprecated: the server no longer supports it',
   },
-  'jira.filters.create': {
-    unset: ['expand', 'overrideSharePermissions'],
-    reason: 'response expansion and the admin share-permission override are not exposed',
-  },
-  'jira.filters.update': {
-    unset: ['expand', 'overrideSharePermissions'],
-    reason: 'response expansion and the admin share-permission override are not exposed',
-  },
   'jira.priorities.delete': {
     unset: ['replaceWith'],
     reason: 'deprecated: not in the deletePriority spec; the CLI rejects --replace-with',
@@ -102,14 +94,6 @@ const KNOWN_GAPS: Readonly<
   'jira.users.createUser': {
     unset: ['name', 'password', 'applicationKeys'],
     reason: 'removed or deprecated in the NewUserDetails spec',
-  },
-  'jira.version.create': {
-    unset: ['expand'],
-    reason: 'response expansion only',
-  },
-  'jira.version.update': {
-    unset: ['expand'],
-    reason: 'response expansion only',
   },
 };
 
