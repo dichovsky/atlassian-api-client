@@ -638,9 +638,22 @@ Classic workflow management — `/rest/api/3/workflow` (B837–B845 + B934), and
 
 **Pagination:** `list` is offset-paginated (`--start-at`, `--max-results`). The usage actions (`issue-type-usages`, `project-usages`, `workflow-scheme-usages`) use cursor pagination (`--next-page-token`, `--max-results`). `get-rule-config` and `search` (B852) are offset-paginated (`--start-at`, `--max-results`, max 50 per page for rule-config).
 
-**Deprecated classic search:** `list` and `get` call deprecated `GET /rest/api/3/workflow/search`. Prefer `search`, which calls current `GET /rest/api/3/workflows/search` and can filter by `--project-id`.
+**Deprecated classic search:** `list` and `get` call deprecated `GET /rest/api/3/workflow/search`. Prefer `search`, which calls current `GET /rest/api/3/workflows/search` and can filter by `--project-id`. `list --workflow-names A,B` sends repeated `workflowName` params (exact names; blank entries are dropped, and a list that names nothing, such as `,`, is refused); `list --order-by` is one of `name`, `created`, `updated` (optionally `+`/`-` prefixed).
+
+**`search` values:** `--order-by` is `name`, `created` or `updated`; `--scope` is `GLOBAL` (company-managed) or `PROJECT` (team-managed); `--is-active true|false`; `--project-id` is a positive integer; `--expand values.transitions` adds each workflow's transitions. Attach a descending sort with `=`: `--order-by=-updated`.
 
 **Required body endpoints (`--body` JSON):** `bulk-get`, `bulk-create`, `validate-create`, `preview`, `update`, `validate-update`. See [payload-rules.md](../payload-rules.md) for JSON-flag tips.
+
+- `bulk-get` (`WorkflowReadRequest`): any of `workflowIds` (array), `workflowNames` (array), or `projectAndIssueTypes` (array of `{"projectId":"…","issueTypeId":"…"}`, both required strings). The response's `workflows[]` entries carry `id`, `version` (`{id, versionNumber}`), `statuses` and `transitions` — the input for `update`.
+- `bulk-create` (`WorkflowCreateRequest`): top-level `scope` (`{"type":"GLOBAL"}` or `{"type":"PROJECT","project":{"id":"…"}}`), `statuses[]` (`{name, statusCategory: TODO|IN_PROGRESS|DONE, statusReference, id?, description?}`) and `workflows[]` (`{name, statuses, transitions, description?}`). Each `workflows[].statuses[]` entry needs **both** `statusReference` and `properties` (use `{}` for none); a transition is normally `{id, name, type, toStatusReference}` with `type` one of `INITIAL`, `GLOBAL`, `DIRECTED` (`links`, `properties`, `actions`, `validators`, `conditions`, `triggers` optional).
+- `preview` (`WorkflowPreviewRequest`): `projectId` (required) plus at least one of `workflowIds`, `workflowNames`, `issueTypeIds` — at most **25** entries in each list.
+
+**`update` / `validate-update` (read-modify-write):** `POST /workflows/update` replaces each listed workflow with the definition you send, so build the body from the current one:
+
+1. Read it: `atlas jira workflows bulk-get --body '{"workflowIds":["<id>"]}'`.
+2. Copy `workflows[0]` and change what you need. Every `workflows[]` entry **requires** `id`, `version` (the `{id, versionNumber}` object exactly as read — a stale version is rejected), `statuses` (each `{statusReference, properties}`, plus optional `layout`) and `transitions` (the full list as read, each normally `{id, name, type, toStatusReference}` plus optional `links`, `properties`, `actions`, `validators`, `conditions`, `triggers`, `transitionScreen`); `description`, `statusMappings` and `defaultStatusMappings` are optional. Describe the statuses the workflows use in the top-level `statuses[]` (`{id?, name, statusCategory, statusReference}`).
+3. Optionally check it: `validate-update` takes the same body wrapped as `{"payload": <update body>, "validationOptions": {"levels": ["ERROR","WARNING"]}}` (`levels` defaults to both) and returns `{errors: [...]}` without changing anything.
+4. Send it with `update`. Transition properties are edited here (the old transition-property routes are gone).
 
 **`copy`:** `POST /rest/api/3/workflows/copy` clones an existing workflow, and the statuses it uses, into a new workflow created in the **same scope** as the source. `--workflow-id` is the ID of the workflow to copy and `--workflow-name` the name of the new one (each 1-255 characters); `--description` (max 2048 characters) defaults to empty. It prints the new workflow in the `WorkflowCreateResponse` shape (`workflows`, `statuses`). Needs _Administer Jira_, or for a project-scoped workflow the _Edit workflows_ project permission (or _View workflow_ plus _Administer projects_); returns 404 if the source workflow is missing and 409 while another workflow configuration update task is running.
 
@@ -648,17 +661,17 @@ Classic workflow management — `/rest/api/3/workflow` (B837–B845 + B934), and
 
 **History note:** Stored workflow data expires after 60 days; no data before October 30, 2025 is available.
 
-**Connect/Forge apps only:** `get-rule-config`, `update-rule-config`, and `delete-rule-config` are restricted to Connect or Forge apps (403 if called from basic/bearer auth directly).
+**Connect/Forge apps only:** `get-rule-config`, `update-rule-config`, and `delete-rule-config` are restricted to Connect or Forge apps (403 if called from basic/bearer auth directly). `get-rule-config --types` is a CSV of `postfunction`, `condition`, `validator` (other values are refused before sending); `--keys`, `--workflow-names` and `--with-tags` are CSVs sent as repeated params (blank entries are dropped; a flag that names nothing, such as `--keys ,`, is refused). `update-rule-config --workflows` is a JSON array of `{workflowId: {name}, postFunctions?, conditions?, validators?}`; every rule needs `id`, `key` (the rule key from the app descriptor, as returned by `get-rule-config`) and `configuration` (`{value: "<string>", disabled?, tag?}`). `delete-rule-config --workflows` is a JSON array of `{workflowId: {name}, workflowRuleIds: [...]}`. A non-object entry is refused before sending.
 
 **Removed API:** Atlassian removed the four workflow transition-property endpoints in July 2026. They are intentionally absent from the SDK and CLI; use bulk workflow read/update operations instead.
 
-**Removed parameter:** Atlassian removed the `draft` workflow-rule selector on November 2, 2026 (CHANGE-3147): requests that include it now fail with HTTP 400, and `workflowId` objects in responses no longer carry it. The SDK and CLI reject it before sending anything — `get-rule-config --draft` is refused, and `update-rule-config` / `delete-rule-config` refuse a `workflowId` that sets `draft`. Omit it.
+**Removed parameter:** Atlassian removed the `draft` workflow-rule selector on November 2, 2026 (CHANGE-3147): requests that include it now fail with HTTP 400, and `workflowId` objects in responses no longer carry it. Only published workflows remain, so the SDK never sends it: `"draft": false` inside a `workflowId` given to `update-rule-config` / `delete-rule-config` is dropped, while `"draft": true` (or any other non-`false` value, such as the string `"true"`) is refused before sending. `get-rule-config --draft` is refused. Omit it.
 
 ### Actions
 
 | Action                   | Positional args        | Key options                                                                                                         |
 | ------------------------ | ---------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| `list`                   | —                      | `--start-at`, `--max-results`, `--expand`, `--query-string`, `--order-by`, `--is-active`                            |
+| `list`                   | —                      | `--start-at`, `--max-results`, `--workflow-names` (CSV), `--expand`, `--query-string`, `--order-by`, `--is-active`  |
 | `get`                    | `workflowName`         | —                                                                                                                   |
 | `delete`                 | `entityId`             | —                                                                                                                   |
 | `issue-type-usages`      | `workflowId projectId` | `--next-page-token`, `--max-results`                                                                                |
@@ -684,6 +697,9 @@ Classic workflow management — `/rest/api/3/workflow` (B837–B845 + B934), and
 # List paginated classic workflows — B934
 atlas jira workflows list --max-results 50
 
+# List specific classic workflows by exact name (repeated workflowName)
+atlas jira workflows list --workflow-names "Default Workflow,Ops Workflow" --order-by name
+
 # Get a workflow by name
 atlas jira workflows get "Default Workflow"
 
@@ -704,13 +720,14 @@ atlas jira workflows workflow-scheme-usages fb759d53-a3a4-45ff-9de4-547c4b638dde
 # Bulk get workflows by IDs/names/project+issueType — B846
 atlas jira workflows bulk-get --body '{"workflowIds":["fb759d53-a3a4-45ff-9de4-547c4b638dde"]}'
 atlas jira workflows bulk-get --body '{"workflowNames":["Default Workflow"]}'
+atlas jira workflows bulk-get --body '{"projectAndIssueTypes":[{"projectId":"10001","issueTypeId":"10000"}]}'
 
 # Get available workflow capabilities — B847
 atlas jira workflows capabilities --workflow-id fb759d53-a3a4-45ff-9de4-547c4b638dde
 atlas jira workflows capabilities --project-id 10001 --issue-type-id 10000
 
 # Bulk create workflows — B848
-atlas jira workflows bulk-create --body '{"scope":{"type":"GLOBAL"},"statuses":[{"name":"To Do","statusCategory":"TODO","statusReference":"f0b24de5-25e7-4fab-ab94-63d81db6c0c0"}],"workflows":[{"name":"My Workflow","statuses":[{"statusReference":"f0b24de5-25e7-4fab-ab94-63d81db6c0c0"}],"transitions":[{"id":"1","name":"Create","type":"INITIAL","toStatusReference":"f0b24de5-25e7-4fab-ab94-63d81db6c0c0"}]}]}'
+atlas jira workflows bulk-create --body '{"scope":{"type":"GLOBAL"},"statuses":[{"name":"To Do","statusCategory":"TODO","statusReference":"f0b24de5-25e7-4fab-ab94-63d81db6c0c0"}],"workflows":[{"name":"My Workflow","statuses":[{"statusReference":"f0b24de5-25e7-4fab-ab94-63d81db6c0c0","properties":{}}],"transitions":[{"id":"1","name":"Create","type":"INITIAL","toStatusReference":"f0b24de5-25e7-4fab-ab94-63d81db6c0c0"}]}]}'
 
 # Copy a workflow (and the statuses it uses) into a new workflow in the same scope — POST /workflows/copy
 atlas jira workflows copy --workflow-id fb759d53-a3a4-45ff-9de4-547c4b638dde --workflow-name "Copy of Default Workflow" --description "Cloned for the pilot team"
@@ -733,24 +750,24 @@ atlas jira workflows get-rule-config --types postfunction,condition
 atlas jira workflows get-rule-config --types postfunction --workflow-names "My Workflow" --max-results 10
 
 # Update transition rule configurations (Connect/Forge apps) — B844
-atlas jira workflows update-rule-config --workflows '[{"workflowId":{"name":"My Workflow"},"postFunctions":[{"id":"rule-id","configuration":{"value":"{}"}}]}]'
+atlas jira workflows update-rule-config --workflows '[{"workflowId":{"name":"My Workflow"},"postFunctions":[{"id":"b4d6cbdc-59f5-11e9-8647-d663bd873d93","key":"my-app__my-post-function","configuration":{"value":"{\"color\":\"red\"}"}}]}]'
 
 # Delete transition rule configurations (Connect apps only) — B845
-atlas jira workflows delete-rule-config --workflows '[{"workflowId":{"name":"My Workflow"},"workflowRuleIds":["rule-id"]}]'
+atlas jira workflows delete-rule-config --workflows '[{"workflowId":{"name":"My Workflow"},"workflowRuleIds":["b4d6cbdc-59f5-11e9-8647-d663bd873d93"]}]'
 
-# Preview workflows for a project — B851
+# Preview workflows for a project (each list holds at most 25 entries) — B851
 atlas jira workflows preview --body '{"projectId":"10001","workflowIds":["3215e5cd-f09f-4c8a-921b-dca92bd1e9aa"]}'
 
 # Search workflows (offset-paginated) — B852
 atlas jira workflows search --query-string "Default" --is-active true
-atlas jira workflows search --start-at 0 --max-results 25 --scope GLOBAL
-atlas jira workflows search --project-id 10001
+atlas jira workflows search --start-at 0 --max-results 25 --scope GLOBAL --order-by=-updated
+atlas jira workflows search --project-id 10001 --expand values.transitions
 
-# Bulk update workflows — B853
-atlas jira workflows update --body '{"workflows":[{"id":"3215e5cd-f09f-4c8a-921b-dca92bd1e9aa","description":"Updated"}]}'
+# Bulk update workflows: send the full definition read with bulk-get, with your edits — B853
+atlas jira workflows update --body '{"statuses":[{"id":"10000","name":"To Do","statusCategory":"TODO","statusReference":"10000"},{"id":"10001","name":"Done","statusCategory":"DONE","statusReference":"10001"}],"workflows":[{"id":"3215e5cd-f09f-4c8a-921b-dca92bd1e9aa","description":"Updated","version":{"id":"6a7f4b1e-3c2d-4e5f-8a9b-0c1d2e3f4a5b","versionNumber":3},"statuses":[{"statusReference":"10000","properties":{}},{"statusReference":"10001","properties":{}}],"transitions":[{"id":"1","name":"Create","type":"INITIAL","toStatusReference":"10000"},{"id":"11","name":"Done","type":"GLOBAL","toStatusReference":"10001","properties":{"jira.issue.editable":"false"}}]}]}'
 
-# Validate a workflow update payload — B854
-atlas jira workflows validate-update --body '{"payload":{"workflows":[{"id":"3215e5cd-f09f-4c8a-921b-dca92bd1e9aa","description":"Updated"}]}}'
+# Validate the same update without applying it — B854
+atlas jira workflows validate-update --body '{"payload":{"statuses":[{"id":"10000","name":"To Do","statusCategory":"TODO","statusReference":"10000"}],"workflows":[{"id":"3215e5cd-f09f-4c8a-921b-dca92bd1e9aa","version":{"id":"6a7f4b1e-3c2d-4e5f-8a9b-0c1d2e3f4a5b","versionNumber":3},"statuses":[{"statusReference":"10000","properties":{}}],"transitions":[{"id":"1","name":"Create","type":"INITIAL","toStatusReference":"10000"}]}]},"validationOptions":{"levels":["ERROR","WARNING"]}}'
 ```
 
 ## `workflowscheme`
@@ -941,7 +958,73 @@ Custom field CRUD, field context management, and field admin/association operati
 
 Covers: B411 (field list-all), B414 (field project associations), B415–B418 (field contexts), B421–B426 (field context options), B419–B420 (context issue-type membership), B429 (context issue-type mappings), B432 (screens for field), B442–B445 (trash/restore/associate), B446 (field search paginated), B447 (trashed fields), the current grouped context default-value reader plus deprecated B905–B906, and field list/create/update/delete.
 
+### Flags per action
+
+No action takes a positional argument except `field-update <fieldId>` and `field-delete <fieldId>`; everything else is a flag. CSV flags drop blank entries (`--project-ids '10010,'` sends `["10010"]`); a CSV flag that is given but names no ID at all (`--issue-type-ids ','`) is refused. Boolean flags take `true|false` (a bare flag means `true`): `--only-options`, `--override-screen-security`, `--override-editable-flag`; `--is-global-context` and `--is-any-issue-type` need an explicit `true|false`.
+
+| Action                            | Required flags                                                                          | Optional flags                                                                                                                                     |
+| --------------------------------- | --------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `field-list`                      | —                                                                                       | `--type` (CSV of `custom`, `system`), `--id` (CSV), `--query`, `--order-by`, `--expand`, `--project-ids` (CSV ints), `--start-at`, `--max-results` |
+| `field-list-all`                  | —                                                                                       | —                                                                                                                                                  |
+| `field-create`                    | `--body` (JSON)                                                                         | —                                                                                                                                                  |
+| `field-update`                    | `<fieldId>`, `--body` (JSON)                                                            | —                                                                                                                                                  |
+| `field-delete`                    | `<fieldId>`                                                                             | —                                                                                                                                                  |
+| `context-list`                    | `--field-id`                                                                            | `--is-global-context`, `--is-any-issue-type`, `--context-id` (CSV ints), `--start-at`, `--max-results`                                             |
+| `context-create`                  | `--field-id`, `--name`                                                                  | `--description`, `--project-ids` (CSV), `--issue-type-ids` (CSV)                                                                                   |
+| `context-update`                  | `--field-id`, `--context-id`, and `--name` and/or `--description`                       | —                                                                                                                                                  |
+| `context-delete`                  | `--field-id`, `--context-id`                                                            | —                                                                                                                                                  |
+| `context-option-list`             | `--field-id`, `--context-id`                                                            | `--option-id`, `--only-options`, `--start-at`, `--max-results`                                                                                     |
+| `context-option-create`           | `--field-id`, `--context-id`, `--body` (JSON)                                           | —                                                                                                                                                  |
+| `context-option-update`           | `--field-id`, `--context-id`, `--body` (JSON)                                           | —                                                                                                                                                  |
+| `context-option-delete`           | `--field-id`, `--context-id`, `--option-id`                                             | —                                                                                                                                                  |
+| `context-option-replace-issues`   | `--field-id`, `--context-id`, `--option-id`                                             | `--replace-with`, `--jql`                                                                                                                          |
+| `context-option-move`             | `--field-id`, `--context-id`, `--option-ids` (CSV), and `--position` or `--after`       | —                                                                                                                                                  |
+| `context-issuetype-set`           | `--field-id`, `--context-id`, and `--issue-type-ids` (CSV) and/or `--is-any-issue-type` | `--default-value-json`                                                                                                                             |
+| `context-issuetype-remove`        | `--field-id`, `--context-id`, `--issue-type-ids` (CSV)                                  | —                                                                                                                                                  |
+| `context-issuetype-mapping`       | `--field-id`                                                                            | `--context-id` (CSV ints), `--start-at`, `--max-results`                                                                                           |
+| `context-default-get`             | `--field-id`                                                                            | `--context-id` (CSV ints), `--issue-type-ids` (CSV), `--start-at`, `--max-results`                                                                 |
+| `context-default-list`            | `--field-id`                                                                            | `--context-id` (CSV ints), `--start-at`, `--max-results`                                                                                           |
+| `context-default-set`             | `--field-id`, `--default-values-json`                                                   | —                                                                                                                                                  |
+| `context-default-update`          | `--field-id`, `--default-values-json`                                                   | —                                                                                                                                                  |
+| `context-project-set`             | `--field-id`, `--context-id`, `--project-ids` (CSV)                                     | —                                                                                                                                                  |
+| `context-project-remove`          | `--field-id`, `--context-id`, `--project-ids` (CSV)                                     | —                                                                                                                                                  |
+| `context-mapping`                 | `--field-id`, `--mappings-json`                                                         | `--start-at`, `--max-results`                                                                                                                      |
+| `context-project-mapping`         | `--field-id`                                                                            | `--context-id` (CSV ints), `--start-at`, `--max-results`                                                                                           |
+| `field-option-list`               | `--field-key`                                                                           | `--start-at`, `--max-results`                                                                                                                      |
+| `field-option-create`             | `--field-key`, `--body` (JSON)                                                          | —                                                                                                                                                  |
+| `field-option-delete`             | `--field-key`, `--option-id`                                                            | —                                                                                                                                                  |
+| `field-option-get`                | `--field-key`, `--option-id`                                                            | —                                                                                                                                                  |
+| `field-option-update`             | `--field-key`, `--option-id`, `--body` (JSON)                                           | —                                                                                                                                                  |
+| `field-option-replace-issues`     | `--field-key`, `--option-id`                                                            | `--replace-with`, `--jql`, `--override-screen-security`, `--override-editable-flag`                                                                |
+| `field-option-suggestions-edit`   | `--field-key`                                                                           | `--project-id`, `--start-at`, `--max-results`                                                                                                      |
+| `field-option-suggestions-search` | `--field-key`                                                                           | `--project-id`, `--start-at`, `--max-results`                                                                                                      |
+| `field-project-associations`      | `--field-id`                                                                            | `--start-at`, `--max-results`                                                                                                                      |
+| `field-screens`                   | `--field-id`                                                                            | `--expand`, `--start-at`, `--max-results`                                                                                                          |
+| `field-restore`                   | `--field-id`                                                                            | —                                                                                                                                                  |
+| `field-trash`                     | `--field-id`                                                                            | —                                                                                                                                                  |
+| `field-remove-associations`       | `--body` (JSON)                                                                         | —                                                                                                                                                  |
+| `field-create-associations`       | `--body` (JSON)                                                                         | —                                                                                                                                                  |
+| `field-trash-list`                | —                                                                                       | `--id` (CSV), `--query`, `--expand`, `--order-by`, `--start-at`, `--max-results`                                                                   |
+
+`--option-id`, `--replace-with`, `--project-id` and `--context-id` values are positive integers; `--start-at` is 0-based. Every list action is offset-paginated (`--start-at`, `--max-results`) except `field-list-all`.
+
 ### Fields (CRUD)
+
+`field-create --body` is a `CustomFieldDefinitionJsonBean`: `name` and `type` are required, `description` and `searcherKey` optional. `type` is a full custom-field type key such as `com.atlassian.jira.plugin.system.customfieldtypes:float` (built-ins: `cascadingselect`, `datepicker`, `datetime`, `float`, `grouppicker`, `importid`, `labels`, `multicheckboxes`, `multigrouppicker`, `multiselect`, `multiuserpicker`, `multiversion`, `project`, `radiobuttons`, `readonlyfield`, `select`, `textarea`, `textfield`, `url`, `userpicker`, `version`), or a Forge custom field type ID. `field-update --body` takes `name` (max 255), `description` (max 40000) and `searcherKey` (or `null`), all optional. `searcherKey` must match the type — use the full key `com.atlassian.jira.plugin.system.customfieldtypes:<searcher>`:
+
+| Field type                                                                     | `<searcher>`                   |
+| ------------------------------------------------------------------------------ | ------------------------------ |
+| `cascadingselect`                                                              | `cascadingselectsearcher`      |
+| `datepicker` / `datetime`                                                      | `daterange` / `datetimerange`  |
+| `float`, `importid`                                                            | `exactnumber` or `numberrange` |
+| `grouppicker`                                                                  | `grouppickersearcher`          |
+| `labels`                                                                       | `labelsearcher`                |
+| `multicheckboxes`, `multigrouppicker`, `multiselect`, `radiobuttons`, `select` | `multiselectsearcher`          |
+| `multiuserpicker`, `userpicker`                                                | `userpickergroupsearcher`      |
+| `multiversion`, `version`                                                      | `versionsearcher`              |
+| `project`                                                                      | `projectsearcher`              |
+| `readonlyfield`, `textarea`, `textfield`                                       | `textsearcher`                 |
+| `url`                                                                          | `exacttextsearcher`            |
 
 ```sh
 # List all fields (flat array)
@@ -951,22 +1034,23 @@ atlas jira fields field-list-all
 atlas jira fields field-list --start-at 0 --max-results 50
 
 # Create a custom field
-atlas jira fields field-create --body '{"name":"Sprint Story Points","type":"com.atlassian.jira.plugin.system.customfieldtypes:float"}'
+atlas jira fields field-create --body '{"name":"Sprint Story Points","type":"com.atlassian.jira.plugin.system.customfieldtypes:float","searcherKey":"com.atlassian.jira.plugin.system.customfieldtypes:exactnumber"}'
 
 # Update a custom field (returns no body — 204 No Content)
 atlas jira fields field-update customfield_10001 --body '{"name":"Renamed Field","description":"Updated description"}'
 
-# Delete a custom field
+# Delete a custom field (asynchronous: prints the deletion task)
 atlas jira fields field-delete customfield_10001
 ```
 
 - `field-update` returns **no body** (the spec responds 204 No Content); the SDK `update()` resolves to `void`.
+- `field-delete` is **asynchronous**: Jira answers 303 to a task, and the CLI prints that task (`{id, self, status, progress, …}`) rather than a confirmation — the field is gone only when the task finishes. Poll it with `atlas jira task get <taskId>` until `status` is `COMPLETE` (or `FAILED`, `CANCELLED`, `DEAD`). If Jira answers without a task (204 or an empty 200), the CLI prints `{"deleted": true}`. In the SDK, `client.fields.delete(id, { returnTask: true })` resolves the task; `client.fields.delete(id)` still resolves `void`.
 
 ### Field Contexts (B415–B418)
 
 ```sh
-# List contexts for a custom field (B415)
-atlas jira fields context-list --field-id customfield_10001
+# List contexts for a custom field (B415), paginated
+atlas jira fields context-list --field-id customfield_10001 --start-at 0 --max-results 50
 
 # Filter contexts by type (tri-state filters — pass true|false; omit to not filter on that dimension)
 atlas jira fields context-list --field-id customfield_10001 --is-global-context true --is-any-issue-type true
@@ -980,21 +1064,26 @@ atlas jira fields context-create --field-id customfield_10001 --name 'Bug fields
 # Create a context scoped to projects and issue types (B416)
 atlas jira fields context-create --field-id customfield_10001 --name 'Scoped context' --project-ids '10010,10011' --issue-type-ids '10000'
 
-# Update a context name/description (B418)
+# Update a context name/description (B418) — at least one of --name/--description
 atlas jira fields context-update --field-id customfield_10001 --context-id 10025 --name 'Renamed context' --description 'New description'
 
 # Delete a context (B417)
 atlas jira fields context-delete --field-id customfield_10001 --context-id 10025
 ```
 
+- `context-create` without `--project-ids` makes a global context; without `--issue-type-ids` it applies to all issue types.
+
 ### Field Context Options (B421–B426)
+
+`context-option-create --body` is `{"options":[{"value":"…","disabled"?:bool,"optionId"?:"<parent option id for a cascading child>"}]}`; `context-option-update --body` is `{"options":[{"id":"…","value"?:"…","disabled"?:bool}]}`. `context-option-move` needs `--option-ids` (options or cascading options, not both; the list order is the order after the move) and exactly one placement: `--position First` / `--position Last`, or `--after <optionId>`; with neither it is refused before sending. `context-option-replace-issues` deselects `--option-id` on the issues matched by `--jql` (e.g. `project=10000`), replacing it with `--replace-with` if given; it only works for options created in Jira or through these context-option actions, not for options created by Connect or Forge apps, and prints the async task.
 
 ```sh
 # List options for a field context (B421)
 atlas jira fields context-option-list --field-id customfield_10001 --context-id 10025
 
-# List options with pagination and filters (B421)
+# List options with pagination and filters (B421): --only-options skips cascading children, --option-id returns one option
 atlas jira fields context-option-list --field-id customfield_10001 --context-id 10025 --start-at 0 --max-results 50 --only-options
+atlas jira fields context-option-list --field-id customfield_10001 --context-id 10025 --option-id 10001
 
 # Bulk-create options in a context (B422)
 atlas jira fields context-option-create --field-id customfield_10001 --context-id 10025 --body '{"options":[{"value":"New York"},{"value":"Boston","disabled":false}]}'
@@ -1008,8 +1097,9 @@ atlas jira fields context-option-delete --field-id customfield_10001 --context-i
 # Replace an option on issues — starts async task (B425)
 atlas jira fields context-option-replace-issues --field-id customfield_10001 --context-id 10025 --option-id 10001 --replace-with 10003 --jql project=PROJ
 
-# Reorder options to first position (B426)
+# Reorder options to the first / last position (B426)
 atlas jira fields context-option-move --field-id customfield_10001 --context-id 10025 --option-ids 10001,10002 --position First
+atlas jira fields context-option-move --field-id customfield_10001 --context-id 10025 --option-ids 10002 --position Last
 
 # Reorder options after a specific option (B426)
 atlas jira fields context-option-move --field-id customfield_10001 --context-id 10025 --option-ids 10001 --after 10005
@@ -1057,17 +1147,38 @@ removes that target's default; entries not listed are left unchanged. Atlassian
 currently restricts this endpoint to tenants in the early access program (CHANGE-3082):
 others get HTTP 403.
 
-Default values are polymorphic — each entry is discriminated by a `type` field. Common types:
+Default-value objects (`context-default-set` array entries, `context-default-update` `value`, `context-issuetype-set --default-value-json`) are discriminated by `type`, which must match the field's type. Every object also needs `contextId` (a string). All IDs are strings unless noted.
 
-- `option.single` — single-select/radio: requires `optionId`
-- `option.multiple` — multi-select/checkbox: requires `optionIds[]`
-- `option.cascading` — cascading select: requires `optionId` + optional `cascadingOptionId`
-- `forge.string` — Forge string field: optional `text`
-- `forge.user` — Forge user field: requires `accountId` + `userFilter`
-- `float` — number field: requires `number`
-- `longtext` — plain-text paragraph field: optional `text` (line breaks preserved)
-- `datepicker` — date field: optional `date`, `useCurrent`
-- `url` — URL field: requires `url`
+| `type`                                | Field type                    | Required keys               | Optional keys                              |
+| ------------------------------------- | ----------------------------- | --------------------------- | ------------------------------------------ |
+| `option.single`                       | select / radio buttons        | `optionId`                  | —                                          |
+| `option.multiple`                     | multi-select / checkboxes     | `optionIds` (array)         | —                                          |
+| `option.cascading`                    | cascading select              | `optionId`                  | `cascadingOptionId`                        |
+| `single.user.select`                  | user picker                   | `accountId`, `userFilter`   | —                                          |
+| `multi.user.select`                   | multi-user picker             | `accountIds` (array)        | —                                          |
+| `grouppicker.single`                  | group picker                  | `groupId`                   | —                                          |
+| `grouppicker.multiple`                | multi-group picker            | `groupIds` (array)          | —                                          |
+| `datepicker`                          | date picker                   | —                           | `date` (ISO date), `useCurrent` (bool)     |
+| `datetimepicker`                      | date-time picker              | —                           | `dateTime` (ISO 8601), `useCurrent` (bool) |
+| `url`                                 | URL                           | `url`                       | —                                          |
+| `project`                             | project picker                | `projectId`                 | —                                          |
+| `float`                               | number                        | `number` (number)           | —                                          |
+| `labels`                              | labels                        | `labels` (array of strings) | —                                          |
+| `textfield` / `textarea` / `longtext` | single-line / multi-line text | —                           | `text`                                     |
+| `readonly`                            | read-only text                | —                           | `text`                                     |
+| `version.single`                      | version picker                | `versionId`                 | `versionOrder`                             |
+| `version.multiple`                    | multi-version picker          | `versionIds` (array)        | `versionOrder`                             |
+| `forge.string`                        | Forge string                  | —                           | `text`                                     |
+| `forge.string.list`                   | Forge string list             | —                           | `values` (array of strings)                |
+| `forge.number`                        | Forge number                  | `number` (number)           | —                                          |
+| `forge.object`                        | Forge object                  | —                           | `object` (JSON object)                     |
+| `forge.datetime`                      | Forge date-time               | —                           | `dateTime`, `useCurrent` (bool)            |
+| `forge.group`                         | Forge group                   | `groupId`                   | —                                          |
+| `forge.group.list`                    | Forge group list              | `groupIds` (array)          | —                                          |
+| `forge.user`                          | Forge user                    | `accountId`, `userFilter`   | —                                          |
+| `forge.user.list`                     | Forge user list               | `accountIds` (array)        | —                                          |
+
+`userFilter` (for `single.user.select` and `forge.user`) is `{"enabled": <bool>, "groups"?: ["group name", …], "roleIds"?: [<int>, …]}` — `enabled` is required; at most 10 groups and 10 role IDs restrict which users the picker suggests.
 
 ```sh
 # Get current defaults grouped by context and issue type (recommended)
@@ -1091,6 +1202,12 @@ atlas jira fields context-default-set --field-id customfield_10001 --default-val
 # Set a cascading default with child option (B906)
 atlas jira fields context-default-set --field-id customfield_10001 --default-values-json '[{"type":"option.cascading","contextId":"10101","optionId":"10002","cascadingOptionId":"10003"}]'
 
+# Set a user-picker default limited to one group (B906)
+atlas jira fields context-default-set --field-id customfield_10005 --default-values-json '[{"type":"single.user.select","contextId":"10103","accountId":"5b10a2844c20165700ede21g","userFilter":{"enabled":true,"groups":["jira-software-users"]}}]'
+
+# Set labels and version-picker defaults (B906)
+atlas jira fields context-default-set --field-id customfield_10006 --default-values-json '[{"type":"labels","contextId":"10104","labels":["triage"]},{"type":"version.single","contextId":"10105","versionId":"10200"}]'
+
 # Update defaults per context and issue type (EAP): set one, remove the catch-all
 atlas jira fields context-default-update --field-id customfield_10001 --default-values-json '[{"contextId":10100,"issueTypeId":"10001","value":{"type":"option.single","contextId":"10100","optionId":"10002"}},{"contextId":10100,"isAnyIssueType":true,"value":null}]'
 ```
@@ -1112,22 +1229,24 @@ atlas jira fields context-project-mapping --field-id customfield_10001
 # Filter mappings by specific contexts (B431)
 atlas jira fields context-project-mapping --field-id customfield_10001 --context-id 10025,10026 --start-at 0 --max-results 50
 
-# Bulk lookup: find which context applies to each project+issueType pair (B430)
+# Bulk lookup: find which context applies to each project+issueType pair (B430), paginated
 # Body is a JSON array of {projectId, issueTypeId} objects
-atlas jira fields context-mapping --field-id customfield_10001 --mappings-json '[{"projectId":"10000","issueTypeId":"10000"},{"projectId":"10000","issueTypeId":"10001"}]'
+atlas jira fields context-mapping --field-id customfield_10001 --mappings-json '[{"projectId":"10000","issueTypeId":"10000"},{"projectId":"10000","issueTypeId":"10001"}]' --start-at 0 --max-results 50
 ```
 
 ### Field key option management (Connect-app-managed)
 
 Manage options on Connect-app select list fields via `fieldKey` (B433–B440). These endpoints only work for options added by Connect apps, not options created in Jira directly.
 
+`field-option-create --body` is `{"value": "…", "properties"?: {…}, "config"?: {…}}` (`value` required); `field-option-update --body` is the full option `{"id": <int, = --option-id>, "value": "…", "properties"?, "config"?}`. `config` controls where the option is available: `{"scope": {"projects2": [{"id": <projectId>, "attributes": ["notSelectable"|"defaultValue"]}], "global": {"attributes": [...]}}}` — `projects2` lists per-project behaviour, an empty `global` object makes it available everywhere, and with no `scope` the option is available in all projects (`config.attributes` and `scope.projects` are deprecated). `field-option-replace-issues` deselects the option on the issues matched by `--jql` (replacing it with `--replace-with` if given) and prints the async task; `--override-screen-security` (edit hidden fields) and `--override-editable-flag` (edit uneditable fields), each `true|false`, are for Connect and Forge app users with admin permission.
+
 ```sh
 # List all options for a field (B433) — GET paginated
 atlas jira fields field-option-list --field-key example-add-on__team-field
 atlas jira fields field-option-list --field-key example-add-on__team-field --start-at 0 --max-results 50
 
-# Create an option for a field (B434) — POST
-atlas jira fields field-option-create --field-key example-add-on__team-field --body '{"value":"Team 1","properties":{"members":42}}'
+# Create an option for a field (B434) — POST, available only in project 10000
+atlas jira fields field-option-create --field-key example-add-on__team-field --body '{"value":"Team 1","properties":{"members":42},"config":{"scope":{"projects2":[{"id":10000,"attributes":["notSelectable"]}]}}}'
 
 # Delete an option from a field (B435) — DELETE 204
 atlas jira fields field-option-delete --field-key example-add-on__team-field --option-id 1
@@ -1140,6 +1259,7 @@ atlas jira fields field-option-update --field-key example-add-on__team-field --o
 
 # Deselect an option from all matching issues (async task) — returns task progress (B438) — DELETE 303
 atlas jira fields field-option-replace-issues --field-key example-add-on__team-field --option-id 1 --replace-with 3 --jql 'project=PROJ'
+atlas jira fields field-option-replace-issues --field-key example-add-on__team-field --option-id 1 --override-screen-security true --override-editable-flag true
 
 # Get selectable options for a field (edit suggestions) (B439) — GET paginated
 atlas jira fields field-option-suggestions-edit --field-key example-add-on__team-field
@@ -1153,6 +1273,10 @@ atlas jira fields field-option-suggestions-search --field-key example-add-on__te
 ### Field admin and association (B414, B432, B442–B445, B447)
 
 Trash/restore custom fields, manage field-to-project associations, list screens a field appears on, and list trashed fields.
+
+`field-create-associations` / `field-remove-associations` take `--body` `{"associationContexts":[{"type":"PROJECT_ID","identifier":<projectId>}],"fields":[{"type":"FIELD_ID","identifier":"<fieldId>"}]}` (both lists required; `PROJECT_ID` and `FIELD_ID` are the identifier types the spec documents). One request handles up to 50 fields and 100 projects; the association also reaches every project that shares the same field configuration.
+
+`field-trash-list --order-by` is `name`, `trashDate` or `plannedDeletionDate` (optionally `+`/`-` prefixed); `--id` is a CSV of field IDs.
 
 ```sh
 # List project associations for a custom field (B414) — GET paginated
@@ -1175,15 +1299,20 @@ atlas jira fields field-remove-associations --body '{"associationContexts":[{"ty
 # Create associations between fields and projects (B445) — PUT with body
 atlas jira fields field-create-associations --body '{"associationContexts":[{"type":"PROJECT_ID","identifier":10000},{"type":"PROJECT_ID","identifier":10001}],"fields":[{"type":"FIELD_ID","identifier":"customfield_10000"}]}'
 
-# List trashed custom fields (B447) — GET paginated
+# List trashed custom fields (B447) — GET paginated; descending sort needs the = form
 atlas jira fields field-trash-list
-atlas jira fields field-trash-list --query approvers --max-results 50
-atlas jira fields field-trash-list --id customfield_10000,customfield_10001 --order-by trashDate
+atlas jira fields field-trash-list --query approvers --start-at 0 --max-results 50
+atlas jira fields field-trash-list --id customfield_10000,customfield_10001 --order-by=-trashDate
 ```
 
 ### Field search paginated (B411 + B446)
 
-`field-list-all` returns the flat array from `GET /field` (B411). `field-list` returns the paginated search from `GET /field/search` (B446), supporting filtering by type, id, query, orderBy, expand, and projectIds.
+`field-list-all` returns the flat array from `GET /field` (B411). `field-list` returns the paginated search from `GET /field/search` (B446):
+
+- `--type` is a CSV of `custom` and/or `system`; `--id` is a CSV of field IDs; `--project-ids` is a CSV of integer project IDs (fields used in those projects). Each list is sent as repeated query params.
+- `--query` matches field names and descriptions (case-insensitive).
+- `--order-by` is one of `contextsCount`, `lastUsed`, `name`, `screensCount`, `projectsCount`, each optionally prefixed with `+` (ascending) or `-` (descending). Attach a value that starts with `-` with `=`: `--order-by=-name` (`--order-by -name` is a parse error).
+- `--expand` is a CSV of `key`, `stableId`, `lastUsed`, `screensCount`, `contextsCount`, `isLocked`, `searcherKey`.
 
 ```sh
 # List all fields (flat, not paginated) — B411
@@ -1192,5 +1321,7 @@ atlas jira fields field-list-all
 # Search fields (paginated) — B446
 atlas jira fields field-list --max-results 50
 atlas jira fields field-list --type custom --query approvers
+atlas jira fields field-list --id customfield_10000,summary --project-ids 10000,10001 --type custom,system
 atlas jira fields field-list --order-by screensCount --expand screensCount,contextsCount
+atlas jira fields field-list --order-by=-name --start-at 50 --max-results 50
 ```

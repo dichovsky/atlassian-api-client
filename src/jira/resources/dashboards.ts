@@ -65,20 +65,45 @@ export interface ListDashboardsParams {
   readonly filter?: 'my' | 'favourite';
 }
 
-/** Request body for creating a new Jira dashboard. */
+/**
+ * Request body for creating a new Jira dashboard (`DashboardDetails` schema).
+ *
+ * The spec requires `name`, `sharePermissions` and `editPermissions`; Jira
+ * rejects a body without `editPermissions`. It stays optional here only to
+ * keep 4.x callers compiling — always send it (`[]` for owner-only editing).
+ */
 export interface CreateDashboardData {
   readonly name: string;
   readonly description?: string;
   readonly sharePermissions: DashboardSharePermission[];
+  /** Required by the spec (`DashboardDetails.required`); optional only for 4.x compatibility. */
   readonly editPermissions?: DashboardSharePermission[];
 }
 
-/** Request body for updating an existing Jira dashboard. */
+/**
+ * Request body for updating an existing Jira dashboard (`DashboardDetails`
+ * schema). Same contract as {@link CreateDashboardData}: always send
+ * `editPermissions`.
+ */
 export interface UpdateDashboardData {
   readonly name: string;
   readonly description?: string;
   readonly sharePermissions: DashboardSharePermission[];
+  /** Required by the spec (`DashboardDetails.required`); optional only for 4.x compatibility. */
   readonly editPermissions?: DashboardSharePermission[];
+}
+
+/**
+ * Query parameters for `POST /dashboard`, `PUT /dashboard/{id}` and
+ * `POST /dashboard/{id}/copy`.
+ */
+export interface DashboardWriteParams {
+  /**
+   * Use admin-level permissions (default `false`), e.g. to edit a dashboard
+   * owned by someone else. Only for users with the *Administer Jira* global
+   * permission.
+   */
+  readonly extendAdminPermissions?: boolean;
 }
 
 /** Position of a gadget on its dashboard. */
@@ -328,21 +353,29 @@ export class DashboardsResource {
   }
 
   /** Create a new dashboard. */
-  async create(data: CreateDashboardData): Promise<Dashboard> {
+  async create(data: CreateDashboardData, params?: DashboardWriteParams): Promise<Dashboard> {
+    const query = dashboardWriteQuery(params);
     const response = await this.transport.request<Dashboard>({
       method: 'POST',
       path: `${this.baseUrl}/dashboard`,
       body: data,
+      ...(Object.keys(query).length > 0 && { query }),
     });
     return response.data;
   }
 
   /** Update a dashboard. */
-  async update(id: string, data: UpdateDashboardData): Promise<Dashboard> {
+  async update(
+    id: string,
+    data: UpdateDashboardData,
+    params?: DashboardWriteParams,
+  ): Promise<Dashboard> {
+    const query = dashboardWriteQuery(params);
     const response = await this.transport.request<Dashboard>({
       method: 'PUT',
       path: `${this.baseUrl}/dashboard/${encodePathSegment(id)}`,
       body: data,
+      ...(Object.keys(query).length > 0 && { query }),
     });
     return response.data;
   }
@@ -504,17 +537,23 @@ export class DashboardsResource {
    * B402: Copy a dashboard. `data` is required — the spec mandates `name`,
    * `sharePermissions`, and `editPermissions` in the `DashboardDetails` body.
    */
-  async copy(id: string, data: CopyDashboardData): Promise<Dashboard> {
+  async copy(
+    id: string,
+    data: CopyDashboardData,
+    params?: DashboardWriteParams,
+  ): Promise<Dashboard> {
     const body: Record<string, unknown> = {
       name: data.name,
       sharePermissions: data.sharePermissions,
       editPermissions: data.editPermissions,
     };
     if (data.description !== undefined) body['description'] = data.description;
+    const query = dashboardWriteQuery(params);
     const response = await this.transport.request<Dashboard>({
       method: 'POST',
       path: `${this.baseUrl}/dashboard/${encodePathSegment(id)}/copy`,
       body,
+      ...(Object.keys(query).length > 0 && { query }),
     });
     return response.data;
   }
@@ -705,3 +744,10 @@ export class DashboardsResource {
 }
 
 const DEFAULT_MAX_PAGES = 10_000;
+
+/** The `extendAdminPermissions` query shared by dashboard create/update/copy. */
+function dashboardWriteQuery(params: DashboardWriteParams | undefined): Record<string, boolean> {
+  return params?.extendAdminPermissions === undefined
+    ? {}
+    : { extendAdminPermissions: params.extendAdminPermissions };
+}

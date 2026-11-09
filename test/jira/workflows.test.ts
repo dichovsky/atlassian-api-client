@@ -881,18 +881,33 @@ describe('WorkflowsResource', () => {
       expect(transport.lastCall?.options.query).not.toHaveProperty('draft');
     });
 
-    it.each([false, true])(
-      'throws ValidationError and sends no request when the removed draft param is %s',
-      async (draft) => {
-        await expect(
-          workflows.getTransitionRuleConfigs({ types: ['postfunction'], draft }),
-        ).rejects.toThrow(ValidationError);
-        await expect(
-          workflows.getTransitionRuleConfigs({ types: ['postfunction'], draft }),
-        ).rejects.toThrow(/CHANGE-3147/);
+    it('throws ValidationError and sends no request when the removed draft param is true', async () => {
+      const call = () =>
+        workflows.getTransitionRuleConfigs({ types: ['postfunction'], draft: true });
+      await expect(call()).rejects.toThrow(ValidationError);
+      await expect(call()).rejects.toThrow(/CHANGE-3147/);
+      expect(transport.calls).toHaveLength(0);
+    });
+
+    it.each(['true', 'false', 1, null])(
+      'throws ValidationError and sends no request for a non-boolean draft %j',
+      async (draft: unknown) => {
+        const params = { types: ['postfunction'], draft } as unknown as Parameters<
+          typeof workflows.getTransitionRuleConfigs
+        >[0];
+        await expect(workflows.getTransitionRuleConfigs(params)).rejects.toThrow(/CHANGE-3147/);
         expect(transport.calls).toHaveLength(0);
       },
     );
+
+    it('accepts draft=false (published, the only state left) and does not send it (F257)', async () => {
+      transport.respondWith(ruleConfigPage);
+      await workflows.getTransitionRuleConfigs({ types: ['postfunction'], draft: false });
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/workflow/rule/config?types=postfunction`,
+      );
+      expect(transport.lastCall?.options.query).not.toHaveProperty('draft');
+    });
 
     it('does not include optional params when not provided', async () => {
       transport.respondWith(ruleConfigPage);
@@ -956,17 +971,46 @@ describe('WorkflowsResource', () => {
       });
     });
 
-    it.each([false, true])(
-      'throws ValidationError and sends no request when a workflowId carries the removed draft=%s',
-      async (draft) => {
-        const entry = (workflowId: { name: string; draft?: boolean }) => ({
-          workflowId,
-          conditions: [{ id: 'c', key: 'k', configuration: { value: '{}' } }],
-        });
-        const body = { workflows: [entry({ name: 'Clean' }), entry({ name: 'Draft', draft })] };
+    const ruleEntry = (workflowId: { name: string; draft?: boolean }) => ({
+      workflowId,
+      conditions: [{ id: 'c', key: 'k', configuration: { value: '{}' } }],
+    });
 
-        await expect(workflows.updateTransitionRuleConfigs(body)).rejects.toThrow(ValidationError);
-        await expect(workflows.updateTransitionRuleConfigs(body)).rejects.toThrow(/CHANGE-3147/);
+    it('throws ValidationError and sends no request when a workflowId carries the removed draft=true', async () => {
+      const body = {
+        workflows: [ruleEntry({ name: 'Clean' }), ruleEntry({ name: 'Draft', draft: true })],
+      };
+
+      await expect(workflows.updateTransitionRuleConfigs(body)).rejects.toThrow(ValidationError);
+      await expect(workflows.updateTransitionRuleConfigs(body)).rejects.toThrow(/CHANGE-3147/);
+      expect(transport.calls).toHaveLength(0);
+    });
+
+    it('strips draft=false from a round-tripped workflowId without mutating the input (F257)', async () => {
+      transport.respondWith(updateResponse);
+      const body = {
+        workflows: [ruleEntry({ name: 'Clean' }), ruleEntry({ name: 'Published', draft: false })],
+      };
+
+      await workflows.updateTransitionRuleConfigs(body);
+
+      expect(transport.lastCall?.options.body).toEqual({
+        workflows: [ruleEntry({ name: 'Clean' }), ruleEntry({ name: 'Published' })],
+      });
+      expect(body.workflows[1]?.workflowId).toEqual({ name: 'Published', draft: false });
+    });
+
+    // Wrapped so vitest does not spread the `[]` case into zero arguments.
+    it.each([[null], [7], ['x'], [[]], [undefined]])(
+      'throws ValidationError, not TypeError, and sends nothing for a %j entry (F267)',
+      async (entry: unknown) => {
+        const body = { workflows: [entry] } as unknown as Parameters<
+          typeof workflows.updateTransitionRuleConfigs
+        >[0];
+
+        await expect(workflows.updateTransitionRuleConfigs(body)).rejects.toThrow(
+          new ValidationError('workflows[0] must be an object'),
+        );
         expect(transport.calls).toHaveLength(0);
       },
     );
@@ -1059,21 +1103,48 @@ describe('WorkflowsResource', () => {
       expect(transport.lastCall?.options.body).toEqual(body);
     });
 
-    it.each([false, true])(
-      'throws ValidationError and sends no request when a workflowId carries the removed draft=%s',
-      async (draft) => {
-        const body = {
-          workflows: [
-            { workflowId: { name: 'Clean' }, workflowRuleIds: ['a'] },
-            { workflowId: { name: 'Draft', draft }, workflowRuleIds: ['b'] },
-          ],
-        };
+    it('throws ValidationError and sends no request when a workflowId carries the removed draft=true', async () => {
+      const body = {
+        workflows: [
+          { workflowId: { name: 'Clean' }, workflowRuleIds: ['a'] },
+          { workflowId: { name: 'Draft', draft: true }, workflowRuleIds: ['b'] },
+        ],
+      };
 
+      await expect(workflows.deleteTransitionRuleConfigs(body)).rejects.toThrow(ValidationError);
+      await expect(workflows.deleteTransitionRuleConfigs(body)).rejects.toThrow(/CHANGE-3147/);
+      expect(transport.calls).toHaveLength(0);
+    });
+
+    it.each(['true', 'false', 0, null])(
+      'throws ValidationError and sends no request for a non-boolean workflowId.draft %j',
+      async (draft: unknown) => {
+        const body = {
+          workflows: [{ workflowId: { name: 'W', draft }, workflowRuleIds: ['b'] }],
+        } as unknown as Parameters<typeof workflows.deleteTransitionRuleConfigs>[0];
         await expect(workflows.deleteTransitionRuleConfigs(body)).rejects.toThrow(ValidationError);
         await expect(workflows.deleteTransitionRuleConfigs(body)).rejects.toThrow(/CHANGE-3147/);
         expect(transport.calls).toHaveLength(0);
       },
     );
+
+    it('strips draft=false before sending (F257)', async () => {
+      transport.respondWith({ updateResults: [] });
+      await workflows.deleteTransitionRuleConfigs({
+        workflows: [{ workflowId: { name: 'Published', draft: false }, workflowRuleIds: ['b'] }],
+      });
+      expect(transport.lastCall?.options.body).toEqual({
+        workflows: [{ workflowId: { name: 'Published' }, workflowRuleIds: ['b'] }],
+      });
+    });
+
+    it('throws ValidationError, not TypeError, for a null entry (F267)', async () => {
+      const body = { workflows: [null] } as unknown as Parameters<
+        typeof workflows.deleteTransitionRuleConfigs
+      >[0];
+      await expect(workflows.deleteTransitionRuleConfigs(body)).rejects.toThrow(ValidationError);
+      expect(transport.calls).toHaveLength(0);
+    });
 
     it('throws ValidationError when workflows array is empty', async () => {
       await expect(workflows.deleteTransitionRuleConfigs({ workflows: [] })).rejects.toThrow(
