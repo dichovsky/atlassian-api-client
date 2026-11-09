@@ -324,7 +324,7 @@ Project version management (B820–B831, B933). Covers the full `/rest/api/3/ver
 - `--archived true|false` and `--released true|false` set the flag either way; bare `--archived` / `--released` mean `true`, and `--archived false` (or `--no-archived`) un-archives. Omit to leave unchanged.
 - `create` needs `--name` and the project: `--project-id <numeric id>` (preferred; `--project <key>` is deprecated by Atlassian).
 - `--after` (`move`) and `--move-unfixed-issues-to` (`create` / `update`) take the version's **self link URL**, e.g. `https://your-site.atlassian.net/rest/api/3/version/10001` (the `self` field of `version get`), not a bare ID. `move` takes `--after` or `--position`, not both.
-- `--expand` on `create` / `update` adds response detail (`operations`, `issuesstatus`).
+- `--expand` on `create` / `update` adds response detail (`operations`, `issuesstatus`, `driver`, `approvers`; comma-separated).
 - `update-related-work` updates the entry named by `--related-work-id` (the `relatedWorkId` from `list-related-work`); only generic link entries can be updated.
 - `delete` is deprecated by Atlassian: use `delete-and-replace`, which also swaps the version in version-picker custom fields.
 - `--move-fix-issues-to` and `--move-affected-issues-to` take a version ID as a string on `delete`, or as an integer on `delete-and-replace`.

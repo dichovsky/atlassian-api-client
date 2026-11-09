@@ -405,6 +405,24 @@ describe('version', () => {
     ]);
     expect(updated.req.body).toEqual({ expand: 'issuesstatus' });
   });
+
+  it('skill lists every Version.expand value the spec defines (review round 3)', async () => {
+    const line = skillSection('projects.md', 'version')
+      .split('\n')
+      .find((l) => l.startsWith('- `--expand` on `create` / `update`'));
+    for (const value of ['operations', 'issuesstatus', 'driver', 'approvers']) {
+      expect(line).toContain(`\`${value}\``);
+    }
+    const { req } = await onlyRequest([
+      'jira',
+      'version',
+      'update',
+      '10000',
+      '--expand',
+      'driver,approvers',
+    ]);
+    expect(req.body).toEqual({ expand: 'driver,approvers' });
+  });
 });
 
 describe('config', () => {
@@ -613,6 +631,28 @@ describe('screenscheme', () => {
     );
   });
 
+  it('rejects a screen id above 2^53 - 1 instead of sending a rounded one (review round 3)', async () => {
+    // Number('9007199254740993') is 9007199254740992: a different screen.
+    await rejected(
+      ['jira', 'screenscheme', 'create', '--name', 'S', '--default-screen', '9007199254740993'],
+      /--default-screen must be at most 9007199254740991/,
+    );
+    await rejected(
+      ['jira', 'screenscheme', 'update', '7', '--view-screen', '9007199254740993'],
+      /--view-screen must be at most 9007199254740991/,
+    );
+    const { req } = await onlyRequest([
+      'jira',
+      'screenscheme',
+      'create',
+      '--name',
+      'S',
+      '--default-screen',
+      '9007199254740991',
+    ]);
+    expect(req.body).toEqual({ name: 'S', screens: { default: 9007199254740991 } });
+  });
+
   it('list --order-by=-name sorts descending; the skill shows the = form (F238)', async () => {
     const { req } = await onlyRequest(['jira', 'screenscheme', 'list', '--order-by=-name']);
     expect(req.query.get('orderBy')).toBe('-name');
@@ -697,6 +737,33 @@ describe('project-template', () => {
     ]);
     expect(JSON.parse(run.stdout)).toEqual({ queued: true, taskId: '10001', taskUrl: task.self });
   });
+
+  it('create prints no taskId when the task URL has no path segment (review round 3)', async () => {
+    const run = await runCliWire(
+      ['jira', 'project-template', 'create', '--template', '{"project":{}}'],
+      { respond: () => ({ body: { id: '10001', self: '/', status: 'ENQUEUED' } }) },
+    );
+    expect(run.exitCode).toBe(0);
+    expect(JSON.parse(run.stdout)).toEqual({ queued: true, taskUrl: '/' });
+  });
+
+  it.each([`${SITE}${JIRA}/task/10001/`, `${SITE}${JIRA}/task/10001?x=1`])(
+    'create takes taskId from the last path segment of %s (review round 3)',
+    async (self) => {
+      const run = await runCliWire(
+        [
+          'jira',
+          'project-template',
+          'create',
+          '--template',
+          '{"project":{"projectTypeKey":"software"}}',
+        ],
+        { respond: () => ({ body: { id: '10001', self, status: 'ENQUEUED' } }) },
+      );
+      expect(run.exitCode).toBe(0);
+      expect(JSON.parse(run.stdout)).toEqual({ queued: true, taskId: '10001', taskUrl: self });
+    },
+  );
 
   it('skill --template example only uses keys the spec defines (F232)', () => {
     const spec = JSON.parse(

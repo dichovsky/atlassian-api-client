@@ -129,6 +129,9 @@ export interface UpdateVersionRelatedWorkData {
   /**
    * ID of the related work entry to update (from `listRelatedWork`). The path
    * names only the version, so Jira reads the entry to update from this field.
+   * The pinned spec marks `VersionRelatedWork.relatedWorkId` `readOnly`, but its
+   * request example for this operation sends it: keep forwarding it (a readOnly
+   * cleanup must not strip it; `test/jira/version.test.ts` guards this).
    */
   readonly relatedWorkId?: string;
   /** Required. Category of the related work. */

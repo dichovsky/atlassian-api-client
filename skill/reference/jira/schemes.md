@@ -584,7 +584,7 @@ Screen scheme management (B762–B765). Covers the `/rest/api/3/screenscheme` su
 **`--order-by` values:** `name`, `-name`, `+name`, `id`, `-id`, `+id`. A leading `-` sorts descending and needs the `=` form: `--order-by=-name` (a separate `-name` argument reads as a flag).
 
 - `--expand issueTypeScreenSchemes` adds, for each screen scheme, the issue type screen schemes that use it.
-- Screen flags take a screen ID (digits only). On `update`, `--view-screen null`, `--edit-screen null` or `--create-screen null` removes that screen so the default screen is used; `--default-screen` cannot be `null`.
+- Screen flags take a screen ID (digits only, at most 9007199254740991). On `update`, `--view-screen null`, `--edit-screen null` or `--create-screen null` removes that screen so the default screen is used; `--default-screen` cannot be `null`.
 
 ```sh
 # List screen schemes

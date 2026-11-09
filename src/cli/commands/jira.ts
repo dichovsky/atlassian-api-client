@@ -6828,7 +6828,12 @@ function screenIdOpt(value: string | boolean | undefined, name: string): number 
   const s = asString(value);
   if (s === undefined) return undefined;
   if (!/^\d+$/.test(s)) throw new Error(`${name} must be a non-negative integer, got: ${s}`);
-  return Number(s);
+  const n = Number(s);
+  // Above 2^53 - 1, Number() rounds to a different ID.
+  if (!Number.isSafeInteger(n)) {
+    throw new Error(`${name} must be at most ${Number.MAX_SAFE_INTEGER}, got: ${s}`);
+  }
+  return n;
 }
 
 /** Like {@link screenIdOpt} for `screenscheme update`, where `null` removes the screen. */
@@ -8495,10 +8500,17 @@ async function executeProjectTemplate(client: JiraClient, cmd: ParsedCommand): P
         details,
         template,
       });
-      // Asynchronous: poll the task with `atlas jira task get <taskId>`.
+      // Asynchronous: poll the task with `atlas jira task get <taskId>`. The ID is the
+      // last path segment, ignoring a query string, fragment or trailing slash.
+      const taskId = taskUrl
+        ?.replace(/[?#].*$/, '')
+        .replace(/\/+$/, '')
+        .split('/')
+        .pop();
       return {
         queued: true,
-        ...(taskUrl !== undefined && { taskId: taskUrl.split('/').pop(), taskUrl }),
+        ...(taskId !== undefined && taskId !== '' && { taskId }),
+        ...(taskUrl !== undefined && { taskUrl }),
       };
     }
 

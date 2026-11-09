@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "4.1.0"
   },
-  "sourceHash": "e433c9ea1a054a522123d1201590ed2bc359c797a82de32b1d0b0b5da347c7aa",
+  "sourceHash": "3509ab6779d5865016c6c54971867fab0fe9150c3d6d1a023e72de1c41f12719",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -1778,6 +1778,33 @@
       "line": 128,
       "signature": "export interface EmbedOperationsResponse { readonly operations?: readonly EmbedOperation[]; }",
       "jsdoc": "Response shape for `GET /embeds/{id}/operations`.",
+      "typeOnly": true
+    },
+    {
+      "name": "ExpressionEvaluateContext",
+      "kind": "interface",
+      "file": "src/jira/resources/expression.ts",
+      "line": 161,
+      "signature": "export interface ExpressionEvaluateContext extends Omit<ExpressionEvalContext, 'issues'> { readonly issues?: { readonly …",
+      "jsdoc": "Evaluation context for POST /expression/evaluate (`JiraExpressionEvaluateContextBean` schema): {@link ExpressionEvalContext} with the token-paged `issues.jql` of the current endpoint.",
+      "typeOnly": true
+    },
+    {
+      "name": "ExpressionEvaluateData",
+      "kind": "interface",
+      "file": "src/jira/resources/expression.ts",
+      "line": 166,
+      "signature": "export interface ExpressionEvaluateData { readonly expression: string; readonly context?: ExpressionEvaluateContext; }",
+      "jsdoc": "Request body for POST /expression/evaluate (`JiraExpressionEvaluateRequestBean`).",
+      "typeOnly": true
+    },
+    {
+      "name": "ExpressionEvaluateJqlContext",
+      "kind": "interface",
+      "file": "src/jira/resources/expression.ts",
+      "line": 150,
+      "signature": "export interface ExpressionEvaluateJqlContext { readonly query?: string; readonly maxResults?: number; readonly nextPage…",
+      "jsdoc": "JQL context bean for the `issues` context variable in POST /expression/evaluate (`JexpEvaluateCtxJqlIssues` schema). Page through the issues by passing back the `nextPageToken` from the previous response's `meta.issues.jql`; there is no `startAt`.",
       "typeOnly": true
     },
     {
@@ -3641,6 +3668,24 @@
       "line": 90,
       "signature": "export interface RegisteredWebhooks { readonly webhookRegistrationResult: WebhookRegistrationResult[]; }",
       "jsdoc": "Response returned after registering webhooks, listing per-registration results.",
+      "typeOnly": true
+    },
+    {
+      "name": "RemoveFieldParametersResult",
+      "kind": "interface",
+      "file": "src/jira/resources/config.ts",
+      "line": 240,
+      "signature": "export interface RemoveFieldParametersResult { readonly results?: RemoveFieldParametersResultEntry[]; }",
+      "jsdoc": "Response from DELETE /rest/api/3/config/fieldschemes/fields/parameters. Spec: `RemoveFieldParametersResult`. Returned on 207 (partial failure).",
+      "typeOnly": true
+    },
+    {
+      "name": "RemoveFieldParametersResultEntry",
+      "kind": "interface",
+      "file": "src/jira/resources/config.ts",
+      "line": 228,
+      "signature": "export interface RemoveFieldParametersResultEntry { readonly fieldId?: string; readonly schemeId?: number; readonly succ…",
+      "jsdoc": "A single result entry from DELETE /rest/api/3/config/fieldschemes/fields/parameters. Spec: `SuccessOrErrorResults`.",
       "typeOnly": true
     },
     {
@@ -6483,262 +6528,262 @@
         {
           "name": "nullableScreenIdOpt",
           "kind": "function",
-          "line": 6835,
+          "line": 6840,
           "signature": "function nullableScreenIdOpt( value: string | boolean | undefined, name: string, ): string | null | undefined",
           "jsdoc": "Like {@link screenIdOpt} for `screenscheme update`, where `null` removes the screen."
         },
         {
           "name": "PLANS_ACTIONS",
           "kind": "variable",
-          "line": 6846,
+          "line": 6851,
           "signature": "const PLANS_ACTIONS = [ 'list', 'create', 'get', 'update', 'archive', 'duplicate', 'list-teams', 'add-atlassian-team', '…"
         },
         {
           "name": "PLANNING_STYLES",
           "kind": "variable",
-          "line": 6865,
+          "line": 6870,
           "signature": "const PLANNING_STYLES: readonly PlanningStyle[] = ['Scrum', 'Kanban'];"
         },
         {
           "name": "asFiniteNumber",
           "kind": "function",
-          "line": 6867,
+          "line": 6872,
           "signature": "function asFiniteNumber(value: string | boolean | undefined, name: string): number | undefined"
         },
         {
           "name": "PlanJsonPatch",
           "kind": "type",
-          "line": 6874,
+          "line": 6879,
           "signature": "type PlanJsonPatch = Extract<Parameters<JiraClient['plans']['update']>[1], unknown[]>;"
         },
         {
           "name": "parseJsonPatchFlag",
           "kind": "function",
-          "line": 6880,
+          "line": 6885,
           "signature": "function parseJsonPatchFlag(raw: string): PlanJsonPatch",
           "jsdoc": "`--body` of the plans patch actions: an RFC 6902 JSON Patch array, or one operation object, which is wrapped into an array."
         },
         {
           "name": "executePlans",
           "kind": "function",
-          "line": 6894,
+          "line": 6899,
           "signature": "async function executePlans(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "WORKFLOWS_ACTIONS",
           "kind": "variable",
-          "line": 7078,
+          "line": 7083,
           "signature": "const WORKFLOWS_ACTIONS = [ 'list', 'get', 'delete', 'issue-type-usages', 'project-usages', 'workflow-scheme-usages', 'b…"
         },
         {
           "name": "REMOVED_WORKFLOW_TRANSITION_PROPERTY_ACTIONS",
           "kind": "variable",
-          "line": 7102,
+          "line": 7107,
           "signature": "const REMOVED_WORKFLOW_TRANSITION_PROPERTY_ACTIONS = [ 'delete-transition-property', 'get-transition-properties', 'creat…"
         },
         {
           "name": "REMOVED_WORKFLOW_TRANSITION_PROPERTY_GUIDANCE",
           "kind": "variable",
-          "line": 7109,
+          "line": 7114,
           "signature": "const REMOVED_WORKFLOW_TRANSITION_PROPERTY_GUIDANCE = 'Atlassian removed the workflow transition-property routes; use wo…"
         },
         {
           "name": "executeWorkflows",
           "kind": "function",
-          "line": 7112,
+          "line": 7117,
           "signature": "async function executeWorkflows(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "WORKFLOWSCHEME_ACTIONS",
           "kind": "variable",
-          "line": 7334,
+          "line": 7339,
           "signature": "const WORKFLOWSCHEME_ACTIONS = [ 'list', 'create', 'delete', 'get', 'update', 'delete-default', 'get-default', 'set-defa…"
         },
         {
           "name": "drainWorkflowSchemes",
           "kind": "function",
-          "line": 7372,
+          "line": 7377,
           "signature": "async function drainWorkflowSchemes(iter: AsyncGenerator<unknown>): Promise<unknown[]>"
         },
         {
           "name": "executeWorkflowScheme",
           "kind": "function",
-          "line": 7378,
+          "line": 7383,
           "signature": "async function executeWorkflowScheme(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "FIELDS_ACTIONS",
           "kind": "variable",
-          "line": 7653,
+          "line": 7658,
           "signature": "const FIELDS_ACTIONS = [ 'field-list', 'field-list-all', 'field-create', 'field-update', 'field-delete', 'context-list',…"
         },
         {
           "name": "executeFields",
           "kind": "function",
-          "line": 7697,
+          "line": 7702,
           "signature": "async function executeFields(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "JQL_ACTIONS",
           "kind": "variable",
-          "line": 8215,
+          "line": 8220,
           "signature": "const JQL_ACTIONS = [ 'autocomplete-data', 'autocomplete-data-post', 'autocomplete-suggestions', 'get-precomputations', …"
         },
         {
           "name": "executeJql",
           "kind": "function",
-          "line": 8229,
+          "line": 8234,
           "signature": "async function executeJql(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeIssueLinkType",
           "kind": "function",
-          "line": 8373,
+          "line": 8378,
           "signature": "async function executeIssueLinkType(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "ACCESS_LEVELS",
           "kind": "variable",
-          "line": 8415,
+          "line": 8420,
           "signature": "const ACCESS_LEVELS = ['open', 'limited', 'private', 'free'] as const;"
         },
         {
           "name": "ASSIGNEE_TYPES",
           "kind": "variable",
-          "line": 8416,
+          "line": 8421,
           "signature": "const ASSIGNEE_TYPES = ['PROJECT_DEFAULT', 'COMPONENT_LEAD', 'PROJECT_LEAD', 'UNASSIGNED'] as const;"
         },
         {
           "name": "SAVE_TEMPLATE_TYPES",
           "kind": "variable",
-          "line": 8417,
+          "line": 8422,
           "signature": "const SAVE_TEMPLATE_TYPES = ['LIVE', 'SNAPSHOT'] as const;"
         },
         {
           "name": "PROJECT_TEMPLATE_ACTIONS",
           "kind": "variable",
-          "line": 8419,
+          "line": 8424,
           "signature": "const PROJECT_TEMPLATE_ACTIONS = [ 'create', 'edit-template', 'live-template', 'remove-template', 'save-template', ] as …"
         },
         {
           "name": "executeProjectTemplate",
           "kind": "function",
-          "line": 8427,
+          "line": 8432,
           "signature": "async function executeProjectTemplate(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "WORKLOG_ACTIONS",
           "kind": "variable",
-          "line": 8636,
+          "line": 8648,
           "signature": "const WORKLOG_ACTIONS = ['deleted', 'list', 'updated'] as const;"
         },
         {
           "name": "executeWorklog",
           "kind": "function",
-          "line": 8638,
+          "line": 8650,
           "signature": "async function executeWorklog(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "UI_MODIFICATIONS_ACTIONS",
           "kind": "variable",
-          "line": 8680,
+          "line": 8692,
           "signature": "const UI_MODIFICATIONS_ACTIONS = ['list', 'list-all', 'create', 'update', 'delete'];"
         },
         {
           "name": "executeUiModifications",
           "kind": "function",
-          "line": 8682,
+          "line": 8694,
           "signature": "async function executeUiModifications(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executePermissions",
           "kind": "function",
-          "line": 8761,
+          "line": 8773,
           "signature": "async function executePermissions(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeRepository",
           "kind": "function",
-          "line": 8804,
+          "line": 8816,
           "signature": "async function executeRepository(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "ISSUE_LINK_ACTIONS",
           "kind": "variable",
-          "line": 8845,
+          "line": 8857,
           "signature": "const ISSUE_LINK_ACTIONS = ['create', 'get', 'delete'] as const;"
         },
         {
           "name": "linkedIssueRef",
           "kind": "function",
-          "line": 8848,
+          "line": 8860,
           "signature": "function linkedIssueRef(value: string): { id: string } | { key: string }",
           "jsdoc": "An issue key always has a project prefix, so an all-digit value is an issue ID."
         },
         {
           "name": "executeIssueLink",
           "kind": "function",
-          "line": 8852,
+          "line": 8864,
           "signature": "async function executeIssueLink(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "PIPELINES_ACTIONS",
           "kind": "variable",
-          "line": 8894,
+          "line": 8906,
           "signature": "const PIPELINES_ACTIONS = [ 'get-build', 'delete-build', 'get-deployment', 'delete-deployment', 'get-deployment-gating-s…"
         },
         {
           "name": "executePipelines",
           "kind": "function",
-          "line": 8902,
+          "line": 8914,
           "signature": "async function executePipelines(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "LINKED_WORKSPACES_ACTIONS",
           "kind": "variable",
-          "line": 8950,
+          "line": 8962,
           "signature": "const LINKED_WORKSPACES_ACTIONS = [ 'list-operations', 'bulk-delete-operations', 'bulk-create-operations', 'list-securit…"
         },
         {
           "name": "executeLinkedWorkspaces",
           "kind": "function",
-          "line": 8960,
+          "line": 8972,
           "signature": "async function executeLinkedWorkspaces(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "BULK_BY_PROPERTIES_ACTIONS",
           "kind": "variable",
-          "line": 8998,
+          "line": 9010,
           "signature": "const BULK_BY_PROPERTIES_ACTIONS = [ 'delete-builds', 'delete-deployments', 'delete-devinfo', 'delete-devops-components'…"
         },
         {
           "name": "executeBulkByProperties",
           "kind": "function",
-          "line": 9009,
+          "line": 9021,
           "signature": "async function executeBulkByProperties(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "DASHBOARDS_ACTIONS",
           "kind": "variable",
-          "line": 9084,
+          "line": 9096,
           "signature": "const DASHBOARDS_ACTIONS = [ 'list', 'get', 'create', 'update', 'delete', 'list-gadgets', 'add-gadget', 'update-gadget',…"
         },
         {
           "name": "executeDashboards",
           "kind": "function",
-          "line": 9105,
+          "line": 9117,
           "signature": "async function executeDashboards(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "MIGRATION_ACTIONS",
           "kind": "variable",
-          "line": 9381,
+          "line": 9393,
           "signature": "const MIGRATION_ACTIONS = [ 'get-task', 'submit-task', 'update-fields', 'update-properties', 'search-workflow-rules', ] …"
         },
         {
           "name": "executeMigration",
           "kind": "function",
-          "line": 9389,
+          "line": 9401,
           "signature": "async function executeMigration(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         }
       ],
@@ -20243,6 +20288,26 @@
             {
               "exported": "BulkAgentSessionsResponse",
               "original": "BulkAgentSessionsResponse"
+            },
+            {
+              "exported": "ExpressionEvaluateJqlContext",
+              "original": "ExpressionEvaluateJqlContext"
+            },
+            {
+              "exported": "ExpressionEvaluateContext",
+              "original": "ExpressionEvaluateContext"
+            },
+            {
+              "exported": "ExpressionEvaluateData",
+              "original": "ExpressionEvaluateData"
+            },
+            {
+              "exported": "RemoveFieldParametersResult",
+              "original": "RemoveFieldParametersResult"
+            },
+            {
+              "exported": "RemoveFieldParametersResultEntry",
+              "original": "RemoveFieldParametersResultEntry"
             }
           ]
         }
@@ -40019,7 +40084,7 @@
         {
           "name": "DeleteAndReplaceVersionData",
           "kind": "interface",
-          "line": 141,
+          "line": 144,
           "exported": true,
           "signature": "export interface DeleteAndReplaceVersionData { readonly moveFixIssuesTo?: number; readonly moveAffectedIssuesTo?: number…",
           "jsdoc": "Request body for POST `/rest/api/3/version/{id}/removeAndSwap`."
@@ -40027,7 +40092,7 @@
         {
           "name": "GetVersionParams",
           "kind": "interface",
-          "line": 148,
+          "line": 151,
           "exported": true,
           "signature": "export interface GetVersionParams { readonly expand?: string; }",
           "jsdoc": "Query parameters for GET `/rest/api/3/version/{id}`."
@@ -40035,7 +40100,7 @@
         {
           "name": "DeleteVersionParams",
           "kind": "interface",
-          "line": 153,
+          "line": 156,
           "exported": true,
           "signature": "export interface DeleteVersionParams { readonly moveFixIssuesTo?: string; readonly moveAffectedIssuesTo?: string; }",
           "jsdoc": "Query parameters for DELETE `/rest/api/3/version/{id}`."
@@ -40043,7 +40108,7 @@
         {
           "name": "VersionResource",
           "kind": "class",
-          "line": 165,
+          "line": 168,
           "exported": true,
           "signature": "export class VersionResource",
           "jsdoc": "Jira Version resource — B820-B831, B933.",
@@ -40051,72 +40116,72 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 166
+              "line": 169
             },
             {
               "name": "create",
               "kind": "method",
-              "line": 175
+              "line": 178
             },
             {
               "name": "get",
               "kind": "method",
-              "line": 201
+              "line": 204
             },
             {
               "name": "update",
               "kind": "method",
-              "line": 216
+              "line": 219
             },
             {
               "name": "delete",
               "kind": "method",
-              "line": 244
+              "line": 247
             },
             {
               "name": "merge",
               "kind": "method",
-              "line": 260
+              "line": 263
             },
             {
               "name": "move",
               "kind": "method",
-              "line": 271
+              "line": 274
             },
             {
               "name": "relatedIssueCounts",
               "kind": "method",
-              "line": 287
+              "line": 290
             },
             {
               "name": "listRelatedWork",
               "kind": "method",
-              "line": 299
+              "line": 302
             },
             {
               "name": "createRelatedWork",
               "kind": "method",
-              "line": 311
+              "line": 314
             },
             {
               "name": "updateRelatedWork",
               "kind": "method",
-              "line": 332
+              "line": 335
             },
             {
               "name": "deleteAndReplace",
               "kind": "method",
-              "line": 354
+              "line": 357
             },
             {
               "name": "unresolvedIssueCount",
               "kind": "method",
-              "line": 372
+              "line": 375
             },
             {
               "name": "deleteRelatedWork",
               "kind": "method",
-              "line": 384
+              "line": 387
             }
           ]
         }
