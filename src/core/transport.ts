@@ -3,8 +3,20 @@ import type { Transport, RequestOptions, ApiResponse, ResolvedConfig } from './t
 import { hashAuthValue } from './auth-identity.js';
 import type { AuthProvider } from './auth.js';
 import { createAuthProvider } from './auth.js';
-import { createHttpError, TimeoutError, NetworkError, ValidationError } from './errors.js';
-import { executeWithRetry, isNetworkError, isTransportFailure } from './retry.js';
+import {
+  createHttpError,
+  HttpError,
+  TimeoutError,
+  NetworkError,
+  ValidationError,
+} from './errors.js';
+import {
+  executeWithRetry,
+  isHeadersTimeout,
+  isNetworkError,
+  isTransportFailure,
+  notRetryable,
+} from './retry.js';
 import { createMiddlewareChain } from './middleware.js';
 import { getRetryAfterMs, parseRateLimitHeaders } from './rate-limiter.js';
 import {
@@ -289,21 +301,28 @@ export class HttpTransport implements Transport {
     const fetchSignal = signals.length === 1 ? signals[0] : AbortSignal.any(signals);
 
     let response: Response;
+    let redirectedWrite: boolean;
     const doFetch = this.config.fetch ?? fetch;
     // Once a status line has arrived, only a GET may be sent again: a write the
     // server answered with a success has committed, and resending it duplicates
     // it (an issue, a comment, a page). PUT/DELETE are idempotent on paper, but
     // a replay meets a version conflict or a 404 for work that already succeeded.
     const replayable = options.method === 'GET';
+    // B011: the server-assigned request id is read from these response headers.
+    // Always-on with no config required. Prefer X-AREQUESTID (Atlassian's
+    // actual header), then fall back to X-Request-Id. The list is configurable
+    // via config.requestId.readResponseHeaders.
+    const readHeaders = this.config.requestId?.readResponseHeaders ?? DEFAULT_INBOUND_HEADERS;
 
     try {
       try {
-        response = await fetchWithCheckedRedirects(
+        ({ response, redirectedWrite } = await fetchWithCheckedRedirects(
           doFetch,
           url,
           { method: options.method, headers, body, signal: fetchSignal },
           this.config.allowedHosts,
-        );
+          readHeaders,
+        ));
       } catch (error) {
         if (error instanceof Error && error.name === 'AbortError') {
           if (timeoutController.signal.aborted) {
@@ -311,17 +330,20 @@ export class HttpTransport implements Transport {
           }
           throw error;
         }
+        // Passed through as is: fetchWithCheckedRedirects made it for the GET after
+        // a write, or a custom `config.fetch` threw it, and its `retryable` decides.
+        if (error instanceof NetworkError) throw error;
         if (isTransportFailure(error)) {
-          throw toNetworkError(error, isNetworkError(error));
+          // A headers timeout fires after the whole request was sent, so the
+          // server may be applying a write: only a GET is sent again.
+          throw toNetworkError(
+            error,
+            isNetworkError(error) && (replayable || !isHeadersTimeout(error)),
+          );
         }
         throw error;
       }
 
-      // B011: capture the server-assigned request id from the response headers.
-      // Always-on with no config required. Prefer X-AREQUESTID (Atlassian's
-      // actual header), then fall back to X-Request-Id. The list is configurable
-      // via config.requestId.readResponseHeaders.
-      const readHeaders = this.config.requestId?.readResponseHeaders ?? DEFAULT_INBOUND_HEADERS;
       const serverRequestId = captureRequestId(response.headers, readHeaders);
 
       if (!response.ok) {
@@ -348,7 +370,10 @@ export class HttpTransport implements Transport {
         );
         const retryAfterMs = getRetryAfterMs(response.headers);
         const retryAfterSeconds = retryAfterMs !== undefined ? retryAfterMs / 1000 : undefined;
-        throw createHttpError(response.status, errBody, retryAfterSeconds, serverRequestId);
+        const error = createHttpError(response.status, errBody, retryAfterSeconds, serverRequestId);
+        // This status answers the GET a write was redirected to, not the write:
+        // the server may have applied it, so a retry must not send it again.
+        throw redirectedWrite ? notRetryable(error) : error;
       }
 
       const data: unknown = await parseBodyWithTimeoutHandling(
@@ -521,29 +546,77 @@ interface OutgoingRequest {
  * body-less GET. That GET is then left to `fetch`. A redirect that keeps going
  * past the hop limit, or that has no `Location`, is returned as the response,
  * so the caller sees it as an `HttpError`.
+ *
+ * A refused redirect that would have replayed the body (a 307/308, or a
+ * 301/302 on a method other than POST) throws the {@link ValidationError} from
+ * {@link resolveRedirectTarget}: the server asked for the request again, so
+ * nothing was applied. A refused redirect that drops the body throws an
+ * `HttpError` with the 3xx status and its request id instead, because the
+ * server may already have applied the write and a resend could apply it twice.
+ * Nothing is sent to the refused target in either case. For the same reason a
+ * transport failure (or any `NetworkError`) on the GET that follows an accepted
+ * body-dropping redirect is a {@link NetworkError} that is not retried, any
+ * other error thrown there is not retried, and `redirectedWrite` tells the
+ * caller that the response answers that GET, so its error status is not
+ * retried either.
  */
 async function fetchWithCheckedRedirects(
   doFetch: typeof fetch,
   url: string,
   request: OutgoingRequest,
   allowedHosts: readonly string[],
-): Promise<Response> {
+  requestIdHeaders: readonly string[],
+): Promise<{ readonly response: Response; readonly redirectedWrite: boolean }> {
   let target = url;
   let current = request;
   for (let hops = 0; ; hops++) {
     if (current.method === 'GET') {
-      return doFetch(target, { ...current, redirect: 'follow' });
+      if (current === request) {
+        return {
+          response: await doFetch(target, { ...current, redirect: 'follow' }),
+          redirectedWrite: false,
+        };
+      }
+      try {
+        return {
+          response: await doFetch(target, { ...current, redirect: 'follow' }),
+          redirectedWrite: true,
+        };
+      } catch (error) {
+        // This GET follows a write the server may already have applied, so no
+        // failure here may send the write again, including whatever a custom
+        // `config.fetch` throws.
+        if (error instanceof NetworkError || isTransportFailure(error)) {
+          throw toNetworkError(error, false);
+        }
+        throw error instanceof Error ? notRetryable(error) : error;
+      }
     }
     const response = await doFetch(target, { ...current, redirect: 'manual' });
     const location = response.headers.get('location');
     if (!REDIRECT_STATUSES.has(response.status) || location === null || hops === MAX_REDIRECTS) {
-      return response;
+      return { response, redirectedWrite: false };
     }
-    target = resolveRedirectTarget(location, target, allowedHosts);
+    // Release the connection before the target check, which may throw.
     await cancelBodyQuietly(response.body);
     const becomesGet =
       response.status === 303 ||
       ((response.status === 301 || response.status === 302) && current.method === 'POST');
+    try {
+      target = resolveRedirectTarget(location, target, allowedHosts);
+    } catch (error) {
+      if (!becomesGet) throw error;
+      throw new HttpError(
+        `The server answered the ${current.method} request with a ${response.status} redirect ` +
+          `this client will not follow. It may already have applied it, so do not send it ` +
+          `again: ${(error as Error).message}`,
+        response.status,
+        undefined,
+        { cause: error },
+        undefined,
+        captureRequestId(response.headers, requestIdHeaders),
+      );
+    }
     if (becomesGet) {
       const headers = Object.fromEntries(
         Object.entries(current.headers).filter(([name]) => name.toLowerCase() !== 'content-type'),
