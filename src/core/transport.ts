@@ -553,8 +553,9 @@ interface OutgoingRequest {
  * `HttpError` with the 3xx status and its request id instead, because the
  * server may already have applied the write and a resend could apply it twice.
  * Nothing is sent to the refused target in either case. For the same reason a
- * transport failure on the GET that follows an accepted body-dropping redirect
- * is a {@link NetworkError} that is not retried, and `redirectedWrite` tells the
+ * transport failure (or any `NetworkError`) on the GET that follows an accepted
+ * body-dropping redirect is a {@link NetworkError} that is not retried, any
+ * other error thrown there is not retried, and `redirectedWrite` tells the
  * caller that the response answers that GET, so its error status is not
  * retried either.
  */
@@ -581,9 +582,13 @@ async function fetchWithCheckedRedirects(
           redirectedWrite: true,
         };
       } catch (error) {
-        // This GET follows a write the server may already have applied, so a
-        // transport failure here must not send the write again.
-        throw isTransportFailure(error) ? toNetworkError(error, false) : error;
+        // This GET follows a write the server may already have applied, so no
+        // failure here may send the write again, including whatever a custom
+        // `config.fetch` throws.
+        if (error instanceof NetworkError || isTransportFailure(error)) {
+          throw toNetworkError(error, false);
+        }
+        throw error instanceof Error ? notRetryable(error) : error;
       }
     }
     const response = await doFetch(target, { ...current, redirect: 'manual' });

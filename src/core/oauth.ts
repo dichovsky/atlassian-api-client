@@ -139,7 +139,10 @@ export class OAuthError extends HttpError {
  * Behaviour:
  * 1. Injects `Authorization: Bearer <token>` into every outgoing request.
  * 2. On a 401 {@link AuthenticationError}, calls the token endpoint with the refresh token.
- * 3. Retries the original request once with the new access token.
+ * 3. Retries the original request once with the new access token. Exception: a
+ *    401 on the GET that follows a write's 303 (or a POST's 301/302) is rethrown
+ *    with no refresh and no resend, because the server may already have applied
+ *    the write.
  * 4. Invokes {@link OAuthRefreshConfig.onTokenRefreshed} so callers can persist the new tokens.
  *
  * SECURITY (B036): Validates `tokenEndpoint` against the host allowlist at

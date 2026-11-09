@@ -19,6 +19,7 @@ import {
   CircuitBreakerOpenError,
   HttpError,
   NetworkError,
+  RateLimitError,
   ValidationError,
 } from '../../src/core/errors.js';
 import { createCircuitBreakerMiddleware } from '../../src/core/circuit-breaker.js';
@@ -384,6 +385,39 @@ describe('a write whose followed body-dropping redirect fails at the transport',
     expect(((error as NetworkError).cause as TypeError).message).toBe('fetch failed');
     expect(fetchMock.mock.calls.map(([, init]) => init.method)).toEqual([method, 'GET']);
   });
+
+  it.each<[string, () => unknown]>([
+    ['a NetworkError without a code', () => new NetworkError('proxy down')],
+    ['a coded NetworkError', () => new NetworkError('proxy down', { cause: { code: 'EPIPE' } })],
+    ['a RateLimitError', () => new RateLimitError('slow down', 0)],
+    ['an HttpError 503', () => new HttpError('busy', 503)],
+    ['a non-Error value', () => 'boom'],
+  ])(
+    'does not resend a 303-redirected POST when a custom fetch rejects its GET with %s',
+    async (_label, reason) => {
+      const thrown = reason();
+      const fetchMock = vi.fn((_url: string, init: RequestInit) =>
+        init.method === 'GET'
+          ? Promise.reject(thrown)
+          : Promise.resolve(
+              new Response(null, { status: 303, headers: { location: `${TENANT}/t` } }),
+            ),
+      );
+
+      const error = await transport(fetchMock as unknown as typeof fetch)
+        .request({ method: 'POST', path: '/x', body: {} })
+        .catch((e: unknown) => e);
+
+      expect(fetchMock.mock.calls.map(([, init]) => init.method)).toEqual(['POST', 'GET']);
+      if (thrown instanceof NetworkError) {
+        expect(error).toBeInstanceOf(NetworkError);
+        expect((error as NetworkError).retryable).toBe(false);
+        expect((error as NetworkError).cause).toBe(thrown);
+      } else {
+        expect(error).toBe(thrown);
+      }
+    },
+  );
 
   it('leaves an argument error on the follow-up GET a raw TypeError', async () => {
     const bug = new TypeError('fetch failed', { cause: { code: 'UND_ERR_INVALID_ARG' } });
