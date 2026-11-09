@@ -5,11 +5,11 @@
  * and run through the real argv → router → client → transport path with a
  * fake fetch; a rejected command must fail before any request is sent.
  */
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { afterAll, describe, expect, it } from 'vitest';
+import { afterAll, describe, expect, it, onTestFinished } from 'vitest';
 import { runCliWire, type CliWireResult, type WireRequest } from '../helpers/cli-wire.js';
 
 const SKILL_DIR = resolve(
@@ -480,4 +480,65 @@ describe('M-JU1: universal-avatar store sends a typed image', () => {
     expect(typed.headers['content-type']).toBe('image/png');
     expect(existsSync(file)).toBe(true);
   });
+});
+
+describe('round 1: blank values the first pass missed', () => {
+  it('screens move-tab sends the skill example and refuses a blank pos', async () => {
+    const argv = example(SCHEMES, 'jira screens move-tab');
+    const req = only(await runCliWire(argv));
+    expect(req.method).toBe('POST');
+    expect(req.path).toBe('/rest/api/3/screens/10001/tabs/1/move/0');
+    await refused([...argv.slice(0, -1), ' '], 'pos must be a non-negative integer, got:  ');
+  });
+
+  it.each([
+    ['--after', ''],
+    ['--after', ' '],
+    ['--position', ''],
+  ])('priorities move refuses an empty %s', async (flag, blank) => {
+    const argv = example(META, 'jira priorities move', '--after');
+    await refused([...argv.slice(0, -2), flag, blank], `Missing value for ${flag}`);
+  });
+
+  it.each([
+    ['confluence pages list', '/pages'],
+    ['confluence blog-posts list', '/blogposts'],
+  ])('%s trims --space-id and refuses a blank or non-decimal one', async (prefix, path) => {
+    const argv = example(CONF, prefix, '--limit 25');
+    const req = only(await runCliWire(withFlag(argv, '--space-id', ' 654321 ')));
+    expect(req.path).toBe(`${C}${path}`);
+    expect(req.query.getAll('space-id')).toEqual(['654321']);
+    expect(req.url).not.toContain('+');
+    await refused(withFlag(argv, '--space-id', ''), '--space-id must not be empty');
+    await refused(withFlag(argv, '--space-id', '  '), '--space-id must not be empty');
+    await refused(
+      withFlag(argv, '--space-id', 'abc'),
+      '--space-id must be a decimal integer ID, got: abc',
+    );
+  });
+
+  it.each(['', ' '])(
+    'attachments thumbnail --file %j is refused before the download',
+    async (blank) => {
+      // Run in a scratch cwd: a regression would write a file named " " there, not in the repo.
+      const scratch = mkdtempSync(join(tmpdir(), 'atlas-blank-thumb-'));
+      const cwd = process.cwd();
+      process.chdir(scratch);
+      onTestFinished(() => {
+        process.chdir(cwd);
+        rmSync(scratch, { recursive: true, force: true });
+      });
+      const argv = withFlag(
+        example(CONF, 'confluence attachments thumbnail', '--file'),
+        '--file',
+        blank,
+      );
+      const run = await runCliWire(argv, { respond: { body: 'PNG' } });
+      expect(run.exitCode).toBe(1);
+      expect(run.stderr).toContain('--file must not be empty');
+      expect(run.stderr).not.toContain('ENOENT');
+      expect(run.requests).toHaveLength(0);
+      expect(readdirSync(scratch)).toEqual([]);
+    },
+  );
 });

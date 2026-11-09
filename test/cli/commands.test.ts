@@ -1436,14 +1436,14 @@ describe('executeConfluenceCommand', () => {
     it('pages list calls client.pages.list with params', async () => {
       // Arrange
       confluencePagesMock.list.mockResolvedValue({ results: [] });
-      const parsed = cmd('pages', 'list', [], { 'space-id': 'SPACE1', limit: '25' });
+      const parsed = cmd('pages', 'list', [], { 'space-id': '12345', limit: '25' });
 
       // Act
       await executeConfluenceCommand(parsed, GLOBALS);
 
       // Assert
       expect(confluencePagesMock.list).toHaveBeenCalledWith(
-        expect.objectContaining({ spaceId: 'SPACE1', limit: 25 }),
+        expect.objectContaining({ spaceId: '12345', limit: 25 }),
       );
     });
 
@@ -3180,14 +3180,14 @@ describe('executeConfluenceCommand', () => {
     it('blog-posts list with space-id and limit', async () => {
       // Arrange
       confluenceBlogPostsMock.list.mockResolvedValue({ results: [] });
-      const parsed = cmd('blog-posts', 'list', [], { 'space-id': 'S1', limit: '5' });
+      const parsed = cmd('blog-posts', 'list', [], { 'space-id': '67890', limit: '5' });
 
       // Act
       await executeConfluenceCommand(parsed, GLOBALS);
 
       // Assert
       expect(confluenceBlogPostsMock.list).toHaveBeenCalledWith(
-        expect.objectContaining({ spaceId: 'S1', limit: 5 }),
+        expect.objectContaining({ spaceId: '67890', limit: 5 }),
       );
     });
 

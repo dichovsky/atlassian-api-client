@@ -1821,8 +1821,8 @@ async function executePriorities(client: JiraClient, cmd: ParsedCommand): Promis
     case 'move': {
       const idsRaw = requireOpt(opts['ids'], '--ids');
       const ids = splitCsvIds(idsRaw);
-      const after = asString(opts['after']);
-      const position = asString(opts['position']);
+      const after = nonBlankOpt(opts['after'], '--after');
+      const position = nonBlankOpt(opts['position'], '--position');
       if (after !== undefined && position !== undefined) {
         throw new Error('priorities move accepts either --after or --position, not both');
       }
@@ -7280,11 +7280,7 @@ async function executeScreens(client: JiraClient, cmd: ParsedCommand): Promise<u
         'screenId',
       );
       const tabId = parsePositiveIntArg(requireArg(cmd.positionalArgs[1], 'tabId'), 'tabId');
-      const posStr = requireArg(cmd.positionalArgs[2], 'pos');
-      const posNum = Number(posStr);
-      if (!Number.isInteger(posNum) || posNum < 0) {
-        throw new Error(`pos must be a non-negative integer, got: ${posStr}`);
-      }
+      const posNum = parseNonNegativeIntArg(requireArg(cmd.positionalArgs[2], 'pos'), 'pos');
       await client.screens.moveTab(screenId, tabId, posNum);
       return { moved: true };
     }

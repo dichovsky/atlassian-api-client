@@ -37,7 +37,6 @@ import type {
   SpaceStatus,
   SpaceType,
   SpaceRolePrincipalType,
-  SpaceRoleType,
   VersionSortOrder,
   WhiteboardLocale,
   WhiteboardTemplateKey,
@@ -626,9 +625,8 @@ async function executeSpaces(client: ConfluenceClient, cmd: ParsedCommand): Prom
 
     // ── role assignments (B207-B208) ──────────────────────────────────────
     case 'role-assignments': {
-      // The spec types `role-type` as an open string (SYSTEM, CUSTOM or tenant-defined);
-      // the SDK param keeps its SYSTEM | CUSTOM type, so the CLI casts.
-      const raRoleType = trimmedFilter(opts, 'role-type') as SpaceRoleType | undefined;
+      // The spec types `role-type` as an open string (SYSTEM, CUSTOM or tenant-defined).
+      const raRoleType = trimmedFilter(opts, 'role-type');
       const raPrincipalType = asEnum(
         opts['principal-type'],
         SPACE_ROLE_PRINCIPAL_TYPES,
@@ -1387,6 +1385,7 @@ async function executeAttachments(client: ConfluenceClient, cmd: ParsedCommand):
         const buffer = await client.attachments.downloadThumbnail(attachmentId, thumbnailParams);
         return { downloaded: true, byteLength: buffer.byteLength };
       }
+      if (file.trim() === '') throw new Error('--file must not be empty');
       const { access, writeFile } = await import('node:fs/promises');
       const exists = await access(file).then(
         () => true,
@@ -1949,18 +1948,22 @@ function parseCsvIntList(raw: string | undefined, flag: string): readonly number
 }
 
 /**
- * `pages list` / `blog-posts list --space-id`: one space ID. The SDK sends it
- * as one `space-id` value, so `1,2` would match no space (multi-space listing
- * is not supported yet).
+ * `pages list` / `blog-posts list --space-id`: one decimal space ID, trimmed.
+ * The SDK sends it as one `space-id` value, so `1,2` would match no space
+ * (multi-space listing is not supported yet); a blank value is refused.
  */
 function singleSpaceId(opts: ParsedCommand['options']): string | undefined {
-  const spaceId = asString(opts['space-id']);
-  if (spaceId?.includes(',')) throw new Error(`--space-id takes one space ID, got: ${spaceId}`);
+  const spaceId = trimmedFilter(opts, 'space-id');
+  if (spaceId === undefined) return undefined;
+  if (spaceId.includes(',')) throw new Error(`--space-id takes one space ID, got: ${spaceId}`);
+  if (!DECIMAL_ID.test(spaceId)) {
+    throw new Error(`--space-id must be a decimal integer ID, got: ${spaceId}`);
+  }
   return spaceId;
 }
 
 /**
- * An open-string filter flag (`--role-type`), sent trimmed. A present but
+ * A single-value filter flag (`--role-type`, `--space-id`), sent trimmed. A present but
  * blank value is refused: it would go out blank and widen the listing.
  */
 function trimmedFilter(opts: ParsedCommand['options'], flag: string): string | undefined {
@@ -2989,8 +2992,9 @@ function asPositiveInt(value: string | boolean | undefined, name: string): numbe
 }
 
 /**
- * Parse an optional epoch-millisecond value (integer, zero included). A blank
- * value is refused, not read as 0 (`Number('')` is 0).
+ * Parse an optional non-negative integer flag (`--limit`, an epoch-millisecond
+ * bound, a match index; zero included). A blank value is refused, not read as
+ * 0 (`Number('')` is 0).
  */
 function asNonNegativeInt(value: string | boolean | undefined, name: string): number | undefined {
   if (typeof value !== 'string') return undefined;
