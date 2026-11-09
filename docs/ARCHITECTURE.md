@@ -292,7 +292,7 @@ delay = min(baseDelay * 2^attempt + random_jitter, maxDelay)
 **Non-retryable:**
 
 - HTTP 400, 401, 403, 404, 409 (client errors)
-- Timeout errors (already represents a long wait)
+- `TimeoutError` (the request timeout, which already represents a long wait)
 - `OAuthError` with `refreshStatus` in the 4xx range (misconfigured OAuth)
 - A write (POST, PUT, PATCH, DELETE) in these cases, where the server may already have applied it: its response headers timed out, its success body failed mid-read, or anything failed on the GET that follows its 303 (or a POST's 301/302). That covers a transport failure (`NetworkError`, `retryable: false`), any status including 5xx and 429, and a 401 under `createOAuthRefreshMiddleware`, which rethrows without refreshing the token. A write answered 500, 502, 503 or 504, or whose connection fails before any response, is still retried (see above)
 - A redirect the client refuses on a write (off `allowedHosts`, a non-https scheme such as plain `http://`, a non-default port, a URL with a username or password, an unparseable `Location`): `HttpError` with the 3xx status for a 303 or a POST's 301/302, `ValidationError` for a 307/308 or a 301/302 on PUT, PATCH or DELETE

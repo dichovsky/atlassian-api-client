@@ -25,20 +25,13 @@ import {
 import { createOAuthRefreshMiddleware } from '../../src/core/oauth.js';
 import { HttpTransport } from '../../src/core/transport.js';
 import type { ClientConfig, HttpMethod, Middleware } from '../../src/core/types.js';
+import { section } from '../helpers/markdown.js';
+import { MockServer } from '../helpers/mock-server.js';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const README = readFileSync(resolve(REPO_ROOT, 'README.md'), 'utf8');
 const ARCHITECTURE = readFileSync(resolve(REPO_ROOT, 'docs', 'ARCHITECTURE.md'), 'utf8');
-
-/** Text between a heading line and the next heading of the same or higher level. */
-function section(markdown: string, heading: string): string {
-  const start = markdown.indexOf(heading);
-  expect(start, `heading "${heading}" not found`).toBeGreaterThanOrEqual(0);
-  const level = /^#+/.exec(heading)?.[0].length ?? 1;
-  const rest = markdown.slice(start + heading.length);
-  const next = new RegExp(`\\n#{1,${level}} `).exec(rest);
-  return next === null ? rest : rest.slice(0, next.index);
-}
+const SECURITY = readFileSync(resolve(REPO_ROOT, 'SECURITY.md'), 'utf8');
 
 /** Text from a bold label such as `**Retryable conditions:**` up to the next blank-line paragraph that is not a list. */
 function list(markdown: string, label: string): string {
@@ -279,6 +272,8 @@ describe('README and ARCHITECTURE describe the retries the transport makes', () 
     expect(retryable).not.toContain('- Network errors (connection reset, DNS failure)');
 
     const nonRetryable = list(ARCHITECTURE, '**Non-retryable:**');
+    expect(nonRetryable).toContain('- `TimeoutError` (the request timeout');
+    expect(nonRetryable).not.toContain('- Timeout errors');
     expect(nonRetryable).toContain('- A write (POST, PUT, PATCH, DELETE) in these cases');
     expect(nonRetryable).toContain('- A redirect the client refuses on a write');
     expect(nonRetryable).toContain(
@@ -389,6 +384,61 @@ describe('README and ARCHITECTURE describe how redirects on writes are handled',
     expect(run.error).toBeInstanceOf(AuthenticationError);
     expect(refreshes).toBe(0);
     expect(run.calls).toHaveLength(2);
+  });
+
+  it("the GET after an accepted 303 is left to fetch with redirect: follow and the write's Authorization", async () => {
+    const sent: { redirect: RequestInit['redirect']; authorization: string | null }[] = [];
+    const answer = thenAnswer(redirectTo(303, `${TENANT}/task/1`), status(200));
+    const run = await send('POST', (call, init) => {
+      sent.push({
+        redirect: init.redirect,
+        authorization: new Headers(init.headers).get('authorization'),
+      });
+      return answer(call, init);
+    });
+    expect(run.error).toBeUndefined();
+    const basic = `Basic ${Buffer.from('a@b.c:TOKEN').toString('base64')}`;
+    expect(sent).toEqual([
+      { redirect: 'manual', authorization: basic },
+      { redirect: 'follow', authorization: basic },
+    ]);
+  });
+
+  it("Node's built-in fetch drops Authorization on a cross-origin redirect", async () => {
+    const origin = new MockServer();
+    const other = new MockServer();
+    await Promise.all([origin.start(), other.start()]);
+    try {
+      origin.setHandler('/same', { status: 302, headers: { location: '/end' } });
+      origin.setHandler('/cross', { status: 302, headers: { location: `${other.baseUrl}/end` } });
+      const headers = { authorization: 'Bearer secret' };
+      await fetch(`${origin.baseUrl}/same`, { headers }).then((r) => r.text());
+      await fetch(`${origin.baseUrl}/cross`, { headers }).then((r) => r.text());
+      expect(origin.requests.find((r) => r.path === '/end')?.headers['authorization']).toBe(
+        'Bearer secret',
+      );
+      expect(other.requests).toHaveLength(1);
+      expect(other.requests[0]?.headers['authorization']).toBeUndefined();
+    } finally {
+      await Promise.all([origin.close(), other.close()]);
+    }
+  });
+
+  it('SECURITY scopes the write-redirect control to the hops the transport checks', () => {
+    const control = section(SECURITY, '## Security Practices')
+      .split('\n')
+      .find((line) => line.startsWith('- **Redirect checks on writes**'));
+    expect(control).toBeDefined();
+    expect(control).toContain(
+      "so the write's own redirects cannot carry it, or its `Authorization` header, to a host outside the allowlist",
+    );
+    expect(control).toContain(
+      "the body-less GET that follows keeps the request's `Authorization` header and is sent with `redirect: 'follow'`",
+    );
+    expect(control).toContain(
+      "Node's built-in `fetch` drops `Authorization` on a cross-origin hop",
+    );
+    expect(control).not.toContain('so a redirect cannot carry a write');
   });
 
   it('README and ARCHITECTURE state the refused-redirect outcomes', () => {
