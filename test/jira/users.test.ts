@@ -39,6 +39,17 @@ describe('UsersResource', () => {
         query: { accountId: 'account-123' },
       });
     });
+
+    it('forwards expand (spec getUser)', async () => {
+      transport.respondWith(makeUser('a'));
+
+      await users.get('a', { expand: 'groups,applicationRoles' });
+
+      expect(transport.lastCall?.options.query).toEqual({
+        accountId: 'a',
+        expand: 'groups,applicationRoles',
+      });
+    });
   });
 
   // ── getCurrentUser ────────────────────────────────────────────────────────
@@ -58,6 +69,15 @@ describe('UsersResource', () => {
         method: 'GET',
         path: `${BASE_URL}/myself`,
       });
+      expect(transport.lastCall?.options.query).toEqual({ expand: undefined });
+    });
+
+    it('forwards expand (spec getCurrentUser)', async () => {
+      transport.respondWith(makeUser('me'));
+
+      await users.getCurrentUser({ expand: 'groups' });
+
+      expect(transport.lastCall?.options.query).toEqual({ expand: 'groups' });
     });
   });
 
@@ -266,6 +286,22 @@ describe('UsersResource', () => {
   });
 
   // ── bulkGet (B801) ────────────────────────────────────────────────────────
+
+  describe('bulkGet() / bulkGetEmails() reject an empty id list', () => {
+    it('bulkGet sends nothing for accountId: []', async () => {
+      await expect(users.bulkGet({ accountId: [] })).rejects.toThrow(
+        'accountId must contain at least one value',
+      );
+      expect(transport.calls).toHaveLength(0);
+    });
+
+    it('bulkGetEmails sends nothing for []', async () => {
+      await expect(users.bulkGetEmails([])).rejects.toThrow(
+        'accountIds must contain at least one value',
+      );
+      expect(transport.calls).toHaveLength(0);
+    });
+  });
 
   describe('bulkGet()', () => {
     it('calls GET /user/bulk with repeated accountId params in the path', async () => {

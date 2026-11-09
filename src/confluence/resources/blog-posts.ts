@@ -154,8 +154,19 @@ export class BlogPostsResource {
     return response.data;
   }
 
-  /** Create a new blog post. */
-  async create(data: CreateBlogPostData, params?: CreateBlogPostParams): Promise<BlogPost> {
+  /**
+   * Create a new blog post. A title is required for a current post; the
+   * spec makes it optional for `status: 'draft'`, so a draft may omit it.
+   */
+  async create(
+    data:
+      | CreateBlogPostData
+      | (Omit<CreateBlogPostData, 'title' | 'status'> & {
+          readonly status: 'draft';
+          readonly title?: string;
+        }),
+    params?: CreateBlogPostParams,
+  ): Promise<BlogPost> {
     const query: Record<string, boolean | undefined> = {};
     if (params?.private !== undefined) query['private'] = params.private;
     const response = await this.transport.request<BlogPost>({
@@ -387,7 +398,7 @@ export class BlogPostsResource {
    * Update the classification level applied to a blog post.
    *
    * The server returns 204 with no body; the resource discards the empty
-   * response. Pass `status: 'current'` — it is the only legal value.
+   * response. `status` selects the `current` or `draft` version.
    *
    * @see https://developer.atlassian.com/cloud/confluence/rest/v2/api-group-classification-level/#api-blogposts-id-classification-level-put
    */
@@ -405,7 +416,8 @@ export class BlogPostsResource {
   /**
    * Reset the blog-post classification level to the space default.
    *
-   * Body is `{ status: 'current' }`; the server returns 204.
+   * Body is `{ status }` (`current` by default, or `draft`); the server
+   * returns 204.
    *
    * @see https://developer.atlassian.com/cloud/confluence/rest/v2/api-group-classification-level/#api-blogposts-id-classification-level-reset-post
    */

@@ -5,6 +5,7 @@ import {
   type UpdateIssueParams,
 } from '../../src/jira/resources/issues.js';
 import type { Issue } from '../../src/jira/types.js';
+import { ValidationError } from '../../src/core/errors.js';
 import { MockTransport } from '../helpers/mock-transport.js';
 
 const BASE_URL = 'https://test.atlassian.net/rest/api/3';
@@ -756,19 +757,24 @@ describe('IssuesResource', () => {
   // ── deleteAllRemoteLinks (B493) ───────────────────────────────────────────
 
   describe('deleteAllRemoteLinks() — B493', () => {
-    it('sends DELETE /issue/:key/remotelink without params', async () => {
+    it.each([undefined, {}, { globalId: '' }])(
+      'rejects %j before any request (spec: globalId is required)',
+      async (params) => {
+        await expect(resource.deleteAllRemoteLinks('PROJ-1', params)).rejects.toThrow(
+          ValidationError,
+        );
+        expect(transport.calls).toHaveLength(0);
+      },
+    );
+
+    it('sends DELETE /issue/:key/remotelink?globalId=', async () => {
       transport.respondWith(undefined);
-      await resource.deleteAllRemoteLinks('PROJ-1');
+      await resource.deleteAllRemoteLinks('PROJ 1', { globalId: 'global-abc' });
       expect(transport.lastCall?.options).toMatchObject({
         method: 'DELETE',
-        path: `${BASE_URL}/issue/PROJ-1/remotelink`,
+        path: `${BASE_URL}/issue/PROJ%201/remotelink`,
+        query: { globalId: 'global-abc' },
       });
-    });
-
-    it('passes globalId as query param', async () => {
-      transport.respondWith(undefined);
-      await resource.deleteAllRemoteLinks('PROJ-1', { globalId: 'global-abc' });
-      expect(transport.lastCall?.options.query).toMatchObject({ globalId: 'global-abc' });
     });
   });
 
@@ -908,19 +914,22 @@ describe('IssuesResource', () => {
   // ── removeWatcher (B502) ──────────────────────────────────────────────────
 
   describe('removeWatcher() — B502', () => {
-    it('sends DELETE /issue/:key/watchers without params', async () => {
+    it.each([undefined, {}, { accountId: '' }])(
+      'rejects %j before any request (spec: accountId is required)',
+      async (params) => {
+        await expect(resource.removeWatcher('PROJ-1', params)).rejects.toThrow(ValidationError);
+        expect(transport.calls).toHaveLength(0);
+      },
+    );
+
+    it('sends DELETE /issue/:key/watchers?accountId=', async () => {
       transport.respondWith(undefined);
-      await resource.removeWatcher('PROJ-1');
+      await resource.removeWatcher('PROJ-1', { accountId: 'acc-1' });
       expect(transport.lastCall?.options).toMatchObject({
         method: 'DELETE',
         path: `${BASE_URL}/issue/PROJ-1/watchers`,
+        query: { accountId: 'acc-1' },
       });
-    });
-
-    it('passes accountId as query param', async () => {
-      transport.respondWith(undefined);
-      await resource.removeWatcher('PROJ-1', { accountId: 'acc-1' });
-      expect(transport.lastCall?.options.query).toMatchObject({ accountId: 'acc-1' });
     });
   });
 

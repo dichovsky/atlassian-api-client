@@ -197,6 +197,10 @@ export interface GetIssueParams {
 export interface CreateIssueData {
   readonly fields: Record<string, unknown>;
   readonly update?: Record<string, unknown[]>;
+  readonly properties?: Record<string, unknown>[];
+  /** Additional issue history details (spec: HistoryMetadata). */
+  readonly historyMetadata?: Record<string, unknown>;
+  readonly transition?: { readonly id: string; readonly looped?: boolean };
 }
 
 /** Request body for updating a Jira issue. */
@@ -204,13 +208,20 @@ export interface UpdateIssueData {
   readonly fields?: Record<string, unknown>;
   readonly update?: Record<string, unknown[]>;
   readonly properties?: Record<string, unknown>[];
+  /** Additional issue history details (spec: HistoryMetadata). */
+  readonly historyMetadata?: Record<string, unknown>;
+  readonly transition?: { readonly id: string; readonly looped?: boolean };
 }
 
 /** Request body for transitioning a Jira issue. */
 export interface TransitionData {
-  readonly transition: { readonly id: string };
+  /** `looped` keeps the issue in its status (spec: IssueTransition). */
+  readonly transition: { readonly id: string; readonly looped?: boolean };
   readonly fields?: Record<string, unknown>;
   readonly update?: Record<string, unknown[]>;
+  readonly properties?: Record<string, unknown>[];
+  /** Additional issue history details (spec: HistoryMetadata). */
+  readonly historyMetadata?: Record<string, unknown>;
 }
 
 /** Parameters for listing Jira projects. */

@@ -316,6 +316,8 @@ export class DatabasesResource {
   /**
    * List the field definitions of a database, in user-defined column order
    * (single page). **Experimental.** Spec `getDatabaseFields`.
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   async listFields(
     id: string,
@@ -330,7 +332,11 @@ export class DatabasesResource {
     return response.data;
   }
 
-  /** Iterate every field definition of a database across all pages. **Experimental.** */
+  /**
+   * Iterate every field definition of a database across all pages. **Experimental.**
+   *
+   * @experimental Atlassian marks this operation as experimental.
+   */
   async *listFieldsAll(
     id: string,
     params?: Omit<ListDatabasePageParams, 'cursor' | 'ifNoneMatch'>,
@@ -345,6 +351,8 @@ export class DatabasesResource {
   /**
    * List the views defined on a database (single page; id, name and type only).
    * **Experimental.** Spec `getDatabaseViews`.
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   async listViews(id: string, params?: ListDatabasePageParams): Promise<DatabaseViewListResponse> {
     const response = await this.transport.request<DatabaseViewListResponse>({
@@ -356,7 +364,11 @@ export class DatabasesResource {
     return response.data;
   }
 
-  /** Iterate every view of a database across all pages. **Experimental.** */
+  /**
+   * Iterate every view of a database across all pages. **Experimental.**
+   *
+   * @experimental Atlassian marks this operation as experimental.
+   */
   async *listViewsAll(
     id: string,
     params?: Omit<ListDatabasePageParams, 'cursor' | 'ifNoneMatch'>,
@@ -374,6 +386,8 @@ export class DatabasesResource {
    * `params.filter` maps field IDs to conditions (see `DatabaseEntryFilter`);
    * `params.sort` is one field ID, `-`-prefixed for descending. **Experimental.**
    * Spec `getDatabaseEntries`.
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   async listEntries(
     id: string,
@@ -392,6 +406,8 @@ export class DatabasesResource {
    * Iterate every entry of a database across all pages. Pagination is best
    * effort while the database is changing: concurrent writes can duplicate or
    * omit rows. **Experimental.**
+   *
+   * @experimental Atlassian marks this operation as experimental.
    */
   async *listEntriesAll(
     id: string,
@@ -404,7 +420,11 @@ export class DatabasesResource {
     );
   }
 
-  /** Get a single database entry by ID. **Experimental.** Spec `getDatabaseEntryById`. */
+  /**
+   * Get a single database entry by ID. **Experimental.** Spec `getDatabaseEntryById`.
+   *
+   * @experimental Atlassian marks this operation as experimental.
+   */
   async getEntry(
     id: string,
     entryId: string,

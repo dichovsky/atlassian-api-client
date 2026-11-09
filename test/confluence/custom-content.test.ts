@@ -24,18 +24,23 @@ describe('CustomContentResource', () => {
   // ── list ──────────────────────────────────────────────────────────────────
 
   describe('list()', () => {
-    it('calls GET /custom-content with no params', async () => {
+    it('calls GET /custom-content with only the required type', async () => {
       const payload = { results: [makeCustomContent('1')], _links: {} };
       transport.respondWith(payload);
 
-      const result = await resource.list();
+      const result = await resource.list({ type: 't' });
 
       expect(result).toEqual(payload);
       expect(transport.lastCall?.options).toMatchObject({
         method: 'GET',
         path: `${BASE_URL}/custom-content`,
       });
-      expect(transport.lastCall?.options.query).toBeUndefined();
+      expect(transport.lastCall?.options.query).toEqual({ type: 't' });
+    });
+
+    it('throws ValidationError without a type (spec-required)', async () => {
+      await expect(resource.list()).rejects.toThrow(ValidationError);
+      expect(transport.calls).toHaveLength(0);
     });
 
     it('forwards every spec-defined query key with kebab-case wire format', async () => {
@@ -54,7 +59,11 @@ describe('CustomContentResource', () => {
       const result = await resource.list(params);
 
       expect(result).toEqual(payload);
-      expect(transport.lastCall?.options.query).toEqual(params);
+      const { id: _id, 'space-id': _spaceId, ...scalars } = params;
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/custom-content?id=123&space-id=SPACE`,
+      );
+      expect(transport.lastCall?.options.query).toEqual(scalars);
     });
 
     it('omits keys not in the spec (no pageId/blogPostId/status drift)', async () => {
@@ -63,7 +72,8 @@ describe('CustomContentResource', () => {
       await resource.list({ type: 't', 'space-id': 'SPACE' });
 
       const query = transport.lastCall?.options.query as Record<string, unknown>;
-      expect(query).toEqual({ type: 't', 'space-id': 'SPACE' });
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/custom-content?space-id=SPACE`);
+      expect(query).toEqual({ type: 't' });
       expect(query).not.toHaveProperty('spaceId');
       expect(query).not.toHaveProperty('pageId');
       expect(query).not.toHaveProperty('blogPostId');
@@ -71,16 +81,17 @@ describe('CustomContentResource', () => {
     });
 
     it('throws ValidationError for invalid limit', async () => {
-      await expect(resource.list({ limit: 0 })).rejects.toThrow(ValidationError);
+      await expect(resource.list({ type: 't', limit: 0 })).rejects.toThrow(ValidationError);
       expect(transport.calls).toHaveLength(0);
     });
 
     it('forwards id-only filter without other keys', async () => {
       transport.respondWith({ results: [], _links: {} });
 
-      await resource.list({ id: '42' });
+      await resource.list({ type: 't', id: '42' });
 
-      expect(transport.lastCall?.options.query).toEqual({ id: '42' });
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/custom-content?id=42`);
+      expect(transport.lastCall?.options.query).toEqual({ type: 't' });
     });
   });
 
@@ -257,7 +268,7 @@ describe('CustomContentResource', () => {
         });
 
       const items: { id: string }[] = [];
-      for await (const item of resource.listAll()) {
+      for await (const item of resource.listAll({ type: 't' })) {
         items.push(item);
       }
 
@@ -288,7 +299,7 @@ describe('CustomContentResource', () => {
         })
         .respondWith({ results: [], _links: {} });
 
-      for await (const _ of resource.listAll()) {
+      for await (const _ of resource.listAll({ type: 't' })) {
         /* consume */
       }
 
@@ -299,7 +310,7 @@ describe('CustomContentResource', () => {
       transport.respondWith({ results: [makeCustomContent('only')], _links: {} });
 
       const items: { id: string }[] = [];
-      for await (const item of resource.listAll()) {
+      for await (const item of resource.listAll({ type: 't' })) {
         items.push(item);
       }
 

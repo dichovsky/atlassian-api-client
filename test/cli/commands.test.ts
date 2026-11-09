@@ -2460,7 +2460,7 @@ describe('executeConfluenceCommand', () => {
       await executeConfluenceCommand(parsed, GLOBALS);
       expect(confluencePagesMock.listFooterComments).toHaveBeenCalledWith('p-1', {
         'body-format': 'storage',
-        status: 'current',
+        status: ['current'],
         sort: '-created-date',
         cursor: 'c1',
         limit: 20,
@@ -2511,8 +2511,8 @@ describe('executeConfluenceCommand', () => {
       await executeConfluenceCommand(parsed, GLOBALS);
       expect(confluencePagesMock.listInlineComments).toHaveBeenCalledWith('p-1', {
         'body-format': 'storage',
-        status: 'current',
-        'resolution-status': 'open',
+        status: ['current'],
+        'resolution-status': ['open'],
         sort: '-created-date',
         cursor: 'c2',
         limit: 15,
@@ -3002,16 +3002,26 @@ describe('executeConfluenceCommand', () => {
     });
 
     // ── space properties (B209-B213) ────────────────────────────────────────
-    it('spaces list-properties passes key + sort', async () => {
+    it('spaces list-properties passes key + limit', async () => {
       confluenceSpacesMock.listProperties.mockResolvedValue({ results: [] });
       await executeConfluenceCommand(
-        cmd('spaces', 'list-properties', ['SP-1'], { key: 'k', sort: 'key', limit: '5' }),
+        cmd('spaces', 'list-properties', ['SP-1'], { key: 'k', limit: '5' }),
         GLOBALS,
       );
       expect(confluenceSpacesMock.listProperties).toHaveBeenCalledWith(
         'SP-1',
-        expect.objectContaining({ key: 'k', sort: 'key', limit: 5 }),
+        expect.objectContaining({ key: 'k', limit: 5 }),
       );
+    });
+
+    it('spaces list-properties rejects --sort (not defined by the spec)', async () => {
+      await expect(
+        executeConfluenceCommand(
+          cmd('spaces', 'list-properties', ['SP-1'], { sort: 'key' }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--sort is not supported by spaces list-properties');
+      expect(confluenceSpacesMock.listProperties).not.toHaveBeenCalled();
     });
 
     it('spaces create-property parses JSON --value', async () => {
@@ -3198,7 +3208,7 @@ describe('executeConfluenceCommand', () => {
         expect.objectContaining({
           cursor: 'tok-next',
           title: 'My Post',
-          status: 'current',
+          status: ['current'],
           sort: '-created-date',
           'body-format': 'storage',
         }),
@@ -3639,7 +3649,9 @@ describe('executeConfluenceCommand', () => {
         cmd('blog-posts', 'reset-classification-level', ['bp-1']),
         GLOBALS,
       );
-      expect(confluenceBlogPostsMock.resetClassificationLevel).toHaveBeenCalledWith('bp-1');
+      expect(confluenceBlogPostsMock.resetClassificationLevel).toHaveBeenCalledWith('bp-1', {
+        status: 'current',
+      });
       expect(result).toEqual({ reset: true });
     });
 
@@ -3677,7 +3689,7 @@ describe('executeConfluenceCommand', () => {
       await executeConfluenceCommand(parsed, GLOBALS);
       expect(confluenceBlogPostsMock.listFooterComments).toHaveBeenCalledWith(
         'bp-1',
-        expect.objectContaining({ status: 'current', sort: '-created-date' }),
+        expect.objectContaining({ status: ['current'], sort: '-created-date' }),
       );
     });
 
@@ -3689,7 +3701,7 @@ describe('executeConfluenceCommand', () => {
       await executeConfluenceCommand(parsed, GLOBALS);
       expect(confluenceBlogPostsMock.listInlineComments).toHaveBeenCalledWith(
         'bp-1',
-        expect.objectContaining({ 'resolution-status': 'open' }),
+        expect.objectContaining({ 'resolution-status': ['open'] }),
       );
     });
 
@@ -3939,7 +3951,7 @@ describe('executeConfluenceCommand', () => {
       >;
       expect(arg).toMatchObject({
         'body-format': 'atlas_doc_format',
-        status: 'current',
+        status: ['current'],
         sort: '-modified-date',
       });
     });
@@ -4000,7 +4012,7 @@ describe('executeConfluenceCommand', () => {
       const result = await executeConfluenceCommand(cmd('comments', 'get', ['c-1']), GLOBALS);
 
       // Assert
-      expect(confluenceCommentsMock.getFooter).toHaveBeenCalledWith('c-1');
+      expect(confluenceCommentsMock.getFooter).toHaveBeenCalledWith('c-1', expect.any(Object));
       expect(result).toEqual({ id: 'c-1' });
     });
 
@@ -4013,7 +4025,7 @@ describe('executeConfluenceCommand', () => {
       await executeConfluenceCommand(parsed, GLOBALS);
 
       // Assert
-      expect(confluenceCommentsMock.getInline).toHaveBeenCalledWith('c-1');
+      expect(confluenceCommentsMock.getInline).toHaveBeenCalledWith('c-1', expect.any(Object));
     });
 
     it('comments get throws when comment ID is missing', async () => {
@@ -5196,8 +5208,8 @@ describe('executeConfluenceCommand', () => {
       });
       await executeConfluenceCommand(parsed, GLOBALS);
       expect(confluenceLabelsMock.list).toHaveBeenCalledWith({
-        'label-id': '10,20',
-        prefix: 'global,team',
+        'label-id': ['10', '20'],
+        prefix: ['global', 'team'],
         sort: '-name',
         limit: 40,
         cursor: 'tok',
@@ -5272,7 +5284,7 @@ describe('executeConfluenceCommand', () => {
       });
       await executeConfluenceCommand(parsed, GLOBALS);
       expect(confluenceLabelsMock.listBlogPosts).toHaveBeenCalledWith('lbl-1', {
-        'space-id': '100,200',
+        'space-id': ['100', '200'],
         'body-format': 'atlas_doc_format',
         sort: '-id',
         limit: 15,
@@ -5317,7 +5329,7 @@ describe('executeConfluenceCommand', () => {
       });
       await executeConfluenceCommand(parsed, GLOBALS);
       expect(confluenceLabelsMock.listPages).toHaveBeenCalledWith('lbl-1', {
-        'space-id': '100',
+        'space-id': ['100'],
         sort: '-title',
         limit: 25,
         cursor: 'cur',
@@ -5370,14 +5382,14 @@ describe('executeConfluenceCommand', () => {
     it('labels list-for-space forwards prefix, sort, limit, cursor', async () => {
       confluenceLabelsMock.listForSpace.mockResolvedValue({ results: [] });
       const parsed = cmd('labels', 'list-for-space', ['sp-1'], {
-        prefix: 'global',
+        prefix: 'team',
         sort: '-name',
         limit: '30',
         cursor: 'c1',
       });
       await executeConfluenceCommand(parsed, GLOBALS);
       expect(confluenceLabelsMock.listForSpace).toHaveBeenCalledWith('sp-1', {
-        prefix: 'global',
+        prefix: 'team',
         sort: '-name',
         limit: 30,
         cursor: 'c1',
@@ -5792,7 +5804,7 @@ describe('executeConfluenceCommand', () => {
       >;
       expect(args).toMatchObject({
         type: 'ai.atlassian.collection',
-        'space-id': 'sp-1',
+        'space-id': ['sp-1'],
         sort: 'created-date',
         limit: 25,
       });
@@ -5821,7 +5833,7 @@ describe('executeConfluenceCommand', () => {
     it('custom-content list with --body-format forwards the flag', async () => {
       confluenceCustomContentMock.list.mockResolvedValue({ results: [], _links: {} });
       await executeConfluenceCommand(
-        cmd('custom-content', 'list', [], { 'body-format': 'storage' }),
+        cmd('custom-content', 'list', [], { type: 'ai.x', 'body-format': 'storage' }),
         GLOBALS,
       );
       const args = confluenceCustomContentMock.list.mock.calls.at(-1)?.[0] as Record<
@@ -6422,31 +6434,24 @@ describe('executeConfluenceCommand', () => {
       );
     });
 
-    it('data-policies list-spaces drops --ids that becomes empty after trimming', async () => {
-      // Arrange
-      confluenceDataPoliciesMock.listSpaces.mockResolvedValue({ results: [], _links: {} });
+    it('data-policies list-spaces rejects --ids that becomes empty after trimming', async () => {
+      // Dropping it would send an unfiltered request, like tasks list (nonEmptyFilter).
       const parsed = cmd('data-policies', 'list-spaces', [], { ids: ' , , ' });
 
-      // Act
-      await executeConfluenceCommand(parsed, GLOBALS);
-
-      // Assert
-      expect(confluenceDataPoliciesMock.listSpaces).toHaveBeenCalledWith(
-        expect.objectContaining({ ids: undefined }),
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        '--ids must not be empty',
       );
+      expect(confluenceDataPoliciesMock.listSpaces).not.toHaveBeenCalled();
     });
 
-    it('data-policies list-spaces drops non-numeric --ids and returns undefined', async () => {
-      // parseCsvIntList filters non-finite values; if all entries fail parseInt
-      // the result is undefined (empty-array guard in parseCsvIntList).
-      confluenceDataPoliciesMock.listSpaces.mockResolvedValue({ results: [], _links: {} });
+    it('data-policies list-spaces rejects non-numeric --ids instead of dropping the filter (F043)', async () => {
+      // Dropping `abc` used to send an unfiltered request; it must fail instead.
       const parsed = cmd('data-policies', 'list-spaces', [], { ids: 'abc,def' });
 
-      await executeConfluenceCommand(parsed, GLOBALS);
-
-      expect(confluenceDataPoliciesMock.listSpaces).toHaveBeenCalledWith(
-        expect.objectContaining({ ids: undefined }),
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        '--ids must contain only decimal integer IDs up to 9007199254740991, got: abc',
       );
+      expect(confluenceDataPoliciesMock.listSpaces).not.toHaveBeenCalled();
     });
 
     it('data-policies list-spaces forwards --sort, --limit, and --cursor', async () => {
@@ -6752,10 +6757,12 @@ describe('executeConfluenceCommand', () => {
       });
     });
 
-    it('space-roles list rejects invalid --role-type', async () => {
-      const parsed = cmd('space-roles', 'list', [], { 'role-type': 'bogus' });
-      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
-        '--role-type must be one of: SYSTEM, CUSTOM',
+    it('space-roles list forwards a tenant-defined --role-type (open string in the spec, F068)', async () => {
+      confluenceSpaceRolesMock.list.mockResolvedValue({ results: [], _links: {} });
+      const parsed = cmd('space-roles', 'list', [], { 'role-type': 'TENANT_DEFINED' });
+      await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluenceSpaceRolesMock.list).toHaveBeenCalledWith(
+        expect.objectContaining({ 'role-type': 'TENANT_DEFINED' }),
       );
     });
 
@@ -9367,6 +9374,7 @@ describe('executeJiraCommand', () => {
             summary: 'Fix this',
           }),
         }),
+        { updateHistory: undefined },
       );
       expect(result).toMatchObject({ key: 'PROJ-1' });
     });
@@ -9458,7 +9466,7 @@ describe('executeJiraCommand', () => {
       const result = await executeJiraCommand(cmd('issues', 'transitions', ['PROJ-1']), GLOBALS);
 
       // Assert
-      expect(jiraIssuesMock.getTransitions).toHaveBeenCalledWith('PROJ-1');
+      expect(jiraIssuesMock.getTransitions).toHaveBeenCalledWith('PROJ-1', {});
       expect(result).toEqual(transitions);
     });
 
@@ -9548,16 +9556,19 @@ describe('executeJiraCommand', () => {
 
       await executeJiraCommand(parsed, GLOBALS);
 
-      expect(jiraIssuesMock.create).toHaveBeenCalledWith({
-        fields: {
-          labels: ['a'],
-          project: { key: 'PROJ' },
-          issuetype: { name: 'Sub-task' },
-          summary: 'Child',
-          parent: { key: 'PROJ-1' },
+      expect(jiraIssuesMock.create).toHaveBeenCalledWith(
+        {
+          fields: {
+            labels: ['a'],
+            project: { key: 'PROJ' },
+            issuetype: { name: 'Sub-task' },
+            summary: 'Child',
+            parent: { key: 'PROJ-1' },
+          },
+          update: { issuelinks: [] },
         },
-        update: { issuelinks: [] },
-      });
+        { updateHistory: undefined },
+      );
     });
 
     it('issues update --body sends arbitrary fields/update; --summary wins', async () => {
@@ -9725,15 +9736,18 @@ describe('executeJiraCommand', () => {
         }),
         GLOBALS,
       );
-      expect(jiraIssuesMock.create).toHaveBeenCalledWith({
-        fields: {
-          project: { key: 'PROJ' },
-          issuetype: { name: 'Sub-task' },
-          summary: 'Child',
-          parent: { key: 'PROJ-1' },
+      expect(jiraIssuesMock.create).toHaveBeenCalledWith(
+        {
+          fields: {
+            project: { key: 'PROJ' },
+            issuetype: { name: 'Sub-task' },
+            summary: 'Child',
+            parent: { key: 'PROJ-1' },
+          },
+          update: { labels: [{ add: 'a' }] },
         },
-        update: { labels: [{ add: 'a' }] },
-      });
+        { updateHistory: undefined },
+      );
     });
 
     it('issues create keeps an update.parent op when --parent is not given', async () => {
@@ -9747,10 +9761,13 @@ describe('executeJiraCommand', () => {
         }),
         GLOBALS,
       );
-      expect(jiraIssuesMock.create).toHaveBeenCalledWith({
-        fields: { project: { key: 'PROJ' }, issuetype: { name: 'Task' }, summary: 'S' },
-        update: { parent: [{ set: { key: 'X-1' } }] },
-      });
+      expect(jiraIssuesMock.create).toHaveBeenCalledWith(
+        {
+          fields: { project: { key: 'PROJ' }, issuetype: { name: 'Task' }, summary: 'S' },
+          update: { parent: [{ set: { key: 'X-1' } }] },
+        },
+        { updateHistory: undefined },
+      );
     });
 
     it('issues transition --resolution drops a colliding update.resolution op', async () => {
@@ -9894,7 +9911,7 @@ describe('executeJiraCommand', () => {
       const payload = { fields: {} };
       jiraIssuesMock.getEditMeta.mockResolvedValue(payload);
       const result = await executeJiraCommand(cmd('issues', 'get-editmeta', ['PROJ-1']), GLOBALS);
-      expect(jiraIssuesMock.getEditMeta).toHaveBeenCalledWith('PROJ-1');
+      expect(jiraIssuesMock.getEditMeta).toHaveBeenCalledWith('PROJ-1', {});
       expect(result).toEqual(payload);
     });
 
@@ -9978,27 +9995,23 @@ describe('executeJiraCommand', () => {
 
     // ── delete-all-remotelinks (B493) ──────────────────────────────────────
 
-    it('issues delete-all-remotelinks calls client.issues.deleteAllRemoteLinks', async () => {
-      jiraIssuesMock.deleteAllRemoteLinks.mockResolvedValue(undefined);
-      const result = await executeJiraCommand(
-        cmd('issues', 'delete-all-remotelinks', ['PROJ-1']),
-        GLOBALS,
-      );
-      expect(jiraIssuesMock.deleteAllRemoteLinks).toHaveBeenCalledWith('PROJ-1', {
-        globalId: undefined,
-      });
-      expect(result).toEqual({ deleted: true });
+    it('issues delete-all-remotelinks requires --global-id (spec: globalId required)', async () => {
+      await expect(
+        executeJiraCommand(cmd('issues', 'delete-all-remotelinks', ['PROJ-1']), GLOBALS),
+      ).rejects.toThrow('Missing required option: --global-id');
+      expect(jiraIssuesMock.deleteAllRemoteLinks).not.toHaveBeenCalled();
     });
 
     it('issues delete-all-remotelinks passes globalId', async () => {
       jiraIssuesMock.deleteAllRemoteLinks.mockResolvedValue(undefined);
-      await executeJiraCommand(
+      const result = await executeJiraCommand(
         cmd('issues', 'delete-all-remotelinks', ['PROJ-1'], { 'global-id': 'gid-1' }),
         GLOBALS,
       );
       expect(jiraIssuesMock.deleteAllRemoteLinks).toHaveBeenCalledWith('PROJ-1', {
         globalId: 'gid-1',
       });
+      expect(result).toEqual({ deleted: true });
     });
 
     // ── list-remotelinks (B494) ────────────────────────────────────────────
@@ -10104,24 +10117,23 @@ describe('executeJiraCommand', () => {
 
     // ── remove-watcher (B502) ──────────────────────────────────────────────
 
-    it('issues remove-watcher calls client.issues.removeWatcher and returns { removed: true }', async () => {
-      jiraIssuesMock.removeWatcher.mockResolvedValue(undefined);
-      const result = await executeJiraCommand(cmd('issues', 'remove-watcher', ['PROJ-1']), GLOBALS);
-      expect(jiraIssuesMock.removeWatcher).toHaveBeenCalledWith('PROJ-1', {
-        accountId: undefined,
-      });
-      expect(result).toEqual({ removed: true });
+    it('issues remove-watcher requires --account-id (spec: accountId required)', async () => {
+      await expect(
+        executeJiraCommand(cmd('issues', 'remove-watcher', ['PROJ-1']), GLOBALS),
+      ).rejects.toThrow('Missing required option: --account-id');
+      expect(jiraIssuesMock.removeWatcher).not.toHaveBeenCalled();
     });
 
-    it('issues remove-watcher passes accountId', async () => {
+    it('issues remove-watcher passes accountId and returns { removed: true }', async () => {
       jiraIssuesMock.removeWatcher.mockResolvedValue(undefined);
-      await executeJiraCommand(
+      const result = await executeJiraCommand(
         cmd('issues', 'remove-watcher', ['PROJ-1'], { 'account-id': 'acc-1' }),
         GLOBALS,
       );
       expect(jiraIssuesMock.removeWatcher).toHaveBeenCalledWith('PROJ-1', {
         accountId: 'acc-1',
       });
+      expect(result).toEqual({ removed: true });
     });
 
     // ── get-watchers (B503) ────────────────────────────────────────────────
@@ -10163,7 +10175,7 @@ describe('executeJiraCommand', () => {
       const result = await executeJiraCommand(cmd('issues', 'get-agile', ['PROJ-1']), GLOBALS);
 
       // Assert
-      expect(jiraIssuesMock.getAgile).toHaveBeenCalledWith('PROJ-1');
+      expect(jiraIssuesMock.getAgile).toHaveBeenCalledWith('PROJ-1', {});
       expect(result).toEqual(agileIssue);
     });
 
@@ -10341,12 +10353,14 @@ describe('executeJiraCommand', () => {
     // ── worklog ───────────────────────────────────────────────────────────────
 
     it('issues delete-all-worklogs calls deleteAllWorklogs with ids and returns { deleted: true }', async () => {
-      jiraIssuesMock.deleteAllWorklogs.mockResolvedValue(undefined);
+      jiraIssuesMock.deleteAllWorklogs.mockResolvedValue({ partial: false });
       const result = await executeJiraCommand(
         cmd('issues', 'delete-all-worklogs', ['PROJ-1'], { ids: '10001,10002' }),
         GLOBALS,
       );
-      expect(jiraIssuesMock.deleteAllWorklogs).toHaveBeenCalledWith('PROJ-1', [10001, 10002]);
+      expect(jiraIssuesMock.deleteAllWorklogs).toHaveBeenCalledWith('PROJ-1', [10001, 10002], {
+        returnOutcome: true,
+      });
       expect(result).toEqual({ deleted: true });
     });
 
@@ -10710,7 +10724,7 @@ describe('executeJiraCommand', () => {
     });
 
     it('issues move-worklog calls moveWorklog with ids and returns { moved: true }', async () => {
-      jiraIssuesMock.moveWorklog.mockResolvedValue(undefined);
+      jiraIssuesMock.moveWorklog.mockResolvedValue({ partial: false });
       const result = await executeJiraCommand(
         cmd('issues', 'move-worklog', ['PROJ-1'], { ids: '10001,10002' }),
         GLOBALS,
@@ -10724,7 +10738,7 @@ describe('executeJiraCommand', () => {
     });
 
     it('issues move-worklog passes target-issue and query params', async () => {
-      jiraIssuesMock.moveWorklog.mockResolvedValue(undefined);
+      jiraIssuesMock.moveWorklog.mockResolvedValue({ partial: false });
       await executeJiraCommand(
         cmd('issues', 'move-worklog', ['PROJ-1'], {
           ids: '10001',
@@ -12605,7 +12619,7 @@ describe('executeJiraCommand', () => {
       const result = await executeJiraCommand(cmd('users', 'get', ['acc-1']), GLOBALS);
 
       // Assert
-      expect(jiraUsersMock.get).toHaveBeenCalledWith('acc-1');
+      expect(jiraUsersMock.get).toHaveBeenCalledWith('acc-1', { expand: undefined });
       expect(result).toMatchObject({ accountId: 'acc-1' });
     });
 
@@ -12939,11 +12953,20 @@ describe('executeJiraCommand', () => {
       );
     });
 
-    it('users permission-search works without optional params', async () => {
+    it('users permission-search works with only the required --permissions', async () => {
       jiraUsersMock.getPermissionUsers.mockResolvedValue([]);
-      await executeJiraCommand(cmd('users', 'permission-search'), GLOBALS);
+      await executeJiraCommand(
+        cmd('users', 'permission-search', [], { permissions: 'BROWSE_PROJECTS' }),
+        GLOBALS,
+      );
       expect(jiraUsersMock.getPermissionUsers).toHaveBeenCalledWith(
         expect.not.objectContaining({ projectKey: expect.anything() }),
+      );
+    });
+
+    it('users permission-search throws without --permissions (spec-required)', async () => {
+      await expect(executeJiraCommand(cmd('users', 'permission-search'), GLOBALS)).rejects.toThrow(
+        'Missing required option: --permissions',
       );
     });
 
@@ -13104,15 +13127,11 @@ describe('executeJiraCommand', () => {
       expect(res).toMatchObject({ total: 0 });
     });
 
-    it('users search-query works without options', async () => {
-      jiraUsersMock.searchQuery.mockResolvedValue({
-        values: [],
-        startAt: 0,
-        maxResults: 50,
-        total: 0,
-      });
-      await executeJiraCommand(cmd('users', 'search-query'), GLOBALS);
-      expect(jiraUsersMock.searchQuery).toHaveBeenCalled();
+    it('users search-query requires --query (spec-required)', async () => {
+      await expect(executeJiraCommand(cmd('users', 'search-query'), GLOBALS)).rejects.toThrow(
+        'Missing required option: --query',
+      );
+      expect(jiraUsersMock.searchQuery).not.toHaveBeenCalled();
     });
 
     // ── search-query-key ───────────────────────────────────────────────────
@@ -13130,15 +13149,11 @@ describe('executeJiraCommand', () => {
       expect(res).toMatchObject({ total: 1 });
     });
 
-    it('users search-query-key works without options', async () => {
-      jiraUsersMock.searchQueryKey.mockResolvedValue({
-        values: [],
-        startAt: 0,
-        maxResults: 50,
-        total: 0,
-      });
-      await executeJiraCommand(cmd('users', 'search-query-key'), GLOBALS);
-      expect(jiraUsersMock.searchQueryKey).toHaveBeenCalled();
+    it('users search-query-key requires --query (spec-required)', async () => {
+      await expect(executeJiraCommand(cmd('users', 'search-query-key'), GLOBALS)).rejects.toThrow(
+        'Missing required option: --query',
+      );
+      expect(jiraUsersMock.searchQueryKey).not.toHaveBeenCalled();
     });
 
     // ── viewissue-search ───────────────────────────────────────────────────
@@ -13195,12 +13210,21 @@ describe('executeJiraCommand', () => {
     it('users list-search calls client.users.listSearch', async () => {
       jiraUsersMock.listSearch.mockResolvedValue([]);
       await executeJiraCommand(
-        cmd('users', 'list-search', [], { query: 'alice', 'start-at': '5' }),
+        cmd('users', 'list-search', [], { 'start-at': '5', expand: 'groups' }),
         GLOBALS,
       );
-      expect(jiraUsersMock.listSearch).toHaveBeenCalledWith(
-        expect.objectContaining({ query: 'alice', startAt: 5 }),
-      );
+      expect(jiraUsersMock.listSearch).toHaveBeenCalledWith({
+        startAt: 5,
+        maxResults: undefined,
+        expand: 'groups',
+      });
+    });
+
+    it('users list-search rejects --query (not a GET /users/search param)', async () => {
+      await expect(
+        executeJiraCommand(cmd('users', 'list-search', [], { query: 'alice' }), GLOBALS),
+      ).rejects.toThrow('--query is not supported by users list-search');
+      expect(jiraUsersMock.listSearch).not.toHaveBeenCalled();
     });
 
     it('users list-search works without options', async () => {
@@ -13515,7 +13539,7 @@ describe('executeJiraCommand', () => {
         cmd('issuetype', 'list-for-project', [], { 'project-id': '10000' }),
         GLOBALS,
       );
-      expect(jiraIssueTypeMock.listForProject).toHaveBeenCalledWith(10000);
+      expect(jiraIssueTypeMock.listForProject).toHaveBeenCalledWith(10000, {});
     });
 
     it('issuetype list-for-project throws when --project-id is missing', async () => {
@@ -13573,14 +13597,22 @@ describe('executeJiraCommand', () => {
       );
     });
 
-    it('priorities create calls client.priorities.create with name', async () => {
+    it('priorities create calls client.priorities.create with the spec-required fields', async () => {
       const priority = { id: '99', name: 'Critical' };
       jiraPrioritiesMock.create.mockResolvedValue(priority);
       const result = await executeJiraCommand(
-        cmd('priorities', 'create', [], { name: 'Critical' }),
+        cmd('priorities', 'create', [], {
+          name: 'Critical',
+          'status-color': '#F00',
+          'avatar-id': '10300',
+        }),
         GLOBALS,
       );
-      expect(jiraPrioritiesMock.create).toHaveBeenCalledWith({ name: 'Critical' });
+      expect(jiraPrioritiesMock.create).toHaveBeenCalledWith({
+        name: 'Critical',
+        statusColor: '#F00',
+        avatarId: 10300,
+      });
       expect(result).toEqual(priority);
     });
 
@@ -13638,26 +13670,24 @@ describe('executeJiraCommand', () => {
       });
     });
 
-    it('priorities update throws when --name is missing', async () => {
+    it('priorities update throws when no field is given', async () => {
       await expect(
         executeJiraCommand(cmd('priorities', 'update', ['10']), GLOBALS),
-      ).rejects.toThrow('--name');
+      ).rejects.toThrow('priorities update requires at least one of --name');
     });
 
     it('priorities delete calls client.priorities.delete', async () => {
       jiraPrioritiesMock.delete.mockResolvedValue(undefined);
-      const result = await executeJiraCommand(
-        cmd('priorities', 'delete', ['10'], { 'replace-with': '1' }),
-        GLOBALS,
-      );
-      expect(jiraPrioritiesMock.delete).toHaveBeenCalledWith('10', { replaceWith: '1' });
+      const result = await executeJiraCommand(cmd('priorities', 'delete', ['10']), GLOBALS);
+      expect(jiraPrioritiesMock.delete).toHaveBeenCalledWith('10');
       expect(result).toEqual({ deleted: true });
     });
 
-    it('priorities delete without --replace-with', async () => {
-      jiraPrioritiesMock.delete.mockResolvedValue(undefined);
-      await executeJiraCommand(cmd('priorities', 'delete', ['10']), GLOBALS);
-      expect(jiraPrioritiesMock.delete).toHaveBeenCalledWith('10', {});
+    it('priorities delete rejects --replace-with (not in the deletePriority spec)', async () => {
+      await expect(
+        executeJiraCommand(cmd('priorities', 'delete', ['10'], { 'replace-with': '1' }), GLOBALS),
+      ).rejects.toThrow('--replace-with is not supported by priorities delete');
+      expect(jiraPrioritiesMock.delete).not.toHaveBeenCalled();
     });
 
     it('priorities set-default calls client.priorities.setDefault', async () => {
@@ -22141,7 +22171,9 @@ describe('executeJiraCommand', () => {
         cmd('issue-comments', 'get', ['PROJ-123', '10001']),
         GLOBALS,
       );
-      expect(jiraIssueCommentsMock.get).toHaveBeenCalledWith('PROJ-123', '10001');
+      expect(jiraIssueCommentsMock.get).toHaveBeenCalledWith('PROJ-123', '10001', {
+        expand: undefined,
+      });
       expect(result).toEqual(comment);
     });
 
@@ -22161,9 +22193,11 @@ describe('executeJiraCommand', () => {
         cmd('issue-comments', 'create', ['PROJ-123'], { body: bodyJson }),
         GLOBALS,
       );
-      expect(jiraIssueCommentsMock.create).toHaveBeenCalledWith('PROJ-123', {
-        body: { type: 'doc', version: 1, content: [] },
-      });
+      expect(jiraIssueCommentsMock.create).toHaveBeenCalledWith(
+        'PROJ-123',
+        { body: { type: 'doc', version: 1, content: [] } },
+        { expand: undefined },
+      );
       expect(result).toEqual(comment);
     });
 
@@ -22189,9 +22223,12 @@ describe('executeJiraCommand', () => {
         cmd('issue-comments', 'update', ['PROJ-123', '10001'], { body: bodyJson }),
         GLOBALS,
       );
-      expect(jiraIssueCommentsMock.update).toHaveBeenCalledWith('PROJ-123', '10001', {
-        body: { type: 'doc', version: 1, content: [] },
-      });
+      expect(jiraIssueCommentsMock.update).toHaveBeenCalledWith(
+        'PROJ-123',
+        '10001',
+        { body: { type: 'doc', version: 1, content: [] } },
+        { notifyUsers: undefined, overrideEditableFlag: undefined, expand: undefined },
+      );
       expect(result).toEqual(comment);
     });
 

@@ -47,37 +47,21 @@ const READ_METHOD = /^(get|list|search|find|count|check|is|has|export|validate|p
 const KNOWN_GAPS: Readonly<
   Record<string, { readonly unset: readonly string[]; readonly reason: string }>
 > = {
-  'confluence.blogPosts.create': {
-    unset: ['status', 'createdAt'],
-    reason: 'creates a published post; draft status and backdating are not exposed',
-  },
   'confluence.blogPosts.update': {
-    unset: ['spaceId', 'createdAt'],
-    reason: 'the API cannot move a post between spaces; backdating is not exposed',
-  },
-  'confluence.blogPosts.resetClassificationLevel': {
-    unset: ['status'],
-    reason: 'resets the current version; the draft-status body is not exposed',
+    unset: ['spaceId'],
+    reason: 'the API cannot move a post between spaces',
   },
   'confluence.databases.resetClassificationLevel': {
     unset: ['status'],
-    reason: 'resets the current version; the draft-status body is not exposed',
+    reason: "no gap: the spec enum is ['current'] only and the SDK default already sends it",
   },
   'confluence.whiteboards.resetClassificationLevel': {
     unset: ['status'],
-    reason: 'resets the current version; the draft-status body is not exposed',
-  },
-  'confluence.customContent.create': {
-    unset: ['status'],
-    reason: 'creates current content; draft status is not exposed',
+    reason: "no gap: the spec enum is ['current'] only and the SDK default already sends it",
   },
   'confluence.pages.update': {
     unset: ['spaceId'],
     reason: 'the API cannot move a page between spaces',
-  },
-  'confluence.spaces.create': {
-    unset: ['roleAssignments'],
-    reason: 'role assignment at create is not exposed',
   },
   'jira.bulkByProperties.deleteDevInfoByProperties': {
     unset: ['_updateSequenceId'],
@@ -95,9 +79,9 @@ const KNOWN_GAPS: Readonly<
     unset: ['expand', 'overrideSharePermissions'],
     reason: 'response expansion and the admin share-permission override are not exposed',
   },
-  'jira.issues.deleteAllWorklogs': {
-    unset: ['adjustEstimate', 'overrideEditableFlag'],
-    reason: 'estimate adjustment and admin override not exposed; defaults apply',
+  'jira.priorities.delete': {
+    unset: ['replaceWith'],
+    reason: 'deprecated: not in the deletePriority spec; the CLI rejects --replace-with',
   },
   'jira.projects.recent': {
     unset: ['maxResults'],

@@ -525,6 +525,9 @@ export class SpacesResource {
   /**
    * List space properties (single page) (B209).
    *
+   * `GET /spaces/{space-id}/properties` defines no `sort` parameter, so a
+   * `params.sort` (accepted by the shared params type) is not sent.
+   *
    * @see https://developer.atlassian.com/cloud/confluence/rest/v2/api-group-space-properties/#api-spaces-space-id-properties-get
    */
   async listProperties(
@@ -534,7 +537,6 @@ export class SpacesResource {
     if (params?.limit !== undefined) validatePageSize(params.limit, 'limit');
     const query: Query = {};
     if (params?.key !== undefined) query['key'] = params.key;
-    if (params?.sort !== undefined) query['sort'] = params.sort;
     if (params?.cursor !== undefined) query['cursor'] = params.cursor;
     if (params?.limit !== undefined) query['limit'] = params.limit;
 
@@ -549,6 +551,9 @@ export class SpacesResource {
   /**
    * Iterate every space property across all pages (B209).
    *
+   * `GET /spaces/{space-id}/properties` defines no `sort` parameter, so a
+   * `params.sort` (accepted by the shared params type) is not sent.
+   *
    * @see https://developer.atlassian.com/cloud/confluence/rest/v2/api-group-space-properties/#api-spaces-space-id-properties-get
    */
   async *listPropertiesAll(
@@ -558,7 +563,6 @@ export class SpacesResource {
     if (params?.limit !== undefined) validatePageSize(params.limit, 'limit');
     const query: Query = {};
     if (params?.key !== undefined) query['key'] = params.key;
-    if (params?.sort !== undefined) query['sort'] = params.sort;
     if (params?.limit !== undefined) query['limit'] = params.limit;
     yield* paginateCursor<SpaceProperty>(
       this.transport,

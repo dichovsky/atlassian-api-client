@@ -23,11 +23,14 @@ const PNG = Uint8Array.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 
 
 let tmp: string;
 let avatarPng: string;
+let avatarNoExt: string;
 
 beforeAll(() => {
   tmp = mkdtempSync(join(tmpdir(), 'atlas-projects-'));
   avatarPng = join(tmp, 'avatar.png');
   writeFileSync(avatarPng, PNG);
+  avatarNoExt = join(tmp, 'avatar');
+  writeFileSync(avatarNoExt, PNG);
 });
 
 afterAll(() => {
@@ -99,7 +102,13 @@ function example(prefix: string): string[] {
     all.find((argv) => argv.join(' ') === prefix) ??
     all.find((argv) => argv.join(' ').startsWith(prefix));
   if (found === undefined) throw new Error(`no skill example starts with: ${prefix}`);
-  return found.map((arg) => (arg === './avatar.png' ? avatarPng : arg));
+  return withSkillFiles(found);
+}
+
+/** Point the skill's placeholder avatar paths at the temp image files. */
+function withSkillFiles(argv: readonly string[]): string[] {
+  const files: Record<string, string> = { './avatar.png': avatarPng, './avatar': avatarNoExt };
+  return argv.map((arg) => files[arg] ?? arg);
 }
 
 // ── F088 get-projects-fields ────────────────────────────────────────────────
@@ -194,6 +203,44 @@ describe('projects load-avatar uploads the image bytes (F089, F274, F339)', () =
       expect(req.headers['content-type']).toBe(type);
       expect([...req.query.keys()]).toEqual([]);
     }
+  });
+
+  it('--media-type sets the Content-Type, overriding or replacing the extension', async () => {
+    const req = await onlyRequest(
+      example('jira projects load-avatar PROJ --file ./avatar --media-type'),
+    );
+    expect(req.method).toBe('POST');
+    expect(req.path).toBe(`${JIRA}/project/PROJ/avatar2`);
+    expect(req.headers['content-type']).toBe('image/png');
+    expect(new Uint8Array(await (req.body as Blob).arrayBuffer())).toEqual(PNG);
+    const override = await onlyRequest([
+      'jira',
+      'projects',
+      'load-avatar',
+      'PROJ',
+      '--file',
+      avatarPng,
+      '--media-type',
+      'image/gif',
+    ]);
+    expect(override.headers['content-type']).toBe('image/gif');
+    await rejected(
+      [
+        'jira',
+        'projects',
+        'load-avatar',
+        'PROJ',
+        '--file',
+        avatarPng,
+        '--media-type',
+        'image/webp',
+      ],
+      /--media-type must be one of: image\/png, image\/jpeg, image\/gif/,
+    );
+    await rejected(
+      ['jira', 'projects', 'load-avatar', 'PROJ', '--file', avatarNoExt],
+      /pass --media-type/,
+    );
   });
 
   it('rejects a missing --file, an unsupported extension and the removed --value', async () => {
@@ -705,7 +752,7 @@ describe('every documented projects/search example reaches its endpoint (F105)',
   it.each(projectExamples.map((argv) => [argv.join(' '), argv] as const))(
     '%s',
     async (_line, argv) => {
-      const args = argv.map((arg) => (arg === './avatar.png' ? avatarPng : arg));
+      const args = withSkillFiles(argv);
       const [method, template] = PROJECT_ROUTES[argv[2] ?? ''] ?? ['?', '?'];
       const req = await onlyRequest(args);
       expect(req.method).toBe(method);

@@ -368,6 +368,21 @@ describe('IssueTypeResource', () => {
       });
     });
 
+    it('forwards level (spec getIssueTypesForProject), including -1', async () => {
+      transport.respondWith([]);
+
+      await issueType.listForProject(10000, { level: -1 });
+
+      expect(transport.lastCall?.options.query).toEqual({ projectId: 10000, level: -1 });
+    });
+
+    it('throws ValidationError when level is not an integer', async () => {
+      await expect(issueType.listForProject(1, { level: 0.5 })).rejects.toThrow(
+        'level must be an integer',
+      );
+      expect(transport.calls).toHaveLength(0);
+    });
+
     it('throws ValidationError when projectId is not a positive integer', async () => {
       await expect(issueType.listForProject(0)).rejects.toThrow(
         'projectId must be a positive integer',

@@ -46,6 +46,20 @@ export interface BulkFetchIssueCommentsParams {
   readonly expand?: string;
 }
 
+/** Query parameters for GET and POST /issue/{issueIdOrKey}/comment[/{id}]. */
+export interface IssueCommentExpandParams {
+  /** `renderedBody` returns the comment body rendered in HTML. */
+  readonly expand?: string;
+}
+
+/** Query parameters for PUT /issue/{issueIdOrKey}/comment/{id}. */
+export interface UpdateIssueCommentParams extends IssueCommentExpandParams {
+  /** Whether users are notified of the update (server default `true`). */
+  readonly notifyUsers?: boolean;
+  /** Edit despite screen security (Connect/Forge apps with Administer Jira only). */
+  readonly overrideEditableFlag?: boolean;
+}
+
 /** Paginated response from POST /comment/list (`PageBeanComment`). */
 export interface BulkFetchIssueCommentsResponse {
   readonly values: readonly IssueComment[];
@@ -93,19 +107,29 @@ export class IssueCommentsResource {
   }
 
   /** Get a single comment by ID. */
-  async get(issueIdOrKey: string, commentId: string): Promise<IssueComment> {
+  async get(
+    issueIdOrKey: string,
+    commentId: string,
+    params?: IssueCommentExpandParams,
+  ): Promise<IssueComment> {
     const response = await this.transport.request<IssueComment>({
       method: 'GET',
       path: `${this.baseUrl}/issue/${encodePathSegment(issueIdOrKey)}/comment/${encodePathSegment(commentId)}`,
+      query: { expand: params?.expand },
     });
     return response.data;
   }
 
   /** Add a comment to an issue. */
-  async create(issueIdOrKey: string, data: CreateIssueCommentData): Promise<IssueComment> {
+  async create(
+    issueIdOrKey: string,
+    data: CreateIssueCommentData,
+    params?: IssueCommentExpandParams,
+  ): Promise<IssueComment> {
     const response = await this.transport.request<IssueComment>({
       method: 'POST',
       path: `${this.baseUrl}/issue/${encodePathSegment(issueIdOrKey)}/comment`,
+      query: { expand: params?.expand },
       body: data,
     });
     return response.data;
@@ -116,10 +140,16 @@ export class IssueCommentsResource {
     issueIdOrKey: string,
     commentId: string,
     data: UpdateIssueCommentData,
+    params?: UpdateIssueCommentParams,
   ): Promise<IssueComment> {
     const response = await this.transport.request<IssueComment>({
       method: 'PUT',
       path: `${this.baseUrl}/issue/${encodePathSegment(issueIdOrKey)}/comment/${encodePathSegment(commentId)}`,
+      query: {
+        notifyUsers: params?.notifyUsers,
+        overrideEditableFlag: params?.overrideEditableFlag,
+        expand: params?.expand,
+      },
       body: data,
     });
     return response.data;
@@ -192,8 +222,11 @@ export class IssueCommentsResource {
       throw new ValidationError('ids cannot exceed 1000 (Atlassian API limit)');
     }
     for (const id of data.ids) {
-      if (!Number.isInteger(id) || id <= 0) {
-        throw new ValidationError(`ids must contain only positive integers, got: ${id}`);
+      // Above 2^53 a number has already lost precision (…993 reads as …992).
+      if (!Number.isSafeInteger(id) || id <= 0) {
+        throw new ValidationError(
+          `ids must contain only positive integers within the safe integer range (at most 2^53 - 1), got: ${id}`,
+        );
       }
     }
     const query: Record<string, string | undefined> = {};
