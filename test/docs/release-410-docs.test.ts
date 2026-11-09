@@ -19,6 +19,7 @@ import type { OpenApiSpec } from '../../src/core/openapi.js';
 import { createRateLimiterMiddleware } from '../../src/core/rate-limiter.js';
 import { listKnownOperations, listKnownScopes } from '../../src/core/scopes.js';
 import type { ApiResponse, Middleware, RequestOptions } from '../../src/core/types.js';
+import { section } from '../helpers/markdown.js';
 
 const TEST_DIR = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(TEST_DIR, '..', '..');
@@ -39,16 +40,6 @@ const PACKAGE_JSON = JSON.parse(read('package.json')) as {
   scripts: Record<string, string>;
   devDependencies: Record<string, string>;
 };
-
-/** Text between a heading line and the next heading of the same or higher level. */
-function section(markdown: string, heading: string): string {
-  const start = markdown.indexOf(heading);
-  expect(start, `heading "${heading}" not found`).toBeGreaterThanOrEqual(0);
-  const level = /^#+/.exec(heading)?.[0].length ?? 1;
-  const rest = markdown.slice(start + heading.length);
-  const next = new RegExp(`\\n#{1,${level}} `).exec(rest);
-  return next === null ? rest : rest.slice(0, next.index);
-}
 
 function readSpec(name: keyof typeof SPEC_FILES): OpenApiSpec {
   return JSON.parse(readFileSync(SPEC_FILES[name], 'utf8')) as OpenApiSpec;

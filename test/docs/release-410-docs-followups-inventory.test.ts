@@ -17,6 +17,7 @@ import * as root from '../../src/index.js';
 import { ConfluenceClient } from '../../src/confluence/index.js';
 import { JiraClient } from '../../src/jira/index.js';
 import { runCliWire } from '../helpers/cli-wire.js';
+import { section } from '../helpers/markdown.js';
 import { parseWorkflowYaml } from '../scripts/workflow-yaml.js';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -31,16 +32,6 @@ const PACKAGE_JSON = JSON.parse(read('package.json')) as {
   scripts: Record<string, string>;
   engines: { node: string };
 };
-
-/** Text between a heading line and the next heading of the same or higher level. */
-function section(markdown: string, heading: string): string {
-  const start = markdown.indexOf(heading);
-  expect(start, `heading "${heading}" not found`).toBeGreaterThanOrEqual(0);
-  const level = /^#+/.exec(heading)?.[0].length ?? 1;
-  const rest = markdown.slice(start + heading.length);
-  const next = new RegExp(`\\n#{1,${level}} `).exec(rest);
-  return next === null ? rest : rest.slice(0, next.index);
-}
 
 /** Bodies of the fenced code blocks tagged `lang`. */
 function codeBlocks(markdown: string, lang: string): string[] {
