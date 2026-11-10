@@ -547,6 +547,7 @@ export type {
   BulkIssueIsWatchingResult,
   // Workflows, field contexts, invalid-JQL audit log, Forge panels
   WorkflowCopyRequest,
+  WorkflowCreateResponse,
   AddIssueTypesToContextBody,
   FieldContextDefaultValueLongText,
   IssueTypeDefaultValueUpdate,
@@ -559,7 +560,7 @@ export type {
   BulkForgePanelPinStatusData,
   ForgePanelProjectPinStatus,
   BulkForgePanelPinStatusResponse,
-  // Space policies (experimental)
+  // Policies (experimental)
   PolicySummary,
   PolicySummaryResponse,
   StatePolicyRule,
@@ -584,7 +585,7 @@ export type {
   ExpressionEvaluateData,
   RemoveFieldParametersResult,
   RemoveFieldParametersResultEntry,
-  // 4.1.0 issue and project method parameters and results
+  // 5.0.0 issue and project method parameters and results
   CreateIssueParams,
   GetEditMetaParams,
   WorklogBulkOutcome,

@@ -26,6 +26,7 @@ const PAYLOAD_RULES = readFileSync(
   'utf8',
 );
 const PACKAGE_JSON = JSON.parse(readFileSync(resolve(REPO_ROOT, 'package.json'), 'utf8')) as {
+  version: string;
   funding?: string;
   files?: string[];
 };
@@ -104,7 +105,8 @@ describe('live documentation consistency', () => {
   });
 
   it('documents the current supported major version and security controls', () => {
-    expect(SECURITY).toContain('| 4.x     | Yes');
+    // The supported major follows package.json, so a stale table fails on the next major.
+    expect(SECURITY).toContain(`| ${PACKAGE_JSON.version.split('.')[0]}.x     | Yes`);
     expect(SECURITY).toContain('`ClientConfig.allowedHosts`');
     expect(SECURITY).toContain('`OAuthRefreshConfig.allowedTokenEndpointHosts`');
     expect(SECURITY).toContain('`ClientConfig.maxResponseBytes`');

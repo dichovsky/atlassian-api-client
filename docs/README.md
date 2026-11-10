@@ -5,8 +5,12 @@ Project documentation for `atlassian-api-client`.
 ## Living references
 
 - [ARCHITECTURE.md](ARCHITECTURE.md) — system design: transport/auth/retry/error taxonomy, middleware composition, pagination, CLI shape. Kept current with the code.
-- [`spec/README.md`](../spec/README.md) and the 4.1.0 entry in [`CHANGELOG.md`](../CHANGELOG.md) — the current pinned OpenAPI snapshots (SHA-256, contract fingerprints, path and operation counts), how to re-pin them, and the 2026-11 API refresh deltas.
+- [`spec/README.md`](../spec/README.md) and the 5.0.0 entry in [`CHANGELOG.md`](../CHANGELOG.md) — the current pinned OpenAPI snapshots (SHA-256, contract fingerprints, path and operation counts), how to re-pin them, and the 2026-11 API refresh deltas.
 - [RELEASING.md](RELEASING.md) — release-readiness gates, trusted publication, post-release checks, and rollback procedure.
+
+## Release records
+
+- [releases/v5.0.0.md](releases/v5.0.0.md) — the 5.0.0 release record: baseline, candidate, checks, release controls, runbook audit and gates, with the full [API–CLI–skill parity matrix](releases/v5.0.0-parity-matrix.md) and [findings ledger](releases/v5.0.0-findings.md).
 
 ## Other docs
 

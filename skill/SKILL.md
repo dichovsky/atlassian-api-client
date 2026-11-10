@@ -27,7 +27,7 @@ source: atlassian-api-client npm package
 ## Always-on rules
 
 - Use env-var auth only (`ATLASSIAN_BASE_URL`, `ATLASSIAN_API_TOKEN`, and `ATLASSIAN_EMAIL` for basic auth).
-- Never place secrets in CLI flags. Specifically avoid `--token <secret>` or `--email <addr>` in shell history, transcripts, CI logs, or chat. Use environment variables (`ATLASSIAN_API_TOKEN`, `ATLASSIAN_EMAIL`) or a config file with restricted permissions. `--email` is always the basic-auth login, never a payload field: give a new Jira user's address with `atlas jira users create --email-address <addr>`.
+- Never place secrets in CLI flags. Specifically avoid `--token <secret>` or `--email <addr>` in shell history, transcripts, CI logs, or chat. Use environment variables (`ATLASSIAN_API_TOKEN`, `ATLASSIAN_EMAIL`), for example exported from a file only you can read; the CLI itself reads no config file. `--email` is always the basic-auth login, never a payload field: give a new Jira user's address with `atlas jira users create --email-address <addr>`.
 - Ask user for missing auth env; do not guess.
 - Return minimal output first (`--format minimal` when IDs are sufficient: one ID per record, list/search envelopes unwrapped; Jira issues print the numeric ID, not the key).
 - Prefer pagination limits and cursors over bulk dumps.

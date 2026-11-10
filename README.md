@@ -413,6 +413,8 @@ The middleware hashes `RequestOptions.path` before the transport resolves it aga
 Every library resource passes the absolute request URL, so this matters only when you call `HttpTransport.request()` yourself: pass an absolute URL there too.
 A relative path such as `'/pages'` is hashed as-is, not as the `/api/v2/pages` the request is sent to, and Atlassian rejects the token with a 401.
 
+The `atlas` CLI authenticates only with basic or bearer credentials, so it cannot call the 22 Jira operations the pinned specs reserve for Connect apps (for example `incidents get` / `delete`, the `linked-workspaces` `*-operations` actions, `webhooks list-failed` and `app get-dynamic-modules`). The CLI still sends a correct request, but Jira rejects the credentials. Call those operations through the SDK with `createConnectJwtMiddleware`. The bundled skill marks each one **Connect app (JWT) only**.
+
 #### Verifying inbound asymmetric (RS256) JWTs
 
 Atlassian signs lifecycle callbacks (installed/uninstalled) and context/iframe
