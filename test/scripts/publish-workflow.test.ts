@@ -617,8 +617,11 @@ describe('publish workflow registry wait', () => {
   // 20-minute wait is a few hundred short processes: slow under coverage load.
   const SLOW = 60_000;
 
-  /** Runs the wait step against a registry that serves the version once `visibleAfter` seconds were slept. */
-  function runWait(visibleAfter: number) {
+  /**
+   * Runs the wait step against a registry that serves the version once `visibleAfter` seconds were
+   * slept, and moves `latest` to it once `latestAfter` seconds were slept.
+   */
+  function runWait(visibleAfter: number, latestAfter = visibleAfter) {
     const { run, env } = step(parse(PUBLISH_TEXT), 'verify', STEP);
     const state = mkdtempSync(join(tmpdir(), 'registry-wait-'));
     try {
@@ -626,14 +629,21 @@ describe('publish workflow registry wait', () => {
         Number(readFileSync(join(state, 'waited'), { encoding: 'utf8', flag: 'a+' }).trim() || 0);
       const result = runStep(
         run,
-        { ...env, VERSION: '5.0.0', STATE: state, VISIBLE_AFTER: String(visibleAfter) },
+        {
+          ...env,
+          VERSION: '5.0.0',
+          STATE: state,
+          VISIBLE_AFTER: String(visibleAfter),
+          LATEST_AFTER: String(latestAfter),
+        },
         {
           npm: [
             'waited=0; [ -f "$STATE/waited" ] && read -r waited < "$STATE/waited"',
             'visible=no; [ "$waited" -ge "$VISIBLE_AFTER" ] && visible=yes',
+            'latest=no; [ "$waited" -ge "$LATEST_AFTER" ] && latest=yes',
             'case "$*" in',
             '  "view $PACKAGE_NAME@$VERSION version") [ $visible = yes ] && echo "$VERSION" || { echo "npm error code E404" >&2; exit 1; } ;;',
-            '  "view $PACKAGE_NAME dist-tags.latest") [ $visible = yes ] && echo "$VERSION" || echo 4.0.0 ;;',
+            '  "view $PACKAGE_NAME dist-tags.latest") [ $latest = yes ] && echo "$VERSION" || echo 4.0.0 ;;',
             '  *) echo "unexpected npm $*" >&2; exit 64 ;;',
             'esac',
           ].join('\n'),
@@ -662,6 +672,20 @@ describe('publish workflow registry wait', () => {
       expect(result.stderr).toBe('');
       expect(result.status).toBe(0);
       expect(result.slept).toBeGreaterThanOrEqual(OBSERVED_DELAY_SECONDS);
+    },
+    SLOW,
+  );
+
+  it(
+    'keeps waiting until latest points at the version, not just until the version exists',
+    () => {
+      const served = runWait(0, OBSERVED_DELAY_SECONDS);
+      expect(served.status).toBe(0);
+      expect(served.slept).toBeGreaterThanOrEqual(OBSERVED_DELAY_SECONDS);
+
+      const neverLatest = runWait(0, Number.MAX_SAFE_INTEGER);
+      expect(neverLatest.status).toBe(1);
+      expect(neverLatest.stderr).toContain('with dist-tags.latest=5.0.0');
     },
     SLOW,
   );
