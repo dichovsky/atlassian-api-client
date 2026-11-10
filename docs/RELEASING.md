@@ -97,7 +97,7 @@ The `Publish` preflight accepts a tag only when the GitHub API reports its signa
 
 ## Post-release
 
-1. Wait for both the publish and independent verification jobs to finish. The verification job must install from the public registry rather than reuse the workspace or tarball.
+1. Wait for both the publish and independent verification jobs to finish. The verification job must install from the public registry rather than reuse the workspace or tarball. npm can accept a publish and serve it only minutes later (`Your package is being processed and may take a few minutes to become available`), so the verification job polls the registry for up to 20 minutes. If the publish job succeeded but verification still failed while waiting for the registry, confirm that `npm view atlassian-api-client@X.Y.Z version` returns the version and `npm view atlassian-api-client dist-tags.latest` returns `X.Y.Z`, then re-run only the failed jobs (`gh run rerun <run-id> --failed`). That reruns verification without publishing again.
 2. Confirm the registry serves the intended version and `latest` points to it. From a clean temporary project, verify package-root ESM imports, both client constructors, `atlas --version`, and bundled-skill version stamping.
 3. Run `npm audit signatures` against the clean install. It also passes for a package without attestations, so the verification job additionally requires SLSA provenance whose workflow is this repository's `.github/workflows/publish.yml` at `refs/tags/vX.Y.Z`. Inspect the npm package page for the same provenance statement.
 4. Confirm the Git tag still resolves to the recorded commit, GitHub reports the tag signature as verified, and the exact-commit `CI` plus `Publish` runs are green.

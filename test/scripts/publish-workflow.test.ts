@@ -174,8 +174,8 @@ describe('publish workflow job gates', () => {
     ],
     [
       'verify granted permissions',
-      '    timeout-minutes: 10\n    permissions: {}',
-      '    timeout-minutes: 10\n    permissions: read-all',
+      '    timeout-minutes: 30\n    permissions: {}',
+      '    timeout-minutes: 30\n    permissions: read-all',
     ],
     [
       'the tag/metadata check removed',
@@ -603,4 +603,115 @@ describe('publish workflow provenance verification', () => {
 
     expect(result.status).not.toBe(0);
   });
+});
+
+describe('publish workflow registry wait', () => {
+  const STEP = 'Wait for the exact version to reach the registry';
+  // npm can accept a publish and serve it only minutes later ("Your package is
+  // being processed and may take a few minutes to become available"): 5.0.0
+  // was accepted at 20:02:44Z and served at 20:07:30Z, after the old 2-minute
+  // wait had already failed the verify job.
+  const OBSERVED_DELAY_SECONDS = 5 * 60;
+  const MIN_WAIT_SECONDS = 15 * 60;
+  // Each poll spawns the fake npm twice and the fake sleep once, so the full
+  // 20-minute wait is a few hundred short processes: slow under coverage load.
+  const SLOW = 60_000;
+
+  /**
+   * Runs the wait step against a registry that serves the version once `visibleAfter` seconds were
+   * slept, and moves `latest` to it once `latestAfter` seconds were slept.
+   */
+  function runWait(visibleAfter: number, latestAfter = visibleAfter) {
+    const { run, env } = step(parse(PUBLISH_TEXT), 'verify', STEP);
+    const state = mkdtempSync(join(tmpdir(), 'registry-wait-'));
+    try {
+      const slept = () =>
+        Number(readFileSync(join(state, 'waited'), { encoding: 'utf8', flag: 'a+' }).trim() || 0);
+      const result = runStep(
+        run,
+        {
+          ...env,
+          VERSION: '5.0.0',
+          STATE: state,
+          VISIBLE_AFTER: String(visibleAfter),
+          LATEST_AFTER: String(latestAfter),
+        },
+        {
+          npm: [
+            'waited=0; [ -f "$STATE/waited" ] && read -r waited < "$STATE/waited"',
+            'visible=no; [ "$waited" -ge "$VISIBLE_AFTER" ] && visible=yes',
+            'latest=no; [ "$waited" -ge "$LATEST_AFTER" ] && latest=yes',
+            'case "$*" in',
+            '  "view $PACKAGE_NAME@$VERSION version") [ $visible = yes ] && echo "$VERSION" || { echo "npm error code E404" >&2; exit 1; } ;;',
+            '  "view $PACKAGE_NAME dist-tags.latest") [ $latest = yes ] && echo "$VERSION" || echo 4.0.0 ;;',
+            '  *) echo "unexpected npm $*" >&2; exit 64 ;;',
+            'esac',
+          ].join('\n'),
+          sleep:
+            'waited=0; [ -f "$STATE/waited" ] && read -r waited < "$STATE/waited"; echo $((waited + $1)) > "$STATE/waited"',
+        },
+      );
+      return { ...result, slept: slept() };
+    } finally {
+      rmSync(state, { recursive: true, force: true });
+    }
+  }
+
+  it('passes as soon as the registry serves the version as latest', () => {
+    const result = runWait(0);
+
+    expect(result.status).toBe(0);
+    expect(result.slept).toBe(0);
+  });
+
+  it(
+    'keeps waiting while npm processes a publish for several minutes',
+    () => {
+      const result = runWait(OBSERVED_DELAY_SECONDS);
+
+      expect(result.stderr).toBe('');
+      expect(result.status).toBe(0);
+      expect(result.slept).toBeGreaterThanOrEqual(OBSERVED_DELAY_SECONDS);
+    },
+    SLOW,
+  );
+
+  it(
+    'keeps waiting until latest points at the version, not just until the version exists',
+    () => {
+      const served = runWait(0, OBSERVED_DELAY_SECONDS);
+      expect(served.status).toBe(0);
+      expect(served.slept).toBeGreaterThanOrEqual(OBSERVED_DELAY_SECONDS);
+
+      const neverLatest = runWait(0, Number.MAX_SAFE_INTEGER);
+      expect(neverLatest.status).toBe(1);
+      expect(neverLatest.stderr).toContain('with dist-tags.latest=5.0.0');
+    },
+    SLOW,
+  );
+
+  it(
+    'fails only after waiting at least 15 minutes',
+    () => {
+      const result = runWait(Number.MAX_SAFE_INTEGER);
+
+      expect(result.status).toBe(1);
+      expect(result.stderr).toContain(
+        'Registry did not return atlassian-api-client@5.0.0 with dist-tags.latest=5.0.0',
+      );
+      expect(result.slept).toBeGreaterThanOrEqual(MIN_WAIT_SECONDS);
+    },
+    SLOW,
+  );
+
+  it(
+    'gives the verify job time for the whole wait plus the smoke and provenance checks',
+    () => {
+      const budget = runWait(Number.MAX_SAFE_INTEGER).slept;
+      const verify = job(parse(PUBLISH_TEXT), 'verify') as Job & { 'timeout-minutes'?: unknown };
+
+      expect(Number(verify['timeout-minutes'])).toBeGreaterThanOrEqual(Math.ceil(budget / 60) + 5);
+    },
+    SLOW,
+  );
 });
