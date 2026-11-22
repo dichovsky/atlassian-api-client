@@ -5,7 +5,7 @@ import { createRequire } from 'node:module';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const USAGE = 'Usage: node scripts/validate-release-tag.js vX.Y.Z';
+const USAGE = 'Usage: node scripts/validate-release-tag.js vX.Y.Z [--warn-date]';
 const STABLE_TAG = /^v((?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*))$/;
 
 function readJson(readFile, file) {
@@ -108,14 +108,15 @@ export function releaseTagProblem(args, readFile, onReleaseDate) {
  * Report a valid tag on stdout or an invalid tag on stderr with exit code 1.
  * Local pre-tag checks can also request a non-blocking date warning.
  *
- * @param {readonly string[]} args - The tag, optionally preceded by --warn-date.
+ * @param {readonly string[]} args - The tag, optionally with --warn-date in either position.
  * @param {(file: string) => string} readFile - Reads a repository file as UTF-8.
  * @param {{ stdout: { write(text: string): unknown }, stderr: { write(text: string): unknown }, exitCode?: number | string }} io
  *   Where to report; the CLI passes `process`.
  */
 export function main(args, readFile, io) {
-  const checkDate = args[0] === '--warn-date';
-  const tagArgs = checkDate ? args.slice(1) : args;
+  const warnDateIndex = args.indexOf('--warn-date');
+  const checkDate = warnDateIndex !== -1;
+  const tagArgs = checkDate ? args.toSpliced(warnDateIndex, 1) : args;
   const warnIfStale = (date) => {
     const today = new Date().toISOString().slice(0, 10);
     if (date !== today) {

@@ -21,7 +21,9 @@ export function validateInt64Ids(
   for (const id of ids ?? []) {
     if (typeof id === 'number') {
       if (!Number.isSafeInteger(id)) {
-        throw new ValidationError(`${name} requires safe integers or decimal int64 strings`);
+        throw new ValidationError(
+          `${name} requires safe integers or decimal int64 strings, got: ${id}`,
+        );
       }
     } else {
       if (!/^-?\d+$/.test(id)) {
@@ -29,7 +31,7 @@ export function validateInt64Ids(
       }
       const value = BigInt(id);
       if (value < -9_223_372_036_854_775_808n || value > 9_223_372_036_854_775_807n) {
-        throw new ValidationError(`${name} must fit in a signed int64`);
+        throw new ValidationError(`${name} must fit in a signed int64, got: ${id}`);
       }
     }
   }

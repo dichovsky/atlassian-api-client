@@ -19,8 +19,12 @@ function buildRoleFilters(params?: ListSpaceRolesParams): Record<string, string 
     validatePageSize(params.limit, 'limit');
     query['limit'] = params.limit;
   }
-  if (params?.['space-id'] !== undefined) {
-    const id = params['space-id'].trim();
+  const spaceId = params?.['space-id'];
+  if (spaceId !== undefined) {
+    if (typeof spaceId !== 'string' && !Number.isSafeInteger(spaceId)) {
+      throw new ValidationError('space-id must be a nonblank string or a safe integer');
+    }
+    const id = String(spaceId).trim();
     if (id === '') throw new ValidationError('space-id must not be empty');
     query['space-id'] = id;
   }

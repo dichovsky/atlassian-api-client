@@ -113,7 +113,7 @@ describe('validate-release-tag in-process', () => {
   });
 
   it.each([[[]], [['v4.0.0', 'v4.0.1']]])('requires exactly one argument (%j)', (args) => {
-    expect(problem(args)).toBe('Usage: node scripts/validate-release-tag.js vX.Y.Z');
+    expect(problem(args)).toBe('Usage: node scripts/validate-release-tag.js vX.Y.Z [--warn-date]');
   });
 
   it('rejects a tag that is not a stable vX.Y.Z', () => {
@@ -201,13 +201,16 @@ describe('validate-release-tag in-process', () => {
     expect(io.exitCode).toBeUndefined();
   });
 
-  it('warns about a stale date only on the local pre-tag check', () => {
-    const io = fakeIo();
-    validator.main(['--warn-date', 'v4.0.0'], reader(), io);
-    expect(written(io.stderr)).toContain('CHANGELOG.md dates 4.0.0 as 2026-09-02');
-    expect(written(io.stdout)).toContain('Release tag v4.0.0 is valid');
-    expect(io.exitCode).toBeUndefined();
-  });
+  it.each([[['--warn-date', 'v4.0.0']], [['v4.0.0', '--warn-date']]])(
+    'warns about a stale date with arguments %j',
+    (args) => {
+      const io = fakeIo();
+      validator.main(args, reader(), io);
+      expect(written(io.stderr)).toContain('CHANGELOG.md dates 4.0.0 as 2026-09-02');
+      expect(written(io.stdout)).toContain('Release tag v4.0.0 is valid');
+      expect(io.exitCode).toBeUndefined();
+    },
+  );
 
   it('accepts a release dated today without a warning', () => {
     const io = fakeIo();
@@ -218,13 +221,19 @@ describe('validate-release-tag in-process', () => {
     expect(written(io.stdout)).toContain('Release tag v4.0.0 is valid');
   });
 
-  it('main reports a failure on stderr with exit code 1', () => {
+  it.each([
+    [[]],
+    [['--warn-date']],
+    [['--warn-date', 'v4.0.0', '--warn-date']],
+    [['--warn-date', 'v4.0.0', 'v4.0.1']],
+    [['v4.0.0', '--unknown']],
+  ])('rejects invalid arguments %j on stderr with exit code 1', (args) => {
     const io = fakeIo();
 
-    validator.main([], reader(), io);
+    validator.main(args, reader(), io);
 
     expect(written(io.stderr)).toBe(
-      'Release validation failed: Usage: node scripts/validate-release-tag.js vX.Y.Z\n',
+      'Release validation failed: Usage: node scripts/validate-release-tag.js vX.Y.Z [--warn-date]\n',
     );
     expect(io.stdout.write).not.toHaveBeenCalled();
     expect(io.exitCode).toBe(1);

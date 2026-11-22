@@ -1510,6 +1510,7 @@ describe('parseCommand boolean flags', () => {
     const message = '--no-purge does not take a value; use --purge true|false or --no-purge alone';
     expect(() => parse('--no-purge', 'true')).toThrow(message);
     expect(() => parse('--no-purge=false')).toThrow(message);
+    expect(() => parse('--no-purge=1')).toThrow(message);
     expect(() => parse('--no-resolved=true')).toThrow('--no-resolved does not take a value');
   });
 
@@ -1518,7 +1519,7 @@ describe('parseCommand boolean flags', () => {
     expect(() => parse('--purge=')).toThrow('--purge accepts true or false, got: ');
   });
 
-  it.each(['yes', 'no', 'y', 'n', 'on', 'off', 'NO', 'Off', '0', '1'])(
+  it.each(['yes', 'no', 'y', 'n', 'on', 'off', 'NO', 'Off'])(
     'rejects the ambiguous value %s right after a bare or negated flag',
     (word) => {
       expect(() => parse('--purge', word)).toThrow(
@@ -1530,6 +1531,24 @@ describe('parseCommand boolean flags', () => {
       expect(parse(word, '--purge').positionalArgs).toEqual(['K-1', word]);
     },
   );
+
+  it.each(['0', '1'])('rejects %s after a bare flag and keeps it as an ID after negation', (id) => {
+    const getPage = (...args: string[]) =>
+      parseCommand(['node', 'atlas', 'confluence', 'pages', 'get', ...args]);
+    expect(() => getPage('--include-labels', id)).toThrow(
+      `--include-labels accepts true or false, got: ${id}`,
+    );
+    expect(getPage('--include-labels', '--', id).positionalArgs).toEqual([id]);
+    expect(getPage(id, '--include-labels').positionalArgs).toEqual([id]);
+    expect(getPage('--no-include-labels', id)).toMatchObject({
+      positionalArgs: [id],
+      options: { 'include-labels': false },
+    });
+    expect(getPage('--no-include-version', id)).toMatchObject({
+      positionalArgs: [id],
+      options: { 'no-include-version': true },
+    });
+  });
 
   it('rejects conflicting values for one flag', () => {
     expect(() => parse('--purge', '--no-purge')).toThrow('--purge was given both true and false');

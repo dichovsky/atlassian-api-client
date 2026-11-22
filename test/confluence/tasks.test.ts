@@ -113,9 +113,10 @@ describe('TasksResource', () => {
       '-9223372036854775809',
       Number.MAX_SAFE_INTEGER + 1,
     ])('rejects invalid or imprecise task ID %j on both list paths', async (id) => {
-      const params = { taskId: [id] };
-      await expect(resource.list(params)).rejects.toThrow(ValidationError);
-      await expect(resource.listAll(params).next()).rejects.toThrow(ValidationError);
+      const params = { taskId: [1, id] };
+      const error = { name: 'ValidationError', message: expect.stringContaining(`got: ${id}`) };
+      await expect(resource.list(params)).rejects.toMatchObject(error);
+      await expect(resource.listAll(params).next()).rejects.toMatchObject(error);
       expect(transport.calls).toHaveLength(0);
     });
 

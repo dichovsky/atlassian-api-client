@@ -1934,6 +1934,7 @@ function singleSpaceId(opts: ParsedCommand['options']): string | undefined {
   if (!/^-?\d+$/.test(spaceId)) {
     throw new Error(`--space-id must be a decimal integer ID, got: ${spaceId}`);
   }
+  validateInt64Ids('--space-id', [spaceId]);
   return spaceId;
 }
 
