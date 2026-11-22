@@ -3,13 +3,13 @@
  * and compares a canonical contract fingerprint with the pinned snapshots in spec/.
  * Commits nothing — this is a read-only check.
  *
- * CLI entry:  node --experimental-strip-types scripts/regenerate-types.ts
+ * CLI entry:  node scripts/regenerate-types.ts
  * npm script: npm run spec-drift
  *
  * The script is also unit-testable via the exported runDriftGuard() function, which
  * accepts an injectable fetch implementation to avoid any real network calls in tests.
  *
- * Execution choice: .ts run via node --experimental-strip-types (Node >=22.6, default in Node 24).
+ * Node.js 24 runs this TypeScript file directly with its built-in type stripping.
  * This lets us import generateTypes() directly from TypeScript source without a prior build,
  * keeping the script dependency-free and in sync with main source at all times.
  */

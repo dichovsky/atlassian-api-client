@@ -6197,7 +6197,8 @@ describe('executeConfluenceCommand', () => {
       confluenceCustomContentMock.listVersions.mockResolvedValue({ results: [], _links: {} });
       await executeConfluenceCommand(cmd('custom-content', 'versions', ['cc-1']), GLOBALS);
       const args = confluenceCustomContentMock.listVersions.mock.calls.at(-1)?.[1] as
-        Record<string, unknown> | undefined;
+        | Record<string, unknown>
+        | undefined;
       expect(args?.sort).toBeUndefined();
       expect(args?.['body-format']).toBeUndefined();
     });
@@ -6310,7 +6311,8 @@ describe('executeConfluenceCommand', () => {
       });
       await executeConfluenceCommand(cmd('custom-content', 'footer-comments', ['cc-1']), GLOBALS);
       const args = confluenceCustomContentMock.listFooterComments.mock.calls.at(-1)?.[1] as
-        Record<string, unknown> | undefined;
+        | Record<string, unknown>
+        | undefined;
       expect(args?.sort).toBeUndefined();
       expect(args?.['body-format']).toBeUndefined();
     });
@@ -6344,7 +6346,8 @@ describe('executeConfluenceCommand', () => {
       confluenceCustomContentMock.listLabels.mockResolvedValue({ results: [], _links: {} });
       await executeConfluenceCommand(cmd('custom-content', 'labels', ['cc-1']), GLOBALS);
       const args = confluenceCustomContentMock.listLabels.mock.calls.at(-1)?.[1] as
-        Record<string, unknown> | undefined;
+        | Record<string, unknown>
+        | undefined;
       expect(args?.prefix).toBeUndefined();
       expect(args?.sort).toBeUndefined();
     });
@@ -7508,7 +7511,8 @@ describe('executeConfluenceCommand', () => {
 
       // Assert
       const callArgs = confluenceDatabasesMock.listDirectChildren.mock.calls[0]?.[1] as
-        Record<string, unknown> | undefined;
+        | Record<string, unknown>
+        | undefined;
       expect(callArgs?.sort).toBeUndefined();
     });
 
@@ -7932,7 +7936,8 @@ describe('executeConfluenceCommand', () => {
       await executeConfluenceCommand(cmd('embeds', 'direct-children', ['embed-1'], {}), GLOBALS);
 
       const callArgs = confluenceEmbedsMock.listDirectChildren.mock.calls.at(-1)?.[1] as
-        Record<string, unknown> | undefined;
+        | Record<string, unknown>
+        | undefined;
       expect(callArgs?.sort).toBeUndefined();
     });
 
@@ -8228,7 +8233,8 @@ describe('executeConfluenceCommand', () => {
       await executeConfluenceCommand(cmd('folders', 'direct-children', ['folder-1'], {}), GLOBALS);
 
       const callArgs = confluenceFoldersMock.listDirectChildren.mock.calls.at(-1)?.[1] as
-        Record<string, unknown> | undefined;
+        | Record<string, unknown>
+        | undefined;
       expect(callArgs?.sort).toBeUndefined();
     });
 
@@ -8582,7 +8588,8 @@ describe('executeConfluenceCommand', () => {
       confluenceFooterCommentsMock.listVersions.mockResolvedValue({ results: [], _links: {} });
       await executeConfluenceCommand(cmd('footer-comments', 'versions', ['77777']), GLOBALS);
       const callArgs = confluenceFooterCommentsMock.listVersions.mock.calls[0]?.[1] as
-        Record<string, unknown> | undefined;
+        | Record<string, unknown>
+        | undefined;
       expect(callArgs?.sort).toBeUndefined();
       expect(callArgs?.['body-format']).toBeUndefined();
     });
@@ -8591,7 +8598,8 @@ describe('executeConfluenceCommand', () => {
       confluenceFooterCommentsMock.listChildren.mockResolvedValue({ results: [], _links: {} });
       await executeConfluenceCommand(cmd('footer-comments', 'children', ['77777']), GLOBALS);
       const callArgs = confluenceFooterCommentsMock.listChildren.mock.calls[0]?.[1] as
-        Record<string, unknown> | undefined;
+        | Record<string, unknown>
+        | undefined;
       expect(callArgs?.sort).toBeUndefined();
       expect(callArgs?.['body-format']).toBeUndefined();
     });
@@ -8699,7 +8707,8 @@ describe('executeConfluenceCommand', () => {
       confluenceInlineCommentsMock.listChildren.mockResolvedValue({ results: [], _links: {} });
       await executeConfluenceCommand(cmd('inline-comments', 'children', ['ic-1']), GLOBALS);
       const callArgs = confluenceInlineCommentsMock.listChildren.mock.calls[0]?.[1] as
-        Record<string, unknown> | undefined;
+        | Record<string, unknown>
+        | undefined;
       expect(callArgs?.sort).toBeUndefined();
       expect(callArgs?.['body-format']).toBeUndefined();
     });
@@ -8779,7 +8788,8 @@ describe('executeConfluenceCommand', () => {
       confluenceInlineCommentsMock.listVersions.mockResolvedValue({ results: [], _links: {} });
       await executeConfluenceCommand(cmd('inline-comments', 'versions', ['ic-1']), GLOBALS);
       const callArgs = confluenceInlineCommentsMock.listVersions.mock.calls[0]?.[1] as
-        Record<string, unknown> | undefined;
+        | Record<string, unknown>
+        | undefined;
       expect(callArgs?.sort).toBeUndefined();
     });
 
@@ -9068,7 +9078,8 @@ describe('executeConfluenceCommand', () => {
       });
       await executeConfluenceCommand(cmd('whiteboards', 'direct-children', ['wb-1'], {}), GLOBALS);
       const callArgs = confluenceWhiteboardsMock.listDirectChildren.mock.calls[0]?.[1] as
-        Record<string, unknown> | undefined;
+        | Record<string, unknown>
+        | undefined;
       expect(callArgs?.sort).toBeUndefined();
     });
 

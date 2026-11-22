@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { assert, describe, it, expect, beforeEach } from 'vitest';
 import type { JsonPatchOperation, PlanStatus } from '../../src/jira/resources/plans.js';
 import { PlansResource } from '../../src/jira/resources/plans.js';
 import { MockTransport } from '../helpers/mock-transport.js';
@@ -348,10 +348,10 @@ describe('PlansResource', () => {
       const opts = transport.lastCall?.options;
       // Must use binaryBody (Blob with type application/json-patch+json), not body
       expect(opts?.body).toBeUndefined();
-      expect(opts?.binaryBody).toBeInstanceOf(Blob);
-      expect((opts?.binaryBody as Blob).type).toBe('application/json-patch+json');
+      assert(opts?.binaryBody instanceof Blob);
+      expect(opts.binaryBody.type).toBe('application/json-patch+json');
       // Blob content must be the JSON-serialized patch array
-      const text = await (opts?.binaryBody as Blob).text();
+      const text = await opts.binaryBody.text();
       expect(JSON.parse(text)).toEqual([{ op: 'replace', path: '/name', value: 'X' }]);
     });
 
@@ -594,9 +594,9 @@ describe('PlansResource', () => {
 
       const opts = transport.lastCall?.options;
       expect(opts?.body).toBeUndefined();
-      expect(opts?.binaryBody).toBeInstanceOf(Blob);
-      expect((opts?.binaryBody as Blob).type).toBe('application/json-patch+json');
-      const text = await (opts?.binaryBody as Blob).text();
+      assert(opts?.binaryBody instanceof Blob);
+      expect(opts.binaryBody.type).toBe('application/json-patch+json');
+      const text = await opts.binaryBody.text();
       expect(JSON.parse(text)).toEqual([{ op: 'replace', path: '/sprintLength', value: 7 }]);
     });
   });
@@ -701,9 +701,9 @@ describe('PlansResource', () => {
 
       const opts = transport.lastCall?.options;
       expect(opts?.body).toBeUndefined();
-      expect(opts?.binaryBody).toBeInstanceOf(Blob);
-      expect((opts?.binaryBody as Blob).type).toBe('application/json-patch+json');
-      const text = await (opts?.binaryBody as Blob).text();
+      assert(opts?.binaryBody instanceof Blob);
+      expect(opts.binaryBody.type).toBe('application/json-patch+json');
+      const text = await opts.binaryBody.text();
       expect(JSON.parse(text)).toEqual([{ op: 'replace', path: '/name', value: 'New' }]);
     });
   });

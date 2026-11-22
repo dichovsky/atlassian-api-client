@@ -123,7 +123,7 @@ describe('IssuesResource (release 4.1.0 jira-issues)', () => {
       await expect(typed).resolves.toEqual({ partial: false });
       // Documented in the JSDoc: a widened boolean takes the void overload, yet
       // the outcome is still resolved at runtime when the value is true.
-      const flag: boolean = true as boolean;
+      const flag = true as boolean;
       const widened = issues.moveWorklog('PROJ-1', { ids: [1] }, { returnOutcome: flag });
       expectTypeOf(widened).toEqualTypeOf<Promise<void>>();
       await expect(widened).resolves.toEqual({ partial: false });
@@ -140,7 +140,7 @@ describe('IssuesResource (release 4.1.0 jira-issues)', () => {
       await expect(typed).resolves.toEqual(edited);
       // Documented: a widened boolean takes the void overload, yet the issue is
       // still resolved at runtime when the value is true.
-      const flag: boolean = true as boolean;
+      const flag = true as boolean;
       const widened = issues.update('PROJ-1', { fields: {} }, { returnIssue: flag });
       expectTypeOf(widened).toEqualTypeOf<Promise<void>>();
       await expect(widened).resolves.toEqual(edited);

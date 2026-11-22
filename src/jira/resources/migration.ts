@@ -9,7 +9,13 @@ export interface MigrationTaskProgress {
   readonly id: string;
   readonly self: string;
   readonly status:
-    'ENQUEUED' | 'RUNNING' | 'COMPLETE' | 'FAILED' | 'CANCEL_REQUESTED' | 'CANCELLED' | 'DEAD';
+    | 'ENQUEUED'
+    | 'RUNNING'
+    | 'COMPLETE'
+    | 'FAILED'
+    | 'CANCEL_REQUESTED'
+    | 'CANCELLED'
+    | 'DEAD';
   readonly elapsedRuntime: number;
   readonly lastUpdate: string;
   readonly progress: number;

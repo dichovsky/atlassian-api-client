@@ -343,8 +343,8 @@ describe('ARCHITECTURE core-layer descriptions match the code', () => {
     for (const name of Object.keys(PACKAGE_JSON.devDependencies)) {
       expect(table, name).toContain(`\`${name}\``);
     }
-    expect(PACKAGE_JSON.devDependencies['@typescript/native']).toMatch(/^npm:typescript@7\./);
-    expect(table).toMatch(/`@typescript\/native`[^\n]*TypeScript 7/);
+    expect(PACKAGE_JSON.devDependencies['typescript']).toMatch(/^7\.\d+\.\d+$/);
+    expect(table).toMatch(/`typescript`[^\n]*TypeScript 7/);
     expect(ARCHITECTURE).not.toContain('**Build tool:** `tsc` (TypeScript compiler, no bundler)');
     expect(section(ARCHITECTURE, '## Build & Output')).toContain('TypeScript 7');
   });

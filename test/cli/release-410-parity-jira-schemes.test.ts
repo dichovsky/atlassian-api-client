@@ -231,8 +231,9 @@ describe('issuesecurityschemes asynchronous actions print the task (X-ISS-ASYNC)
     type Iss = Pick<JiraClient['issueSecuritySchemes'], 'associateToProject' | 'removeLevel'>;
     const noTask: Iss = {
       associateToProject: async () => undefined,
-      // eslint-disable-next-line @typescript-eslint/no-empty-function -- the empty-body fake is the case under test.
-      removeLevel: async () => {},
+      removeLevel: async () => {
+        // The empty implementation deliberately infers Promise<void>.
+      },
     };
     const singleSignature: Iss = {
       // @ts-expect-error TS2322: one signature returning the task cannot satisfy the void overload.

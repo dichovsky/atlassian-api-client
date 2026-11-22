@@ -216,12 +216,10 @@ describe('ScreenSchemeResource', () => {
 
       await resource.create({ name: 'Minimal', screens: { default: 10001 } });
 
-      const screens = (transport.lastCall?.options.body as Record<string, unknown>)[
-        'screens'
-      ] as Record<string, unknown>;
-      expect(screens).not.toHaveProperty('view');
-      expect(screens).not.toHaveProperty('edit');
-      expect(screens).not.toHaveProperty('create');
+      expect(transport.lastCall?.options.body).toStrictEqual({
+        name: 'Minimal',
+        screens: { default: 10001 },
+      });
     });
   });
 

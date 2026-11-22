@@ -25,7 +25,10 @@ export type CustomContentBodyRepresentation = 'raw' | 'storage' | 'atlas_doc_for
  * read-only `view`, `export_view`, and `anonymous_export_view` projections).
  */
 export type CustomContentBodyRepresentationSingle =
-  CustomContentBodyRepresentation | 'view' | 'export_view' | 'anonymous_export_view';
+  | CustomContentBodyRepresentation
+  | 'view'
+  | 'export_view'
+  | 'anonymous_export_view';
 
 /**
  * Envelope used for the inlined sub-resources on `CustomContent` (`labels`,
@@ -207,7 +210,12 @@ export interface ListCustomContentVersionsParams {
  * spec's closed `ChildCustomContentSortOrder` enum.
  */
 export type ChildCustomContentSortOrder =
-  'id' | '-id' | 'created-date' | '-created-date' | 'modified-date' | '-modified-date';
+  | 'id'
+  | '-id'
+  | 'created-date'
+  | '-created-date'
+  | 'modified-date'
+  | '-modified-date';
 
 /** Parameters for `GET /custom-content/{id}/children`. */
 export interface ListCustomContentChildrenParams {

@@ -3,8 +3,7 @@
  * `.`) must name every type a 4.1.0-new or 4.1.0-changed public method
  * signature uses (X-EX1), plus every type the 4.1.0 release notes tell
  * consumers to import (X-EX3). Generic Jira names carry a `Jira` prefix
- * (X-EX2). Both typecheck passes (`npm run typecheck`, `npm run
- * typecheck:ts6`) compile this file: a name missing from `src/index.ts`
+ * (X-EX2). `npm run typecheck` compiles this file. A name missing from `src/index.ts`
  * fails with TS2305, a type that drifts from the signature it names fails
  * `toEqualTypeOf`, and a reappearing unprefixed `GetUserParams` fails the
  * `@ts-expect-error` below with TS2578.

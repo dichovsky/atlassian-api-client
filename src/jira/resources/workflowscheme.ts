@@ -102,7 +102,13 @@ export interface TaskProgressBeanObject {
   readonly self: string;
   readonly started?: number;
   readonly status:
-    'ENQUEUED' | 'RUNNING' | 'COMPLETE' | 'FAILED' | 'CANCEL_REQUESTED' | 'CANCELLED' | 'DEAD';
+    | 'ENQUEUED'
+    | 'RUNNING'
+    | 'COMPLETE'
+    | 'FAILED'
+    | 'CANCEL_REQUESTED'
+    | 'CANCELLED'
+    | 'DEAD';
   readonly submitted: number;
   readonly submittedBy: number;
 }

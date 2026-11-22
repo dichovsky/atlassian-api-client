@@ -16,45 +16,36 @@ Use Node.js 24 or later (`.nvmrc` holds the version CI uses). The gate also runs
 
 ## Scripts
 
-| Script                     | Purpose                                                                                                                                                                                                                      |
-| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `npm run build`            | Compile TypeScript to `dist/` with TypeScript 7                                                                                                                                                                              |
-| `npm run clean`            | Remove generated `dist/` and `coverage/` output                                                                                                                                                                              |
-| `npm run filemode:check`   | Verify that no tracked file has an executable mode outside the allowlist                                                                                                                                                     |
-| `npm run toolchain:check`  | Verify the pinned TypeScript 7 compiler and TypeScript 6 API bridge                                                                                                                                                          |
-| `npm run tsc:6`            | Run the TypeScript 6 compiler bridge directly (prefer `typecheck:ts6`)                                                                                                                                                       |
-| `npm run tsc:7`            | Run the TypeScript 7 compiler directly (prefer `build` / `typecheck`)                                                                                                                                                        |
-| `npm run typecheck`        | Type-check source and tests with TypeScript 7                                                                                                                                                                                |
-| `npm run typecheck:ts6`    | Verify TypeScript 6 compatibility with stable type ordering                                                                                                                                                                  |
-| `npm run codemap`          | Regenerate `CODEMAP.md`                                                                                                                                                                                                      |
-| `npm run codemap:check`    | Verify that `CODEMAP.md` is current (a frequent CI failure: re-run `npm run codemap` after the last source or formatting change)                                                                                             |
-| `npm run lint`             | Run ESLint                                                                                                                                                                                                                   |
-| `npm run lint:fix`         | Auto-fix ESLint issues                                                                                                                                                                                                       |
-| `npm run format`           | Rewrite files with Prettier (whole repository; for a focused change run `npx prettier --write <files>` instead)                                                                                                              |
-| `npm run format:check`     | Check formatting with Prettier                                                                                                                                                                                               |
-| `npm run test`             | Run the TypeScript/V8 suite and all API gap analyzer scenarios                                                                                                                                                               |
-| `npm run test:unit`        | Run every Vitest test except the Python API gap analyzer suite                                                                                                                                                               |
-| `npm run test:api-gap`     | Run all API gap analyzer scenarios with concurrency bounded to four processes                                                                                                                                                |
-| `npm run test:watch`       | Run tests in watch mode                                                                                                                                                                                                      |
-| `npm run test:coverage`    | Run the TypeScript/V8 suite with exact 100% coverage enforcement                                                                                                                                                             |
-| `npm run test:exports`     | Validate the built package exports                                                                                                                                                                                           |
-| `npm run api-coverage`     | Compare executable SDK routes with the pinned `spec/` snapshots (Python 3); fails on a missing non-deprecated operation. Run it whenever resource wire behavior changes                                                      |
-| `npm run spec-drift`       | Fetch the live upstream specs and compare their contract fingerprints with `spec/` (needs network; read-only, commits nothing)                                                                                               |
-| `npm run changelog`        | Prepend conventional-commit entries to `CHANGELOG.md` (`conventional-changelog`)                                                                                                                                             |
-| `npm run release:check`    | Validate a release tag against `package.json`, `package-lock.json`, and `CHANGELOG.md` (`npm run release:check -- vX.Y.Z`); required by the [release runbook](docs/RELEASING.md)                                             |
-| `npm run validate:quality` | The static half of the gate: `filemode:check`, `toolchain:check`, `typecheck:ts6`, `typecheck`, `codemap:check`, `lint`, `format:check`                                                                                      |
-| `npm run validate:package` | The package half of the gate: `build`, then `test:exports`                                                                                                                                                                   |
-| `npm run validate`         | The full publish gate: `clean`, `validate:quality`, `test:coverage`, `test:api-gap`, then `validate:package` (filemode, toolchain, both typechecks, codemap, lint, format, 100% coverage, API-gap suite, build, and exports) |
+| Script                     | Purpose                                                                                                                                                                          |
+| -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `npm run build`            | Compile the package to `dist/` with TypeScript 7.                                                                                                                                |
+| `npm run clean`            | Remove generated `dist/` and `coverage/` output                                                                                                                                  |
+| `npm run filemode:check`   | Verify that no tracked file has an executable mode outside the allowlist                                                                                                         |
+| `npm run typecheck`        | Type-check the source, tests, examples, and scripts with TypeScript 7.                                                                                                           |
+| `npm run codemap`          | Regenerate `CODEMAP.md`                                                                                                                                                          |
+| `npm run codemap:check`    | Verify that `CODEMAP.md` is current (a frequent CI failure: re-run `npm run codemap` after the last source or formatting change)                                                 |
+| `npm run lint`             | Check JavaScript syntax with Node.js, then run Oxlint. Any warning or error fails the check.                                                                                     |
+| `npm run lint:fix`         | Apply automatic Oxlint fixes.                                                                                                                                                    |
+| `npm run format`           | Format the repository with Oxfmt. To format specific files, run `npx oxfmt --write <files>`.                                                                                     |
+| `npm run format:check`     | Check formatting with Oxfmt.                                                                                                                                                     |
+| `npm run test`             | Run the TypeScript/V8 suite and all API gap analyzer scenarios                                                                                                                   |
+| `npm run test:unit`        | Run every Vitest test except the Python API gap analyzer suite                                                                                                                   |
+| `npm run test:api-gap`     | Run all API gap analyzer scenarios with concurrency bounded to four processes                                                                                                    |
+| `npm run test:watch`       | Run tests in watch mode                                                                                                                                                          |
+| `npm run test:coverage`    | Run the TypeScript/V8 suite with exact 100% coverage enforcement                                                                                                                 |
+| `npm run test:exports`     | Validate the built package exports                                                                                                                                               |
+| `npm run api-coverage`     | Compare executable SDK routes with the pinned `spec/` snapshots (Python 3); fails on a missing non-deprecated operation. Run it whenever resource wire behavior changes          |
+| `npm run spec-drift`       | Fetch the live upstream specs and compare their contract fingerprints with `spec/` (needs network; read-only, commits nothing)                                                   |
+| `npm run changelog`        | Prepend Conventional Commits entries to `CHANGELOG.md`.                                                                                                                          |
+| `npm run release:check`    | Validate a release tag against `package.json`, `package-lock.json`, and `CHANGELOG.md` (`npm run release:check -- vX.Y.Z`); required by the [release runbook](docs/RELEASING.md) |
+| `npm run validate:quality` | Run `filemode:check`, `typecheck`, `codemap:check`, `lint`, and `format:check`.                                                                                                  |
+| `npm run validate:package` | The package half of the gate: `build`, then `test:exports`                                                                                                                       |
+| `npm run validate`         | Run the full publish gate in order with `clean`, `validate:quality`, `test:coverage`, `test:api-gap`, and `validate:package`.                                                    |
 
-TypeScript 7 powers production type-checking and builds. The `typescript` dependency intentionally
-remains on the TypeScript 6 compatibility package because these still need it: `typescript-eslint`, the
-codemap generator (`scripts/generate-codemap.js`), the public-JSDoc test
-(`test/docs/jsdoc-public-exports.test.ts`), the CLI write-property reachability test
-(`test/cli/cli-write-property-reachability.test.ts`), the SDK/CLI route map
-(`test/helpers/sdk-routes.ts`) and the skill TypeScript-snippet test
-(`test/cli/release-410-help-skill-docs.test.ts`) use the TypeScript 6 compiler API, and
-`npm run typecheck:ts6` runs its `tsc6` compiler. Use the npm scripts above instead of a bare `tsc`; the
-bridge can be removed once those tools support TypeScript 7's stable API.
+TypeScript 7 compiles the SDK and checks the TypeScript examples in the README and bundled skill.
+The codemap, public JSDoc, SDK route, and CLI write-property checks inspect source through
+`typescript/unstable/` APIs. The dependency is pinned to an exact version because those interfaces
+can change between releases. Run `npm run validate` when upgrading the compiler.
 
 The Python-backed API gap tests are separate from V8 coverage because they do not execute `src/**/*.ts`.
 `npm run validate` still requires both suites.
@@ -68,7 +59,7 @@ check.
 ## Code Standards
 
 - TypeScript strict mode, no `any`
-- ESLint with zero warnings/errors
+- Oxlint with zero warnings and errors
 - 100% test coverage (statements, branches, functions, lines)
 - Immutable data patterns
 - Small focused functions (<50 lines)

@@ -83,8 +83,7 @@ function extractClassBody(source: string, className: string): string {
   return source.slice(bodyStart, i - 1);
 }
 
-// Matches a class member signature at exactly 2-space indent (Prettier's
-// class-member indent in this repo), e.g. `  async list(`, `  async *listAll(`,
+// Matches a class member signature at the repository's two-space indent, e.g. `  async list(`, `  async *listAll(`,
 // `  private async helper(`. JSDoc lines (`  /**`, `   * ...`) never match:
 // they don't end in `\w+\s*\(` at this indent.
 const MEMBER_RE =

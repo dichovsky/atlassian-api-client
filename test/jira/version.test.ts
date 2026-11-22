@@ -107,9 +107,8 @@ describe('VersionResource', () => {
 
     it('does NOT forward readOnly userStartDate/userReleaseDate even when provided (B1050)', async () => {
       transport.respondWith(makeVersion());
-      // Cast bypasses the fixed type; verifies the implementation strips the fields regardless
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await resource.create({ userStartDate: '01/Jan/26', userReleaseDate: '01/Jun/26' } as any);
+      const input = { name: 'v1.0', userStartDate: '01/Jan/26', userReleaseDate: '01/Jun/26' };
+      await resource.create(input);
 
       const body = transport.lastCall?.options.body as Record<string, unknown>;
       expect(body['userStartDate']).toBeUndefined();

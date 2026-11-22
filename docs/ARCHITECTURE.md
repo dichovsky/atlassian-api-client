@@ -114,8 +114,7 @@ src/
 │   │   ├── fields.ts            # /rest/api/3/field
 │   │   ├── webhooks.ts          # /rest/api/3/webhook
 │   │   ├── jql.ts               # /rest/api/3/jql/*
-│   │   ├── bulk.ts              # /rest/api/3/issue/bulk, issue/properties/{key}, bulk/issues/*, bulk/queue/{id}, and the DevOps */bulk submit routes
-│   │   └── index.ts             # Resources barrel
+│   │   └── bulk.ts              # /rest/api/3/issue/bulk, issue/properties/{key}, bulk/issues/*, bulk/queue/{id}, and the DevOps */bulk submit routes
 │   ├── client.ts                # JiraClient class
 │   └── index.ts                 # Jira barrel export
 └── index.ts                     # Package entry point
@@ -661,20 +660,17 @@ The package uses only Node.js built-ins available in the supported runtime (Node
 
 ### Dev Dependencies
 
-| Package                      | Purpose                                                                                                                                                                                                                                                                        |
-| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `@typescript/native`         | TypeScript 7 (aliased from `npm:typescript`) — the build and type-check compiler (`npm run tsc:7`)                                                                                                                                                                             |
-| `typescript`                 | TypeScript 6 bridge (aliased from `npm:@typescript/typescript6`): compiler API for `typescript-eslint`, codemap, JSDoc test, CLI write-property reachability test, SDK/CLI route map (`test/helpers/sdk-routes.ts`), skill TypeScript-snippet test; `tsc6` for `typecheck:ts6` |
-| `@types/node`                | Node.js type definitions                                                                                                                                                                                                                                                       |
-| `vitest`                     | Test framework                                                                                                                                                                                                                                                                 |
-| `@vitest/coverage-v8`        | V8-based coverage                                                                                                                                                                                                                                                              |
-| `eslint`, `@eslint/js`       | Linting                                                                                                                                                                                                                                                                        |
-| `typescript-eslint`          | TypeScript ESLint rules + parser (unified)                                                                                                                                                                                                                                     |
-| `globals`                    | Global-variable definitions for the ESLint config                                                                                                                                                                                                                              |
-| `prettier`                   | Code formatting                                                                                                                                                                                                                                                                |
-| `fast-check`                 | Property-based testing (B014)                                                                                                                                                                                                                                                  |
-| `conventional-changelog-cli` | Changelog generation (`npm run changelog`)                                                                                                                                                                                                                                     |
-| `rimraf`                     | Cross-platform clean (`npm run clean`)                                                                                                                                                                                                                                         |
+| Package                                      | Purpose                                                                                                                                         |
+| -------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `typescript`                                 | TypeScript 7 builds the SDK, checks source and documentation examples, and provides the compiler API for the codemap and source-analysis tests. |
+| `@types/node`                                | Node.js type definitions.                                                                                                                       |
+| `vitest`                                     | Test runner.                                                                                                                                    |
+| `@vitest/coverage-v8`                        | V8-based coverage.                                                                                                                              |
+| `oxlint`                                     | Linting for TypeScript and JavaScript.                                                                                                          |
+| `oxfmt`                                      | Formatting for source code, Markdown, and configuration files.                                                                                  |
+| `fast-check`                                 | Property-based testing.                                                                                                                         |
+| `conventional-changelog`                     | Generates changelog entries with `npm run changelog`.                                                                                           |
+| `conventional-changelog-conventionalcommits` | Parses Conventional Commits and formats their changelog entries.                                                                                |
 
 ---
 
@@ -756,7 +752,7 @@ Default is `basic`. Unknown values fall back to `basic` so existing invocations 
 
 ## Build & Output
 
-**Build tool:** `tsc` from TypeScript 7 (`@typescript/native`, run via `npm run build`; no bundler)
+**Build tool:** `npm run build` invokes the TypeScript 7 compiler (`tsc`).
 
 **Output:**
 
@@ -780,4 +776,4 @@ Default is `basic`. Unknown values fall back to `basic` so existing invocations 
 - `test/` (tests)
 - `examples/` (dev examples)
 - Other `docs/` files not explicitly whitelisted
-- Config files (tsconfig, vitest, eslint, prettier)
+- Configuration files for TypeScript, Vitest, Oxlint, and Oxfmt

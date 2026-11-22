@@ -11,10 +11,11 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { readFileSync } from 'node:fs';
+import { readdirSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import ts from 'typescript';
+import * as ts from 'typescript/unstable/ast';
+import { readTypeScriptSources } from '../../scripts/typescript-source.ts';
 
 const TEST_DIR = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(TEST_DIR, '..', '..');
@@ -22,11 +23,15 @@ const SRC_ROOT = resolve(REPO_ROOT, 'src');
 
 // ─── TypeScript source file helpers ───────────────────────────────────────────
 
+const sourceFiles = readdirSync(SRC_ROOT, { recursive: true, encoding: 'utf8' })
+  .filter((path) => path.endsWith('.ts'))
+  .map((path) => resolve(SRC_ROOT, path));
+const sources = readTypeScriptSources(sourceFiles);
+
 function readSourceFile(absPath: string): ts.SourceFile {
-  const text = readFileSync(absPath, 'utf8');
-  // setParentNodes: true is required so getJSDocCommentsAndTags can walk
-  // the parent chain. ts.createProgram does NOT set parents.
-  return ts.createSourceFile(absPath, text, ts.ScriptTarget.ES2022, /* setParentNodes */ true);
+  const source = sources.get(absPath);
+  if (!source) throw new Error(`Missing TypeScript source: ${absPath}`);
+  return source;
 }
 
 /** Resolve a bare `.js` module specifier to its `.ts` source file. */
@@ -38,15 +43,7 @@ function resolveSpecifier(specifier: string, fromDir: string): string | null {
     resolve(fromDir, withoutExt + '.ts'),
     resolve(fromDir, withoutExt, 'index.ts'),
   ];
-  for (const c of candidates) {
-    try {
-      readFileSync(c); // throws if not found
-      return c;
-    } catch {
-      // continue
-    }
-  }
-  return null;
+  return candidates.find((path) => sources.has(path)) ?? null;
 }
 
 // ─── Export name resolution ────────────────────────────────────────────────────
@@ -109,7 +106,7 @@ function collectExports(
         const exportedName = element.name.text;
         const originalName = element.propertyName?.text ?? exportedName;
         // Resolve the declaration: the target may itself be another barrel.
-        const resolved = resolveDeclaration(targetPath, originalName, maxDepth - 1, visited);
+        const resolved = resolveDeclaration(targetPath, originalName, maxDepth - 1);
         results.push({
           name: exportedName,
           declarationFile: resolved.file,
@@ -130,7 +127,6 @@ function resolveDeclaration(
   filePath: string,
   name: string,
   maxDepth: number,
-  visited: Set<string>,
 ): { file: string; name: string } {
   if (maxDepth <= 0) return { file: filePath, name };
 
@@ -151,7 +147,7 @@ function resolveDeclaration(
         const targetPath = resolveSpecifier(moduleSpec.text, fileDir);
         if (targetPath === null) return { file: filePath, name };
         // Found a re-export: follow it into the target with the original name.
-        return resolveDeclaration(targetPath, elOriginal, maxDepth - 1, visited);
+        return resolveDeclaration(targetPath, elOriginal, maxDepth - 1);
       }
     }
   }
@@ -163,38 +159,10 @@ function resolveDeclaration(
 // ─── JSDoc presence check ──────────────────────────────────────────────────────
 
 /**
- * Return the JSDoc comment text attached to a declaration node, or `null` when
- * the declaration has none.
- *
- * Handles both the `getJSDocCommentsAndTags` public API (which requires
- * `setParentNodes: true` to work) and the common single-line `/** … *\/` form
- * that the library uses throughout.
+ * Report whether each matching exported declaration has an attached JSDoc comment.
  */
-function getJsDoc(node: ts.Node): string | null {
-  const tags = ts.getJSDocCommentsAndTags(node);
-  if (tags.length > 0) {
-    const first = tags[0];
-    if (first !== undefined && ts.isJSDoc(first) && first.comment !== undefined) {
-      const c = first.comment;
-      if (typeof c === 'string') return c;
-      // NodeArray<JSDocComment> — just signal presence; content doesn't matter for this gate.
-      return Array.isArray(c) ? c.map((p) => (typeof p === 'string' ? p : '')).join('') : '';
-    }
-    // Has tags (e.g. @param, @returns) but no description body — still counts as documented.
-    return '';
-  }
-  return null;
-}
-
-/**
- * Return all top-level exported declarations that carry `name` in a source
- * file, along with their JSDoc status.
- */
-function findDeclarationJsDoc(
-  sf: ts.SourceFile,
-  name: string,
-): { node: ts.Node; jsdoc: string | null }[] {
-  const results: { node: ts.Node; jsdoc: string | null }[] = [];
+function findDeclarationJsDoc(sf: ts.SourceFile, name: string): boolean[] {
+  const results: boolean[] = [];
 
   for (const stmt of sf.statements) {
     // `export class Foo { … }` / `export function foo() { … }` / `export const foo = …`
@@ -213,14 +181,11 @@ function findDeclarationJsDoc(
         for (const decl of stmt.declarationList.declarations) {
           if (ts.isIdentifier(decl.name) && decl.name.text === name) {
             // JSDoc lives on the VariableStatement, not the individual declaration.
-            results.push({ node: stmt, jsdoc: getJsDoc(stmt) });
+            results.push(stmt.jsDoc?.some(ts.isJSDoc) ?? false);
           }
         }
-      } else {
-        const named = stmt as ts.DeclarationStatement;
-        if (named.name && ts.isIdentifier(named.name) && named.name.text === name) {
-          results.push({ node: stmt, jsdoc: getJsDoc(stmt) });
-        }
+      } else if (stmt.name?.text === name) {
+        results.push(stmt.jsDoc?.some(ts.isJSDoc) ?? false);
       }
     }
   }
@@ -263,7 +228,7 @@ describe('B001 — JSDoc on public exports', () => {
         continue;
       }
 
-      const hasJsDoc = matches.some((m) => m.jsdoc !== null);
+      const hasJsDoc = matches.includes(true);
       if (!hasJsDoc) {
         const relPath = loc.declarationFile.replace(REPO_ROOT + '/', '');
         missing.push(`${loc.localName} (${relPath})`);
@@ -283,27 +248,27 @@ describe('B001 — JSDoc on public exports', () => {
     const sf = readSourceFile(resolve(SRC_ROOT, 'confluence', 'client.ts'));
     const matches = findDeclarationJsDoc(sf, 'ConfluenceClient');
     expect(matches.length).toBeGreaterThan(0);
-    expect(matches.some((m) => m.jsdoc !== null)).toBe(true);
+    expect(matches.includes(true)).toBe(true);
   });
 
   it('JiraClient class has a JSDoc comment', () => {
     const sf = readSourceFile(resolve(SRC_ROOT, 'jira', 'client.ts'));
     const matches = findDeclarationJsDoc(sf, 'JiraClient');
     expect(matches.length).toBeGreaterThan(0);
-    expect(matches.some((m) => m.jsdoc !== null)).toBe(true);
+    expect(matches.includes(true)).toBe(true);
   });
 
   it('HttpTransport class has a JSDoc comment', () => {
     const sf = readSourceFile(resolve(SRC_ROOT, 'core', 'transport.ts'));
     const matches = findDeclarationJsDoc(sf, 'HttpTransport');
     expect(matches.length).toBeGreaterThan(0);
-    expect(matches.some((m) => m.jsdoc !== null)).toBe(true);
+    expect(matches.includes(true)).toBe(true);
   });
 
   it('resolveConfig function has a JSDoc comment', () => {
     const sf = readSourceFile(resolve(SRC_ROOT, 'core', 'config.ts'));
     const matches = findDeclarationJsDoc(sf, 'resolveConfig');
     expect(matches.length).toBeGreaterThan(0);
-    expect(matches.some((m) => m.jsdoc !== null)).toBe(true);
+    expect(matches.includes(true)).toBe(true);
   });
 });

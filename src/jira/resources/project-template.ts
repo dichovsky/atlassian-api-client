@@ -11,10 +11,20 @@ export interface ProjectTemplateKey {
 /** Archetype (type + style) of a project template. */
 export interface ProjectArchetype {
   readonly realType?:
-    'BUSINESS' | 'SOFTWARE' | 'PRODUCT_DISCOVERY' | 'SERVICE_DESK' | 'CUSTOMER_SERVICE' | 'OPS';
+    | 'BUSINESS'
+    | 'SOFTWARE'
+    | 'PRODUCT_DISCOVERY'
+    | 'SERVICE_DESK'
+    | 'CUSTOMER_SERVICE'
+    | 'OPS';
   readonly style?: 'classic' | 'next-gen';
   readonly type?:
-    'BUSINESS' | 'SOFTWARE' | 'PRODUCT_DISCOVERY' | 'SERVICE_DESK' | 'CUSTOMER_SERVICE' | 'OPS';
+    | 'BUSINESS'
+    | 'SOFTWARE'
+    | 'PRODUCT_DISCOVERY'
+    | 'SERVICE_DESK'
+    | 'CUSTOMER_SERVICE'
+    | 'OPS';
 }
 
 /**
@@ -33,7 +43,10 @@ export type ProjectAccessLevel = 'open' | 'limited' | 'private' | 'free';
 
 /** Default assignee mode for a project. */
 export type ProjectAssigneeType =
-  'PROJECT_DEFAULT' | 'COMPONENT_LEAD' | 'PROJECT_LEAD' | 'UNASSIGNED';
+  | 'PROJECT_DEFAULT'
+  | 'COMPONENT_LEAD'
+  | 'PROJECT_LEAD'
+  | 'UNASSIGNED';
 
 /** Scalar project details passed in the create-with-custom-template body. */
 export interface CustomTemplatesProjectDetails {

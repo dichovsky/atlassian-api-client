@@ -15,7 +15,8 @@ import { createHash } from 'node:crypto';
 import { existsSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
 import process from 'node:process';
-import ts from 'typescript';
+import * as ts from 'typescript/unstable/ast';
+import { readTypeScriptSources } from './typescript-source.ts';
 
 // Repo root = process.cwd(); npm scripts always cd into package dir, so this
 // matches normal invocation. Tests can override by spawning with cwd: fixtureDir.
@@ -79,12 +80,8 @@ function main() {
 
   /** @type {Map<string, FileInfo>} */
   const fileMap = new Map();
-  for (const filePath of files) {
-    const text = readFileSync(filePath, 'utf8');
-    // setParentNodes: true is required for ts.getJSDocCommentsAndTags() to walk
-    // up to find leading JSDoc — ts.createProgram does NOT set parents.
-    const sf = ts.createSourceFile(filePath, text, ts.ScriptTarget.ES2022, true);
-    fileMap.set(filePath, extractFileInfo(sf, filePath, config));
+  for (const [file, source] of readTypeScriptSources(files)) {
+    fileMap.set(file, extractFileInfo(source, file, config));
   }
 
   const publicApi = buildPublicApi(config.entrypoints, fileMap);
@@ -430,18 +427,21 @@ function fullText(node, sf) {
 
 /** Collapse whitespace via TS scanner so string literals stay intact. */
 function normalizeWs(text) {
-  const scanner = ts.createScanner(ts.ScriptTarget.ES2022, true);
-  scanner.setText(text);
+  const scanner = ts.createScanner(true, undefined, text);
   const parts = [];
   let prevEnd = -1;
   while (true) {
     const token = scanner.scan();
-    if (token === ts.SyntaxKind.EndOfFileToken) break;
-    const start =
-      typeof scanner.getTokenStart === 'function' ? scanner.getTokenStart() : scanner.getTokenPos();
+    if (token === ts.SyntaxKind.EndOfFile) break;
+    const start = scanner.getTokenStart();
+    // The standalone scanner sees a bare # (such as one in a regex) as a
+    // zero-width private identifier. Consume the hash before scanning again.
+    if (token === ts.SyntaxKind.PrivateIdentifier && start === scanner.getTokenEnd()) {
+      scanner.reScanHashToken();
+    }
     if (prevEnd >= 0 && start > prevEnd) parts.push(' ');
     parts.push(scanner.getTokenText());
-    prevEnd = scanner.getTextPos();
+    prevEnd = scanner.getTokenEnd();
   }
   return parts.join('').trim();
 }
@@ -489,11 +489,10 @@ function memberName(m) {
 }
 
 function extractJsdoc(node) {
-  const blocks = ts.getJSDocCommentsAndTags(node).filter((t) => ts.isJSDoc(t));
-  if (blocks.length === 0) return null;
-  const last = blocks[blocks.length - 1];
+  const last = node.jsDoc?.findLast(ts.isJSDoc);
+  if (!last) return null;
   const descRaw = ts.getTextOfJSDocComment(last.comment) ?? '';
-  let firstPara = descRaw
+  const firstPara = descRaw
     .split(/\n\s*\n/)[0]
     .trim()
     .replace(/\s+/g, ' ');
@@ -515,9 +514,7 @@ function extractJsdoc(node) {
 // ---------- helpers ----------
 
 function hasModifier(node, kind) {
-  if (!ts.canHaveModifiers(node)) return false;
-  const mods = ts.getModifiers(node);
-  return mods?.some((m) => m.kind === kind) ?? false;
+  return node.modifiers?.some((m) => m.kind === kind) ?? false;
 }
 
 function lineOf(node, sf) {
