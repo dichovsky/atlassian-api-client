@@ -41,13 +41,24 @@ const yield = 0o10; module.exports = [yield, '\0', '\\141'];`,
       mkdirSync(join(dir, ignored));
       writeFileSync(join(dir, ignored, 'ignored.js'), 'console.log(010);');
     }
+    const nestedConfig = 'scripts/nested.config.js';
+    for (const file of ['root.config.js', nestedConfig]) {
+      writeFileSync(join(dir, file), 'console.log(010, missingVariable);');
+    }
+    const nestedPackage = join(dir, 'common');
+    mkdirSync(nestedPackage);
+    writeFileSync(join(nestedPackage, 'package.json'), '{"type":"commonjs"}');
+    writeFileSync(join(nestedPackage, 'legacy.js'), 'module.exports = 010;');
+    writeFileSync(join(nestedPackage, 'valid.js'), 'const yield = 0o10; module.exports = yield;');
+    writeFileSync(join(dir, 'escapes.mjs'), String.raw`export default ['\0', '\\141'];`);
     const syntax = fileURLToPath(new URL('scripts/check-javascript-syntax.js', root));
     const checked = spawnSync(process.execPath, [syntax], { cwd: dir, encoding: 'utf8' });
     expect(checked.status).toBe(1);
     expect(checked.stderr).toContain('with spaces.js');
     expect(checked.stderr).toContain('duplicate.js');
     expect(checked.stderr).toContain('legacy.mjs');
-    for (const file of ['valid.js', 'valid.cjs', 'await.js', 'ignored.js']) {
+    expect(checked.stderr).toContain('nested.config.js');
+    for (const file of ['valid.js', 'valid.cjs', 'await.js', 'ignored.js', 'root.config.js']) {
       expect(checked.stderr).not.toContain(file);
     }
     const result = spawnSync(process.execPath, [cli, '--format', 'json', '.'], {
@@ -57,7 +68,12 @@ const yield = 0o10; module.exports = [yield, '\0', '\\141'];`,
     const { diagnostics } = JSON.parse(result.stdout) as {
       diagnostics: { filename: string; code?: string }[];
     };
-    for (const filename of ['legacy.cjs', 'legacy-decimal.cjs', 'legacy-string.cjs']) {
+    for (const filename of [
+      'legacy.cjs',
+      'legacy-decimal.cjs',
+      'legacy-string.cjs',
+      'common/legacy.js',
+    ]) {
       expect(diagnostics).toContainEqual(
         expect.objectContaining({ filename, code: 'node-syntax(no-legacy-literal)' }),
       );
@@ -65,7 +81,7 @@ const yield = 0o10; module.exports = [yield, '\0', '\\141'];`,
     expect(diagnostics).toContainEqual(
       expect.objectContaining({ filename: 'duplicate.cjs', code: 'eslint(no-redeclare)' }),
     );
-    for (const filename of jsFiles) {
+    for (const filename of [...jsFiles, nestedConfig]) {
       expect(diagnostics).toContainEqual(
         expect.objectContaining({ filename, code: 'eslint(no-undef)' }),
       );
@@ -77,12 +93,15 @@ const yield = 0o10; module.exports = [yield, '\0', '\\141'];`,
     }
     expect([...new Set(diagnostics.map((issue) => issue.filename))].sort()).toEqual(
       [
+        'common/legacy.js',
+        nestedConfig,
         'duplicate.cjs',
         'duplicate.js',
         'legacy.cjs',
         'legacy-decimal.cjs',
         'legacy-string.cjs',
         'legacy.mjs',
+        'with spaces.js',
         ...jsFiles,
         ...tsFiles,
       ].sort(),

@@ -1,4 +1,4 @@
-// CommonJS permits legacy literals that the project's lint rules reject.
+// CommonJS permits legacy literals even in .js files inside a CommonJS package.
 export default {
   meta: { name: 'node-syntax' },
   rules: {

@@ -16,7 +16,8 @@ const files = execFileSync(
     '*.js',
     '*.mjs',
     '*.cjs',
-    ...ignorePatterns.map((pattern) => `:(exclude,glob)${pattern}`),
+    // Oxlint anchors a leading slash at the root; Git pathspecs start there already.
+    ...ignorePatterns.map((pattern) => ':(exclude,glob)' + pattern.replace(/^\//, '')),
   ],
   { encoding: 'utf8' },
 );
