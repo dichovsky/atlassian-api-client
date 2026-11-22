@@ -49,11 +49,11 @@ When you refer to the spec in a PR description, include the SHA-256 from this pa
 
 `npm run spec-drift` compares a canonical contract fingerprint (routes, parameters, bodies, responses, schemas, and security metadata). It ignores changes that are only in the documentation prose.
 
-`npm run api-coverage` fails closed if a snapshot does not have correct OpenAPI 3.x metadata, paths, operations, or its expected server scope. It audits the `GET`, `PUT`, `POST`, `DELETE`, `OPTIONS`, `HEAD`, `PATCH`, and `TRACE` operations. It does not ignore an unresolved Path Item `$ref`, but rejects it. The check also fails if one of these conditions occurs:
+`npm run api-coverage` fails closed if a snapshot does not have correct OpenAPI 3.x metadata, paths, operations, or the expected path of its server URL. It audits the `GET`, `PUT`, `POST`, `DELETE`, `OPTIONS`, `HEAD`, `PATCH`, and `TRACE` operations. It does not ignore an unresolved Path Item `$ref`, but rejects it. The check also fails if one of these conditions occurs:
 
 - A pinned operation that is not deprecated has no SDK route.
 - The route extraction is unresolved.
-- An in-scope SDK request does not agree with a pinned operation.
+- An SDK request that the audit covers does not agree with a pinned operation.
 
 The check reports deprecated omissions and the documented Confluence REST v1 upload exception, but these items do not cause the check to fail.
 
