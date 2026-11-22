@@ -1,6 +1,6 @@
 # OpenAPI Specs
 
-Pinned snapshots of upstream Atlassian REST API specifications. Used by implementers and reviewers as the single source of truth for endpoint verb/path/body/query shapes during API-coverage work (see `CLAUDE.md` → Required Workflow (step 6) and Critical Invariants).
+This directory contains pinned snapshots of the upstream Atlassian REST API specifications. During API-coverage work, implementers and reviewers use only these snapshots to find the HTTP method, path, body, and query shape of an endpoint (see `CLAUDE.md` → Required Workflow (step 6) and Critical Invariants).
 
 ## Files
 
@@ -36,7 +36,7 @@ Pinned snapshots of upstream Atlassian REST API specifications. Used by implemen
 
 ## How to use
 
-During implementation or review of an endpoint, grep the spec for the path or operation:
+When you implement or review an endpoint, find the path or the operation in the spec:
 
 ```bash
 jq '.paths["/rest/api/3/workflowscheme/{id}"]' spec/jira-platform-v3.json
@@ -45,11 +45,21 @@ jq '.paths["/rest/agile/1.0/board/{boardId}/sprint"]' spec/jira-software.json
 jq '.paths["/spaces/{id}/labels"]' spec/confluence-v2.json
 ```
 
-When citing the spec in a PR description, reference the SHA-256 above so reviewers know which snapshot was checked. `npm run spec-drift` compares a canonical contract fingerprint (routes, parameters, bodies, responses, schemas, and security metadata) while ignoring prose-only documentation changes. `npm run api-coverage` fails closed when a snapshot lacks valid OpenAPI 3.x metadata, paths, operations, or its expected server scope. It audits `GET`, `PUT`, `POST`, `DELETE`, `OPTIONS`, `HEAD`, `PATCH`, and `TRACE`; an unresolved Path Item `$ref` is rejected explicitly. The check also fails when a current operation has no SDK route, route extraction is unresolved, or an in-scope SDK request matches no pinned operation; deprecated omissions and the documented Confluence REST v1 upload exception are reported without failing the check.
+When you refer to the spec in a PR description, include the SHA-256 from this page. Then reviewers know which snapshot you examined.
+
+`npm run spec-drift` compares a canonical contract fingerprint (routes, parameters, bodies, responses, schemas, and security metadata). It ignores changes that are only in the documentation prose.
+
+`npm run api-coverage` fails closed if a snapshot does not have correct OpenAPI 3.x metadata, paths, operations, or its expected server scope. It audits the `GET`, `PUT`, `POST`, `DELETE`, `OPTIONS`, `HEAD`, `PATCH`, and `TRACE` operations. It does not ignore an unresolved Path Item `$ref`, but rejects it. The check also fails if one of these conditions occurs:
+
+- A pinned operation that is not deprecated has no SDK route.
+- The route extraction is unresolved.
+- An in-scope SDK request does not agree with a pinned operation.
+
+The check reports deprecated omissions and the documented Confluence REST v1 upload exception, but these items do not cause the check to fail.
 
 ## Re-pinning
 
-To refresh the snapshots:
+To re-pin the snapshots, run these commands:
 
 ```bash
 curl -fsSL -o spec/jira-platform-v3.json https://developer.atlassian.com/cloud/jira/platform/swagger-v3.v3.json
@@ -63,5 +73,9 @@ npm run spec-drift
 npm run api-coverage
 ```
 
-Then update the SHA-256, contract fingerprint printed by `spec-drift`, pinned date, and upstream
-version above. Review the semantic diff and update SDK/CLI/skill parity before opening the PR.
+Then do these steps:
+
+1. Update the SHA-256, the contract fingerprint that `spec-drift` prints, the pinned date, and the upstream version on this page.
+2. Review the semantic diff.
+3. Update the SDK, CLI, and skill parity.
+4. Open the PR.

@@ -9,39 +9,44 @@
 
 ## Reporting a Vulnerability
 
-If you discover a security vulnerability, please report it responsibly:
+If you find a security vulnerability, use this procedure to report it:
 
 1. **Do not** open a public issue.
-2. Report it privately through [GitHub private vulnerability reporting](https://github.com/dichovsky/atlassian-api-client/security/advisories/new) (preferred: the report becomes a tracked draft advisory), or email **magdich.igor@gmail.com** with details of the vulnerability.
-3. Include steps to reproduce the issue.
-4. Allow reasonable time for a fix before public disclosure.
+2. Report the vulnerability privately. Use one of these methods:
+   - [GitHub private vulnerability reporting](https://github.com/dichovsky/atlassian-api-client/security/advisories/new). This is the recommended method, because the report becomes a tracked draft advisory.
+   - Send an email to **magdich.igor@gmail.com**. In the email, give information about the vulnerability.
+3. Include the steps that make the vulnerability occur.
+4. Give the maintainer sufficient time to correct the vulnerability before you make it public.
 
 ## Security Practices
 
-This package follows these security practices:
+This package uses these security practices:
 
-- **Zero runtime dependencies** — Minimises supply-chain attack surface.
-- **No credential exposure** — Auth credentials are not logged or serialised in errors. `HttpError.toJSON()` omits `responseBody`, debug logs strip query strings and credential-shaped path segments, and OAuth error snippets redact token fields before truncation.
-- **Auth always wins** — `HttpTransport` strips caller-supplied auth-bearing headers (`Authorization`, proxy auth, cookies, and Atlassian WebSudo) before applying the configured auth provider.
-- **Credential host allowlists** — `ClientConfig.allowedHosts` gates API hosts and rejects non-default ports. `OAuthRefreshConfig.allowedTokenEndpointHosts` separately exact-matches OAuth token endpoint hostnames because refresh calls bypass the transport.
-- **Redirect checks on writes** — POST, PUT, PATCH and DELETE requests are sent with `redirect: 'manual'`. The transport follows a write's redirect only to an `https://` URL on the default port whose host passes `ClientConfig.allowedHosts` and that carries no username or password, so the write's own redirects cannot carry it, or its `Authorization` header, to a host outside the allowlist. A refused redirect throws instead of being followed, and the write is not sent again (see the README's Retry & Timeout section). After an accepted 303 (or a POST's 301/302), the body-less GET that follows keeps the request's `Authorization` header and is sent with `redirect: 'follow'`, so `fetch` follows any further redirect of it without the `allowedHosts` check, as for every GET. Node's built-in `fetch` drops `Authorization` on a cross-origin hop; a custom `config.fetch` that does not would send the credential to that host.
-- **HTTPS enforcement** — `baseUrl` and OAuth `tokenEndpoint` must use `https:`. The `tokenEndpoint` must additionally use the scheme's default port and carry no embedded userinfo, so an allow-listed hostname cannot be used to route `refresh_token` and `client_secret` to a different service on another port, or to smuggle a Basic credential the caller never intended. OAuth middleware validates its endpoint at construction; direct `fetchRefreshedTokens` calls validate before dispatch.
-- **Input validation** — Configuration is validated at construction time; numeric IDs (`boardId`, `sprintId`, `versionNumber`) are validated as positive integers before URL construction.
-- **Response body cap** — Set `ClientConfig.maxResponseBytes` when consuming responses from untrusted proxies or upstreams. Buffered success and error bodies fail with `ResponseTooLargeError` when they exceed the configured cap.
-- **Safe logging** — Debug logs record `method + path` only; query strings (which may contain cursor tokens or sensitive filter values) are never written to logs.
-- **Injection-safe code generation** — `generateTypes` validates schema names as legal TypeScript identifiers and escapes unsafe sequences in descriptions and enum values before emitting source code.
-- **Safe defaults** — Conservative timeout and retry settings; cache options validated to reject zero or negative `maxSize`/`ttl`.
-- **Strict CLI parsing** — Unknown CLI flags are rejected (not silently swallowed), so typos in security-relevant flags like `--token` produce an error instead of silently falling back to environment variables.
+- **Zero runtime dependencies** — The package has no runtime dependencies. This decreases the supply-chain attack surface.
+- **No credential exposure** — The client does not write auth credentials to logs or to serialized errors. `HttpError.toJSON()` does not include `responseBody`. Debug logs remove query strings and the path segments that have the shape of a credential. The client redacts the token fields in OAuth error snippets before it truncates the snippets.
+- **Auth always wins** — `HttpTransport` removes the caller-supplied headers that contain auth data (`Authorization`, proxy auth, cookies, and Atlassian WebSudo). Then it applies the configured auth provider.
+- **Credential host allowlists** — `ClientConfig.allowedHosts` lets the client send requests only to the API hosts in this allowlist. It also rejects ports that are not the default port. `OAuthRefreshConfig.allowedTokenEndpointHosts` is a different allowlist for OAuth token endpoint hostnames. A token endpoint hostname must be the same as one entry in that allowlist. This different allowlist is necessary because refresh calls do not go through the transport.
+- **Redirect checks on writes** — The transport sends POST, PUT, PATCH, and DELETE requests with `redirect: 'manual'`. The transport follows the redirect of a write only to an `https://` URL on the default port. `ClientConfig.allowedHosts` must accept the host of that URL, and the URL must not contain a username or a password. The transport uses these limits, so the write's own redirects cannot carry it, or its `Authorization` header, to a host outside the allowlist. After an accepted 303 (or a POST's 301/302), the body-less GET that follows keeps the request's `Authorization` header and is sent with `redirect: 'follow'`. Node's built-in `fetch` drops `Authorization` on a cross-origin hop.
+  - If the transport refuses a redirect, the request throws an error. The transport does not follow that redirect, and it does not send the write again (see the README's Retry & Timeout section).
+  - `fetch` follows all subsequent redirects of the body-less GET without the `allowedHosts` check, as for all other GET requests.
+  - If a custom `config.fetch` does not drop `Authorization` on a cross-origin hop, that `fetch` sends the credential to the cross-origin host.
+- **HTTPS enforcement** — `baseUrl` and the OAuth `tokenEndpoint` must use `https:`. The `tokenEndpoint` must also use the default port of its scheme, and it must not contain embedded userinfo. Thus, a request to an allow-listed hostname cannot send `refresh_token` and `client_secret` to a different service on a different port. Also, that request cannot include a hidden Basic credential that the caller did not intend to send. The OAuth middleware validates its endpoint at construction time. If you call `fetchRefreshedTokens` directly, it validates the endpoint before it sends the request.
+- **Input validation** — The client validates its configuration at construction time. It validates numeric IDs (`boardId`, `sprintId`, `versionNumber`) as positive integers before it constructs a URL.
+- **Response body cap** — If the client gets responses from proxies or upstream servers that you do not trust, set `ClientConfig.maxResponseBytes`. If a buffered success body or error body is larger than the configured cap, the request throws `ResponseTooLargeError`.
+- **Safe logging** — Debug logs record only `method + path`. The client does not write query strings to logs, because query strings can contain cursor tokens or sensitive filter values.
+- **Injection-safe code generation** — `generateTypes` validates schema names as legal TypeScript identifiers. Before it writes the source code, it escapes dangerous sequences in descriptions and enum values.
+- **Safe defaults** — The timeout and retry settings have safe default values. The client validates the cache options and rejects a zero or negative `maxSize` or `ttl`.
+- **Strict CLI parsing** — The CLI rejects unknown flags and does not ignore them. Thus, if you type a security-related flag incorrectly (for example, `--token`), the CLI shows an error. The CLI does not use the environment variables as an alternative to that flag without a message.
 
 ## Usage Guidelines
 
-- **Never hardcode API tokens** in source code. Use environment variables or a secret manager.
-- **Rotate API tokens** regularly and immediately if exposure is suspected.
-- **Use least privilege** — Use OAuth scopes appropriate for the integration. `detectRequiredScopes` can identify the known minimal OAuth scope set for supported operation names.
+- **Do not hardcode API tokens** in source code. Use environment variables or a secret manager.
+- **Rotate API tokens** at regular intervals. If you think that a token is exposed, rotate it immediately.
+- **Use least privilege** — Use the OAuth scopes that are applicable to the integration. `detectRequiredScopes` can identify the known minimum set of OAuth scopes for the supported operation names.
 - **Secure transport** — Always use HTTPS URLs for `baseUrl` and `tokenEndpoint`.
-- **Persist refreshed tokens** — Use `onTokenRefreshed` in `OAuthRefreshConfig` to store new tokens; stale tokens cause unnecessary re-authentication.
+- **Persist refreshed tokens** — Use `onTokenRefreshed` in `OAuthRefreshConfig` to store new tokens. Stale tokens cause re-authentication that is not necessary.
 
 ## Supply Chain
 
-- Run `npm audit` regularly to check for known vulnerabilities in dev dependencies.
-- This package has zero runtime dependencies, so supply-chain risk is limited to the build/test toolchain.
+- Run `npm audit` at regular intervals. This command finds known vulnerabilities in dev dependencies.
+- This package has no runtime dependencies. Thus, the supply-chain risk applies only to the build and test toolchain.
