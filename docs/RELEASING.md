@@ -41,7 +41,7 @@ The `Publish` preflight accepts a tag only when the GitHub API reports its signa
    npm run release:check -- vX.Y.Z
    ```
 
-   It fails while `Unreleased` still has entries, and when the `X.Y.Z` section is missing, duplicated, not the newest entry, or not dated `(YYYY-MM-DD)`. It does not check that the date is current; if the release slips, re-date the section, which makes a new candidate.
+   It fails while `Unreleased` still has entries, and when the `X.Y.Z` section is missing, duplicated, not the newest entry, or not dated `(YYYY-MM-DD)`. The local command warns if the release date differs from today in UTC. If the release slips, update the date and validate the new candidate.
 
 5. Install from the lockfile and run the full repository gate:
 
@@ -86,11 +86,11 @@ The `Publish` preflight accepts a tag only when the GitHub API reports its signa
    ```
 
 5. In GitHub Actions, verify the `Publish` preflight resolves the signed tag to the recorded commit, proves it is the exact protected `main` tip, finds a successful completed `CI` run for that exact commit, and rechecks all version files.
-6. Review and approve the protected `release` environment deployment. Confirm the job requests only `contents: read` and `id-token: write`; it must not receive a long-lived npm token. `main` must still not move until this job has finished.
-7. The workflow builds before packaging and runs:
+6. Confirm the build job ran the full validation gate on the verified commit and uploaded the package tarball. The build job has read access to the repository and no publishing credential. Review and approve the protected `release` environment deployment. Confirm the job requests only `contents: read` and `id-token: write`; it must not receive a long-lived npm token. `main` must still not move until this job has finished.
+7. The approved job downloads the tarball by artifact ID and checks its SHA-512 integrity against the build output. It compares the packaged `package.json` with the manifest from the signed commit before npm reads its publish configuration. It then publishes that file with lifecycle scripts disabled.
 
    ```bash
-   npm publish --provenance
+   npm publish --provenance --ignore-scripts "${RUNNER_TEMP}/release/package.tgz"
    ```
 
    Do not retry the publish job after npm accepted the version. Continue with verification or use a new patch version for a fix-forward.
@@ -98,7 +98,7 @@ The `Publish` preflight accepts a tag only when the GitHub API reports its signa
 ## Post-release
 
 1. Wait for both the publish and independent verification jobs to finish. The verification job must install from the public registry rather than reuse the workspace or tarball. npm can accept a publish and serve it only minutes later (`Your package is being processed and may take a few minutes to become available`), so the verification job polls the registry for up to 20 minutes. If the publish job succeeded but verification still failed while waiting for the registry, confirm that `npm view atlassian-api-client@X.Y.Z version` returns the version and `npm view atlassian-api-client dist-tags.latest` returns `X.Y.Z`, then re-run only the failed jobs (`gh run rerun <run-id> --failed`). That reruns verification without publishing again.
-2. Confirm the registry serves the intended version and `latest` points to it. From a clean temporary project, verify package-root ESM imports, both client constructors, `atlas --version`, and bundled-skill version stamping.
+2. Confirm the registry serves the intended version, its `dist.integrity` matches the build output, and `latest` points to that version. From a clean temporary project, verify package-root ESM imports, both client constructors, `atlas --version`, and bundled-skill version stamping.
 3. Run `npm audit signatures` against the clean install. It also passes for a package without attestations, so the verification job additionally requires SLSA provenance whose workflow is this repository's `.github/workflows/publish.yml` at `refs/tags/vX.Y.Z`. Inspect the npm package page for the same provenance statement.
 4. Confirm the Git tag still resolves to the recorded commit, GitHub reports the tag signature as verified, and the exact-commit `CI` plus `Publish` runs are green.
 5. Create or finalize the immutable GitHub release from that existing tag. Use the reviewed changelog text, include migration notes for breaking changes, and link the npm package page and successful publish run.

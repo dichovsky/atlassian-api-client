@@ -39,7 +39,7 @@ export interface SpaceRole {
  * envelope.
  */
 export interface ListSpaceRolesParams {
-  /** Restrict to roles available for assignment in the named space. */
+  /** Restrict to roles available for assignment in the named space. Supply a nonblank ID. */
   readonly 'space-id'?: string;
   /**
    * Restrict to roles of a specific type. The OpenAPI spec declares this as

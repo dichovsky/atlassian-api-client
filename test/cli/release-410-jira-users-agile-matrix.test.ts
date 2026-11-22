@@ -96,13 +96,6 @@ const USERS: readonly Row[] = [
     { accountId: 'a' },
   ],
   [['users', 'get-columns'], 'GET', `${API}/user/columns`, {}],
-  [
-    ['users', 'set-columns', '--columns', 'summary,status'],
-    'PUT',
-    `${API}/user/columns`,
-    {},
-    { columns: ['summary', 'status'] },
-  ],
   [['users', 'email', '--account-id', 'a'], 'GET', `${API}/user/email`, { accountId: 'a' }],
   [
     ['users', 'bulk-emails', '--account-ids', 'a,b'],
@@ -644,6 +637,40 @@ describe('CLI → wire matrix (release 4.1.0 jira-users-agile)', () => {
   it.each(labelled(BOARDS))('%s', (_label, row) => expectRow(row));
   it.each(labelled(SPRINTS))('%s', (_label, row) => expectRow(row));
   it.each(labelled(OTHER))('%s', (_label, row) => expectRow(row));
+
+  it.each([
+    ['users', ','],
+    ['users', '  '],
+    ['settings', ','],
+    ['settings', '  '],
+  ])('%s set-columns rejects an empty list %j before writing', async (resource, columns) => {
+    const run = await runCliWire(['jira', resource, 'set-columns', '--columns', columns]);
+    expect(run.exitCode).toBe(1);
+    expect(run.stderr).toContain('--columns');
+    expect(run.requests).toHaveLength(0);
+  });
+
+  it('users set-columns sends one multipart field per column to the specified account', async () => {
+    const run = await runCliWire([
+      'jira',
+      'users',
+      'set-columns',
+      '--columns',
+      'summary,status',
+      '--account-id',
+      'a',
+    ]);
+    expect(run.exitCode).toBe(0);
+    expect(run.requests).toHaveLength(1);
+    const req = run.requests[0] as WireRequest;
+    expect(req.method).toBe('PUT');
+    expect(req.path).toBe(`${API}/user/columns`);
+    expect(queryOf(req)).toEqual({ accountId: 'a' });
+    expect(req.headers['x-atlassian-token']).toBe('no-check');
+    expect(req.headers['content-type']).toBeUndefined();
+    expect(req.body).toBeInstanceOf(FormData);
+    expect((req.body as FormData).getAll('columns')).toEqual(['summary', 'status']);
+  });
 
   it('issue-attachments upload sends multipart FormData with X-Atlassian-Token', async () => {
     const dir = await mkdtemp(join(tmpdir(), 'atlas-upload-'));

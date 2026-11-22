@@ -99,38 +99,24 @@ describe('flags that only act when true send nothing for false (X-HS3)', () => {
   });
 });
 
-describe('a 1 or 0 after a boolean flag sets it to true (review r1 minor)', () => {
+describe('numeric IDs and boolean flags', () => {
   it.each([
-    [['confluence', 'pages', 'delete', '123', '--purge', '0'], `${C}/pages/123`, 'purge'],
-    [
-      ['jira', 'issues', 'delete', 'K-1', '--delete-subtasks', '0'],
-      '/rest/api/3/issue/K-1',
-      'deleteSubtasks',
-    ],
-  ] as const)('%j sends %s?%s=true', async (argv, path, param) => {
-    const req = await oneRequest(argv);
-    expect(req.method).toBe('DELETE');
-    expect(req.path).toBe(path);
-    expect([...req.query.entries()]).toEqual([[param, 'true']]);
+    [['confluence', 'pages', 'delete', '123', '--purge', '0']],
+    [['confluence', 'pages', 'delete', '--purge', '0', '123']],
+    [['jira', 'issues', 'delete', 'K-1', '--delete-subtasks', '1']],
+  ] as const)('refuses ambiguous arguments %j before dispatch', async (args) => {
+    const run = await rejected(args);
+    expect(run.stderr).toContain('accepts true or false');
   });
 
-  it('a digit before the id is taken as the id (review r2 minor)', async () => {
-    const req = await oneRequest(['confluence', 'pages', 'delete', '--purge', '0', '123']);
+  it.each([
+    [['1', '--purge'], '1'],
+    [['--purge', '--', '0'], '0'],
+  ] as const)('accepts an unambiguous positional ID in %j', async (args, id) => {
+    const req = await oneRequest(['confluence', 'pages', 'delete', ...args]);
     expect(req.method).toBe('DELETE');
-    expect(req.path).toBe(`${C}/pages/0`);
+    expect(req.path).toBe(`${C}/pages/${id}`);
     expect([...req.query.entries()]).toEqual([['purge', 'true']]);
-    expect(PAYLOAD_RULES).toContain(
-      'before the id, the digit is taken as the id: `atlas confluence pages delete --purge 0 123` purges page `0`',
-    );
-  });
-
-  it('payload-rules.md warns that the flag becomes true', () => {
-    expect(PAYLOAD_RULES).toContain(
-      'a `1` or `0` after the flag is not its value: the flag is set to `true` and the digit becomes a stray positional',
-    );
-    expect(PAYLOAD_RULES).toContain(
-      '`atlas confluence pages delete 123 --purge 0` purges the page',
-    );
   });
 });
 

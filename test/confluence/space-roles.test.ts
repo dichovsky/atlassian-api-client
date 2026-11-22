@@ -24,6 +24,13 @@ describe('SpaceRolesResource', () => {
 
   // ── list ──────────────────────────────────────────────────────────────────
 
+  it.each(['', '   '])('rejects blank space-id %j on both list paths', async (spaceId) => {
+    const params = { 'space-id': spaceId };
+    await expect(resource.list(params)).rejects.toThrow(ValidationError);
+    await expect(resource.listAll(params).next()).rejects.toThrow(ValidationError);
+    expect(transport.calls).toHaveLength(0);
+  });
+
   describe('list()', () => {
     it('calls GET /space-roles with no params', async () => {
       // Arrange
@@ -49,7 +56,7 @@ describe('SpaceRolesResource', () => {
 
       // Act
       await resource.list({
-        'space-id': 'space-1',
+        'space-id': '  space-1  ',
         'role-type': 'CUSTOM',
         'principal-id': 'acc-1',
         'principal-type': 'USER',

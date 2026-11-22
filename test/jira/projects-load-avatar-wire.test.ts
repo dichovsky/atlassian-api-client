@@ -1,11 +1,11 @@
 /**
- * loadAvatar over native fetch and a real socket: MockTransport cannot show
- * what fetch actually puts on the wire for a non-native Blob.
+ * Verify the bytes and media type received by a Node HTTP server when
+ * projects.loadAvatar sends a non-native Blob through native fetch.
  */
 
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 import { JiraClient } from '../../src/jira/client.js';
-import { MockServer, makeMockFetch } from '../helpers/mock-server.js';
+import { MockServer } from '../helpers/mock-server.js';
 
 // ASCII bytes: MockServer captures the body as UTF-8 text.
 const PNG = new TextEncoder().encode('png-bytes');
@@ -20,7 +20,7 @@ describe('projects.loadAvatar() on the wire', () => {
       baseUrl: 'https://test.atlassian.net',
       auth: { type: 'basic', email: 'a@b.c', apiToken: 'token' },
       retries: 0,
-      fetch: makeMockFetch(server.baseUrl),
+      fetch: server.routeFetch(),
     });
   });
   afterAll(() => server.close());

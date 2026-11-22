@@ -219,15 +219,18 @@ export class UsersResource {
     return response.data;
   }
 
-  /** Set the default issue table columns for a user (B805). */
+  /** Set columns in order. An empty array removes all default columns for this user. */
   async setColumns(columns: string[], accountId?: string): Promise<void> {
     const query: Record<string, string | undefined> = {};
     if (accountId !== undefined) query['accountId'] = accountId;
+    const formData = new FormData();
+    for (const column of columns) formData.append('columns', column);
     await this.transport.request<undefined>({
       method: 'PUT',
       path: `${this.baseUrl}/user/columns`,
       query,
-      body: { columns },
+      formData,
+      headers: { 'X-Atlassian-Token': 'no-check' },
     });
   }
 

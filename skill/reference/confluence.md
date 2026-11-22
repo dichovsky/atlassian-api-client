@@ -149,9 +149,9 @@ atlas confluence pages update-title 12345 --title "Renamed" --status current
 # Content properties
 atlas confluence pages list-properties 12345 --sort key
 atlas confluence pages create-property 12345 --key reviewed --value true
-atlas confluence pages get-property 12345 --property-id prop-1
-atlas confluence pages update-property 12345 --property-id prop-1 --key reviewed --value false --version-number 2 --message "Reviewed again"
-atlas confluence pages delete-property 12345 --property-id prop-1
+atlas confluence pages get-property 12345 --property-id 98765
+atlas confluence pages update-property 12345 --property-id 98765 --key reviewed --value false --version-number 2 --message "Reviewed again"
+atlas confluence pages delete-property 12345 --property-id 98765
 
 # Versions + attachments upload
 atlas confluence pages version 12345 --version-number 2
@@ -164,9 +164,9 @@ atlas confluence pages upload-attachment 12345 --file ./screenshot.png --media-t
 # Restriction state and direct permissions
 atlas confluence pages get-restriction-state 12345
 atlas confluence pages set-restriction-state 12345 --state EDIT_RESTRICTED
-atlas confluence pages list-permissions 12345 --principal-type user --principal-id <accountId>
-atlas confluence pages add-permissions 12345 --body '{"permissions":[{"operation":"read","principals":[{"principalType":"user","principalId":"<accountId>"}]}]}'
-atlas confluence pages delete-permissions 12345 --operation read --principal-type user --principal-id <accountId>
+atlas confluence pages list-permissions 12345 --principal-type user --principal-id 5b10a2844c20165700ede21g
+atlas confluence pages add-permissions 12345 --body '{"permissions":[{"operation":"read","principals":[{"principalType":"user","principalId":"5b10a2844c20165700ede21g"}]}]}'
+atlas confluence pages delete-permissions 12345 --operation read --principal-type user --principal-id 5b10a2844c20165700ede21g
 ```
 
 ## `spaces`
@@ -217,7 +217,7 @@ atlas confluence spaces list --status trashed --sort=-name --include-icon --limi
 atlas confluence spaces get 654321 --description-format view --include-labels --include-permissions
 atlas confluence spaces create --name "Engineering" --key ENG --description "Eng wiki"
 atlas confluence spaces create --name "Private Inbox" --alias inbox --private
-atlas confluence spaces create --name "Design" --key DES --value '[{"principal":{"principalType":"USER","principalId":"acc-1"},"roleId":"role-1"}]'
+atlas confluence spaces create --name "Design" --key DES --value '[{"principal":{"principalType":"USER","principalId":"a41001"},"roleId":"46001"}]'
 
 # Sub-collections
 atlas confluence spaces blog-posts 654321 --sort=-created-date --status current --limit 25
@@ -235,14 +235,14 @@ atlas confluence spaces delete-default-classification-level 654321
 # Permissions + roles
 atlas confluence spaces permissions 654321 --limit 50
 atlas confluence spaces role-assignments 654321 --role-type CUSTOM --principal-type USER
-atlas confluence spaces set-role-assignments 654321 --value '[{"principal":{"principalType":"USER","principalId":"acc-1"},"roleId":"role-1"}]'
+atlas confluence spaces set-role-assignments 654321 --value '[{"principal":{"principalType":"USER","principalId":"a41001"},"roleId":"46001"}]'
 
 # Space properties
 atlas confluence spaces list-properties 654321 --key feature-flags
 atlas confluence spaces create-property 654321 --key feature-flags --value '{"beta":true}'
-atlas confluence spaces get-property 654321 --property-id prop-1
-atlas confluence spaces update-property 654321 --property-id prop-1 --key feature-flags --value '{"beta":false}' --version-number 2
-atlas confluence spaces delete-property 654321 --property-id prop-1
+atlas confluence spaces get-property 654321 --property-id 98765
+atlas confluence spaces update-property 654321 --property-id 98765 --key feature-flags --value '{"beta":false}' --version-number 2
+atlas confluence spaces delete-property 654321 --property-id 98765
 ```
 
 ## `blog-posts`
@@ -325,7 +325,7 @@ atlas confluence blog-posts redact 99999 --value '{"createdAt":"2026-05-01T00:00
 # Content properties
 atlas confluence blog-posts list-properties 99999 --sort key
 atlas confluence blog-posts create-property 99999 --key reviewed --value true
-atlas confluence blog-posts update-property 99999 --property-id prop-1 --key reviewed --value false --version-number 2
+atlas confluence blog-posts update-property 99999 --property-id 98765 --key reviewed --value false --version-number 2
 
 # Attachments + classification
 atlas confluence blog-posts attachments 99999 --media-type image/png --sort=-created-date
@@ -354,9 +354,9 @@ atlas confluence blog-posts version 99999 --version-number 2
 # Restriction state and direct permissions
 atlas confluence blog-posts get-restriction-state 67890
 atlas confluence blog-posts set-restriction-state 67890 --state EDIT_RESTRICTED
-atlas confluence blog-posts list-permissions 67890 --principal-type user --principal-id <accountId>
-atlas confluence blog-posts add-permissions 67890 --body '{"permissions":[{"operation":"read","principals":[{"principalType":"user","principalId":"<accountId>"}]}]}'
-atlas confluence blog-posts delete-permissions 67890 --operation read --principal-type user --principal-id <accountId>
+atlas confluence blog-posts list-permissions 67890 --principal-type user --principal-id 5b10a2844c20165700ede21g
+atlas confluence blog-posts add-permissions 67890 --body '{"permissions":[{"operation":"read","principals":[{"principalType":"user","principalId":"5b10a2844c20165700ede21g"}]}]}'
+atlas confluence blog-posts delete-permissions 67890 --operation read --principal-type user --principal-id 5b10a2844c20165700ede21g
 ```
 
 ## `comments`
@@ -404,7 +404,7 @@ atlas confluence comments delete 77777
 atlas confluence comments delete 77778 --comment-type inline
 
 # Content properties
-atlas confluence comments update-property 77777 --property-id prop-1 --key reviewed --value true --version-number 2
+atlas confluence comments update-property 77777 --property-id 98765 --key reviewed --value true --version-number 2
 ```
 
 ## `attachments`
@@ -661,33 +661,33 @@ First-class v2 content for app-defined types (AI collections, embedded items, th
 ```sh
 # Lifecycle
 atlas confluence custom-content list --type ai.atlassian.collection --space-id 654321 --limit 25
-atlas confluence custom-content get cc-1 --body-format storage
+atlas confluence custom-content get 41001 --body-format storage
 atlas confluence custom-content create --type ai.atlassian.collection --space-id 654321 --title "AI Notes" --body "<p>hi</p>"
 atlas confluence custom-content create --type ai.atlassian.collection --page-id 12345 --title "Raw item" --body '{"k":1}' --body-representation raw --status draft
-atlas confluence custom-content update cc-1 --type ai.atlassian.collection --version-number 2 --title "Renamed" --body "<p>v2</p>" --message "Renamed"
+atlas confluence custom-content update 41001 --type ai.atlassian.collection --version-number 2 --title "Renamed" --body "<p>v2</p>" --message "Renamed"
 atlas confluence custom-content list --type ai.atlassian.collection --id 101,102 --sort=-modified-date
-atlas confluence custom-content delete cc-1
-atlas confluence custom-content delete cc-2 --purge
+atlas confluence custom-content delete 41001
+atlas confluence custom-content delete 41002 --purge
 
 # Content properties
-atlas confluence custom-content list-properties cc-1 --sort key
-atlas confluence custom-content create-property cc-1 --key reviewed --value true
-atlas confluence custom-content get-property cc-1 --property-id prop-1
-atlas confluence custom-content update-property cc-1 --property-id prop-1 --key reviewed --value false --version-number 2
-atlas confluence custom-content delete-property cc-1 --property-id prop-1
+atlas confluence custom-content list-properties 41001 --sort key
+atlas confluence custom-content create-property 41001 --key reviewed --value true
+atlas confluence custom-content get-property 41001 --property-id 98765
+atlas confluence custom-content update-property 41001 --property-id 98765 --key reviewed --value false --version-number 2
+atlas confluence custom-content delete-property 41001 --property-id 98765
 
 # Versions
-atlas confluence custom-content versions cc-1 --sort=-modified-date
-atlas confluence custom-content version cc-1 --version-number 2
+atlas confluence custom-content versions 41001 --sort=-modified-date
+atlas confluence custom-content version 41001 --version-number 2
 
 # Sub-collections
-atlas confluence custom-content attachments cc-1 --media-type image/png --sort=-created-date
-atlas confluence custom-content children cc-1 --limit 50
-atlas confluence custom-content footer-comments cc-1 --sort=-created-date
-atlas confluence custom-content labels cc-1 --prefix global
+atlas confluence custom-content attachments 41001 --media-type image/png --sort=-created-date
+atlas confluence custom-content children 41001 --limit 50
+atlas confluence custom-content footer-comments 41001 --sort=-created-date
+atlas confluence custom-content labels 41001 --prefix global
 
 # Permitted operations
-atlas confluence custom-content operations cc-1
+atlas confluence custom-content operations 41001
 ```
 
 ## `data-policies`
@@ -716,9 +716,9 @@ app scope); the spaces endpoint additionally needs `read:space:confluence`.
   `--keys ENG,OPS`). Whitespace per entry is trimmed; empty entries are
   dropped; an effectively-empty value (`--ids ,`, `--keys ""`) is rejected
   before any request. The server caps each list at 250 entries. Every
-  `--ids` entry must be a decimal integer up to 9007199254740991 (space IDs
-  are int64): `--ids abc` or `--ids 12abc` is rejected before any request, so
-  a typo never turns into an unfiltered listing.
+  `--ids` entry must be a signed 64-bit decimal integer. The CLI preserves
+  every digit, including in IDs such as `9007199254740993`. It rejects a
+  malformed or out-of-range entry before sending a request.
 - `--sort` accepts `id`, `-id`, `key`, `-key`, `name`, `-name` (prefix `-`
   flips direction). Unknown values are rejected client-side. Write a
   descending sort with `=` (`--sort=-id`); the space form `--sort -id` is
@@ -841,7 +841,7 @@ atlas confluence space-permissions transition-remove-access \
 
 # Returns: { taskId, status, statusUrl }
 # Poll the task:
-atlas confluence space-permissions transition-task-status <taskId>
+atlas confluence space-permissions transition-task-status task-123
 ```
 
 ### `transition-assign-roles` — bulk assign roles
@@ -925,7 +925,7 @@ Manages Confluence space roles (`/wiki/api/v2/space-roles`). Available on tenant
 atlas confluence space-roles list --role-type=CUSTOM
 
 # Filter to roles available for a specific principal
-atlas confluence space-roles list --principal-id acc-123 --principal-type=USER
+atlas confluence space-roles list --principal-id a4100123 --principal-type=USER
 
 # Roles available to every licensed user (access class)
 atlas confluence space-roles list --principal-type ACCESS_CLASS --principal-id all-licensed-users
@@ -934,16 +934,16 @@ atlas confluence space-roles list --principal-type ACCESS_CLASS --principal-id a
 atlas confluence space-roles list --space-id 654321 --limit 50 --cursor "<value-from-response>"
 
 # Fetch a single role
-atlas confluence space-roles get role-1
+atlas confluence space-roles get 46001
 
 # Create a custom role
 atlas confluence space-roles create --name "Editor" --description "Edit pages" --space-permissions read/space,write/space
 
 # Update a role (returns a taskId — poll until done)
-atlas confluence space-roles update role-1 --name "Editor v2" --description "Updated description" --space-permissions read/space,write/space
+atlas confluence space-roles update 46001 --name "Editor v2" --description "Updated description" --space-permissions read/space,write/space
 
 # Delete a role (returns a taskId — poll until done)
-atlas confluence space-roles delete role-1
+atlas confluence space-roles delete 46001
 ```
 
 ## `tasks`
@@ -960,7 +960,7 @@ single task, and toggle its `status` between `incomplete` and `complete`.
 | `update` | `<taskId>` | `--status`     | `--body-format`                                                                                                                                                                                                                                                                                              |
 
 - `--status` accepts `incomplete` or `complete` (the only two task states v2 surfaces). On `update` it's required and toggles the task. On `list` it filters results.
-- `--task-id`, `--space-id`, `--page-id`, `--blog-post-id` each take one ID or a comma-separated list of up to 250 numeric IDs (`--task-id 5,6`); each value is sent as a repeated query parameter (`task-id=5&task-id=6`). Every token must be a decimal integer up to 9007199254740991: a value such as `abc` or `12abc` is rejected before any request is sent, and so is an empty value (`--page-id ,`, or `--page-id ""` from an unset shell variable), so a typo can never widen the listing to every task.
+- `--task-id`, `--space-id`, `--page-id`, `--blog-post-id` each take one ID or a comma-separated list of up to 250 numeric IDs (`--task-id 5,6`); each value is sent as a repeated query parameter (`task-id=5&task-id=6`). Use signed 64-bit decimal integers. The CLI preserves every digit, including in IDs such as `9007199254740993`. It rejects malformed or out-of-range entries and empty filters such as `--page-id ,` or `--page-id ""` before sending a request.
 - `--created-by`, `--assigned-to`, `--completed-by` take one Atlassian account ID or a comma-separated list of up to 250 (`--assigned-to acc-1,acc-2`), also sent as repeated parameters. An empty value is rejected the same way.
 - `--space-id`, `--page-id`, `--blog-post-id` scope the listing to tasks in those containers; page and blog-post filters can be used together.
 - `--include-blank-tasks` controls tasks whose `body` is empty (e.g. checkboxes without inline text). The server includes them by default; pass `--include-blank-tasks false` (or `--no-include-blank-tasks`) to send `include-blank-tasks=false` and hide them. `--include-blank-tasks` alone (or `--include-blank-tasks true`) sends `true`; omitting it sends nothing.
@@ -974,16 +974,16 @@ single task, and toggle its `status` between `incomplete` and `complete`.
 atlas confluence tasks list --status incomplete --limit 25
 
 # Tasks assigned to a particular user on a page
-atlas confluence tasks list --page-id 12345 --assigned-to acc-123
+atlas confluence tasks list --page-id 12345 --assigned-to a4100123
 
 # Several IDs per filter (comma-separated, repeated on the wire)
-atlas confluence tasks list --space-id 1,2 --task-id 5,6 --created-by acc-1,acc-2
+atlas confluence tasks list --space-id 1,2 --task-id 5,6 --created-by a41001,a41002
 
 # Hide tasks with an empty body
 atlas confluence tasks list --space-id 1 --include-blank-tasks false
 
 # Tasks completed in a date window
-atlas confluence tasks list --status complete --completed-by acc-123 \
+atlas confluence tasks list --status complete --completed-by a4100123 \
   --completed-at-from 1767225600000 --completed-at-to 1769904000000
 
 # Read a single task (with rendered body)
@@ -1058,10 +1058,10 @@ and Confluence caps the batch at 1-250 IDs server-side.
 
 ```sh
 # Look up two users by account ID
-atlas confluence users-bulk lookup --account-ids acc-1,acc-2
+atlas confluence users-bulk lookup --account-ids a41001,a41002
 
 # Pipe into jq to project just displayName / accountId
-atlas confluence users-bulk lookup --account-ids acc-1,acc-2 \
+atlas confluence users-bulk lookup --account-ids a41001,a41002 \
   | jq '.results[] | { accountId, displayName }'
 ```
 
@@ -1127,40 +1127,40 @@ atlas confluence databases create --space-id 654321 --title "Inventory"
 atlas confluence databases create --space-id 654321 --title "Secret" --private
 
 # Read a database with everything inlined
-atlas confluence databases get db-1 --include-properties --include-operations
+atlas confluence databases get 42001 --include-properties --include-operations
 
 # Walk the descendant tree
-atlas confluence databases descendants db-1 --depth 3 --limit 50
+atlas confluence databases descendants 42001 --depth 3 --limit 50
 
 # Sort direct children by most-recently modified
-atlas confluence databases direct-children db-1 --sort=-modified-date
+atlas confluence databases direct-children 42001 --sort=-modified-date
 
 # Classification level lifecycle
-atlas confluence databases get-classification-level db-1
-atlas confluence databases update-classification-level db-1 --level-id cl-restricted
-atlas confluence databases reset-classification-level db-1
+atlas confluence databases get-classification-level 42001
+atlas confluence databases update-classification-level 42001 --level-id cl-restricted
+atlas confluence databases reset-classification-level 42001
 
 # Content properties
-atlas confluence databases list-properties db-1
-atlas confluence databases list-properties db-1 --sort=-key --limit 50
-atlas confluence databases create-property db-1 --key feature-flags --value '{"beta":true}'
-atlas confluence databases get-property db-1 --property-id prop-1
-atlas confluence databases update-property db-1 --property-id prop-1 --key feature-flags --value '{"beta":false}' --version-number 4
-atlas confluence databases update-property db-1 --property-id prop-1 --key feature-flags --value '{"beta":true}' --version-number 5 --message "Re-enable beta"
-atlas confluence databases delete-property db-1 --property-id prop-1
+atlas confluence databases list-properties 42001
+atlas confluence databases list-properties 42001 --sort=-key --limit 50
+atlas confluence databases create-property 42001 --key feature-flags --value '{"beta":true}'
+atlas confluence databases get-property 42001 --property-id 98765
+atlas confluence databases update-property 42001 --property-id 98765 --key feature-flags --value '{"beta":false}' --version-number 4
+atlas confluence databases update-property 42001 --property-id 98765 --key feature-flags --value '{"beta":true}' --version-number 5 --message "Re-enable beta"
+atlas confluence databases delete-property 42001 --property-id 98765
 
 # Restriction state and direct permissions
-atlas confluence databases get-restriction-state db-1
-atlas confluence databases set-restriction-state db-1 --state EDIT_RESTRICTED
-atlas confluence databases list-permissions db-1 --principal-type user --principal-id <accountId>
-atlas confluence databases add-permissions db-1 --body '{"permissions":[{"operation":"read","principals":[{"principalType":"user","principalId":"<accountId>"}]}]}'
-atlas confluence databases delete-permissions db-1 --operation read --principal-type user --principal-id <accountId>
+atlas confluence databases get-restriction-state 42001
+atlas confluence databases set-restriction-state 42001 --state EDIT_RESTRICTED
+atlas confluence databases list-permissions 42001 --principal-type user --principal-id 5b10a2844c20165700ede21g
+atlas confluence databases add-permissions 42001 --body '{"permissions":[{"operation":"read","principals":[{"principalType":"user","principalId":"5b10a2844c20165700ede21g"}]}]}'
+atlas confluence databases delete-permissions 42001 --operation read --principal-type user --principal-id 5b10a2844c20165700ede21g
 
 # Fields, views and entries (experimental)
-atlas confluence databases fields db-1 --limit 50
-atlas confluence databases views db-1
-atlas confluence databases entries db-1 --sort=-<fieldId> --filter '{"<fieldId>":"eq:Done"}'
-atlas confluence databases get-entry db-1 --entry-id <entryId>
+atlas confluence databases fields 42001 --limit 50
+atlas confluence databases views 42001
+atlas confluence databases entries 42001 --sort=-fld1 --filter '{"fld1":"eq:Done"}'
+atlas confluence databases get-entry 42001 --entry-id entry-1
 ```
 
 ## `embeds`
@@ -1202,25 +1202,25 @@ atlas confluence embeds create --space-id 654321 --title "Demo Video" --embed-ur
 atlas confluence embeds create --space-id 654321 --title "Spec" --parent-id 789 --embed-url https://example.com/spec
 
 # Read an embed with everything inlined
-atlas confluence embeds get embed-1 --include-properties --include-operations
+atlas confluence embeds get 43001 --include-properties --include-operations
 
 # Walk the descendant tree
-atlas confluence embeds descendants embed-1 --depth 3 --limit 50
+atlas confluence embeds descendants 43001 --depth 3 --limit 50
 
 # Sort direct children by most-recently modified
-atlas confluence embeds direct-children embed-1 --sort=-modified-date
+atlas confluence embeds direct-children 43001 --sort=-modified-date
 
 # Permitted operations
-atlas confluence embeds operations embed-1
+atlas confluence embeds operations 43001
 
 # Content properties
-atlas confluence embeds list-properties embed-1
-atlas confluence embeds create-property embed-1 --key feature-flags --value '{"beta":true}'
-atlas confluence embeds get-property embed-1 --property-id prop-1
-atlas confluence embeds update-property embed-1 --property-id prop-1 --key feature-flags --value '{"beta":false}' --version-number 4
-atlas confluence embeds update-property embed-1 --property-id prop-1 --key feature-flags --value '{"beta":true}' --version-number 5 --message "Re-enable beta"
-atlas confluence embeds list-properties embed-1 --sort=-key --limit 50
-atlas confluence embeds delete-property embed-1 --property-id prop-1
+atlas confluence embeds list-properties 43001
+atlas confluence embeds create-property 43001 --key feature-flags --value '{"beta":true}'
+atlas confluence embeds get-property 43001 --property-id 98765
+atlas confluence embeds update-property 43001 --property-id 98765 --key feature-flags --value '{"beta":false}' --version-number 4
+atlas confluence embeds update-property 43001 --property-id 98765 --key feature-flags --value '{"beta":true}' --version-number 5 --message "Re-enable beta"
+atlas confluence embeds list-properties 43001 --sort=-key --limit 50
+atlas confluence embeds delete-property 43001 --property-id 98765
 ```
 
 ## `folders`
@@ -1269,32 +1269,32 @@ atlas confluence folders create --space-id 654321 --title "Drafts"
 atlas confluence folders create --space-id 654321 --title "Q1 Drafts" --parent-id 789
 
 # Read a folder with everything inlined
-atlas confluence folders get folder-1 --include-properties --include-operations
+atlas confluence folders get 44001 --include-properties --include-operations
 
 # Walk the descendant tree
-atlas confluence folders descendants folder-1 --depth 3 --limit 50
+atlas confluence folders descendants 44001 --depth 3 --limit 50
 
 # Sort direct children by most-recently modified
-atlas confluence folders direct-children folder-1 --sort=-modified-date
+atlas confluence folders direct-children 44001 --sort=-modified-date
 
 # Permitted operations
-atlas confluence folders operations folder-1
+atlas confluence folders operations 44001
 
 # Content properties
-atlas confluence folders list-properties folder-1
-atlas confluence folders create-property folder-1 --key feature-flags --value '{"beta":true}'
-atlas confluence folders get-property folder-1 --property-id prop-1
-atlas confluence folders update-property folder-1 --property-id prop-1 --key feature-flags --value '{"beta":false}' --version-number 4
-atlas confluence folders update-property folder-1 --property-id prop-1 --key feature-flags --value '{"beta":true}' --version-number 5 --message "Re-enable beta"
-atlas confluence folders list-properties folder-1 --sort=-key --limit 50
-atlas confluence folders delete-property folder-1 --property-id prop-1
+atlas confluence folders list-properties 44001
+atlas confluence folders create-property 44001 --key feature-flags --value '{"beta":true}'
+atlas confluence folders get-property 44001 --property-id 98765
+atlas confluence folders update-property 44001 --property-id 98765 --key feature-flags --value '{"beta":false}' --version-number 4
+atlas confluence folders update-property 44001 --property-id 98765 --key feature-flags --value '{"beta":true}' --version-number 5 --message "Re-enable beta"
+atlas confluence folders list-properties 44001 --sort=-key --limit 50
+atlas confluence folders delete-property 44001 --property-id 98765
 
 # Restriction state and direct permissions
-atlas confluence folders get-restriction-state folder-1
-atlas confluence folders set-restriction-state folder-1 --state EDIT_RESTRICTED
-atlas confluence folders list-permissions folder-1 --principal-type user --principal-id <accountId>
-atlas confluence folders add-permissions folder-1 --body '{"permissions":[{"operation":"read","principals":[{"principalType":"user","principalId":"<accountId>"}]}]}'
-atlas confluence folders delete-permissions folder-1 --operation read --principal-type user --principal-id <accountId>
+atlas confluence folders get-restriction-state 44001
+atlas confluence folders set-restriction-state 44001 --state EDIT_RESTRICTED
+atlas confluence folders list-permissions 44001 --principal-type user --principal-id 5b10a2844c20165700ede21g
+atlas confluence folders add-permissions 44001 --body '{"permissions":[{"operation":"read","principals":[{"principalType":"user","principalId":"5b10a2844c20165700ede21g"}]}]}'
+atlas confluence folders delete-permissions 44001 --operation read --principal-type user --principal-id 5b10a2844c20165700ede21g
 ```
 
 ## `footer-comments`
@@ -1458,37 +1458,37 @@ atlas confluence whiteboards create --space-id 654321 --title "Secret" --templat
 atlas confluence whiteboards create --space-id 654321 --title "SWOT" --template-key swot-analysis --locale de-DE
 
 # Read a whiteboard (basic)
-atlas confluence whiteboards get wb-1
+atlas confluence whiteboards get 45001
 
 # Read a whiteboard with additional details
-atlas confluence whiteboards get wb-1 --include-collaborators --include-properties
+atlas confluence whiteboards get 45001 --include-collaborators --include-properties
 
 # Walk the descendant tree
-atlas confluence whiteboards descendants wb-1 --depth 3 --limit 50
+atlas confluence whiteboards descendants 45001 --depth 3 --limit 50
 
 # Sort direct children by most-recently modified
-atlas confluence whiteboards direct-children wb-1 --sort=-modified-date
+atlas confluence whiteboards direct-children 45001 --sort=-modified-date
 
 # Classification level lifecycle
-atlas confluence whiteboards get-classification-level wb-1
-atlas confluence whiteboards update-classification-level wb-1 --level-id cl-restricted
-atlas confluence whiteboards reset-classification-level wb-1
+atlas confluence whiteboards get-classification-level 45001
+atlas confluence whiteboards update-classification-level 45001 --level-id cl-restricted
+atlas confluence whiteboards reset-classification-level 45001
 
 # Content properties
-atlas confluence whiteboards list-properties wb-1
-atlas confluence whiteboards create-property wb-1 --key feature-flags --value '{"beta":true}'
-atlas confluence whiteboards get-property wb-1 --property-id prop-1
-atlas confluence whiteboards update-property wb-1 --property-id prop-1 --key feature-flags --value '{"beta":false}' --version-number 4
-atlas confluence whiteboards update-property wb-1 --property-id prop-1 --key feature-flags --value '{"beta":true}' --version-number 5 --message "Re-enable beta"
-atlas confluence whiteboards list-properties wb-1 --sort=-key --limit 50
-atlas confluence whiteboards delete-property wb-1 --property-id prop-1
+atlas confluence whiteboards list-properties 45001
+atlas confluence whiteboards create-property 45001 --key feature-flags --value '{"beta":true}'
+atlas confluence whiteboards get-property 45001 --property-id 98765
+atlas confluence whiteboards update-property 45001 --property-id 98765 --key feature-flags --value '{"beta":false}' --version-number 4
+atlas confluence whiteboards update-property 45001 --property-id 98765 --key feature-flags --value '{"beta":true}' --version-number 5 --message "Re-enable beta"
+atlas confluence whiteboards list-properties 45001 --sort=-key --limit 50
+atlas confluence whiteboards delete-property 45001 --property-id 98765
 
 # Restriction state and direct permissions
-atlas confluence whiteboards get-restriction-state wb-1
-atlas confluence whiteboards set-restriction-state wb-1 --state EDIT_RESTRICTED
-atlas confluence whiteboards list-permissions wb-1 --principal-type user --principal-id <accountId>
-atlas confluence whiteboards add-permissions wb-1 --body '{"permissions":[{"operation":"read","principals":[{"principalType":"user","principalId":"<accountId>"}]}]}'
-atlas confluence whiteboards delete-permissions wb-1 --operation read --principal-type user --principal-id <accountId>
+atlas confluence whiteboards get-restriction-state 45001
+atlas confluence whiteboards set-restriction-state 45001 --state EDIT_RESTRICTED
+atlas confluence whiteboards list-permissions 45001 --principal-type user --principal-id 5b10a2844c20165700ede21g
+atlas confluence whiteboards add-permissions 45001 --body '{"permissions":[{"operation":"read","principals":[{"principalType":"user","principalId":"5b10a2844c20165700ede21g"}]}]}'
+atlas confluence whiteboards delete-permissions 45001 --operation read --principal-type user --principal-id 5b10a2844c20165700ede21g
 ```
 
 ## Content permissions and restriction state (`pages`, `blog-posts`, `databases`, `whiteboards`, `folders`)
@@ -1513,9 +1513,9 @@ These five content types expose the same six actions (`<id>` is the page / blog 
 
 ```sh
 atlas confluence pages set-restriction-state 12345 --state VIEW_RESTRICTED
-atlas confluence pages set-permissions 12345 --body '{"permissions":[{"operation":"update","principals":[{"principalType":"user","principalId":"<accountId>"},{"principalType":"group","principalId":"<groupId>"}]}]}'
-atlas confluence folders list-permissions folder-1 --operation update --limit 50
-atlas confluence whiteboards delete-permissions wb-1 --principal-type group --principal-id <groupId>
+atlas confluence pages set-permissions 12345 --body '{"permissions":[{"operation":"update","principals":[{"principalType":"user","principalId":"5b10a2844c20165700ede21g"},{"principalType":"group","principalId":"2ac0b8ec-778d-47df-88cf-da8fa04bf454"}]}]}'
+atlas confluence folders list-permissions 44001 --operation update --limit 50
+atlas confluence whiteboards delete-permissions 45001 --principal-type group --principal-id 2ac0b8ec-778d-47df-88cf-da8fa04bf454
 ```
 
 ## Pagination

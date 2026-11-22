@@ -28,6 +28,8 @@ Zero runtime dependencies. Uses native `fetch` (Node.js 24+).
 npm install atlassian-api-client
 ```
 
+TypeScript projects also need the Node.js declarations for their runtime version, for example `npm install --save-dev @types/node@24` for Node.js 24. Include `"node"` in `compilerOptions.types` when your project explicitly lists ambient types or uses TypeScript 7.
+
 ## Supported Runtimes
 
 - Node.js >= 24.0.0

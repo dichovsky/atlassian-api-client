@@ -1,5 +1,6 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, expectTypeOf, beforeEach } from 'vitest';
 import { TasksResource } from '../../src/confluence/resources/tasks.js';
+import type { ConfluenceListTasksParams } from '../../src/index.js';
 import { MockTransport } from '../helpers/mock-transport.js';
 import { ValidationError } from '../../src/core/errors.js';
 
@@ -18,6 +19,18 @@ describe('TasksResource', () => {
   beforeEach(() => {
     transport = new MockTransport();
     resource = new TasksResource(transport, BASE_URL);
+  });
+
+  it('preserves the numeric ID types of existing SDK consumers', () => {
+    expectTypeOf<ConfluenceListTasksParams['taskId']>().toEqualTypeOf<
+      readonly number[] | undefined
+    >();
+    expectTypeOf<Parameters<TasksResource['list']>[0]>().toEqualTypeOf<
+      ConfluenceListTasksParams | undefined
+    >();
+    expectTypeOf<Parameters<TasksResource['listAll']>[0]>().toEqualTypeOf<
+      Omit<ConfluenceListTasksParams, 'cursor'> | undefined
+    >();
   });
 
   // ── list ──────────────────────────────────────────────────────────────────
@@ -44,7 +57,7 @@ describe('TasksResource', () => {
         includeBlankTasks: true,
         status: 'incomplete' as const,
         // array-type params go into path
-        taskId: [100, 200],
+        taskId: [100, '-9223372036854775808'],
         spaceId: [11, 22],
         pageId: [33],
         blogPostId: [44],
@@ -82,7 +95,7 @@ describe('TasksResource', () => {
       // Array-type params are baked into the path as repeated segments.
       const { path } = transport.lastCall!.options;
       expect(path).toContain('task-id=100');
-      expect(path).toContain('task-id=200');
+      expect(path).toContain('task-id=-9223372036854775808');
       expect(path).toContain('space-id=11');
       expect(path).toContain('space-id=22');
       expect(path).toContain('page-id=33');
@@ -91,6 +104,19 @@ describe('TasksResource', () => {
       expect(path).toContain('created-by=user-2');
       expect(path).toContain('assigned-to=user-3');
       expect(path).toContain('completed-by=user-4');
+    });
+
+    it.each([
+      '12abc',
+      '',
+      '9223372036854775808',
+      '-9223372036854775809',
+      Number.MAX_SAFE_INTEGER + 1,
+    ])('rejects invalid or imprecise task ID %j on both list paths', async (id) => {
+      const params = { taskId: [id] };
+      await expect(resource.list(params)).rejects.toThrow(ValidationError);
+      await expect(resource.listAll(params).next()).rejects.toThrow(ValidationError);
+      expect(transport.calls).toHaveLength(0);
     });
 
     it('omits empty arrays from the path', async () => {

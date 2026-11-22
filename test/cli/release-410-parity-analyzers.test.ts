@@ -16,6 +16,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { runCliWire, type CliWireResult, type WireRequest } from '../helpers/cli-wire.js';
+import { LocalHttpNetwork } from '../helpers/local-http.js';
 import { MockServer } from '../helpers/mock-server.js';
 import {
   actionProblem,
@@ -554,12 +555,14 @@ describe('X-NO-NETWORK: the guard refuses every non-loopback host', () => {
     await expect(guardedFetch(new URL('http://10.0.0.1/'))).rejects.toThrow('http://10.0.0.1');
   });
 
-  it('still reaches a real socket server on loopback', async () => {
-    const server = new MockServer();
+  it('still reaches an HTTP server on loopback', async () => {
+    const network = new LocalHttpNetwork();
+    const server = new MockServer(network);
     await server.start();
     try {
       server.setHandler('/ping', { status: 200, body: { ok: true } });
-      const response = await guardedFetch(`${server.baseUrl}/ping`);
+      expect(globalThis.fetch).toBe(guardedFetch);
+      const response = await network.fetch(`${server.baseUrl}/ping`);
       expect(await response.json()).toEqual({ ok: true });
     } finally {
       await server.close();

@@ -12,7 +12,7 @@ npm install
 npm run validate
 ```
 
-Use Node.js 24 or later (`.nvmrc` holds the version CI uses). The gate also runs these tools from `PATH`: `git` (`filemode:check` reads the index), `python3` (the API gap analyzer behind `api-coverage` and `test:api-gap`), and `bash` and `jq`, because `test/scripts/publish-workflow.test.ts` runs the publish workflow's step scripts with `bash` and those scripts call `jq`.
+Use Node.js 24 or later (`.nvmrc` selects the default CI version). Install `git` for file-mode checks and `python3` for API coverage. The publish workflow tests use `bash`, `jq`, `tar`, and `openssl` to replay release steps locally.
 
 ## Scripts
 
@@ -50,11 +50,12 @@ can change between releases. Run `npm run validate` when upgrading the compiler.
 The Python-backed API gap tests are separate from V8 coverage because they do not execute `src/**/*.ts`.
 `npm run validate` still requires both suites.
 
-CI runs five parallel jobs: `quality` (`npm run validate:quality`), `coverage` (`npm run test:coverage`),
-`api_gap` (`npm run test:api-gap`), `package` (`npm run validate:package`), and `node_floor`, which runs
-`npm run build` and `npm run test:unit` on Node.js 24.0.0, the `engines.node` floor; the other jobs use
-the version in `.nvmrc`. The aggregate `CI` job passes only when all five pass, and it is the required
-check.
+CI runs `quality` (`npm run validate:quality`), `coverage` (`npm run test:coverage`),
+`api_gap` (`npm run test:api-gap`), `package` (`npm run validate:package`), and the `node_compat` matrix, which runs
+`npm run build` and `npm run test:unit` on Node.js 24.0.0 (the `engines.node` floor) and Node.js 26.
+The other jobs use the version in `.nvmrc`. The required `CI` check passes when all jobs succeed.
+
+HTTP integration tests use native `fetch` and a Node HTTP server. GitHub Actions runs them over loopback TCP. If a local runner denies permission to open a listening port, the same tests exchange HTTP bytes over paired in-process streams.
 
 ## Code Standards
 

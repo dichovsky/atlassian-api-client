@@ -201,6 +201,23 @@ describe('validate-release-tag in-process', () => {
     expect(io.exitCode).toBeUndefined();
   });
 
+  it('warns about a stale date only on the local pre-tag check', () => {
+    const io = fakeIo();
+    validator.main(['--warn-date', 'v4.0.0'], reader(), io);
+    expect(written(io.stderr)).toContain('CHANGELOG.md dates 4.0.0 as 2026-09-02');
+    expect(written(io.stdout)).toContain('Release tag v4.0.0 is valid');
+    expect(io.exitCode).toBeUndefined();
+  });
+
+  it('accepts a release dated today without a warning', () => {
+    const io = fakeIo();
+    const today = new Date().toISOString().slice(0, 10);
+    const changelog = MANIFESTS['CHANGELOG.md'].replace('2026-09-02', today);
+    validator.main(['--warn-date', 'v4.0.0'], reader({ 'CHANGELOG.md': changelog }), io);
+    expect(written(io.stderr)).toBe('');
+    expect(written(io.stdout)).toContain('Release tag v4.0.0 is valid');
+  });
+
   it('main reports a failure on stderr with exit code 1', () => {
     const io = fakeIo();
 
@@ -341,13 +358,25 @@ describe.each([
     expect(isEntryPoint(url, script)).toBe(true);
     expect(isEntryPoint(url, link)).toBe(true);
     expect(isEntryPoint(url, VALIDATOR === script ? CHECKER : VALIDATOR)).toBe(false);
-    expect(isEntryPoint(url, join(tmpdir(), 'does-not-exist.js'))).toBe(false);
-    expect(isEntryPoint(url, undefined)).toBe(false);
+    expect(() => isEntryPoint(url, join(tmpdir(), 'does-not-exist.js'))).toThrow();
+    expect(() => isEntryPoint(url, undefined)).toThrow();
     // `node scripts/x` (node adds the .js) and --preserve-symlinks-main (the
     // module keeps the symlink's URL) both run the script.
     expect(isEntryPoint(url, script.replace(/\.js$/, ''))).toBe(true);
     expect(isEntryPoint(pathToFileURL(link).href, link)).toBe(true);
     expect(isEntryPoint(pathToFileURL(link).href, script)).toBe(true);
+  });
+
+  it('exits with an error when an eval invocation has no resolvable entry point', () => {
+    const result = spawnSync(
+      process.execPath,
+      ['-e', `import(${JSON.stringify(pathToFileURL(script).href)})`],
+      {
+        encoding: 'utf8',
+      },
+    );
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain('entry point');
   });
 
   /** A git repo with a tracked executable and no manifests: both scripts must fail in it. */

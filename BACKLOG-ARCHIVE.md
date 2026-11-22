@@ -2970,3 +2970,13 @@
   - **Impl:** Shipped in the 2026-09 Atlassian contract refresh; the type and resource query paths now carry the documented sort option.
 - [x] 🟡 📝 Infra: B1062 Document the v3.0.0 breaking changes
   - **Impl:** Shipped in the v3.0.0 release changelog with migration notes scoped to v2.0.0.
+
+## Release follow-ups after 5.0.0
+
+- [x] B1069 Isolate npm publishing from development dependencies.
+  - **Impl:** Build, test, and pack in a read-only job. The publishing job checks the tarball and manifest, then publishes with lifecycle scripts disabled. The registry check compares the published integrity with the build output.
+  - **Rat:** Development dependencies no longer run in the job that can mint an npm publishing credential.
+- [x] B1070 CLI, wire, packaging, and CI fixes.
+  - **Impl:** Refuse ambiguous numeric boolean arguments, blank column lists, obsolete Jira component lead names, and blank space-role filters. Preserve full int64 task and data-policy IDs. Send Jira column updates as multipart form fields. Correct numeric IDs in Confluence examples and document Node.js declarations for TypeScript consumers.
+  - **Impl:** Test both Node.js 24 and 26. Use a YAML parser for workflow checks, warn about stale local release dates, and fail when a gate cannot resolve its entry point.
+  - **Rat:** These fixes address incorrect requests and release checks without removing public methods. The existing `priorities move --after` wire test already verifies trimming. Jira documents multipart for user columns, so the implementation no longer relies on whether a tenant accepts JSON. The public type cleanup remains in the active backlog.

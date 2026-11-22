@@ -34,8 +34,9 @@ GLOBAL OPTIONS:
 BOOLEAN FLAGS (flags that work bare, with no value):
   --flag, --flag true and --flag=true mean true; --flag false, --flag=false
   and --no-flag mean false; omit the flag to keep the server default. Only
-  true/false are accepted (--flag no is an error). A true/false word right
-  after such a flag is its value (put a positional true/false after --).
+  true/false are accepted. A true/false word right after a flag is its value.
+  A bare flag followed by 0 or 1 is ambiguous and fails. For a positional
+  ID of 0 or 1, put it before the flag or after --.
   Flags documented with values (e.g. --validate-query) always need one.
 
 AUTH:

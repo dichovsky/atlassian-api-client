@@ -420,14 +420,18 @@ describe('UsersResource', () => {
   // ── setColumns (B805) ─────────────────────────────────────────────────────
 
   describe('setColumns()', () => {
-    it('calls PUT /user/columns with UserColumnRequestBody { columns } object', async () => {
+    it('calls PUT /user/columns with one form field per column in order', async () => {
       transport.respondWith(undefined);
       await users.setColumns(['summary', 'status']);
       expect(transport.lastCall?.options).toMatchObject({
         method: 'PUT',
         path: `${BASE_URL}/user/columns`,
-        body: { columns: ['summary', 'status'] },
       });
+      expect(transport.lastCall?.options.formData?.getAll('columns')).toEqual([
+        'summary',
+        'status',
+      ]);
+      expect(transport.lastCall?.options.body).toBeUndefined();
     });
 
     it('includes accountId query param when provided', async () => {
@@ -438,14 +442,10 @@ describe('UsersResource', () => {
       });
     });
 
-    it('REPRO #211 sends UserColumnRequestBody { columns } object, not a bare array', async () => {
+    it('sends an empty form for an explicit empty SDK columns list', async () => {
       transport.respondWith(undefined);
-      await users.setColumns(['summary', 'status']);
-      const body = transport.lastCall?.options.body;
-      // Spec: PUT /user/columns (setUserColumns) body schema = UserColumnRequestBody
-      // = { columns: string[] } (type:object, additionalProperties:false). A bare array is invalid.
-      expect(Array.isArray(body)).toBe(false);
-      expect((body as { columns?: unknown })?.columns).toEqual(['summary', 'status']);
+      await users.setColumns([]);
+      expect(transport.lastCall?.options.formData?.getAll('columns')).toEqual([]);
     });
   });
 

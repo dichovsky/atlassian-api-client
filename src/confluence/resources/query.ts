@@ -7,10 +7,33 @@
  * Add new helpers here only when a coercion is reused across 2+ resources.
  */
 
+import { ValidationError } from '../../core/errors.js';
 import type { BodyFormat } from '../types/common.js';
 
 /** Query bag accepted by the underlying transport. Scalars only. */
 type Query = Record<string, string | number | boolean | undefined>;
+
+/** Reject an ID that cannot be represented exactly in the signed int64 wire format. */
+export function validateInt64Ids(
+  name: string,
+  ids: readonly (string | number)[] | undefined,
+): void {
+  for (const id of ids ?? []) {
+    if (typeof id === 'number') {
+      if (!Number.isSafeInteger(id)) {
+        throw new ValidationError(`${name} requires safe integers or decimal int64 strings`);
+      }
+    } else {
+      if (!/^-?\d+$/.test(id)) {
+        throw new ValidationError(`${name} must contain only decimal integer IDs, got: ${id}`);
+      }
+      const value = BigInt(id);
+      if (value < -9_223_372_036_854_775_808n || value > 9_223_372_036_854_775_807n) {
+        throw new ValidationError(`${name} must fit in a signed int64`);
+      }
+    }
+  }
+}
 
 /**
  * Return `undefined` for an empty query bag so the transport does not append

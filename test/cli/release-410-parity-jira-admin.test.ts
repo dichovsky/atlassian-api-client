@@ -560,6 +560,7 @@ describe('settings set-columns sends multipart repeated columns (M5-3)', () => {
   it('PUTs FormData with one columns field per CSV entry', async () => {
     const req = only(await runCliWire(example(ADMIN, 'jira settings set-columns')));
     expect(`${req.method} ${req.path}`).toBe(`PUT ${API}/settings/columns`);
+    expect(req.headers['x-atlassian-token']).toBe('no-check');
     expect(req.body).toBeInstanceOf(FormData);
     expect((req.body as FormData).getAll('columns')).toEqual(['issuekey', 'summary']);
   });

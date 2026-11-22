@@ -1612,12 +1612,8 @@ async function executeUsers(
     case 'get-columns':
       return client.users.getColumns(asString(opts['account-id']));
     case 'set-columns': {
-      const columnsRaw = requireOpt(opts['columns'], '--columns');
-      const columnList = columnsRaw
-        .split(',')
-        .map((s) => s.trim())
-        .filter((s) => s.length > 0);
-      await client.users.setColumns(columnList, asString(opts['account-id']));
+      const columns = requireCsv(opts['columns'], '--columns');
+      await client.users.setColumns(columns, asString(opts['account-id']));
       return { set: true };
     }
     case 'email':
@@ -3534,11 +3530,7 @@ async function executeSettings(client: JiraClient, cmd: ParsedCommand): Promise<
     case 'get-columns':
       return client.settings.getColumns();
     case 'set-columns': {
-      const rawColumns = requireOpt(opts['columns'], '--columns');
-      const columns = rawColumns
-        .split(',')
-        .map((s) => s.trim())
-        .filter((s) => s.length > 0);
+      const columns = requireCsv(opts['columns'], '--columns');
       await client.settings.setColumns(columns);
       return { updated: true };
     }
@@ -4748,6 +4740,12 @@ async function executeUniversalAvatar(client: JiraClient, cmd: ParsedCommand): P
 
 async function executeComponent(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
   const opts = cmd.options;
+  rejectRemovedOptions(
+    opts,
+    `component ${cmd.action}`,
+    ['lead-user-name'],
+    'Atlassian removed leadUserName. Use --lead-account-id',
+  );
 
   switch (cmd.action) {
     case 'list': {
@@ -4766,7 +4764,6 @@ async function executeComponent(client: JiraClient, cmd: ParsedCommand): Promise
       const name = requireOpt(opts['name'], '--name');
       const description = asString(opts['description']);
       const leadAccountId = asString(opts['lead-account-id']);
-      const leadUserName = asString(opts['lead-user-name']);
       const assigneeType = asComponentAssigneeType(opts['assignee-type']);
       const project = requireOpt(opts['project'], '--project');
       return client.component.create({
@@ -4774,7 +4771,6 @@ async function executeComponent(client: JiraClient, cmd: ParsedCommand): Promise
         project,
         ...(description !== undefined && { description }),
         ...(leadAccountId !== undefined && { leadAccountId }),
-        ...(leadUserName !== undefined && { leadUserName }),
         ...(assigneeType !== undefined && { assigneeType }),
       });
     }
@@ -4784,24 +4780,21 @@ async function executeComponent(client: JiraClient, cmd: ParsedCommand): Promise
       const name = asString(opts['name']);
       const description = asString(opts['description']);
       const leadAccountId = asString(opts['lead-account-id']);
-      const leadUserName = asString(opts['lead-user-name']);
       const assigneeType = asComponentAssigneeType(opts['assignee-type']);
       if (
         name === undefined &&
         description === undefined &&
         leadAccountId === undefined &&
-        leadUserName === undefined &&
         assigneeType === undefined
       ) {
         throw new Error(
-          'update requires at least one of: --name, --description, --lead-account-id, --lead-user-name, --assignee-type',
+          'update requires at least one of: --name, --description, --lead-account-id, --assignee-type',
         );
       }
       return client.component.update(requireArg(cmd.positionalArgs[0], 'component id'), {
         ...(name !== undefined && { name }),
         ...(description !== undefined && { description }),
         ...(leadAccountId !== undefined && { leadAccountId }),
-        ...(leadUserName !== undefined && { leadUserName }),
         ...(assigneeType !== undefined && { assigneeType }),
       });
     }

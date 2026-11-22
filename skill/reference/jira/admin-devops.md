@@ -638,7 +638,7 @@ atlas jira license get-approximate-count-for-product jira-software
 
 - `get-columns` calls `GET /rest/api/3/settings/columns` and returns the default issue navigator columns.
 - `set-columns` calls `PUT /rest/api/3/settings/columns` and replaces the default column configuration. Requires **Jira administrator** global permission.
-- `--columns` is a **comma-separated** list of column field keys (e.g. `issuekey,summary,assignee`). The endpoint accepts `multipart/form-data` with repeated `columns` fields.
+- `--columns` requires at least one column field key. Separate multiple keys with commas (e.g. `issuekey,summary,assignee`). The endpoint accepts `multipart/form-data` with repeated `columns` fields.
 
 ```sh
 # Get the current default issue navigator columns
