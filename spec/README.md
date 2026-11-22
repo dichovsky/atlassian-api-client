@@ -1,6 +1,6 @@
 # OpenAPI Specs
 
-This directory contains pinned snapshots of the upstream Atlassian REST API specifications. During API-coverage work, implementers and reviewers use only these snapshots to find the HTTP method, path, body, and query shape of an endpoint (see `CLAUDE.md` → Required Workflow (step 6) and Critical Invariants).
+This directory contains pinned snapshots of the upstream Atlassian REST API specifications. During API-coverage work, implementers and reviewers use only these snapshots to find the HTTP method, path, request body, and query shape of an endpoint (see `CLAUDE.md` → Required Workflow (step 6) and Critical Invariants).
 
 ## Files
 
@@ -36,7 +36,7 @@ This directory contains pinned snapshots of the upstream Atlassian REST API spec
 
 ## How to use
 
-When you implement or review an endpoint, find the path or the operation in the spec:
+When you implement or review an endpoint, find the path or the operation in the snapshot:
 
 ```bash
 jq '.paths["/rest/api/3/workflowscheme/{id}"]' spec/jira-platform-v3.json
@@ -45,14 +45,14 @@ jq '.paths["/rest/agile/1.0/board/{boardId}/sprint"]' spec/jira-software.json
 jq '.paths["/spaces/{id}/labels"]' spec/confluence-v2.json
 ```
 
-When you refer to the spec in a PR description, include the SHA-256 from this page. Then reviewers know which snapshot you examined.
+When you refer to a snapshot in a PR description, include the SHA-256 from this file. Then reviewers know which snapshot you examined.
 
-`npm run spec-drift` compares a canonical contract fingerprint (routes, parameters, bodies, responses, schemas, and security metadata). It ignores changes that are only in the documentation prose.
+`npm run spec-drift` compares a canonical contract fingerprint (paths and HTTP methods, parameters, request bodies, responses, schemas, and security metadata). It ignores changes that are only in the documentation prose.
 
 `npm run api-coverage` fails closed if a snapshot does not have correct OpenAPI 3.x metadata, paths, operations, or the expected path of its server URL. It audits the `GET`, `PUT`, `POST`, `DELETE`, `OPTIONS`, `HEAD`, `PATCH`, and `TRACE` operations. It does not ignore an unresolved Path Item `$ref`, but rejects it. The check also fails if one of these conditions occurs:
 
 - A pinned operation that is not deprecated has no SDK route.
-- The route extraction is unresolved.
+- The analyzer cannot find the route of an SDK request.
 - An SDK request that the audit covers does not agree with a pinned operation.
 
 The check reports deprecated omissions and the documented Confluence REST v1 upload exception, but these items do not cause the check to fail.
@@ -75,7 +75,7 @@ npm run api-coverage
 
 Then do these steps:
 
-1. Update the SHA-256, the contract fingerprint that `spec-drift` prints, the pinned date, and the upstream version on this page.
+1. Update the SHA-256, the contract fingerprint that `spec-drift` prints, the pinned date, and the upstream version in this file.
 2. Review the semantic diff.
 3. Update the SDK, CLI, and skill parity.
 4. Open the PR.
