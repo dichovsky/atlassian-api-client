@@ -251,6 +251,7 @@ const GLOBAL_OPTIONS = {
   'include-inactive-users': { type: 'boolean' as const },
   // settings/columns options (B772)
   columns: { type: 'string' as const },
+  clear: { type: 'boolean' as const },
   // exists-by-properties options (B963)
   'entity-id': { type: 'string' as const },
   'entity-type': { type: 'string' as const },
@@ -740,6 +741,15 @@ export function parseCommand(argv: string[]): ParsedCommand & {
 
   if (api === 'confluence' && options['software-cloud-id'] !== undefined) {
     throw new Error('--software-cloud-id is only supported for Jira commands');
+  }
+
+  if (
+    options['clear'] !== undefined &&
+    !(api === 'jira' && action === 'set-columns' && ['users', 'settings'].includes(resource))
+  ) {
+    throw new Error(
+      '--clear is supported only by jira users set-columns and jira settings set-columns',
+    );
   }
 
   const currentJqlSearchAction = ['', 'search', 'query', 'jql-get', 'jql-post'].includes(action);

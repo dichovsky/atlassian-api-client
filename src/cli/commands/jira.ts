@@ -1482,6 +1482,26 @@ function requireCsv(value: string | boolean | undefined, name: string): string[]
   return values;
 }
 
+function columnSelection(cmd: ParsedCommand): string[] {
+  if (cmd.positionalArgs.length > 0) {
+    throw new Error(
+      'set-columns takes no positional arguments. Use --columns <field-ids> or --clear',
+    );
+  }
+  const raw = cmd.options['columns'];
+  if (cmd.options['clear'] === true) {
+    if (raw !== undefined) throw new Error('Choose either --columns or --clear');
+    return [];
+  }
+  const columns = requireOpt(raw, '--columns or --clear')
+    .split(',')
+    .map((id) => id.trim());
+  if (columns.includes('')) {
+    throw new Error('--columns requires a non-empty field ID in each entry');
+  }
+  return columns;
+}
+
 async function executeUsers(
   client: JiraClient,
   cmd: ParsedCommand,
@@ -1612,7 +1632,7 @@ async function executeUsers(
     case 'get-columns':
       return client.users.getColumns(asString(opts['account-id']));
     case 'set-columns': {
-      const columns = requireCsv(opts['columns'], '--columns');
+      const columns = columnSelection(cmd);
       await client.users.setColumns(columns, asString(opts['account-id']));
       return { set: true };
     }
@@ -3524,13 +3544,14 @@ async function executeLicense(client: JiraClient, cmd: ParsedCommand): Promise<u
 }
 
 async function executeSettings(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
-  const opts = cmd.options;
-
   switch (cmd.action) {
     case 'get-columns':
       return client.settings.getColumns();
     case 'set-columns': {
-      const columns = requireCsv(opts['columns'], '--columns');
+      if (cmd.options['account-id'] !== undefined) {
+        throw new Error('Use jira users set-columns with --account-id to change one user’s columns');
+      }
+      const columns = columnSelection(cmd);
       await client.settings.setColumns(columns);
       return { updated: true };
     }

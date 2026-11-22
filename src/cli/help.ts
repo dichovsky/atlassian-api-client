@@ -458,6 +458,8 @@ EXAMPLES:
   atlas jira license get-approximate-count-for-product jira-software
   atlas jira settings get-columns
   atlas jira settings set-columns --columns issuekey,summary
+  atlas jira settings set-columns --clear
+  atlas jira users set-columns --clear --account-id 5b10ac...
   atlas jira redact start --value '[{"contentItem":{"entityId":"summary","entityType":"issuefieldvalue","id":"10000"},"externalId":"51101de6-d001-429d-a095-b2b96dd57fcb","reason":"PII","redactionPosition":{"expectedText":"<sha256-base64>","from":0,"to":5}}]'
   atlas jira redact get-status job-abc123
   atlas jira flag get flag-xyz

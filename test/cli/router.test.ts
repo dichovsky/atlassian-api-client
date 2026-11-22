@@ -1426,8 +1426,9 @@ describe('parseCommand', () => {
 // Release 4.1.0 cli-infra (F076/F139/F215/F224/F234/F272): every boolean flag
 // is tri-state at the router, so no spelling of `false` can turn into `true`.
 describe('parseCommand boolean flags', () => {
-  // Two flags are action-scoped by the router; parse them on an action that accepts them.
+  // Parse each action-scoped flag on a command that accepts it.
   const COMMAND_FOR: Record<string, string[]> = {
+    clear: ['jira', 'users', 'set-columns'],
     'include-archived-projects': ['jira', 'search', 'query'],
     'include-reserved-keys': ['jira', 'workflows', 'get-transition-properties'],
   };

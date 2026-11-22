@@ -117,7 +117,8 @@ export class MockServer {
       const url = new URL(input instanceof Request ? input.url : input);
       const origin = new URL(this.baseUrl);
       url.protocol = origin.protocol;
-      url.host = origin.host;
+      url.hostname = origin.hostname;
+      url.port = origin.port;
       const request = input instanceof Request ? new Request(url, input) : url;
       return send(request, init);
     };

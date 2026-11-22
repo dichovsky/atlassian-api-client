@@ -1,9 +1,65 @@
 import { once } from 'node:events';
 import { createServer, type IncomingMessage } from 'node:http';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { LocalHttpNetwork } from './local-http.js';
+import { MockServer } from './mock-server.js';
 
 describe('local HTTP fixture', () => {
+  it('uses the runtime dispatcher for TCP listeners and refuses unregistered loopback origins', async () => {
+    // Model a successful bind even on machines that prohibit listening on TCP.
+    const network = new LocalHttpNetwork();
+    const server = createServer();
+    vi.spyOn(server, 'listen').mockImplementation(() => {
+      queueMicrotask(() => server.emit('listening'));
+      return server;
+    });
+    vi.spyOn(server, 'address').mockReturnValue({
+      address: '127.0.0.1',
+      family: 'IPv4',
+      port: 54321,
+    });
+    vi.spyOn(server, 'close').mockImplementation((callback) => {
+      callback?.();
+      return server;
+    });
+    const origin = await network.listen(server);
+    const request = new Request(origin);
+    const { Agent, getGlobalDispatcher } = await import('undici');
+    expect(getGlobalDispatcher()).not.toBeInstanceOf(Agent);
+    const sentinel = new Error('native TCP dispatcher reached');
+    const dispatch = vi.spyOn(getGlobalDispatcher(), 'dispatch').mockImplementation(() => {
+      throw sentinel;
+    });
+    try {
+      await expect(network.fetch(request)).rejects.toMatchObject({ cause: sentinel });
+      await expect(network.fetch('http://127.0.0.1:54322')).rejects.toMatchObject({
+        cause: { code: 'ECONNREFUSED' },
+      });
+      expect(dispatch).toHaveBeenCalledTimes(1);
+    } finally {
+      dispatch.mockRestore();
+      await network.close(server);
+    }
+  });
+
+  it('replaces an explicit source port when routing a request to a portless fixture', async () => {
+    const server = new MockServer(new LocalHttpNetwork({ inProcess: true }));
+    await server.start();
+    try {
+      const source = new Request('https://tenant.example:8443//api/path?version=1', {
+        method: 'POST',
+        body: 'payload',
+      });
+      const response = await server.routeFetch()(source);
+      await response.text();
+      expect(server.requests).toMatchObject([
+        { method: 'POST', path: '//api/path', query: 'version=1', body: 'payload' },
+      ]);
+    } finally {
+      await server.close();
+    }
+  });
+
   it('carries request bodies and follows redirects across distinct local origins', async () => {
     const network = new LocalHttpNetwork({ inProcess: true });
     const originalBodies: string[] = [];
@@ -70,6 +126,10 @@ describe('local HTTP fixture', () => {
     });
     const origin = await network.listen(server);
     try {
+      const manual = await network.fetch(origin, { redirect: 'manual' });
+      expect(manual.status).toBe(302);
+      expect(manual.headers.get('location')).toBe('https://unregistered.invalid/');
+      await manual.text();
       await expect(network.fetch(origin)).rejects.toMatchObject({
         cause: { code: 'ECONNREFUSED' },
       });

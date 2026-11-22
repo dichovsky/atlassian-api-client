@@ -638,15 +638,66 @@ describe('CLI → wire matrix (release 4.1.0 jira-users-agile)', () => {
   it.each(labelled(SPRINTS))('%s', (_label, row) => expectRow(row));
   it.each(labelled(OTHER))('%s', (_label, row) => expectRow(row));
 
+  describe.each(['users', 'settings'])('%s set-columns', (resource) => {
+    it.for([
+      [],
+      ['--clear=false'],
+      ['--columns', ''],
+      ['--columns', '  '],
+      ['--columns', ','],
+      ['--columns', 'summary, ,status'],
+      ['--columns', 'summary', '--clear'],
+      ['--clear', '--columns', ''],
+      ['--clear', 'unexpected'],
+    ])('rejects invalid input before writing (%j)', async (flags) => {
+      const run = await runCliWire(['jira', resource, 'set-columns', ...flags]);
+      expect(run.exitCode).toBe(1);
+      expect(run.stderr).toContain('--columns');
+      expect(run.requests).toHaveLength(0);
+    });
+  });
+
   it.each([
-    ['users', ','],
-    ['users', '  '],
-    ['settings', ','],
-    ['settings', '  '],
-  ])('%s set-columns rejects an empty list %j before writing', async (resource, columns) => {
-    const run = await runCliWire(['jira', resource, 'set-columns', '--columns', columns]);
+    ['users', [], 'user', {}],
+    ['users', ['--account-id', 'a'], 'user', { accountId: 'a' }],
+    ['settings', [], 'settings', {}],
+  ] as const)(
+    '%s set-columns --clear %j sends an empty form',
+    async (resource, flags, path, query) => {
+      const run = await runCliWire(['jira', resource, 'set-columns', '--clear', ...flags]);
+      expect(run.exitCode).toBe(0);
+      expect(run.requests).toHaveLength(1);
+      const req = run.requests[0] as WireRequest;
+      expect(req.method).toBe('PUT');
+      expect(req.path).toBe(`${API}/${path}/columns`);
+      expect(queryOf(req)).toEqual(query);
+      expect(req.headers['x-atlassian-token']).toBe('no-check');
+      expect(req.body).toBeInstanceOf(FormData);
+      expect(Array.from((req.body as FormData).keys())).toEqual([]);
+    },
+  );
+
+  it.for([['--clear'], ['--columns', 'summary']])(
+    'settings set-columns %j rejects --account-id before writing system defaults',
+    async (flags) => {
+      const run = await runCliWire([
+        'jira',
+        'settings',
+        'set-columns',
+        ...flags,
+        '--account-id',
+        'a',
+      ]);
+      expect(run.exitCode).toBe(1);
+      expect(run.stderr).toContain('jira users set-columns');
+      expect(run.requests).toHaveLength(0);
+    },
+  );
+
+  it('rejects --clear on other actions before dispatch', async () => {
+    const run = await runCliWire(['jira', 'users', 'reset-columns', '--clear']);
     expect(run.exitCode).toBe(1);
-    expect(run.stderr).toContain('--columns');
+    expect(run.stderr).toContain('--clear');
     expect(run.requests).toHaveLength(0);
   });
 
