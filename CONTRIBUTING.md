@@ -24,7 +24,7 @@ Use Node.js 24 or later (`.nvmrc` holds the version CI uses). The gate also runs
 | `npm run typecheck`        | Type-check the source, tests, examples, and scripts with TypeScript 7.                                                                                                           |
 | `npm run codemap`          | Regenerate `CODEMAP.md`                                                                                                                                                          |
 | `npm run codemap:check`    | Verify that `CODEMAP.md` is current (a frequent CI failure: re-run `npm run codemap` after the last source or formatting change)                                                 |
-| `npm run lint`             | Run Oxlint. Any warning or error fails the check.                                                                                                                                |
+| `npm run lint`             | Check JavaScript syntax with Node.js, then run Oxlint. Any warning or error fails the check.                                                                                     |
 | `npm run lint:fix`         | Apply automatic Oxlint fixes.                                                                                                                                                    |
 | `npm run format`           | Format the repository with Oxfmt. To format specific files, run `npx oxfmt --write <files>`.                                                                                     |
 | `npm run format:check`     | Check formatting with Oxfmt.                                                                                                                                                     |

@@ -63,7 +63,7 @@
     "filemode:check": "node scripts/check-file-modes.js",
     "format": "oxfmt --write .",
     "format:check": "oxfmt --check .",
-    "lint": "oxlint --deny-warnings --report-unused-disable-directives .",
+    "lint": "node scripts/check-javascript-syntax.js && oxlint --deny-warnings --report-unused-disable-directives .",
     "lint:fix": "npm run lint -- --fix",
     "prepublishOnly": "npm run validate",
     "release:check": "node scripts/validate-release-tag.js",

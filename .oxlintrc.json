@@ -1,6 +1,7 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
   "plugins": ["typescript"],
+  "jsPlugins": ["./scripts/oxlint-node-syntax.js"],
   "categories": {
     "correctness": "error"
   },
@@ -64,14 +65,20 @@
   },
   "overrides": [
     {
-      "files": ["**/*.js"],
+      "files": ["**/*.{js,mjs,cjs}"],
       "rules": {
         "no-redeclare": "error",
         "no-undef": "error"
       }
     },
     {
-      "files": ["**/*.ts"],
+      "files": ["**/*.cjs"],
+      "rules": {
+        "node-syntax/no-legacy-literal": "error"
+      }
+    },
+    {
+      "files": ["**/*.{ts,mts,cts,tsx}"],
       "rules": {
         "no-var": "error",
         "prefer-const": "error",
