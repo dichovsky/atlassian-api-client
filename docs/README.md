@@ -7,6 +7,7 @@ This directory contains the documentation for `atlassian-api-client`.
 - [ARCHITECTURE.md](ARCHITECTURE.md) — the system architecture: transport, auth, retry, error taxonomy, middleware composition, pagination, and the CLI shape. The maintainers update this file when the code changes.
 - [`spec/README.md`](../spec/README.md) and the 5.0.0 section of [`CHANGELOG.md`](../CHANGELOG.md) — the pinned OpenAPI snapshots (SHA-256, contract fingerprints, path and operation counts), the procedure to re-pin them, and the API changes of the 2026-11 re-pin.
 - [RELEASING.md](RELEASING.md) — the release-readiness gates, trusted publication, post-release checks, and the rollback procedure.
+- [WRITING.md](WRITING.md) — the writing guide: the ASD-STE100 rules, the terminology table, and the exceptions for the project documentation.
 
 ## Release records
 
