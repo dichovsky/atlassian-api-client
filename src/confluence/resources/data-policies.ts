@@ -2,11 +2,14 @@ import type { Transport } from '../../core/types.js';
 import type { CursorPaginatedResponse } from '../../core/pagination.js';
 import { paginateCursor, validatePageSize } from '../../core/pagination.js';
 import { appendRepeatedParams } from '../../core/query.js';
+import { validateInt64Ids } from './query.js';
 import type {
   DataPolicyMetadata,
   DataPolicySpace,
   ListDataPolicySpacesParams,
 } from '../types/data-policies.js';
+
+type SpaceFilters = ListDataPolicySpacesParams<string | number>;
 
 type Query = Record<string, string | number | boolean | undefined>;
 
@@ -52,9 +55,12 @@ export class DataPoliciesResource {
    * List a single page of spaces with data policies applied.
    * @experimental Atlassian marks this operation experimental.
    */
-  async listSpaces(
+  listSpaces(params?: SpaceFilters): Promise<CursorPaginatedResponse<DataPolicySpace>>;
+  listSpaces(
+    // oxlint-disable-next-line typescript/unified-signatures -- Parameters<> must retain numeric IDs.
     params?: ListDataPolicySpacesParams,
-  ): Promise<CursorPaginatedResponse<DataPolicySpace>> {
+  ): Promise<CursorPaginatedResponse<DataPolicySpace>>;
+  async listSpaces(params?: SpaceFilters): Promise<CursorPaginatedResponse<DataPolicySpace>> {
     if (params?.limit !== undefined) validatePageSize(params.limit, 'limit');
     const { path, query } = buildSpaces(`${this.baseUrl}/data-policies/spaces`, params);
 
@@ -70,9 +76,12 @@ export class DataPoliciesResource {
    * Iterate over every space with data policies across all pages.
    * @experimental Uses Atlassian's experimental `data-policies/spaces` operation.
    */
-  async *listAllSpaces(
+  listAllSpaces(params?: Omit<SpaceFilters, 'cursor'>): AsyncGenerator<DataPolicySpace>;
+  listAllSpaces(
+    // oxlint-disable-next-line typescript/unified-signatures -- Parameters<> must retain numeric IDs.
     params?: Omit<ListDataPolicySpacesParams, 'cursor'>,
-  ): AsyncGenerator<DataPolicySpace> {
+  ): AsyncGenerator<DataPolicySpace>;
+  async *listAllSpaces(params?: Omit<SpaceFilters, 'cursor'>): AsyncGenerator<DataPolicySpace> {
     // Validate `limit` here (in addition to the per-page `listSpaces` path
     // exercised by `paginateCursor`) so JS callers that smuggle invalid values
     // fail fast before any HTTP request is issued. Mirrors the defensive
@@ -91,9 +100,10 @@ export class DataPoliciesResource {
  * (B1049). Scalar params stay in the query bag; unset values are omitted so
  * query equality assertions stay tight.
  */
-function buildSpaces(basePath: string, params?: ListDataPolicySpacesParams): PathAndQuery {
+function buildSpaces(basePath: string, params?: SpaceFilters): PathAndQuery {
   const query: Query = {};
   if (!params) return { path: basePath, query };
+  validateInt64Ids('ids', params.ids);
   let path = appendRepeatedParams(basePath, 'ids', params.ids);
   path = appendRepeatedParams(path, 'keys', params.keys);
   if (params.sort !== undefined) query['sort'] = params.sort;
@@ -110,13 +120,10 @@ function buildSpaces(basePath: string, params?: ListDataPolicySpacesParams): Pat
  * `cursor` through `as any` / `as object` casts (`cursor` only ever lands in
  * the scalar query bag, never the repeated-param path).
  */
-function buildListAll(
-  basePath: string,
-  params?: Omit<ListDataPolicySpacesParams, 'cursor'>,
-): PathAndQuery {
+function buildListAll(basePath: string, params?: Omit<SpaceFilters, 'cursor'>): PathAndQuery {
   // `params` may carry a smuggled `cursor` at runtime; the spread below
   // deliberately omits it without mutating the result of `buildSpaces`.
-  const { path, query } = buildSpaces(basePath, params as ListDataPolicySpacesParams);
+  const { path, query } = buildSpaces(basePath, params);
   const { cursor: _cursor, ...rest } = query;
   return { path, query: rest };
 }

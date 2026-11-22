@@ -66,7 +66,7 @@
     "lint": "node scripts/check-javascript-syntax.js && oxlint --deny-warnings --report-unused-disable-directives .",
     "lint:fix": "npm run lint -- --fix",
     "prepublishOnly": "npm run validate",
-    "release:check": "node scripts/validate-release-tag.js",
+    "release:check": "node scripts/validate-release-tag.js --warn-date",
     "api-coverage": "python3 scripts/api-gap-analysis.py",
     "test": "npm run test:unit && npm run test:api-gap",
     "test:api-gap": "vitest run --config vitest.api-gap.config.ts",
@@ -89,7 +89,9 @@
     "oxfmt": "^0.79.0",
     "oxlint": "^1.94.0",
     "typescript": "7.0.2",
-    "vitest": "^5.1.1"
+    "undici": "^7.30.2",
+    "vitest": "^5.1.1",
+    "yaml": "2.9.1"
   },
   "engines": {
     "node": ">=24.0.0"

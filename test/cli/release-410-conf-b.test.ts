@@ -210,11 +210,10 @@ describe('every documented command for these resources runs (F044, F064, F070)',
 // ─── tasks ──────────────────────────────────────────────────────────────────
 
 describe('tasks list numeric ID filters (F043, F044)', () => {
-  const message = 'must contain only decimal integer IDs up to 9007199254740991, got: ';
+  const message = 'must contain only decimal integer IDs, got: ';
   it.each([
     ['--page-id', 'abc', 'abc'],
     ['--page-id', '12abc,7', '12abc'],
-    ['--task-id', '9007199254740993', '9007199254740993'],
     ['--space-id', '1.5', '1.5'],
     ['--blog-post-id', '7,0x10', '0x10'],
   ])('rejects %s %s instead of dropping or rounding it', async (flag, value, bad) => {
@@ -236,9 +235,19 @@ describe('tasks list numeric ID filters (F043, F044)', () => {
 
   it('data-policies list-spaces --ids shares the guard', async () => {
     await rejected(['data-policies', 'list-spaces', '--ids', 'abc'], `--ids ${message}abc`);
-    const req = await sent(['data-policies', 'list-spaces', '--ids', '1,2']);
-    expect(queryOf(req)).toEqual({ ids: ['1', '2'] });
+    const req = await sent(['data-policies', 'list-spaces', '--ids', '1,9223372036854775807']);
+    expect(queryOf(req)).toEqual({ ids: ['1', '9223372036854775807'] });
   });
+
+  it.each([
+    ['tasks', 'list', '--task-id', '9223372036854775808'],
+    ['data-policies', 'list-spaces', '--ids', '-9223372036854775809'],
+  ])(
+    'rejects an out-of-range %s %s %s before the request',
+    async (resource, action, flag, value) => {
+      await rejected([resource, action, `${flag}=${value}`], 'must fit in a signed int64');
+    },
+  );
 
   it.each([
     ['--ids', ','],
@@ -253,14 +262,24 @@ describe('tasks list numeric ID filters (F043, F044)', () => {
 
   it('sends each comma-separated ID as a repeated parameter', async () => {
     const req = await sent([
-      ...['tasks', 'list', '--space-id', '1,2', '--task-id', '5,6'],
+      ...[
+        'tasks',
+        'list',
+        '--space-id',
+        '1,9223372036854775807',
+        '--task-id',
+        '5,9007199254740993',
+      ],
+      ...['--page-id', '9007199254740995', '--blog-post-id', '9007199254740997'],
       ...['--created-by', 'acc-1,acc-2'],
     ]);
     expect(req.method).toBe('GET');
     expect(req.path).toBe(`${V2}/tasks`);
     expect(queryOf(req)).toEqual({
-      'task-id': ['5', '6'],
-      'space-id': ['1', '2'],
+      'task-id': ['5', '9007199254740993'],
+      'space-id': ['1', '9223372036854775807'],
+      'page-id': '9007199254740995',
+      'blogpost-id': '9007199254740997',
       'created-by': ['acc-1', 'acc-2'],
     });
   });

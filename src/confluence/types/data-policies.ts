@@ -80,13 +80,16 @@ export interface DataPolicySpace {
  */
 export type DataPolicySpaceSortOrder = 'id' | '-id' | 'key' | '-key' | 'name' | '-name';
 
-/** Query parameters for `GET /data-policies/spaces`. */
-export interface ListDataPolicySpacesParams {
+/**
+ * Query parameters for `GET /data-policies/spaces`.
+ * The default ID type is numeric. Use `string | number` for filters that include exact decimal strings.
+ */
+export interface ListDataPolicySpacesParams<Id extends string | number = number> {
   /**
-   * Filter to specific space IDs. Server caps at 250 entries. Values are
-   * `int64` integers on the wire (`type: array, items: { type: integer }`).
+   * Filter to specific space IDs (up to 250). Pass IDs outside the
+   * safe-integer range as decimal int64 strings.
    */
-  readonly ids?: readonly number[];
+  readonly ids?: readonly Id[];
   /** Filter to specific space keys. Server caps at 250 entries. */
   readonly keys?: readonly string[];
   /** Sort field; prefix with `-` to reverse direction. */

@@ -28,6 +28,7 @@ export interface Component {
   readonly description?: string;
   readonly lead?: ComponentUserRef;
   readonly leadAccountId?: string;
+  /** @deprecated Jira Cloud removed this property. Use leadAccountId. */
   readonly leadUserName?: string;
   readonly assigneeType?: ComponentAssigneeType;
   readonly assignee?: ComponentUserRef;
@@ -66,6 +67,7 @@ export interface CreateComponentData {
   readonly name: string;
   readonly description?: string;
   readonly leadAccountId?: string;
+  /** @deprecated Jira Cloud removed this property. Use leadAccountId. */
   readonly leadUserName?: string;
   readonly assigneeType?: ComponentAssigneeType;
   readonly project?: string;
@@ -76,6 +78,7 @@ export interface UpdateComponentData {
   readonly name?: string;
   readonly description?: string;
   readonly leadAccountId?: string;
+  /** @deprecated Jira Cloud removed this property. Use leadAccountId. */
   readonly leadUserName?: string;
   readonly assigneeType?: ComponentAssigneeType;
 }

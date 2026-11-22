@@ -25,31 +25,34 @@ export interface ConfluenceTask {
   readonly completedAt?: string;
 }
 
-/** Parameters for listing Confluence tasks. */
-export interface ListTasksParams {
+/**
+ * Parameters for listing Confluence tasks.
+ * The default ID type is numeric. Use `string | number` for filters that include exact decimal strings.
+ */
+export interface ListTasksParams<Id extends string | number = number> {
   readonly 'body-format'?: TaskBodyFormat;
   readonly includeBlankTasks?: boolean;
   readonly status?: 'incomplete' | 'complete';
   /**
    * Filter to specific task IDs. Multiple IDs can be specified (up to 250).
-   * Values are `int64` integers on the wire.
+   * Pass IDs outside the safe-integer range as decimal int64 strings.
    */
-  readonly taskId?: readonly number[];
+  readonly taskId?: readonly Id[];
   /**
    * Filter to specific space IDs. Multiple IDs can be specified (up to 250).
-   * Values are `int64` integers on the wire.
+   * Pass IDs outside the safe-integer range as decimal int64 strings.
    */
-  readonly spaceId?: readonly number[];
+  readonly spaceId?: readonly Id[];
   /**
    * Filter to specific page IDs. Multiple IDs can be specified (up to 250).
-   * Values are `int64` integers on the wire.
+   * Pass IDs outside the safe-integer range as decimal int64 strings.
    */
-  readonly pageId?: readonly number[];
+  readonly pageId?: readonly Id[];
   /**
    * Filter to specific blog post IDs. Multiple IDs can be specified (up to 250).
-   * Values are `int64` integers on the wire.
+   * Pass IDs outside the safe-integer range as decimal int64 strings.
    */
-  readonly blogPostId?: readonly number[];
+  readonly blogPostId?: readonly Id[];
   /** Filter by creator account IDs. Multiple IDs can be specified (up to 250). */
   readonly createdBy?: readonly string[];
   /** Filter by assignee account IDs. Multiple IDs can be specified (up to 250). */

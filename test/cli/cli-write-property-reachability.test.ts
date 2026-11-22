@@ -97,6 +97,14 @@ const KNOWN_GAPS: Readonly<
     reason:
       'deprecated: deleteFeatureFlagsByProperty marks _updateSequenceId "no longer supported"; the CLI rejects --update-sequence-id',
   },
+  'jira.component.create': {
+    unset: ['leadUserName'],
+    reason: 'removed: ProjectComponent marks leadUserName unavailable. Use leadAccountId.',
+  },
+  'jira.component.update': {
+    unset: ['leadUserName'],
+    reason: 'removed: ProjectComponent marks leadUserName unavailable. Use leadAccountId.',
+  },
   'jira.dashboards.listAvailableGadgets': {
     unset: ['dashboardId', 'gadgetId', 'moduleKey', 'uri'],
     reason:

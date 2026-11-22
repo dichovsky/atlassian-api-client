@@ -1,4 +1,5 @@
 import type { GlobalOptions, ParsedCommand } from '../types.js';
+import { validateInt64Ids } from '../../confluence/resources/query.js';
 import { ConfluenceClient } from '../../confluence/client.js';
 import { buildClientConfig } from '../config.js';
 import type {
@@ -1881,7 +1882,7 @@ async function executeDataPolicies(client: ConfluenceClient, cmd: ParsedCommand)
     case 'list-spaces': {
       const sort = asEnum(opts['sort'], DATA_POLICY_SPACE_SORT_ORDERS, 'sort');
       return client.dataPolicies.listSpaces({
-        ids: parseCsvIntList(nonEmptyFilter(opts, 'ids'), '--ids'),
+        ids: parseCsvIdList(nonEmptyFilter(opts, 'ids'), '--ids'),
         keys: parseCsvList(nonEmptyFilter(opts, 'keys')),
         ...(sort !== undefined ? { sort } : {}),
         limit: asPositiveInt(opts['limit'], '--limit'),
@@ -1909,9 +1910,6 @@ function parseCsvList(raw: string | undefined): readonly string[] | undefined {
   return items.length > 0 ? items : undefined;
 }
 
-/** A spec `int64` ID token. Range is left to the server (B1059), so `-1` passes. */
-const DECIMAL_ID = /^-?\d+$/;
-
 /**
  * Split a comma-separated flag of spec `int64` IDs into decimal strings, for
  * SDK params typed as strings. Kept as strings so IDs above
@@ -1920,31 +1918,8 @@ const DECIMAL_ID = /^-?\d+$/;
  */
 function parseCsvIdList(raw: string | undefined, flag: string): readonly string[] | undefined {
   const ids = parseCsvList(raw);
-  for (const id of ids ?? []) {
-    if (!DECIMAL_ID.test(id)) {
-      throw new Error(`${flag} must contain only decimal integer IDs, got: ${id}`);
-    }
-  }
+  validateInt64Ids(flag, ids);
   return ids;
-}
-
-/**
- * Like {@link parseCsvIdList}, for SDK params typed as `number[]`: a token
- * beyond `Number.MAX_SAFE_INTEGER` also throws, since rounding it would
- * change the requested ID.
- */
-function parseCsvIntList(raw: string | undefined, flag: string): readonly number[] | undefined {
-  const strs = parseCsvList(raw);
-  if (strs === undefined) return undefined;
-  return strs.map((s) => {
-    const n = Number(s);
-    if (!DECIMAL_ID.test(s) || !Number.isSafeInteger(n)) {
-      throw new Error(
-        `${flag} must contain only decimal integer IDs up to ${Number.MAX_SAFE_INTEGER}, got: ${s}`,
-      );
-    }
-    return n;
-  });
 }
 
 /**
@@ -1956,9 +1931,10 @@ function singleSpaceId(opts: ParsedCommand['options']): string | undefined {
   const spaceId = trimmedFilter(opts, 'space-id');
   if (spaceId === undefined) return undefined;
   if (spaceId.includes(',')) throw new Error(`--space-id takes one space ID, got: ${spaceId}`);
-  if (!DECIMAL_ID.test(spaceId)) {
+  if (!/^-?\d+$/.test(spaceId)) {
     throw new Error(`--space-id must be a decimal integer ID, got: ${spaceId}`);
   }
+  validateInt64Ids('--space-id', [spaceId]);
   return spaceId;
 }
 
@@ -2178,10 +2154,10 @@ async function executeTasks(client: ConfluenceClient, cmd: ParsedCommand): Promi
             ? opts['include-blank-tasks']
             : undefined,
         status: asEnum(opts['status'], TASK_STATUSES, 'status'),
-        taskId: parseCsvIntList(nonEmptyFilter(opts, 'task-id'), '--task-id'),
-        spaceId: parseCsvIntList(nonEmptyFilter(opts, 'space-id'), '--space-id'),
-        pageId: parseCsvIntList(nonEmptyFilter(opts, 'page-id'), '--page-id'),
-        blogPostId: parseCsvIntList(nonEmptyFilter(opts, 'blog-post-id'), '--blog-post-id'),
+        taskId: parseCsvIdList(nonEmptyFilter(opts, 'task-id'), '--task-id'),
+        spaceId: parseCsvIdList(nonEmptyFilter(opts, 'space-id'), '--space-id'),
+        pageId: parseCsvIdList(nonEmptyFilter(opts, 'page-id'), '--page-id'),
+        blogPostId: parseCsvIdList(nonEmptyFilter(opts, 'blog-post-id'), '--blog-post-id'),
         createdBy: parseCsvList(nonEmptyFilter(opts, 'created-by')),
         assignedTo: parseCsvList(nonEmptyFilter(opts, 'assigned-to')),
         completedBy: parseCsvList(nonEmptyFilter(opts, 'completed-by')),

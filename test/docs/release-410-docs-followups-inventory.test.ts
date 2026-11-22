@@ -130,7 +130,11 @@ describe('CONTRIBUTING describes the CI jobs and gate prerequisites that exist',
   const ci = parseWorkflowYaml(read('.github', 'workflows', 'ci.yml')) as {
     jobs: Record<
       string,
-      { needs?: string[]; steps?: { run?: string; with?: Record<string, string> }[] }
+      {
+        needs?: string[];
+        strategy?: { matrix: { node: string[] } };
+        steps?: { run?: string; with?: Record<string, string> }[];
+      }
     >;
   };
   const scriptsSection = section(CONTRIBUTING, '## Scripts');
@@ -155,8 +159,8 @@ describe('CONTRIBUTING describes the CI jobs and gate prerequisites that exist',
 
   it('gives the minimum-Node job the engines.node floor', () => {
     const floor = /^>=(\d+\.\d+\.\d+)$/.exec(PACKAGE_JSON.engines.node)?.[1];
-    const setup = ci.jobs['node_floor']?.steps?.find((s) => s.with?.['node-version'] !== undefined);
-    expect(setup?.with?.['node-version']).toBe(floor);
+    expect(ci.jobs['node_compat']?.strategy?.matrix.node).toContain(floor);
+    expect(ciParagraph).toContain('Node.js 26');
     expect(ciParagraph).toContain(`Node.js ${floor}`);
   });
 
@@ -177,7 +181,10 @@ describe('CONTRIBUTING describes the CI jobs and gate prerequisites that exist',
     ) {
       tools.add('jq');
     }
-    expect([...tools].sort()).toEqual(['bash', 'git', 'jq', 'python3']);
+    const workflow = read('.github', 'workflows', 'publish.yml');
+    if (workflow.includes('openssl dgst ')) tools.add('openssl');
+    if (workflow.includes('tar -xzOf ')) tools.add('tar');
+    expect([...tools].sort()).toEqual(['bash', 'git', 'jq', 'openssl', 'python3', 'tar']);
     for (const tool of tools) expect(setup, tool).toContain(`\`${tool}\``);
   });
 

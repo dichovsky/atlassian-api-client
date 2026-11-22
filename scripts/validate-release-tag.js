@@ -5,7 +5,7 @@ import { createRequire } from 'node:module';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const USAGE = 'Usage: node scripts/validate-release-tag.js vX.Y.Z';
+const USAGE = 'Usage: node scripts/validate-release-tag.js vX.Y.Z [--warn-date]';
 const STABLE_TAG = /^v((?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*))$/;
 
 function readJson(readFile, file) {
@@ -38,7 +38,7 @@ function isCalendarDate(value) {
 // The release section must already hold everything being shipped: an
 // Unreleased section with content means the fold was skipped, and a pushed
 // tag cannot be moved to fix that afterwards.
-function changelogProblem(changelog, version) {
+function changelogProblem(changelog, version, onReleaseDate) {
   const sections = changelogSections(changelog);
   const isUnreleased = (section) => /^## \[Unreleased\]/i.test(section.heading);
   if (sections.some((s) => isUnreleased(s) && s.body.some((line) => line.trim() !== ''))) {
@@ -60,6 +60,7 @@ function changelogProblem(changelog, version) {
   if (!date || !isCalendarDate(date)) {
     return `CHANGELOG.md release section for ${version} must end with its release date as (YYYY-MM-DD); received ${JSON.stringify(matches[0].heading)}`;
   }
+  onReleaseDate?.(date);
   return undefined;
 }
 
@@ -68,9 +69,10 @@ function changelogProblem(changelog, version) {
  *
  * @param {readonly string[]} args - The command-line arguments: exactly one tag.
  * @param {(file: string) => string} readFile - Reads a repository file as UTF-8.
+ * @param {(date: string) => void} [onReleaseDate] - Receives the validated release date.
  * @returns {string | undefined} Why the tag is invalid, or `undefined` when it is valid.
  */
-export function releaseTagProblem(args, readFile) {
+export function releaseTagProblem(args, readFile, onReleaseDate) {
   if (args.length !== 1) return USAGE;
 
   const tag = args[0];
@@ -96,30 +98,41 @@ export function releaseTagProblem(args, readFile) {
       }
     }
 
-    return changelogProblem(readFile('CHANGELOG.md'), version);
+    return changelogProblem(readFile('CHANGELOG.md'), version, onReleaseDate);
   } catch (error) {
     return error instanceof Error ? error.message : String(error);
   }
 }
 
 /**
- * Validate the tag in `args` and report the result as the CLI does: one line
- * on stdout when it is valid, otherwise one line on stderr and exit code 1.
+ * Report a valid tag on stdout or an invalid tag on stderr with exit code 1.
+ * Local pre-tag checks can also request a non-blocking date warning.
  *
- * @param {readonly string[]} args - The command-line arguments: exactly one tag.
+ * @param {readonly string[]} args - The tag, optionally with --warn-date in either position.
  * @param {(file: string) => string} readFile - Reads a repository file as UTF-8.
  * @param {{ stdout: { write(text: string): unknown }, stderr: { write(text: string): unknown }, exitCode?: number | string }} io
  *   Where to report; the CLI passes `process`.
  */
 export function main(args, readFile, io) {
-  const problem = releaseTagProblem(args, readFile);
+  const warnDateIndex = args.indexOf('--warn-date');
+  const checkDate = warnDateIndex !== -1;
+  const tagArgs = checkDate ? args.toSpliced(warnDateIndex, 1) : args;
+  const warnIfStale = (date) => {
+    const today = new Date().toISOString().slice(0, 10);
+    if (date !== today) {
+      io.stderr.write(
+        `Warning: CHANGELOG.md dates ${tagArgs[0].slice(1)} as ${date}; today is ${today} (UTC).\n`,
+      );
+    }
+  };
+  const problem = releaseTagProblem(tagArgs, readFile, checkDate ? warnIfStale : undefined);
   if (problem) {
     io.stderr.write(`Release validation failed: ${problem}\n`);
     io.exitCode = 1;
     return;
   }
-  const version = STABLE_TAG.exec(args[0])[1];
-  io.stdout.write(`Release tag ${args[0]} is valid for package version ${version}.\n`);
+  const tag = tagArgs[0];
+  io.stdout.write(`Release tag ${tag} is valid for package version ${tag.slice(1)}.\n`);
 }
 
 /**
@@ -137,8 +150,8 @@ export function isEntryPoint(moduleUrl, scriptPath) {
   try {
     const entry = createRequire(moduleUrl).resolve(resolve(scriptPath));
     return realpathSync(entry) === realpathSync(fileURLToPath(moduleUrl));
-  } catch {
-    return false;
+  } catch (cause) {
+    throw new Error('Cannot resolve the Node.js entry point for the repository check.', { cause });
   }
 }
 

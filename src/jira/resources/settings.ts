@@ -28,7 +28,8 @@ export class SettingsResource {
    *
    * @param columns - Array of column field IDs (e.g. `['issuekey', 'summary']`).
    *   Spec: PUT /rest/api/3/settings/columns accepts `multipart/form-data` with
-   *   repeated `columns` form fields — one entry per column ID string.
+   *   repeated `columns` form fields — one entry per column ID string. An empty
+   *   array removes all default columns.
    */
   async setColumns(columns: string[]): Promise<void> {
     const formData = new FormData();
@@ -39,6 +40,7 @@ export class SettingsResource {
       method: 'PUT',
       path: `${this.baseUrl}/settings/columns`,
       formData,
+      headers: { 'X-Atlassian-Token': 'no-check' },
     });
   }
 }

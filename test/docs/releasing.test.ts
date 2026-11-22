@@ -48,11 +48,11 @@ describe('release runbook', () => {
     expect(preRelease).toContain("merge nothing into `main` except this release's pull request");
   });
 
-  it('folds every Unreleased entry and says release:check cannot see a stale date', () => {
+  it('folds every Unreleased entry and explains the local release date warning', () => {
     const preRelease = section('Pre-release');
 
     expect(preRelease).toContain('Move all entries out of `Unreleased`');
-    expect(preRelease).toContain('It does not check that the date is current');
+    expect(preRelease).toContain('warns if the release date differs from today in UTC');
   });
 
   it('repeats the release and registry checks before pushing the tag', () => {

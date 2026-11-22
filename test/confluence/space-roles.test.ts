@@ -24,6 +24,44 @@ describe('SpaceRolesResource', () => {
 
   // ── list ──────────────────────────────────────────────────────────────────
 
+  it.each(['', '   '])('rejects blank space-id %j on both list paths', async (spaceId) => {
+    const params = { 'space-id': spaceId };
+    await expect(resource.list(params)).rejects.toThrow(ValidationError);
+    await expect(resource.listAll(params).next()).rejects.toThrow(ValidationError);
+    expect(transport.calls).toHaveLength(0);
+  });
+
+  it.each([
+    [42, '42'],
+    [Number.MAX_SAFE_INTEGER, '9007199254740991'],
+    ['  9007199254740993  ', '9007199254740993'],
+  ] as const)(
+    'sends space-id %j as an exact string on both list paths',
+    async (spaceId, expected) => {
+      const params = { 'space-id': spaceId };
+      const page = { results: [], _links: {} };
+      transport.respondWith(page).respondWith(page);
+
+      await resource.list(params);
+      await resource.listAll(params).next();
+
+      expect(transport.calls.map(({ options }) => options.query)).toEqual([
+        { 'space-id': expected },
+        { 'space-id': expected },
+      ]);
+    },
+  );
+
+  it.each([[Number.MAX_SAFE_INTEGER + 1], [1.5], [NaN], [null], [false], [['42']]] as const)(
+    'rejects invalid space-id %o on both list paths before sending a request',
+    async (spaceId) => {
+      const params = { 'space-id': spaceId as number };
+      await expect(resource.list(params)).rejects.toThrow(ValidationError);
+      await expect(resource.listAll(params).next()).rejects.toThrow(ValidationError);
+      expect(transport.calls).toHaveLength(0);
+    },
+  );
+
   describe('list()', () => {
     it('calls GET /space-roles with no params', async () => {
       // Arrange
@@ -49,7 +87,7 @@ describe('SpaceRolesResource', () => {
 
       // Act
       await resource.list({
-        'space-id': 'space-1',
+        'space-id': '  space-1  ',
         'role-type': 'CUSTOM',
         'principal-id': 'acc-1',
         'principal-type': 'USER',

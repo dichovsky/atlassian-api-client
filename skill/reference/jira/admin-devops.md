@@ -631,14 +631,14 @@ atlas jira license get-approximate-count-for-product jira-software
 
 ## `settings`
 
-| Action        | Positional | Required flags | Optional flags |
-| ------------- | ---------- | -------------- | -------------- |
-| `get-columns` | —          | —              | —              |
-| `set-columns` | —          | `--columns`    | —              |
+| Action        | Positional | Required flags                | Optional flags |
+| ------------- | ---------- | ----------------------------- | -------------- |
+| `get-columns` | —          | —                             | —              |
+| `set-columns` | —          | one of `--columns`, `--clear` | —              |
 
 - `get-columns` calls `GET /rest/api/3/settings/columns` and returns the default issue navigator columns.
-- `set-columns` calls `PUT /rest/api/3/settings/columns` and replaces the default column configuration. Requires **Jira administrator** global permission.
-- `--columns` is a **comma-separated** list of column field keys (e.g. `issuekey,summary,assignee`). The endpoint accepts `multipart/form-data` with repeated `columns` fields.
+- `set-columns` calls `PUT /rest/api/3/settings/columns` and replaces the default column configuration. Requires **Jira administrator** global permission. To update one account, use `atlas jira users set-columns` with `--account-id`.
+- Use `--columns` with comma-separated, non-empty field keys (e.g. `issuekey,summary,assignee`) or `--clear` to remove all system default columns. The endpoint accepts `multipart/form-data` with one `columns` field per key.
 
 ```sh
 # Get the current default issue navigator columns
@@ -646,6 +646,9 @@ atlas jira settings get-columns
 
 # Set the default columns to Key and Summary
 atlas jira settings set-columns --columns issuekey,summary
+
+# Remove all system default columns
+atlas jira settings set-columns --clear
 ```
 
 ## `redact`

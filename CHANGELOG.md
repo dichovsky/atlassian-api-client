@@ -4,6 +4,9 @@
 
 - Jira field context options accept an optional `query` filter (`atlas jira fields context-option-list --field-id <field> --context-id <id> --query <text>`). JQL suggestions accept Jira's experimental `maxResults` hint (`atlas jira jql autocomplete-suggestions --field-name <field> --max-results <n>`).
 - Jira plan scheduling accepts `AnySprintDates` in requests and responses. Atlassian now marks the plural field-context default-values GET operation experimental and documents a 422 limit-exceeded response when creating a project from a custom template.
+- Confluence task and data-policy ID filters accept exact decimal strings across the signed 64-bit range. Pass IDs too large for a safe JavaScript integer as strings. Blank space-role space IDs now fail before a request is sent.
+- The CLI rejects `0` and `1` directly after a bare positive boolean flag. To use either as a positional ID, place it before the flag or after `--`. Either ID can still directly follow a negated flag such as `--no-include-version`. Jira component writes reject `--lead-user-name`. Use `--lead-account-id`.
+- Jira user and system column updates send ordered multipart fields with the required Atlassian header. Both CLI setters accept `--clear` to remove all columns and reject blank field IDs in `--columns`. SDK callers can pass an empty array to clear.
 
 ## [5.0.0](https://github.com/dichovsky/atlassian-api-client/compare/v4.0.0...v5.0.0) (2026-11-10)
 

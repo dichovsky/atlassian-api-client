@@ -251,6 +251,7 @@ const GLOBAL_OPTIONS = {
   'include-inactive-users': { type: 'boolean' as const },
   // settings/columns options (B772)
   columns: { type: 'string' as const },
+  clear: { type: 'boolean' as const },
   // exists-by-properties options (B963)
   'entity-id': { type: 'string' as const },
   'entity-type': { type: 'string' as const },
@@ -629,7 +630,7 @@ export const BOOLEAN_FLAGS: ReadonlySet<string> = new Set(
 );
 
 const BOOLEAN_LITERAL = /^(?:true|false)$/i;
-// Words a user may mean as a boolean value; only true/false are accepted.
+// Recognize common boolean spellings so invalid values fail before dispatch.
 const BOOLEAN_WORD = /^(?:true|false|yes|no|y|n|on|off)$/i;
 
 function negatedValueError(rawName: string, flag: string): Error {
@@ -672,10 +673,10 @@ function splitBooleanInlineValues(args: readonly string[]): string[] {
  *
  * Boolean flags are tri-state: `--flag`, `--flag true` and `--flag=true` give
  * `true`; `--flag false`, `--flag=false` and `--no-flag` give `false`; an
- * omitted flag stays `undefined`. A `true`/`false` token right after a boolean
- * flag is its value, never a positional (put real positionals after `--`);
- * `yes`/`no`/`y`/`n`/`on`/`off` there are rejected rather than silently read
- * as a positional with the flag left `true`.
+ * omitted flag stays `undefined`. A `true`/`false` token right after a positive
+ * boolean flag supplies its value. Put a positional `true` or `false` after `--`.
+ * A bare positive flag rejects `0` and `1`. After `--no-flag`, either digit
+ * is a positional ID.
  * Conflicting values for one flag are rejected. When a legacy `--no-<flag>`
  * option is registered (`no-include-version`, `no-resolved`,
  * `no-notify-users`), an explicit false is reported as `'no-<flag>': true`
@@ -704,7 +705,10 @@ export function parseCommand(argv: string[]): ParsedCommand & {
     const negated = token.rawName === `--no-${token.name}`;
     let value = !negated;
     const next = tokens[i + 1];
-    if (next?.kind === 'positional' && BOOLEAN_WORD.test(next.value)) {
+    if (
+      next?.kind === 'positional' &&
+      (BOOLEAN_WORD.test(next.value) || (!negated && /^[01]$/.test(next.value)))
+    ) {
       if (negated) throw negatedValueError(token.rawName, token.name);
       if (!BOOLEAN_LITERAL.test(next.value)) {
         throw new Error(
@@ -740,6 +744,15 @@ export function parseCommand(argv: string[]): ParsedCommand & {
 
   if (api === 'confluence' && options['software-cloud-id'] !== undefined) {
     throw new Error('--software-cloud-id is only supported for Jira commands');
+  }
+
+  if (
+    options['clear'] !== undefined &&
+    !(api === 'jira' && action === 'set-columns' && ['users', 'settings'].includes(resource))
+  ) {
+    throw new Error(
+      '--clear is supported only by jira users set-columns and jira settings set-columns',
+    );
   }
 
   const currentJqlSearchAction = ['', 'search', 'query', 'jql-get', 'jql-post'].includes(action);

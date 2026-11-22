@@ -65,16 +65,16 @@ describe('CI orchestration', () => {
     expect(workflow).toContain('run: npm run test:coverage');
     expect(workflow).toContain('run: npm run test:api-gap');
     expect(workflow).toContain('run: npm run validate:package');
-    expect(workflow).toContain('needs: [quality, coverage, api_gap, package, node_floor]');
+    expect(workflow).toContain('needs: [quality, coverage, api_gap, package, node_compat]');
     expect(workflow).toContain('  ci:\n    name: CI\n    if: always()');
     expect(workflow).toContain('test "$QUALITY_RESULT" = success');
     expect(workflow).toContain('test "$COVERAGE_RESULT" = success');
     expect(workflow).toContain('test "$API_GAP_RESULT" = success');
     expect(workflow).toContain('test "$PACKAGE_RESULT" = success');
-    expect(workflow).toContain('test "$NODE_FLOOR_RESULT" = success');
+    expect(workflow).toContain('test "$NODE_COMPAT_RESULT" = success');
   });
 
-  it('tests the oldest Node.js release that engines.node promises, and gates CI on it', async () => {
+  it('builds and tests on the engines.node floor and Node 26, and gates CI on both', async () => {
     const [packageJsonText, workflowText] = await Promise.all([
       readFile(resolve(REPO_ROOT, 'package.json'), 'utf8'),
       readFile(resolve(REPO_ROOT, '.github/workflows/ci.yml'), 'utf8'),
@@ -85,16 +85,18 @@ describe('CI orchestration', () => {
         string,
         {
           needs?: string[];
+          strategy?: { matrix: { node: string[] } };
           steps: { uses?: string; with?: Record<string, string>; run?: string }[];
         }
       >;
     };
-    const floor = workflow.jobs.node_floor!;
-    const setupNode = floor.steps.find((step) => step.uses?.startsWith('actions/setup-node@'));
+    const compat = workflow.jobs.node_compat!;
+    const setupNode = compat.steps.find((step) => step.uses?.startsWith('actions/setup-node@'));
 
     expect(engines.node).toMatch(/^>=\d+\.\d+\.\d+$/);
-    expect(setupNode?.with?.['node-version']).toBe(engines.node.slice('>='.length));
-    expect(floor.steps.map((step) => step.run)).toContain('npm run build && npm run test:unit');
+    expect(compat.strategy?.matrix.node).toEqual([engines.node.slice('>='.length), '26']);
+    expect(setupNode?.with?.['node-version']).toBe('${{ matrix.node }}');
+    expect(compat.steps.map((step) => step.run)).toContain('npm run build && npm run test:unit');
     const otherJobs = Object.keys(workflow.jobs).filter((name) => name !== 'ci');
     expect(workflow.jobs.ci!.needs).toEqual(otherJobs);
   });
@@ -124,8 +126,7 @@ describe('CI orchestration', () => {
     expect(workflow).toContain('needs: preflight');
     expect(workflow).toContain('environment: release');
     expect(workflow).toContain('id-token: write');
-    expect(workflow).toContain('run: npm run build');
-    expect(workflow).not.toContain('run: npm run validate');
+    expect(workflow).toContain('run: npm run validate');
     expect(workflow).not.toContain('npm install -g npm');
     expect(workflow).toContain('run: npm publish --provenance');
     expect(workflow).toContain('dist-tags.latest');
@@ -142,10 +143,9 @@ describe('CI orchestration', () => {
     const publish = workflow.slice(workflow.indexOf('  publish:'), workflow.indexOf('  verify:'));
     const verify = workflow.slice(workflow.indexOf('  verify:'));
 
-    expect(publish).toContain('git fetch --no-tags origin');
-    expect(publish).toContain('git rev-parse refs/remotes/origin/main');
+    expect(publish).toContain('git/ref/heads/main');
     expect(publish).toContain('${{ needs.preflight.outputs.release-sha }}');
-    expect(publish).toContain("node-version-file: '.nvmrc'");
+    expect(publish).toContain("node-version: '24'");
     expect(publish).toContain("registry-url: 'https://registry.npmjs.org'");
     expect(verify).toContain("node-version: '24'");
     expect(verify).not.toContain('node-version-file:');

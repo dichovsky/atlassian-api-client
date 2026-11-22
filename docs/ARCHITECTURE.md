@@ -671,6 +671,8 @@ The package uses only Node.js built-ins available in the supported runtime (Node
 | `fast-check`                                 | Property-based testing.                                                                                                                         |
 | `conventional-changelog`                     | Generates changelog entries with `npm run changelog`.                                                                                           |
 | `conventional-changelog-conventionalcommits` | Parses Conventional Commits and formats their changelog entries.                                                                                |
+| `undici`                                     | Provides the HTTP dispatcher for transport timeout integration tests.                                                                           |
+| `yaml`                                       | Parses GitHub Actions workflow definitions for CI and release tests.                                                                            |
 
 ---
 

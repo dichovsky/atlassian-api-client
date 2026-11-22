@@ -8,7 +8,6 @@
  */
 import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from 'vitest';
 import http from 'node:http';
-import type { AddressInfo } from 'node:net';
 import fc from 'fast-check';
 import { JiraClient } from '../../src/jira/client.js';
 import { HttpTransport } from '../../src/core/transport.js';
@@ -25,6 +24,7 @@ import {
 import { createCircuitBreakerMiddleware } from '../../src/core/circuit-breaker.js';
 import { createOAuthRefreshMiddleware } from '../../src/core/oauth.js';
 import type { ClientConfig } from '../../src/core/types.js';
+import { LocalHttpNetwork } from '../helpers/local-http.js';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -38,14 +38,16 @@ interface Hit {
 }
 
 interface TestServer {
-  readonly port: number;
+  readonly origin: string;
   readonly hits: Hit[];
   close(): Promise<void>;
 }
 
 type Responder = (hit: Hit, res: http.ServerResponse) => void;
 
-async function startServer(respond: Responder): Promise<TestServer> {
+const network = new LocalHttpNetwork();
+
+async function startServer(respond: Responder, httpNetwork = network): Promise<TestServer> {
   const hits: Hit[] = [];
   const server = http.createServer((req, res) => {
     let body = '';
@@ -61,16 +63,8 @@ async function startServer(respond: Responder): Promise<TestServer> {
       respond(hit, res);
     });
   });
-  await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
-  return {
-    port: (server.address() as AddressInfo).port,
-    hits,
-    close: () =>
-      new Promise<void>((resolve) => {
-        server.closeAllConnections();
-        server.close(() => resolve());
-      }),
-  };
+  const origin = await httpNetwork.listen(server);
+  return { origin, hits, close: () => httpNetwork.close(server) };
 }
 
 const TENANT = 'https://test.atlassian.net';
@@ -78,13 +72,13 @@ const FOREIGN = 'https://foreign.example';
 const AUTH = { type: 'basic', email: 'a@b.c', apiToken: 'TOKEN' } as const;
 
 /** Route each https origin to a local plain-http server, as a proxying `config.fetch` would. */
-function routeTo(routes: Record<string, number>, init: RequestInit = {}): typeof fetch {
+function routeTo(routes: Record<string, string>, httpNetwork = network): typeof fetch {
   return ((input: string | URL, requestInit?: RequestInit) => {
     let url = String(input);
-    for (const [origin, port] of Object.entries(routes)) {
-      url = url.replace(origin, `http://127.0.0.1:${port}`);
+    for (const [origin, target] of Object.entries(routes)) {
+      url = url.replace(origin, target);
     }
-    return fetch(url, { ...requestInit, ...init });
+    return httpNetwork.fetch(url, requestInit);
   }) as typeof fetch;
 }
 
@@ -143,8 +137,8 @@ describe('a write answered with a body-dropping redirect the client will not fol
     });
   });
   afterAll(async () => {
-    await foreign.close();
-    await tenant.close();
+    await foreign?.close();
+    await tenant?.close();
   });
   beforeEach(() => {
     foreign.hits.splice(0);
@@ -152,7 +146,7 @@ describe('a write answered with a body-dropping redirect the client will not fol
   });
 
   const client = (): JiraClient =>
-    jira(routeTo({ [TENANT]: tenant.port, [FOREIGN]: foreign.port }), 3);
+    jira(routeTo({ [TENANT]: tenant.origin, [FOREIGN]: foreign.origin }), 3);
 
   it('reports a DELETE answered 303 off-host as accepted, sends nothing there, and does not retry', async () => {
     const error = await client()
@@ -376,13 +370,13 @@ describe('a write whose followed body-dropping redirect fails at the transport',
       res.end();
     });
   });
-  afterAll(() => tenant.close());
+  afterAll(() => tenant?.close());
   beforeEach(() => {
     tenant.hits.splice(0);
   });
 
   it('sends the write once when the socket dies on the follow-up GET', async () => {
-    const error = await jira(routeTo({ [TENANT]: tenant.port }), 2)
+    const error = await jira(routeTo({ [TENANT]: tenant.origin }), 2)
       .issues.create({ fields: { summary: 'once' } })
       .catch((e: unknown) => e);
 
@@ -477,10 +471,10 @@ describe('a write whose followed body-dropping redirect loops on the GET', () =>
       res.end();
     });
   });
-  afterAll(() => tenant.close());
+  afterAll(() => tenant?.close());
 
   it("sends the write once and surfaces fetch's own redirect-limit TypeError", async () => {
-    const error = await jira(routeTo({ [TENANT]: tenant.port }), 2)
+    const error = await jira(routeTo({ [TENANT]: tenant.origin }), 2)
       .issues.create({ fields: { summary: 'once' } })
       .catch((e: unknown) => e);
 
@@ -509,13 +503,13 @@ describe('a write whose followed body-dropping redirect answers a retryable stat
       res.end();
     });
   });
-  afterAll(() => tenant.close());
+  afterAll(() => tenant?.close());
   beforeEach(() => {
     tenant.hits.splice(0);
   });
 
   it('sends an async project delete once when its task GET answers 503', async () => {
-    const error = await jira(routeTo({ [TENANT]: tenant.port }), 2)
+    const error = await jira(routeTo({ [TENANT]: tenant.origin }), 2)
       .projects.deleteAsync('PROJ')
       .catch((e: unknown) => e);
 
@@ -600,7 +594,7 @@ describe('a request undici refuses to build (F352)', () => {
       res.end('{"ok":true}');
     });
   });
-  afterAll(() => tenant.close());
+  afterAll(() => tenant?.close());
   beforeEach(() => {
     tenant.hits.splice(0);
   });
@@ -612,7 +606,7 @@ describe('a request undici refuses to build (F352)', () => {
   ])(
     '%s stays a raw TypeError: not retried, and the breaker stays closed',
     async (code, method, headers) => {
-      const routed = vi.fn(routeTo({ [TENANT]: tenant.port }));
+      const routed = vi.fn(routeTo({ [TENANT]: tenant.origin }));
       const t = transport(routed as typeof fetch, {
         middleware: [createCircuitBreakerMiddleware({ failureThreshold: 1 })],
       });
@@ -628,7 +622,17 @@ describe('a request undici refuses to build (F352)', () => {
 
       expect(error).toBeInstanceOf(TypeError);
       expect(error).not.toBeInstanceOf(NetworkError);
-      expect(((error as TypeError).cause as { code: string }).code).toBe(code);
+      const cause = (error as TypeError).cause as { code: string; message: string };
+      if (code === 'UND_ERR_REQ_CONTENT_LENGTH_MISMATCH') {
+        // Early Node 24 fetch appends the computed length, so Undici rejects "99, 2"
+        // as an invalid header. Later versions compare the supplied 99 to the body.
+        expect([
+          [code, 'Request body length does not match content-length header'],
+          ['UND_ERR_INVALID_ARG', 'invalid content-length header'],
+        ]).toContainEqual([cause.code, cause.message]);
+      } else {
+        expect(cause.code).toBe(code);
+      }
       expect(routed).toHaveBeenCalledTimes(1);
       expect(tenant.hits).toHaveLength(0);
 
@@ -658,29 +662,21 @@ describe('a request undici refuses to build (F352)', () => {
 // F353 — a headers timeout means the server has the whole request
 // ---------------------------------------------------------------------------
 
-/** Node's bundled undici `Agent`, reached through the global dispatcher it installs. */
-function undiciAgent(options: { headersTimeout: number }): unknown {
-  const global = (globalThis as Record<symbol, unknown>)[Symbol.for('undici.globalDispatcher.1')];
-  const Agent = (global as { constructor: new (o: typeof options) => unknown }).constructor;
-  return new Agent(options);
-}
-
 describe('a response that never starts (F353)', () => {
   let silent: TestServer;
-  const dispatcher = undiciAgent({ headersTimeout: 50 });
+  const timeoutNetwork = new LocalHttpNetwork({ headersTimeout: 50 });
 
   beforeAll(async () => {
     silent = await startServer(() => {
       // Never answer: undici's headersTimeout fires after the request was sent.
-    });
+    }, timeoutNetwork);
   });
-  afterAll(() => silent.close());
+  afterAll(() => silent?.close());
   beforeEach(() => {
     silent.hits.splice(0);
   });
 
-  const client = (): JiraClient =>
-    jira(routeTo({ [TENANT]: silent.port }, { dispatcher } as RequestInit), 2);
+  const client = (): JiraClient => jira(routeTo({ [TENANT]: silent.origin }, timeoutNetwork), 2);
 
   it('sends a create once: the server may be working on it', async () => {
     const error = await client()

@@ -6415,10 +6415,10 @@ describe('executeConfluenceCommand', () => {
       // Act
       await executeConfluenceCommand(parsed, GLOBALS);
 
-      // Assert — ids are integer/int64 in the spec (B1059): CLI parses as numbers
+      // Assert — int64 IDs stay decimal strings.
       expect(confluenceDataPoliciesMock.listSpaces).toHaveBeenCalledWith(
         expect.objectContaining({
-          ids: [1, 2, 3],
+          ids: ['1', '2', '3'],
           keys: ['ENG', 'OPS'],
         }),
       );
@@ -6434,9 +6434,9 @@ describe('executeConfluenceCommand', () => {
       // Act
       await executeConfluenceCommand(parsed, GLOBALS);
 
-      // Assert — ids parsed as integers after trimming (B1059)
+      // Assert — each trimmed ID remains a decimal string.
       expect(confluenceDataPoliciesMock.listSpaces).toHaveBeenCalledWith(
-        expect.objectContaining({ ids: [1, 2] }),
+        expect.objectContaining({ ids: ['1', '2'] }),
       );
     });
 
@@ -6455,7 +6455,7 @@ describe('executeConfluenceCommand', () => {
       const parsed = cmd('data-policies', 'list-spaces', [], { ids: 'abc,def' });
 
       await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
-        '--ids must contain only decimal integer IDs up to 9007199254740991, got: abc',
+        '--ids must contain only decimal integer IDs, got: abc',
       );
       expect(confluenceDataPoliciesMock.listSpaces).not.toHaveBeenCalled();
     });
@@ -7017,10 +7017,10 @@ describe('executeConfluenceCommand', () => {
         'body-format': 'storage',
         includeBlankTasks: true,
         status: 'complete',
-        taskId: [42, 99],
-        spaceId: [11, 22],
-        pageId: [33],
-        blogPostId: [44],
+        taskId: ['42', '99'],
+        spaceId: ['11', '22'],
+        pageId: ['33'],
+        blogPostId: ['44'],
         createdBy: ['acc-creator', 'acc-other'],
         assignedTo: ['acc-assignee'],
         completedBy: ['acc-finisher'],
@@ -7063,7 +7063,7 @@ describe('executeConfluenceCommand', () => {
       const parsed = cmd('tasks', 'list', [], { 'task-id': '-1' });
       await executeConfluenceCommand(parsed, GLOBALS);
       expect(confluenceTasksMock.list).toHaveBeenCalledWith(
-        expect.objectContaining({ taskId: [-1] }),
+        expect.objectContaining({ taskId: ['-1'] }),
       );
     });
 
@@ -19452,7 +19452,6 @@ describe('executeJiraCommand', () => {
           name: 'Full',
           description: 'desc',
           'lead-account-id': 'acc-1',
-          'lead-user-name': 'legacy',
           'assignee-type': 'PROJECT_LEAD',
           project: 'HSP',
         }),
@@ -19462,11 +19461,27 @@ describe('executeJiraCommand', () => {
         name: 'Full',
         description: 'desc',
         leadAccountId: 'acc-1',
-        leadUserName: 'legacy',
         assigneeType: 'PROJECT_LEAD',
         project: 'HSP',
       });
     });
+
+    it.each(['create', 'update'] as const)(
+      'component %s rejects --lead-user-name before writing',
+      async (action) => {
+        await expect(
+          executeJiraCommand(
+            cmd('component', action, ['10000'], {
+              project: 'PROJ',
+              name: 'New',
+              'lead-user-name': 'legacy',
+            }),
+            GLOBALS,
+          ),
+        ).rejects.toThrow('--lead-account-id');
+        expect(jiraComponentMock[action]).not.toHaveBeenCalled();
+      },
+    );
 
     it('component create requires --name', async () => {
       await expect(executeJiraCommand(cmd('component', 'create', [], {}), GLOBALS)).rejects.toThrow(
@@ -19510,7 +19525,6 @@ describe('executeJiraCommand', () => {
           name: 'X',
           description: 'd',
           'lead-account-id': 'a',
-          'lead-user-name': 'u',
           'assignee-type': 'UNASSIGNED',
         }),
         GLOBALS,
@@ -19519,7 +19533,6 @@ describe('executeJiraCommand', () => {
         name: 'X',
         description: 'd',
         leadAccountId: 'a',
-        leadUserName: 'u',
         assigneeType: 'UNASSIGNED',
       });
     });
@@ -19528,7 +19541,7 @@ describe('executeJiraCommand', () => {
       await expect(
         executeJiraCommand(cmd('component', 'update', ['1'], {}), GLOBALS),
       ).rejects.toThrow(
-        'update requires at least one of: --name, --description, --lead-account-id, --lead-user-name, --assignee-type',
+        'update requires at least one of: --name, --description, --lead-account-id, --assignee-type',
       );
     });
 
