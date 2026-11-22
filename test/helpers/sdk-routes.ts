@@ -19,8 +19,9 @@
  *   the same way, with its lifecycle flags and description.
  */
 import { readFileSync, readdirSync } from 'node:fs';
-import { resolve } from 'node:path';
-import ts from 'typescript';
+import { basename, resolve } from 'node:path';
+import * as ts from 'typescript/unstable/ast';
+import { readTypeScriptSources } from '../../scripts/typescript-source.js';
 import { JiraClient } from '../../src/jira/client.js';
 import { ConfluenceClient } from '../../src/confluence/client.js';
 import { DISPATCHER_FN_BY_RESOURCE } from './dispatcher-map.js';
@@ -231,8 +232,8 @@ class PathResolver {
           const prop = objectProperty(value, property);
           if (prop) out.push(...inner.resolve(prop));
         }
-      } else if (!ts.isFunctionLike(node)) {
-        ts.forEachChild(node, visit);
+      } else if (!ts.isFunctionLikeDeclaration(node)) {
+        node.forEachChild(visit);
       }
     };
     visit(inner.scope);
@@ -252,6 +253,7 @@ class PathResolver {
       } else if (
         // `const { path, query } = this.buildList(params)`
         ts.isBindingElement(node) &&
+        node.name &&
         ts.isIdentifier(node.name) &&
         node.name.text === name &&
         ts.isObjectBindingPattern(node.parent) &&
@@ -277,7 +279,7 @@ class PathResolver {
       ) {
         out.push(...this.resolve(node.right, next));
       }
-      ts.forEachChild(node, visit);
+      node.forEachChild(visit);
     };
     visit(this.scope);
     if (!declared) out.push(...(this.bindings.get(name) ?? []));
@@ -290,7 +292,13 @@ function objectProperty(obj: ts.ObjectLiteralExpression, name: string): ts.Expre
     if (ts.isPropertyAssignment(prop) && ts.isIdentifier(prop.name) && prop.name.text === name) {
       return prop.initializer;
     }
-    if (ts.isShorthandPropertyAssignment(prop) && prop.name.text === name) return prop.name;
+    if (
+      ts.isShorthandPropertyAssignment(prop) &&
+      ts.isIdentifier(prop.name) &&
+      prop.name.text === name
+    ) {
+      return prop.name;
+    }
   }
   return undefined;
 }
@@ -314,7 +322,7 @@ function ownRequests(
     if (ts.isObjectLiteralExpression(node)) {
       const method = objectProperty(node, 'method');
       const path = objectProperty(node, 'path');
-      if (method && path && ts.isStringLiteralLike(method))
+      if (method && path && ts.isStringLiteralLikeNode(method))
         add(method.text, resolver.resolve(path));
     } else if (ts.isCallExpression(node)) {
       const callee = unwrap(node.expression);
@@ -337,25 +345,30 @@ function ownRequests(
         }
       }
     }
-    ts.forEachChild(node, visit);
+    node.forEachChild(visit);
   };
   visit(resolver.scope);
   return { routes, delegates };
 }
 
-function isPublic(member: ts.ClassElement): boolean {
-  const flags = ts.getCombinedModifierFlags(member as ts.Declaration);
+function isPublic(member: ts.MethodDeclaration): boolean {
+  const flags = member.modifierFlags;
   return (
     (flags & (ts.ModifierFlags.Private | ts.ModifierFlags.Protected | ts.ModifierFlags.Static)) ===
     0
   );
 }
 
-function jsDocsOf(node: ts.Node, source: ts.SourceFile): string[] {
-  return ts
-    .getJSDocCommentsAndTags(node)
-    .filter(ts.isJSDoc)
-    .map((doc) => source.text.slice(doc.pos, doc.end));
+function jsDocsOf(node: ts.Node): string[] {
+  const docs = node.jsDoc?.filter(ts.isJSDoc);
+  if (!docs?.length) return [];
+  // Native JSDoc positions include leading trivia. Match each attached block's
+  // end to its comment token so unrelated comments never supply lifecycle tags.
+  const text = node.getFullText();
+  const ends = new Set(docs.map((doc) => doc.end - node.pos));
+  return (ts.getLeadingCommentRanges(text, 0) ?? [])
+    .filter((range) => ends.has(range.end))
+    .map((range) => text.slice(range.pos, range.end));
 }
 
 let sdkCache: SdkMethod[] | undefined;
@@ -372,14 +385,11 @@ export function sdkRoutes(): readonly SdkMethod[] {
       ]),
     );
     const dir = resolve(ROOT, 'src', api, 'resources');
-    for (const name of readdirSync(dir).filter((f) => f.endsWith('.ts'))) {
-      const file = resolve(dir, name);
-      const source = ts.createSourceFile(
-        file,
-        readFileSync(file, 'utf8'),
-        ts.ScriptTarget.Latest,
-        true,
-      );
+    const files = readdirSync(dir)
+      .filter((name) => name.endsWith('.ts'))
+      .map((name) => resolve(dir, name));
+    for (const [file, source] of readTypeScriptSources(files)) {
+      const name = basename(file);
       for (const cls of source.statements.filter(ts.isClassDeclaration)) {
         const wired = cls.name && byClass.get(cls.name.text);
         if (!wired) continue;
@@ -398,9 +408,13 @@ export function sdkRoutes(): readonly SdkMethod[] {
         >();
         for (const member of all.filter(isPublic)) {
           const methodName = (member.name as ts.Identifier).text;
-          const entry = methods.get(methodName) ?? { routes: [], delegates: [], docs: [] };
+          const entry = methods.get(methodName) ?? {
+            routes: [],
+            delegates: [],
+            docs: [],
+          };
           methods.set(methodName, entry);
-          entry.docs.push(...jsDocsOf(member, source));
+          entry.docs.push(...jsDocsOf(member));
           if (!member.body) continue;
           const resolver = new PathResolver(wired.instance, helpers, member.body);
           const own = ownRequests(resolver, (n) => publicNames.has(n));
@@ -485,13 +499,14 @@ const FN_TO_RESOURCE = new Map(
 function caseLabels(node: ts.Node, fn: ts.Node): string[] {
   let clause: ts.CaseClause | undefined;
   for (let n: ts.Node = node; n !== fn; n = n.parent) if (ts.isCaseClause(n)) clause = n;
-  if (!clause || !ts.isStringLiteralLike(clause.expression)) return [];
+  if (!clause || !ts.isStringLiteralLikeNode(clause.expression)) return [];
+  if (!ts.isCaseBlock(clause.parent)) return [];
   const clauses = clause.parent.clauses;
   const labels = [clause.expression.text];
   for (let i = clauses.indexOf(clause) - 1; i >= 0; i--) {
     const prev = clauses[i];
     if (!prev || !ts.isCaseClause(prev) || prev.statements.length > 0) break;
-    if (ts.isStringLiteralLike(prev.expression)) labels.push(prev.expression.text);
+    if (ts.isStringLiteralLikeNode(prev.expression)) labels.push(prev.expression.text);
   }
   return labels;
 }
@@ -509,14 +524,12 @@ let cliCache: Map<string, string[]> | undefined;
 export function cliActions(): ReadonlyMap<string, readonly string[]> {
   if (cliCache) return cliCache;
   const out = new Map<string, string[]>();
-  for (const api of ['jira', 'confluence'] as const) {
-    const file = resolve(ROOT, 'src', 'cli', 'commands', `${api}.ts`);
-    const source = ts.createSourceFile(
-      file,
-      readFileSync(file, 'utf8'),
-      ts.ScriptTarget.Latest,
-      true,
-    );
+  const apis = ['jira', 'confluence'] as const;
+  const sources = readTypeScriptSources(
+    apis.map((api) => resolve(ROOT, 'src', 'cli', 'commands', `${api}.ts`)),
+  );
+  for (const [file, source] of sources) {
+    const api = basename(file, '.ts');
     /** `resource action` pairs for a node inside a dispatcher, or via one helper's call sites. */
     const helperCalls = new Map<string, ts.CallExpression[]>();
     const clientCalls: { key: string; node: ts.CallExpression }[] = [];
@@ -537,7 +550,7 @@ export function cliActions(): ReadonlyMap<string, readonly string[]> {
           });
         }
       }
-      ts.forEachChild(node, visit);
+      node.forEachChild(visit);
     };
     visit(source);
     const pairs = (node: ts.Node, depth: number): string[] => {

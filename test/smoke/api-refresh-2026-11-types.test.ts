@@ -1,9 +1,8 @@
 /**
  * Consumer-import check for the request/response types added by the 2026-11
  * API refresh. `package.json` exposes only `.`, so a type missing from
- * `src/index.ts` cannot be imported by consumers at all. Both typecheck
- * passes (`npm run typecheck`, `npm run typecheck:ts6`) compile this file
- * and fail with TS2305 if any of these names stops reaching the root.
+ * `src/index.ts` cannot be imported by consumers at all. `npm run typecheck` compiles
+ * this file and fails with TS2305 if any of these names stops reaching the root.
  */
 import { describe, it, expect } from 'vitest';
 import type {

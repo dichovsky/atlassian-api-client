@@ -83,6 +83,16 @@ describe('generate-codemap fixture', () => {
     expect(generated).toBe(expected);
   });
 
+  it('retains bare hashes in regex signatures', async () => {
+    const tmp = tempFixture();
+    const signature = 'export const pattern = /[ #]/;';
+    writeFileSync(join(tmp, 'src', 'hash.ts'), signature);
+    const result = await runGenerator(tmp);
+    expect(result.exitCode).toBe(0);
+    const generated = readFileSync(join(tmp, 'CODEMAP.md'), 'utf8');
+    expect(generated).toContain(JSON.stringify(signature));
+  });
+
   it('produces byte-identical output across two runs', async () => {
     const tmp = tempFixture();
     rmSync(join(tmp, 'CODEMAP.md'), { force: true });

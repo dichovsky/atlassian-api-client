@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "5.0.0"
   },
-  "sourceHash": "8bb910ca9492e699cca7d3523b3b7390ff4172b161f2da1226d46f07d2e2a890",
+  "sourceHash": "31fa2ae0de385ca7217a1658167689e3776d464f8291235a1a075bd85c860a5e",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -32802,242 +32802,6 @@
       ]
     },
     {
-      "path": "src/jira/resources/index.ts",
-      "reExports": [
-        {
-          "kind": "named",
-          "from": "./backlog.js",
-          "typeOnly": false,
-          "names": [
-            {
-              "exported": "BacklogResource",
-              "original": "BacklogResource"
-            }
-          ]
-        },
-        {
-          "kind": "named",
-          "from": "./boards.js",
-          "typeOnly": false,
-          "names": [
-            {
-              "exported": "BoardsResource",
-              "original": "BoardsResource"
-            }
-          ]
-        },
-        {
-          "kind": "named",
-          "from": "./bulk.js",
-          "typeOnly": false,
-          "names": [
-            {
-              "exported": "BulkResource",
-              "original": "BulkResource"
-            }
-          ]
-        },
-        {
-          "kind": "named",
-          "from": "./dashboards.js",
-          "typeOnly": false,
-          "names": [
-            {
-              "exported": "DashboardsResource",
-              "original": "DashboardsResource"
-            }
-          ]
-        },
-        {
-          "kind": "named",
-          "from": "./epic.js",
-          "typeOnly": false,
-          "names": [
-            {
-              "exported": "EpicResource",
-              "original": "EpicResource"
-            }
-          ]
-        },
-        {
-          "kind": "named",
-          "from": "./fields.js",
-          "typeOnly": false,
-          "names": [
-            {
-              "exported": "FieldsResource",
-              "original": "FieldsResource"
-            }
-          ]
-        },
-        {
-          "kind": "named",
-          "from": "./filters.js",
-          "typeOnly": false,
-          "names": [
-            {
-              "exported": "FiltersResource",
-              "original": "FiltersResource"
-            }
-          ]
-        },
-        {
-          "kind": "named",
-          "from": "./issue-attachments.js",
-          "typeOnly": false,
-          "names": [
-            {
-              "exported": "IssueAttachmentsResource",
-              "original": "IssueAttachmentsResource"
-            }
-          ]
-        },
-        {
-          "kind": "named",
-          "from": "./issue-comments.js",
-          "typeOnly": false,
-          "names": [
-            {
-              "exported": "IssueCommentsResource",
-              "original": "IssueCommentsResource"
-            }
-          ]
-        },
-        {
-          "kind": "named",
-          "from": "./issue-types.js",
-          "typeOnly": false,
-          "names": [
-            {
-              "exported": "IssueTypesResource",
-              "original": "IssueTypesResource"
-            }
-          ]
-        },
-        {
-          "kind": "named",
-          "from": "./issues.js",
-          "typeOnly": false,
-          "names": [
-            {
-              "exported": "IssuesResource",
-              "original": "IssuesResource"
-            }
-          ]
-        },
-        {
-          "kind": "named",
-          "from": "./jql.js",
-          "typeOnly": false,
-          "names": [
-            {
-              "exported": "JqlResource",
-              "original": "JqlResource"
-            }
-          ]
-        },
-        {
-          "kind": "named",
-          "from": "./labels.js",
-          "typeOnly": false,
-          "names": [
-            {
-              "exported": "LabelsResource",
-              "original": "LabelsResource"
-            }
-          ]
-        },
-        {
-          "kind": "named",
-          "from": "./priorities.js",
-          "typeOnly": false,
-          "names": [
-            {
-              "exported": "PrioritiesResource",
-              "original": "PrioritiesResource"
-            }
-          ]
-        },
-        {
-          "kind": "named",
-          "from": "./projects.js",
-          "typeOnly": false,
-          "names": [
-            {
-              "exported": "ProjectsResource",
-              "original": "ProjectsResource"
-            }
-          ]
-        },
-        {
-          "kind": "named",
-          "from": "./search.js",
-          "typeOnly": false,
-          "names": [
-            {
-              "exported": "SearchResource",
-              "original": "SearchResource"
-            }
-          ]
-        },
-        {
-          "kind": "named",
-          "from": "./sprints.js",
-          "typeOnly": false,
-          "names": [
-            {
-              "exported": "SprintsResource",
-              "original": "SprintsResource"
-            }
-          ]
-        },
-        {
-          "kind": "named",
-          "from": "./statuses.js",
-          "typeOnly": false,
-          "names": [
-            {
-              "exported": "StatusesResource",
-              "original": "StatusesResource"
-            }
-          ]
-        },
-        {
-          "kind": "named",
-          "from": "./users.js",
-          "typeOnly": false,
-          "names": [
-            {
-              "exported": "UsersResource",
-              "original": "UsersResource"
-            }
-          ]
-        },
-        {
-          "kind": "named",
-          "from": "./webhooks.js",
-          "typeOnly": false,
-          "names": [
-            {
-              "exported": "WebhooksResource",
-              "original": "WebhooksResource"
-            }
-          ]
-        },
-        {
-          "kind": "named",
-          "from": "./workflows.js",
-          "typeOnly": false,
-          "names": [
-            {
-              "exported": "WorkflowsResource",
-              "original": "WorkflowsResource"
-            }
-          ]
-        }
-      ]
-    },
-    {
       "path": "src/jira/resources/instance.ts",
       "symbols": [
         {
@@ -38635,207 +38399,207 @@
             {
               "name": "loadAvatar",
               "kind": "method",
-              "line": 752
+              "line": 751
             },
             {
               "name": "getAvatars",
               "kind": "method",
-              "line": 779
+              "line": 778
             },
             {
               "name": "restore",
               "kind": "method",
-              "line": 795
+              "line": 794
             },
             {
               "name": "listRoles",
               "kind": "method",
-              "line": 804
+              "line": 803
             },
             {
               "name": "getClassificationConfig",
               "kind": "method",
-              "line": 818
+              "line": 817
             },
             {
               "name": "deleteClassificationLevel",
               "kind": "method",
-              "line": 832
+              "line": 831
             },
             {
               "name": "getClassificationLevel",
               "kind": "method",
-              "line": 845
+              "line": 844
             },
             {
               "name": "setClassificationLevel",
               "kind": "method",
-              "line": 859
+              "line": 858
             },
             {
               "name": "listComponents",
               "kind": "method",
-              "line": 870
+              "line": 869
             },
             {
               "name": "deleteRoleActors",
               "kind": "method",
-              "line": 890
+              "line": 889
             },
             {
               "name": "getRole",
               "kind": "method",
-              "line": 908
+              "line": 907
             },
             {
               "name": "listAllComponents",
               "kind": "method",
-              "line": 930
+              "line": 929
             },
             {
               "name": "deleteAsync",
               "kind": "method",
-              "line": 950
+              "line": 949
             },
             {
               "name": "getFeatures",
               "kind": "method",
-              "line": 959
+              "line": 958
             },
             {
               "name": "setFeatureState",
               "kind": "method",
-              "line": 968
+              "line": 967
             },
             {
               "name": "addRoleActors",
               "kind": "method",
-              "line": 982
+              "line": 981
             },
             {
               "name": "setRoleActors",
               "kind": "method",
-              "line": 1000
+              "line": 999
             },
             {
               "name": "listProperties",
               "kind": "method",
-              "line": 1014
+              "line": 1013
             },
             {
               "name": "getRoleDetails",
               "kind": "method",
-              "line": 1023
+              "line": 1022
             },
             {
               "name": "deleteProperty",
               "kind": "method",
-              "line": 1048
+              "line": 1047
             },
             {
               "name": "getProperty",
               "kind": "method",
-              "line": 1056
+              "line": 1055
             },
             {
               "name": "getStatuses",
               "kind": "method",
-              "line": 1068
+              "line": 1067
             },
             {
               "name": "listVersions",
               "kind": "method",
-              "line": 1077
+              "line": 1076
             },
             {
               "name": "listAllVersions",
               "kind": "method",
-              "line": 1098
+              "line": 1097
             },
             {
               "name": "getIssueSecurityScheme",
               "kind": "method",
-              "line": 1114
+              "line": 1113
             },
             {
               "name": "getNotificationScheme",
               "kind": "method",
-              "line": 1123
+              "line": 1122
             },
             {
               "name": "getPermissionScheme",
               "kind": "method",
-              "line": 1139
+              "line": 1138
             },
             {
               "name": "setPermissionScheme",
               "kind": "method",
-              "line": 1155
+              "line": 1154
             },
             {
               "name": "getSecurityLevels",
               "kind": "method",
-              "line": 1172
+              "line": 1171
             },
             {
               "name": "listCategories",
               "kind": "method",
-              "line": 1183
+              "line": 1182
             },
             {
               "name": "createCategory",
               "kind": "method",
-              "line": 1192
+              "line": 1191
             },
             {
               "name": "deleteCategory",
               "kind": "method",
-              "line": 1205
+              "line": 1204
             },
             {
               "name": "getCategory",
               "kind": "method",
-              "line": 1213
+              "line": 1212
             },
             {
               "name": "setProperty",
               "kind": "method",
-              "line": 1222
+              "line": 1221
             },
             {
               "name": "updateCategory",
               "kind": "method",
-              "line": 1231
+              "line": 1230
             },
             {
               "name": "getProjectsFields",
               "kind": "method",
-              "line": 1255
+              "line": 1254
             },
             {
               "name": "getProjectsFields",
               "kind": "method",
-              "line": 1263
+              "line": 1262
             },
             {
               "name": "getProjectsFields",
               "kind": "method",
-              "line": 1266
+              "line": 1265
             },
             {
               "name": "validateProjectKey",
               "kind": "method",
-              "line": 1300
+              "line": 1299
             },
             {
               "name": "getValidProjectKey",
               "kind": "method",
-              "line": 1314
+              "line": 1313
             },
             {
               "name": "getValidProjectName",
               "kind": "method",
-              "line": 1328
+              "line": 1327
             }
           ]
         }

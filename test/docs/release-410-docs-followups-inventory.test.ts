@@ -7,9 +7,7 @@
  * compiler), and every documented count or inventory is recomputed from its
  * source rather than copied into the test.
  */
-import { execFileSync } from 'node:child_process';
-import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
@@ -18,6 +16,7 @@ import { ConfluenceClient } from '../../src/confluence/index.js';
 import { JiraClient } from '../../src/jira/index.js';
 import { runCliWire } from '../helpers/cli-wire.js';
 import { section } from '../helpers/markdown.js';
+import { checkTypeScriptExamples } from '../helpers/check-typescript-examples.js';
 import { parseWorkflowYaml } from '../scripts/workflow-yaml.js';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -38,15 +37,6 @@ function codeBlocks(markdown: string, lang: string): string[] {
   return [...markdown.matchAll(new RegExp(`^\`\`\`${lang}\\n([\\s\\S]*?)^\`\`\`$`, 'gm'))].map(
     (m) => m[1] as string,
   );
-}
-
-/** Every file under `dir` (repository-relative), skipping node_modules. */
-function walk(dir: string): string[] {
-  return readdirSync(resolve(REPO_ROOT, dir), { withFileTypes: true }).flatMap((entry) => {
-    const path = join(dir, entry.name);
-    if (entry.isDirectory()) return entry.name === 'node_modules' ? [] : walk(path);
-    return [path];
-  });
 }
 
 interface JsonSchema {
@@ -191,29 +181,14 @@ describe('CONTRIBUTING describes the CI jobs and gate prerequisites that exist',
     for (const tool of tools) expect(setup, tool).toContain(`\`${tool}\``);
   });
 
-  it('names every TypeScript 6 compiler-API consumer and the typecheck:ts6 script', () => {
-    const consumers = [...walk('scripts'), ...walk('test')]
-      .filter((path) => /\.(?:[cm]?js|ts)$/.test(path))
-      .filter((path) => /^import [^\n]* from 'typescript';$/m.test(read(path)))
-      // The toolchain check imports it only to assert the bridge's own version.
-      .filter((path) => path !== join('scripts', 'check-typescript-toolchain.js'));
-    expect(consumers.length).toBeGreaterThan(0);
-    const usesTs6 = Object.entries(PACKAGE_JSON.scripts)
-      .filter(([name, script]) => name !== 'tsc:6' && script.includes('npm run tsc:6'))
-      .map(([name]) => name);
-    expect(usesTs6).toEqual(['typecheck:ts6']);
-
-    const bridge = /^TypeScript 7 powers[^\n]*(?:\n(?!\n)[^\n]*)*/m.exec(CONTRIBUTING)?.[0] ?? '';
-    for (const path of consumers) expect(bridge, path).toContain(`\`${path}\``);
-    expect(bridge).toContain('`typescript-eslint`');
-    expect(bridge).toContain('`npm run typecheck:ts6`');
-
-    const devDeps = section(ARCHITECTURE, '### Dev Dependencies');
-    const typescriptRow =
-      devDeps.split('\n').find((line) => line.startsWith('| `typescript` ')) ?? '';
-    expect(typescriptRow).toContain('`typecheck:ts6`');
-    expect(typescriptRow).toContain('write-property reachability test');
-    expect(typescriptRow).toContain('`test/helpers/sdk-routes.ts`');
+  it('documents the compiler used by the build and source-analysis tools', () => {
+    const compiler = section(ARCHITECTURE, '### Dev Dependencies')
+      .split('\n')
+      .find((line) => line.startsWith('| `typescript` '));
+    expect(compiler).toContain('TypeScript 7');
+    expect(CONTRIBUTING).toContain('`typescript/unstable/`');
+    expect(PACKAGE_JSON.scripts['build']).toMatch(/^tsc\b/);
+    expect(PACKAGE_JSON.scripts['typecheck']).toMatch(/^tsc\b/);
   });
 });
 
@@ -330,83 +305,42 @@ describe('README examples run against the current SDK and CLI', () => {
   it('every TypeScript snippet type-checks against the package root', () => {
     const snippets = codeBlocks(README, 'typescript');
     expect(snippets.length).toBeGreaterThan(25);
-    const dir = mkdtempSync(join(tmpdir(), 'readme-snippets-'));
-    try {
-      // Names the README leaves to the reader or defines in an earlier snippet,
-      // and every package-root value, for fragments that omit their import.
-      const values = Object.keys(root).map((name) => `  const ${name}: typeof Pkg.${name};`);
-      writeFileSync(
-        join(dir, 'globals.d.ts'),
-        [
-          "import type * as Pkg from 'atlassian-api-client';",
-          'declare global {',
-          ...values,
-          '  const confluence: Pkg.ConfluenceClient;',
-          '  const jira: Pkg.JiraClient;',
-          '  const email: string;',
-          '  const apiToken: string;',
-          '  const token: string;',
-          '  const accessToken: string;',
-          '  const clientKey: string;',
-          '  const config: Pkg.ClientConfig;',
-          '  const oauthConfig: Pkg.OAuthRefreshConfig;',
-          '  function saveTokens(accessToken: string, refreshToken: string): void;',
-          '}',
-          'export {};',
-        ].join('\n'),
-      );
-      // The recipes' third-party imports: undici resolves to its own published
-      // types (undici-types, installed with @types/node); pino is stubbed.
-      writeFileSync(
-        join(dir, 'pino.d.ts'),
-        [
-          "declare module 'pino' {",
-          '  type Log = (context: unknown, message: string) => void;',
-          '  export default function pino(): { debug: Log; info: Log; warn: Log; error: Log };',
-          '}',
-        ].join('\n'),
-      );
-      const files = snippets.map((source, index) => {
-        const file = join(dir, `snippet-${String(index).padStart(2, '0')}.ts`);
-        writeFileSync(file, `${source}\nexport {};\n`);
-        return file;
-      });
-      writeFileSync(
-        join(dir, 'tsconfig.json'),
-        JSON.stringify({
-          compilerOptions: {
-            target: 'ES2022',
-            module: 'ESNext',
-            moduleResolution: 'Bundler',
-            lib: ['ES2022'],
-            types: ['node'],
-            typeRoots: [resolve(REPO_ROOT, 'node_modules', '@types')],
-            strict: true,
-            skipLibCheck: true,
-            noEmit: true,
-            allowImportingTsExtensions: true,
-            paths: {
-              'atlassian-api-client': [resolve(REPO_ROOT, 'src', 'index.ts')],
-              undici: [resolve(REPO_ROOT, 'node_modules', 'undici-types', 'index.d.ts')],
-            },
-          },
-          files: [join(dir, 'globals.d.ts'), join(dir, 'pino.d.ts'), ...files],
-        }),
-      );
-      const tsc = resolve(REPO_ROOT, 'node_modules', '@typescript', 'native', 'bin', 'tsc');
-      let output = '';
-      try {
-        execFileSync(process.execPath, [tsc, '-p', join(dir, 'tsconfig.json')], {
-          encoding: 'utf8',
-          stdio: 'pipe',
-        });
-      } catch (error) {
-        output = String((error as { stdout?: string }).stdout ?? error);
-      }
-      expect(output).toBe('');
-    } finally {
-      rmSync(dir, { recursive: true, force: true });
+    // Supply names introduced by earlier snippets and package exports with omitted imports.
+    const values = Object.keys(root).map((name) => `  const ${name}: typeof Pkg.${name};`);
+    const files: Record<string, string> = {
+      'globals.d.ts': [
+        "import type * as Pkg from 'atlassian-api-client';",
+        'declare global {',
+        ...values,
+        '  const confluence: Pkg.ConfluenceClient;',
+        '  const jira: Pkg.JiraClient;',
+        '  const email: string;',
+        '  const apiToken: string;',
+        '  const token: string;',
+        '  const accessToken: string;',
+        '  const clientKey: string;',
+        '  const config: Pkg.ClientConfig;',
+        '  const oauthConfig: Pkg.OAuthRefreshConfig;',
+        '  function saveTokens(accessToken: string, refreshToken: string): void;',
+        '}',
+        'export {};',
+      ].join('\n'),
+      'pino.d.ts': [
+        "declare module 'pino' {",
+        '  type Log = (context: unknown, message: string) => void;',
+        '  export default function pino(): { debug: Log; info: Log; warn: Log; error: Log };',
+        '}',
+      ].join('\n'),
+    };
+    for (const [index, source] of snippets.entries()) {
+      files[`README-snippet-${index + 1}.ts`] = `${source}\nexport {};\n`;
     }
+    checkTypeScriptExamples(files, {
+      module: 'ESNext',
+      moduleResolution: 'Bundler',
+      allowImportingTsExtensions: true,
+      paths: { undici: [resolve(REPO_ROOT, 'node_modules/undici-types/index.d.ts')] },
+    });
   }, 60_000);
 });
 
