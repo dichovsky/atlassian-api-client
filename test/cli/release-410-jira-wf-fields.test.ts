@@ -651,6 +651,28 @@ describe('jql autocomplete-suggestions --field-name is optional (F162)', () => {
   });
 });
 
+describe('jql autocomplete-suggestions result limit', () => {
+  it.each(['-2147483648', '0', '65', '2147483647'])(
+    'forwards --max-results=%s to Jira',
+    async (limit) => {
+      const req = await onlyRequest(['jql', 'autocomplete-suggestions', `--max-results=${limit}`]);
+      expect(req.method).toBe('GET');
+      expect(req.path).toBe(`${J}/jql/autocompletedata/suggestions`);
+      expect(query(req)).toEqual({ maxResults: [limit] });
+    },
+  );
+
+  it.each(['1.5', '2147483647.00000000001', '-2147483649', '2147483648', '9007199254740993'])(
+    'rejects --max-results=%s before sending',
+    async (limit) => {
+      await rejected(
+        ['jql', 'autocomplete-suggestions', `--max-results=${limit}`],
+        /--max-results/,
+      );
+    },
+  );
+});
+
 describe('jql update-precomputations on 204 (F164)', () => {
   it('prints an acknowledgement, not null', async () => {
     const run = await runCliWire(
@@ -731,6 +753,24 @@ describe('filters --favourite and bulk-edit --autofix-name keep an explicit fals
 });
 
 // ── fields / jql / webhooks route table (F163) ───────────────────────────────
+
+describe('fields context-option-list query filter', () => {
+  it.each(['R&D North', ''])('forwards the literal query %j', async (value) => {
+    const req = await onlyRequest([
+      'fields',
+      'context-option-list',
+      '--field-id',
+      'customfield_10001',
+      '--context-id',
+      '10025',
+      '--query',
+      value,
+    ]);
+    expect(req.method).toBe('GET');
+    expect(req.path).toBe(`${J}/field/customfield_10001/context/10025/option`);
+    expect(query(req)).toEqual({ query: [value] });
+  });
+});
 
 describe('fields, jql and webhooks actions reach the spec route with their flags (F163)', () => {
   it.each([

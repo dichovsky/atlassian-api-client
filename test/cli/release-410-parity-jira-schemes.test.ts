@@ -1439,6 +1439,10 @@ const EXAMPLES: readonly (readonly [command: string, request: string, body?: unk
     'GET /field/customfield_10001/context/10025/option',
   ],
   [
+    'atlas jira fields context-option-list --field-id customfield_10001 --context-id 10025 --query London',
+    'GET /field/customfield_10001/context/10025/option?query=London',
+  ],
+  [
     'atlas jira fields context-option-list --field-id customfield_10001 --context-id 10025 --start-at 0 --max-results 50 --only-options',
     'GET /field/customfield_10001/context/10025/option?maxResults=50&onlyOptions=true&startAt=0',
   ],

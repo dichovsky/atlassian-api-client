@@ -197,6 +197,8 @@ export class ProjectTemplateResource {
    * (the default HTTP transport follows it to `GET /rest/api/3/task/{taskId}`).
    * Poll it with `GET /rest/api/3/task/{taskId}`. Resolves `undefined` when
    * neither is present.
+   *
+   * @throws {HttpError} The default transport exposes Jira's HTTP 422 limit details in `responseBody`.
    */
   async createWithCustomTemplate(
     data: ProjectCustomTemplateCreateRequestDTO,

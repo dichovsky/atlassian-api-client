@@ -1,5 +1,6 @@
 import type { GlobalOptions, ParsedCommand } from '../types.js';
 import { JiraClient } from '../../jira/client.js';
+import { validateInt32 } from '../../core/query.js';
 import type {
   CreateStatusData,
   StatusScope,
@@ -2799,6 +2800,12 @@ function asEnum<T extends string>(
 
 function asString(value: string | boolean | undefined): string | undefined {
   return typeof value === 'string' ? value : undefined;
+}
+
+function asInt32(value: string | boolean | undefined, name: string): number | undefined {
+  if (typeof value !== 'string') return undefined;
+  // Check the decimal text before Number can round a fractional input to an integer.
+  return validateInt32(/^[+-]?\d+$/.test(value.trim()) ? Number(value) : NaN, name);
 }
 
 function asPositiveInt(value: string | boolean | undefined, name: string): number | undefined {
@@ -8523,7 +8530,9 @@ async function executeFields(client: JiraClient, cmd: ParsedCommand): Promise<un
       const maxResults = asPositiveInt(opts['max-results'], '--max-results');
       const optionId = asPositiveInt(opts['option-id'], '--option-id');
       const onlyOptions = asBoolFlag(opts['only-options']);
+      const query = asString(opts['query']);
       return client.fields.listContextOptions(fieldId, contextId, {
+        ...(query !== undefined && { query }),
         ...(optionId !== undefined && { optionId }),
         ...(onlyOptions !== undefined && { onlyOptions }),
         ...(startAt !== undefined && { startAt }),
@@ -8969,7 +8978,9 @@ async function executeJql(client: JiraClient, cmd: ParsedCommand): Promise<unkno
       const fieldValue = asString(opts['field-value']);
       const predicateName = asString(opts['predicate-name']);
       const predicateValue = asString(opts['predicate-value']);
+      const maxResults = asInt32(opts['max-results'], '--max-results');
       return client.jql.getFieldReferenceSuggestions({
+        ...(maxResults !== undefined && { maxResults }),
         ...(fieldName !== undefined && { fieldName }),
         ...(fieldValue !== undefined && { fieldValue }),
         ...(predicateName !== undefined && { predicateName }),

@@ -192,6 +192,8 @@ export type FieldContextOptionPage = OffsetPaginatedResponse<FieldContextOption>
 /** Query parameters for listing field context options (B421). */
 export interface ListFieldContextOptionsParams {
   readonly optionId?: number;
+  /** Case-insensitive literal substring of the option value. A blank query matches any value. */
+  readonly query?: string;
   readonly onlyOptions?: boolean;
   readonly startAt?: number;
   readonly maxResults?: number;
@@ -466,7 +468,7 @@ export interface FieldContextDefaultValueTextField {
   readonly text?: string;
 }
 
-/** type: `textarea` — text area field default (max 32767 chars). */
+/** Text area field default. The Jira instance's text field character limit applies. */
 export interface FieldContextDefaultValueTextArea {
   readonly type: 'textarea';
   readonly contextId: string;
@@ -1055,7 +1057,11 @@ export class FieldsResource {
     });
   }
 
-  /** List options for a custom field context (paginated). B421 */
+  /**
+   * List options for a custom field context (paginated). B421
+   * Jira applies `query`, `optionId`, and `onlyOptions` together before pagination.
+   * The response's `total` counts the matching options across all pages.
+   */
   async listContextOptions(
     fieldId: string,
     contextId: number,
@@ -1065,6 +1071,7 @@ export class FieldsResource {
     const query: Record<string, string | number | boolean | undefined> = {};
     if (params) {
       if (params.optionId !== undefined) query['optionId'] = params.optionId;
+      if (params.query !== undefined) query['query'] = params.query;
       if (params.onlyOptions !== undefined) query['onlyOptions'] = params.onlyOptions;
       if (params.startAt !== undefined) query['startAt'] = params.startAt;
       if (params.maxResults !== undefined) query['maxResults'] = params.maxResults;
@@ -1239,6 +1246,9 @@ export class FieldsResource {
    * GET /rest/api/3/field/{fieldId}/context/defaultValues
    *
    * This is the replacement for the deprecated singular `/defaultValue` reader.
+   * The tenant must be enrolled in the early access program (CHANGE-3082), and the caller
+   * must have the Administer Jira global permission. Jira returns HTTP 403 if either is missing.
+   * @experimental Atlassian marks this operation as experimental.
    */
   async getContextDefaultValues(
     fieldId: string,

@@ -434,7 +434,7 @@ atlas jira version delete-related-work 10000 rw-abc
 
 Custom project template management (B653–B657). Covers the full `/rest/api/3/project-template` surface: create a project with a custom template, edit/save/remove templates, and retrieve live template details.
 
-`create` is asynchronous: it prints `{ "queued": true, "taskId": "<id>", "taskUrl": "<url>" }`; poll with `atlas jira task get <taskId>` until `status` is `COMPLETE`. `edit-template`, `remove-template` return `void` (no JSON body). `live-template` returns `ProjectTemplateModel`. `save-template` returns `{ projectTemplateKey }`.
+`create` is asynchronous: it prints `{ "queued": true, "taskId": "<id>", "taskUrl": "<url>" }`; poll with `atlas jira task get <taskId>` until `status` is `COMPLETE`. Jira can return HTTP 422 with limit details when it cannot create the project. `edit-template`, `remove-template` return `void` (no JSON body). `live-template` returns `ProjectTemplateModel`. `save-template` returns `{ projectTemplateKey }`.
 
 **Note: These endpoints are only available on Jira Enterprise edition.**
 

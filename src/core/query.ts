@@ -1,3 +1,5 @@
+import { ValidationError } from './errors.js';
+
 /**
  * Append a repeated (`type: array`, `style: form`, `explode: true`) query
  * parameter to a path/query string.
@@ -74,4 +76,12 @@ export function appendScalarOrArrayParam(
     ? (value as readonly (string | number)[])
     : [value as string | number];
   return appendRepeatedParams(path, name, values);
+}
+
+/** Validate a query value declared as an OpenAPI signed 32-bit integer. */
+export function validateInt32(value: number, name: string): number {
+  if (!Number.isInteger(value) || value < -2_147_483_648 || value > 2_147_483_647) {
+    throw new ValidationError(`${name} must be a signed 32-bit integer`);
+  }
+  return value;
 }

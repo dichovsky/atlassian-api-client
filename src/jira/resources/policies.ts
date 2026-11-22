@@ -23,8 +23,8 @@ export interface PolicySummary {
  * Page of policy summaries. Spec: `PolicySummaryResponse`.
  *
  * @remarks
- * In cursor mode `startAt` and `total` are null/absent; pass `nextPageCursor`
- * as the next request's `cursor`.
+ * In cursor mode, Jira returns null for `startAt` and `total`.
+ * Use `nextPageCursor` to request the next page.
  */
 export interface PolicySummaryResponse {
   readonly values?: readonly PolicySummary[];
@@ -124,7 +124,9 @@ export class PoliciesResource {
   ) {}
 
   /**
-   * GET /rest/api/3/policies — list all policies (`listPolicies`).
+   * GET /rest/api/3/policies — list policies one page at a time (`listPolicies`).
+   * Omit `cursor` on the first request. For each subsequent page, pass the previous
+   * response's `nextPageCursor` as `cursor`. The only accepted legacy `startAt` in cursor mode is 0.
    *
    * @experimental Atlassian marks this operation as experimental.
    */
