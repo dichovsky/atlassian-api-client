@@ -37,25 +37,25 @@ JQL query and precomputation API (B587–B596). Covers autocomplete, parse, sani
 
 > **Experimental:** Atlassian marks `sanitize` and `invalid-jqls-access-log` `x-experimental`; their shapes may change without notice.
 
-| Action                      | Positionals | Required flags          | Optional flags                                                           |
-| --------------------------- | ----------- | ----------------------- | ------------------------------------------------------------------------ |
-| `autocomplete-data`         | —           | —                       | —                                                                        |
-| `autocomplete-data-post`    | —           | —                       | `--project-ids`, `--include-collapsed-fields`                            |
-| `autocomplete-suggestions`  | —           | —                       | `--field-name`, `--field-value`, `--predicate-name`, `--predicate-value` |
-| `get-precomputations`       | —           | —                       | `--function-key`, `--start-at`, `--max-results`, `--order-by`            |
-| `update-precomputations`    | —           | `--values`              | `--skip-not-found`                                                       |
-| `get-precomputations-by-id` | —           | —                       | `--precomputation-ids`, `--order-by`                                     |
-| `match-issues`              | —           | `--issue-ids`, `--jqls` | —                                                                        |
-| `parse`                     | —           | `--queries`             | `--validation`                                                           |
-| `migrate-queries`           | —           | —                       | `--query-strings`                                                        |
-| `sanitize`                  | —           | `--queries`             | —                                                                        |
-| `invalid-jqls-access-log`   | —           | —                       | `--user-account-id`, `--next-page-token`, `--max-results`                |
+| Action                      | Positionals | Required flags          | Optional flags                                                                            |
+| --------------------------- | ----------- | ----------------------- | ----------------------------------------------------------------------------------------- |
+| `autocomplete-data`         | —           | —                       | —                                                                                         |
+| `autocomplete-data-post`    | —           | —                       | `--project-ids`, `--include-collapsed-fields`                                             |
+| `autocomplete-suggestions`  | —           | —                       | `--field-name`, `--field-value`, `--predicate-name`, `--predicate-value`, `--max-results` |
+| `get-precomputations`       | —           | —                       | `--function-key`, `--start-at`, `--max-results`, `--order-by`                             |
+| `update-precomputations`    | —           | `--values`              | `--skip-not-found`                                                                        |
+| `get-precomputations-by-id` | —           | —                       | `--precomputation-ids`, `--order-by`                                                      |
+| `match-issues`              | —           | `--issue-ids`, `--jqls` | —                                                                                         |
+| `parse`                     | —           | `--queries`             | `--validation`                                                                            |
+| `migrate-queries`           | —           | —                       | `--query-strings`                                                                         |
+| `sanitize`                  | —           | `--queries`             | —                                                                                         |
+| `invalid-jqls-access-log`   | —           | —                       | `--user-account-id`, `--next-page-token`, `--max-results`                                 |
 
 **Notes:**
 
 - `autocomplete-data` (B587): `GET /rest/api/3/jql/autocompletedata` — returns field names, function names, and reserved words for JQL autocompletion.
 - `autocomplete-data-post` (B588): `POST /rest/api/3/jql/autocompletedata` — same as GET but lets you filter by `--project-ids` (CSV of int IDs) and include collapsed fields via `--include-collapsed-fields` (bare or `true` sends `true`, `false` sends `false`, omitted sends nothing).
-- `autocomplete-suggestions` (B589): `GET /rest/api/3/jql/autocompletedata/suggestions` — every flag is optional and sent only when given. `--field-name` alone lists the field's values; add `--field-value` to match values containing that text; `--field-name` + `--predicate-name` (a `CHANGED` predicate: `by`, `from` or `to`) lists predicate values, narrowed by `--predicate-value`.
+- `autocomplete-suggestions` (B589): `GET /rest/api/3/jql/autocompletedata/suggestions` — every flag is optional and sent only when given. `--field-name` alone lists the field's values; add `--field-value` to match values containing that text; `--field-name` + `--predicate-name` (a `CHANGED` predicate: `by`, `from` or `to`) lists predicate values, narrowed by `--predicate-value`. The experimental `--max-results` flag accepts a signed 32-bit integer in decimal and hints how many suggestions to return for each field or predicate value. Jira caps the hint at 50 and may use its default of 15.
 - **App-only precomputation actions:** `get-precomputations`, `update-precomputations` and `get-precomputations-by-id` serve the custom JQL functions of a Forge or Connect app: Jira accepts them only from that app, and an app sees only its own functions. A user API token (the default `basic` auth) is rejected; from the CLI they need `ATLASSIAN_AUTH_TYPE=bearer` with a token issued to the app.
 - `get-precomputations` (B590): `GET /rest/api/3/jql/function/computation` — paginated list of app function precomputations. `--function-key` accepts a CSV of function keys (repeated `functionKey` params; Forge `ari:cloud:ecosystem::extension/<appId>/<envId>/static/<key>`, Connect `<appKey>__<moduleKey>`).
 - `--order-by` on `get-precomputations` / `get-precomputations-by-id` is `functionKey`, `used`, `created` or `updated` (optionally `+`/`-` prefixed). Attach a value that starts with `-` with `=`: `--order-by=-updated` (`--order-by -updated` is a parse error).
@@ -84,7 +84,7 @@ atlas jira jql autocomplete-data-post --include-collapsed-fields
 
 # Get field value suggestions — B589
 atlas jira jql autocomplete-suggestions --field-name status
-atlas jira jql autocomplete-suggestions --field-name reporter --field-value adm
+atlas jira jql autocomplete-suggestions --field-name reporter --field-value adm --max-results 10
 
 # Get predicate value suggestions — B589
 atlas jira jql autocomplete-suggestions --field-name status --predicate-name by --predicate-value adm

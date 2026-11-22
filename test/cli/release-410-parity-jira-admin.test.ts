@@ -680,7 +680,7 @@ describe('plans CLI → wire (M7-4)', () => {
     expect(req.body).toEqual({
       name: 'Q4 Plan',
       issueSources: [{ type: 'Project', value: 10100 }],
-      scheduling: { estimation: 'Days', inferredDates: 'ReleaseDates' },
+      scheduling: { estimation: 'Days', inferredDates: 'AnySprintDates' },
       crossProjectReleases: [{ name: 'Q4 release', releaseIds: [10200, 10201] }],
       customFields: [{ customFieldId: 10050, filter: true }],
       exclusionRules: { numberOfDaysToShowCompletedIssues: 30, issueTypeIds: [10003] },

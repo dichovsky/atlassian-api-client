@@ -428,6 +428,7 @@ EXAMPLES:
   atlas jira users create --email-address new.hire@example.com --products jira-software
   atlas jira search search --jql "project = PROJ AND status = Open"
   atlas jira search approximate-count --jql "project = PROJ"
+  atlas jira jql autocomplete-suggestions --field-name status --field-value open --max-results 10
   atlas jira search jql-get --jql "project = PROJ" --max-results 50 --properties release.owner --fields-by-keys --fail-fast
   atlas jira search jql-post --jql "project = PROJ AND assignee = currentUser()"
   atlas jira projects list --type-key software --status live --action browse --query platform --order-by key
@@ -726,7 +727,7 @@ EXAMPLES:
   atlas jira fields context-create --field-id customfield_10001 --name 'Bug context' --project-ids 10010,10011
   atlas jira fields context-update --field-id customfield_10001 --context-id 10025 --name 'Renamed'
   atlas jira fields context-delete --field-id customfield_10001 --context-id 10025
-  atlas jira fields context-option-list --field-id customfield_10001 --context-id 10025
+  atlas jira fields context-option-list --field-id customfield_10001 --context-id 10025 --query London
   atlas jira fields context-option-create --field-id customfield_10001 --context-id 10025 --body '{"options":[{"value":"New York"}]}'
   atlas jira fields context-option-update --field-id customfield_10001 --context-id 10025 --body '{"options":[{"id":"10001","value":"Renamed"}]}'
   atlas jira fields context-option-delete --field-id customfield_10001 --context-id 10025 --option-id 10001

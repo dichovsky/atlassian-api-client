@@ -582,26 +582,31 @@ describe('FieldsResource', () => {
       });
     });
 
-    it('passes optionId, onlyOptions, startAt, maxResults as query params', async () => {
-      // Arrange
-      transport.respondWith({ values: [], startAt: 0, maxResults: 100, total: 0, isLast: true });
+    it.each(['New & Old', ''])(
+      'forwards query %j with option and pagination filters',
+      async (query) => {
+        // Arrange
+        transport.respondWith({ values: [], startAt: 0, maxResults: 100, total: 0, isLast: true });
 
-      // Act
-      await fields.listContextOptions('customfield_10001', 10025, {
-        optionId: 10001,
-        onlyOptions: true,
-        startAt: 10,
-        maxResults: 50,
-      });
+        // Act
+        await fields.listContextOptions('customfield_10001', 10025, {
+          optionId: 10001,
+          query,
+          onlyOptions: true,
+          startAt: 10,
+          maxResults: 50,
+        });
 
-      // Assert
-      expect(transport.lastCall?.options.query).toMatchObject({
-        optionId: 10001,
-        onlyOptions: true,
-        startAt: 10,
-        maxResults: 50,
-      });
-    });
+        // Assert
+        expect(transport.lastCall?.options.query).toStrictEqual({
+          optionId: 10001,
+          query,
+          onlyOptions: true,
+          startAt: 10,
+          maxResults: 50,
+        });
+      },
+    );
 
     it('encodes fieldId and contextId in the path', async () => {
       // Arrange
@@ -624,7 +629,7 @@ describe('FieldsResource', () => {
       await fields.listContextOptions('customfield_10001', 10025, { optionId: 10001 });
 
       // Assert — query has only optionId
-      expect(transport.lastCall?.options.query).toEqual({ optionId: 10001 });
+      expect(transport.lastCall?.options.query).toStrictEqual({ optionId: 10001 });
     });
 
     it('omits undefined optional params from query — onlyOptions only', async () => {

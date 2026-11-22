@@ -4,8 +4,11 @@
  * `src/index.ts` cannot be imported by consumers at all. `npm run typecheck` compiles
  * this file and fails with TS2305 if any of these names stops reaching the root.
  */
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, expectTypeOf } from 'vitest';
 import type {
+  JiraClient,
+  ListFieldContextOptionsParams,
+  SchedulingInferredDates,
   // Confluence: content permissions and restriction state
   ContentPermissionOperation,
   ContentPermissionOutput,
@@ -204,6 +207,15 @@ describe('2026-11 API refresh types are importable from the package root', () =>
   it('covers every new type name (90)', () => {
     const arity: RootReachable['length'] = 90;
     expect(arity).toBe(90);
+  });
+
+  it('exports the field option filters and plan scheduling values used by Jira methods', () => {
+    type Filter = Parameters<JiraClient['fields']['listContextOptions']>[2];
+    type Scheduling = Parameters<JiraClient['plans']['create']>[0]['scheduling'];
+    expectTypeOf<Filter>().toEqualTypeOf<ListFieldContextOptionsParams | undefined>();
+    expectTypeOf<Scheduling['inferredDates']>().toEqualTypeOf<
+      SchedulingInferredDates | undefined
+    >();
   });
 
   it('accepts request bodies built against the root-exported types', () => {

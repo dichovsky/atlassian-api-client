@@ -635,7 +635,7 @@ npm run api-coverage
 Example output:
 
 ```
-✓ jiraPlatform: 1000 types; contract d2bfad62f84c (https://developer.atlassian.com/cloud/.../swagger-v3.v3.json)
+✓ jiraPlatform: 1000 types; contract c72f7509a6c6 (https://developer.atlassian.com/cloud/.../swagger-v3.v3.json)
 ✓ jiraSoftware: 66 types; contract 1b3a0fd3f68e (https://developer.atlassian.com/cloud/.../swagger.v3.json)
 ✓ confluence: 221 types; contract ad6d0bc5ad1f (https://developer.atlassian.com/cloud/.../openapi-v2.v3.json)
 ```
