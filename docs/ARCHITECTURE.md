@@ -39,10 +39,10 @@
 
 1. **Composition over inheritance** — A client contains a set of resources. The SDK does not use deep class hierarchies.
 2. **Dependency injection** — A test can supply a different transport through `config.transport`.
-3. **Zero runtime dependencies** — The SDK uses only the Node.js built-ins (`fetch`, `AbortController`, `Buffer`, `URL`).
+3. **Zero runtime dependencies** — The SDK uses only Node.js built-ins (for example, `fetch`, `AbortController`, `Buffer`, and `URL`).
 4. **Immutability** — The SDK does not change a configuration object or an options object. It makes a new object.
 5. **Fail fast** — When you construct a client, the client rejects an incorrect configuration.
-6. **Explicit over magic** — The documentation gives all defaults. The transport does not automatically retry an error that is not retryable.
+6. **Explicit over magic** — The documentation gives the defaults. The transport does not automatically retry an error that is not retryable.
 7. **Small, focused modules** — Each file does only one task.
 
 ---
@@ -138,7 +138,7 @@ test/
 
 ### Transport (`src/core/transport.ts`)
 
-The resources send all HTTP requests through the `Transport` interface:
+Each resource gives its requests to the transport through the `Transport` interface:
 
 ```typescript
 interface Transport {
@@ -151,13 +151,13 @@ interface Transport {
 - The transport makes the URL, puts all request headers into one set, serializes the request body, and parses the response. It uses `AbortController` for the timeout.
 - **Auth always wins:** The transport removes each caller-supplied `Authorization` header. Then it adds the header of the `AuthProvider`. Thus, a middleware cannot accidentally replace the authentication.
 - **Safe debug logging:** Debug logs record only `method + path`. The transport does not add the query parameters to the logged path, because query parameters can contain cursors or sensitive filter values.
-- **Caller-driven cancellation:** The transport uses `AbortSignal.any` to make one signal from `RequestOptions.signal?: AbortSignal` and the internal timeout signal. If the caller aborts the request, the request throws `AbortError`. If the timeout occurs, the request throws `TimeoutError`. Thus, callers can see the difference between the two conditions.
+- **Caller-driven cancellation:** The transport uses `AbortSignal.any` to make one signal from `RequestOptions.signal?: AbortSignal` and the internal timeout signal. If the caller aborts the request, the transport throws `AbortError`. If the timeout occurs, the transport throws `TimeoutError`. Thus, callers can see the difference between the two conditions.
 - **Rate-limit visibility:** Each `ApiResponse<T>` for a 2xx response has a `rateLimit?: RateLimitInfo` field. The transport parses this field from the `x-ratelimit-*` response headers. If `nearLimit === true`, the configured `logger` writes a `warn` message. Thus, callers can decrease their request rate before they get a 429 response.
 - **Retry wraps middleware:** The retry and backoff loop contains the middleware chain. Thus, the transport uses the same retry logic for errors from a middleware (for example, an `OAuthError` with a 5xx `refreshStatus`) and for the errors that the transport throws.
 
-**URL construction — one source for the base URL:**
+**URL construction — one source for the API URL:**
 
-`HttpTransport` uses only `config.baseUrl` as the base URL when it makes the request URLs. Before a client gives the configuration to the transport, the client sets `config.baseUrl` to the base URL of its API (for example, `https://host/wiki/api/v2`):
+`HttpTransport` uses only `config.baseUrl` when it makes the request URLs. Before a client gives the configuration to the transport, the client sets `config.baseUrl` to the URL of its API (for example, `https://host/wiki/api/v2`):
 
 ```typescript
 // ConfluenceClient (simplified)
@@ -168,7 +168,7 @@ const transport = new HttpTransport({ ...resolved, baseUrl }); // config.baseUrl
 
 The resources get the same `baseUrl`. They always give fully-qualified URLs to the transport (for example, `${this.baseUrl}/pages/123`). If a path starts with `https://`, the transport uses the path without a change. If a path is relative (for example, `/pages/123`), the transport puts `config.baseUrl` before the path.
 
-> **Deprecated:** `HttpTransport` accepts an optional second `baseUrl` argument. This argument lets code from v0.x continue to operate. If you give this argument, the transport uses it and not `config.baseUrl` to make the request URLs. For new code, we recommend that you put the base URL of the API in `config.baseUrl`. We also recommend that you do not give the second argument.
+> **Deprecated:** `HttpTransport` accepts an optional second `baseUrl` argument. This argument lets code from v0.x continue to operate. If you give this argument, the transport uses it and not `config.baseUrl` to make the request URLs. For new code, we recommend that you put the URL of the API in `config.baseUrl`. We also recommend that you do not give the second argument.
 
 **Data flow:**
 
@@ -266,7 +266,7 @@ Each error has these properties:
 
 An error message does not contain credentials.
 
-**`HttpError.toJSON()`** does not include `responseBody`. Thus, `JSON.stringify(error)` does not write the response bodies of the API to log aggregators. The serialized object includes only `name`, `code`, `status`, and `message`, plus `requestId` when the server returned one.
+**`HttpError.toJSON()`** does not include `responseBody`. Thus, the output of `JSON.stringify(error)` does not contain the response body of the API. A log aggregator that records this output does not get the response body. The serialized object includes only `name`, `code`, `status`, and `message`, plus `requestId` when the server returned one.
 
 ### Retry (`src/core/retry.ts`)
 
@@ -286,7 +286,7 @@ delay = min(baseDelay * 2^attempt + random_jitter, maxDelay)
 
 - HTTP 429 (Too Many Requests) — If the response has a `Retry-After` header, the transport uses its value as the minimum delay. The transport adds a `0..retryDelay` jitter to this minimum. If `maxRetryDelay` is larger than the minimum, the jitter is not more than the difference between the two values. Thus, the delay is not more than `maxRetryDelay`. The jitter makes sure that many clients do not retry at the same time.
 - HTTP 500, 502, 503, 504 (5xx responses).
-- Transient network errors (connection reset or refused, DNS failure, connection timeout, socket closed). A response-headers timeout (`UND_ERR_HEADERS_TIMEOUT`) and a failure while the transport reads the body of a 2xx response are retried only for GET. The transport also retries a write request that gets a 500, 502, 503, or 504 response. The transport also retries a write request with a connection failure before a response. Thus, the server can possibly get the write request more than one time.
+- Transient network errors (connection reset or refused, DNS failure, connect timeout, socket closed). A response-headers timeout (`UND_ERR_HEADERS_TIMEOUT`) and a failure while the transport reads the body of a 2xx response are retried only for GET. The transport also retries a write request that gets a 500, 502, 503, or 504 response. The transport also retries a write request with a connection failure before a response. Thus, the server can possibly get the write request more than one time.
 - `OAuthError` with a `refreshStatus` in the 5xx range (a transient failure of the token endpoint).
 
 **Non-retryable:**
@@ -314,7 +314,7 @@ delay = min(baseDelay * 2^attempt + random_jitter, maxDelay)
 
 The SDK has two mechanisms for rate limits. The two mechanisms operate independently:
 
-**Reactive (`retry.ts`)** — This mechanism operates on a 429 response after the server sends it:
+**Reactive (`retry.ts`)** — This mechanism operates on a 429 response after the server returns it:
 
 1. `HttpTransport` reads the `Retry-After` response header (seconds) and puts its value in `RateLimitError.retryAfter`.
 2. `executeWithRetry` waits for that time (not more than `maxRetryDelay`, jitter included) before the next attempt.
@@ -355,13 +355,13 @@ interface OffsetPaginatedResponse<T> {
 }
 ```
 
-- Next page: `startAt += values.length` (the number of items that the server sent). To calculate the next `startAt`, the SDK does not use the `maxResults` value of the response, because Jira can decrease or increase this value.
-- Done: `isLast === true` OR `startAt + values.length >= total` OR `values.length < min(pageSize, serverMaxResults)` (short-page fallback). The short-page condition uses two values: the number of items that the caller requests (`pageSize`) and the `maxResults` value of the response. Thus, if a server decreases the number of items on a page and does not send `isLast` or `total`, the iteration stops correctly. But the iteration does not stop on a full page that has a decreased number of items.
-- Forward-progress guard: If the server sends an empty page during the iteration, but `total` (or `isLast === false`) shows that more data is available, the SDK throws `PaginationError`. Thus, the caller sees that the upstream server truncated the data. The SDK does not give only a part of the results without an error.
+- Next page: `startAt += values.length` (the number of items that the server returned). To calculate the next `startAt`, the SDK does not use the `maxResults` value of the response, because Jira can decrease or increase this value.
+- Done: `isLast === true` OR `startAt + values.length >= total` OR `values.length < min(pageSize, serverMaxResults)` (short-page fallback). The short-page condition uses two values: the number of items that the caller requests (`pageSize`) and the `maxResults` value of the response. A server can set a `maxResults` value that is less than `pageSize`, and the response can have no `isLast` or `total`. In this condition, the iteration stops on the first page that has fewer items than this `maxResults` value. The iteration does not stop on a page that has exactly this number of items.
+- Forward-progress guard: If the server returns an empty page during the iteration, but `total` (or `isLast === false`) shows that more data is available, the SDK throws `PaginationError`. Thus, the caller sees that the upstream server truncated the data. The SDK does not return only a part of the results without an error.
 
 **Async iterators:**
 
-The two clients have `*All()` resource methods that give `AsyncIterable<T>`:
+The two clients have `*All()` resource methods that return `AsyncIterable<T>`:
 
 ```typescript
 for await (const page of confluence.pages.listAll({ spaceId: '123' })) {
@@ -412,7 +412,7 @@ response:  a ← b ← c ← fetch
 
 The sequence of the middleware is important:
 
-- **Caching wins _inside_ of auth.** `[oauth, cache, batch]` is correct for most apps. The cache stores only the response body. It does not store the `Authorization` header. Thus, the OAuth middleware always attaches the access token to each request, also when the cache has the response. If the cache is outermost (`[cache, oauth, batch]`), there is a risk that the cache sends a stale response when an access token refresh is _necessary_.
+- **Caching wins _inside_ of auth.** `[oauth, cache, batch]` is correct for most apps. The cache stores only the response body. It does not store the `Authorization` header. Thus, the OAuth middleware always attaches the access token to each request, also when the cache has the response. If the cache is outermost (`[cache, oauth, batch]`), there is a risk that the cache returns a stale response when an access token refresh is _necessary_.
 - **Batching wins _innermost_ of the auth and cache layers.** If `batch` is after the authentication and cache middleware, the batch middleware compares requests only after the authentication middleware adds the `Authorization` header. Thus, two requests at the same time with the same credentials become one `fetch`. If `batch` is outermost, requests with different credentials can get the response of one request in progress.
 - **Connect JWT replaces OAuth, not stacks with it.** The JWT signature uses the request URL and the HTTP method that the transport sends. Thus, the JWT middleware must be the innermost authentication middleware. For Connect apps, use `[connectJwt, cache, batch]`. Do _not_ use `oauth` and `connectJwt` together.
 
@@ -427,7 +427,7 @@ The recommended sequences are:
 
 ### OAuth Scope Detection (`src/core/scopes.ts`)
 
-`detectRequiredScopes(operations)` gives the recommended granular Cloud OAuth 2.0 scope strings for a set of Atlassian operation names (for example, `'jira.issues.create'`). Tools can use `listKnownOperations()` to get the operation names that `detectRequiredScopes` knows. To validate scopes, the SDK uses a larger catalog that comes from the pinned snapshots. The catalog contains 273 recognized strings total:
+`detectRequiredScopes(operations)` returns the recommended granular Cloud OAuth 2.0 scope strings for a set of Atlassian operation names (for example, `'jira.issues.create'`). Tools can use `listKnownOperations()` to get the operation names that `detectRequiredScopes` knows. To validate scopes, the SDK uses a larger catalog that comes from the pinned snapshots. The catalog contains 273 recognized strings total:
 
 - 247 unique granular scopes that OpenAPI operations refer to.
 - 10 granular catalog entries that no OpenAPI operation refers to. These entries include `read:bulk-job:jira` and `write:bulk-job:jira`, which occur only in the OAuth 2.0 security scheme.
@@ -435,7 +435,7 @@ The recommended sequences are:
 
 ### OpenAPI Type Generator (`src/core/openapi.ts`)
 
-`generateTypes(spec)` generates TypeScript interface and type declarations from the `components.schemas` of an OpenAPI 3.x document. It accepts these schema keywords: `$ref`, `allOf`, `oneOf`, `anyOf`, enum, nullable, and `additionalProperties`. It gives `{ source: string, typeNames: string[] }`.
+`generateTypes(spec)` generates TypeScript interface and type declarations from the `components.schemas` of an OpenAPI 3.x document. It generates TypeScript for these schema keywords: `$ref`, `allOf`, `oneOf`, `anyOf`, enum, nullable, and `additionalProperties`. It returns `{ source: string, typeNames: string[] }`.
 
 **Injection protection:**
 
@@ -499,7 +499,7 @@ The resources have these properties:
 
 - **Version handling:** An update request must include `version.number` (the last version number + 1). The update TypeScript types include this field.
 - **Body format:** The query parameter `body-format` sets the format of the response body (`storage`, `atlas_doc_format`, `view`).
-- **IDs:** IDs have the TypeScript type `string` (the API sends them as strings in the JSON response bodies).
+- **IDs:** IDs have the TypeScript type `string` (the API returns them as strings in the JSON response bodies).
 - **Soft delete:** Some `delete` resource methods (for example, `pages.delete()`) accept an optional `purge: true`. With this option, the resource method deletes the item permanently.
 
 ---
@@ -558,7 +558,7 @@ class IssuesResource {
 - **ADF format:** Issue descriptions and comments use the Atlassian Document Format (JSON). The TypeScript types show this format.
 - **Search endpoints:** The search resource has resource methods for the deprecated offset pagination endpoints `GET`/`POST /rest/api/3/search`. It also has resource methods for the cursor pagination endpoints `GET`/`POST /rest/api/3/search/jql`. Search responses use `{ issues: [...] }`, not `{ values: [...] }`.
 - **Expand parameter:** With the optional `expand` parameter, the response includes more data. On most parameter types, `expand` is a comma-separated `string` (for example, `GetIssueParams.expand`). Some parameter types (for example, the JQL search parameters) use a `string[]`. The SDK changes this array to the shape that is necessary for the endpoint.
-- **Issue keys:** The resource methods accept IDs that are numbers and also string keys (for example, `PROJ-123`). The TypeScript type is `string`.
+- **Issue keys:** The resource methods accept issue IDs, which contain only digits, and issue keys (for example, `PROJ-123`). The TypeScript type of the two is `string`.
 
 ---
 
@@ -676,20 +676,20 @@ The package uses only the Node.js built-ins of Node 24+:
 
 ### Dev Dependencies
 
-| Package                      | Purpose                                                                                                                                                                                                                                                                                                                                                                             |
-| ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `@typescript/native`         | TypeScript 7 (the npm alias of `npm:typescript`). It is the compiler for the build and for the type check (`npm run tsc:7`).                                                                                                                                                                                                                                                        |
-| `typescript`                 | TypeScript 6 package (the npm alias of `npm:@typescript/typescript6`). It supplies the compiler API for `typescript-eslint`, the codemap, the JSDoc test, and the CLI write-property reachability test. It also supplies the compiler API for the SDK/CLI route map (`test/helpers/sdk-routes.ts`) and the skill TypeScript-snippet test. `typecheck:ts6` uses its `tsc6` compiler. |
-| `@types/node`                | The TypeScript type definitions for Node.js                                                                                                                                                                                                                                                                                                                                         |
-| `vitest`                     | The test framework                                                                                                                                                                                                                                                                                                                                                                  |
-| `@vitest/coverage-v8`        | Test coverage with V8                                                                                                                                                                                                                                                                                                                                                               |
-| `eslint`, `@eslint/js`       | Linting                                                                                                                                                                                                                                                                                                                                                                             |
-| `typescript-eslint`          | The TypeScript rules and the TypeScript parser for ESLint (in one package)                                                                                                                                                                                                                                                                                                          |
-| `globals`                    | The definitions of global variables for the ESLint configuration                                                                                                                                                                                                                                                                                                                    |
-| `prettier`                   | Code formatting                                                                                                                                                                                                                                                                                                                                                                     |
-| `fast-check`                 | Property-based testing (B014)                                                                                                                                                                                                                                                                                                                                                       |
-| `conventional-changelog-cli` | It generates the changelog (`npm run changelog`).                                                                                                                                                                                                                                                                                                                                   |
-| `rimraf`                     | It deletes `dist` and `coverage` on all operating systems (`npm run clean`).                                                                                                                                                                                                                                                                                                        |
+| Package                      | Purpose                                                                                                                                                                                                                                                                                                                                                                            |
+| ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@typescript/native`         | TypeScript 7 (the npm alias of `npm:typescript`). It is the compiler that builds the package and type-checks the code (`npm run tsc:7`).                                                                                                                                                                                                                                           |
+| `typescript`                 | TypeScript 6 bridge (the npm alias of `npm:@typescript/typescript6`). It supplies the compiler API for `typescript-eslint`, the codemap, the JSDoc test, and the CLI write-property reachability test. It also supplies the compiler API for the SDK/CLI route map (`test/helpers/sdk-routes.ts`) and the skill TypeScript-snippet test. `typecheck:ts6` uses its `tsc6` compiler. |
+| `@types/node`                | The TypeScript type definitions for Node.js                                                                                                                                                                                                                                                                                                                                        |
+| `vitest`                     | The test framework                                                                                                                                                                                                                                                                                                                                                                 |
+| `@vitest/coverage-v8`        | Test coverage with V8                                                                                                                                                                                                                                                                                                                                                              |
+| `eslint`, `@eslint/js`       | Linting                                                                                                                                                                                                                                                                                                                                                                            |
+| `typescript-eslint`          | The TypeScript rules and the TypeScript parser for ESLint (in one package)                                                                                                                                                                                                                                                                                                         |
+| `globals`                    | The definitions of global variables for the ESLint configuration                                                                                                                                                                                                                                                                                                                   |
+| `prettier`                   | Code formatting                                                                                                                                                                                                                                                                                                                                                                    |
+| `fast-check`                 | Property-based testing (B014)                                                                                                                                                                                                                                                                                                                                                      |
+| `conventional-changelog-cli` | It generates the changelog (`npm run changelog`).                                                                                                                                                                                                                                                                                                                                  |
+| `rimraf`                     | It deletes `dist` and `coverage` on all operating systems (`npm run clean`).                                                                                                                                                                                                                                                                                                       |
 
 ---
 
@@ -733,7 +733,7 @@ src/cli/
     └── install-skill.ts # Thin delegate to src/skill-installer/ (installSkill, InstallSkillError)
 ```
 
-The installer of the bundled skill is in a different module, `src/skill-installer/index.ts` (`installSkill`, `InstallSkillError`, `FilesystemDeps`). Thus, other code can use the install logic, and unit tests can examine it independently of the CLI command parser. The `commands/install-skill.ts` handler contains almost no logic. It rejects positional arguments, calls `installSkill`, and shows the result or the error message.
+The installer of the bundled skill is in a different module, `src/skill-installer/index.ts` (`installSkill`, `InstallSkillError`, `FilesystemDeps`). Thus, other code can use the install logic, and unit tests can examine it independently of the CLI command parser. The `commands/install-skill.ts` handler contains almost no logic. It rejects subcommands and positional arguments, calls `installSkill`, and shows the result or the error message.
 
 ### Auth Resolution
 
@@ -763,7 +763,7 @@ The default is `basic`. If the value is unknown, the CLI uses `basic`. Thus, the
 ### Design Decisions
 
 - **Zero CLI dependencies** — The CLI uses the built-in Node.js `util.parseArgs` (stable in Node 24+).
-- **Reuses library clients** — The CLI commands make a `ConfluenceClient` or `JiraClient` instance and call its resource methods.
+- **Reuses library clients** — The CLI commands construct a `ConfluenceClient` or a `JiraClient` and call its resource methods.
 - **Pipe-friendly** — The default output is JSON. The CLI writes errors to stderr and data to stdout.
 - **Stateless** — The CLI does not use configuration files or authentication sessions. It reads the authentication values again for each command.
 
@@ -777,7 +777,7 @@ The default is `basic`. If the value is unknown, the CLI uses `basic`. Thus, the
 
 - `dist/` — the compiled JavaScript (ESM), the declaration files (`.d.ts`), and the source maps
 
-**Module format:** ESM-only (`"type": "module"` in `package.json`). On Node 24+, CommonJS callers can `require()` the ESM entry point directly. Node 22.12 made `require(ESM)` available without a flag.
+**Module format:** ESM-only (`"type": "module"` in `package.json`). On Node 24+, CommonJS callers can `require()` the ESM package root directly. Node 22.12 made `require(ESM)` available without a flag.
 
 **Published files:**
 

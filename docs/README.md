@@ -1,10 +1,10 @@
 # Documentation
 
-This directory contains the documentation for `atlassian-api-client`.
+This directory contains documentation for `atlassian-api-client`. This file also gives links to related files in other directories.
 
 ## Living references
 
-- [ARCHITECTURE.md](ARCHITECTURE.md) — the system architecture: transport, auth, retry, error taxonomy, middleware composition, pagination, and the CLI shape. The maintainers update this file when the code changes.
+- [ARCHITECTURE.md](ARCHITECTURE.md) — the system architecture: transport, authentication, retry, error taxonomy, middleware composition, pagination, and the CLI shape. The maintainer updates this file when the code changes.
 - [`spec/README.md`](../spec/README.md) and the 5.0.0 section of [`CHANGELOG.md`](../CHANGELOG.md) — the pinned OpenAPI snapshots (SHA-256, contract fingerprints, path and operation counts), the procedure to re-pin them, and the API changes of the 2026-11 re-pin.
 - [RELEASING.md](RELEASING.md) — the release-readiness gates, trusted publication, post-release checks, and the rollback procedure.
 - [WRITING.md](WRITING.md) — the writing guide: the ASD-STE100 rules, the terminology table, and the exceptions for the project documentation.
@@ -21,8 +21,8 @@ This directory contains the documentation for `atlassian-api-client`.
 
 ## Archive
 
-These dated reports show the status at one point in time. Subsequent work replaced them. The maintainers keep them as historical reports, not as the status of the project at this time. Refer to [archive/](archive/):
+These dated reports show the status at one point in time. Subsequent work replaced them. The maintainer keeps them as historical reports, not as the status of the project at this time. Refer to [archive/](archive/):
 
 - [API-GAP-ANALYSIS-2026-06-07.md](archive/API-GAP-ANALYSIS-2026-06-07.md) — the analysis of missing API coverage (the June deep audit in this list replaced it).
 - [BACKLOG-AUDIT.md](archive/BACKLOG-AUDIT.md) — the audit of the file paths in the backlog on 2026-05-23.
-- [DEEP-AUDIT-2026-06-10.md](archive/DEEP-AUDIT-2026-06-10.md) — the full-repository audit. After the audit, the maintainers resolved each of its findings or moved the finding to the backlog.
+- [DEEP-AUDIT-2026-06-10.md](archive/DEEP-AUDIT-2026-06-10.md) — the full-repository audit. After the audit, the maintainer resolved each of its findings or moved the finding to the backlog.

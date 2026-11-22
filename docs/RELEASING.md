@@ -177,10 +177,10 @@ The `Publish` preflight accepts a tag only when the GitHub API reports its signa
    - `atlas --version`
    - The version that the CLI writes into the installed skill
 3. In that project, run `npm audit signatures`. This command also passes for a package that has no attestations. Thus, the `verify` job also makes sure that the package has SLSA provenance from this repository's `.github/workflows/publish.yml` at `refs/tags/vX.Y.Z`. Make sure that the npm package page shows the same provenance statement.
-4. Do these checks:
-   - Make sure that the Git tag continues to resolve to the recorded commit.
-   - Make sure that GitHub shows the tag signature as verified.
-   - Make sure that the `CI` workflow run and the `Publish` workflow run for that commit passed.
+4. Make sure that these conditions are true:
+   - The Git tag continues to resolve to the recorded commit.
+   - GitHub shows the tag signature as verified.
+   - The `CI` workflow run and the `Publish` workflow run for that commit passed.
 5. Make or complete the immutable GitHub release from the tag that you pushed. In the GitHub release, do these steps:
    - Use the changelog text that the reviewer examined.
    - Include the migration notes for breaking changes.
@@ -209,13 +209,13 @@ You cannot change npm versions or signed release tags. Thus, a rollback changes 
 
    Do these steps before you make information about the problem public.
 
-2. Stop the promotion of the npm version that has the problem. Use `npm deprecate` to identify that version clearly:
+2. Stop promotion. Use `npm deprecate` to identify the npm version that has the problem clearly:
 
    ```bash
    npm deprecate atlassian-api-client@X.Y.Z "Known issue: <short impact and upgrade guidance>"
    ```
 
-3. If the version that has the problem is `latest` and the previous version is safe, do this step. Do not delete a version or a tag. Put the `latest` distribution tag back on the safe version:
+3. If the version that has the problem is `latest` and the previous version is safe, put the `latest` distribution tag back on the safe version. Do not delete a version or a tag. Use this command:
 
    ```bash
    npm dist-tag add atlassian-api-client@<safe-version> latest

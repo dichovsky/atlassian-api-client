@@ -289,7 +289,7 @@ The client uses exponential backoff with jitter between attempts.
 
 Retryable: 429, 500, 502, 503, 504, and transient network errors (connection reset or refused, DNS failure, connect timeout, socket closed, and for GET also a response-headers or body timeout).
 
-These conditions are for a write request (POST, PUT, PATCH, DELETE):
+This information is applicable to a write request (POST, PUT, PATCH, DELETE):
 
 - The client does not send the write request again in these conditions: its success response is cut off mid-body, its response headers time out, or anything fails on the GET that follows its 303 (or a POST's 301/302). In these conditions, the server possibly made the changes of the write request.
 - A write answered 500, 502, 503 or 504 is still retried as in 4.0.0, so the server may receive it more than once.
@@ -405,8 +405,8 @@ createOAuthRefreshMiddleware({
 });
 ```
 
-- `retryJitterMs` (default `100`, no jitter if `0`) adds a random interval before the middleware retries each request that waited for the new access token. Thus, the middleware does not retry N requests at the same time. The random interval prevents too many requests at the same time to a server that is available again. It also prevents new 429 responses.
-- `failureCooldownMs` (default `1000`, no cooldown if `0`) keeps the last **failure to refresh the access token** for the configured time. During that time, the middleware throws the kept error again for each 401 response. The error is the initial `OAuthError`. Thus, you can debug the failure. The middleware does not send a new request to the token endpoint. Thus, if the authentication server is not available, the middleware does not try to refresh the access token in a loop without a limit.
+- `retryJitterMs` (default `100`, no jitter if `0`) adds a random interval before the middleware retries each request that waited for the new access token. Thus, if many requests wait for the new access token, the middleware does not retry all of them at the same time. The random interval prevents too many requests at the same time to a server that is available again. It also prevents new 429 responses.
+- `failureCooldownMs` (default `1000`, no cooldown if `0`) keeps the last **failure to refresh the access token** for the configured time. During that time, the middleware throws the kept error again for each 401 response. The error is the same `OAuthError` that the last failed refresh threw. Thus, you can debug the failure. The middleware does not send a new request to the token endpoint. Thus, if the authentication server is not available, the middleware does not try to refresh the access token in a loop without a limit.
 
 The middleware validates the two options when you call `createOAuthRefreshMiddleware`. Each option must be a finite number that is not less than `0`. During the jitter interval, the middleware obeys `RequestOptions.signal`. Thus, if the caller aborts the request, the caller does not wait for the jitter interval.
 
@@ -454,7 +454,7 @@ Thus, Atlassian rejects the token with a 401 response.
 
 If you call `HttpTransport.request()` directly, give an absolute URL as the path.
 
-The `atlas` CLI uses only basic or bearer authentication. Thus, it cannot use the 22 Jira operations that the pinned specs keep for Connect apps. Examples are `incidents get` / `delete`, the `linked-workspaces` `*-operations` actions, `webhooks list-failed`, and `app get-dynamic-modules`. For these operations, the CLI sends a correct request, but Jira rejects the credentials. To send requests to these operations, use the SDK with `createConnectJwtMiddleware`. The bundled skill identifies each of these operations with **Connect app (JWT) only**.
+The `atlas` CLI uses only basic or bearer authentication. Thus, it cannot use the 22 Jira operations that the pinned specs keep for Connect apps. Examples are `incidents get` / `delete`, the `linked-workspaces` `*-operations` actions, `webhooks list-failed`, and `app get-dynamic-modules`. For these operations, the CLI sends a correct request, but Jira rejects the credentials. To send requests to the endpoints of these operations, use the SDK with `createConnectJwtMiddleware`. The bundled skill identifies each of these operations with **Connect app (JWT) only**.
 
 #### Verifying inbound asymmetric (RS256) JWTs
 
@@ -535,7 +535,7 @@ try {
 
 The circuit breaker prevents cascading failures when a server that the client uses does not operate correctly. After `failureThreshold` counted failures in sequence (5xx, network errors, timeouts), the circuit breaker opens. Then each subsequent request fails immediately with `CircuitBreakerOpenError`, and the transport does not send it.
 
-After `resetTimeoutMs`, the circuit breaker does not change to half-open immediately. The change occurs **only** at the next request after the timeout, not with a background timer. That request is the only trial request. If the trial request passes, the circuit breaker changes to closed.
+After `resetTimeoutMs`, the circuit breaker does not change to half-open immediately. The change occurs **only** at the next request after the `resetTimeoutMs` interval, not with a background timer. That request is the only half-open trial. If the half-open trial passes, the circuit breaker changes to closed.
 
 **Failure classification:** The circuit breaker counts only `NetworkError`, `TimeoutError`, and `HttpError` with a 5xx status as failures. For the errors in this list, the counter does not change, and the error goes to the caller:
 
@@ -558,7 +558,7 @@ const confluenceClient = new ConfluenceClient({ ...config, middleware: [confluen
 const jiraClient = new JiraClient({ ...config, middleware: [jiraBreaker] });
 ```
 
-**Recommended compose order:** Put the circuit breaker first in the array (the outer position). Thus, an open circuit breaker stops the request before the request uses a bucket token of the rate limiter or starts the OAuth refresh code:
+**Recommended compose order:** Put the circuit breaker first in the array (the outermost position). Thus, an open circuit breaker stops the request before the request uses a unit of the rate limiter or starts the OAuth refresh code:
 
 ```typescript
 const client = new JiraClient({
@@ -638,7 +638,7 @@ The total is 273 accepted strings. `detectRequiredScopes()` recommends only gran
 
 ## OpenAPI Type Generation
 
-`generateTypes(spec)` is a public utility function. It changes an OpenAPI 3.x spec object into TypeScript `interface` and `type` declarations. Call it with **your specs**. The package and the repository do not contain generated types.
+`generateTypes(spec)` is a public utility function. It generates TypeScript `interface` and `type` declarations from an OpenAPI 3.x spec object. Call it with **your specs**. The package and the repository do not contain generated types.
 
 ```typescript
 import { generateTypes } from 'atlassian-api-client';
@@ -783,7 +783,7 @@ The bundled skill (`skill/reference/jira/admin-devops.md`) gives the full reques
 
 ### Self-hosted / non-Atlassian baseUrl
 
-For security, the default host allowlist of the CLI accepts only `*.atlassian.{net,com}`, `*.jira-dev.com`, and `*.jira.com`. A request to a different host fails with `ValidationError`. If you use a self-hosted Jira or Confluence, or a proxy, set `--allowed-hosts` (or the `ATLASSIAN_ALLOWED_HOSTS` environment variable). Each entry is only a hostname, without a URL scheme or a port. The list must include the host of `baseUrl`:
+For security, the default host allowlist of the CLI accepts only `*.atlassian.{net,com}`, `*.jira-dev.com`, and `*.jira.com`. A request to a different host fails with `ValidationError`. If you use a self-hosted Jira or Confluence, or a reverse proxy, set `--allowed-hosts` (or the `ATLASSIAN_ALLOWED_HOSTS` environment variable). Each entry is only a hostname, without a URL scheme or a port. The list must include the host of `baseUrl`:
 
 ```bash
 atlas confluence spaces list \
@@ -866,7 +866,7 @@ The clients give access to a large part of the Atlassian APIs. These tables show
 
 ## Recipes
 
-This section gives snippets for frequent configurations. You can put a copy of each snippet in your code. Each recipe operates independently of the other recipes.
+This section gives snippets for frequent configurations. You can put a copy of each snippet in your code. You can use each recipe without the other recipes.
 
 ### Custom logger
 
@@ -896,7 +896,7 @@ const client = new ConfluenceClient({
 The client always records the request ID that the server gives in the response headers. It reads `X-AREQUESTID` first, then `X-Request-Id`.
 
 - For an error response, the ID is in `error.requestId`. `error.toJSON()` also includes the ID, for structured logging.
-- For a success response, the ID is in the `requestId` field of the transport-level `ApiResponse`. Resource methods such as `client.pages.get()` give only the unwrapped `data`. To read the ID, use a [middleware](#middleware) that gets the `ApiResponse`.
+- For a success response, the ID is in the `requestId` field of the transport-level `ApiResponse`. Resource methods such as `client.pages.get()` return only the unwrapped `data`. To read the ID, use a [middleware](#middleware) that gets the `ApiResponse`.
 
 By default, the client does not add a request ID to the requests that it sends. To attach a UUID to each request, set `requestId: { generate: true }`. The client uses the **same ID for all attempts of a request**. Thus, the server can identify all attempts of one request, independently of the number of attempts.
 
