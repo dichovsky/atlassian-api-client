@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "5.0.0"
   },
-  "sourceHash": "517d3255abaf44fa021ab95b4147aff967e835547ec69233734242daba4f70a9",
+  "sourceHash": "c3997e7c4763663eb722649bedfefbe5a1be90953cfafa1fec5ddb6924b1df58",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -16203,7 +16203,7 @@
           "signature": "class BasicAuthProvider implements AuthProvider",
           "members": [
             {
-              "name": "headerValue",
+              "name": "#headerValue",
               "kind": "property",
               "line": 66
             },
@@ -16226,7 +16226,7 @@
           "signature": "class BearerAuthProvider implements AuthProvider",
           "members": [
             {
-              "name": "headerValue",
+              "name": "#headerValue",
               "kind": "property",
               "line": 79
             },

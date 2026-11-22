@@ -63,26 +63,26 @@ function assertNonEmptyCredential(value: string, fieldName: string): void {
 }
 
 class BasicAuthProvider implements AuthProvider {
-  private readonly headerValue: string;
+  readonly #headerValue: string;
 
   constructor(email: string, apiToken: string) {
     const encoded = Buffer.from(`${email}:${apiToken}`).toString('base64');
-    this.headerValue = `Basic ${encoded}`;
+    this.#headerValue = `Basic ${encoded}`;
   }
 
   getHeaders(): Record<string, string> {
-    return { Authorization: this.headerValue };
+    return { Authorization: this.#headerValue };
   }
 }
 
 class BearerAuthProvider implements AuthProvider {
-  private readonly headerValue: string;
+  readonly #headerValue: string;
 
   constructor(token: string) {
-    this.headerValue = `Bearer ${token}`;
+    this.#headerValue = `Bearer ${token}`;
   }
 
   getHeaders(): Record<string, string> {
-    return { Authorization: this.headerValue };
+    return { Authorization: this.#headerValue };
   }
 }
