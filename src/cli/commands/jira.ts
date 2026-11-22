@@ -3549,7 +3549,9 @@ async function executeSettings(client: JiraClient, cmd: ParsedCommand): Promise<
       return client.settings.getColumns();
     case 'set-columns': {
       if (cmd.options['account-id'] !== undefined) {
-        throw new Error('Use jira users set-columns with --account-id to change one user’s columns');
+        throw new Error(
+          'Use jira users set-columns with --account-id to change one user’s columns',
+        );
       }
       const columns = columnSelection(cmd);
       await client.settings.setColumns(columns);
