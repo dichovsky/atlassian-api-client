@@ -17,7 +17,9 @@ export interface IncidentSeverity {
 
 /** Association type for incident-related entities. */
 export type IncidentAssociationType =
-  'issueIdOrKeys' | 'serviceIdOrKeys' | 'ati:cloud:compass:event-source';
+  | 'issueIdOrKeys'
+  | 'serviceIdOrKeys'
+  | 'ati:cloud:compass:event-source';
 
 /** An association linking an incident to Jira issues or other entities. */
 export interface IncidentAssociation {

@@ -190,9 +190,7 @@ describe('ResolutionResource', () => {
     });
 
     it('throws ValidationError when name is empty string', async () => {
-      await expect(resource.update('10', { name: '' })).rejects.toBeInstanceOf(
-        ValidationError,
-      );
+      await expect(resource.update('10', { name: '' })).rejects.toBeInstanceOf(ValidationError);
     });
   });
 

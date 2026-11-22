@@ -3457,7 +3457,9 @@ function makePageCreateBody(
   opts: Record<string, string | boolean | undefined>,
 ): PageBodyWrite | PageNestedBodyWrite | undefined {
   return makeWriteBody(opts, PAGE_BODY_WRITE_REPRESENTATIONS, true) as
-    PageBodyWrite | PageNestedBodyWrite | undefined;
+    | PageBodyWrite
+    | PageNestedBodyWrite
+    | undefined;
 }
 
 /** Flat `{ representation, value }` content write body. */

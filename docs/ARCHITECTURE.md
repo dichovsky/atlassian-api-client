@@ -660,17 +660,17 @@ The package uses only Node.js built-ins available in the supported runtime (Node
 
 ### Dev Dependencies
 
-| Package | Purpose |
-| --- | --- |
-| `typescript` | TypeScript 7 builds the SDK, checks source and documentation examples, and provides the compiler API for the codemap and source-analysis tests. |
-| `@types/node` | Node.js type definitions. |
-| `vitest` | Test runner. |
-| `@vitest/coverage-v8` | V8-based coverage. |
-| `oxlint` | Linting for TypeScript and JavaScript. |
-| `oxfmt` | Formatting for source code, Markdown, and configuration files. |
-| `fast-check` | Property-based testing. |
-| `conventional-changelog` | Generates changelog entries with `npm run changelog`. |
-| `conventional-changelog-conventionalcommits` | Parses Conventional Commits and formats their changelog entries. |
+| Package                                      | Purpose                                                                                                                                         |
+| -------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `typescript`                                 | TypeScript 7 builds the SDK, checks source and documentation examples, and provides the compiler API for the codemap and source-analysis tests. |
+| `@types/node`                                | Node.js type definitions.                                                                                                                       |
+| `vitest`                                     | Test runner.                                                                                                                                    |
+| `@vitest/coverage-v8`                        | V8-based coverage.                                                                                                                              |
+| `oxlint`                                     | Linting for TypeScript and JavaScript.                                                                                                          |
+| `oxfmt`                                      | Formatting for source code, Markdown, and configuration files.                                                                                  |
+| `fast-check`                                 | Property-based testing.                                                                                                                         |
+| `conventional-changelog`                     | Generates changelog entries with `npm run changelog`.                                                                                           |
+| `conventional-changelog-conventionalcommits` | Parses Conventional Commits and formats their changelog entries.                                                                                |
 
 ---
 

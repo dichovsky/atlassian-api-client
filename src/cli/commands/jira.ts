@@ -4503,7 +4503,8 @@ async function executeBulk(client: JiraClient, cmd: ParsedCommand): Promise<unkn
       }
       const value = valueRaw !== undefined ? parseJsonValueFlag(valueRaw, '--value') : undefined;
       const filter = bulkPropertyFilter(opts['filter'], 'set-property') as
-        BulkSetIssuePropertyData['filter'] | undefined;
+        | BulkSetIssuePropertyData['filter']
+        | undefined;
       return client.bulk.setPropertyBulk(
         propertyKey,
         {
