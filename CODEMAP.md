@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "5.0.0"
   },
-  "sourceHash": "c3997e7c4763663eb722649bedfefbe5a1be90953cfafa1fec5ddb6924b1df58",
+  "sourceHash": "a2acd778b19c75e593debc8e94779b1d7ece13f96ab64defad27f2e9bead03c1",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -18476,7 +18476,7 @@
           "jsdoc": "HTTP transport using native `fetch` with auth, retry, rate-limit, and timeout support. @example ```ts import { HttpTransport, resolveConfig } from 'atlassian-api-client'; const…",
           "members": [
             {
-              "name": "config",
+              "name": "#config",
               "kind": "property",
               "line": 80
             },
@@ -18486,7 +18486,7 @@
               "line": 81
             },
             {
-              "name": "authHeaders",
+              "name": "#authHeaders",
               "kind": "property",
               "line": 91
             },

@@ -1,3 +1,4 @@
+import { inspect } from 'node:util';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { HttpTransport } from '../../src/core/transport.js';
 import {
@@ -1060,6 +1061,24 @@ describe('HttpTransport', () => {
       );
     });
   });
+
+  it.each([
+    { type: 'basic', email: 'test@example.com', apiToken: 'fixture-token' },
+    { type: 'bearer', token: 'fixture-token' },
+  ] satisfies ResolvedConfig['auth'][])(
+    'keeps the $type credential out of JSON and inspection',
+    (auth) => {
+      const transport = makeTransport({ ...defaultConfig, auth });
+      const encoded = Buffer.from('test@example.com:fixture-token').toString('base64');
+      for (const output of [
+        JSON.stringify({ transport }),
+        inspect(transport, { showHidden: true, depth: Infinity }),
+      ]) {
+        expect(output).not.toContain('fixture-token');
+        expect(output).not.toContain(encoded);
+      }
+    },
+  );
 
   describe('non-retryable non-AbortError thrown by fetch', () => {
     it('rethrows unknown errors that are not TypeError or AbortError (retries=0)', async () => {
