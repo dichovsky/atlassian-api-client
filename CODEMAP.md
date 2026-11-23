@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "5.0.0"
   },
-  "sourceHash": "517d3255abaf44fa021ab95b4147aff967e835547ec69233734242daba4f70a9",
+  "sourceHash": "ef13dceb61b4ca6cb1c57ff83726e3236628af83c388c0654415018902354bc2",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -2277,7 +2277,7 @@
       "name": "HttpTransport",
       "kind": "class",
       "file": "src/core/transport.ts",
-      "line": 79,
+      "line": 81,
       "signature": "export class HttpTransport implements Transport",
       "jsdoc": "HTTP transport using native `fetch` with auth, retry, rate-limit, and timeout support. @example ```ts import { HttpTransport, resolveConfig } from 'atlassian-api-client'; const…"
     },
@@ -16192,55 +16192,15 @@
         {
           "name": "assertNonEmptyCredential",
           "kind": "function",
-          "line": 59,
+          "line": 60,
           "signature": "function assertNonEmptyCredential(value: string, fieldName: string): void",
           "jsdoc": "B1041(6): reject an absent or empty credential field with a typed {@link ValidationError} so a misconfigured client fails at construction with a clear message rather than emitting a broken `Authorization` header."
         },
         {
-          "name": "BasicAuthProvider",
-          "kind": "class",
-          "line": 65,
-          "signature": "class BasicAuthProvider implements AuthProvider",
-          "members": [
-            {
-              "name": "headerValue",
-              "kind": "property",
-              "line": 66
-            },
-            {
-              "name": "constructor",
-              "kind": "constructor",
-              "line": 68
-            },
-            {
-              "name": "getHeaders",
-              "kind": "method",
-              "line": 73
-            }
-          ]
-        },
-        {
-          "name": "BearerAuthProvider",
-          "kind": "class",
-          "line": 78,
-          "signature": "class BearerAuthProvider implements AuthProvider",
-          "members": [
-            {
-              "name": "headerValue",
-              "kind": "property",
-              "line": 79
-            },
-            {
-              "name": "constructor",
-              "kind": "constructor",
-              "line": 81
-            },
-            {
-              "name": "getHeaders",
-              "kind": "method",
-              "line": 85
-            }
-          ]
+          "name": "providerForHeader",
+          "kind": "function",
+          "line": 66,
+          "signature": "function providerForHeader(value: string): AuthProvider"
         }
       ],
       "imports": [
@@ -18461,149 +18421,160 @@
       "path": "src/core/transport.ts",
       "symbols": [
         {
+          "name": "sendRequest",
+          "kind": "variable",
+          "line": 36,
+          "signature": "const sendRequest = Symbol('HttpTransport.sendRequest');"
+        },
+        {
           "name": "stripCallerAuthorizationOverride",
           "kind": "function",
-          "line": 49,
+          "line": 51,
           "signature": "function stripCallerAuthorizationOverride(options: RequestOptions): RequestOptions",
           "jsdoc": "Drop a caller-supplied `authorizationOverride` at the request boundary."
         },
         {
           "name": "HttpTransport",
           "kind": "class",
-          "line": 79,
+          "line": 81,
           "exported": true,
           "signature": "export class HttpTransport implements Transport",
           "jsdoc": "HTTP transport using native `fetch` with auth, retry, rate-limit, and timeout support. @example ```ts import { HttpTransport, resolveConfig } from 'atlassian-api-client'; const…",
           "members": [
             {
-              "name": "config",
+              "name": "#config",
               "kind": "property",
-              "line": 80
+              "line": 82
             },
             {
               "name": "authProvider",
               "kind": "property",
-              "line": 81
+              "line": 83
             },
             {
-              "name": "authHeaders",
+              "name": "#authHeaders",
               "kind": "property",
-              "line": 91
+              "line": 93
             },
             {
               "name": "authIdentity",
               "kind": "property",
-              "line": 99
+              "line": 101
             },
             {
               "name": "requestHandler",
               "kind": "property",
-              "line": 100
+              "line": 102
             },
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 108
+              "line": 110
             },
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 116
+              "line": 118
             },
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 117
+              "line": 119
             },
             {
               "name": "request",
               "kind": "method",
-              "line": 162
+              "line": 164
+            },
+            {
+              "name": "[sendRequest]",
+              "kind": "property",
+              "line": 170
             },
             {
               "name": "injectAuthIdentity",
               "kind": "method",
-              "line": 251
+              "line": 259
             },
             {
               "name": "executeFetch",
               "kind": "method",
-              "line": 271
+              "line": 279
             }
           ]
         },
         {
           "name": "isHeadersLike",
           "kind": "function",
-          "line": 444,
+          "line": 452,
           "signature": "function isHeadersLike(value: unknown): value is Headers",
           "jsdoc": "Duck-type check for a WHATWG `Headers`-shaped value."
         },
         {
           "name": "DEFAULT_INBOUND_HEADERS",
           "kind": "variable",
-          "line": 466,
+          "line": 474,
           "signature": "const DEFAULT_INBOUND_HEADERS: readonly string[] = ['X-AREQUESTID', 'X-Request-Id'];",
           "jsdoc": "Default inbound response headers to check for a server-assigned request id (B011). `X-AREQUESTID` is Atlassian's actual header; `X-Request-Id` is the conventional RFC draft / de-facto standard fallback."
         },
         {
           "name": "captureRequestId",
           "kind": "function",
-          "line": 473,
+          "line": 481,
           "signature": "function captureRequestId(headers: Headers, candidates: readonly string[]): string | undefined",
           "jsdoc": "Read the first matching request-id header from the response. Returns the header value, or `undefined` when none of the candidates are present. `Headers.get()` is case-insensitive per the WHATWG Fetch spec."
         },
         {
           "name": "parseBodyWithTimeoutHandling",
           "kind": "function",
-          "line": 481,
+          "line": 489,
           "signature": "async function parseBodyWithTimeoutHandling<T>( parse: () => Promise<T>, timeoutSignal: AbortSignal, timeoutMs: number, …"
         },
         {
           "name": "toNetworkError",
           "kind": "function",
-          "line": 513,
+          "line": 521,
           "signature": "function toNetworkError(error: unknown, retryable: boolean): NetworkError",
           "jsdoc": "Wrap a transport failure in the taxonomy. {@link isTransportFailure} also matches non-Error shapes (a thrown `{ code }` object), whose `.message` is `undefined`, so fall back to the class default and keep the original value as `cause` without claiming it is an Error."
         },
         {
           "name": "REDIRECT_STATUSES",
           "kind": "variable",
-          "line": 519,
+          "line": 527,
           "signature": "const REDIRECT_STATUSES: ReadonlySet<number> = new Set([301, 302, 303, 307, 308]);",
           "jsdoc": "Statuses `fetch` treats as redirects (WHATWG Fetch \"redirect status\")."
         },
         {
           "name": "MAX_REDIRECTS",
           "kind": "variable",
-          "line": 522,
+          "line": 530,
           "signature": "const MAX_REDIRECTS = 20;",
           "jsdoc": "The hop limit `fetch` applies when it follows redirects itself."
         },
         {
           "name": "OutgoingRequest",
           "kind": "interface",
-          "line": 524,
+          "line": 532,
           "signature": "interface OutgoingRequest { readonly method: string; readonly headers: Record<string, string>; readonly body: FormData |…"
         },
         {
           "name": "fetchWithCheckedRedirects",
           "kind": "function",
-          "line": 563,
+          "line": 571,
           "signature": "async function fetchWithCheckedRedirects( doFetch: typeof fetch, url: string, request: OutgoingRequest, allowedHosts: re…",
           "jsdoc": "Send a request, following a redirect only to a target the request could have been sent to directly."
         },
         {
           "name": "computeAuthIdentity",
           "kind": "function",
-          "line": 645,
+          "line": 653,
           "signature": "function computeAuthIdentity(authHeaders: Record<string, string>): string",
           "jsdoc": "Hash the auth provider's `Authorization` header value into the short stable identifier exposed as {@link RequestOptions.authIdentity}. Uses the first 16 hex chars (64 bits) of SHA-256 — wide enough for accidental collisions to vanish in practice, narrow enough to keep cache/batch keys compact, and one-way so a logging/metrics middleware that persists `RequestOptions` never accidentally writes the credential to a log sink."
         },
         {
           "name": "assertOverrideBaseUrl",
           "kind": "function",
-          "line": 664,
+          "line": 672,
           "signature": "function assertOverrideBaseUrl(baseUrl: string, allowedHosts: readonly string[]): void",
           "jsdoc": "Validate a baseUrl override (deprecated constructor overload) against the same `allowedHosts` policy `resolveConfig` already applied to `config.baseUrl`. Without this, an override could silently relocate every relative-path request to a foreign host with the configured `Authorization` header attached. PR review of round 3."
         }

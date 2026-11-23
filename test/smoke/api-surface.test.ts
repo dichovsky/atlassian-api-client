@@ -2,6 +2,7 @@
  * API surface smoke tests — verify the public API is constructable and correctly typed.
  * These tests do not make network calls; they validate structure and type compatibility.
  */
+import { inspect } from 'node:util';
 import { describe, it, expect } from 'vitest';
 import {
   ConfluenceClient,
@@ -59,6 +60,34 @@ const BASE_CONFIG: ClientConfig = {
   baseUrl: 'https://test.atlassian.net',
   auth: { type: 'basic', email: 'user@example.com', apiToken: 'token' },
 };
+
+for (const Client of [JiraClient, ConfluenceClient]) {
+  it.each([
+    { type: 'basic', email: 'fixture@example.com', apiToken: 'fixture-api-token' },
+    { type: 'bearer', token: 'fixture-bearer-token' },
+  ] satisfies ClientConfig['auth'][])(
+    `${Client.name} with the built-in transport keeps $type credentials out of JSON and inspection`,
+    (auth) => {
+      const client = new Client({ ...BASE_CONFIG, auth });
+      const secrets =
+        auth.type === 'basic'
+          ? [
+              auth.email,
+              auth.apiToken,
+              Buffer.from(`${auth.email}:${auth.apiToken}`).toString('base64'),
+            ]
+          : [auth.token];
+      for (const output of [
+        JSON.stringify(client),
+        inspect(client, { showHidden: true, depth: Infinity }),
+      ]) {
+        for (const secret of secrets) {
+          expect(output).not.toContain(secret);
+        }
+      }
+    },
+  );
+}
 
 describe('ConfluenceClient', () => {
   it('is constructable with basic auth', () => {
