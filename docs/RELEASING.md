@@ -152,8 +152,8 @@ The `Publish` preflight accepts a tag only when the GitHub API reports its signa
 6. Do these steps for the build job and the publish job:
    - Make sure that the build job ran the full validation gate on the verified commit and uploaded the package tarball. The build job has read access to the repository, and it has no credential that can publish.
    - Examine the deployment of the publish job to the protected `release` environment. Then give your approval for the deployment.
-   - Make sure that the job requests only `contents: read` and `id-token: write`. The job must not receive an npm token that has a long life.
-   - Until this job has completed, `main` must not move.
+   - Make sure that the publish job requests only `contents: read` and `id-token: write`. The publish job must not receive an npm token that has a long life.
+   - Until the publish job has completed, `main` must not move.
 7. The approved job downloads the tarball by its artifact ID. Then it compares the SHA-512 integrity of the tarball with the build output. Before npm reads the publish configuration, the job compares the packaged `package.json` with the manifest from the signed commit. Then the job publishes that file with the lifecycle scripts disabled:
 
    ```bash

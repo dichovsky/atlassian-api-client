@@ -539,7 +539,7 @@ The circuit breaker prevents cascading failures when a server that the client us
 
 After `resetTimeoutMs`, the circuit breaker does not change to half-open immediately. The change occurs **only** at the next request after the `resetTimeoutMs` interval, not with a background timer. That request is the only half-open trial. If the half-open trial passes, the circuit breaker changes to closed.
 
-**Failure classification:** The circuit breaker counts only `NetworkError`, `TimeoutError`, and `HttpError` with a 5xx status as failures. For the errors in this list, the counter does not change, and the error goes to the caller:
+**Failure classification:** The circuit breaker counts only `NetworkError`, `TimeoutError`, and `HttpError` with a 5xx status as failures. The counter does not change for the errors in the list that follows. These errors go to the caller:
 
 - 4xx responses (429 also)
 - `ValidationError`
@@ -604,10 +604,10 @@ const client = new JiraClient({
 These are the important properties of the rate limiter:
 
 - **Bucket starts full** — At the start, the middleware lets a maximum of `tokensPerInterval` requests continue immediately.
-- **Waits, never rejects by default** — When the bucket is empty, the middleware waits until the next bucket token is available. Thus, the traffic stays regular, and the request does not fail immediately. To set a maximum time to wait, set `maxWaitMs`. If the necessary time to wait is longer than `maxWaitMs`, the middleware throws `RateLimiterExhaustedError` and does not wait.
+- **Waits, never rejects by default** — When the bucket is empty, the middleware waits until the next unit is available in the bucket. Thus, the traffic stays regular, and the request does not fail immediately. To set a maximum time to wait, set `maxWaitMs`. If the necessary time to wait is longer than `maxWaitMs`, the middleware throws `RateLimiterExhaustedError` and does not wait.
 - **Abort-aware** — While the middleware waits, it obeys `RequestOptions.signal`. Thus, if the caller cancels the request or the transport timeout occurs, the request stops correctly.
-- **Retry interaction** — If the client retries a request, the request goes through the middleware again. The middleware uses one bucket token for each attempt, because the server gets each attempt. Thus, the rate limiter uses the same limit for all attempts.
-- **Recommended ordering** — Put this middleware after the circuit breaker (if you use one). Thus, an open circuit stops the request before the request uses a bucket token. Also put this middleware after (inside) cache/batch. Thus, a request does not use a bucket token if the cache has the response or the batch middleware gives the response. The first entry in the array operates first on each request. For example, with `[breaker, oauth, cache, batch, rateLimiter]`, if the cache has the response, the cache gives the response before the rate limiter operates.
+- **Retry interaction** — If the client retries a request, the request goes through the middleware again. The middleware removes one unit from the bucket for each attempt, because the server gets each attempt. Thus, the rate limiter uses the same limit for all attempts.
+- **Recommended ordering** — Put this middleware after the circuit breaker (if you use one). Thus, an open circuit stops the request before the request uses a unit of the bucket. Also put this middleware after (inside) cache/batch. Thus, a request does not use a unit of the bucket if the cache has the response or the batch middleware gives the response. The first entry in the array operates first on each request. For example, with `[breaker, oauth, cache, batch, rateLimiter]`, if the cache has the response, the cache gives the response before the rate limiter operates.
 
 `RateLimiterExhaustedError` (code `'RATE_LIMITER_EXHAUSTED'`) is a client-side error. It is different from the server-side `RateLimitError` (HTTP 429).
 

@@ -36,7 +36,7 @@ This package uses these security practices:
 - **Safe logging** — Debug logs record only `method + path`. The client does not write query strings to logs, because query strings can contain cursors or sensitive filter values.
 - **Injection-safe code generation** — `generateTypes` validates schema names as legal TypeScript identifiers. Before it generates the source code, it escapes dangerous sequences in descriptions and enum values.
 - **Safe defaults** — The timeout and retry settings have safe default values. When you construct the cache middleware, `createCacheMiddleware` validates the cache options. It throws a `ValidationError` if `maxSize` or `ttl` is zero or negative.
-- **Strict CLI parsing** — The CLI rejects unknown flags and does not ignore them. Thus, if you type a security-related flag incorrectly (for example, `--token`), the CLI shows an error message. The CLI does not use the environment variables as an alternative to that flag.
+- **Strict CLI parsing** — The CLI rejects unknown flags and does not ignore them. Thus, if you type a security-related flag incorrectly (for example, `--token`), the CLI shows an error message. The CLI does not ignore the incorrect flag and then use the environment variables.
 
 ## Usage Guidelines
 
