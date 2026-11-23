@@ -77,8 +77,8 @@ function stripCallerAuthorizationOverride(options: RequestOptions): RequestOptio
  * ```
  */
 export class HttpTransport implements Transport {
-  private readonly config: ResolvedConfig;
-  private readonly authProvider: AuthProvider;
+  readonly #config: ResolvedConfig;
+  readonly #authProvider: AuthProvider;
   /**
    * Auth headers captured ONCE from `authProvider.getHeaders()` at construction
    * (B1041(1)). Reused for both the {@link authIdentity} hash and every
@@ -88,7 +88,7 @@ export class HttpTransport implements Transport {
    * return a stable value, so a single capture is equivalent to the prior
    * per-request call.
    */
-  private readonly authHeaders: Record<string, string>;
+  readonly #authHeaders: Record<string, string>;
   /**
    * Hashed identity for the configured auth provider, computed once at
    * construction. Injected into `RequestOptions.authIdentity` before the
@@ -124,21 +124,21 @@ export class HttpTransport implements Transport {
       // message we validate the override up front against the SAME
       // allowedHosts that `resolveConfig` already resolved.
       assertOverrideBaseUrl(baseUrl, config.allowedHosts);
-      this.config = { ...config, baseUrl };
+      this.#config = { ...config, baseUrl };
     } else {
-      this.config = config;
+      this.#config = config;
     }
-    this.authProvider = createAuthProvider(this.config.auth);
+    this.#authProvider = createAuthProvider(this.#config.auth);
     // B1041(1): capture the auth headers exactly once. Both the identity hash
     // below and the per-request `executeFetch` header merge read from this
     // snapshot, so they cannot diverge and `getHeaders()` is never called twice.
-    this.authHeaders = this.authProvider.getHeaders();
-    this.authIdentity = computeAuthIdentity(this.authHeaders);
-    this.requestHandler = createMiddlewareChain(this.config.middleware ?? [], (opts) =>
+    this.#authHeaders = this.#authProvider.getHeaders();
+    this.authIdentity = computeAuthIdentity(this.#authHeaders);
+    this.requestHandler = createMiddlewareChain(this.#config.middleware ?? [], (opts) =>
       this.executeFetch(opts),
     );
     if (baseUrl !== undefined) {
-      this.config.logger?.warn(
+      this.#config.logger?.warn(
         'HttpTransport(config, baseUrl) is deprecated; ' +
           'pass the API-specific URL via config.baseUrl instead.',
       );
@@ -185,9 +185,9 @@ export class HttpTransport implements Transport {
     // B011: outbound request-id injection (opt-in). The id is generated ONCE
     // here — before executeWithRetry — so all retry attempts carry the SAME
     // id, enabling server-side correlation of a logical request across retries.
-    if (this.config.requestId?.generate === true) {
-      const header = this.config.requestId.header ?? 'X-Request-Id';
-      const generator = this.config.requestId.generator ?? randomUUID;
+    if (this.#config.requestId?.generate === true) {
+      const header = this.#config.requestId.header ?? 'X-Request-Id';
+      const generator = this.#config.requestId.generator ?? randomUUID;
       const id = generator();
       // Skip the header entirely when the generator returns an empty string
       // (defensive: an empty id is worse than no id — it misleads servers into
@@ -214,7 +214,7 @@ export class HttpTransport implements Transport {
 
     const response = await executeWithRetry(
       () => this.requestHandler(augmentedOptions),
-      this.config,
+      this.#config,
       augmentedOptions.signal,
     );
 
@@ -270,15 +270,15 @@ export class HttpTransport implements Transport {
 
   private async executeFetch(options: RequestOptions): Promise<ApiResponse<unknown>> {
     const url = buildUrl(
-      this.config.baseUrl,
+      this.#config.baseUrl,
       options.path,
       options.query,
-      this.config.allowedHosts,
+      this.#config.allowedHosts,
     );
     const sanitizedPath = sanitizePathForLogging(options.path);
     // Log only method + path to avoid query parameters (which may contain cursors or
     // filter values) landing in persistent log aggregators.
-    this.config.logger?.debug('HTTP request', { method: options.method, path: sanitizedPath });
+    this.#config.logger?.debug('HTTP request', { method: options.method, path: sanitizedPath });
 
     const { body, withJsonBody, binaryContentType } = buildFetchBody(options);
     const headers = buildHeaders(
@@ -286,14 +286,14 @@ export class HttpTransport implements Transport {
       // B1041(1): reuse the construction-time auth-header snapshot rather than
       // re-invoking `authProvider.getHeaders()` here, so the wire credential
       // matches the hashed `authIdentity` exactly.
-      this.authHeaders,
+      this.#authHeaders,
       withJsonBody,
       binaryContentType,
       options.authorizationOverride,
     );
 
     const timeoutController = new AbortController();
-    const timeoutId = setTimeout(() => timeoutController.abort(), this.config.timeout);
+    const timeoutId = setTimeout(() => timeoutController.abort(), this.#config.timeout);
     const signals: AbortSignal[] = [timeoutController.signal];
     if (options.signal !== undefined) {
       signals.push(options.signal);
@@ -302,7 +302,7 @@ export class HttpTransport implements Transport {
 
     let response: Response;
     let redirectedWrite: boolean;
-    const doFetch = this.config.fetch ?? fetch;
+    const doFetch = this.#config.fetch ?? fetch;
     // Once a status line has arrived, only a GET may be sent again: a write the
     // server answered with a success has committed, and resending it duplicates
     // it (an issue, a comment, a page). PUT/DELETE are idempotent on paper, but
@@ -312,7 +312,7 @@ export class HttpTransport implements Transport {
     // Always-on with no config required. Prefer X-AREQUESTID (Atlassian's
     // actual header), then fall back to X-Request-Id. The list is configurable
     // via config.requestId.readResponseHeaders.
-    const readHeaders = this.config.requestId?.readResponseHeaders ?? DEFAULT_INBOUND_HEADERS;
+    const readHeaders = this.#config.requestId?.readResponseHeaders ?? DEFAULT_INBOUND_HEADERS;
 
     try {
       try {
@@ -320,13 +320,13 @@ export class HttpTransport implements Transport {
           doFetch,
           url,
           { method: options.method, headers, body, signal: fetchSignal },
-          this.config.allowedHosts,
+          this.#config.allowedHosts,
           readHeaders,
         ));
       } catch (error) {
         if (error instanceof Error && error.name === 'AbortError') {
           if (timeoutController.signal.aborted) {
-            throw new TimeoutError(this.config.timeout);
+            throw new TimeoutError(this.#config.timeout);
           }
           throw error;
         }
@@ -363,9 +363,9 @@ export class HttpTransport implements Transport {
         // path there is no such verdict to preserve, so a dead socket there
         // IS a network failure.
         const errBody = await parseBodyWithTimeoutHandling(
-          () => safeParseBody(response, this.config.maxResponseBytes),
+          () => safeParseBody(response, this.#config.maxResponseBytes),
           timeoutController.signal,
-          this.config.timeout,
+          this.#config.timeout,
           replayable,
         );
         const retryAfterMs = getRetryAfterMs(response.headers);
@@ -377,13 +377,13 @@ export class HttpTransport implements Transport {
       }
 
       const data: unknown = await parseBodyWithTimeoutHandling(
-        () => parseResponseBody(response, options.responseType, this.config.maxResponseBytes),
+        () => parseResponseBody(response, options.responseType, this.#config.maxResponseBytes),
         timeoutController.signal,
-        this.config.timeout,
+        this.#config.timeout,
         replayable,
       );
 
-      this.config.logger?.debug('HTTP response', {
+      this.#config.logger?.debug('HTTP response', {
         method: options.method,
         path: sanitizedPath,
         status: response.status,
@@ -391,7 +391,7 @@ export class HttpTransport implements Transport {
 
       const rateLimit = parseRateLimitHeaders(response.headers);
       if (rateLimit.nearLimit === true) {
-        this.config.logger?.warn('Rate limit near threshold', {
+        this.#config.logger?.warn('Rate limit near threshold', {
           method: options.method,
           path: sanitizedPath,
           limit: rateLimit.limit,

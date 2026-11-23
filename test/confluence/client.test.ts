@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
+import { inspect } from 'node:util';
 import { ConfluenceClient } from '../../src/confluence/client.js';
 import { MockTransport } from '../helpers/mock-transport.js';
 import { ValidationError } from '../../src/core/errors.js';
@@ -16,6 +17,18 @@ const VALID_CONFIG = {
 
 describe('ConfluenceClient', () => {
   describe('constructor', () => {
+    it('does not expose credentials via JSON.stringify or util.inspect', () => {
+      const client = new ConfluenceClient(VALID_CONFIG);
+      const b64 = Buffer.from('user@example.com:token123').toString('base64');
+      for (const rendering of [
+        JSON.stringify(client),
+        inspect(client, { showHidden: true, depth: Infinity }),
+      ]) {
+        expect(rendering).not.toContain('token123');
+        expect(rendering).not.toContain(b64);
+      }
+    });
+
     it('creates a client with valid basic auth config', () => {
       const client = new ConfluenceClient(VALID_CONFIG);
       expect(client).toBeInstanceOf(ConfluenceClient);

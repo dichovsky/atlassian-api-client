@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { inspect } from 'node:util';
 import { HttpTransport } from '../../src/core/transport.js';
 import {
   AuthenticationError,
@@ -90,6 +91,22 @@ describe('HttpTransport', () => {
   afterEach(() => {
     vi.restoreAllMocks();
     vi.useRealTimers();
+  });
+
+  // The transport keeps the resolved config (raw `auth`) and the captured
+  // `Authorization` header. Neither may show when a caller serializes or logs
+  // the transport (or a client, whose resources hold the transport).
+  it('does not expose credentials via JSON.stringify, String() or util.inspect', () => {
+    const transport = makeTransport();
+    const b64 = Buffer.from('test@example.com:test-token').toString('base64');
+    for (const rendering of [
+      JSON.stringify(transport),
+      String(transport),
+      inspect(transport, { showHidden: true, depth: Infinity }),
+    ]) {
+      expect(rendering).not.toContain('test-token');
+      expect(rendering).not.toContain(b64);
+    }
   });
 
   // -------------------------------------------------------------------------

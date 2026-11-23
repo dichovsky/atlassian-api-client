@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "5.0.0"
   },
-  "sourceHash": "517d3255abaf44fa021ab95b4147aff967e835547ec69233734242daba4f70a9",
+  "sourceHash": "a79e069fd1a9d79b6778ee9420e98898ac4dc83789da2259f5cdbb992d4fbaf6",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -16203,7 +16203,7 @@
           "signature": "class BasicAuthProvider implements AuthProvider",
           "members": [
             {
-              "name": "headerValue",
+              "name": "#headerValue",
               "kind": "property",
               "line": 66
             },
@@ -16226,7 +16226,7 @@
           "signature": "class BearerAuthProvider implements AuthProvider",
           "members": [
             {
-              "name": "headerValue",
+              "name": "#headerValue",
               "kind": "property",
               "line": 79
             },
@@ -18476,17 +18476,17 @@
           "jsdoc": "HTTP transport using native `fetch` with auth, retry, rate-limit, and timeout support. @example ```ts import { HttpTransport, resolveConfig } from 'atlassian-api-client'; const…",
           "members": [
             {
-              "name": "config",
+              "name": "#config",
               "kind": "property",
               "line": 80
             },
             {
-              "name": "authProvider",
+              "name": "#authProvider",
               "kind": "property",
               "line": 81
             },
             {
-              "name": "authHeaders",
+              "name": "#authHeaders",
               "kind": "property",
               "line": 91
             },

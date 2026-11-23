@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { inspect } from 'node:util';
 import { JiraClient } from '../../src/jira/client.js';
 import type { JiraClientConfig } from '../../src/jira/client.js';
 import { MockTransport } from '../helpers/mock-transport.js';
@@ -24,6 +25,18 @@ const PROXY_CONFIG: JiraClientConfig = {
 
 describe('JiraClient', () => {
   describe('constructor', () => {
+    it('does not expose credentials via JSON.stringify or util.inspect', () => {
+      const client = new JiraClient(VALID_CONFIG);
+      const b64 = Buffer.from('user@example.com:token123').toString('base64');
+      for (const rendering of [
+        JSON.stringify(client),
+        inspect(client, { showHidden: true, depth: Infinity }),
+      ]) {
+        expect(rendering).not.toContain('token123');
+        expect(rendering).not.toContain(b64);
+      }
+    });
+
     it('creates a client with valid config and custom transport', () => {
       // Arrange
       const transport = new MockTransport();

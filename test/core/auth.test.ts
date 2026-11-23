@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { inspect } from 'node:util';
 import { createAuthProvider } from '../../src/core/auth.js';
 import { ValidationError } from '../../src/core/errors.js';
 import type { AuthConfig } from '../../src/core/types.js';
@@ -129,6 +130,48 @@ describe('createAuthProvider', () => {
         createAuthProvider({ type: 'basic', email: 'user@example.com', apiToken: 'tok' }),
       ).not.toThrow();
       expect(() => createAuthProvider({ type: 'bearer', token: 'tok' })).not.toThrow();
+    });
+  });
+
+  // The provider must not show the credential when a caller serializes or
+  // logs it (`JSON.stringify`, `String()`, `console.log` → `util.inspect`).
+  // A TS `private` field is an ordinary enumerable property at runtime.
+  describe('credential redaction', () => {
+    const API_TOKEN = 'basic-secret-api-token';
+    const BEARER_TOKEN = 'bearer-secret-access-token';
+    const basicB64 = Buffer.from(`user@example.com:${API_TOKEN}`).toString('base64');
+    const cases = [
+      {
+        name: 'basic',
+        config: { type: 'basic', email: 'user@example.com', apiToken: API_TOKEN },
+        secrets: [API_TOKEN, basicB64],
+      },
+      {
+        name: 'bearer',
+        config: { type: 'bearer', token: BEARER_TOKEN },
+        secrets: [BEARER_TOKEN],
+      },
+    ] as const satisfies readonly {
+      name: string;
+      config: AuthConfig;
+      secrets: readonly string[];
+    }[];
+
+    it.each(cases)('$name provider does not expose the credential', ({ config, secrets }) => {
+      const provider = createAuthProvider(config);
+      const renderings = [
+        JSON.stringify(provider),
+        String(provider),
+        inspect(provider),
+        inspect(provider, { showHidden: true, depth: Infinity }),
+      ];
+      for (const rendering of renderings) {
+        for (const secret of secrets) {
+          expect(rendering).not.toContain(secret);
+        }
+      }
+      // getHeaders() still returns the real credential.
+      expect(provider.getHeaders()['Authorization']).toContain(secrets.at(-1));
     });
   });
 });
