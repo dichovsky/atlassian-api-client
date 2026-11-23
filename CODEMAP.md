@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "5.0.0"
   },
-  "sourceHash": "517d3255abaf44fa021ab95b4147aff967e835547ec69233734242daba4f70a9",
+  "sourceHash": "bafcdcab04c349037742f001e32fdecc2d02f436fa3487e5e3c8ce34d4f60c77",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -16425,26 +16425,26 @@
         {
           "name": "validateRequestIdOptions",
           "kind": "function",
-          "line": 203,
+          "line": 215,
           "signature": "function validateRequestIdOptions(opts: NonNullable<ClientConfig['requestId']>): void"
         },
         {
           "name": "validateAllowedHosts",
           "kind": "function",
-          "line": 229,
+          "line": 241,
           "signature": "function validateAllowedHosts(hosts: readonly string[]): void"
         },
         {
           "name": "renderHostForError",
           "kind": "function",
-          "line": 275,
+          "line": 287,
           "signature": "function renderHostForError(host: string): string",
           "jsdoc": "Render a rejected `allowedHosts` entry safely for inclusion in a `ValidationError` message. `JSON.stringify` escapes C0 (0x00–0x1F), backslash, and quote — but leaves DEL (0x7F) and C1 (0x80–0x9F) raw. This validation branch is reached SPECIFICALLY when one of those bytes is present, so without explicit escaping the error message would carry the raw terminal control byte itself (PR review of round 4)."
         },
         {
           "name": "validateAuth",
           "kind": "function",
-          "line": 291,
+          "line": 303,
           "signature": "function validateAuth(auth: ClientConfig['auth']): void"
         }
       ],
@@ -17583,11 +17583,29 @@
           "jsdoc": "Validate user-supplied `allowedTokenEndpointHosts`. Same rules as `validateAllowedHosts` in config.ts (non-empty array, non-empty strings, no port, no whitespace/slashes/control chars/IPv6 brackets). The shared character policy lives in `isInvalidBareHostChar` (atlassian-hosts.ts) so both validators stay in sync."
         },
         {
+          "name": "SECRET_KEY",
+          "kind": "variable",
+          "line": 506,
+          "signature": "const SECRET_KEY = String.raw`[\\w-]*(?:token|secret)`;"
+        },
+        {
+          "name": "JSON_SECRET_FIELD",
+          "kind": "variable",
+          "line": 508,
+          "signature": "const JSON_SECRET_FIELD = new RegExp( String.raw`(\"${SECRET_KEY}\"\\s*:\\s*\")(?:[^\"\\\\]|\\\\[\\s\\S])*`, 'gi', );"
+        },
+        {
+          "name": "FORM_SECRET_FIELD",
+          "kind": "variable",
+          "line": 514,
+          "signature": "const FORM_SECRET_FIELD = new RegExp(String.raw`(?<![\\w-])(${SECRET_KEY}=)[^&\\s\"]*`, 'gi');"
+        },
+        {
           "name": "formatBodySnippet",
           "kind": "function",
-          "line": 510,
-          "signature": "function formatBodySnippet(raw: string): string",
-          "jsdoc": "Build a short diagnostic snippet of a token-endpoint response body. Truncates to 200 chars after replacing any token values with `***` so that an accidentally-echoed credential never reaches an error message or log."
+          "line": 524,
+          "signature": "function formatBodySnippet(raw: string, secrets: readonly string[]): string",
+          "jsdoc": "Build a short diagnostic snippet of a token-endpoint response body. Before it truncates to 200 chars, it replaces with `***` the value of each token- or secret-named JSON or form field, then each known secret (raw, JSON-escaped and URL-encoded), so that a credential the endpoint echoes never reaches an error message or log. The fields go first: a known secret that is a substring of a key name would otherwise break the key match."
         }
       ],
       "imports": [

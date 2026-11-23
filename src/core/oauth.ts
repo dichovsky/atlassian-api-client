@@ -324,7 +324,7 @@ export async function fetchRefreshedTokens(
   }
 
   if (!response.ok) {
-    const snippet = formatBodySnippet(rawText);
+    const snippet = formatBodySnippet(rawText, [refreshToken, config.clientSecret]);
     const detail = snippet === '' ? '' : `: ${snippet}`;
     throw new OAuthError(
       `Token refresh failed with HTTP ${response.status}${detail}`,
@@ -339,7 +339,7 @@ export async function fetchRefreshedTokens(
     typeof (body as Record<string, unknown>)['access_token'] !== 'string' ||
     (body as Record<string, unknown>)['access_token'] === ''
   ) {
-    const snippet = formatBodySnippet(rawText);
+    const snippet = formatBodySnippet(rawText, [refreshToken, config.clientSecret]);
     const detail = snippet === '' ? '' : `: ${snippet}`;
     throw new OAuthError(
       `Token refresh response missing access_token (HTTP ${response.status})${detail}`,
@@ -502,17 +502,37 @@ function validateAllowedTokenEndpointHosts(hosts: readonly string[]): readonly s
   return hosts;
 }
 
+// Any key that ends in `token` or `secret`: access_token, refreshToken, client-secret, …
+const SECRET_KEY = String.raw`[\w-]*(?:token|secret)`;
+// JSON `"key": "value"`. The value may hold escaped quotes or be unterminated.
+const JSON_SECRET_FIELD = new RegExp(
+  String.raw`("${SECRET_KEY}"\s*:\s*")(?:[^"\\]|\\[\s\S])*`,
+  'gi',
+);
+// Form-encoded `key=value`. The lookbehind starts a match only at the start of
+// a key, so a long run of word characters cannot backtrack quadratically.
+const FORM_SECRET_FIELD = new RegExp(String.raw`(?<![\w-])(${SECRET_KEY}=)[^&\s"]*`, 'gi');
+
 /**
  * Build a short diagnostic snippet of a token-endpoint response body.
- * Truncates to 200 chars after replacing any token values with `***` so that
- * an accidentally-echoed credential never reaches an error message or log.
+ * Before it truncates to 200 chars, it replaces with `***` the value of each
+ * token- or secret-named JSON or form field, then each known secret (raw,
+ * JSON-escaped and URL-encoded), so that a credential the endpoint echoes
+ * never reaches an error message or log. The fields go first: a known secret
+ * that is a substring of a key name would otherwise break the key match.
  */
-function formatBodySnippet(raw: string): string {
+function formatBodySnippet(raw: string, secrets: readonly string[]): string {
   if (raw === '') return '';
-  const redacted = raw.replace(
-    /("(?:access_token|refresh_token|id_token|client_secret)"\s*:\s*")[^"]*(")/gi,
-    '$1***$2',
-  );
+  let redacted = raw.replace(JSON_SECRET_FIELD, '$1***').replace(FORM_SECRET_FIELD, '$1***');
+  for (const secret of secrets) {
+    if (!secret) continue;
+    const forms = new Set([
+      secret,
+      JSON.stringify(secret).slice(1, -1),
+      encodeURIComponent(secret),
+    ]);
+    for (const form of forms) redacted = redacted.replaceAll(form, '***');
+  }
   const trimmed = redacted.trim();
   if (trimmed.length <= 200) return trimmed;
   return trimmed.slice(0, 200) + '…';

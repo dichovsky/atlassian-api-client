@@ -284,6 +284,20 @@ describe('HttpTransport', () => {
       expect(captured?.message).not.toContain('secret-token');
     });
 
+    it('deprecated 2-arg overload rejects userinfo on an allow-listed override host', () => {
+      // An allow-listed host passes the hostname check, so without this guard
+      // the credential reaches `fetch`, whose TypeError echoes the full URL.
+      expect(
+        () =>
+          new HttpTransport(
+            { ...defaultConfig, baseUrl: INSTANCE_URL },
+            'https://u:S3CRET_TOKEN@test.atlassian.net/wiki/api/v2',
+          ),
+      ).toThrow(
+        'HttpTransport baseUrl override must not embed userinfo credentials: https://test.atlassian.net',
+      );
+    });
+
     it('1-arg constructor does not emit the deprecation warn', () => {
       const logger = {
         debug: vi.fn(),
