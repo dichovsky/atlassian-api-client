@@ -39,8 +39,15 @@ class RedactedAuthorization {
   constructor(value: string) {
     this.#value = value;
   }
-  reveal(): string {
-    return this.#value;
+  /**
+   * Return the held value, or `undefined` when `holder` is not a real
+   * instance (for example, a deep clone made with `Object.create`). The brand
+   * check makes sure that this function never throws.
+   */
+  static read(holder: unknown): string | undefined {
+    return typeof holder === 'object' && holder !== null && #value in holder
+      ? holder.#value
+      : undefined;
   }
 }
 
@@ -59,39 +66,41 @@ type WithHiddenOverride = RequestOptions & {
  * Return a copy of `options` that sends `value` as the `Authorization` header.
  * The OAuth refresh and Connect JWT middleware use this instead of the public
  * `authorizationOverride` string, so a later middleware that logs the options
- * cannot print the credential.
+ * cannot print the credential. The copy has no public `authorizationOverride`
+ * key, so a value that a later middleware writes there wins.
  */
 export function withAuthorizationOverride(options: RequestOptions, value: string): RequestOptions {
+  const { authorizationOverride: _replaced, ...rest } = options;
   const result: WithHiddenOverride = {
-    ...options,
+    ...rest,
     [AUTHORIZATION_OVERRIDE]: new RedactedAuthorization(value),
   };
   return result;
 }
 
 /**
- * Return the in-chain `Authorization` override: the value that
- * {@link withAuthorizationOverride} set, else the public
- * `RequestOptions.authorizationOverride` string, else `undefined`.
+ * Return the in-chain `Authorization` override. The last writer wins: when
+ * `options` has its own `authorizationOverride` key (written after the last
+ * {@link withAuthorizationOverride}), return that key's value, even
+ * `undefined`. Otherwise return the hidden value, or `undefined`.
  */
 export function readAuthorizationOverride(options: RequestOptions): string | undefined {
-  return (
-    (options as WithHiddenOverride)[AUTHORIZATION_OVERRIDE]?.reveal() ??
-    options.authorizationOverride
-  );
+  if (Object.hasOwn(options, 'authorizationOverride')) return options.authorizationOverride;
+  return RedactedAuthorization.read((options as WithHiddenOverride)[AUTHORIZATION_OVERRIDE]);
 }
 
 /**
- * Return `options` without either override channel. Returns the same
- * reference when neither is present.
+ * Return a plain copy of `options` without either override channel. The copy
+ * is always new, so a getter or `Proxy` on the caller's object is read only
+ * once and cannot return a different value later.
  */
 export function stripAuthorizationOverride(options: RequestOptions): RequestOptions {
   const {
-    authorizationOverride,
-    [AUTHORIZATION_OVERRIDE]: hidden,
+    authorizationOverride: _public,
+    [AUTHORIZATION_OVERRIDE]: _hidden,
     ...rest
   } = options as WithHiddenOverride;
-  return authorizationOverride === undefined && hidden === undefined ? options : rest;
+  return rest;
 }
 
 /**

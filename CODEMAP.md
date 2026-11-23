@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "5.0.0"
   },
-  "sourceHash": "ef1bb1870ec7cd9ab77dd6e882967b6ffb3ce52e34f0f59833218f7139b6dd01",
+  "sourceHash": "1b43a3fb10de99cc64b16daaadd9d7bdc5ac3e0b38a8fdb33f805469c8c626f7",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -37,7 +37,7 @@
       "name": "ApiResponse",
       "kind": "interface",
       "file": "src/core/types.ts",
-      "line": 76,
+      "line": 79,
       "signature": "export interface ApiResponse<T> { readonly data: T; readonly status: number; readonly headers: Headers; readonly rateLim…",
       "jsdoc": "Parsed API response.",
       "typeOnly": true
@@ -189,7 +189,7 @@
       "name": "AuthConfig",
       "kind": "type",
       "file": "src/core/types.ts",
-      "line": 153,
+      "line": 156,
       "signature": "export type AuthConfig = BasicAuthConfig | BearerAuthConfig;",
       "jsdoc": "Discriminated union of supported auth strategies. @example ```ts // Basic auth const basicAuth: AuthConfig = { type: 'basic', email: 'user@…",
       "typeOnly": true
@@ -206,7 +206,7 @@
       "name": "BasicAuthConfig",
       "kind": "interface",
       "file": "src/core/types.ts",
-      "line": 119,
+      "line": 122,
       "signature": "export interface BasicAuthConfig { readonly type: 'basic'; readonly email: string; readonly apiToken: string; }",
       "jsdoc": "Basic auth config (email + API token). @example ```ts const config: ClientConfig = { baseUrl: 'https://mycompany.atlassian.net',…",
       "typeOnly": true
@@ -215,7 +215,7 @@
       "name": "BearerAuthConfig",
       "kind": "interface",
       "file": "src/core/types.ts",
-      "line": 136,
+      "line": 139,
       "signature": "export interface BearerAuthConfig { readonly type: 'bearer'; readonly token: string; }",
       "jsdoc": "Bearer auth config (OAuth 2.0 access token or PAT). @example ```ts const config: ClientConfig = { baseUrl: 'https://mycompany.atlassian.net',…",
       "typeOnly": true
@@ -610,7 +610,7 @@
       "name": "ClientConfig",
       "kind": "interface",
       "file": "src/core/types.ts",
-      "line": 171,
+      "line": 174,
       "signature": "export interface ClientConfig { readonly baseUrl: string; readonly auth: AuthConfig; readonly timeout?: number; readonly…",
       "jsdoc": "Client configuration. @example ```ts const config: ClientConfig = { baseUrl: 'https://mycompany.atlassian.net',…",
       "typeOnly": true
@@ -3421,7 +3421,7 @@
       "name": "Logger",
       "kind": "interface",
       "file": "src/core/types.ts",
-      "line": 358,
+      "line": 361,
       "signature": "export interface Logger { debug(message: string, context?: Record<string, unknown>): void; info(message: string, context…",
       "jsdoc": "Logger interface for request/response observability. Compatible with console, pino, winston, and any structured logger.",
       "typeOnly": true
@@ -3430,7 +3430,7 @@
       "name": "Middleware",
       "kind": "type",
       "file": "src/core/types.ts",
-      "line": 373,
+      "line": 376,
       "signature": "export type Middleware = ( options: RequestOptions, next: (options: RequestOptions) => Promise<ApiResponse<unknown>>, ) …",
       "jsdoc": "Middleware function for intercepting and transforming requests. Call next(options) to pass control to the next middleware or the transport.",
       "typeOnly": true
@@ -3758,7 +3758,7 @@
       "name": "RateLimitInfo",
       "kind": "interface",
       "file": "src/core/types.ts",
-      "line": 347,
+      "line": 350,
       "signature": "export interface RateLimitInfo { readonly limit?: number; readonly remaining?: number; readonly reset?: string; readonly…",
       "jsdoc": "Rate limit information parsed from response headers.",
       "typeOnly": true
@@ -3883,7 +3883,7 @@
       "name": "RequestIdOptions",
       "kind": "interface",
       "file": "src/core/types.ts",
-      "line": 317,
+      "line": 320,
       "signature": "export interface RequestIdOptions { readonly generate?: boolean; readonly header?: string; readonly generator?: () => st…",
       "jsdoc": "Options controlling X-Request-Id propagation (B011). @example ```ts const config: ClientConfig = { baseUrl: 'https://mycompany.atlassian.net',…",
       "typeOnly": true
@@ -4376,7 +4376,7 @@
       "name": "Transport",
       "kind": "interface",
       "file": "src/core/types.ts",
-      "line": 103,
+      "line": 106,
       "signature": "export interface Transport { request<T>(options: RequestOptions): Promise<ApiResponse<T>>; }",
       "jsdoc": "Transport abstraction — the only interface resource modules depend on.",
       "typeOnly": true
@@ -16158,53 +16158,53 @@
               "line": 39
             },
             {
-              "name": "reveal",
+              "name": "read",
               "kind": "method",
-              "line": 42
+              "line": 47
             }
           ]
         },
         {
           "name": "AUTHORIZATION_OVERRIDE",
           "kind": "variable",
-          "line": 52,
+          "line": 59,
           "signature": "const AUTHORIZATION_OVERRIDE = Symbol('authorizationOverride');",
           "jsdoc": "Module-private key of the library's in-chain `Authorization` channel. The key is a symbol, so `JSON.stringify` ignores it. Object spread and rest copy it, so a later middleware that copies the options keeps the credential."
         },
         {
           "name": "WithHiddenOverride",
           "kind": "type",
-          "line": 54,
+          "line": 61,
           "signature": "type WithHiddenOverride = RequestOptions & { readonly [AUTHORIZATION_OVERRIDE]?: RedactedAuthorization; };"
         },
         {
           "name": "withAuthorizationOverride",
           "kind": "function",
-          "line": 64,
+          "line": 72,
           "exported": true,
           "signature": "export function withAuthorizationOverride(options: RequestOptions, value: string): RequestOptions",
-          "jsdoc": "Return a copy of `options` that sends `value` as the `Authorization` header. The OAuth refresh and Connect JWT middleware use this instead of the public `authorizationOverride` string, so a later middleware that logs the options cannot print the credential."
+          "jsdoc": "Return a copy of `options` that sends `value` as the `Authorization` header. The OAuth refresh and Connect JWT middleware use this instead of the public `authorizationOverride` string, so a later middleware that logs the options cannot print the credential. The copy has no public `authorizationOverride` key, so a value that a later middleware writes there wins."
         },
         {
           "name": "readAuthorizationOverride",
           "kind": "function",
-          "line": 77,
+          "line": 87,
           "exported": true,
           "signature": "export function readAuthorizationOverride(options: RequestOptions): string | undefined",
-          "jsdoc": "Return the in-chain `Authorization` override: the value that {@link withAuthorizationOverride} set, else the public `RequestOptions.authorizationOverride` string, else `undefined`."
+          "jsdoc": "Return the in-chain `Authorization` override. The last writer wins: when `options` has its own `authorizationOverride` key (written after the last {@link withAuthorizationOverride}), return that key's value, even `undefined`. Otherwise return the hidden value, or `undefined`."
         },
         {
           "name": "stripAuthorizationOverride",
           "kind": "function",
-          "line": 88,
+          "line": 97,
           "exported": true,
           "signature": "export function stripAuthorizationOverride(options: RequestOptions): RequestOptions",
-          "jsdoc": "Return `options` without either override channel. Returns the same reference when neither is present."
+          "jsdoc": "Return a plain copy of `options` without either override channel. The copy is always new, so a getter or `Proxy` on the caller's object is read only once and cannot return a different value later."
         },
         {
           "name": "resolveAuthIdentity",
           "kind": "function",
-          "line": 109,
+          "line": 118,
           "exported": true,
           "signature": "export function resolveAuthIdentity(opts: RequestOptions): string",
           "jsdoc": "Derive the stable identifier that cache/batch keys partition on, so a shared transport never serves or coalesces one tenant's authenticated response for another's request."
@@ -16212,7 +16212,7 @@
         {
           "name": "serializeQueryKey",
           "kind": "function",
-          "line": 123,
+          "line": 132,
           "exported": true,
           "signature": "export function serializeQueryKey(query: RequestOptions['query']): string",
           "jsdoc": "Canonical query-string serialization for cache/batch keys: `undefined` values dropped, keys sorted, both key and value URI-encoded. Returns the empty string when there is no query, otherwise a leading `?`."
@@ -16220,7 +16220,7 @@
         {
           "name": "appendQueryKey",
           "kind": "function",
-          "line": 142,
+          "line": 151,
           "exported": true,
           "signature": "export function appendQueryKey(path: string, query: RequestOptions['query']): string",
           "jsdoc": "Append the canonical query-key serialization to a path that may itself already carry a query string (e.g. resources that embed repeated query params like `?accountId=a&accountId=b` directly into the path because the transport's `query` map collapses duplicate keys). Yields exactly one `?` separator regardless of which side holds query params."
@@ -18699,7 +18699,7 @@
         {
           "name": "ApiResponse",
           "kind": "interface",
-          "line": 76,
+          "line": 79,
           "exported": true,
           "signature": "export interface ApiResponse<T> { readonly data: T; readonly status: number; readonly headers: Headers; readonly rateLim…",
           "jsdoc": "Parsed API response."
@@ -18707,7 +18707,7 @@
         {
           "name": "Transport",
           "kind": "interface",
-          "line": 103,
+          "line": 106,
           "exported": true,
           "signature": "export interface Transport { request<T>(options: RequestOptions): Promise<ApiResponse<T>>; }",
           "jsdoc": "Transport abstraction — the only interface resource modules depend on."
@@ -18715,7 +18715,7 @@
         {
           "name": "BasicAuthConfig",
           "kind": "interface",
-          "line": 119,
+          "line": 122,
           "exported": true,
           "signature": "export interface BasicAuthConfig { readonly type: 'basic'; readonly email: string; readonly apiToken: string; }",
           "jsdoc": "Basic auth config (email + API token). @example ```ts const config: ClientConfig = { baseUrl: 'https://mycompany.atlassian.net',…"
@@ -18723,7 +18723,7 @@
         {
           "name": "BearerAuthConfig",
           "kind": "interface",
-          "line": 136,
+          "line": 139,
           "exported": true,
           "signature": "export interface BearerAuthConfig { readonly type: 'bearer'; readonly token: string; }",
           "jsdoc": "Bearer auth config (OAuth 2.0 access token or PAT). @example ```ts const config: ClientConfig = { baseUrl: 'https://mycompany.atlassian.net',…"
@@ -18731,7 +18731,7 @@
         {
           "name": "AuthConfig",
           "kind": "type",
-          "line": 153,
+          "line": 156,
           "exported": true,
           "signature": "export type AuthConfig = BasicAuthConfig | BearerAuthConfig;",
           "jsdoc": "Discriminated union of supported auth strategies. @example ```ts // Basic auth const basicAuth: AuthConfig = { type: 'basic', email: 'user@…"
@@ -18739,7 +18739,7 @@
         {
           "name": "ClientConfig",
           "kind": "interface",
-          "line": 171,
+          "line": 174,
           "exported": true,
           "signature": "export interface ClientConfig { readonly baseUrl: string; readonly auth: AuthConfig; readonly timeout?: number; readonly…",
           "jsdoc": "Client configuration. @example ```ts const config: ClientConfig = { baseUrl: 'https://mycompany.atlassian.net',…"
@@ -18747,7 +18747,7 @@
         {
           "name": "ResolvedConfig",
           "kind": "interface",
-          "line": 265,
+          "line": 268,
           "exported": true,
           "signature": "export interface ResolvedConfig { readonly baseUrl: string; readonly auth: AuthConfig; readonly timeout: number; readonl…",
           "jsdoc": "Internal resolved config with defaults applied."
@@ -18755,7 +18755,7 @@
         {
           "name": "RequestIdOptions",
           "kind": "interface",
-          "line": 317,
+          "line": 320,
           "exported": true,
           "signature": "export interface RequestIdOptions { readonly generate?: boolean; readonly header?: string; readonly generator?: () => st…",
           "jsdoc": "Options controlling X-Request-Id propagation (B011). @example ```ts const config: ClientConfig = { baseUrl: 'https://mycompany.atlassian.net',…"
@@ -18763,7 +18763,7 @@
         {
           "name": "RateLimitInfo",
           "kind": "interface",
-          "line": 347,
+          "line": 350,
           "exported": true,
           "signature": "export interface RateLimitInfo { readonly limit?: number; readonly remaining?: number; readonly reset?: string; readonly…",
           "jsdoc": "Rate limit information parsed from response headers."
@@ -18771,7 +18771,7 @@
         {
           "name": "Logger",
           "kind": "interface",
-          "line": 358,
+          "line": 361,
           "exported": true,
           "signature": "export interface Logger { debug(message: string, context?: Record<string, unknown>): void; info(message: string, context…",
           "jsdoc": "Logger interface for request/response observability. Compatible with console, pino, winston, and any structured logger."
@@ -18779,7 +18779,7 @@
         {
           "name": "Middleware",
           "kind": "type",
-          "line": 373,
+          "line": 376,
           "exported": true,
           "signature": "export type Middleware = ( options: RequestOptions, next: (options: RequestOptions) => Promise<ApiResponse<unknown>>, ) …",
           "jsdoc": "Middleware function for intercepting and transforming requests. Call next(options) to pass control to the next middleware or the transport."

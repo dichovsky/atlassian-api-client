@@ -246,3 +246,67 @@ describe('authorizationOverride channels at the transport boundary', () => {
     expect(sent[0]).toBe('Bearer CUSTOM_MW_TOKEN');
   });
 });
+
+describe('authorizationOverride precedence and copy safety', () => {
+  const capture = (sent: string[]): typeof fetch =>
+    (async (_url: string | URL, init?: RequestInit) => {
+      sent.push((init?.headers as Record<string, string>)?.Authorization ?? '(none)');
+      return new Response('{"ok":true}', {
+        status: 200,
+        headers: new Headers({ 'Content-Type': 'application/json' }),
+      });
+    }) as unknown as typeof fetch;
+  const oauth = (): Middleware =>
+    createOAuthRefreshMiddleware({
+      accessToken: 'OAUTH_TOKEN',
+      refreshToken: 'r1',
+      clientId: 'cid',
+      clientSecret: 'csec',
+    });
+  const send = async (mw: Middleware[], opts?: RequestOptions): Promise<string> => {
+    const sent: string[] = [];
+    await new HttpTransport(baseConfig(capture(sent), mw)).request(
+      opts ?? { method: 'GET', path: '/myself' },
+    );
+    return sent[0]!;
+  };
+
+  it('the last writer wins: a public override set after the auth middleware is sent', async () => {
+    const later: Middleware = async (o, next) =>
+      next({ ...o, authorizationOverride: 'Bearer LATER_CUSTOM' });
+    const cleared: Middleware = async (o, next) => next({ ...o, authorizationOverride: undefined });
+    const earlier: Middleware = async (o, next) =>
+      next({ ...o, authorizationOverride: 'Bearer EARLIER_CUSTOM' });
+
+    expect(await send([oauth(), later])).toBe('Bearer LATER_CUSTOM');
+    expect(await send([oauth(), cleared])).toBe('Bearer CONFIG_TOKEN');
+    expect(await send([earlier, oauth()])).toBe('Bearer OAUTH_TOKEN');
+  });
+
+  it('a deep clone of the options falls back to config.auth instead of throwing', async () => {
+    // lodash-style cloneDeep: new objects from the same prototype, own keys copied.
+    const clone = (v: unknown): unknown => {
+      if (typeof v !== 'object' || v === null) return v;
+      const c = Object.create(Object.getPrototypeOf(v) as object) as Record<PropertyKey, unknown>;
+      for (const k of Reflect.ownKeys(v)) c[k] = clone((v as Record<PropertyKey, unknown>)[k]);
+      return c;
+    };
+    const cloner: Middleware = async (o, next) => next(clone(o) as RequestOptions);
+
+    expect(await send([oauth(), cloner])).toBe('Bearer CONFIG_TOKEN');
+  });
+
+  it('the boundary strip reads a caller getter once (no undefined-then-value race)', async () => {
+    let reads = 0;
+    const opts = {
+      method: 'GET',
+      path: '/myself',
+      get authorizationOverride() {
+        reads += 1;
+        return reads === 1 ? undefined : 'Bearer EVIL';
+      },
+    } as RequestOptions;
+
+    expect(await send([], opts)).toBe('Bearer CONFIG_TOKEN');
+  });
+});

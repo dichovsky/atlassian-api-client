@@ -59,6 +59,9 @@ export interface RequestOptions {
    * do not show, so a later middleware that logs `RequestOptions` cannot print
    * the token. For those middleware, this field stays `undefined`. A value
    * that a custom middleware writes here is visible to all later middleware.
+   * The last writer wins: a value written here after the OAuth or Connect
+   * middleware replaces their credential, and theirs replaces a value written
+   * here before them.
    *
    * This is a SEPARATE, trusted channel from caller-supplied
    * `headers.Authorization`: the latter is always stripped at the transport's
