@@ -7,6 +7,7 @@ import {
 } from 'node:crypto';
 import type { KeyObject } from 'node:crypto';
 import type { Middleware, RequestOptions, HttpMethod } from './types.js';
+import { withAuthorizationOverride } from './auth-identity.js';
 import { ValidationError } from './errors.js';
 import { trimTrailingSlashes } from './path.js';
 
@@ -51,10 +52,8 @@ export function createConnectJwtMiddleware(config: ConnectJwtConfig): Middleware
     const token = signConnectJwt(config, options);
     // Set the trusted in-chain override (not `headers.Authorization`, which the
     // transport strips as a caller header) so the signed JWT reaches the wire (#243).
-    return next({
-      ...options,
-      authorizationOverride: `JWT ${token}`,
-    });
+    // The value is hidden from later middleware that log the options.
+    return next(withAuthorizationOverride(options, `JWT ${token}`));
   };
 }
 

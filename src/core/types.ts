@@ -50,9 +50,15 @@ export interface RequestOptions {
    */
   readonly authIdentity?: string;
   /**
-   * `Authorization` header value set by the library's own auth middleware
-   * (e.g. {@link createOAuthRefreshMiddleware}, {@link createConnectJwtMiddleware})
-   * to override the configured `config.auth` credential for this request.
+   * `Authorization` header value that a middleware in the chain sets to
+   * override the configured `config.auth` credential for this request.
+   *
+   * The library's own auth middleware ({@link createOAuthRefreshMiddleware},
+   * {@link createConnectJwtMiddleware}) do not write their credential to this
+   * field. They use a hidden channel that `JSON.stringify` and `util.inspect`
+   * do not show, so a later middleware that logs `RequestOptions` cannot print
+   * the token. For those middleware, this field stays `undefined`. A value
+   * that a custom middleware writes here is visible to all later middleware.
    *
    * This is a SEPARATE, trusted channel from caller-supplied
    * `headers.Authorization`: the latter is always stripped at the transport's
@@ -61,6 +67,7 @@ export interface RequestOptions {
    * the middleware refreshes/signs is what actually reaches the wire (#243).
    *
    * Set by middleware inside the chain — resource methods never populate it.
+   * `HttpTransport.request()` removes a caller-supplied value.
    */
   readonly authorizationOverride?: string;
 }

@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "5.0.0"
   },
-  "sourceHash": "517d3255abaf44fa021ab95b4147aff967e835547ec69233734242daba4f70a9",
+  "sourceHash": "ef1bb1870ec7cd9ab77dd6e882967b6ffb3ce52e34f0f59833218f7139b6dd01",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -37,7 +37,7 @@
       "name": "ApiResponse",
       "kind": "interface",
       "file": "src/core/types.ts",
-      "line": 69,
+      "line": 76,
       "signature": "export interface ApiResponse<T> { readonly data: T; readonly status: number; readonly headers: Headers; readonly rateLim…",
       "jsdoc": "Parsed API response.",
       "typeOnly": true
@@ -82,7 +82,7 @@
       "name": "AsymmetricJwtVerifyOptions",
       "kind": "interface",
       "file": "src/core/connect-jwt.ts",
-      "line": 275,
+      "line": 274,
       "signature": "export interface AsymmetricJwtVerifyOptions { readonly publicKey?: string | KeyObject; readonly publicKeyResolver?: (kid…",
       "jsdoc": "Options for {@link verifyConnectAsymmetricJwt}.",
       "typeOnly": true
@@ -189,7 +189,7 @@
       "name": "AuthConfig",
       "kind": "type",
       "file": "src/core/types.ts",
-      "line": 146,
+      "line": 153,
       "signature": "export type AuthConfig = BasicAuthConfig | BearerAuthConfig;",
       "jsdoc": "Discriminated union of supported auth strategies. @example ```ts // Basic auth const basicAuth: AuthConfig = { type: 'basic', email: 'user@…",
       "typeOnly": true
@@ -206,7 +206,7 @@
       "name": "BasicAuthConfig",
       "kind": "interface",
       "file": "src/core/types.ts",
-      "line": 112,
+      "line": 119,
       "signature": "export interface BasicAuthConfig { readonly type: 'basic'; readonly email: string; readonly apiToken: string; }",
       "jsdoc": "Basic auth config (email + API token). @example ```ts const config: ClientConfig = { baseUrl: 'https://mycompany.atlassian.net',…",
       "typeOnly": true
@@ -215,7 +215,7 @@
       "name": "BearerAuthConfig",
       "kind": "interface",
       "file": "src/core/types.ts",
-      "line": 129,
+      "line": 136,
       "signature": "export interface BearerAuthConfig { readonly type: 'bearer'; readonly token: string; }",
       "jsdoc": "Bearer auth config (OAuth 2.0 access token or PAT). @example ```ts const config: ClientConfig = { baseUrl: 'https://mycompany.atlassian.net',…",
       "typeOnly": true
@@ -610,7 +610,7 @@
       "name": "ClientConfig",
       "kind": "interface",
       "file": "src/core/types.ts",
-      "line": 164,
+      "line": 171,
       "signature": "export interface ClientConfig { readonly baseUrl: string; readonly auth: AuthConfig; readonly timeout?: number; readonly…",
       "jsdoc": "Client configuration. @example ```ts const config: ClientConfig = { baseUrl: 'https://mycompany.atlassian.net',…",
       "typeOnly": true
@@ -758,7 +758,7 @@
       "name": "ConnectJwtConfig",
       "kind": "interface",
       "file": "src/core/connect-jwt.ts",
-      "line": 14,
+      "line": 15,
       "signature": "export interface ConnectJwtConfig { readonly issuer: string; readonly sharedSecret: string; readonly tokenLifetimeSecond…",
       "jsdoc": "Configuration for the Atlassian Connect JWT middleware.",
       "typeOnly": true
@@ -2277,7 +2277,7 @@
       "name": "HttpTransport",
       "kind": "class",
       "file": "src/core/transport.ts",
-      "line": 79,
+      "line": 64,
       "signature": "export class HttpTransport implements Transport",
       "jsdoc": "HTTP transport using native `fetch` with auth, retry, rate-limit, and timeout support. @example ```ts import { HttpTransport, resolveConfig } from 'atlassian-api-client'; const…"
     },
@@ -3421,7 +3421,7 @@
       "name": "Logger",
       "kind": "interface",
       "file": "src/core/types.ts",
-      "line": 351,
+      "line": 358,
       "signature": "export interface Logger { debug(message: string, context?: Record<string, unknown>): void; info(message: string, context…",
       "jsdoc": "Logger interface for request/response observability. Compatible with console, pino, winston, and any structured logger.",
       "typeOnly": true
@@ -3430,7 +3430,7 @@
       "name": "Middleware",
       "kind": "type",
       "file": "src/core/types.ts",
-      "line": 366,
+      "line": 373,
       "signature": "export type Middleware = ( options: RequestOptions, next: (options: RequestOptions) => Promise<ApiResponse<unknown>>, ) …",
       "jsdoc": "Middleware function for intercepting and transforming requests. Call next(options) to pass control to the next middleware or the transport.",
       "typeOnly": true
@@ -3455,7 +3455,7 @@
       "name": "OAuthError",
       "kind": "class",
       "file": "src/core/oauth.ts",
-      "line": 125,
+      "line": 126,
       "signature": "export class OAuthError extends HttpError",
       "jsdoc": "Thrown when the token refresh request itself fails."
     },
@@ -3463,7 +3463,7 @@
       "name": "OAuthRefreshConfig",
       "kind": "interface",
       "file": "src/core/oauth.ts",
-      "line": 26,
+      "line": 27,
       "signature": "export interface OAuthRefreshConfig { readonly accessToken: string; readonly refreshToken: string; readonly clientId: st…",
       "jsdoc": "Configuration for the OAuth 2.0 token refresh middleware.",
       "typeOnly": true
@@ -3472,7 +3472,7 @@
       "name": "OAuthTokens",
       "kind": "interface",
       "file": "src/core/oauth.ts",
-      "line": 14,
+      "line": 15,
       "signature": "export interface OAuthTokens { readonly accessToken: string; readonly refreshToken: string; readonly expiresIn?: number;…",
       "jsdoc": "Tokens returned by the OAuth 2.0 token endpoint.",
       "typeOnly": true
@@ -3758,7 +3758,7 @@
       "name": "RateLimitInfo",
       "kind": "interface",
       "file": "src/core/types.ts",
-      "line": 340,
+      "line": 347,
       "signature": "export interface RateLimitInfo { readonly limit?: number; readonly remaining?: number; readonly reset?: string; readonly…",
       "jsdoc": "Rate limit information parsed from response headers.",
       "typeOnly": true
@@ -3883,7 +3883,7 @@
       "name": "RequestIdOptions",
       "kind": "interface",
       "file": "src/core/types.ts",
-      "line": 310,
+      "line": 317,
       "signature": "export interface RequestIdOptions { readonly generate?: boolean; readonly header?: string; readonly generator?: () => st…",
       "jsdoc": "Options controlling X-Request-Id propagation (B011). @example ```ts const config: ClientConfig = { baseUrl: 'https://mycompany.atlassian.net',…",
       "typeOnly": true
@@ -4376,7 +4376,7 @@
       "name": "Transport",
       "kind": "interface",
       "file": "src/core/types.ts",
-      "line": 96,
+      "line": 103,
       "signature": "export interface Transport { request<T>(options: RequestOptions): Promise<ApiResponse<T>>; }",
       "jsdoc": "Transport abstraction — the only interface resource modules depend on.",
       "typeOnly": true
@@ -4798,7 +4798,7 @@
       "name": "computeQsh",
       "kind": "function",
       "file": "src/core/connect-jwt.ts",
-      "line": 98,
+      "line": 97,
       "signature": "export function computeQsh( method: HttpMethod, path: string, query?: Readonly<Record<string, string | number | boolean …",
       "jsdoc": "Computes the Query String Hash (QSH) per the Atlassian Connect specification."
     },
@@ -4830,7 +4830,7 @@
       "name": "createConnectJwtMiddleware",
       "kind": "function",
       "file": "src/core/connect-jwt.ts",
-      "line": 49,
+      "line": 50,
       "signature": "export function createConnectJwtMiddleware(config: ConnectJwtConfig): Middleware",
       "jsdoc": "Creates middleware that signs every request with an Atlassian Connect JWT."
     },
@@ -4846,7 +4846,7 @@
       "name": "createOAuthRefreshMiddleware",
       "kind": "function",
       "file": "src/core/oauth.ts",
-      "line": 152,
+      "line": 153,
       "signature": "export function createOAuthRefreshMiddleware(config: OAuthRefreshConfig): Middleware",
       "jsdoc": "Creates middleware that automatically refreshes an OAuth 2.0 access token on 401 responses."
     },
@@ -4886,7 +4886,7 @@
       "name": "fetchRefreshedTokens",
       "kind": "function",
       "file": "src/core/oauth.ts",
-      "line": 293,
+      "line": 291,
       "signature": "export async function fetchRefreshedTokens( config: Pick< OAuthRefreshConfig, 'clientId' | 'clientSecret' | 'tokenEndpoi…",
       "jsdoc": "Calls the token endpoint with the refresh token and returns new {@link OAuthTokens}. Exported for direct use in advanced scenarios (e.g. proactive token refresh)."
     },
@@ -4942,7 +4942,7 @@
       "name": "signConnectJwt",
       "kind": "function",
       "file": "src/core/connect-jwt.ts",
-      "line": 65,
+      "line": 64,
       "signature": "export function signConnectJwt(config: ConnectJwtConfig, options: RequestOptions): string",
       "jsdoc": "Signs a Connect JWT for the given request options. Exported for testing and advanced scenarios (e.g. signing outside middleware)."
     },
@@ -4958,7 +4958,7 @@
       "name": "verifyConnectAsymmetricJwt",
       "kind": "function",
       "file": "src/core/connect-jwt.ts",
-      "line": 370,
+      "line": 369,
       "signature": "export async function verifyConnectAsymmetricJwt( token: string, options: AsymmetricJwtVerifyOptions, ): Promise<Record<…",
       "jsdoc": "Verifies an inbound Atlassian Connect asymmetric (RS256) JWT and returns its claims. @example ```ts const claims = await verifyConnectAsymmetricJwt(token, { publicKeyResolver…"
     }
@@ -16141,9 +16141,70 @@
           "jsdoc": "Return the effective `Authorization` header value from a plain-object headers map, or `undefined` when none is present. When multiple Authorization-like keys exist, the LAST occurrence in iteration order wins — matching `fetch` last-write-wins semantics for duplicate-key headers."
         },
         {
+          "name": "RedactedAuthorization",
+          "kind": "class",
+          "line": 37,
+          "signature": "class RedactedAuthorization",
+          "jsdoc": "Holds a middleware credential in an ES `#private` field, so `JSON.stringify` prints `{}` and `util.inspect` prints `RedactedAuthorization {}`.",
+          "members": [
+            {
+              "name": "#value",
+              "kind": "property",
+              "line": 38
+            },
+            {
+              "name": "constructor",
+              "kind": "constructor",
+              "line": 39
+            },
+            {
+              "name": "reveal",
+              "kind": "method",
+              "line": 42
+            }
+          ]
+        },
+        {
+          "name": "AUTHORIZATION_OVERRIDE",
+          "kind": "variable",
+          "line": 52,
+          "signature": "const AUTHORIZATION_OVERRIDE = Symbol('authorizationOverride');",
+          "jsdoc": "Module-private key of the library's in-chain `Authorization` channel. The key is a symbol, so `JSON.stringify` ignores it. Object spread and rest copy it, so a later middleware that copies the options keeps the credential."
+        },
+        {
+          "name": "WithHiddenOverride",
+          "kind": "type",
+          "line": 54,
+          "signature": "type WithHiddenOverride = RequestOptions & { readonly [AUTHORIZATION_OVERRIDE]?: RedactedAuthorization; };"
+        },
+        {
+          "name": "withAuthorizationOverride",
+          "kind": "function",
+          "line": 64,
+          "exported": true,
+          "signature": "export function withAuthorizationOverride(options: RequestOptions, value: string): RequestOptions",
+          "jsdoc": "Return a copy of `options` that sends `value` as the `Authorization` header. The OAuth refresh and Connect JWT middleware use this instead of the public `authorizationOverride` string, so a later middleware that logs the options cannot print the credential."
+        },
+        {
+          "name": "readAuthorizationOverride",
+          "kind": "function",
+          "line": 77,
+          "exported": true,
+          "signature": "export function readAuthorizationOverride(options: RequestOptions): string | undefined",
+          "jsdoc": "Return the in-chain `Authorization` override: the value that {@link withAuthorizationOverride} set, else the public `RequestOptions.authorizationOverride` string, else `undefined`."
+        },
+        {
+          "name": "stripAuthorizationOverride",
+          "kind": "function",
+          "line": 88,
+          "exported": true,
+          "signature": "export function stripAuthorizationOverride(options: RequestOptions): RequestOptions",
+          "jsdoc": "Return `options` without either override channel. Returns the same reference when neither is present."
+        },
+        {
           "name": "resolveAuthIdentity",
           "kind": "function",
-          "line": 45,
+          "line": 109,
           "exported": true,
           "signature": "export function resolveAuthIdentity(opts: RequestOptions): string",
           "jsdoc": "Derive the stable identifier that cache/batch keys partition on, so a shared transport never serves or coalesces one tenant's authenticated response for another's request."
@@ -16151,7 +16212,7 @@
         {
           "name": "serializeQueryKey",
           "kind": "function",
-          "line": 59,
+          "line": 123,
           "exported": true,
           "signature": "export function serializeQueryKey(query: RequestOptions['query']): string",
           "jsdoc": "Canonical query-string serialization for cache/batch keys: `undefined` values dropped, keys sorted, both key and value URI-encoded. Returns the empty string when there is no query, otherwise a leading `?`."
@@ -16159,7 +16220,7 @@
         {
           "name": "appendQueryKey",
           "kind": "function",
-          "line": 78,
+          "line": 142,
           "exported": true,
           "signature": "export function appendQueryKey(path: string, query: RequestOptions['query']): string",
           "jsdoc": "Append the canonical query-key serialization to a path that may itself already carry a query string (e.g. resources that embed repeated query params like `?accountId=a&accountId=b` directly into the path because the transport's `query` map collapses duplicate keys). Yields exactly one `?` separator regardless of which side holds query params."
@@ -16461,7 +16522,7 @@
         {
           "name": "ConnectJwtConfig",
           "kind": "interface",
-          "line": 14,
+          "line": 15,
           "exported": true,
           "signature": "export interface ConnectJwtConfig { readonly issuer: string; readonly sharedSecret: string; readonly tokenLifetimeSecond…",
           "jsdoc": "Configuration for the Atlassian Connect JWT middleware."
@@ -16469,7 +16530,7 @@
         {
           "name": "createConnectJwtMiddleware",
           "kind": "function",
-          "line": 49,
+          "line": 50,
           "exported": true,
           "signature": "export function createConnectJwtMiddleware(config: ConnectJwtConfig): Middleware",
           "jsdoc": "Creates middleware that signs every request with an Atlassian Connect JWT."
@@ -16477,7 +16538,7 @@
         {
           "name": "signConnectJwt",
           "kind": "function",
-          "line": 65,
+          "line": 64,
           "exported": true,
           "signature": "export function signConnectJwt(config: ConnectJwtConfig, options: RequestOptions): string",
           "jsdoc": "Signs a Connect JWT for the given request options. Exported for testing and advanced scenarios (e.g. signing outside middleware)."
@@ -16485,7 +16546,7 @@
         {
           "name": "computeQsh",
           "kind": "function",
-          "line": 98,
+          "line": 97,
           "exported": true,
           "signature": "export function computeQsh( method: HttpMethod, path: string, query?: Readonly<Record<string, string | number | boolean …",
           "jsdoc": "Computes the Query String Hash (QSH) per the Atlassian Connect specification."
@@ -16493,61 +16554,61 @@
         {
           "name": "canonicalizePath",
           "kind": "function",
-          "line": 186,
+          "line": 185,
           "signature": "function canonicalizePath(pathWithoutQuery: string, contextPath?: string): string",
           "jsdoc": "Canonical URI per the Connect spec: discard protocol/server/port (every resource passes an absolute `https://host/rest/...` URL as `path`) and the product context path, strip a trailing `/` unless it is the only character, never emit an empty path, and percent-encode `&`."
         },
         {
           "name": "normalizeContextPath",
           "kind": "function",
-          "line": 201,
+          "line": 200,
           "signature": "function normalizeContextPath(contextPath: string | undefined): string",
           "jsdoc": "`'wiki'` / `'/wiki/'` / `'https://site.atlassian.net/wiki'` → `'/wiki'`; `undefined` / `''` / `'/'` → `''` (nothing to strip)."
         },
         {
           "name": "ABSOLUTE_URL_RE",
           "kind": "variable",
-          "line": 210,
+          "line": 209,
           "signature": "const ABSOLUTE_URL_RE = /^https?:\\/\\//i;"
         },
         {
           "name": "parsePathname",
           "kind": "function",
-          "line": 213,
+          "line": 212,
           "signature": "function parsePathname(url: string, what: 'path' | 'contextPath'): string",
           "jsdoc": "`URL.pathname` of an absolute URL, in the taxonomy; the raw value is never echoed."
         },
         {
           "name": "encodeRfc3986",
           "kind": "function",
-          "line": 233,
+          "line": 232,
           "signature": "function encodeRfc3986(value: string): string",
           "jsdoc": "RFC-3986 percent-encoding for QSH canonicalization."
         },
         {
           "name": "base64UrlEncode",
           "kind": "function",
-          "line": 240,
+          "line": 239,
           "signature": "function base64UrlEncode(input: string): string"
         },
         {
           "name": "ASYMMETRIC_JWT_ALG",
           "kind": "variable",
-          "line": 255,
+          "line": 254,
           "signature": "const ASYMMETRIC_JWT_ALG = 'RS256';",
           "jsdoc": "The only signing algorithm Atlassian uses for asymmetric Connect JWTs."
         },
         {
           "name": "DEFAULT_MAX_CLOCK_SKEW_SECONDS",
           "kind": "variable",
-          "line": 265,
+          "line": 264,
           "signature": "const DEFAULT_MAX_CLOCK_SKEW_SECONDS = 30;",
           "jsdoc": "Default clock-skew tolerance (seconds) for `exp`/`iat`/`nbf` validation."
         },
         {
           "name": "AsymmetricJwtVerifyOptions",
           "kind": "interface",
-          "line": 275,
+          "line": 274,
           "exported": true,
           "signature": "export interface AsymmetricJwtVerifyOptions { readonly publicKey?: string | KeyObject; readonly publicKeyResolver?: (kid…",
           "jsdoc": "Options for {@link verifyConnectAsymmetricJwt}."
@@ -16555,7 +16616,7 @@
         {
           "name": "verifyConnectAsymmetricJwt",
           "kind": "function",
-          "line": 370,
+          "line": 369,
           "exported": true,
           "signature": "export async function verifyConnectAsymmetricJwt( token: string, options: AsymmetricJwtVerifyOptions, ): Promise<Record<…",
           "jsdoc": "Verifies an inbound Atlassian Connect asymmetric (RS256) JWT and returns its claims. @example ```ts const claims = await verifyConnectAsymmetricJwt(token, { publicKeyResolver…"
@@ -16563,82 +16624,83 @@
         {
           "name": "parseJwt",
           "kind": "function",
-          "line": 427,
+          "line": 426,
           "signature": "function parseJwt(token: string): { signingInput: string; header: Record<string, unknown>; payload: Record<string, unkno…",
           "jsdoc": "Splits and decodes a compact JWT, validating structural shape only."
         },
         {
           "name": "decodeJsonSegment",
           "kind": "function",
-          "line": 449,
+          "line": 448,
           "signature": "function decodeJsonSegment(segment: string, name: string): Record<string, unknown>",
           "jsdoc": "Decodes a base64url JSON segment into a plain object."
         },
         {
           "name": "resolvePublicKey",
           "kind": "function",
-          "line": 463,
+          "line": 462,
           "signature": "async function resolvePublicKey( header: Record<string, unknown>, options: AsymmetricJwtVerifyOptions, ): Promise<KeyObj…",
           "jsdoc": "Resolves the verifying key from an injected key or the caller's resolver."
         },
         {
           "name": "toKeyObject",
           "kind": "function",
-          "line": 490,
+          "line": 489,
           "signature": "function toKeyObject(key: string | KeyObject): KeyObject",
           "jsdoc": "Normalises a PEM string or KeyObject into a public KeyObject."
         },
         {
           "name": "validateTimeClaims",
           "kind": "function",
-          "line": 502,
+          "line": 501,
           "signature": "function validateTimeClaims( payload: Record<string, unknown>, options: AsymmetricJwtVerifyOptions, ): void",
           "jsdoc": "Validates `exp`, `iat`, and `nbf` with the configured clock-skew tolerance."
         },
         {
           "name": "resolveClockSkewSeconds",
           "kind": "function",
-          "line": 538,
+          "line": 537,
           "signature": "function resolveClockSkewSeconds(value: number | undefined): number",
           "jsdoc": "Resolve the clock-skew tolerance, rejecting values that would silently disable the time checks entirely."
         },
         {
           "name": "MAX_CLOCK_SKEW_CEILING_SECONDS",
           "kind": "variable",
-          "line": 559,
+          "line": 558,
           "signature": "const MAX_CLOCK_SKEW_CEILING_SECONDS = 86_400;",
           "jsdoc": "One day. Beyond this, `exp + skew` outruns any plausible clock difference."
         },
         {
           "name": "readNumericClaim",
           "kind": "function",
-          "line": 562,
+          "line": 561,
           "signature": "function readNumericClaim(payload: Record<string, unknown>, name: string): number | undefined",
           "jsdoc": "Reads a numeric claim, rejecting present-but-non-numeric values."
         },
         {
           "name": "validateIssuer",
           "kind": "function",
-          "line": 572,
+          "line": 571,
           "signature": "function validateIssuer( payload: Record<string, unknown>, options: AsymmetricJwtVerifyOptions, ): void",
           "jsdoc": "Enforces `iss === options.issuer` when an expected issuer is configured."
         },
         {
           "name": "validateAudience",
           "kind": "function",
-          "line": 583,
+          "line": 582,
           "signature": "function validateAudience( payload: Record<string, unknown>, options: AsymmetricJwtVerifyOptions, ): void",
           "jsdoc": "Enforces `options.audience` membership in `aud` (string or string[])."
         },
         {
           "name": "validateQsh",
           "kind": "function",
-          "line": 599,
+          "line": 598,
           "signature": "function validateQsh(payload: Record<string, unknown>, options: AsymmetricJwtVerifyOptions): void",
           "jsdoc": "Enforces the `qsh` claim against the expected hash when configured."
         }
       ],
       "imports": [
+        "./auth-identity.js",
         "./errors.js",
         "./path.js",
         "./types.js",
@@ -17499,14 +17561,14 @@
         {
           "name": "DEFAULT_OAUTH_TOKEN_ENDPOINT",
           "kind": "variable",
-          "line": 11,
+          "line": 12,
           "signature": "const DEFAULT_OAUTH_TOKEN_ENDPOINT = 'https://auth.atlassian.com/oauth/token';",
           "jsdoc": "Default OAuth 2.0 3LO token endpoint URL for Atlassian Cloud."
         },
         {
           "name": "OAuthTokens",
           "kind": "interface",
-          "line": 14,
+          "line": 15,
           "exported": true,
           "signature": "export interface OAuthTokens { readonly accessToken: string; readonly refreshToken: string; readonly expiresIn?: number;…",
           "jsdoc": "Tokens returned by the OAuth 2.0 token endpoint."
@@ -17514,7 +17576,7 @@
         {
           "name": "OAuthRefreshConfig",
           "kind": "interface",
-          "line": 26,
+          "line": 27,
           "exported": true,
           "signature": "export interface OAuthRefreshConfig { readonly accessToken: string; readonly refreshToken: string; readonly clientId: st…",
           "jsdoc": "Configuration for the OAuth 2.0 token refresh middleware."
@@ -17522,7 +17584,7 @@
         {
           "name": "OAuthError",
           "kind": "class",
-          "line": 125,
+          "line": 126,
           "exported": true,
           "signature": "export class OAuthError extends HttpError",
           "jsdoc": "Thrown when the token refresh request itself fails.",
@@ -17530,19 +17592,19 @@
             {
               "name": "refreshStatus",
               "kind": "property",
-              "line": 127
+              "line": 128
             },
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 129
+              "line": 130
             }
           ]
         },
         {
           "name": "createOAuthRefreshMiddleware",
           "kind": "function",
-          "line": 152,
+          "line": 153,
           "exported": true,
           "signature": "export function createOAuthRefreshMiddleware(config: OAuthRefreshConfig): Middleware",
           "jsdoc": "Creates middleware that automatically refreshes an OAuth 2.0 access token on 401 responses."
@@ -17550,20 +17612,20 @@
         {
           "name": "resolveNonNegFiniteNumber",
           "kind": "function",
-          "line": 262,
+          "line": 263,
           "signature": "function resolveNonNegFiniteNumber( value: number | undefined, dflt: number, fieldName: string, ): number",
           "jsdoc": "Validate a non-negative finite number field on `OAuthRefreshConfig`. Used for both `retryJitterMs` and `failureCooldownMs`. `0` is accepted and documented to disable the feature; negatives, `NaN`, `Infinity`, and non-number runtime values produce `ValidationError`."
         },
         {
           "name": "injectBearerToken",
           "kind": "function",
-          "line": 274,
+          "line": 275,
           "signature": "function injectBearerToken(options: RequestOptions, token: string): RequestOptions"
         },
         {
           "name": "fetchRefreshedTokens",
           "kind": "function",
-          "line": 293,
+          "line": 291,
           "exported": true,
           "signature": "export async function fetchRefreshedTokens( config: Pick< OAuthRefreshConfig, 'clientId' | 'clientSecret' | 'tokenEndpoi…",
           "jsdoc": "Calls the token endpoint with the refresh token and returns new {@link OAuthTokens}. Exported for direct use in advanced scenarios (e.g. proactive token refresh)."
@@ -17571,27 +17633,28 @@
         {
           "name": "validateTokenEndpoint",
           "kind": "function",
-          "line": 397,
+          "line": 395,
           "signature": "function validateTokenEndpoint( configured: string | undefined, allowedHosts: readonly string[] | undefined, ): string",
           "jsdoc": "Validate a `tokenEndpoint` URL against the host allowlist and return the normalised endpoint string for downstream `fetch` calls. Throws `ValidationError` on: - malformed URL - non-HTTPS scheme - host not on the allowlist - embedded userinfo (`https://user:pw@host/…`) - a non-default port (`https://host:8443/…`) - invalid `allowedTokenEndpointHosts` entries (empty, port-bearing, whitespace, slashes, control chars, IPv6 brackets)"
         },
         {
           "name": "validateAllowedTokenEndpointHosts",
           "kind": "function",
-          "line": 472,
+          "line": 470,
           "signature": "function validateAllowedTokenEndpointHosts(hosts: readonly string[]): readonly string[]",
           "jsdoc": "Validate user-supplied `allowedTokenEndpointHosts`. Same rules as `validateAllowedHosts` in config.ts (non-empty array, non-empty strings, no port, no whitespace/slashes/control chars/IPv6 brackets). The shared character policy lives in `isInvalidBareHostChar` (atlassian-hosts.ts) so both validators stay in sync."
         },
         {
           "name": "formatBodySnippet",
           "kind": "function",
-          "line": 510,
+          "line": 508,
           "signature": "function formatBodySnippet(raw: string): string",
           "jsdoc": "Build a short diagnostic snippet of a token-endpoint response body. Truncates to 200 chars after replacing any token values with `***` so that an accidentally-echoed credential never reaches an error message or log."
         }
       ],
       "imports": [
         "./atlassian-hosts.js",
+        "./auth-identity.js",
         "./errors.js",
         "./retry.js",
         "./types.js"
@@ -18070,7 +18133,7 @@
         {
           "name": "buildHeaders",
           "kind": "function",
-          "line": 375,
+          "line": 376,
           "exported": true,
           "signature": "export function buildHeaders( callerHeaders: Readonly<Record<string, string>> | undefined, authHeaders: Readonly<Record<…",
           "jsdoc": "Merge caller-supplied headers with the auth provider's headers."
@@ -18078,7 +18141,7 @@
         {
           "name": "FetchBody",
           "kind": "interface",
-          "line": 428,
+          "line": 429,
           "exported": true,
           "signature": "export interface FetchBody { readonly body: FormData | Blob | string | undefined; readonly withJsonBody: boolean; readon…",
           "jsdoc": "Outcome of {@link buildFetchBody}."
@@ -18086,7 +18149,7 @@
         {
           "name": "buildFetchBody",
           "kind": "function",
-          "line": 444,
+          "line": 445,
           "exported": true,
           "signature": "export function buildFetchBody(options: RequestOptions): FetchBody",
           "jsdoc": "Resolve `RequestOptions.body` / `formData` / `binaryBody` into a `fetch`-ready body."
@@ -18461,16 +18524,9 @@
       "path": "src/core/transport.ts",
       "symbols": [
         {
-          "name": "stripCallerAuthorizationOverride",
-          "kind": "function",
-          "line": 49,
-          "signature": "function stripCallerAuthorizationOverride(options: RequestOptions): RequestOptions",
-          "jsdoc": "Drop a caller-supplied `authorizationOverride` at the request boundary."
-        },
-        {
           "name": "HttpTransport",
           "kind": "class",
-          "line": 79,
+          "line": 64,
           "exported": true,
           "signature": "export class HttpTransport implements Transport",
           "jsdoc": "HTTP transport using native `fetch` with auth, retry, rate-limit, and timeout support. @example ```ts import { HttpTransport, resolveConfig } from 'atlassian-api-client'; const…",
@@ -18478,132 +18534,132 @@
             {
               "name": "config",
               "kind": "property",
-              "line": 80
+              "line": 65
             },
             {
               "name": "authProvider",
               "kind": "property",
-              "line": 81
+              "line": 66
             },
             {
               "name": "authHeaders",
               "kind": "property",
-              "line": 91
+              "line": 76
             },
             {
               "name": "authIdentity",
               "kind": "property",
-              "line": 99
+              "line": 84
             },
             {
               "name": "requestHandler",
               "kind": "property",
-              "line": 100
+              "line": 85
             },
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 108
+              "line": 93
             },
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 116
+              "line": 101
             },
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 117
+              "line": 102
             },
             {
               "name": "request",
               "kind": "method",
-              "line": 162
+              "line": 147
             },
             {
               "name": "injectAuthIdentity",
               "kind": "method",
-              "line": 251
+              "line": 238
             },
             {
               "name": "executeFetch",
               "kind": "method",
-              "line": 271
+              "line": 258
             }
           ]
         },
         {
           "name": "isHeadersLike",
           "kind": "function",
-          "line": 444,
+          "line": 431,
           "signature": "function isHeadersLike(value: unknown): value is Headers",
           "jsdoc": "Duck-type check for a WHATWG `Headers`-shaped value."
         },
         {
           "name": "DEFAULT_INBOUND_HEADERS",
           "kind": "variable",
-          "line": 466,
+          "line": 453,
           "signature": "const DEFAULT_INBOUND_HEADERS: readonly string[] = ['X-AREQUESTID', 'X-Request-Id'];",
           "jsdoc": "Default inbound response headers to check for a server-assigned request id (B011). `X-AREQUESTID` is Atlassian's actual header; `X-Request-Id` is the conventional RFC draft / de-facto standard fallback."
         },
         {
           "name": "captureRequestId",
           "kind": "function",
-          "line": 473,
+          "line": 460,
           "signature": "function captureRequestId(headers: Headers, candidates: readonly string[]): string | undefined",
           "jsdoc": "Read the first matching request-id header from the response. Returns the header value, or `undefined` when none of the candidates are present. `Headers.get()` is case-insensitive per the WHATWG Fetch spec."
         },
         {
           "name": "parseBodyWithTimeoutHandling",
           "kind": "function",
-          "line": 481,
+          "line": 468,
           "signature": "async function parseBodyWithTimeoutHandling<T>( parse: () => Promise<T>, timeoutSignal: AbortSignal, timeoutMs: number, …"
         },
         {
           "name": "toNetworkError",
           "kind": "function",
-          "line": 513,
+          "line": 500,
           "signature": "function toNetworkError(error: unknown, retryable: boolean): NetworkError",
           "jsdoc": "Wrap a transport failure in the taxonomy. {@link isTransportFailure} also matches non-Error shapes (a thrown `{ code }` object), whose `.message` is `undefined`, so fall back to the class default and keep the original value as `cause` without claiming it is an Error."
         },
         {
           "name": "REDIRECT_STATUSES",
           "kind": "variable",
-          "line": 519,
+          "line": 506,
           "signature": "const REDIRECT_STATUSES: ReadonlySet<number> = new Set([301, 302, 303, 307, 308]);",
           "jsdoc": "Statuses `fetch` treats as redirects (WHATWG Fetch \"redirect status\")."
         },
         {
           "name": "MAX_REDIRECTS",
           "kind": "variable",
-          "line": 522,
+          "line": 509,
           "signature": "const MAX_REDIRECTS = 20;",
           "jsdoc": "The hop limit `fetch` applies when it follows redirects itself."
         },
         {
           "name": "OutgoingRequest",
           "kind": "interface",
-          "line": 524,
+          "line": 511,
           "signature": "interface OutgoingRequest { readonly method: string; readonly headers: Record<string, string>; readonly body: FormData |…"
         },
         {
           "name": "fetchWithCheckedRedirects",
           "kind": "function",
-          "line": 563,
+          "line": 550,
           "signature": "async function fetchWithCheckedRedirects( doFetch: typeof fetch, url: string, request: OutgoingRequest, allowedHosts: re…",
           "jsdoc": "Send a request, following a redirect only to a target the request could have been sent to directly."
         },
         {
           "name": "computeAuthIdentity",
           "kind": "function",
-          "line": 645,
+          "line": 632,
           "signature": "function computeAuthIdentity(authHeaders: Record<string, string>): string",
           "jsdoc": "Hash the auth provider's `Authorization` header value into the short stable identifier exposed as {@link RequestOptions.authIdentity}. Uses the first 16 hex chars (64 bits) of SHA-256 — wide enough for accidental collisions to vanish in practice, narrow enough to keep cache/batch keys compact, and one-way so a logging/metrics middleware that persists `RequestOptions` never accidentally writes the credential to a log sink."
         },
         {
           "name": "assertOverrideBaseUrl",
           "kind": "function",
-          "line": 664,
+          "line": 651,
           "signature": "function assertOverrideBaseUrl(baseUrl: string, allowedHosts: readonly string[]): void",
           "jsdoc": "Validate a baseUrl override (deprecated constructor overload) against the same `allowedHosts` policy `resolveConfig` already applied to `config.baseUrl`. Without this, an override could silently relocate every relative-path request to a foreign host with the configured `Authorization` header attached. PR review of round 3."
         }
@@ -18643,7 +18699,7 @@
         {
           "name": "ApiResponse",
           "kind": "interface",
-          "line": 69,
+          "line": 76,
           "exported": true,
           "signature": "export interface ApiResponse<T> { readonly data: T; readonly status: number; readonly headers: Headers; readonly rateLim…",
           "jsdoc": "Parsed API response."
@@ -18651,7 +18707,7 @@
         {
           "name": "Transport",
           "kind": "interface",
-          "line": 96,
+          "line": 103,
           "exported": true,
           "signature": "export interface Transport { request<T>(options: RequestOptions): Promise<ApiResponse<T>>; }",
           "jsdoc": "Transport abstraction — the only interface resource modules depend on."
@@ -18659,7 +18715,7 @@
         {
           "name": "BasicAuthConfig",
           "kind": "interface",
-          "line": 112,
+          "line": 119,
           "exported": true,
           "signature": "export interface BasicAuthConfig { readonly type: 'basic'; readonly email: string; readonly apiToken: string; }",
           "jsdoc": "Basic auth config (email + API token). @example ```ts const config: ClientConfig = { baseUrl: 'https://mycompany.atlassian.net',…"
@@ -18667,7 +18723,7 @@
         {
           "name": "BearerAuthConfig",
           "kind": "interface",
-          "line": 129,
+          "line": 136,
           "exported": true,
           "signature": "export interface BearerAuthConfig { readonly type: 'bearer'; readonly token: string; }",
           "jsdoc": "Bearer auth config (OAuth 2.0 access token or PAT). @example ```ts const config: ClientConfig = { baseUrl: 'https://mycompany.atlassian.net',…"
@@ -18675,7 +18731,7 @@
         {
           "name": "AuthConfig",
           "kind": "type",
-          "line": 146,
+          "line": 153,
           "exported": true,
           "signature": "export type AuthConfig = BasicAuthConfig | BearerAuthConfig;",
           "jsdoc": "Discriminated union of supported auth strategies. @example ```ts // Basic auth const basicAuth: AuthConfig = { type: 'basic', email: 'user@…"
@@ -18683,7 +18739,7 @@
         {
           "name": "ClientConfig",
           "kind": "interface",
-          "line": 164,
+          "line": 171,
           "exported": true,
           "signature": "export interface ClientConfig { readonly baseUrl: string; readonly auth: AuthConfig; readonly timeout?: number; readonly…",
           "jsdoc": "Client configuration. @example ```ts const config: ClientConfig = { baseUrl: 'https://mycompany.atlassian.net',…"
@@ -18691,7 +18747,7 @@
         {
           "name": "ResolvedConfig",
           "kind": "interface",
-          "line": 258,
+          "line": 265,
           "exported": true,
           "signature": "export interface ResolvedConfig { readonly baseUrl: string; readonly auth: AuthConfig; readonly timeout: number; readonl…",
           "jsdoc": "Internal resolved config with defaults applied."
@@ -18699,7 +18755,7 @@
         {
           "name": "RequestIdOptions",
           "kind": "interface",
-          "line": 310,
+          "line": 317,
           "exported": true,
           "signature": "export interface RequestIdOptions { readonly generate?: boolean; readonly header?: string; readonly generator?: () => st…",
           "jsdoc": "Options controlling X-Request-Id propagation (B011). @example ```ts const config: ClientConfig = { baseUrl: 'https://mycompany.atlassian.net',…"
@@ -18707,7 +18763,7 @@
         {
           "name": "RateLimitInfo",
           "kind": "interface",
-          "line": 340,
+          "line": 347,
           "exported": true,
           "signature": "export interface RateLimitInfo { readonly limit?: number; readonly remaining?: number; readonly reset?: string; readonly…",
           "jsdoc": "Rate limit information parsed from response headers."
@@ -18715,7 +18771,7 @@
         {
           "name": "Logger",
           "kind": "interface",
-          "line": 351,
+          "line": 358,
           "exported": true,
           "signature": "export interface Logger { debug(message: string, context?: Record<string, unknown>): void; info(message: string, context…",
           "jsdoc": "Logger interface for request/response observability. Compatible with console, pino, winston, and any structured logger."
@@ -18723,7 +18779,7 @@
         {
           "name": "Middleware",
           "kind": "type",
-          "line": 366,
+          "line": 373,
           "exported": true,
           "signature": "export type Middleware = ( options: RequestOptions, next: (options: RequestOptions) => Promise<ApiResponse<unknown>>, ) …",
           "jsdoc": "Middleware function for intercepting and transforming requests. Call next(options) to pass control to the next middleware or the transport."

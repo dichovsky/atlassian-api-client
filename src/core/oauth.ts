@@ -5,6 +5,7 @@ import {
   hostMatchesExact,
   isInvalidBareHostChar,
 } from './atlassian-hosts.js';
+import { withAuthorizationOverride } from './auth-identity.js';
 import { isNotRetryable, sleepWithAbort } from './retry.js';
 
 /** Default OAuth 2.0 3LO token endpoint URL for Atlassian Cloud. */
@@ -274,11 +275,8 @@ function resolveNonNegFiniteNumber(
 function injectBearerToken(options: RequestOptions, token: string): RequestOptions {
   // Set the trusted in-chain override (not `headers.Authorization`, which the
   // transport strips as a caller header) so the refreshed token reaches the
-  // wire (#243).
-  return {
-    ...options,
-    authorizationOverride: `Bearer ${token}`,
-  };
+  // wire (#243). The value is hidden from later middleware that log the options.
+  return withAuthorizationOverride(options, `Bearer ${token}`);
 }
 
 /**

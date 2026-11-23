@@ -11,6 +11,7 @@ import {
   ValidationError,
 } from '../../src/core/errors.js';
 import type { RequestOptions, ApiResponse } from '../../src/core/types.js';
+import { readAuthorizationOverride } from '../../src/core/auth-identity.js';
 
 const makeOpts = (overrides?: Partial<RequestOptions>): RequestOptions => ({
   method: 'GET',
@@ -90,7 +91,7 @@ describe('createOAuthRefreshMiddleware', () => {
     // `headers.Authorization` (which the transport strips as a caller header).
     const capturedAuth: (string | undefined)[] = [];
     const next = vi.fn(async (opts: RequestOptions): Promise<ApiResponse<unknown>> => {
-      capturedAuth.push(opts.authorizationOverride);
+      capturedAuth.push(readAuthorizationOverride(opts));
       return makeResponse({ ok: true });
     });
 
@@ -122,7 +123,7 @@ describe('createOAuthRefreshMiddleware', () => {
 
     await mw(makeOpts({ headers: { 'X-Custom': 'value' } }), next);
 
-    expect(captured[0]?.authorizationOverride).toBe('Bearer tok');
+    expect(readAuthorizationOverride(captured[0] as RequestOptions)).toBe('Bearer tok');
     expect((captured[0]?.headers as Record<string, string>)?.['X-Custom']).toBe('value');
   });
 
@@ -149,7 +150,7 @@ describe('createOAuthRefreshMiddleware', () => {
 
     const next = vi.fn(async (opts: RequestOptions): Promise<ApiResponse<unknown>> => {
       callCount++;
-      calls.push(opts.authorizationOverride ?? '');
+      calls.push(readAuthorizationOverride(opts) ?? '');
       if (callCount === 1) throw new AuthenticationError();
       return makeResponse({ retried: true });
     });
@@ -286,7 +287,7 @@ describe('createOAuthRefreshMiddleware', () => {
       let callCount = 0;
       const next = vi.fn(async (opts: RequestOptions): Promise<ApiResponse<unknown>> => {
         callCount++;
-        calls.push(opts.authorizationOverride ?? '');
+        calls.push(readAuthorizationOverride(opts) ?? '');
         if (callCount === 1) throw new AuthenticationError();
         return makeResponse({ retried: true });
       });
@@ -322,7 +323,7 @@ describe('createOAuthRefreshMiddleware', () => {
         callCount++;
         // Each fresh request first hits 401 on the (current) initial token,
         // then succeeds after refresh. Two logical requests, two refreshes.
-        if (opts.authorizationOverride === 'Bearer access-1' || callCount === 3) {
+        if (readAuthorizationOverride(opts) === 'Bearer access-1' || callCount === 3) {
           throw new AuthenticationError();
         }
         return makeResponse({ ok: callCount });
@@ -1138,7 +1139,7 @@ describe('B016: OAuth refresh herd protection', () => {
 
       const next = vi.fn(async (opts: RequestOptions): Promise<ApiResponse<unknown>> => {
         const seq = ++nextCallSeq;
-        const authHeader = opts.authorizationOverride ?? '';
+        const authHeader = readAuthorizationOverride(opts) ?? '';
         // First call from each middleware invocation throws 401 (using the
         // initial token); retry call uses the refreshed token.
         if (authHeader === 'Bearer access-1' && initialFailures.size < 2) {
@@ -1181,7 +1182,7 @@ describe('B016: OAuth refresh herd protection', () => {
 
       const next = vi.fn(async (opts: RequestOptions): Promise<ApiResponse<unknown>> => {
         nextCallSeq++;
-        const authHeader = opts.authorizationOverride ?? '';
+        const authHeader = readAuthorizationOverride(opts) ?? '';
         if (authHeader === 'Bearer access-1' && nextCallSeq <= 2) {
           throw new AuthenticationError();
         }
@@ -1242,7 +1243,7 @@ describe('B016: OAuth refresh herd protection', () => {
       let nextSeq = 0;
       const next = vi.fn(async (opts: RequestOptions): Promise<ApiResponse<unknown>> => {
         nextSeq++;
-        const authHeader = opts.authorizationOverride ?? '';
+        const authHeader = readAuthorizationOverride(opts) ?? '';
         if (authHeader === 'Bearer access-1') throw new AuthenticationError();
         return makeResponse({ retried: true });
       });
@@ -1382,7 +1383,7 @@ describe('B016: OAuth refresh herd protection', () => {
       let nextSeq = 0;
       const next = vi.fn(async (opts: RequestOptions): Promise<ApiResponse<unknown>> => {
         nextSeq++;
-        const authHeader = opts.authorizationOverride ?? '';
+        const authHeader = readAuthorizationOverride(opts) ?? '';
         // 401 for original token; success for refreshed.
         if (authHeader === 'Bearer access-1') throw new AuthenticationError();
         return makeResponse({ ok: true });
@@ -1445,7 +1446,7 @@ describe('B016: OAuth refresh herd protection', () => {
       }) as unknown as typeof fetch;
 
       const next = vi.fn(async (opts: RequestOptions): Promise<ApiResponse<unknown>> => {
-        const authHeader = opts.authorizationOverride ?? '';
+        const authHeader = readAuthorizationOverride(opts) ?? '';
         if (authHeader === 'Bearer access-1') throw new AuthenticationError();
         return makeResponse(null);
       });
@@ -1472,7 +1473,7 @@ describe('B016: OAuth refresh herd protection', () => {
       let nextSeq2 = 0;
       const nextAgain = vi.fn(async (opts: RequestOptions): Promise<ApiResponse<unknown>> => {
         nextSeq2++;
-        const authHeader = opts.authorizationOverride ?? '';
+        const authHeader = readAuthorizationOverride(opts) ?? '';
         if (authHeader === 'Bearer new' && nextSeq2 === 1) throw new AuthenticationError();
         return makeResponse(null);
       });
