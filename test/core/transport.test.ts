@@ -1,5 +1,7 @@
+import { inspect } from 'node:util';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { HttpTransport } from '../../src/core/transport.js';
+import { JiraClient } from '../../src/jira/client.js';
 import {
   AuthenticationError,
   NotFoundError,
@@ -1073,6 +1075,63 @@ describe('HttpTransport', () => {
         'Bearer my-bearer-token',
       );
     });
+  });
+
+  it.each([
+    { type: 'basic', email: 'test@example.com', apiToken: 'fixture-token' },
+    { type: 'bearer', token: 'fixture-token' },
+  ] satisfies ResolvedConfig['auth'][])(
+    'keeps the $type credential out of JSON and inspection',
+    (auth) => {
+      const transport = makeTransport({ ...defaultConfig, auth });
+      const encoded = Buffer.from('test@example.com:fixture-token').toString('base64');
+      for (const output of [
+        JSON.stringify({ transport }),
+        inspect(transport, { showHidden: true, depth: Infinity }),
+      ]) {
+        expect(output).not.toContain('fixture-token');
+        expect(output).not.toContain(encoded);
+      }
+    },
+  );
+
+  it('sends an authenticated request through a proxy injected into JiraClient', async () => {
+    const fetch = vi
+      .fn<typeof globalThis.fetch>()
+      .mockResolvedValue(Response.json({ accountId: '1' }));
+    const transport = makeTransport({
+      ...defaultConfig,
+      auth: { type: 'bearer', token: 'fixture-token' },
+      fetch,
+    });
+    const client = new JiraClient({
+      baseUrl: INSTANCE_URL,
+      auth: defaultConfig.auth,
+      transport: new Proxy(transport, {}),
+    });
+
+    expect(await client.users.getCurrentUser()).toEqual({ accountId: '1' });
+    expect(fetch).toHaveBeenCalledTimes(1);
+    expect(new Headers(fetch.mock.calls[0]![1]?.headers).get('authorization')).toBe(
+      'Bearer fixture-token',
+    );
+  });
+
+  it('preserves subclass request overrides and their own sendRequest helper', async () => {
+    class CustomTransport extends HttpTransport {
+      override request<T>(options: RequestOptions): Promise<ApiResponse<T>> {
+        return this.sendRequest<T>(options);
+      }
+
+      private sendRequest<T>(options: RequestOptions): Promise<ApiResponse<T>> {
+        return super.request<T>({ ...options, path: '/custom' });
+      }
+    }
+
+    const fetch = vi.fn<typeof globalThis.fetch>().mockResolvedValue(makeResponse(200));
+    const transport = new Proxy(new CustomTransport({ ...defaultConfig, fetch }), {});
+    await transport.request({ method: 'GET', path: '/original' });
+    expect(String(fetch.mock.calls[0]![0])).toBe(`${BASE_URL}/custom`);
   });
 
   describe('non-retryable non-AbortError thrown by fetch', () => {

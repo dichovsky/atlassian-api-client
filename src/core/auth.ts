@@ -42,13 +42,14 @@ export function createAuthProvider(config: AuthConfig): AuthProvider {
     // that produces an opaque 401 at request time instead of a clear config error.
     assertNonEmptyCredential(config.email, 'auth.email');
     assertNonEmptyCredential(config.apiToken, 'auth.apiToken');
-    return new BasicAuthProvider(config.email, config.apiToken);
+    const encoded = Buffer.from(`${config.email}:${config.apiToken}`).toString('base64');
+    return providerForHeader(`Basic ${encoded}`);
   }
 
   // B1041(6): an empty bearer `token` would emit `Bearer ` (no credential) and
   // fail opaquely at request time; reject it up front.
   assertNonEmptyCredential(config.token, 'auth.token');
-  return new BearerAuthProvider(config.token);
+  return providerForHeader(`Bearer ${config.token}`);
 }
 
 /**
@@ -62,27 +63,6 @@ function assertNonEmptyCredential(value: string, fieldName: string): void {
   }
 }
 
-class BasicAuthProvider implements AuthProvider {
-  private readonly headerValue: string;
-
-  constructor(email: string, apiToken: string) {
-    const encoded = Buffer.from(`${email}:${apiToken}`).toString('base64');
-    this.headerValue = `Basic ${encoded}`;
-  }
-
-  getHeaders(): Record<string, string> {
-    return { Authorization: this.headerValue };
-  }
-}
-
-class BearerAuthProvider implements AuthProvider {
-  private readonly headerValue: string;
-
-  constructor(token: string) {
-    this.headerValue = `Bearer ${token}`;
-  }
-
-  getHeaders(): Record<string, string> {
-    return { Authorization: this.headerValue };
-  }
+function providerForHeader(value: string): AuthProvider {
+  return { getHeaders: () => ({ Authorization: value }) };
 }

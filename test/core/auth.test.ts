@@ -1,9 +1,29 @@
+import { inspect } from 'node:util';
 import { describe, it, expect } from 'vitest';
 import { createAuthProvider } from '../../src/core/auth.js';
 import { ValidationError } from '../../src/core/errors.js';
 import type { AuthConfig } from '../../src/core/types.js';
 
 describe('createAuthProvider', () => {
+  const fixtures = [
+    { type: 'basic', email: 'fixture@example.com', apiToken: 'fixture-token' },
+    { type: 'bearer', token: 'fixture-token' },
+  ] satisfies AuthConfig[];
+
+  it.each(fixtures)('keeps the $type credential out of JSON and inspection', (config) => {
+    const provider = createAuthProvider(config);
+    const header = provider.getHeaders()['Authorization']!;
+    for (const output of [JSON.stringify({ provider }), inspect(provider, { showHidden: true })]) {
+      expect(output).not.toContain(header.slice(header.indexOf(' ') + 1));
+      expect(output).not.toContain('fixture-token');
+    }
+  });
+
+  it.each(fixtures)('returns the same $type header through a forwarding proxy', (config) => {
+    const provider = createAuthProvider(config);
+    expect(new Proxy(provider, {}).getHeaders()).toEqual(provider.getHeaders());
+  });
+
   describe('basic auth', () => {
     const config: AuthConfig = {
       type: 'basic',
