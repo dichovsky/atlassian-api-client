@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "5.0.0"
   },
-  "sourceHash": "ef13dceb61b4ca6cb1c57ff83726e3236628af83c388c0654415018902354bc2",
+  "sourceHash": "65a08299feaa4cfb81b8eb69c6900f142e90df6a9e09a099306a6b69e11d851c",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -4806,7 +4806,7 @@
       "name": "createBatchMiddleware",
       "kind": "function",
       "file": "src/core/batch.ts",
-      "line": 49,
+      "line": 50,
       "signature": "export function createBatchMiddleware(): Middleware",
       "jsdoc": "Creates a middleware that deduplicates concurrent identical in-flight requests."
     },
@@ -4814,7 +4814,7 @@
       "name": "createCacheMiddleware",
       "kind": "function",
       "file": "src/core/cache.ts",
-      "line": 62,
+      "line": 63,
       "signature": "export function createCacheMiddleware(options?: CacheOptions): Middleware",
       "jsdoc": "Creates a middleware that caches API responses in memory."
     },
@@ -16221,7 +16221,7 @@
         {
           "name": "createBatchMiddleware",
           "kind": "function",
-          "line": 49,
+          "line": 50,
           "exported": true,
           "signature": "export function createBatchMiddleware(): Middleware",
           "jsdoc": "Creates a middleware that deduplicates concurrent identical in-flight requests."
@@ -16265,7 +16265,7 @@
         {
           "name": "createCacheMiddleware",
           "kind": "function",
-          "line": 62,
+          "line": 63,
           "exported": true,
           "signature": "export function createCacheMiddleware(options?: CacheOptions): Middleware",
           "jsdoc": "Creates a middleware that caches API responses in memory."
@@ -16273,14 +16273,14 @@
         {
           "name": "sweepExpired",
           "kind": "function",
-          "line": 142,
+          "line": 143,
           "signature": "function sweepExpired(cache: Map<string, CacheEntry>, now: number): void",
           "jsdoc": "Delete every expired entry from the cache. Called on eviction to reclaim TTL-expired slots before resorting to LRU, so that a still-valid entry is not pushed out by a dead one that happened to be inserted earlier."
         },
         {
           "name": "buildCacheKey",
           "kind": "function",
-          "line": 150,
+          "line": 151,
           "signature": "function buildCacheKey(opts: RequestOptions): string"
         }
       ],

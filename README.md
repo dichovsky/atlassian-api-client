@@ -465,6 +465,8 @@ Caches GET responses in memory. Keys include auth identity, method, path, and qu
 
 ### Request Batching / Deduplication
 
+Both cache and batch middleware send a separate request for each caller that sets `responseType: 'stream'`. Each caller can read or cancel its own response body.
+
 ```typescript
 import { createBatchMiddleware } from 'atlassian-api-client';
 

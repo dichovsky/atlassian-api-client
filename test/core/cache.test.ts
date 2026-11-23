@@ -561,7 +561,7 @@ describe('createCacheMiddleware — B1065 responseType in cache key', () => {
     expect(second).toBe(first);
   });
 
-  it('treats an arrayBuffer GET then a stream GET for the same URL as separate cache entries', async () => {
+  it('bypasses an existing arrayBuffer cache entry when the caller requests a stream', async () => {
     let counter = 0;
     const next = vi.fn(async (): Promise<ApiResponse<unknown>> => makeResponse(++counter));
     const mw = createCacheMiddleware();

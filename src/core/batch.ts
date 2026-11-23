@@ -22,6 +22,7 @@ const IDEMPOTENT_METHODS = new Set<string>(['GET', 'HEAD']);
  * Non-idempotent methods (POST/PUT/PATCH/DELETE) always bypass dedup — each call
  * reaches the transport independently so no mutation is silently dropped.
  *
+ * Stream requests run independently so each caller can read or cancel its own response body.
  * Requests carrying `formData` or `binaryBody` also bypass dedup unconditionally
  * because those values are not safely serialisable into a stable string key.
  *
@@ -50,9 +51,8 @@ export function createBatchMiddleware(): Middleware {
   const inflight = new Map<string, Promise<ApiResponse<unknown>>>();
 
   return (opts: RequestOptions, next): Promise<ApiResponse<unknown>> => {
-    // B1039 — only coalesce safe-idempotent reads; mutations and requests with
-    // non-serialisable bodies bypass dedup entirely so every call reaches the transport.
     if (
+      opts.responseType === 'stream' ||
       !IDEMPOTENT_METHODS.has(opts.method) ||
       opts.formData !== undefined ||
       opts.binaryBody !== undefined
@@ -81,7 +81,7 @@ function buildRequestKey(opts: RequestOptions): string {
   const bodyStr = opts.body !== undefined ? JSON.stringify(opts.body) : '';
   const headersStr = serializeHeaders(opts.headers);
   // B1039: include responseType so GETs for the same URL but requesting
-  // different response shapes ('json' vs 'arrayBuffer' vs 'stream') are
+  // different buffered response shapes ('json' vs 'arrayBuffer') are
   // never collapsed — the transport returns fundamentally different data.
   const responseType = opts.responseType ?? 'json';
   // B024: prefix with an auth-identity hash (the `config.auth`-derived

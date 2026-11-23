@@ -48,8 +48,9 @@ interface CacheEntry {
  * - the query parameters (sorted, `undefined` values dropped);
  * - the `responseType` discriminator (B1065 — same class as B1039/batch.ts):
  *   `'json'` is the effective default so an explicit `responseType:'json'` and
- *   an omitted `responseType` map to the same key; `'arrayBuffer'` and
- *   `'stream'` are partitioned separately.
+ *   an omitted `responseType` map to the same key. Array buffers use a separate key.
+ *
+ * Stream requests bypass both the cache and in-flight sharing. Each caller owns its response body.
  *
  * Headers OTHER than `Authorization` do NOT contribute to the cache key —
  * a value variant like `Accept-Language: fr` will hit a cache entry stored
@@ -80,7 +81,7 @@ export function createCacheMiddleware(options?: CacheOptions): Middleware {
   const inFlight = new Map<string, Promise<ApiResponse<unknown>>>();
 
   return async (opts, next) => {
-    if (!methods.has(opts.method)) {
+    if (opts.responseType === 'stream' || !methods.has(opts.method)) {
       return next(opts);
     }
 
@@ -156,7 +157,7 @@ function buildCacheKey(opts: RequestOptions): string {
   // `authorizationOverride` (#243) or a caller `Authorization` header — and to
   // a shared-tenant marker when none is present (single-tenant deployments).
   // B1065: include responseType so GETs for the same URL but requesting
-  // different response shapes ('json' vs 'arrayBuffer' vs 'stream') are never
+  // different buffered response shapes ('json' vs 'arrayBuffer') are never
   // served from the same cache entry. Mirrors the batch.ts fix (B1039).
   // Omitted responseType defaults to 'json' — the same effective shape — so
   // explicit and implicit 'json' callers share one cache slot.
