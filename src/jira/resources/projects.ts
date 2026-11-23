@@ -744,8 +744,7 @@ export class ProjectsResource {
    */
   loadAvatar(
     projectIdOrKey: string,
-    // Kept separate so 4.0.0 callers still type-check while seeing the deprecation.
-    // eslint-disable-next-line @typescript-eslint/unified-signatures
+    // oxlint-disable-next-line typescript/unified-signatures -- only the legacy body overload is deprecated.
     body: unknown,
     params?: LoadProjectAvatarParams,
   ): Promise<ProjectAvatar>;

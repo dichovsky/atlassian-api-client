@@ -19,19 +19,8 @@
   - solution: add a `connect-jwt` CLI auth type (issuer + shared secret from env) wired through `createConnectJwtMiddleware`, with a security review; shrink `CONNECT_ONLY` as each action becomes reachable.
   - files: `src/cli/config.ts`, `src/cli/commands/*.ts`, `skill/reference/auth-and-safety.md`, `README.md`
   - deps: maintainer decision (release 5.0.0 deferred it)
-- [ ] 🟡 🔒 QA: B1069 Run no devDependency code in the job that holds `id-token: write` (F326)
-  - problem: the publish job runs `npm ci` and the full gate (`prepublishOnly` → `validate`) in the same job that can mint the npm OIDC credential, so a compromised devDependency could publish.
-  - solution: build, validate and attest the tarball in a job without `id-token`; the publishing job only downloads and publishes that artifact with `--ignore-scripts`.
-  - files: `.github/workflows/publish.yml`, `docs/RELEASING.md`, `test/scripts/publish-workflow.test.ts`
-  - deps: change between releases, never right before a tag
-- [ ] 🟢 ♻️ QA: B1070 Small follow-ups deferred from 5.0.0
-  - router: a `0`/`1` after a boolean flag stays a positional (`pages delete 123 --purge 0` purges; `--purge 0 123` purges page 0). Same in 4.0.0; the skill warns about it. Decide whether `0`/`1` should be refused there.
+- [ ] 🟢 ♻️ QA: B1070 Public type changes for the next major release
   - types (next major): narrow `ListPagesParams.status` and allow multi-value `spaceId` (F010); give `CreateIssueSourceData.type` a create-only union without `'Custom'` (F242); remove `SearchAllUsersParams.query` / `username`, which Jira ignores; merge the duplicate `Task` / `TaskProgressBeanObject` types.
-  - packaging: published `.d.ts` files need Node types (`node:crypto` in `dist/core/connect-jwt.d.ts`); declare `@types/node` as an optional peer or document it (F334).
-  - CI: engines allow Node 26 but CI runs only Node 24 (F310); release tooling: warn on a stale CHANGELOG date in the local `release:check`, make the release-gate entry check fail closed, replace the hand-written workflow YAML test parser.
-  - wire: check on a live tenant whether `users set-columns` accepts the JSON body (F128); send int64 IDs above 2^53-1 exactly in Confluence task and data-policy filters; SDK `spaceRoles.list({ 'space-id': '' })` should refuse a blank value like the CLI; trim `priorities move --after`.
-  - CLI policy: one rule for spec-removed params (`component --lead-user-name`, `groups picker --user-name`).
-  - docs: replace the remaining placeholder IDs in `skill/reference/confluence.md` examples with numeric IDs.
 
 ## 🏛️ Architecture
 

@@ -3,7 +3,7 @@ import { encodePathSegment } from '../../core/path.js';
 import type { CursorPaginatedResponse } from '../../core/pagination.js';
 import { paginateCursor, validatePageSize } from '../../core/pagination.js';
 import { appendRepeatedParams } from '../../core/query.js';
-import { nonEmptyQuery } from './query.js';
+import { nonEmptyQuery, validateInt64Ids } from './query.js';
 import type {
   ConfluenceTask,
   ListTasksParams,
@@ -11,6 +11,8 @@ import type {
   UpdateTaskData,
   UpdateTaskParams,
 } from '../types/tasks.js';
+
+type TaskFilters = ListTasksParams<string | number>;
 
 type Query = Record<string, string | number | boolean | undefined>;
 
@@ -29,7 +31,7 @@ type Query = Record<string, string | number | boolean | undefined>;
  */
 function buildTasksQuery(
   basePath: string,
-  params?: ListTasksParams,
+  params?: TaskFilters,
 ): { path: string; query: Query | undefined } {
   if (params === undefined) return { path: basePath, query: undefined };
   const {
@@ -58,6 +60,11 @@ function buildTasksQuery(
   if (completedAtFrom !== undefined) query['completed-at-from'] = completedAtFrom;
   if (completedAtTo !== undefined) query['completed-at-to'] = completedAtTo;
 
+  validateInt64Ids('task-id', taskId);
+  validateInt64Ids('space-id', spaceId);
+  validateInt64Ids('page-id', pageId);
+  validateInt64Ids('blogpost-id', blogPostId);
+
   // Array-typed params: bake into the path as repeated segments.
   let path = appendRepeatedParams(basePath, 'task-id', taskId);
   path = appendRepeatedParams(path, 'space-id', spaceId);
@@ -77,7 +84,10 @@ export class TasksResource {
   ) {}
 
   /** List tasks with optional filtering. */
-  async list(params?: ListTasksParams): Promise<CursorPaginatedResponse<ConfluenceTask>> {
+  list(params?: TaskFilters): Promise<CursorPaginatedResponse<ConfluenceTask>>;
+  // oxlint-disable-next-line typescript/unified-signatures -- Parameters<> must retain numeric IDs.
+  list(params?: ListTasksParams): Promise<CursorPaginatedResponse<ConfluenceTask>>;
+  async list(params?: TaskFilters): Promise<CursorPaginatedResponse<ConfluenceTask>> {
     if (params?.limit !== undefined) validatePageSize(params.limit, 'limit');
     const basePath = `${this.baseUrl}/tasks`;
     const { path, query } = buildTasksQuery(basePath, params);
@@ -115,7 +125,10 @@ export class TasksResource {
   }
 
   /** Iterate over all tasks across all result pages. */
-  async *listAll(params?: Omit<ListTasksParams, 'cursor'>): AsyncGenerator<ConfluenceTask> {
+  listAll(params?: Omit<TaskFilters, 'cursor'>): AsyncGenerator<ConfluenceTask>;
+  // oxlint-disable-next-line typescript/unified-signatures -- Parameters<> must retain numeric IDs.
+  listAll(params?: Omit<ListTasksParams, 'cursor'>): AsyncGenerator<ConfluenceTask>;
+  async *listAll(params?: Omit<TaskFilters, 'cursor'>): AsyncGenerator<ConfluenceTask> {
     if (params?.limit !== undefined) validatePageSize(params.limit, 'limit');
     const basePath = `${this.baseUrl}/tasks`;
     const { path, query } = buildTasksQuery(basePath, params);

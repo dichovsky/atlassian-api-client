@@ -1,4 +1,5 @@
 import { spawnSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
@@ -25,6 +26,9 @@ const SLSA_PROVENANCE_V1 = 'https://slsa.dev/provenance/v1';
 
 interface Step {
   name?: string;
+  id?: string;
+  uses?: string;
+  with?: Record<string, string>;
   run?: string;
   env?: Record<string, string>;
 }
@@ -32,6 +36,7 @@ interface Step {
 interface Job {
   needs?: string | string[];
   environment?: string;
+  outputs?: Record<string, string>;
   permissions?: unknown;
   steps: Step[];
 }
@@ -70,7 +75,12 @@ interface StepResult {
 }
 
 /** Runs a step script the way the runner does (`bash -e <file>`) with fake tools first on PATH. */
-function runStep(script: string, env: Record<string, string>, fakes: Record<string, string>) {
+function runStep(
+  script: string,
+  env: Record<string, string>,
+  fakes: Record<string, string>,
+  cwd?: string,
+) {
   const root = mkdtempSync(join(tmpdir(), 'publish-step-'));
   try {
     const bin = join(root, 'bin');
@@ -83,6 +93,7 @@ function runStep(script: string, env: Record<string, string>, fakes: Record<stri
     writeFileSync(join(root, 'step.sh'), script);
     const result = spawnSync('bash', ['--noprofile', '--norc', '-e', join(root, 'step.sh')], {
       encoding: 'utf8',
+      cwd,
       env: { PATH: `${bin}:${process.env.PATH}`, HOME: root, GITHUB_OUTPUT: output, ...env },
     });
     return {
@@ -107,16 +118,36 @@ function expand(text: string, values: Record<string, string>): string {
 function assertJobGates(workflow: Workflow): void {
   expect(workflow.on).toEqual({ push: { tags: ['v*'] } });
   expect(workflow.permissions).toEqual({});
-  expect(Object.keys(workflow.jobs)).toEqual(['preflight', 'publish', 'verify']);
+  expect(Object.keys(workflow.jobs)).toEqual(['preflight', 'build', 'publish', 'verify']);
 
   const preflight = job(workflow, 'preflight');
   expect(preflight.permissions).toEqual({ actions: 'read', contents: 'read' });
+  expect(preflight.outputs?.['manifest-sha256']).toBe(
+    '${{ steps.release.outputs.manifest_sha256 }}',
+  );
   expect(preflight.steps.map((s) => s.run?.trim())).toContain(
     'node scripts/validate-release-tag.js "$GITHUB_REF_NAME"',
   );
 
+  const build = job(workflow, 'build');
+  expect(build.needs).toBe('preflight');
+  expect(build.permissions).toEqual({ contents: 'read' });
+  expect(build.steps[0]?.with?.['ref']).toBe('${{ needs.preflight.outputs.release-sha }}');
+  const commands = build.steps.map((entry) => entry.run?.trim()).filter(Boolean);
+  expect(commands.slice(0, 2)).toEqual(['npm ci', 'npm run validate']);
+  expect(commands[2]).toContain('npm pack --ignore-scripts --json');
+  expect(build.steps.at(-1)).toMatchObject({
+    id: 'upload',
+    uses: expect.stringMatching(/^actions\/upload-artifact@[a-f0-9]{40}$/),
+    with: { path: '${{ runner.temp }}/package.tgz', 'if-no-files-found': 'error' },
+  });
+  expect(build.outputs).toEqual({
+    'artifact-id': '${{ steps.upload.outputs.artifact-id }}',
+    integrity: '${{ steps.pack.outputs.integrity }}',
+  });
+
   const publish = job(workflow, 'publish');
-  expect(publish.needs).toBe('preflight');
+  expect(publish.needs).toEqual(['preflight', 'build']);
   expect(publish.environment).toBe('release');
   expect(publish.permissions).toEqual({ contents: 'read', 'id-token': 'write' });
   // Exactly one publish, and it is the last step, so it runs after both gates.
@@ -125,13 +156,31 @@ function assertJobGates(workflow: Workflow): void {
     'npm',
     'publish',
     '--provenance',
+    '--ignore-scripts',
+    '"${RUNNER_TEMP}/release/package.tgz"',
   ]);
-  const publishStepNames = publish.steps.map((s) => s.name);
-  expect(publishStepNames).toContain('Recheck the current main tip after approval');
-  expect(publishStepNames).toContain('Require npm trusted-publishing support');
+  const publishActions = publish.steps.filter((entry) => entry.uses);
+  expect(publishActions.map((entry) => entry.uses?.split('@')[0])).toEqual([
+    'actions/setup-node',
+    'actions/download-artifact',
+  ]);
+  expect(publishActions[1]).toMatchObject({
+    uses: expect.stringMatching(/^actions\/download-artifact@[a-f0-9]{40}$/),
+    with: {
+      'artifact-ids': '${{ needs.build.outputs.artifact-id }}',
+      path: '${{ runner.temp }}/release',
+    },
+  });
+  // Only these reviewed scripts may run with the publishing credential.
+  expect(publish.steps.filter((entry) => entry.run).map((entry) => entry.name)).toEqual([
+    'Recheck the current main tip after approval',
+    'Require npm trusted-publishing support',
+    'Check the downloaded tarball',
+    'Publish with trusted publishing and provenance',
+  ]);
 
   const verify = job(workflow, 'verify');
-  expect(verify.needs).toEqual(['preflight', 'publish']);
+  expect(verify.needs).toEqual(['preflight', 'build', 'publish']);
   expect(verify.permissions).toEqual({});
 
   // A gate that may be skipped or may fail without failing the job is no gate.
@@ -160,7 +209,15 @@ describe('publish workflow job gates', () => {
       '    # environment: release (disabled)\n',
     ],
     ['a renamed environment', '    environment: release\n', '    environment: staging\n'],
-    ['publish not waiting for preflight', '    needs: preflight\n', ''],
+    ['build not waiting for preflight', '    needs: preflight\n', ''],
+    ['publish not waiting for build', '    needs: [preflight, build]\n', '    needs: preflight\n'],
+    ['lifecycle scripts enabled', '--provenance --ignore-scripts', '--provenance'],
+    ['validation skipped', 'run: npm run validate', 'run: npm run build'],
+    [
+      'devDependencies installed after approval',
+      '      - name: Check the downloaded tarball\n',
+      '      - run: npm ci\n      - name: Check the downloaded tarball\n',
+    ],
     ['provenance dropped', 'run: npm publish --provenance', 'run: npm publish'],
     [
       'contents: write on publish',
@@ -251,7 +308,12 @@ describe('publish workflow signed-tag preflight', () => {
     const accepted = runSignatureCheck(workflow, ANNOTATED_REF, verifiedTag(VERIFIED));
     expect(accepted.stderr).toBe('');
     expect(accepted.status).toBe(0);
-    expect(accepted.output).toBe(`release_sha=${RELEASE_SHA}\nversion=4.1.0\n`);
+    const manifestSha256 = createHash('sha256')
+      .update(readFileSync(resolve(REPO_ROOT, 'package.json')))
+      .digest('hex');
+    expect(accepted.output).toBe(
+      `release_sha=${RELEASE_SHA}\nversion=4.1.0\nmanifest_sha256=${manifestSha256}\n`,
+    );
 
     const rejected = [
       // lightweight tag: the ref points straight at a commit
@@ -313,19 +375,20 @@ describe('publish workflow exact-main preflight and recheck', () => {
   function runMainTipCheck(
     workflow: Workflow,
     [jobName, stepName]: (typeof GATES)[number],
-    { main = RELEASE_SHA, head = RELEASE_SHA, fetchStatus = '0' } = {},
+    { main = RELEASE_SHA, fetchStatus = '0' } = {},
   ) {
     const { run, env = {} } = step(workflow, jobName, stepName);
     const outputs = {
       'steps.release.outputs.release_sha': RELEASE_SHA,
       'needs.preflight.outputs.release-sha': RELEASE_SHA,
+      'github.token': 'test-token',
     };
     return runStep(
       expand(run, outputs),
       {
         ...Object.fromEntries(Object.entries(env).map(([k, v]) => [k, expand(v, outputs)])),
         FAKE_MAIN: main,
-        FAKE_HEAD: head,
+        GITHUB_REPOSITORY: 'owner/client',
         FAKE_FETCH_STATUS: fetchStatus,
       },
       {
@@ -333,9 +396,13 @@ describe('publish workflow exact-main preflight and recheck', () => {
           'case "$*" in',
           '  "fetch --no-tags origin +refs/heads/main:refs/remotes/origin/main") exit "$FAKE_FETCH_STATUS" ;;',
           '  "rev-parse refs/remotes/origin/main") echo "$FAKE_MAIN" ;;',
-          '  "rev-parse HEAD") echo "$FAKE_HEAD" ;;',
           '  *) echo "unexpected git $*" >&2; exit 64 ;;',
           'esac',
+        ].join('\n'),
+        gh: [
+          '[ "$*" = "api repos/$GITHUB_REPOSITORY/git/ref/heads/main --jq .object.sha" ] || exit 64',
+          '[ "$FAKE_FETCH_STATUS" = 0 ] || exit "$FAKE_FETCH_STATUS"',
+          'echo "$FAKE_MAIN"',
         ].join('\n'),
       },
     );
@@ -350,8 +417,6 @@ describe('publish workflow exact-main preflight and recheck', () => {
       expect(runMainTipCheck(workflow, gate, { main: OTHER_SHA }).status).not.toBe(0);
       expect(runMainTipCheck(workflow, gate, { fetchStatus: '1' }).status).not.toBe(0);
     }
-    // only the post-approval recheck looks at the checked-out commit
-    expect(runMainTipCheck(workflow, GATES[1], { head: OTHER_SHA }).status).not.toBe(0);
   }
 
   it('requires the release commit to be the fetched main tip, before and after approval', () => {
@@ -373,20 +438,78 @@ describe('publish workflow exact-main preflight and recheck', () => {
     ],
     [
       'the recheck main comparison dropped',
-      [
-        '          test "$(git rev-parse HEAD)" = "${RELEASE_SHA}"',
-        '          test "$(git rev-parse refs/remotes/origin/main)" = "${RELEASE_SHA}"',
-      ].join('\n'),
-      '          test "$(git rev-parse HEAD)" = "${RELEASE_SHA}"',
-    ],
-    [
-      'the recheck HEAD comparison dropped',
-      '          test "$(git rev-parse HEAD)" = "${RELEASE_SHA}"\n',
-      '',
+      '          test "${main_sha}" = "${RELEASE_SHA}"\n',
+      '          true\n',
     ],
   ])('fails when the workflow has %s', (_label, from, to) => {
     const mutated = mutate(from, to);
     expect(() => assertMainTipGates(mutated)).toThrow();
+  });
+});
+
+describe('publish workflow tarball integrity', () => {
+  const workflow = parse(PUBLISH_TEXT);
+  const bytes = 'the validated tarball';
+  const integrity = `sha512-${createHash('sha512').update(bytes).digest('base64')}`;
+
+  it('packs the expected version with scripts disabled and records the tarball integrity', () => {
+    const root = mkdtempSync(join(tmpdir(), 'release-pack-'));
+    try {
+      const project = join(root, 'project');
+      mkdirSync(project);
+      writeFileSync(
+        join(project, 'package.json'),
+        JSON.stringify({
+          name: PACKAGE_JSON.name,
+          version: '1.2.3',
+          scripts: { prepack: 'exit 42' },
+        }),
+      );
+      const pack = step(workflow, 'build', 'Pack the validated files');
+      expect(pack.env?.['VERSION']).toBe('${{ needs.preflight.outputs.version }}');
+      const env = { VERSION: '1.2.3', RUNNER_TEMP: root, npm_config_offline: 'true' };
+      const result = runStep(pack.run, env, {}, project);
+      expect(result.status, result.stderr).toBe(0);
+      const digest = createHash('sha512')
+        .update(readFileSync(join(root, 'package.tgz')))
+        .digest('base64');
+      expect(result.output.trim()).toBe(`integrity=sha512-${digest}`);
+      expect(runStep(pack.run, { ...env, VERSION: '1.2.4' }, {}, project).status).not.toBe(0);
+
+      const check = step(workflow, 'publish', 'Check the downloaded tarball');
+      expect(check.env?.['EXPECTED_INTEGRITY']).toBe('${{ needs.build.outputs.integrity }}');
+      expect(check.env?.['MANIFEST_SHA256']).toBe('${{ needs.preflight.outputs.manifest-sha256 }}');
+      const manifest = readFileSync(join(project, 'package.json'));
+      const checkEnv = {
+        RUNNER_TEMP: root,
+        EXPECTED_INTEGRITY: `sha512-${digest}`,
+        MANIFEST_SHA256: createHash('sha256').update(manifest).digest('hex'),
+      };
+      mkdirSync(join(root, 'release'));
+      expect(runStep(check.run, checkEnv, {}).status).not.toBe(0);
+      const target = join(root, 'release', 'package.tgz');
+      writeFileSync(target, readFileSync(join(root, 'package.tgz')));
+      expect(runStep(check.run, checkEnv, {}).status).toBe(0);
+      expect(runStep(check.run, { ...checkEnv, MANIFEST_SHA256: 'other' }, {}).status).not.toBe(0);
+      writeFileSync(target, 'changed');
+      expect(runStep(check.run, checkEnv, {}).status).not.toBe(0);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it('requires the registry to serve the same package integrity', () => {
+    const check = step(workflow, 'verify', 'Check the registry tarball integrity');
+    expect(check.env?.['EXPECTED_INTEGRITY']).toBe('${{ needs.build.outputs.integrity }}');
+    const npm =
+      '[ "$*" = "view atlassian-api-client@1.2.3 dist.integrity" ] || exit 64\necho "$SERVED"';
+    const env = {
+      PACKAGE_NAME: PACKAGE_JSON.name,
+      VERSION: '1.2.3',
+      EXPECTED_INTEGRITY: integrity,
+    };
+    expect(runStep(check.run, { ...env, SERVED: integrity }, { npm }).status).toBe(0);
+    expect(runStep(check.run, { ...env, SERVED: 'other' }, { npm }).status).not.toBe(0);
   });
 });
 

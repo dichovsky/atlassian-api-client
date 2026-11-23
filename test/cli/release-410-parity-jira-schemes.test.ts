@@ -231,8 +231,9 @@ describe('issuesecurityschemes asynchronous actions print the task (X-ISS-ASYNC)
     type Iss = Pick<JiraClient['issueSecuritySchemes'], 'associateToProject' | 'removeLevel'>;
     const noTask: Iss = {
       associateToProject: async () => undefined,
-      // eslint-disable-next-line @typescript-eslint/no-empty-function -- the empty-body fake is the case under test.
-      removeLevel: async () => {},
+      removeLevel: async () => {
+        // The empty implementation deliberately infers Promise<void>.
+      },
     };
     const singleSignature: Iss = {
       // @ts-expect-error TS2322: one signature returning the task cannot satisfy the void overload.
@@ -1436,6 +1437,10 @@ const EXAMPLES: readonly (readonly [command: string, request: string, body?: unk
   [
     'atlas jira fields context-option-list --field-id customfield_10001 --context-id 10025',
     'GET /field/customfield_10001/context/10025/option',
+  ],
+  [
+    'atlas jira fields context-option-list --field-id customfield_10001 --context-id 10025 --query London',
+    'GET /field/customfield_10001/context/10025/option?query=London',
   ],
   [
     'atlas jira fields context-option-list --field-id customfield_10001 --context-id 10025 --start-at 0 --max-results 50 --only-options',

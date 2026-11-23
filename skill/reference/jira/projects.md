@@ -6,18 +6,18 @@
 
 Jira project components — flat `/rest/api/3/component` surface (B361–B366).
 
-| Action                 | Positional      | Required flags                                                                                        | Optional flags                                                                  |
-| ---------------------- | --------------- | ----------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
-| `list`                 | —               | —                                                                                                     | `--project-ids-or-keys`, `--start-at`, `--max-results`, `--order-by`, `--query` |
-| `create`               | —               | `--name`, `--project`                                                                                 | `--description`, `--lead-account-id`, `--lead-user-name`, `--assignee-type`     |
-| `get`                  | `<componentId>` | —                                                                                                     | —                                                                               |
-| `update`               | `<componentId>` | at least one of `--name`, `--description`, `--lead-account-id`, `--lead-user-name`, `--assignee-type` | —                                                                               |
-| `delete`               | `<componentId>` | —                                                                                                     | `--move-issues-to`                                                              |
-| `related-issue-counts` | `<componentId>` | —                                                                                                     | —                                                                               |
+| Action                 | Positional      | Required flags                                                                    | Optional flags                                                                  |
+| ---------------------- | --------------- | --------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| `list`                 | —               | —                                                                                 | `--project-ids-or-keys`, `--start-at`, `--max-results`, `--order-by`, `--query` |
+| `create`               | —               | `--name`, `--project`                                                             | `--description`, `--lead-account-id`, `--assignee-type`                         |
+| `get`                  | `<componentId>` | —                                                                                 | —                                                                               |
+| `update`               | `<componentId>` | at least one of `--name`, `--description`, `--lead-account-id`, `--assignee-type` | —                                                                               |
+| `delete`               | `<componentId>` | —                                                                                 | `--move-issues-to`                                                              |
+| `related-issue-counts` | `<componentId>` | —                                                                                 | —                                                                               |
 
 - `--project-ids-or-keys` is comma-separated (e.g. `--project-ids-or-keys HSP,PROJ`).
 - `--assignee-type` must be one of: `PROJECT_DEFAULT`, `COMPONENT_LEAD`, `PROJECT_LEAD`, `UNASSIGNED`.
-- `--lead-user-name` was removed by Atlassian ("no longer available"); Jira ignores it. Use `--lead-account-id`.
+- Use `--lead-account-id` to assign a component lead. The CLI rejects the removed `--lead-user-name` flag.
 - `create` requires `--project` with the owning project's **key** (Jira cannot change it later; there is no numeric-ID alternative).
 - `--order-by` (`list`) is one of `name`, `+name`, `-name`, `description`, `+description`, `-description`. Write the descending forms with `=`: `--order-by=-name`.
 - `delete --move-issues-to <id>` reassigns issues currently using the deleted component to another component instead of leaving them component-less.
@@ -434,7 +434,7 @@ atlas jira version delete-related-work 10000 rw-abc
 
 Custom project template management (B653–B657). Covers the full `/rest/api/3/project-template` surface: create a project with a custom template, edit/save/remove templates, and retrieve live template details.
 
-`create` is asynchronous: it prints `{ "queued": true, "taskId": "<id>", "taskUrl": "<url>" }`; poll with `atlas jira task get <taskId>` until `status` is `COMPLETE`. `edit-template`, `remove-template` return `void` (no JSON body). `live-template` returns `ProjectTemplateModel`. `save-template` returns `{ projectTemplateKey }`.
+`create` is asynchronous: it prints `{ "queued": true, "taskId": "<id>", "taskUrl": "<url>" }`; poll with `atlas jira task get <taskId>` until `status` is `COMPLETE`. Jira can return HTTP 422 with limit details when it cannot create the project. `edit-template`, `remove-template` return `void` (no JSON body). `live-template` returns `ProjectTemplateModel`. `save-template` returns `{ projectTemplateKey }`.
 
 **Note: These endpoints are only available on Jira Enterprise edition.**
 

@@ -559,7 +559,7 @@ atlas jira forge bulk-pin-status --module-id 'ari:cloud:ecosystem::extension/app
 | `apply`                | `<policyId>`       | `--project-ids` | —                                         |
 | `remove`               | `<policyId>`       | `--project-ids` | —                                         |
 
-- `list` calls `GET /rest/api/3/policies` and returns `{ values, startAt, maxResults, total, isLast, nextPageCursor }`; each value is a policy summary (`id`, `policyName`, `policyDescription`, `isDefault`, `version`, `appliedProjectIds`). In cursor mode `startAt` and `total` are null: omit `--cursor` for page one, then pass the previous response's `nextPageCursor` as `--cursor`. `--max-results` is capped at 50 in cursor mode.
+- `list` calls `GET /rest/api/3/policies` and returns `{ values, startAt, maxResults, total, isLast, nextPageCursor }`; each value is a policy summary (`id`, `policyName`, `policyDescription`, `isDefault`, `version`, `appliedProjectIds`). Omit `--cursor` for the first page, then pass the previous response's `nextPageCursor` as `--cursor`. In cursor mode, the response fields `startAt` and `total` are null. The only supported value for the legacy `--start-at` request flag is 0 in this mode, and `--max-results` is capped at 50.
 - `get-project-state` calls `GET /rest/api/3/policies/project/{projectIdOrKey}` and returns the policies applied to the project, each with `rulesByDomain`.
 - `get-project-rules` calls `GET /rest/api/3/policies/project/{projectIdOrKey}/rules` and returns only the **active** rules of the requested types (`ruleId`, `ruleTypeId`, `domain`, `description`, `properties`). `--rule-type-ids` is a comma-separated list sent as repeated `ruleTypeIds` params.
 - `set-project-policies` calls `PUT /rest/api/3/policies/project/{projectIdOrKey}/policies` and **replaces** the project's complete policy set (a project can hold at most one policy). `--body` is `'{"policyIds":["<policyId>"]}'`; `'{"policyIds":[]}'` clears the set. A `--body` without a `policyIds` array of strings (for example a `policyId` typo) is rejected before the request. Prints `{"updated":true}`.
@@ -631,14 +631,14 @@ atlas jira license get-approximate-count-for-product jira-software
 
 ## `settings`
 
-| Action        | Positional | Required flags | Optional flags |
-| ------------- | ---------- | -------------- | -------------- |
-| `get-columns` | —          | —              | —              |
-| `set-columns` | —          | `--columns`    | —              |
+| Action        | Positional | Required flags                | Optional flags |
+| ------------- | ---------- | ----------------------------- | -------------- |
+| `get-columns` | —          | —                             | —              |
+| `set-columns` | —          | one of `--columns`, `--clear` | —              |
 
 - `get-columns` calls `GET /rest/api/3/settings/columns` and returns the default issue navigator columns.
-- `set-columns` calls `PUT /rest/api/3/settings/columns` and replaces the default column configuration. Requires **Jira administrator** global permission.
-- `--columns` is a **comma-separated** list of column field keys (e.g. `issuekey,summary,assignee`). The endpoint accepts `multipart/form-data` with repeated `columns` fields.
+- `set-columns` calls `PUT /rest/api/3/settings/columns` and replaces the default column configuration. Requires **Jira administrator** global permission. To update one account, use `atlas jira users set-columns` with `--account-id`.
+- Use `--columns` with comma-separated, non-empty field keys (e.g. `issuekey,summary,assignee`) or `--clear` to remove all system default columns. The endpoint accepts `multipart/form-data` with one `columns` field per key.
 
 ```sh
 # Get the current default issue navigator columns
@@ -646,6 +646,9 @@ atlas jira settings get-columns
 
 # Set the default columns to Key and Summary
 atlas jira settings set-columns --columns issuekey,summary
+
+# Remove all system default columns
+atlas jira settings set-columns --clear
 ```
 
 ## `redact`
@@ -1385,7 +1388,7 @@ Advanced Roadmaps plans management (B625–B640). Covers the `/rest/api/3/plans/
 **`create` JSON flags** (`create` and `duplicate` print the new plan ID, a number):
 
 - `--issue-sources` (required): `[{ "type": "Board" | "Project" | "Filter", "value": <board, project or filter id> }, ...]`.
-- `--scheduling` (required): `{ "estimation": "StoryPoints" | "Days" | "Hours", "dependencies"?: "Sequential" | "Concurrent", "inferredDates"?: "None" | "SprintDates" | "ReleaseDates", "startDate"?: <date field>, "endDate"?: <date field> }` — `estimation` is required. `<date field>` is `{ "type": "DueDate" | "TargetStartDate" | "TargetEndDate" | "DateCustomField", "dateCustomFieldId"?: <id, for DateCustomField> }`.
+- `--scheduling` (required): `{ "estimation": "StoryPoints" | "Days" | "Hours", "dependencies"?: "Sequential" | "Concurrent", "inferredDates"?: "None" | "SprintDates" | "ReleaseDates" | "AnySprintDates", "startDate"?: <date field>, "endDate"?: <date field> }` — `estimation` is required. `<date field>` is `{ "type": "DueDate" | "TargetStartDate" | "TargetEndDate" | "DateCustomField", "dateCustomFieldId"?: <id, for DateCustomField> }`.
 - `--cross-project-releases`: `[{ "name": "<release name>", "releaseIds"?: [<version id>, ...] }, ...]`.
 - `--custom-fields`: `[{ "customFieldId": <id>, "filter"?: <boolean> }, ...]`.
 - `--exclusion-rules`: `{ "numberOfDaysToShowCompletedIssues"?: <int>, "issueIds"?: [...], "issueTypeIds"?: [...], "releaseIds"?: [...], "workStatusCategoryIds"?: [...], "workStatusIds"?: [...] }` (all ID lists are numeric).
@@ -1396,7 +1399,7 @@ Advanced Roadmaps plans management (B625–B640). Covers the `/rest/api/3/plans/
 - `--planning-style`: `Scrum`, `Kanban`
 - `--scheduling` estimation: `StoryPoints`, `Days`, `Hours`
 - `--scheduling` dependencies: `Sequential`, `Concurrent`
-- `--scheduling` inferredDates: `None`, `SprintDates`, `ReleaseDates`
+- `--scheduling` inferredDates: `None`, `SprintDates`, `ReleaseDates`, `AnySprintDates`
 
 | Action                  | Positional                  | Required flags                                                         | Optional flags                                                                                                                                                                       |
 | ----------------------- | --------------------------- | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -1436,7 +1439,7 @@ atlas jira plans get 10001 --use-group-id
 atlas jira plans create --name "Q3 Plan" --issue-sources '[{"type":"Board","value":1}]' --scheduling '{"estimation":"StoryPoints","dependencies":"Sequential","startDate":{"type":"TargetStartDate"},"endDate":{"type":"TargetEndDate"}}'
 
 # Create a plan with releases, a custom field filter, exclusions and an editor
-atlas jira plans create --name "Q4 Plan" --issue-sources '[{"type":"Project","value":10100}]' --scheduling '{"estimation":"Days","inferredDates":"ReleaseDates"}' --cross-project-releases '[{"name":"Q4 release","releaseIds":[10200,10201]}]' --custom-fields '[{"customFieldId":10050,"filter":true}]' --exclusion-rules '{"numberOfDaysToShowCompletedIssues":30,"issueTypeIds":[10003]}' --plan-permissions '[{"type":"Edit","holder":{"type":"AccountId","value":"5b10ac8d82e05b22cc7d4ef5"}}]'
+atlas jira plans create --name "Q4 Plan" --issue-sources '[{"type":"Project","value":10100}]' --scheduling '{"estimation":"Days","inferredDates":"AnySprintDates"}' --cross-project-releases '[{"name":"Q4 release","releaseIds":[10200,10201]}]' --custom-fields '[{"customFieldId":10050,"filter":true}]' --exclusion-rules '{"numberOfDaysToShowCompletedIssues":30,"issueTypeIds":[10003]}' --plan-permissions '[{"type":"Edit","holder":{"type":"AccountId","value":"5b10ac8d82e05b22cc7d4ef5"}}]'
 
 # Create a plan with a lead, letting a group (named by group ID) view it
 atlas jira plans create --name "Q1 Plan" --issue-sources '[{"type":"Filter","value":10300}]' --scheduling '{"estimation":"Hours"}' --lead-account-id 5b10ac8d82e05b22cc7d4ef5 --plan-permissions '[{"type":"View","holder":{"type":"Group","value":"276f955c-63d7-42c8-9520-92d01dca0625"}}]' --use-group-id

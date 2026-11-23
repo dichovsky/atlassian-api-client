@@ -1,14 +1,12 @@
 /**
  * Release 4.1.0, unit "core": regressions found by the pre-release audit.
  *
- * Most cases run over a real local socket through the public client, so they
- * pin what reaches the wire (server hit counts, methods, bodies, headers), not
- * how the transport is put together. The rest mock `config.fetch` to produce a
- * failure shape a socket cannot produce on demand.
+ * Most cases exercise native fetch and a local HTTP server through the public
+ * client, recording request counts, methods, bodies, and headers. The rest mock
+ * `config.fetch` to produce failures that are hard to induce on demand.
  */
 import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from 'vitest';
 import http from 'node:http';
-import type { AddressInfo } from 'node:net';
 import { JiraClient } from '../../src/jira/client.js';
 import { HttpTransport } from '../../src/core/transport.js';
 import { resolveConfig } from '../../src/core/config.js';
@@ -23,6 +21,7 @@ import { createCircuitBreakerMiddleware } from '../../src/core/circuit-breaker.j
 import { fetchRefreshedTokens, OAuthError } from '../../src/core/oauth.js';
 import { computeQsh } from '../../src/core/connect-jwt.js';
 import type { ClientConfig } from '../../src/core/types.js';
+import { LocalHttpNetwork } from '../helpers/local-http.js';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -37,12 +36,14 @@ interface Hit {
 }
 
 interface TestServer {
-  readonly port: number;
+  readonly origin: string;
   readonly hits: Hit[];
   close(): Promise<void>;
 }
 
 type Responder = (hit: Hit, req: http.IncomingMessage, res: http.ServerResponse) => void;
+
+const network = new LocalHttpNetwork();
 
 async function startServer(respond: Responder): Promise<TestServer> {
   const hits: Hit[] = [];
@@ -61,25 +62,17 @@ async function startServer(respond: Responder): Promise<TestServer> {
       respond(hit, req, res);
     });
   });
-  await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
-  return {
-    port: (server.address() as AddressInfo).port,
-    hits,
-    close: () =>
-      new Promise<void>((resolve) => {
-        server.closeAllConnections();
-        server.close(() => resolve());
-      }),
-  };
+  const origin = await network.listen(server);
+  return { origin, hits, close: () => network.close(server) };
 }
 
 const TENANT = 'https://test.atlassian.net';
 const AUTH = { type: 'basic', email: 'a@b.c', apiToken: 'TOKEN' } as const;
 
 /** Route the tenant origin to a local server, as a proxying `config.fetch` would. */
-function routeTenantTo(port: number): typeof fetch {
+function routeTenantTo(origin: string): typeof fetch {
   return ((input: string | URL, init?: RequestInit) =>
-    fetch(String(input).replace(TENANT, `http://127.0.0.1:${port}`), init)) as typeof fetch;
+    network.fetch(String(input).replace(TENANT, origin), init)) as typeof fetch;
 }
 
 function jira(fetchImpl: typeof fetch, retries = 3): JiraClient {
@@ -177,13 +170,13 @@ describe('a socket that dies after a 2xx status arrived (F251/F260)', () => {
       setTimeout(() => req.socket.destroy(), 10);
     });
   });
-  afterAll(() => server.close());
+  afterAll(() => server?.close());
   beforeEach(() => {
     server.hits.splice(0);
   });
 
   it('sends a create exactly once: the 201 means the issue already exists', async () => {
-    const error = await jira(routeTenantTo(server.port))
+    const error = await jira(routeTenantTo(server.origin))
       .issues.create({ fields: { summary: 'once' } })
       .catch((e: unknown) => e);
 
@@ -193,7 +186,7 @@ describe('a socket that dies after a 2xx status arrived (F251/F260)', () => {
   });
 
   it('still retries a GET, which is safe to repeat', async () => {
-    const error = await jira(routeTenantTo(server.port))
+    const error = await jira(routeTenantTo(server.origin))
       .issues.get('PROJ-1')
       .catch((e: unknown) => e);
 
@@ -353,19 +346,19 @@ describe('OAuth token refresh redirects (F262)', () => {
       res.end('{"access_token":"attacker-chosen","expires_in":3600}');
     });
     tokenHost = await startServer((_hit, _req, res) => {
-      res.writeHead(308, { location: `http://127.0.0.1:${foreign.port}/collect` });
+      res.writeHead(308, { location: `${foreign.origin}/collect` });
       res.end();
     });
   });
   afterAll(async () => {
-    await foreign.close();
-    await tokenHost.close();
+    await foreign?.close();
+    await tokenHost?.close();
   });
 
   it('rejects a 308 instead of replaying refresh_token and client_secret elsewhere', async () => {
     const shim = ((input: string | URL, init?: RequestInit) =>
-      fetch(
-        String(input).replace('https://auth.atlassian.com', `http://127.0.0.1:${tokenHost.port}`),
+      network.fetch(
+        String(input).replace('https://auth.atlassian.com', tokenHost.origin),
         init,
       )) as typeof fetch;
 
@@ -396,7 +389,7 @@ describe('redirects on requests that carry a body (F263)', () => {
     });
     tenant = await startServer((hit, _req, res) => {
       if (hit.url === '/rest/api/3/issue') {
-        res.writeHead(308, { location: `http://127.0.0.1:${foreign.port}/collect` });
+        res.writeHead(308, { location: `${foreign.origin}/collect` });
         res.end();
       } else if (hit.url === '/rest/api/3/issue/properties') {
         res.writeHead(303, { location: '/rest/api/3/task/1' });
@@ -405,14 +398,14 @@ describe('redirects on requests that carry a body (F263)', () => {
         res.writeHead(200, { 'content-type': 'application/json' });
         res.end('{"id":"1","status":"COMPLETE"}');
       } else {
-        res.writeHead(303, { location: `http://127.0.0.1:${foreign.port}/media/1` });
+        res.writeHead(303, { location: `${foreign.origin}/media/1` });
         res.end();
       }
     });
   });
   afterAll(async () => {
-    await foreign.close();
-    await tenant.close();
+    await foreign?.close();
+    await tenant?.close();
   });
   beforeEach(() => {
     foreign.hits.splice(0);
@@ -420,7 +413,7 @@ describe('redirects on requests that carry a body (F263)', () => {
   });
 
   it('refuses a 308 that would replay a POST body to a host outside allowedHosts', async () => {
-    const error = await jira(routeTenantTo(tenant.port), 0)
+    const error = await jira(routeTenantTo(tenant.origin), 0)
       .issues.create({ fields: { summary: 'confidential' } })
       .catch((e: unknown) => e);
 
@@ -430,7 +423,7 @@ describe('redirects on requests that carry a body (F263)', () => {
   });
 
   it('follows a 303 after a POST as a body-less GET on the same host (async task)', async () => {
-    await jira(routeTenantTo(tenant.port), 0).issues.setPropertiesByEntityIds({
+    await jira(routeTenantTo(tenant.origin), 0).issues.setPropertiesByEntityIds({
       entitiesIds: [10001],
       properties: { flag: true },
     });
@@ -447,7 +440,7 @@ describe('redirects on requests that carry a body (F263)', () => {
   });
 
   it('still lets fetch follow a GET redirect off-host, without the credential', async () => {
-    const data = await jira(routeTenantTo(tenant.port), 0).issueAttachments.downloadContent('1');
+    const data = await jira(routeTenantTo(tenant.origin), 0).issueAttachments.downloadContent('1');
 
     expect(new TextDecoder().decode(data)).toBe('media-bytes');
     expect(tenant.hits[0]?.auth).toMatch(/^Basic /);

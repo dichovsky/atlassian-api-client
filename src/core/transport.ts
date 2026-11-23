@@ -112,7 +112,7 @@ export class HttpTransport implements Transport {
    *   argument. When provided, `baseUrl` takes precedence over `config.baseUrl`
    *   for URL construction (preserves v0.x behavior).
    */
-  // eslint-disable-next-line @typescript-eslint/unified-signatures
+  // oxlint-disable-next-line typescript/unified-signatures -- only this overload is deprecated.
   constructor(config: ResolvedConfig, baseUrl: string);
   constructor(config: ResolvedConfig, baseUrl?: string) {
     if (baseUrl !== undefined) {

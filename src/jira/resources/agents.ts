@@ -38,7 +38,11 @@ export interface StartAgentSessionsUniformData {
 
 /** Item-level outcome code. Spec: `BulkAgentSessionOutcome.result`. */
 export type BulkAgentSessionResult =
-  'STARTED' | 'ALREADY_STARTED' | 'FAILED' | 'RATE_LIMITED' | 'IN_DOUBT';
+  | 'STARTED'
+  | 'ALREADY_STARTED'
+  | 'FAILED'
+  | 'RATE_LIMITED'
+  | 'IN_DOUBT';
 
 /** Item-level error inside an HTTP 200 response. Spec: `BulkAgentSessionItemError`. */
 export interface BulkAgentSessionItemError {

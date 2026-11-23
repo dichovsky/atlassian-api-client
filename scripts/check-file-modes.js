@@ -89,8 +89,8 @@ export function isEntryPoint(moduleUrl, scriptPath) {
   try {
     const entry = createRequire(moduleUrl).resolve(resolve(scriptPath));
     return realpathSync(entry) === realpathSync(fileURLToPath(moduleUrl));
-  } catch {
-    return false;
+  } catch (cause) {
+    throw new Error('Cannot resolve the Node.js entry point for the repository check.', { cause });
   }
 }
 

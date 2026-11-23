@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { parseWorkflowYaml } from './workflow-yaml.js';
 
-describe('workflow YAML subset parser', () => {
+describe('workflow YAML parser', () => {
   it('parses the constructs the workflows use', () => {
     const source = [
       'on:',
@@ -50,24 +50,43 @@ describe('workflow YAML subset parser', () => {
     });
   });
 
+  it('reads flow mappings, anchored steps and folded run commands', () => {
+    const source = [
+      'on: [push]',
+      'jobs:',
+      '  build:',
+      '    steps: &steps',
+      '      - run: >-',
+      '          npm run',
+      '          validate',
+      '  test:',
+      '    needs: ["build, scan", build]',
+      '    steps: *steps',
+      '    strategy: {fail-fast: false, matrix: {node: [24, 26]}}',
+    ].join('\n');
+
+    const steps = [{ run: 'npm run validate' }];
+    expect(parseWorkflowYaml(source)).toEqual({
+      on: ['push'],
+      jobs: {
+        build: { steps },
+        test: {
+          needs: ['build, scan', 'build'],
+          steps,
+          strategy: { 'fail-fast': false, matrix: { node: [24, 26] } },
+        },
+      },
+    });
+  });
+
   it.each([
     ['a duplicate key', 'a: 1\na: 2'],
-    ['an anchor', 'a: &x 1'],
-    ['an alias', 'a: *x'],
-    ['a tag', 'a: !!str 1'],
-    ['a folded scalar', 'a: >\n  text'],
-    ['a multi-line plain scalar', 'a: one\n  two'],
-    ['a non-empty flow mapping', 'a: {b: c}'],
-    ['a nested flow sequence', 'a: [[b]]'],
-    ['a comma inside a single-quoted flow item', "a: ['pre,flight', publish]"],
-    ['a comma inside a double-quoted flow item', 'a: ["pre,flight", publish]'],
-    ['a quote left open in a flow item', "a: ['b, c]"],
-    ['a value containing ": "', 'a: b: c'],
-    ['tab indentation', 'a:\n\tb: c'],
+    ['an unresolved alias', 'a: *missing'],
+    ['an unknown tag', 'a: !unknown text'],
+    ['multiple documents', 'on: push\n---\non: pull_request'],
     ['an unterminated quote', "a: 'b"],
-    ['content after a quoted scalar', "a: 'b' c"],
-    ['a dedented trailing line', 'a:\n    b: c\n  d: e'],
-  ])('rejects %s instead of guessing', (_label, source) => {
+    ['incorrect indentation', 'a:\n    b: c\n  d: e'],
+  ])('rejects %s', (_label, source) => {
     expect(() => parseWorkflowYaml(source)).toThrow();
   });
 });

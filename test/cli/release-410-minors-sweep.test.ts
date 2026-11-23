@@ -98,6 +98,22 @@ describe('M-CA2: pages / blog-posts list --space-id takes one space ID', () => {
 
     await refused(withFlag(argv, '--space-id', '1,2'), '--space-id takes one space ID, got: 1,2');
   });
+
+  it.each(['pages', 'blog-posts'])('%s list preserves int64 bounds', async (resource) => {
+    for (const id of ['-9223372036854775808', '9223372036854775807']) {
+      const req = only(await runCliWire(['confluence', resource, 'list', `--space-id=${id}`]));
+      expect(req.query.getAll('space-id')).toEqual([id]);
+    }
+  });
+
+  it.each(['pages', 'blog-posts'])('%s list rejects out-of-range space IDs', async (resource) => {
+    for (const id of ['-9223372036854775809', '9223372036854775808']) {
+      await refused(
+        ['confluence', resource, 'list', `--space-id=${id}`],
+        `--space-id must fit in a signed int64, got: ${id}`,
+      );
+    }
+  });
 });
 
 describe('M-CA3: attachments thumbnail --file refuses an existing file before the download', () => {

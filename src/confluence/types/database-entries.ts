@@ -277,7 +277,12 @@ export interface DatabaseEntryLinkValue {
 /** Value of a lookup-derived field; the API always returns `null` for these. */
 export interface DatabaseNullLookupValue {
   readonly type:
-    'entryDetails' | 'backlink' | 'pageDetails' | 'pageLabels' | 'pageStatus' | 'jiraIssueDetails';
+    | 'entryDetails'
+    | 'backlink'
+    | 'pageDetails'
+    | 'pageLabels'
+    | 'pageStatus'
+    | 'jiraIssueDetails';
   readonly value: null;
 }
 

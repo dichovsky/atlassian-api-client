@@ -1019,7 +1019,7 @@ No action takes a positional argument except `field-update <fieldId>` and `field
 | `context-create`                  | `--field-id`, `--name`                                                                  | `--description`, `--project-ids` (CSV), `--issue-type-ids` (CSV)                                                                                   |
 | `context-update`                  | `--field-id`, `--context-id`, and `--name` and/or `--description`                       | —                                                                                                                                                  |
 | `context-delete`                  | `--field-id`, `--context-id`                                                            | —                                                                                                                                                  |
-| `context-option-list`             | `--field-id`, `--context-id`                                                            | `--option-id`, `--only-options`, `--start-at`, `--max-results`                                                                                     |
+| `context-option-list`             | `--field-id`, `--context-id`                                                            | `--option-id`, `--only-options`, `--query`, `--start-at`, `--max-results`                                                                          |
 | `context-option-create`           | `--field-id`, `--context-id`, `--body` (JSON)                                           | —                                                                                                                                                  |
 | `context-option-update`           | `--field-id`, `--context-id`, `--body` (JSON)                                           | —                                                                                                                                                  |
 | `context-option-delete`           | `--field-id`, `--context-id`, `--option-id`                                             | —                                                                                                                                                  |
@@ -1121,11 +1121,16 @@ atlas jira fields context-delete --field-id customfield_10001 --context-id 10025
 
 ### Field Context Options (B421–B426)
 
+`context-option-list` applies `--query`, `--option-id`, and `--only-options` together before pagination. The response's `total` counts matching options across all pages.
+
 `context-option-create --body` is `{"options":[{"value":"…","disabled"?:bool,"optionId"?:"<parent option id for a cascading child>"}]}`; `context-option-update --body` is `{"options":[{"id":"…","value"?:"…","disabled"?:bool}]}`. `context-option-move` needs `--option-ids` (options or cascading options, not both; the list order is the order after the move) and exactly one placement: `--position First` / `--position Last`, or `--after <optionId>`; with neither it is refused before sending. `context-option-replace-issues` deselects `--option-id` on the issues matched by `--jql` (e.g. `project=10000`), replacing it with `--replace-with` if given; it only works for options created in Jira or through these context-option actions, not for options created by Connect or Forge apps, and prints the async task.
 
 ```sh
 # List options for a field context (B421)
 atlas jira fields context-option-list --field-id customfield_10001 --context-id 10025
+
+# Search option values for a literal substring, ignoring case. A blank query matches any value.
+atlas jira fields context-option-list --field-id customfield_10001 --context-id 10025 --query London
 
 # List options with pagination and filters (B421): --only-options skips cascading children, --option-id returns one option
 atlas jira fields context-option-list --field-id customfield_10001 --context-id 10025 --start-at 0 --max-results 50 --only-options
@@ -1178,9 +1183,16 @@ atlas jira fields context-issuetype-mapping --field-id customfield_10001 --conte
 
 Get and set default values for custom field contexts.
 
+> **Experimental:** Atlassian marks `context-default-get` `x-experimental`.
+
 `context-default-get` uses the current grouped reader
 `GET /field/{fieldId}/context/defaultValues`. It returns one item per context,
-with nested defaults grouped by issue type. `context-default-list` and
+with nested defaults grouped by issue type. The tenant must be enrolled in the
+early access program (CHANGE-3082), and the caller needs the Administer Jira
+global permission. HTTP 403 can mean the feature is disabled for the tenant or
+the caller lacks that permission.
+
+`context-default-list` and
 `context-default-set` use the deprecated singular `/defaultValue` endpoints
 (CHANGE-3082), scheduled for removal in October 2026.
 

@@ -514,6 +514,7 @@ export type {
   CreateFieldData,
   UpdateFieldData,
   ListFieldsParams,
+  ListFieldContextOptionsParams,
   DeleteFieldParams,
   TaskProgressBeanObject,
   // issueSecuritySchemes.associateToProject / removeLevel resolve the task with { returnTask: true }
@@ -536,6 +537,7 @@ export type {
   JqlQueryToSanitize,
   SanitizedJqlQuery,
   JqlSuggestion,
+  SchedulingInferredDates,
   BulkCreateIssueData,
   BulkCreatedIssues,
   BulkSetIssuePropertyData,

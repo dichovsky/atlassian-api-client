@@ -5,7 +5,7 @@
 import { describe, expect, it } from 'vitest';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
-import ts from 'typescript';
+import { checkTypeScriptExamples } from '../helpers/check-typescript-examples.js';
 
 const ROOT = resolve(import.meta.dirname, '..', '..');
 const SKILL_DIR = resolve(ROOT, 'skill');
@@ -46,43 +46,10 @@ describe('TypeScript snippets in the skill compile against the package (F006)', 
   });
 
   it('type-checks every snippet with the package import mapped to src', () => {
-    const entry = resolve(ROOT, 'src/index.ts').replace(/\.ts$/, '.js');
-    const files = new Map(
-      snippets.map((s, i) => [
-        resolve(ROOT, 'test', `__skill_snippet_${i}__.ts`),
-        (PRELUDE + s.code).replaceAll("'atlassian-api-client'", JSON.stringify(entry)),
-      ]),
+    const files = Object.fromEntries(
+      snippets.map(({ where, code }, index) => [`${where}-${index + 1}.mts`, PRELUDE + code]),
     );
-    const options: ts.CompilerOptions = {
-      target: ts.ScriptTarget.ES2022,
-      module: ts.ModuleKind.Node16,
-      moduleResolution: ts.ModuleResolutionKind.Node16,
-      moduleDetection: ts.ModuleDetectionKind.Force,
-      lib: ['lib.es2022.d.ts'],
-      types: ['node'],
-      strict: true,
-      skipLibCheck: true,
-      noEmit: true,
-    };
-    const host = ts.createCompilerHost(options);
-    const { getSourceFile, fileExists, readFile } = host;
-    host.fileExists = (f) => files.has(f) || fileExists.call(host, f);
-    host.readFile = (f) => files.get(f) ?? readFile.call(host, f);
-    host.getSourceFile = (f, lang, ...rest) => {
-      const text = files.get(f);
-      return text === undefined
-        ? getSourceFile.call(host, f, lang, ...rest)
-        : ts.createSourceFile(f, text, lang);
-    };
-    const program = ts.createProgram([...files.keys()], options, host);
-    const errors = [...files.keys()].flatMap((f, i) =>
-      ts
-        .getPreEmitDiagnostics(program, program.getSourceFile(f))
-        .map(
-          (d) => `${snippets[i]?.where}: ${ts.flattenDiagnosticMessageText(d.messageText, '\n')}`,
-        ),
-    );
-    expect(errors).toEqual([]);
+    checkTypeScriptExamples(files, { module: 'Node16', moduleResolution: 'Node16' });
   }, 60_000);
 });
 

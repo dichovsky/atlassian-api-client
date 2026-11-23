@@ -1,4 +1,5 @@
 import type { Transport } from '../../core/types.js';
+import { ValidationError } from '../../core/errors.js';
 import { encodePathSegment } from '../../core/path.js';
 import type { CursorPaginatedResponse } from '../../core/pagination.js';
 import { paginateCursor, validatePageSize } from '../../core/pagination.js';
@@ -11,6 +12,27 @@ import type {
   UpdateSpaceRoleData,
   UpdateSpaceRoleResponse,
 } from '../types/space-roles.js';
+
+function buildRoleFilters(params?: ListSpaceRolesParams): Record<string, string | number> {
+  const query: Record<string, string | number> = {};
+  if (params?.limit !== undefined) {
+    validatePageSize(params.limit, 'limit');
+    query['limit'] = params.limit;
+  }
+  const spaceId = params?.['space-id'];
+  if (spaceId !== undefined) {
+    if (typeof spaceId !== 'string' && !Number.isSafeInteger(spaceId)) {
+      throw new ValidationError('space-id must be a nonblank string or a safe integer');
+    }
+    const id = String(spaceId).trim();
+    if (id === '') throw new ValidationError('space-id must not be empty');
+    query['space-id'] = id;
+  }
+  if (params?.['role-type'] !== undefined) query['role-type'] = params['role-type'];
+  if (params?.['principal-id'] !== undefined) query['principal-id'] = params['principal-id'];
+  if (params?.['principal-type'] !== undefined) query['principal-type'] = params['principal-type'];
+  return query;
+}
 
 /**
  * Resource for the Confluence v2 `space-roles` API.
@@ -39,15 +61,8 @@ export class SpaceRolesResource {
 
   /** List available space roles (single page). */
   async list(params?: ListSpaceRolesParams): Promise<CursorPaginatedResponse<SpaceRole>> {
-    if (params?.limit !== undefined) validatePageSize(params.limit, 'limit');
-    const query: Record<string, string | number | undefined> = {};
-    if (params?.['space-id'] !== undefined) query['space-id'] = params['space-id'];
-    if (params?.['role-type'] !== undefined) query['role-type'] = params['role-type'];
-    if (params?.['principal-id'] !== undefined) query['principal-id'] = params['principal-id'];
-    if (params?.['principal-type'] !== undefined)
-      query['principal-type'] = params['principal-type'];
+    const query = buildRoleFilters(params);
     if (params?.cursor !== undefined) query['cursor'] = params.cursor;
-    if (params?.limit !== undefined) query['limit'] = params.limit;
 
     const response = await this.transport.request<CursorPaginatedResponse<SpaceRole>>({
       method: 'GET',
@@ -59,14 +74,7 @@ export class SpaceRolesResource {
 
   /** Iterate over every available space role across all pages. */
   async *listAll(params?: Omit<ListSpaceRolesParams, 'cursor'>): AsyncGenerator<SpaceRole> {
-    if (params?.limit !== undefined) validatePageSize(params.limit, 'limit');
-    const query: Record<string, string | number | undefined> = {};
-    if (params?.['space-id'] !== undefined) query['space-id'] = params['space-id'];
-    if (params?.['role-type'] !== undefined) query['role-type'] = params['role-type'];
-    if (params?.['principal-id'] !== undefined) query['principal-id'] = params['principal-id'];
-    if (params?.['principal-type'] !== undefined)
-      query['principal-type'] = params['principal-type'];
-    if (params?.limit !== undefined) query['limit'] = params.limit;
+    const query = buildRoleFilters(params);
     yield* paginateCursor<SpaceRole>(this.transport, `${this.baseUrl}/space-roles`, query);
   }
 

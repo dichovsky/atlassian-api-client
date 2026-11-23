@@ -11,6 +11,8 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync, readdirSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import * as ts from 'typescript/unstable/ast';
+import { readTypeScriptSources } from '../../scripts/typescript-source.js';
 import { parseCases, actionsForResource } from '../helpers/dispatcher-map.js';
 import {
   actionProblem,
@@ -56,54 +58,29 @@ function extractWiring(clientSource: string): ResourceWiring[] {
   return out;
 }
 
-/** Find the resource file declaring `class <className>` by content, not filename convention. */
-function findClassFile(resourcesDir: string, className: string): string {
-  const files = readdirSync(resourcesDir).filter((f) => f.endsWith('.ts'));
-  for (const file of files) {
-    const path = resolve(resourcesDir, file);
-    if (new RegExp(String.raw`class\s+${className}\b`).test(readFileSync(path, 'utf8'))) {
-      return path;
+/** Inspect runtime implementations. An overload signature has no body or generator token. */
+function readResourceMethods(resourcesDir: string): Map<string, MethodInfo[]> {
+  const files = readdirSync(resourcesDir)
+    .filter((file) => file.endsWith('.ts'))
+    .map((file) => resolve(resourcesDir, file));
+  const methodsByClass = new Map<string, MethodInfo[]>();
+  const hidden = ts.ModifierFlags.Private | ts.ModifierFlags.Protected | ts.ModifierFlags.Static;
+  for (const source of readTypeScriptSources(files).values()) {
+    for (const cls of source.statements.filter(ts.isClassDeclaration)) {
+      if (!cls.name) continue;
+      const methods: MethodInfo[] = [];
+      for (const member of cls.members) {
+        if (!ts.isMethodDeclaration(member) || !member.body) continue;
+        if ((member.modifierFlags & hidden) !== 0 || ts.isPrivateIdentifier(member.name)) continue;
+        const name = ts.isStringLiteral(member.name)
+          ? member.name.text
+          : member.name.getText(source);
+        methods.push({ name, isGenerator: Boolean(member.asteriskToken) });
+      }
+      methodsByClass.set(cls.name.text, methods);
     }
   }
-  throw new Error(`No file under ${resourcesDir} declares class ${className}`);
-}
-
-/** Isolate one class's body text via brace-depth matching (safe for nested braces). */
-function extractClassBody(source: string, className: string): string {
-  const declRegex = new RegExp(String.raw`(?:export\s+)?class\s+${className}\b[^{]*\{`);
-  const match = declRegex.exec(source);
-  if (!match) throw new Error(`class ${className} declaration not found`);
-  const bodyStart = match.index + match[0].length;
-  let depth = 1;
-  let i = bodyStart;
-  for (; i < source.length && depth > 0; i++) {
-    if (source[i] === '{') depth++;
-    else if (source[i] === '}') depth--;
-  }
-  return source.slice(bodyStart, i - 1);
-}
-
-// Matches a class member signature at exactly 2-space indent (Prettier's
-// class-member indent in this repo), e.g. `  async list(`, `  async *listAll(`,
-// `  private async helper(`. JSDoc lines (`  /**`, `   * ...`) never match:
-// they don't end in `\w+\s*\(` at this indent.
-const MEMBER_RE =
-  /^ {2}((?:(?:private|protected|static|public)\s+)*)(async\s+)?(\*\s*)?(\w+)\s*\(/gm;
-
-/** Every public instance method (async or async generator) declared directly in a class body. */
-function extractPublicMethods(classBody: string): MethodInfo[] {
-  const out: MethodInfo[] = [];
-  const re = new RegExp(MEMBER_RE);
-  let m: RegExpExecArray | null;
-  while ((m = re.exec(classBody)) !== null) {
-    const modifiers = m[1] ?? '';
-    const isGenerator = Boolean(m[3]);
-    const name = m[4] as string;
-    if (name === 'constructor') continue;
-    if (/private|protected|static/.test(modifiers)) continue;
-    out.push({ name, isGenerator });
-  }
-  return out;
+  return methodsByClass;
 }
 
 /**
@@ -151,7 +128,7 @@ function extractCallSites(cliSource: string): Set<string> {
 function describeSdkToCliReachability(
   label: string,
   clientSource: string,
-  resourcesDir: string,
+  methodsByClass: ReadonlyMap<string, readonly MethodInfo[]>,
   cliSource: string,
 ): void {
   const wirings = extractWiring(clientSource);
@@ -159,10 +136,8 @@ function describeSdkToCliReachability(
 
   describe(`${label}: every public resource method is CLI-reachable`, () => {
     for (const { property, className } of wirings) {
-      const classFile = findClassFile(resourcesDir, className);
-      const classSource = readFileSync(classFile, 'utf8');
-      const classBody = extractClassBody(classSource, className);
-      const methods = extractPublicMethods(classBody);
+      const methods = methodsByClass.get(className);
+      if (!methods) throw new Error(`No resource class named ${className} in ${label}`);
       const methodNames = new Set(methods.map((m) => m.name));
 
       for (const method of methods) {
@@ -184,13 +159,33 @@ const confluenceClientSource = readFileSync(CONFLUENCE_CLIENT_SRC, 'utf8');
 const jiraCliSource = readFileSync(JIRA_CLI_SRC, 'utf8');
 const confluenceCliSource = readFileSync(CONFLUENCE_CLI_SRC, 'utf8');
 
-describeSdkToCliReachability('Jira', jiraClientSource, JIRA_RESOURCES_DIR, jiraCliSource);
+const confluenceMethods = readResourceMethods(CONFLUENCE_RESOURCES_DIR);
+describeSdkToCliReachability(
+  'Jira',
+  jiraClientSource,
+  readResourceMethods(JIRA_RESOURCES_DIR),
+  jiraCliSource,
+);
 describeSdkToCliReachability(
   'Confluence',
   confluenceClientSource,
-  CONFLUENCE_RESOURCES_DIR,
+  confluenceMethods,
   confluenceCliSource,
 );
+
+it('counts an overloaded paginator once and detects an ordinary method missing from the CLI', () => {
+  const methods = confluenceMethods.get('TasksResource') ?? [];
+  expect(methods.filter((method) => method.name === 'listAll')).toEqual([
+    { name: 'listAll', isGenerator: true },
+  ]);
+  const names = new Set(methods.map(({ name }) => name));
+  const calls = extractCallSites(confluenceCliSource);
+  calls.delete('tasks.get');
+  const missing = methods.filter(
+    (method) => !isAllVariantExempt(method, names) && !calls.has(`tasks.${method.name}`),
+  );
+  expect(missing).toEqual([{ name: 'get', isGenerator: false }]);
+});
 
 // ─── Test B: CLI action -> skill-doc reachability ──────────────────────────
 

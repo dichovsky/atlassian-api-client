@@ -28,6 +28,8 @@ The package has no runtime dependencies. It uses the `fetch` function of Node.js
 npm install atlassian-api-client
 ```
 
+A TypeScript project must also have the Node.js type declarations for the Node.js version that it uses. For example, for Node.js 24, run `npm install --save-dev @types/node@24`. If you use TypeScript 6.0 or a subsequent version, put `"node"` in `compilerOptions.types`. Also do this if your project gives a list of its ambient types.
+
 ## Supported Runtimes
 
 - Node.js >= 24.0.0
@@ -691,7 +693,7 @@ npm run api-coverage
 This is an example of the output:
 
 ```
-✓ jiraPlatform: 1000 types; contract d2bfad62f84c (https://developer.atlassian.com/cloud/.../swagger-v3.v3.json)
+✓ jiraPlatform: 1000 types; contract c72f7509a6c6 (https://developer.atlassian.com/cloud/.../swagger-v3.v3.json)
 ✓ jiraSoftware: 66 types; contract 1b3a0fd3f68e (https://developer.atlassian.com/cloud/.../swagger.v3.json)
 ✓ confluence: 221 types; contract ad6d0bc5ad1f (https://developer.atlassian.com/cloud/.../openapi-v2.v3.json)
 ```

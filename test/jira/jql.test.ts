@@ -88,26 +88,38 @@ describe('JqlResource', () => {
       });
     });
 
-    it('passes optional fieldValue, predicateName, predicateValue params', async () => {
-      // Arrange
-      transport.respondWith({ results: [] });
+    it.each([-2_147_483_648, -1, 0, 25, 51, 2_147_483_647])(
+      'forwards all filters and maxResults=%i',
+      async (maxResults) => {
+        transport.respondWith({ results: [] });
 
-      // Act
-      await jql.getFieldReferenceSuggestions({
-        fieldName: 'assignee',
-        fieldValue: 'john',
-        predicateName: 'was',
-        predicateValue: 'before',
-      });
+        await jql.getFieldReferenceSuggestions({
+          fieldName: 'assignee',
+          fieldValue: 'john',
+          predicateName: 'was',
+          predicateValue: 'before',
+          maxResults,
+        });
 
-      // Assert
-      expect(transport.lastCall?.options.query).toMatchObject({
-        fieldName: 'assignee',
-        fieldValue: 'john',
-        predicateName: 'was',
-        predicateValue: 'before',
-      });
-    });
+        expect(transport.lastCall?.options.query).toStrictEqual({
+          fieldName: 'assignee',
+          fieldValue: 'john',
+          predicateName: 'was',
+          predicateValue: 'before',
+          maxResults,
+        });
+      },
+    );
+
+    it.each([NaN, Infinity, 1.5, -2_147_483_649, 2_147_483_648, Number.MAX_SAFE_INTEGER + 1])(
+      'rejects maxResults=%s outside the int32 domain before sending a request',
+      async (maxResults) => {
+        await expect(jql.getFieldReferenceSuggestions({ maxResults })).rejects.toThrow(
+          new ValidationError('maxResults must be a signed 32-bit integer'),
+        );
+        expect(transport.calls).toHaveLength(0);
+      },
+    );
 
     it('does not include undefined optional params in query', async () => {
       // Arrange
@@ -117,10 +129,7 @@ describe('JqlResource', () => {
       await jql.getFieldReferenceSuggestions({ fieldName: 'project' });
 
       // Assert
-      const query = transport.lastCall?.options.query ?? {};
-      expect(query['fieldValue']).toBeUndefined();
-      expect(query['predicateName']).toBeUndefined();
-      expect(query['predicateValue']).toBeUndefined();
+      expect(transport.lastCall?.options.query).toStrictEqual({ fieldName: 'project' });
     });
 
     it('accepts no params — fieldName is optional per spec (B1056)', async () => {

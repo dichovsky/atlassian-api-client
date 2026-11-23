@@ -96,13 +96,6 @@ const USERS: readonly Row[] = [
     { accountId: 'a' },
   ],
   [['users', 'get-columns'], 'GET', `${API}/user/columns`, {}],
-  [
-    ['users', 'set-columns', '--columns', 'summary,status'],
-    'PUT',
-    `${API}/user/columns`,
-    {},
-    { columns: ['summary', 'status'] },
-  ],
   [['users', 'email', '--account-id', 'a'], 'GET', `${API}/user/email`, { accountId: 'a' }],
   [
     ['users', 'bulk-emails', '--account-ids', 'a,b'],
@@ -644,6 +637,91 @@ describe('CLI → wire matrix (release 4.1.0 jira-users-agile)', () => {
   it.each(labelled(BOARDS))('%s', (_label, row) => expectRow(row));
   it.each(labelled(SPRINTS))('%s', (_label, row) => expectRow(row));
   it.each(labelled(OTHER))('%s', (_label, row) => expectRow(row));
+
+  describe.each(['users', 'settings'])('%s set-columns', (resource) => {
+    it.for([
+      [],
+      ['--clear=false'],
+      ['--columns', ''],
+      ['--columns', '  '],
+      ['--columns', ','],
+      ['--columns', 'summary, ,status'],
+      ['--columns', 'summary', '--clear'],
+      ['--clear', '--columns', ''],
+      ['--clear', 'unexpected'],
+    ])('rejects invalid input before writing (%j)', async (flags) => {
+      const run = await runCliWire(['jira', resource, 'set-columns', ...flags]);
+      expect(run.exitCode).toBe(1);
+      expect(run.stderr).toContain('--columns');
+      expect(run.requests).toHaveLength(0);
+    });
+  });
+
+  it.each([
+    ['users', [], 'user', {}],
+    ['users', ['--account-id', 'a'], 'user', { accountId: 'a' }],
+    ['settings', [], 'settings', {}],
+  ] as const)(
+    '%s set-columns --clear %j sends an empty form',
+    async (resource, flags, path, query) => {
+      const run = await runCliWire(['jira', resource, 'set-columns', '--clear', ...flags]);
+      expect(run.exitCode).toBe(0);
+      expect(run.requests).toHaveLength(1);
+      const req = run.requests[0] as WireRequest;
+      expect(req.method).toBe('PUT');
+      expect(req.path).toBe(`${API}/${path}/columns`);
+      expect(queryOf(req)).toEqual(query);
+      expect(req.headers['x-atlassian-token']).toBe('no-check');
+      expect(req.body).toBeInstanceOf(FormData);
+      expect(Array.from((req.body as FormData).keys())).toEqual([]);
+    },
+  );
+
+  it.for([['--clear'], ['--columns', 'summary']])(
+    'settings set-columns %j rejects --account-id before writing system defaults',
+    async (flags) => {
+      const run = await runCliWire([
+        'jira',
+        'settings',
+        'set-columns',
+        ...flags,
+        '--account-id',
+        'a',
+      ]);
+      expect(run.exitCode).toBe(1);
+      expect(run.stderr).toContain('jira users set-columns');
+      expect(run.requests).toHaveLength(0);
+    },
+  );
+
+  it('rejects --clear on other actions before dispatch', async () => {
+    const run = await runCliWire(['jira', 'users', 'reset-columns', '--clear']);
+    expect(run.exitCode).toBe(1);
+    expect(run.stderr).toContain('--clear');
+    expect(run.requests).toHaveLength(0);
+  });
+
+  it('users set-columns sends one multipart field per column to the specified account', async () => {
+    const run = await runCliWire([
+      'jira',
+      'users',
+      'set-columns',
+      '--columns',
+      'summary,status',
+      '--account-id',
+      'a',
+    ]);
+    expect(run.exitCode).toBe(0);
+    expect(run.requests).toHaveLength(1);
+    const req = run.requests[0] as WireRequest;
+    expect(req.method).toBe('PUT');
+    expect(req.path).toBe(`${API}/user/columns`);
+    expect(queryOf(req)).toEqual({ accountId: 'a' });
+    expect(req.headers['x-atlassian-token']).toBe('no-check');
+    expect(req.headers['content-type']).toBeUndefined();
+    expect(req.body).toBeInstanceOf(FormData);
+    expect((req.body as FormData).getAll('columns')).toEqual(['summary', 'status']);
+  });
 
   it('issue-attachments upload sends multipart FormData with X-Atlassian-Token', async () => {
     const dir = await mkdtemp(join(tmpdir(), 'atlas-upload-'));

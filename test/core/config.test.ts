@@ -447,9 +447,7 @@ describe('resolveConfig', () => {
     });
 
     it('throws when an allowedHosts entry contains a control byte (PR review)', () => {
-      // Synthesise the hostile inputs via String.fromCharCode so the test
-      // file's raw bytes stay vanilla ASCII (avoids accidental cleanup
-      // when prettier / EOL filters touch this file).
+      // Construct the control bytes at runtime so formatting preserves the test inputs.
       const base = 'mycompany.atlassian.net';
       const hostile = [
         base + String.fromCharCode(0x09) + 'tab', // C0 (tab)

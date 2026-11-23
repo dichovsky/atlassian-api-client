@@ -1,5 +1,9 @@
-import { describe, it, expect, beforeEach } from 'vitest';
-import type { JsonPatchOperation, PlanStatus } from '../../src/jira/resources/plans.js';
+import { assert, describe, it, expect, beforeEach } from 'vitest';
+import type {
+  JsonPatchOperation,
+  PlanResponse,
+  PlanStatus,
+} from '../../src/jira/resources/plans.js';
 import { PlansResource } from '../../src/jira/resources/plans.js';
 import { MockTransport } from '../helpers/mock-transport.js';
 
@@ -13,16 +17,16 @@ const makePlanSummary = (id = '101') => ({
   issueSources: [{ type: 'Board' as const, value: 1 }],
 });
 
-const makePlanResponse = (planId = 101) => ({
+const makePlanResponse = (planId = 101): PlanResponse => ({
   id: planId,
   name: 'Q3 Plan',
-  status: 'Active' as const,
+  status: 'Active',
   scheduling: {
-    dependencies: 'Sequential' as const,
-    endDate: { type: 'TargetEndDate' as const },
-    estimation: 'StoryPoints' as const,
-    inferredDates: 'None' as const,
-    startDate: { type: 'TargetStartDate' as const },
+    dependencies: 'Sequential',
+    endDate: { type: 'TargetEndDate' },
+    estimation: 'StoryPoints',
+    inferredDates: 'AnySprintDates',
+    startDate: { type: 'TargetStartDate' },
   },
   exclusionRules: { numberOfDaysToShowCompletedIssues: 30 },
 });
@@ -202,6 +206,7 @@ describe('PlansResource', () => {
         issueSources: [{ type: 'Board', value: 1 }],
         scheduling: {
           estimation: 'StoryPoints',
+          inferredDates: 'AnySprintDates',
           dependencies: 'Sequential',
           startDate: { type: 'TargetStartDate' },
           endDate: { type: 'TargetEndDate' },
@@ -216,7 +221,7 @@ describe('PlansResource', () => {
       const body = transport.lastCall?.options.body as Record<string, unknown>;
       expect(body['name']).toBe('Q3 Plan');
       expect(body['issueSources']).toEqual([{ type: 'Board', value: 1 }]);
-      expect(body['scheduling']).toBeDefined();
+      expect(body['scheduling']).toMatchObject({ inferredDates: 'AnySprintDates' });
     });
 
     it('includes optional fields when provided', async () => {
@@ -348,10 +353,10 @@ describe('PlansResource', () => {
       const opts = transport.lastCall?.options;
       // Must use binaryBody (Blob with type application/json-patch+json), not body
       expect(opts?.body).toBeUndefined();
-      expect(opts?.binaryBody).toBeInstanceOf(Blob);
-      expect((opts?.binaryBody as Blob).type).toBe('application/json-patch+json');
+      assert(opts?.binaryBody instanceof Blob);
+      expect(opts.binaryBody.type).toBe('application/json-patch+json');
       // Blob content must be the JSON-serialized patch array
-      const text = await (opts?.binaryBody as Blob).text();
+      const text = await opts.binaryBody.text();
       expect(JSON.parse(text)).toEqual([{ op: 'replace', path: '/name', value: 'X' }]);
     });
 
@@ -594,9 +599,9 @@ describe('PlansResource', () => {
 
       const opts = transport.lastCall?.options;
       expect(opts?.body).toBeUndefined();
-      expect(opts?.binaryBody).toBeInstanceOf(Blob);
-      expect((opts?.binaryBody as Blob).type).toBe('application/json-patch+json');
-      const text = await (opts?.binaryBody as Blob).text();
+      assert(opts?.binaryBody instanceof Blob);
+      expect(opts.binaryBody.type).toBe('application/json-patch+json');
+      const text = await opts.binaryBody.text();
       expect(JSON.parse(text)).toEqual([{ op: 'replace', path: '/sprintLength', value: 7 }]);
     });
   });
@@ -701,9 +706,9 @@ describe('PlansResource', () => {
 
       const opts = transport.lastCall?.options;
       expect(opts?.body).toBeUndefined();
-      expect(opts?.binaryBody).toBeInstanceOf(Blob);
-      expect((opts?.binaryBody as Blob).type).toBe('application/json-patch+json');
-      const text = await (opts?.binaryBody as Blob).text();
+      assert(opts?.binaryBody instanceof Blob);
+      expect(opts.binaryBody.type).toBe('application/json-patch+json');
+      const text = await opts.binaryBody.text();
       expect(JSON.parse(text)).toEqual([{ op: 'replace', path: '/name', value: 'New' }]);
     });
   });

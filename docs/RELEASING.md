@@ -66,14 +66,14 @@ The `Publish` preflight accepts a tag only when the GitHub API reports its signa
    npm run release:check -- vX.Y.Z
    ```
 
-   This command validates the tag, the versions, and the changelog. It does not check that the date is current. The command fails in these conditions:
+   This command validates the tag, the versions, and the changelog. The local command warns if the release date differs from today in UTC. The command fails in these conditions:
    - The `Unreleased` section has entries.
    - The `X.Y.Z` section is missing.
    - There are two or more `X.Y.Z` sections.
    - The `X.Y.Z` section is not the newest entry.
    - The heading of the `X.Y.Z` section does not have a date in the format `(YYYY-MM-DD)`.
 
-   If you do not make the tag on that date, write a new date in the section. The new date makes a new release candidate.
+   If you do not make the tag on that date, write a new date in the section. The new date makes a new release candidate. Validate the new release candidate.
 
 5. Install the dependencies from the lockfile. Then run the full repository gate:
 
@@ -149,11 +149,15 @@ The `Publish` preflight accepts a tag only when the GitHub API reports its signa
    - It makes sure that this commit is the last commit on the protected `main` branch.
    - It finds a successful completed `CI` run for that exact commit.
    - It validates all version files again.
-6. Examine the deployment of the publish job to the protected `release` environment. Then give your approval for the deployment. Make sure that the job requests only `contents: read` and `id-token: write`. The job must not receive an npm token that has a long life. Until this job has completed, `main` must not move.
-7. The workflow builds the package. Then the workflow runs this command, which makes the tarball and publishes the package:
+6. Do these steps for the build job and the publish job:
+   - Make sure that the build job ran the full validation gate on the verified commit and uploaded the package tarball. The build job has read access to the repository, and it has no credential that can publish.
+   - Examine the deployment of the publish job to the protected `release` environment. Then give your approval for the deployment.
+   - Make sure that the job requests only `contents: read` and `id-token: write`. The job must not receive an npm token that has a long life.
+   - Until this job has completed, `main` must not move.
+7. The approved job downloads the tarball by its artifact ID. Then it compares the SHA-512 integrity of the tarball with the build output. Before npm reads the publish configuration, the job compares the packaged `package.json` with the manifest from the signed commit. Then the job publishes that file with the lifecycle scripts disabled:
 
    ```bash
-   npm publish --provenance
+   npm publish --provenance --ignore-scripts "${RUNNER_TEMP}/release/package.tgz"
    ```
 
    If npm accepted the version, do not run the publish job again. Do one of these steps:
@@ -171,7 +175,7 @@ The `Publish` preflight accepts a tag only when the GitHub API reports its signa
    2. Make sure that `npm view atlassian-api-client dist-tags.latest` shows `X.Y.Z`.
    3. Run again only the jobs that failed (`gh run rerun <run-id> --failed`). This command runs the `verify` job again, but it does not publish the package again.
 
-2. Make sure that the registry supplies the version in the release record. Make sure that `latest` points to that version. In a new temporary project, make sure that these items are correct:
+2. Make sure that the registry supplies the version in the release record. Make sure that its `dist.integrity` agrees with the build output. Make sure that `latest` points to that version. In a new temporary project, make sure that these items are correct:
    - The ESM imports from the package root
    - The constructors of the two clients
    - `atlas --version`

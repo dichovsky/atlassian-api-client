@@ -7,12 +7,12 @@ This directory contains pinned snapshots of the upstream Atlassian REST API spec
 ### `jira-platform-v3.json`
 
 - **Source:** https://developer.atlassian.com/cloud/jira/platform/swagger-v3.v3.json
-- **Pinned:** 2026-11-08
+- **Pinned:** 2026-11-22
 - **OpenAPI:** 3.0.1
-- **Upstream version:** `1001.0.0-SNAPSHOT-30f301faa123fbef7f33006c52a9db372ad7afa7`
+- **Upstream version:** `1001.0.0-SNAPSHOT-eac1257d8e1582ed7dd2a97a93dbea3c277d24be`
 - **Paths:** 433 (630 operations, 29 deprecated)
-- **SHA-256:** `2a7438c5feaa1fab2e64699cf3ed1b45685af3da356dbb987b216cd98adc12d0`
-- **Contract fingerprint:** `d2bfad62f84c`
+- **SHA-256:** `36a08f68d55c32f4e8dc257c1ca26f693d09e066a041dbf041ccb804dc52b971`
+- **Contract fingerprint:** `c72f7509a6c6`
 
 ### `jira-software.json`
 

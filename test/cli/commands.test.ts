@@ -6197,7 +6197,8 @@ describe('executeConfluenceCommand', () => {
       confluenceCustomContentMock.listVersions.mockResolvedValue({ results: [], _links: {} });
       await executeConfluenceCommand(cmd('custom-content', 'versions', ['cc-1']), GLOBALS);
       const args = confluenceCustomContentMock.listVersions.mock.calls.at(-1)?.[1] as
-        Record<string, unknown> | undefined;
+        | Record<string, unknown>
+        | undefined;
       expect(args?.sort).toBeUndefined();
       expect(args?.['body-format']).toBeUndefined();
     });
@@ -6310,7 +6311,8 @@ describe('executeConfluenceCommand', () => {
       });
       await executeConfluenceCommand(cmd('custom-content', 'footer-comments', ['cc-1']), GLOBALS);
       const args = confluenceCustomContentMock.listFooterComments.mock.calls.at(-1)?.[1] as
-        Record<string, unknown> | undefined;
+        | Record<string, unknown>
+        | undefined;
       expect(args?.sort).toBeUndefined();
       expect(args?.['body-format']).toBeUndefined();
     });
@@ -6344,7 +6346,8 @@ describe('executeConfluenceCommand', () => {
       confluenceCustomContentMock.listLabels.mockResolvedValue({ results: [], _links: {} });
       await executeConfluenceCommand(cmd('custom-content', 'labels', ['cc-1']), GLOBALS);
       const args = confluenceCustomContentMock.listLabels.mock.calls.at(-1)?.[1] as
-        Record<string, unknown> | undefined;
+        | Record<string, unknown>
+        | undefined;
       expect(args?.prefix).toBeUndefined();
       expect(args?.sort).toBeUndefined();
     });
@@ -6412,10 +6415,10 @@ describe('executeConfluenceCommand', () => {
       // Act
       await executeConfluenceCommand(parsed, GLOBALS);
 
-      // Assert — ids are integer/int64 in the spec (B1059): CLI parses as numbers
+      // Assert — int64 IDs stay decimal strings.
       expect(confluenceDataPoliciesMock.listSpaces).toHaveBeenCalledWith(
         expect.objectContaining({
-          ids: [1, 2, 3],
+          ids: ['1', '2', '3'],
           keys: ['ENG', 'OPS'],
         }),
       );
@@ -6431,9 +6434,9 @@ describe('executeConfluenceCommand', () => {
       // Act
       await executeConfluenceCommand(parsed, GLOBALS);
 
-      // Assert — ids parsed as integers after trimming (B1059)
+      // Assert — each trimmed ID remains a decimal string.
       expect(confluenceDataPoliciesMock.listSpaces).toHaveBeenCalledWith(
-        expect.objectContaining({ ids: [1, 2] }),
+        expect.objectContaining({ ids: ['1', '2'] }),
       );
     });
 
@@ -6452,7 +6455,7 @@ describe('executeConfluenceCommand', () => {
       const parsed = cmd('data-policies', 'list-spaces', [], { ids: 'abc,def' });
 
       await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
-        '--ids must contain only decimal integer IDs up to 9007199254740991, got: abc',
+        '--ids must contain only decimal integer IDs, got: abc',
       );
       expect(confluenceDataPoliciesMock.listSpaces).not.toHaveBeenCalled();
     });
@@ -7014,10 +7017,10 @@ describe('executeConfluenceCommand', () => {
         'body-format': 'storage',
         includeBlankTasks: true,
         status: 'complete',
-        taskId: [42, 99],
-        spaceId: [11, 22],
-        pageId: [33],
-        blogPostId: [44],
+        taskId: ['42', '99'],
+        spaceId: ['11', '22'],
+        pageId: ['33'],
+        blogPostId: ['44'],
         createdBy: ['acc-creator', 'acc-other'],
         assignedTo: ['acc-assignee'],
         completedBy: ['acc-finisher'],
@@ -7060,7 +7063,7 @@ describe('executeConfluenceCommand', () => {
       const parsed = cmd('tasks', 'list', [], { 'task-id': '-1' });
       await executeConfluenceCommand(parsed, GLOBALS);
       expect(confluenceTasksMock.list).toHaveBeenCalledWith(
-        expect.objectContaining({ taskId: [-1] }),
+        expect.objectContaining({ taskId: ['-1'] }),
       );
     });
 
@@ -7508,7 +7511,8 @@ describe('executeConfluenceCommand', () => {
 
       // Assert
       const callArgs = confluenceDatabasesMock.listDirectChildren.mock.calls[0]?.[1] as
-        Record<string, unknown> | undefined;
+        | Record<string, unknown>
+        | undefined;
       expect(callArgs?.sort).toBeUndefined();
     });
 
@@ -7932,7 +7936,8 @@ describe('executeConfluenceCommand', () => {
       await executeConfluenceCommand(cmd('embeds', 'direct-children', ['embed-1'], {}), GLOBALS);
 
       const callArgs = confluenceEmbedsMock.listDirectChildren.mock.calls.at(-1)?.[1] as
-        Record<string, unknown> | undefined;
+        | Record<string, unknown>
+        | undefined;
       expect(callArgs?.sort).toBeUndefined();
     });
 
@@ -8228,7 +8233,8 @@ describe('executeConfluenceCommand', () => {
       await executeConfluenceCommand(cmd('folders', 'direct-children', ['folder-1'], {}), GLOBALS);
 
       const callArgs = confluenceFoldersMock.listDirectChildren.mock.calls.at(-1)?.[1] as
-        Record<string, unknown> | undefined;
+        | Record<string, unknown>
+        | undefined;
       expect(callArgs?.sort).toBeUndefined();
     });
 
@@ -8582,7 +8588,8 @@ describe('executeConfluenceCommand', () => {
       confluenceFooterCommentsMock.listVersions.mockResolvedValue({ results: [], _links: {} });
       await executeConfluenceCommand(cmd('footer-comments', 'versions', ['77777']), GLOBALS);
       const callArgs = confluenceFooterCommentsMock.listVersions.mock.calls[0]?.[1] as
-        Record<string, unknown> | undefined;
+        | Record<string, unknown>
+        | undefined;
       expect(callArgs?.sort).toBeUndefined();
       expect(callArgs?.['body-format']).toBeUndefined();
     });
@@ -8591,7 +8598,8 @@ describe('executeConfluenceCommand', () => {
       confluenceFooterCommentsMock.listChildren.mockResolvedValue({ results: [], _links: {} });
       await executeConfluenceCommand(cmd('footer-comments', 'children', ['77777']), GLOBALS);
       const callArgs = confluenceFooterCommentsMock.listChildren.mock.calls[0]?.[1] as
-        Record<string, unknown> | undefined;
+        | Record<string, unknown>
+        | undefined;
       expect(callArgs?.sort).toBeUndefined();
       expect(callArgs?.['body-format']).toBeUndefined();
     });
@@ -8699,7 +8707,8 @@ describe('executeConfluenceCommand', () => {
       confluenceInlineCommentsMock.listChildren.mockResolvedValue({ results: [], _links: {} });
       await executeConfluenceCommand(cmd('inline-comments', 'children', ['ic-1']), GLOBALS);
       const callArgs = confluenceInlineCommentsMock.listChildren.mock.calls[0]?.[1] as
-        Record<string, unknown> | undefined;
+        | Record<string, unknown>
+        | undefined;
       expect(callArgs?.sort).toBeUndefined();
       expect(callArgs?.['body-format']).toBeUndefined();
     });
@@ -8779,7 +8788,8 @@ describe('executeConfluenceCommand', () => {
       confluenceInlineCommentsMock.listVersions.mockResolvedValue({ results: [], _links: {} });
       await executeConfluenceCommand(cmd('inline-comments', 'versions', ['ic-1']), GLOBALS);
       const callArgs = confluenceInlineCommentsMock.listVersions.mock.calls[0]?.[1] as
-        Record<string, unknown> | undefined;
+        | Record<string, unknown>
+        | undefined;
       expect(callArgs?.sort).toBeUndefined();
     });
 
@@ -9068,7 +9078,8 @@ describe('executeConfluenceCommand', () => {
       });
       await executeConfluenceCommand(cmd('whiteboards', 'direct-children', ['wb-1'], {}), GLOBALS);
       const callArgs = confluenceWhiteboardsMock.listDirectChildren.mock.calls[0]?.[1] as
-        Record<string, unknown> | undefined;
+        | Record<string, unknown>
+        | undefined;
       expect(callArgs?.sort).toBeUndefined();
     });
 
@@ -19441,7 +19452,6 @@ describe('executeJiraCommand', () => {
           name: 'Full',
           description: 'desc',
           'lead-account-id': 'acc-1',
-          'lead-user-name': 'legacy',
           'assignee-type': 'PROJECT_LEAD',
           project: 'HSP',
         }),
@@ -19451,11 +19461,27 @@ describe('executeJiraCommand', () => {
         name: 'Full',
         description: 'desc',
         leadAccountId: 'acc-1',
-        leadUserName: 'legacy',
         assigneeType: 'PROJECT_LEAD',
         project: 'HSP',
       });
     });
+
+    it.each(['create', 'update'] as const)(
+      'component %s rejects --lead-user-name before writing',
+      async (action) => {
+        await expect(
+          executeJiraCommand(
+            cmd('component', action, ['10000'], {
+              project: 'PROJ',
+              name: 'New',
+              'lead-user-name': 'legacy',
+            }),
+            GLOBALS,
+          ),
+        ).rejects.toThrow('--lead-account-id');
+        expect(jiraComponentMock[action]).not.toHaveBeenCalled();
+      },
+    );
 
     it('component create requires --name', async () => {
       await expect(executeJiraCommand(cmd('component', 'create', [], {}), GLOBALS)).rejects.toThrow(
@@ -19499,7 +19525,6 @@ describe('executeJiraCommand', () => {
           name: 'X',
           description: 'd',
           'lead-account-id': 'a',
-          'lead-user-name': 'u',
           'assignee-type': 'UNASSIGNED',
         }),
         GLOBALS,
@@ -19508,7 +19533,6 @@ describe('executeJiraCommand', () => {
         name: 'X',
         description: 'd',
         leadAccountId: 'a',
-        leadUserName: 'u',
         assigneeType: 'UNASSIGNED',
       });
     });
@@ -19517,7 +19541,7 @@ describe('executeJiraCommand', () => {
       await expect(
         executeJiraCommand(cmd('component', 'update', ['1'], {}), GLOBALS),
       ).rejects.toThrow(
-        'update requires at least one of: --name, --description, --lead-account-id, --lead-user-name, --assignee-type',
+        'update requires at least one of: --name, --description, --lead-account-id, --assignee-type',
       );
     });
 

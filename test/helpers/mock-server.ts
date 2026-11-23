@@ -1,9 +1,8 @@
 /**
- * In-process HTTP mock server for testing HttpTransport over a real socket.
+ * Local HTTP server for integration tests of HttpTransport.
  *
- * Uses `node:http` exclusively — no third-party dependencies. Binds on
- * `127.0.0.1:0` (ephemeral port) so tests run concurrently without port
- * conflicts. The base URL is exposed immediately after `start()` resolves.
+ * The fixture gives each server its own loopback origin. The base URL
+ * is available after `start()` resolves.
  *
  * Usage:
  * ```ts
@@ -19,6 +18,7 @@
  */
 
 import * as http from 'node:http';
+import { LocalHttpNetwork } from './local-http.js';
 
 export interface MockResponse {
   /** HTTP status code. Default: 200. */
@@ -64,7 +64,7 @@ export class MockServer {
   private readonly handlers: Map<string, Handler> = new Map<string, Handler>();
   private defaultHandler: Handler = () => ({ status: 200, body: {} });
 
-  constructor() {
+  constructor(private readonly network = new LocalHttpNetwork()) {
     this.server = http.createServer((req, res) => {
       void this.handleRequest(req, res);
     });
@@ -73,6 +73,11 @@ export class MockServer {
   /** Resolved base URL (e.g. `http://127.0.0.1:PORT`). Available after `start()`. */
   get baseUrl(): string {
     return this._baseUrl;
+  }
+
+  /** True while this fixture owns an operating-system TCP listener. */
+  get hasTcpListener(): boolean {
+    return this.server.listening;
   }
 
   /** All requests captured since the last `reset()` call. */
@@ -98,27 +103,25 @@ export class MockServer {
     this.defaultHandler = () => ({ status: 200, body: {} });
   }
 
-  /** Start the server and wait until it is ready to accept connections. */
   async start(): Promise<void> {
-    await new Promise<void>((resolve, reject) => {
-      this.server.once('error', reject);
-      this.server.listen(0, '127.0.0.1', () => {
-        this.server.removeListener('error', reject);
-        const addr = this.server.address() as { address: string; port: number };
-        this._baseUrl = `http://${addr.address}:${addr.port}`;
-        resolve();
-      });
-    });
+    this._baseUrl = await this.network.listen(this.server);
   }
 
-  /** Stop the server and wait until all connections are closed. */
-  async close(): Promise<void> {
-    await new Promise<void>((resolve, reject) => {
-      this.server.close((err) => {
-        if (err) reject(err);
-        else resolve();
-      });
-    });
+  close(): Promise<void> {
+    return this.network.close(this.server);
+  }
+
+  /** Redirect SDK calls to this origin while preserving the request path, query and body. */
+  routeFetch(send: typeof fetch = this.network.fetch): typeof fetch {
+    return (input, init) => {
+      const url = new URL(input instanceof Request ? input.url : input);
+      const origin = new URL(this.baseUrl);
+      url.protocol = origin.protocol;
+      url.hostname = origin.hostname;
+      url.port = origin.port;
+      const request = input instanceof Request ? new Request(url, input) : url;
+      return send(request, init);
+    };
   }
 
   private async handleRequest(req: http.IncomingMessage, res: http.ServerResponse): Promise<void> {
@@ -205,33 +208,4 @@ function readBody(req: http.IncomingMessage): Promise<string> {
 
 function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-/**
- * Create a `fetch` shim that transparently forwards all requests to the given
- * `targetBaseUrl` while preserving the original path, query string, and all
- * other request attributes.
- *
- * This lets `HttpTransport` believe it is talking to its configured `baseUrl`
- * (e.g. `https://test.atlassian.net/wiki/api/v2`) while actually communicating
- * with the in-process `MockServer` over a real TCP socket — exercising the full
- * HTTP path without bypassing the real `fetch` implementation.
- */
-export function makeMockFetch(targetBaseUrl: string): typeof fetch {
-  return async (input: string | URL | Request, init?: RequestInit): Promise<Response> => {
-    const originalUrl =
-      typeof input === 'string'
-        ? input
-        : input instanceof URL
-          ? input.href
-          : (input as Request).url;
-    // Replace the origin (scheme + host + port) of the original URL with the
-    // mock server's origin while keeping the path and query intact.
-    const parsed = new URL(originalUrl);
-    const target = new URL(targetBaseUrl);
-    parsed.protocol = target.protocol;
-    parsed.hostname = target.hostname;
-    parsed.port = target.port;
-    return fetch(parsed.toString(), init);
-  };
 }

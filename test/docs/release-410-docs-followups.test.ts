@@ -26,6 +26,7 @@ import { createOAuthRefreshMiddleware } from '../../src/core/oauth.js';
 import { HttpTransport } from '../../src/core/transport.js';
 import type { ClientConfig, HttpMethod, Middleware } from '../../src/core/types.js';
 import { section } from '../helpers/markdown.js';
+import { LocalHttpNetwork } from '../helpers/local-http.js';
 import { MockServer } from '../helpers/mock-server.js';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -407,15 +408,17 @@ describe('README and ARCHITECTURE describe how redirects on writes are handled',
   });
 
   it("Node's built-in fetch drops Authorization on a cross-origin redirect", async () => {
-    const origin = new MockServer();
-    const other = new MockServer();
-    await Promise.all([origin.start(), other.start()]);
+    const network = new LocalHttpNetwork();
+    const origin = new MockServer(network);
+    const other = new MockServer(network);
     try {
+      await origin.start();
+      await other.start();
       origin.setHandler('/same', { status: 302, headers: { location: '/end' } });
       origin.setHandler('/cross', { status: 302, headers: { location: `${other.baseUrl}/end` } });
       const headers = { authorization: 'Bearer secret' };
-      await fetch(`${origin.baseUrl}/same`, { headers }).then((r) => r.text());
-      await fetch(`${origin.baseUrl}/cross`, { headers }).then((r) => r.text());
+      await network.fetch(`${origin.baseUrl}/same`, { headers }).then((r) => r.text());
+      await network.fetch(`${origin.baseUrl}/cross`, { headers }).then((r) => r.text());
       expect(origin.requests.find((r) => r.path === '/end')?.headers['authorization']).toBe(
         'Bearer secret',
       );

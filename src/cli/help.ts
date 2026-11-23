@@ -34,8 +34,10 @@ GLOBAL OPTIONS:
 BOOLEAN FLAGS (flags that work bare, with no value):
   --flag, --flag true and --flag=true mean true; --flag false, --flag=false
   and --no-flag mean false; omit the flag to keep the server default. Only
-  true/false are accepted (--flag no is an error). A true/false word right
-  after such a flag is its value (put a positional true/false after --).
+  true/false are accepted. A bare --flag followed by 0 or 1 fails. Put a
+  positional ID before --flag or after the -- terminator. A positional ID
+  can directly follow --no-flag, including 0 and 1. Boolean words such as
+  true or no directly after --no-flag are rejected.
   Flags documented with values (e.g. --validate-query) always need one.
 
 AUTH:
@@ -428,6 +430,7 @@ EXAMPLES:
   atlas jira users create --email-address new.hire@example.com --products jira-software
   atlas jira search search --jql "project = PROJ AND status = Open"
   atlas jira search approximate-count --jql "project = PROJ"
+  atlas jira jql autocomplete-suggestions --field-name status --field-value open --max-results 10
   atlas jira search jql-get --jql "project = PROJ" --max-results 50 --properties release.owner --fields-by-keys --fail-fast
   atlas jira search jql-post --jql "project = PROJ AND assignee = currentUser()"
   atlas jira projects list --type-key software --status live --action browse --query platform --order-by key
@@ -456,6 +459,8 @@ EXAMPLES:
   atlas jira license get-approximate-count-for-product jira-software
   atlas jira settings get-columns
   atlas jira settings set-columns --columns issuekey,summary
+  atlas jira settings set-columns --clear
+  atlas jira users set-columns --clear --account-id 5b10ac...
   atlas jira redact start --value '[{"contentItem":{"entityId":"summary","entityType":"issuefieldvalue","id":"10000"},"externalId":"51101de6-d001-429d-a095-b2b96dd57fcb","reason":"PII","redactionPosition":{"expectedText":"<sha256-base64>","from":0,"to":5}}]'
   atlas jira redact get-status job-abc123
   atlas jira flag get flag-xyz
@@ -726,7 +731,7 @@ EXAMPLES:
   atlas jira fields context-create --field-id customfield_10001 --name 'Bug context' --project-ids 10010,10011
   atlas jira fields context-update --field-id customfield_10001 --context-id 10025 --name 'Renamed'
   atlas jira fields context-delete --field-id customfield_10001 --context-id 10025
-  atlas jira fields context-option-list --field-id customfield_10001 --context-id 10025
+  atlas jira fields context-option-list --field-id customfield_10001 --context-id 10025 --query London
   atlas jira fields context-option-create --field-id customfield_10001 --context-id 10025 --body '{"options":[{"value":"New York"}]}'
   atlas jira fields context-option-update --field-id customfield_10001 --context-id 10025 --body '{"options":[{"id":"10001","value":"Renamed"}]}'
   atlas jira fields context-option-delete --field-id customfield_10001 --context-id 10025 --option-id 10001

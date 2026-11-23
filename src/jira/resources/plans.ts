@@ -15,8 +15,8 @@ export type SchedulingDependencies = 'Sequential' | 'Concurrent';
 /** Scheduling estimation values. */
 export type SchedulingEstimation = 'StoryPoints' | 'Days' | 'Hours';
 
-/** Scheduling inferred dates values. */
-export type SchedulingInferredDates = 'None' | 'SprintDates' | 'ReleaseDates';
+/** Date inference modes accepted when creating a plan and returned in its scheduling settings. */
+export type SchedulingInferredDates = 'None' | 'SprintDates' | 'ReleaseDates' | 'AnySprintDates';
 
 /** Date field type values. */
 export type DateFieldType = 'DueDate' | 'TargetStartDate' | 'TargetEndDate' | 'DateCustomField';

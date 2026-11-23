@@ -26,7 +26,6 @@ export default defineConfig({
         'src/index.ts',
         'src/core/index.ts',
         'src/jira/index.ts',
-        'src/jira/resources/index.ts',
         'src/confluence/index.ts',
       ],
       thresholds: {

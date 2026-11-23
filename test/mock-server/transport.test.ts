@@ -1,19 +1,8 @@
 /**
- * B012 — Real-socket integration tests for HttpTransport.
- *
- * These tests construct a genuine `HttpTransport` (NOT MockTransport) backed by
- * an in-process `MockServer` over a real TCP socket. Every request travels
- * through the full native `fetch` → HTTP → OS socket stack, exercising code
- * paths that `MockTransport` completely bypasses: header serialisation,
- * body encoding/decoding, status→error mapping, retry/backoff, timeout
- * abort signals, and `ResponseTooLargeError`.
- *
- * Architecture: `HttpTransport` is configured with `config.fetch` pointing to
- * `makeMockFetch(server.baseUrl)`, which transparently rewrites the scheme +
- * host + port of each outgoing URL to the in-process mock server while keeping
- * every other aspect of the request (method, path, query, headers, body) intact.
- * This keeps `allowedHosts` validation intact (the hostname stays `test.atlassian.net`)
- * while routing over a real socket for determinism and isolation.
+ * Integration tests for HttpTransport using native fetch and a Node HTTP server.
+ * The fixture forwards SDK requests to its local origin after host validation.
+ * Node serializes the headers and body, handles redirects and response streaming,
+ * and applies the transport's timeout and abort signals.
  */
 
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
@@ -29,7 +18,7 @@ import {
   ResponseTooLargeError,
 } from '../../src/core/errors.js';
 import type { ResolvedConfig, ApiResponse } from '../../src/core/types.js';
-import { MockServer, makeMockFetch, type CapturedRequest } from '../helpers/mock-server.js';
+import { MockServer, type CapturedRequest } from '../helpers/mock-server.js';
 
 /** Assert that a request was captured and return it (fails the test otherwise). */
 function getRequest(server: MockServer, index = 0): CapturedRequest {
@@ -71,7 +60,7 @@ function makeConfig(server: MockServer, overrides: Partial<ResolvedConfig> = {})
     retryDelay: 50,
     maxRetryDelay: 500,
     allowedHosts: [INSTANCE_HOST],
-    fetch: makeMockFetch(server.baseUrl),
+    fetch: server.routeFetch(),
     ...overrides,
   };
 }
@@ -79,7 +68,7 @@ function makeConfig(server: MockServer, overrides: Partial<ResolvedConfig> = {})
 // ---------------------------------------------------------------------------
 // Happy-path tests
 // ---------------------------------------------------------------------------
-describe('HttpTransport over real socket — happy path', () => {
+describe('HttpTransport over HTTP — happy path', () => {
   const server = new MockServer();
 
   beforeAll(async () => {
@@ -152,7 +141,7 @@ describe('HttpTransport over real socket — happy path', () => {
 // ---------------------------------------------------------------------------
 // Request-correctness tests (headers, auth, body encoding)
 // ---------------------------------------------------------------------------
-describe('HttpTransport over real socket — request correctness', () => {
+describe('HttpTransport over HTTP — request correctness', () => {
   const server = new MockServer();
 
   beforeAll(async () => {
@@ -297,7 +286,7 @@ describe('HttpTransport over real socket — request correctness', () => {
 // ---------------------------------------------------------------------------
 // Status → error taxonomy
 // ---------------------------------------------------------------------------
-describe('HttpTransport over real socket — error taxonomy', () => {
+describe('HttpTransport over HTTP — error taxonomy', () => {
   const server = new MockServer();
 
   beforeAll(async () => {
@@ -431,7 +420,7 @@ describe('HttpTransport over real socket — error taxonomy', () => {
 // ---------------------------------------------------------------------------
 // Retry / backoff
 // ---------------------------------------------------------------------------
-describe('HttpTransport over real socket — retry behaviour', () => {
+describe('HttpTransport over HTTP — retry behaviour', () => {
   const server = new MockServer();
 
   beforeAll(async () => {
@@ -540,7 +529,7 @@ describe('HttpTransport over real socket — retry behaviour', () => {
 // ---------------------------------------------------------------------------
 // Timeout
 // ---------------------------------------------------------------------------
-describe('HttpTransport over real socket — timeout', () => {
+describe('HttpTransport over HTTP — timeout', () => {
   const server = new MockServer();
 
   beforeAll(async () => {
@@ -583,38 +572,26 @@ describe('HttpTransport over real socket — timeout', () => {
 // ---------------------------------------------------------------------------
 // Network error (connecting to a closed port)
 // ---------------------------------------------------------------------------
-describe('HttpTransport over real socket — network error', () => {
+describe('HttpTransport over HTTP — network error', () => {
   it('throws NetworkError when connecting to a closed port', async () => {
-    // Allocate a server, start it, capture its port, then close it immediately.
-    // This guarantees we get a real closed port without a race against OS reuse.
     const probe = new MockServer();
     await probe.start();
-    const closedUrl = probe.baseUrl;
+    // When TCP is available, the kernel must refuse the connection to the released port.
+    const fetchClosed = probe.routeFetch(probe.hasTcpListener ? globalThis.fetch : undefined);
     await probe.close();
 
-    const customFetch = makeMockFetch(closedUrl);
-    const config: ResolvedConfig = {
-      baseUrl: BASE_URL,
-      auth: { type: 'basic', email: 'u@e.com', apiToken: 'tok' },
-      timeout: 3_000,
-      retries: 0,
-      retryDelay: 50,
-      maxRetryDelay: 500,
-      allowedHosts: [INSTANCE_HOST],
-      fetch: customFetch,
-    };
-
-    const transport = new HttpTransport(config);
+    const transport = new HttpTransport(makeConfig(probe, { fetch: fetchClosed, timeout: 3_000 }));
     const err = await transport.request({ method: 'GET', path: '/pages' }).catch((e: unknown) => e);
 
     expect(err).toBeInstanceOf(NetworkError);
+    expect(err).toMatchObject({ cause: { cause: { code: 'ECONNREFUSED' } } });
   }, 8_000);
 });
 
 // ---------------------------------------------------------------------------
 // ResponseTooLargeError
 // ---------------------------------------------------------------------------
-describe('HttpTransport over real socket — ResponseTooLargeError', () => {
+describe('HttpTransport over HTTP — ResponseTooLargeError', () => {
   const server = new MockServer();
 
   beforeAll(async () => {
@@ -684,7 +661,7 @@ describe('HttpTransport over real socket — ResponseTooLargeError', () => {
 // ---------------------------------------------------------------------------
 // Rate-limit metadata
 // ---------------------------------------------------------------------------
-describe('HttpTransport over real socket — rate-limit metadata', () => {
+describe('HttpTransport over HTTP — rate-limit metadata', () => {
   const server = new MockServer();
 
   beforeAll(async () => {

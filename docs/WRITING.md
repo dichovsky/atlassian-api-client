@@ -238,9 +238,8 @@ The categories are:
 | finding                         | Technical name | One result of an audit or a review.                                                                                                                                                                                                             | "issue" (for a finding)                                         |
 | issue                           | Technical name | A GitHub issue, or a Jira issue in the API documentation.                                                                                                                                                                                       | a problem in general (write "problem")                          |
 | review                          | Technical name | The procedure in which a reviewer examines a pull request.                                                                                                                                                                                      | "audit" (for a pull request review)                             |
-| compiler, compiler API          | Technical name | The TypeScript compiler (`tsc`, `tsc6`) and the compiler API that tools import from `typescript`.                                                                                                                                               | "TS" in new prose                                               |
-| TypeScript 6 bridge             | Technical name | The `typescript` dependency, which stays on the TypeScript 6 compatibility package for the tools that use the TypeScript 6 compiler API.                                                                                                        | "shim", "polyfill"                                              |
-| type-check, format              | Technical verb | To find type errors with the TypeScript compiler, and to change the layout of files with Prettier.                                                                                                                                              | "lint" (for these actions)                                      |
+| compiler, compiler API          | Technical name | The TypeScript 7 compiler (`tsc`) and the compiler API that tools import from `typescript/unstable/`.                                                                                                                                           | "TS" in new prose                                               |
+| type-check, format              | Technical verb | To find type errors with the TypeScript compiler, and to change the layout of files with Oxfmt.                                                                                                                                                 | "lint" (for these actions)                                      |
 | test suite                      | Technical name | One of the two Vitest test groups: the TypeScript/V8 test suite and the API gap analyzer test suite.                                                                                                                                            | "test pack", "scenarios" (for the suite)                        |
 | API gap analyzer                | Technical name | The Python script `scripts/api-gap-analysis.py`. It compares SDK routes with OpenAPI operations (`npm run api-coverage`).                                                                                                                       | "coverage tool"                                                 |
 | static checks                   | Technical name | The checks of the gate that do not run tests (`npm run validate:quality`).                                                                                                                                                                      | "static half"                                                   |
@@ -280,7 +279,7 @@ These words are not approved, but the project keeps them in the specified places
 
 Do these checks after you change a file in the scope of this guide:
 
-1. Format the file: `npx prettier --write <file>`.
+1. Format the file: `npx oxfmt --write <file>`.
 2. Run the documentation tests: `npx vitest run test/docs`.
 3. Before you open a pull request, run the full gate: `npm run validate`.
 4. Read each changed sentence again. Compare it with the sentence before your change. Examine the meaning, conditions, negation, numbers, and requirement strength.
@@ -288,7 +287,7 @@ Do these checks after you change a file in the scope of this guide:
 
 ## Limits of the checks
 
-- Prettier and the tests check the format and the text that tests pin. No check in this repository counts words or looks up words in the dictionary.
+- Oxfmt and the tests check the format and the text that tests pin. No check in this repository counts words or looks up words in the dictionary.
 - The STE100 migration used scratch scripts that are not in this repository. The scripts counted the words in each sentence and found words that are not approved in the dictionary. A person or an agent examined each result.
 - A script cannot find the part of speech or the meaning of a word (rules 1.2 and 1.3). A script also cannot find a changed meaning. Only a review can find these problems.
 - A dictionary check does not make a file compliant. The exceptions in this guide and the files out of scope are not STE text.

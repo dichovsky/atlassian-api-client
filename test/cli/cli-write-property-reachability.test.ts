@@ -29,9 +29,21 @@
  * it once got wrong.
  */
 import { describe, expect, it } from 'vitest';
+import { mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import path, { dirname, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import ts from 'typescript';
+import * as ts from 'typescript/unstable/ast';
+import {
+  API,
+  ObjectFlags,
+  SignatureKind,
+  TypeFlags,
+  type Checker,
+  type Project,
+  type Symbol as CompilerSymbol,
+  type Type,
+} from 'typescript/unstable/sync';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const SRC_DIR = resolve(REPO_ROOT, 'src');
@@ -84,6 +96,14 @@ const KNOWN_GAPS: Readonly<
     unset: ['_updateSequenceId'],
     reason:
       'deprecated: deleteFeatureFlagsByProperty marks _updateSequenceId "no longer supported"; the CLI rejects --update-sequence-id',
+  },
+  'jira.component.create': {
+    unset: ['leadUserName'],
+    reason: 'removed: ProjectComponent marks leadUserName unavailable. Use leadAccountId.',
+  },
+  'jira.component.update': {
+    unset: ['leadUserName'],
+    reason: 'removed: ProjectComponent marks leadUserName unavailable. Use leadAccountId.',
   },
   'jira.dashboards.listAvailableGadgets': {
     unset: ['dashboardId', 'gadgetId', 'moduleKey', 'uri'],
@@ -156,14 +176,23 @@ interface Keys {
 }
 const NONE: Keys = { open: false, named: new Set() };
 const ANY: Keys = { open: true, named: new Set() };
-const just = (...names: string[]): Keys => ({ open: false, named: new Set(names) });
+const just = (...names: string[]): Keys => ({
+  open: false,
+  named: new Set(names),
+});
 
 function union(a: Keys, b: Keys): Keys {
   if (a.open && b.open)
-    return { open: true, named: new Set([...a.named].filter((k) => b.named.has(k))) };
+    return {
+      open: true,
+      named: new Set([...a.named].filter((k) => b.named.has(k))),
+    };
   const [open, closed] = a.open ? [a, b] : [b, a];
   if (!open.open) return just(...a.named, ...b.named);
-  return { open: true, named: new Set([...open.named].filter((k) => !closed.named.has(k))) };
+  return {
+    open: true,
+    named: new Set([...open.named].filter((k) => !closed.named.has(k))),
+  };
 }
 
 function sets(keys: Keys, name: string): boolean {
@@ -183,7 +212,7 @@ function unwrap(expr: ts.Expression): ts.Expression {
     ts.isAsExpression(e) ||
     ts.isSatisfiesExpression(e) ||
     ts.isNonNullExpression(e) ||
-    ts.isTypeAssertionExpression(e)
+    ts.isTypeAssertion(e)
   ) {
     e = e.expression;
   }
@@ -191,23 +220,31 @@ function unwrap(expr: ts.Expression): ts.Expression {
 }
 
 /** The key an expression names when its type is one string/number literal (`'k'`, a `const`); else undefined. */
-function literalKey(checker: ts.TypeChecker, expr: ts.Expression): string | undefined {
+function literalKey(checker: Checker, expr: ts.Expression): string | undefined {
   const type = checker.getTypeAtLocation(expr);
-  return type.isStringLiteral() || type.isNumberLiteral() ? String(type.value) : undefined;
+  return type?.isStringLiteralType() || type?.isNumberLiteralType()
+    ? String(type.value)
+    : undefined;
 }
 
 /** A property name's key: plain, quoted, or computed from a literal/constant; else undefined. */
-function propertyKey(checker: ts.TypeChecker, name: ts.PropertyName): string | undefined {
-  if (ts.isIdentifier(name) || ts.isStringLiteralLike(name) || ts.isNumericLiteral(name)) {
+function propertyKey(checker: Checker, name: ts.PropertyName): string | undefined {
+  if (ts.isIdentifier(name) || ts.isStringLiteralLikeNode(name) || ts.isNumericLiteral(name)) {
     return name.text;
   }
   return ts.isComputedPropertyName(name) ? literalKey(checker, name.expression) : undefined;
 }
 
-function isOpen(checker: ts.TypeChecker, type: ts.Type): boolean {
+function typeOf(checker: Checker, expr: ts.Expression): Type {
+  const type = checker.getTypeAtLocation(expr);
+  if (!type) throw new Error(`Missing type for ${expr.getText()}`);
+  return type;
+}
+
+function isOpen(checker: Checker, type: Type): boolean {
   return (
-    (type.flags & (ts.TypeFlags.Any | ts.TypeFlags.Unknown)) !== 0 ||
-    checker.getIndexInfosOfType(type).some((info) => info.keyType.flags & ts.TypeFlags.String)
+    (type.flags & (TypeFlags.Any | TypeFlags.Unknown)) !== 0 ||
+    checker.getIndexInfosOfType(type).some((info) => info.keyType.flags & TypeFlags.String)
   );
 }
 
@@ -216,16 +253,14 @@ function isOpen(checker: ts.TypeChecker, type: ts.Type): boolean {
  * literal; none for a declared type (`data: CreateXData`), which says what
  * may be set, not what is — so an untraceable shape fails loudly.
  */
-function keysOfType(checker: ts.TypeChecker, type: ts.Type): Keys {
-  const t = checker.getNonNullableType(type);
-  if (t.isUnion())
-    return t.types.reduce<Keys>((acc, part) => union(acc, keysOfType(checker, part)), NONE);
+function keysOfType(checker: Checker, type: Type): Keys {
+  const t = checker.getNonNullableType(type) ?? type;
+  if (t.isUnionType())
+    return t.getTypes().reduce<Keys>((acc, part) => union(acc, keysOfType(checker, part)), NONE);
   if (isOpen(checker, t)) return ANY;
-  const objectLiteral =
-    (t.flags & ts.TypeFlags.Object) !== 0 &&
-    ((t as ts.ObjectType).objectFlags & ts.ObjectFlags.ObjectLiteral) !== 0;
+  const objectLiteral = t.isObjectType() && (t.objectFlags & ObjectFlags.ObjectLiteral) !== 0;
   if (!objectLiteral) return NONE;
-  return just(...t.getProperties().map((p) => p.name));
+  return just(...checker.getPropertiesOfType(t).map((p) => p.name));
 }
 
 /**
@@ -234,8 +269,8 @@ function keysOfType(checker: ts.TypeChecker, type: ts.Type): Keys {
  * A write whose key can't be resolved adds nothing (fails closed).
  */
 function writesBefore(
-  checker: ts.TypeChecker,
-  symbol: ts.Symbol,
+  checker: Checker,
+  symbol: CompilerSymbol,
   scope: ts.Node,
   use: ts.Node,
 ): Keys {
@@ -244,7 +279,7 @@ function writesBefore(
   const visit = (node: ts.Node): void => {
     if (node.getStart() >= usedAt) return;
     const containsUse = node.getEnd() >= use.getEnd();
-    if (node !== scope && ts.isFunctionLike(node) && !containsUse) return;
+    if (node !== scope && ts.isFunctionLikeDeclaration(node) && !containsUse) return;
     if (
       ts.isBinaryExpression(node) &&
       node.operatorToken.kind === ts.SyntaxKind.EqualsToken &&
@@ -257,14 +292,14 @@ function writesBefore(
         : literalKey(checker, node.left.argumentExpression);
       if (name !== undefined) keys = union(keys, just(name));
     }
-    ts.forEachChild(node, visit);
+    node.forEachChild(visit);
   };
   visit(scope);
   return keys;
 }
 
 /** Keys `expr` fills in. `path` holds the declarations being followed, to break cycles. */
-function keysOf(checker: ts.TypeChecker, expr: ts.Expression, path: Set<ts.Node>): Keys {
+function keysOf(checker: Checker, expr: ts.Expression, path: Set<ts.Node>): Keys {
   const e = unwrap(expr);
 
   if (ts.isObjectLiteralExpression(e)) {
@@ -293,7 +328,7 @@ function keysOf(checker: ts.TypeChecker, expr: ts.Expression, path: Set<ts.Node>
 
   const target = ts.isCallExpression(e) ? unwrap(e.expression) : e;
   const symbol = ts.isIdentifier(target) ? checker.getSymbolAtLocation(target) : undefined;
-  const decl = symbol?.valueDeclaration;
+  const decl = symbol?.valueDeclaration?.resolve();
   if (symbol && decl && !path.has(decl)) {
     // A same-file helper: the union of what its `return`s produce.
     if (ts.isCallExpression(e) && ts.isFunctionDeclaration(decl) && decl.body) {
@@ -302,11 +337,11 @@ function keysOf(checker: ts.TypeChecker, expr: ts.Expression, path: Set<ts.Node>
       const visit = (node: ts.Node): void => {
         if (ts.isReturnStatement(node) && node.expression) {
           keys = union(keys, keysOf(checker, node.expression, path));
-        } else if (!ts.isFunctionLike(node)) {
-          ts.forEachChild(node, visit);
+        } else if (!ts.isFunctionLikeDeclaration(node)) {
+          node.forEachChild(visit);
         }
       };
-      ts.forEachChild(decl.body, visit);
+      decl.body.forEachChild(visit);
       path.delete(decl);
       return keys;
     }
@@ -314,7 +349,7 @@ function keysOf(checker: ts.TypeChecker, expr: ts.Expression, path: Set<ts.Node>
     if (ts.isIdentifier(e) && ts.isVariableDeclaration(decl) && decl.initializer) {
       path.add(decl);
       let scope: ts.Node = decl;
-      while (!ts.isFunctionLike(scope) && !ts.isSourceFile(scope)) scope = scope.parent;
+      while (!ts.isFunctionLikeDeclaration(scope) && !ts.isSourceFile(scope)) scope = scope.parent;
       const keys = union(
         keysOf(checker, decl.initializer, path),
         writesBefore(checker, symbol, scope, e),
@@ -338,7 +373,7 @@ function keysOf(checker: ts.TypeChecker, expr: ts.Expression, path: Set<ts.Node>
         if (el === decl) return [];
         const name = el.propertyName
           ? propertyKey(checker, el.propertyName)
-          : ts.isIdentifier(el.name)
+          : el.name && ts.isIdentifier(el.name)
             ? el.name.text
             : undefined;
         return name === undefined ? [] : [name];
@@ -349,31 +384,30 @@ function keysOf(checker: ts.TypeChecker, expr: ts.Expression, path: Set<ts.Node>
     }
   }
 
-  return keysOfType(checker, checker.getTypeAtLocation(e));
+  return keysOfType(checker, typeOf(checker, e));
 }
 
 /** Top-level properties of an object-typed SDK parameter declared under `sdkDir`, else undefined. */
-function sdkProperties(
-  checker: ts.TypeChecker,
-  type: ts.Type,
-  sdkDir: string,
-): string[] | undefined {
-  const t = checker.getNonNullableType(type);
-  const objects = (t.isUnion() ? t.types : [t]).filter(
+function sdkProperties(checker: Checker, type: Type, sdkDir: string): string[] | undefined {
+  const t = checker.getNonNullableType(type) ?? type;
+  const objects = (t.isUnionType() ? t.getTypes() : [t]).filter(
     (part) =>
-      (part.flags & (ts.TypeFlags.Object | ts.TypeFlags.Intersection)) !== 0 &&
+      (part.flags & (TypeFlags.Object | TypeFlags.Intersection)) !== 0 &&
       !checker.isArrayType(part) &&
       !checker.isTupleType(part) &&
-      part.getCallSignatures().length === 0,
+      checker.getSignaturesOfType(part, SignatureKind.Call).length === 0,
   );
-  const declaredInSdk = (part: ts.Type): boolean =>
-    part
-      .getProperties()
-      .some((p) => p.declarations?.some((d) => isInside(sdkDir, d.getSourceFile().fileName)));
+  const declaredInSdk = (part: Type): boolean =>
+    checker.getPropertiesOfType(part).some((p) =>
+      p.declarations.some((d) => {
+        const declaration = d.resolve();
+        return declaration !== undefined && isInside(sdkDir, declaration.getSourceFile().fileName);
+      }),
+    );
   if (objects.length === 0 || objects.some((o) => isOpen(checker, o) || !declaredInSdk(o))) {
     return undefined;
   }
-  return [...new Set(objects.flatMap((o) => o.getProperties().map((p) => p.name)))];
+  return [...new Set(objects.flatMap((o) => checker.getPropertiesOfType(o).map((p) => p.name)))];
 }
 
 interface Slot {
@@ -388,18 +422,18 @@ interface CalledMethod {
 
 /** `api.resource.method` → its call sites in `files` and per-parameter reached keys. */
 function analyzeCalls(
-  program: ts.Program,
+  project: Project,
   files: Readonly<Record<string, string>>,
   sdkDir: string,
 ): Map<string, CalledMethod> {
-  const checker = program.getTypeChecker();
+  const { checker, program } = project;
   const methods = new Map<string, CalledMethod>();
 
   for (const [api, file] of Object.entries(files)) {
     const source = program.getSourceFile(file);
     if (!source) throw new Error(`${file} is not in the program`);
     const visit = (node: ts.Node): void => {
-      ts.forEachChild(node, visit);
+      node.forEachChild(visit);
       if (!ts.isCallExpression(node) || !ts.isPropertyAccessExpression(node.expression)) return;
       const resource = node.expression.expression;
       if (
@@ -410,24 +444,30 @@ function analyzeCalls(
         return;
       }
       const key = `${api}.${resource.name.text}.${node.expression.name.text}`;
-      const method = methods.get(key) ?? { callSites: [], slots: new Map<string, Slot>() };
+      const method = methods.get(key) ?? {
+        callSites: [],
+        slots: new Map<string, Slot>(),
+      };
       methods.set(key, method);
       const { line } = source.getLineAndCharacterOfPosition(node.getStart());
       method.callSites.push(`${relative(REPO_ROOT, file)}:${line + 1}`);
 
       const signature = checker.getResolvedSignature(node);
-      signature?.getParameters().forEach((param, i) => {
+      if (!signature) throw new Error(`No SDK signature for ${key}`);
+      signature.getParameters().forEach((param, i) => {
         const paramType = checker.getTypeOfSymbolAtLocation(param, node);
         const arg = node.arguments[i];
         const properties = sdkProperties(checker, paramType, sdkDir);
         if (!properties) {
           // A scalar/positional parameter: reached when some call site passes
           // it a value that is not always undefined or null (`undefined`, `void 0`, `null`).
-          const slot = method.slots.get(param.name) ?? { properties: [param.name], keys: NONE };
+          const slot = method.slots.get(param.name) ?? {
+            properties: [param.name],
+            keys: NONE,
+          };
           method.slots.set(param.name, slot);
-          const nothing = ts.TypeFlags.Undefined | ts.TypeFlags.Null;
-          const passed =
-            arg !== undefined && (checker.getTypeAtLocation(arg).flags & nothing) === 0;
+          const nothing = TypeFlags.Undefined | TypeFlags.Null;
+          const passed = arg !== undefined && (typeOf(checker, arg).flags & nothing) === 0;
           if (passed) slot.keys = union(slot.keys, just(param.name));
           return;
         }
@@ -453,24 +493,27 @@ function unreachedProperties(methods: Map<string, CalledMethod>): Map<string, st
   return gaps;
 }
 
-function cliProgram(): ts.Program {
-  const config = ts.getParsedCommandLineOfConfigFile(
-    resolve(REPO_ROOT, 'tsconfig.json'),
-    {},
-    {
-      ...ts.sys,
-      onUnRecoverableConfigFileDiagnostic: (d) => {
-        throw new Error(ts.flattenDiagnosticMessageText(d.messageText, '\n'));
-      },
-    },
-  );
-  if (!config) throw new Error('tsconfig.json could not be parsed');
-  return ts.createProgram(Object.values(CLI_FILES), config.options);
+function withProject<T>(config: string, run: (project: Project) => T): T {
+  const api = new API({ cwd: REPO_ROOT });
+  try {
+    const snapshot = api.updateSnapshot({ openProjects: [config] });
+    try {
+      const project = snapshot.getProject(config);
+      if (!project) throw new Error(`Could not load TypeScript project ${config}`);
+      return run(project);
+    } finally {
+      snapshot.dispose();
+    }
+  } finally {
+    api.close();
+  }
 }
 
 // ─── Tests ─────────────────────────────────────────────────────────────────
 
-const methods = analyzeCalls(cliProgram(), CLI_FILES, SRC_DIR);
+const methods = withProject(resolve(REPO_ROOT, 'tsconfig.json'), (project) =>
+  analyzeCalls(project, CLI_FILES, SRC_DIR),
+);
 const gaps = unreachedProperties(methods);
 
 describe('CLI calls can send every input their SDK method accepts', () => {
@@ -514,7 +557,6 @@ describe('CLI calls can send every input their SDK method accepts', () => {
 // `client`; `gaps` is what the analyzer must report. They pin shapes review
 // proved the analyzer once got wrong.
 
-const FIXTURE_DIR = '/fixture/src';
 const FIXTURE_SDK = `
 interface TransitionData { transition?: { id: string }; fields?: Record<string, unknown>; update?: Record<string, unknown> }
 interface ActorsData { user?: string[]; group?: string[]; groupId?: string[] }
@@ -621,60 +663,76 @@ void client.links.del('2', 7);`,
   },
 };
 
-/** One in-memory program holding every fixture as its own module. */
-function fixtureProgram(files: Readonly<Record<string, string>>): ts.Program {
-  const options: ts.CompilerOptions = {
-    target: ts.ScriptTarget.ES2022,
-    lib: ['lib.es2022.d.ts'],
-    types: [],
-    strict: true,
-    noEmit: true,
-  };
-  const base = ts.createCompilerHost(options);
-  const host: ts.CompilerHost = {
-    ...base,
-    fileExists: (name) => name in files || base.fileExists(name),
-    readFile: (name) => files[name] ?? base.readFile(name),
-    getSourceFile: (name, version, ...rest) => {
-      const text = files[name];
-      return text === undefined
-        ? base.getSourceFile(name, version, ...rest)
-        : ts.createSourceFile(name, text, version);
-    },
-  };
-  return ts.createProgram(Object.keys(files), options, host);
+function analyzeFixtures(fixtures: readonly { id: string; code: string }[]) {
+  const dir = mkdtempSync(resolve(realpathSync(tmpdir()), 'atlas-cli-inputs-'));
+  try {
+    const files: Record<string, string> = {};
+    for (const { id, code } of fixtures) {
+      const file = resolve(dir, `${id}.ts`);
+      writeFileSync(file, `${FIXTURE_SDK}\n${code}\n`);
+      files[id] = file;
+    }
+    const config = resolve(dir, 'tsconfig.json');
+    writeFileSync(
+      config,
+      JSON.stringify({
+        compilerOptions: {
+          target: 'ES2022',
+          lib: ['es2022'],
+          types: [],
+          strict: true,
+          noEmit: true,
+        },
+        files: fixtures.map(({ id }) => `${id}.ts`),
+      }),
+    );
+    return withProject(config, (project) => {
+      const { program } = project;
+      return {
+        fixtureGaps: unreachedProperties(analyzeCalls(project, files, dir)),
+        errors: [
+          ...program.getConfigFileParsingDiagnostics(),
+          ...program.getProgramDiagnostics(),
+          ...program.getSyntacticDiagnostics(),
+          ...program.getBindDiagnostics(),
+          ...program.getGlobalDiagnostics(),
+          ...program.getSemanticDiagnostics(),
+        ],
+      };
+    });
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 }
 
 describe('the input-reachability analyzer', () => {
-  const ids = Object.keys(FIXTURES).map((title, i) => ({ title, id: `f${i}` }));
-  const files = Object.fromEntries(ids.map(({ id }) => [id, `${FIXTURE_DIR}/${id}.ts`]));
-  const sources = Object.fromEntries(
-    ids.map(({ title, id }) => [
-      `${FIXTURE_DIR}/${id}.ts`,
-      `${FIXTURE_SDK}\n${FIXTURES[title]?.code}\n`,
-    ]),
-  );
-  const program = fixtureProgram(sources);
-  const fixtureGaps = unreachedProperties(analyzeCalls(program, files, FIXTURE_DIR));
+  const fixtures = Object.entries(FIXTURES).map(([title, fixture], i) => ({
+    title,
+    id: `f${i}`,
+    ...fixture,
+  }));
+  const { fixtureGaps, errors } = analyzeFixtures(fixtures);
 
   it('compiles every fixture', () => {
-    const errors = ts
-      .getPreEmitDiagnostics(program)
-      .map((d) => ts.flattenDiagnosticMessageText(d.messageText, '\n'));
     expect(errors).toEqual([]);
   });
 
-  it.each(ids)('$title', ({ title, id }) => {
+  it.each(fixtures)('$title', ({ id, gaps: expected }) => {
     const reported = Object.fromEntries(
       [...fixtureGaps]
         .filter(([key]) => key.startsWith(`${id}.`))
         .map(([key, unset]) => [key.slice(id.length + 1), unset]),
     );
-    expect(reported).toEqual(FIXTURES[title]?.gaps);
+    expect(reported).toEqual(expected);
   });
 
   it.each([
     { dir: 'C:\\repo\\src', file: 'C:/repo/src/jira/types.ts', inside: true },
+    {
+      dir: 'C:\\MyRepo\\src',
+      file: 'c:/myrepo/src/jira/types.ts',
+      inside: true,
+    },
     { dir: 'C:\\repo\\src', file: 'C:/repo/srcx/types.ts', inside: false },
     { dir: 'C:\\repo\\src', file: 'C:/repo/test/cli/x.ts', inside: false },
   ])('matches TypeScript file names against a Windows SDK dir: $file', ({ dir, file, inside }) => {

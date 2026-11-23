@@ -72,7 +72,10 @@ export interface SpaceProperty {
  * OpenAPI `CommentSortOrder` enum.
  */
 export type CommentSortOrder =
-  'created-date' | '-created-date' | 'modified-date' | '-modified-date';
+  | 'created-date'
+  | '-created-date'
+  | 'modified-date'
+  | '-modified-date';
 
 /**
  * Sort tokens accepted by version list endpoints. Mirrors the
@@ -85,7 +88,10 @@ export type VersionSortOrder = 'modified-date' | '-modified-date';
  * OpenAPI `AttachmentSortOrder` enum.
  */
 export type AttachmentSortOrder =
-  'modified-date' | '-modified-date' | 'created-date' | '-created-date';
+  | 'modified-date'
+  | '-modified-date'
+  | 'created-date'
+  | '-created-date';
 
 /**
  * Status filter accepted by `GET /attachments`. Mirrors the OpenAPI
@@ -195,7 +201,12 @@ export interface CreateContentPropertyData {
  * OpenAPI `BlogPostSortOrder` enum.
  */
 export type BlogPostSortOrder =
-  'id' | '-id' | 'created-date' | '-created-date' | 'modified-date' | '-modified-date';
+  | 'id'
+  | '-id'
+  | 'created-date'
+  | '-created-date'
+  | 'modified-date'
+  | '-modified-date';
 
 /**
  * Sort tokens accepted by `GET /labels/{id}/pages`. The default direction

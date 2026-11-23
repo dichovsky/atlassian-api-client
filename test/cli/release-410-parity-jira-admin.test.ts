@@ -558,8 +558,9 @@ describe('dashboards CLI → wire (M2-6)', () => {
 
 describe('settings set-columns sends multipart repeated columns (M5-3)', () => {
   it('PUTs FormData with one columns field per CSV entry', async () => {
-    const req = only(await runCliWire(example(ADMIN, 'jira settings set-columns')));
+    const req = only(await runCliWire(example(ADMIN, 'jira settings set-columns --columns')));
     expect(`${req.method} ${req.path}`).toBe(`PUT ${API}/settings/columns`);
+    expect(req.headers['x-atlassian-token']).toBe('no-check');
     expect(req.body).toBeInstanceOf(FormData);
     expect((req.body as FormData).getAll('columns')).toEqual(['issuekey', 'summary']);
   });
@@ -680,7 +681,7 @@ describe('plans CLI → wire (M7-4)', () => {
     expect(req.body).toEqual({
       name: 'Q4 Plan',
       issueSources: [{ type: 'Project', value: 10100 }],
-      scheduling: { estimation: 'Days', inferredDates: 'ReleaseDates' },
+      scheduling: { estimation: 'Days', inferredDates: 'AnySprintDates' },
       crossProjectReleases: [{ name: 'Q4 release', releaseIds: [10200, 10201] }],
       customFields: [{ customFieldId: 10050, filter: true }],
       exclusionRules: { numberOfDaysToShowCompletedIssues: 30, issueTypeIds: [10003] },

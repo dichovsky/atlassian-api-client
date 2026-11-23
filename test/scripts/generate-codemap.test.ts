@@ -83,6 +83,30 @@ describe('generate-codemap fixture', () => {
     expect(generated).toBe(expected);
   });
 
+  it('retains bare hashes in regex signatures', async () => {
+    const tmp = tempFixture();
+    const signature = 'export const pattern = /[ #]/;';
+    writeFileSync(join(tmp, 'src', 'hash.ts'), signature);
+    const result = await runGenerator(tmp);
+    expect(result.exitCode).toBe(0);
+    const generated = readFileSync(join(tmp, 'CODEMAP.md'), 'utf8');
+    expect(generated).toContain(JSON.stringify(signature));
+  });
+
+  it('preserves regex contents and division in generated signatures', async () => {
+    const tmp = tempFixture();
+    const signature = String.raw`export const url = /^https?:\/\//i;`;
+    const spacing = 'export const pattern = /foo  bar/g;';
+    const division = 'export const half = 20 / 2;';
+    writeFileSync(join(tmp, 'src', 'patterns.ts'), [signature, spacing, division].join('\n'));
+    const result = await runGenerator(tmp);
+    expect(result.exitCode).toBe(0);
+    const generated = readFileSync(join(tmp, 'CODEMAP.md'), 'utf8');
+    for (const declaration of [signature, spacing, division]) {
+      expect(generated).toContain(JSON.stringify(declaration));
+    }
+  });
+
   it('produces byte-identical output across two runs', async () => {
     const tmp = tempFixture();
     rmSync(join(tmp, 'CODEMAP.md'), { force: true });

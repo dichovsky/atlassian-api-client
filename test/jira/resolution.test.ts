@@ -190,12 +190,7 @@ describe('ResolutionResource', () => {
     });
 
     it('throws ValidationError when name is empty string', async () => {
-      // name is required by spec (UpdateResolutionDetails: required: ["name"])
-      // TypeScript enforces at compile time, but runtime guard covers runtime callers.
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await expect(resource.update('10', { name: '' } as any)).rejects.toBeInstanceOf(
-        ValidationError,
-      );
+      await expect(resource.update('10', { name: '' })).rejects.toBeInstanceOf(ValidationError);
     });
   });
 

@@ -1426,8 +1426,9 @@ describe('parseCommand', () => {
 // Release 4.1.0 cli-infra (F076/F139/F215/F224/F234/F272): every boolean flag
 // is tri-state at the router, so no spelling of `false` can turn into `true`.
 describe('parseCommand boolean flags', () => {
-  // Two flags are action-scoped by the router; parse them on an action that accepts them.
+  // Parse each action-scoped flag on a command that accepts it.
   const COMMAND_FOR: Record<string, string[]> = {
+    clear: ['jira', 'users', 'set-columns'],
     'include-archived-projects': ['jira', 'search', 'query'],
     'include-reserved-keys': ['jira', 'workflows', 'get-transition-properties'],
   };
@@ -1509,6 +1510,7 @@ describe('parseCommand boolean flags', () => {
     const message = '--no-purge does not take a value; use --purge true|false or --no-purge alone';
     expect(() => parse('--no-purge', 'true')).toThrow(message);
     expect(() => parse('--no-purge=false')).toThrow(message);
+    expect(() => parse('--no-purge=1')).toThrow(message);
     expect(() => parse('--no-resolved=true')).toThrow('--no-resolved does not take a value');
   });
 
@@ -1518,7 +1520,7 @@ describe('parseCommand boolean flags', () => {
   });
 
   it.each(['yes', 'no', 'y', 'n', 'on', 'off', 'NO', 'Off'])(
-    'rejects the yes/no-style word %s right after a bare or negated flag',
+    'rejects the ambiguous value %s right after a bare or negated flag',
     (word) => {
       expect(() => parse('--purge', word)).toThrow(
         `--purge accepts true or false, got: ${word} (a positional ${word} goes after --)`,
@@ -1530,9 +1532,22 @@ describe('parseCommand boolean flags', () => {
     },
   );
 
-  it('keeps 0/1 after a bare flag as a positional (they can be IDs)', () => {
-    expect(parse('--purge', '1').positionalArgs).toEqual(['K-1', '1']);
-    expect(parse('--purge', '0').options['purge']).toBe(true);
+  it.each(['0', '1'])('rejects %s after a bare flag and keeps it as an ID after negation', (id) => {
+    const getPage = (...args: string[]) =>
+      parseCommand(['node', 'atlas', 'confluence', 'pages', 'get', ...args]);
+    expect(() => getPage('--include-labels', id)).toThrow(
+      `--include-labels accepts true or false, got: ${id}`,
+    );
+    expect(getPage('--include-labels', '--', id).positionalArgs).toEqual([id]);
+    expect(getPage(id, '--include-labels').positionalArgs).toEqual([id]);
+    expect(getPage('--no-include-labels', id)).toMatchObject({
+      positionalArgs: [id],
+      options: { 'include-labels': false },
+    });
+    expect(getPage('--no-include-version', id)).toMatchObject({
+      positionalArgs: [id],
+      options: { 'no-include-version': true },
+    });
   });
 
   it('rejects conflicting values for one flag', () => {

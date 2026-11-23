@@ -1,5 +1,6 @@
 import type { GlobalOptions, ParsedCommand } from '../types.js';
 import { JiraClient } from '../../jira/client.js';
+import { validateInt32 } from '../../core/query.js';
 import type {
   CreateStatusData,
   StatusScope,
@@ -1481,6 +1482,26 @@ function requireCsv(value: string | boolean | undefined, name: string): string[]
   return values;
 }
 
+function columnSelection(cmd: ParsedCommand): string[] {
+  if (cmd.positionalArgs.length > 0) {
+    throw new Error(
+      'set-columns takes no positional arguments. Use --columns <field-ids> or --clear',
+    );
+  }
+  const raw = cmd.options['columns'];
+  if (cmd.options['clear'] === true) {
+    if (raw !== undefined) throw new Error('Choose either --columns or --clear');
+    return [];
+  }
+  const columns = requireOpt(raw, '--columns or --clear')
+    .split(',')
+    .map((id) => id.trim());
+  if (columns.includes('')) {
+    throw new Error('--columns requires a non-empty field ID in each entry');
+  }
+  return columns;
+}
+
 async function executeUsers(
   client: JiraClient,
   cmd: ParsedCommand,
@@ -1611,12 +1632,8 @@ async function executeUsers(
     case 'get-columns':
       return client.users.getColumns(asString(opts['account-id']));
     case 'set-columns': {
-      const columnsRaw = requireOpt(opts['columns'], '--columns');
-      const columnList = columnsRaw
-        .split(',')
-        .map((s) => s.trim())
-        .filter((s) => s.length > 0);
-      await client.users.setColumns(columnList, asString(opts['account-id']));
+      const columns = columnSelection(cmd);
+      await client.users.setColumns(columns, asString(opts['account-id']));
       return { set: true };
     }
     case 'email':
@@ -2801,6 +2818,12 @@ function asString(value: string | boolean | undefined): string | undefined {
   return typeof value === 'string' ? value : undefined;
 }
 
+function asInt32(value: string | boolean | undefined, name: string): number | undefined {
+  if (typeof value !== 'string') return undefined;
+  // Check the decimal text before Number can round a fractional input to an integer.
+  return validateInt32(/^[+-]?\d+$/.test(value.trim()) ? Number(value) : NaN, name);
+}
+
 function asPositiveInt(value: string | boolean | undefined, name: string): number | undefined {
   if (typeof value !== 'string') return undefined;
   const n = Number(value);
@@ -3521,17 +3544,16 @@ async function executeLicense(client: JiraClient, cmd: ParsedCommand): Promise<u
 }
 
 async function executeSettings(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
-  const opts = cmd.options;
-
   switch (cmd.action) {
     case 'get-columns':
       return client.settings.getColumns();
     case 'set-columns': {
-      const rawColumns = requireOpt(opts['columns'], '--columns');
-      const columns = rawColumns
-        .split(',')
-        .map((s) => s.trim())
-        .filter((s) => s.length > 0);
+      if (cmd.options['account-id'] !== undefined) {
+        throw new Error(
+          'Use jira users set-columns with --account-id to change one user’s columns',
+        );
+      }
+      const columns = columnSelection(cmd);
       await client.settings.setColumns(columns);
       return { updated: true };
     }
@@ -4503,7 +4525,8 @@ async function executeBulk(client: JiraClient, cmd: ParsedCommand): Promise<unkn
       }
       const value = valueRaw !== undefined ? parseJsonValueFlag(valueRaw, '--value') : undefined;
       const filter = bulkPropertyFilter(opts['filter'], 'set-property') as
-        BulkSetIssuePropertyData['filter'] | undefined;
+        | BulkSetIssuePropertyData['filter']
+        | undefined;
       return client.bulk.setPropertyBulk(
         propertyKey,
         {
@@ -4740,6 +4763,12 @@ async function executeUniversalAvatar(client: JiraClient, cmd: ParsedCommand): P
 
 async function executeComponent(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
   const opts = cmd.options;
+  rejectRemovedOptions(
+    opts,
+    `component ${cmd.action}`,
+    ['lead-user-name'],
+    'Atlassian removed leadUserName. Use --lead-account-id',
+  );
 
   switch (cmd.action) {
     case 'list': {
@@ -4758,7 +4787,6 @@ async function executeComponent(client: JiraClient, cmd: ParsedCommand): Promise
       const name = requireOpt(opts['name'], '--name');
       const description = asString(opts['description']);
       const leadAccountId = asString(opts['lead-account-id']);
-      const leadUserName = asString(opts['lead-user-name']);
       const assigneeType = asComponentAssigneeType(opts['assignee-type']);
       const project = requireOpt(opts['project'], '--project');
       return client.component.create({
@@ -4766,7 +4794,6 @@ async function executeComponent(client: JiraClient, cmd: ParsedCommand): Promise
         project,
         ...(description !== undefined && { description }),
         ...(leadAccountId !== undefined && { leadAccountId }),
-        ...(leadUserName !== undefined && { leadUserName }),
         ...(assigneeType !== undefined && { assigneeType }),
       });
     }
@@ -4776,24 +4803,21 @@ async function executeComponent(client: JiraClient, cmd: ParsedCommand): Promise
       const name = asString(opts['name']);
       const description = asString(opts['description']);
       const leadAccountId = asString(opts['lead-account-id']);
-      const leadUserName = asString(opts['lead-user-name']);
       const assigneeType = asComponentAssigneeType(opts['assignee-type']);
       if (
         name === undefined &&
         description === undefined &&
         leadAccountId === undefined &&
-        leadUserName === undefined &&
         assigneeType === undefined
       ) {
         throw new Error(
-          'update requires at least one of: --name, --description, --lead-account-id, --lead-user-name, --assignee-type',
+          'update requires at least one of: --name, --description, --lead-account-id, --assignee-type',
         );
       }
       return client.component.update(requireArg(cmd.positionalArgs[0], 'component id'), {
         ...(name !== undefined && { name }),
         ...(description !== undefined && { description }),
         ...(leadAccountId !== undefined && { leadAccountId }),
-        ...(leadUserName !== undefined && { leadUserName }),
         ...(assigneeType !== undefined && { assigneeType }),
       });
     }
@@ -8522,7 +8546,9 @@ async function executeFields(client: JiraClient, cmd: ParsedCommand): Promise<un
       const maxResults = asPositiveInt(opts['max-results'], '--max-results');
       const optionId = asPositiveInt(opts['option-id'], '--option-id');
       const onlyOptions = asBoolFlag(opts['only-options']);
+      const query = asString(opts['query']);
       return client.fields.listContextOptions(fieldId, contextId, {
+        ...(query !== undefined && { query }),
         ...(optionId !== undefined && { optionId }),
         ...(onlyOptions !== undefined && { onlyOptions }),
         ...(startAt !== undefined && { startAt }),
@@ -8968,7 +8994,9 @@ async function executeJql(client: JiraClient, cmd: ParsedCommand): Promise<unkno
       const fieldValue = asString(opts['field-value']);
       const predicateName = asString(opts['predicate-name']);
       const predicateValue = asString(opts['predicate-value']);
+      const maxResults = asInt32(opts['max-results'], '--max-results');
       return client.jql.getFieldReferenceSuggestions({
+        ...(maxResults !== undefined && { maxResults }),
         ...(fieldName !== undefined && { fieldName }),
         ...(fieldValue !== undefined && { fieldValue }),
         ...(predicateName !== undefined && { predicateName }),

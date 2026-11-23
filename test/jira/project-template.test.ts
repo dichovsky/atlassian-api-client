@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
+import { JiraClient } from '../../src/jira/client.js';
 import { ProjectTemplateResource } from '../../src/jira/resources/project-template.js';
 import { MockTransport } from '../helpers/mock-transport.js';
 import type {
@@ -20,6 +21,24 @@ describe('ProjectTemplateResource', () => {
   // ── createWithCustomTemplate (B653) ──────────────────────────────────────
 
   describe('createWithCustomTemplate()', () => {
+    it('preserves Jira limit details from a 422 response', async () => {
+      const details = {
+        current_count: 12,
+        max_allowed_limit: 12,
+        message: 'Project limit reached',
+      };
+      const client = new JiraClient({
+        baseUrl: 'https://test.atlassian.net',
+        auth: { type: 'bearer', token: 'test' },
+        fetch: async () => Response.json(details, { status: 422 }),
+      });
+      await expect(client.projectTemplate.createWithCustomTemplate({})).rejects.toMatchObject({
+        name: 'HttpError',
+        status: 422,
+        responseBody: details,
+      });
+    });
+
     it('POST /project-template with full data', async () => {
       transport.respondWithHeaders(undefined, 303, {
         location: `${BASE_URL}/task/10001`,

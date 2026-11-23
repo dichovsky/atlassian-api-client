@@ -1,5 +1,6 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, expectTypeOf, beforeEach } from 'vitest';
 import { DataPoliciesResource } from '../../src/confluence/resources/data-policies.js';
+import type { ListDataPolicySpacesParams } from '../../src/index.js';
 import { MockTransport } from '../helpers/mock-transport.js';
 import { ValidationError } from '../../src/core/errors.js';
 
@@ -50,6 +51,18 @@ describe('DataPoliciesResource', () => {
     });
   });
 
+  it('preserves the numeric ID types of existing SDK consumers', () => {
+    expectTypeOf<ListDataPolicySpacesParams['ids']>().toEqualTypeOf<
+      readonly number[] | undefined
+    >();
+    expectTypeOf<Parameters<DataPoliciesResource['listSpaces']>[0]>().toEqualTypeOf<
+      ListDataPolicySpacesParams | undefined
+    >();
+    expectTypeOf<Parameters<DataPoliciesResource['listAllSpaces']>[0]>().toEqualTypeOf<
+      Omit<ListDataPolicySpacesParams, 'cursor'> | undefined
+    >();
+  });
+
   // ── listSpaces ───────────────────────────────────────────────────────────
 
   describe('listSpaces()', () => {
@@ -84,6 +97,13 @@ describe('DataPoliciesResource', () => {
         `${BASE_URL}/data-policies/spaces?ids=1&ids=2&ids=3&keys=ENG&keys=OPS`,
       );
       expect(transport.lastCall?.options.query).toEqual({});
+    });
+
+    it('rejects unsafe numeric IDs before either list path sends a request', async () => {
+      const params = { ids: [Number.MAX_SAFE_INTEGER + 1] };
+      await expect(resource.listSpaces(params)).rejects.toThrow(ValidationError);
+      await expect(resource.listAllSpaces(params).next()).rejects.toThrow(ValidationError);
+      expect(transport.calls).toHaveLength(0);
     });
 
     it('omits ids and keys when arrays are empty', async () => {
@@ -168,7 +188,7 @@ describe('DataPoliciesResource', () => {
 
       // Act — ids are integer/int64 in the spec (B1059)
       const iter = resource.listAllSpaces({
-        ids: [10, 20],
+        ids: [10, '9223372036854775807'],
         keys: ['ENG'],
         sort: 'key',
         limit: 25,
@@ -184,7 +204,7 @@ describe('DataPoliciesResource', () => {
       expect(transport.lastCall?.options.query).not.toHaveProperty('ids');
       expect(transport.lastCall?.options.query).not.toHaveProperty('keys');
       expect(transport.lastCall?.options.path).toContain('ids=10');
-      expect(transport.lastCall?.options.path).toContain('ids=20');
+      expect(transport.lastCall?.options.path).toContain('ids=9223372036854775807');
       expect(transport.lastCall?.options.path).toContain('keys=ENG');
     });
 

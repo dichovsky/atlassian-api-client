@@ -19,7 +19,7 @@
 | `bulk-migration`           | —               | —                                               | `--user-name`, `--key`, `--start-at`, `--max-results`                                                                                                            |
 | `reset-columns`            | —               | —                                               | `--account-id`                                                                                                                                                   |
 | `get-columns`              | —               | —                                               | `--account-id`                                                                                                                                                   |
-| `set-columns`              | —               | `--columns`                                     | `--account-id`                                                                                                                                                   |
+| `set-columns`              | —               | one of `--columns`, `--clear`                   | `--account-id`                                                                                                                                                   |
 | `email`                    | —               | `--account-id`                                  | —                                                                                                                                                                |
 | `bulk-emails`              | —               | `--account-ids`                                 | —                                                                                                                                                                |
 | `groups`                   | —               | `--account-id`                                  | `--user-name`, `--key`                                                                                                                                           |
@@ -45,7 +45,7 @@
 - `users assignable` and `viewissue-search` also need a user selector: the spec requires `--query` (matched against display name and email prefixes) or `--account-id` (exact match) on top of the issue/project scope. The CLI does not check this; pass one of them, as in the examples below.
 - `users bulk` and `users bulk-emails` accept `--account-ids` as a comma-separated list. `bulk-emails` returns a **single** `{ accountId, email }` object (spec `UnrestrictedUserEmail`), not a `{ values: [...] }` wrapper.
 - `users bulk-migration` accepts `--user-name` and `--key` as comma-separated lists to translate legacy identifiers to account IDs.
-- `users set-columns` accepts `--columns` as a comma-separated list of column names; `--account-id` scopes the update to a specific user (admin only).
+- `users set-columns` accepts either `--columns` with comma-separated, non-empty field IDs or `--clear` to remove all columns. Each ID is sent as a repeated `columns` form field, in order. The command updates the current user by default. A Jira administrator can select another user with `--account-id`. Use `users reset-columns` to restore the system defaults.
 - `permission-search` returns users who have **all** the given permissions; `--permissions` (required) is a comma-separated list of permission keys (e.g. `BROWSE_PROJECTS,EDIT_ISSUES`). Scope with `--project-key` or `--issue-key`. The spec contradicts itself on `--query` / `--account-id`: the parameters say one is required, the operation says that without a search string it returns all users with the permissions. Pass one of them if Jira answers 400.
 - `picker` is a typeahead search for user selection UIs; `--exclude-account-ids` is comma-separated (sent as repeated params). `--exclude` (legacy usernames) is still sent but Atlassian says it is **no longer available**; use `--exclude-account-ids`.
 - `list-properties`, `get-property`, `delete-property`, `set-property` manage arbitrary key-value data stored on a user; scope with `--account-id`.
@@ -56,6 +56,9 @@
 - `list-search` hits `GET /users/search`, which also returns a page of **all** users: it has no name or username filter, so the CLI rejects `--query` and `--user-name`. To find users by name or email use `users search --query` or `users picker --query`.
 
 ```sh
+# Remove all columns for the current user
+atlas jira users set-columns --clear
+
 # Find users with a specific permission in a project
 atlas jira users permission-search --permissions BROWSE_PROJECTS --project-key PROJ
 

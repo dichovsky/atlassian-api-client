@@ -40,9 +40,7 @@ const DEFAULT_ENV: Record<string, string | undefined> = {
 function applyEnv(overrides: Record<string, string | undefined>): () => void {
   // `process.env[k] = undefined` coerces to the string `"undefined"` which
   // would then pass the CLI's `length > 0` checks. We must actually delete
-  // the key. ESLint's `no-dynamic-delete` rule is overzealous for this
-  // narrow test-helper use case; `Reflect.deleteProperty` is the
-  // structurally-equivalent escape hatch that avoids the rule.
+  // the key to restore an absent variable.
   const previous: Record<string, string | undefined> = {};
   for (const key of Object.keys(overrides)) {
     previous[key] = process.env[key];

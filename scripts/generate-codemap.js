@@ -15,7 +15,8 @@ import { createHash } from 'node:crypto';
 import { existsSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
 import process from 'node:process';
-import ts from 'typescript';
+import * as ts from 'typescript/unstable/ast';
+import { readTypeScriptSources } from './typescript-source.ts';
 
 // Repo root = process.cwd(); npm scripts always cd into package dir, so this
 // matches normal invocation. Tests can override by spawning with cwd: fixtureDir.
@@ -79,12 +80,8 @@ function main() {
 
   /** @type {Map<string, FileInfo>} */
   const fileMap = new Map();
-  for (const filePath of files) {
-    const text = readFileSync(filePath, 'utf8');
-    // setParentNodes: true is required for ts.getJSDocCommentsAndTags() to walk
-    // up to find leading JSDoc — ts.createProgram does NOT set parents.
-    const sf = ts.createSourceFile(filePath, text, ts.ScriptTarget.ES2022, true);
-    fileMap.set(filePath, extractFileInfo(sf, filePath, config));
+  for (const [file, source] of readTypeScriptSources(files)) {
+    fileMap.set(file, extractFileInfo(source, file, config));
   }
 
   const publicApi = buildPublicApi(config.entrypoints, fileMap);
@@ -320,7 +317,7 @@ function collectSymbol(stmt, sf, symbols, config) {
         kind: 'variable',
         line: lineOf(stmt, sf),
         exported: true,
-        signature: truncate(normalizeWs(stmt.getText(sf)), config.maxSignatureLength),
+        signature: truncate(fullText(stmt, sf), config.maxSignatureLength),
         jsdoc: extractJsdoc(stmt) ?? undefined,
       }),
     );
@@ -346,7 +343,7 @@ function makeSymbolFromVar(name, kind, decl, stmt, sf, exported, config) {
   ) {
     sig = sliceArrowToBody(stmt, decl, sf);
   } else {
-    sig = normalizeWs(stmt.getText(sf));
+    sig = fullText(stmt, sf);
   }
   return omitUndefined({
     name,
@@ -381,13 +378,12 @@ function fileEntry(f) {
 function sliceToBody(node, sf) {
   const start = node.getStart(sf);
   const bodyStart = node.body?.getStart(sf);
-  const text = bodyStart != null ? sf.text.substring(start, bodyStart) : node.getText(sf);
-  return normalizeWs(text);
+  return normalizeWs(sf, start, bodyStart ?? node.end);
 }
 
 function sliceArrowToBody(stmt, decl, sf) {
   const init = decl.initializer;
-  if (!init) return normalizeWs(decl.getText(sf));
+  if (!init) return fullText(decl, sf);
   const bodyStart = init.body?.getStart(sf);
   // Slice from the declarator's start, not the statement's. Otherwise a
   // multi-declarator statement like `const a = () => 1, b = () => 2` would
@@ -395,13 +391,9 @@ function sliceArrowToBody(stmt, decl, sf) {
   // For single-declarator statements we prepend the leading keyword
   // (`export const`/`export let`/`const`/etc.) so the signature still reads
   // as a recognizable top-level declaration.
-  const declOnly =
-    bodyStart == null ? decl.getText(sf) : sf.text.substring(decl.getStart(sf), bodyStart);
-  if (stmt.declarationList.declarations.length === 1) {
-    const stmtPrefix = sf.text.substring(stmt.getStart(sf), decl.getStart(sf));
-    return normalizeWs(stmtPrefix + declOnly);
-  }
-  return normalizeWs(declOnly);
+  const start =
+    stmt.declarationList.declarations.length === 1 ? stmt.getStart(sf) : decl.getStart(sf);
+  return normalizeWs(sf, start, bodyStart ?? decl.end);
 }
 
 function classSignature(node, sf) {
@@ -412,36 +404,46 @@ function classSignature(node, sf) {
     const c = text[i];
     if (c === '<') depth++;
     else if (c === '>') depth--;
-    else if (c === '{' && depth === 0) return normalizeWs(text.substring(0, i));
+    else if (c === '{' && depth === 0) {
+      const start = node.getStart(sf);
+      return normalizeWs(sf, start, start + i);
+    }
   }
-  return normalizeWs(text);
+  return fullText(node, sf);
 }
 
 function enumSignature(node, sf) {
   const text = node.getText(sf);
   const idx = text.indexOf('{');
-  if (idx > 0) return normalizeWs(text.substring(0, idx));
-  return normalizeWs(text);
+  if (idx > 0) return normalizeWs(sf, node.getStart(sf), node.getStart(sf) + idx);
+  return fullText(node, sf);
 }
 
 function fullText(node, sf) {
-  return normalizeWs(node.getText(sf));
+  return normalizeWs(sf, node.getStart(sf), node.end);
 }
 
-/** Collapse whitespace via TS scanner so string literals stay intact. */
-function normalizeWs(text) {
-  const scanner = ts.createScanner(ts.ScriptTarget.ES2022, true);
-  scanner.setText(text);
+// Scan the original source range so the AST can distinguish a regex literal from division.
+function normalizeWs(sf, from, to) {
+  const scanner = ts.createScanner(true, undefined, sf.text, from, to - from);
   const parts = [];
   let prevEnd = -1;
   while (true) {
     const token = scanner.scan();
-    if (token === ts.SyntaxKind.EndOfFileToken) break;
-    const start =
-      typeof scanner.getTokenStart === 'function' ? scanner.getTokenStart() : scanner.getTokenPos();
+    if (token === ts.SyntaxKind.EndOfFile) break;
+    const start = scanner.getTokenStart();
+    if (
+      (token === ts.SyntaxKind.SlashToken || token === ts.SyntaxKind.SlashEqualsToken) &&
+      ts.isRegularExpressionLiteral(ts.getTokenAtPosition(sf, start))
+    ) {
+      scanner.reScanSlashToken();
+    } else if (token === ts.SyntaxKind.PrivateIdentifier && start === scanner.getTokenEnd()) {
+      // Make progress on incomplete private names when indexing a work in progress.
+      scanner.reScanHashToken();
+    }
     if (prevEnd >= 0 && start > prevEnd) parts.push(' ');
     parts.push(scanner.getTokenText());
-    prevEnd = scanner.getTextPos();
+    prevEnd = scanner.getTokenEnd();
   }
   return parts.join('').trim();
 }
@@ -489,11 +491,10 @@ function memberName(m) {
 }
 
 function extractJsdoc(node) {
-  const blocks = ts.getJSDocCommentsAndTags(node).filter((t) => ts.isJSDoc(t));
-  if (blocks.length === 0) return null;
-  const last = blocks[blocks.length - 1];
+  const last = node.jsDoc?.findLast(ts.isJSDoc);
+  if (!last) return null;
   const descRaw = ts.getTextOfJSDocComment(last.comment) ?? '';
-  let firstPara = descRaw
+  const firstPara = descRaw
     .split(/\n\s*\n/)[0]
     .trim()
     .replace(/\s+/g, ' ');
@@ -515,9 +516,7 @@ function extractJsdoc(node) {
 // ---------- helpers ----------
 
 function hasModifier(node, kind) {
-  if (!ts.canHaveModifiers(node)) return false;
-  const mods = ts.getModifiers(node);
-  return mods?.some((m) => m.kind === kind) ?? false;
+  return node.modifiers?.some((m) => m.kind === kind) ?? false;
 }
 
 function lineOf(node, sf) {

@@ -1,5 +1,6 @@
 import type { Transport } from '../../core/types.js';
 import { validatePageSize } from '../../core/pagination.js';
+import { validateInt32 } from '../../core/query.js';
 
 // ── GET /invalid-jqls-access-log (experimental) ──────────────────────────────
 
@@ -277,6 +278,12 @@ export interface JqlSuggestionsParams {
   readonly fieldValue?: string;
   readonly predicateName?: string;
   readonly predicateValue?: string;
+  /**
+   * Signed 32-bit integer hint for the number of field or predicate suggestions.
+   * Jira caps the hint at 50 and may use its default of 15 instead.
+   * @experimental Atlassian marks this parameter as experimental.
+   */
+  readonly maxResults?: number;
 }
 
 /** One field auto-complete suggestion (spec `AutoCompleteSuggestion`). */
@@ -312,11 +319,14 @@ export class JqlResource {
 
   /** Get field reference suggestions for JQL autocomplete. */
   async getFieldReferenceSuggestions(params?: JqlSuggestionsParams): Promise<JqlSuggestions> {
-    const query: Record<string, string | undefined> = {};
+    const query: Record<string, string | number> = {};
     if (params?.fieldName !== undefined) query['fieldName'] = params.fieldName;
     if (params?.fieldValue !== undefined) query['fieldValue'] = params.fieldValue;
     if (params?.predicateName !== undefined) query['predicateName'] = params.predicateName;
     if (params?.predicateValue !== undefined) query['predicateValue'] = params.predicateValue;
+    if (params?.maxResults !== undefined) {
+      query['maxResults'] = validateInt32(params.maxResults, 'maxResults');
+    }
 
     const response = await this.transport.request<JqlSuggestions>({
       method: 'GET',
