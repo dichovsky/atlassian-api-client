@@ -33,6 +33,8 @@ import {
   safeParseBody,
 } from './response.js';
 
+const sendRequest = Symbol('HttpTransport.sendRequest');
+
 /**
  * Drop a caller-supplied `authorizationOverride` at the request boundary.
  *
@@ -159,7 +161,13 @@ export class HttpTransport implements Transport {
    * @throws {NetworkError} if a transient network failure occurs.
    * @throws {HttpError} (or a subclass) for non-2xx HTTP responses.
    */
-  async request<T>(options: RequestOptions): Promise<ApiResponse<T>> {
+  request<T>(options: RequestOptions): Promise<ApiResponse<T>> {
+    return this[sendRequest]<T>(options);
+  }
+
+  // A forwarding Proxy can call the public method. This closure reads private
+  // fields on the transport instance that owns them.
+  private readonly [sendRequest] = async <T>(options: RequestOptions): Promise<ApiResponse<T>> => {
     // PR review (round 4 → round 5): expose only a non-secret hashed
     // identity to the middleware chain, NOT the raw `Authorization`
     // header. Cache and batch middleware need a stable identity to
@@ -234,7 +242,7 @@ export class HttpTransport implements Transport {
     }
 
     return response as ApiResponse<T>;
-  }
+  };
 
   /**
    * Attach the precomputed `authIdentity` hash to `options` so downstream

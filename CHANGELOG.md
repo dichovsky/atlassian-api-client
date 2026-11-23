@@ -2,7 +2,7 @@
 
 ## [Unreleased](https://github.com/dichovsky/atlassian-api-client/compare/v5.0.0...HEAD)
 
-- Jira and Confluence clients, `HttpTransport`, and the Basic and Bearer auth providers keep credentials and cached authorization headers private during JSON serialization and Node.js object inspection.
+- The built-in `HttpTransport`, its Basic and Bearer auth providers, and Jira and Confluence clients using that transport keep credentials and cached authorization headers private during JSON serialization and Node.js object inspection.
 - Jira field context options accept an optional `query` filter (`atlas jira fields context-option-list --field-id <field> --context-id <id> --query <text>`). JQL suggestions accept Jira's experimental `maxResults` hint (`atlas jira jql autocomplete-suggestions --field-name <field> --max-results <n>`).
 - Jira plan scheduling accepts `AnySprintDates` in requests and responses. Atlassian now marks the plural field-context default-values GET operation experimental and documents a 422 limit-exceeded response when creating a project from a custom template.
 - Confluence task and data-policy ID filters accept exact decimal strings across the signed 64-bit range. Pass IDs too large for a safe JavaScript integer as strings. Blank space-role space IDs now fail before a request is sent.
