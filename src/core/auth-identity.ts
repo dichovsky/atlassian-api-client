@@ -79,14 +79,16 @@ export function withAuthorizationOverride(options: RequestOptions, value: string
 }
 
 /**
- * Return the in-chain `Authorization` override. The last writer wins: when
- * `options` has its own `authorizationOverride` key (written after the last
- * {@link withAuthorizationOverride}), return that key's value, even
- * `undefined`. Otherwise return the hidden value, or `undefined`.
+ * Return the in-chain `Authorization` override: the public
+ * `authorizationOverride` string when it is defined, else the hidden value,
+ * else `undefined`. {@link withAuthorizationOverride} removes the public key,
+ * so a defined public value was written after it, and the last writer wins.
  */
 export function readAuthorizationOverride(options: RequestOptions): string | undefined {
-  if (Object.hasOwn(options, 'authorizationOverride')) return options.authorizationOverride;
-  return RedactedAuthorization.read((options as WithHiddenOverride)[AUTHORIZATION_OVERRIDE]);
+  return (
+    options.authorizationOverride ??
+    RedactedAuthorization.read((options as WithHiddenOverride)[AUTHORIZATION_OVERRIDE])
+  );
 }
 
 /**

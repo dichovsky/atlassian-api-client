@@ -271,16 +271,25 @@ describe('authorizationOverride precedence and copy safety', () => {
     return sent[0]!;
   };
 
-  it('the last writer wins: a public override set after the auth middleware is sent', async () => {
+  it('a defined public override written after the auth middleware wins', async () => {
     const later: Middleware = async (o, next) =>
       next({ ...o, authorizationOverride: 'Bearer LATER_CUSTOM' });
-    const cleared: Middleware = async (o, next) => next({ ...o, authorizationOverride: undefined });
     const earlier: Middleware = async (o, next) =>
       next({ ...o, authorizationOverride: 'Bearer EARLIER_CUSTOM' });
+    const inherit: Middleware = async (o, next) => next(Object.create(o) as RequestOptions);
 
     expect(await send([oauth(), later])).toBe('Bearer LATER_CUSTOM');
-    expect(await send([oauth(), cleared])).toBe('Bearer CONFIG_TOKEN');
     expect(await send([earlier, oauth()])).toBe('Bearer OAUTH_TOKEN');
+    expect(await send([later, inherit])).toBe('Bearer LATER_CUSTOM');
+  });
+
+  it('an undefined public override does not clear the auth middleware credential', async () => {
+    const passThrough: Middleware = async (o, next) =>
+      next({ ...o, authorizationOverride: o.authorizationOverride });
+    const cleared: Middleware = async (o, next) => next({ ...o, authorizationOverride: undefined });
+
+    expect(await send([oauth(), passThrough])).toBe('Bearer OAUTH_TOKEN');
+    expect(await send([oauth(), cleared])).toBe('Bearer OAUTH_TOKEN');
   });
 
   it('a deep clone of the options falls back to config.auth instead of throwing', async () => {

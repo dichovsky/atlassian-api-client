@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "5.0.0"
   },
-  "sourceHash": "1b43a3fb10de99cc64b16daaadd9d7bdc5ac3e0b38a8fdb33f805469c8c626f7",
+  "sourceHash": "71a94b1479e426ce3b957730b6760a284b5ce46273c73c93da70c58cccee420c",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -16191,12 +16191,12 @@
           "line": 87,
           "exported": true,
           "signature": "export function readAuthorizationOverride(options: RequestOptions): string | undefined",
-          "jsdoc": "Return the in-chain `Authorization` override. The last writer wins: when `options` has its own `authorizationOverride` key (written after the last {@link withAuthorizationOverride}), return that key's value, even `undefined`. Otherwise return the hidden value, or `undefined`."
+          "jsdoc": "Return the in-chain `Authorization` override: the public `authorizationOverride` string when it is defined, else the hidden value, else `undefined`. {@link withAuthorizationOverride} removes the public key, so a defined public value was written after it, and the last writer wins."
         },
         {
           "name": "stripAuthorizationOverride",
           "kind": "function",
-          "line": 97,
+          "line": 99,
           "exported": true,
           "signature": "export function stripAuthorizationOverride(options: RequestOptions): RequestOptions",
           "jsdoc": "Return a plain copy of `options` without either override channel. The copy is always new, so a getter or `Proxy` on the caller's object is read only once and cannot return a different value later."
@@ -16204,7 +16204,7 @@
         {
           "name": "resolveAuthIdentity",
           "kind": "function",
-          "line": 118,
+          "line": 120,
           "exported": true,
           "signature": "export function resolveAuthIdentity(opts: RequestOptions): string",
           "jsdoc": "Derive the stable identifier that cache/batch keys partition on, so a shared transport never serves or coalesces one tenant's authenticated response for another's request."
@@ -16212,7 +16212,7 @@
         {
           "name": "serializeQueryKey",
           "kind": "function",
-          "line": 132,
+          "line": 134,
           "exported": true,
           "signature": "export function serializeQueryKey(query: RequestOptions['query']): string",
           "jsdoc": "Canonical query-string serialization for cache/batch keys: `undefined` values dropped, keys sorted, both key and value URI-encoded. Returns the empty string when there is no query, otherwise a leading `?`."
@@ -16220,7 +16220,7 @@
         {
           "name": "appendQueryKey",
           "kind": "function",
-          "line": 151,
+          "line": 153,
           "exported": true,
           "signature": "export function appendQueryKey(path: string, query: RequestOptions['query']): string",
           "jsdoc": "Append the canonical query-key serialization to a path that may itself already carry a query string (e.g. resources that embed repeated query params like `?accountId=a&accountId=b` directly into the path because the transport's `query` map collapses duplicate keys). Yields exactly one `?` separator regardless of which side holds query params."
