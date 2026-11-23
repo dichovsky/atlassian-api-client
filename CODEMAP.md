@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "5.0.0"
   },
-  "sourceHash": "bafcdcab04c349037742f001e32fdecc2d02f436fa3487e5e3c8ce34d4f60c77",
+  "sourceHash": "6956cdee548c10a7126142a9e845d53c20c073d17b4b26f1e322d1d36e515982",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -17601,11 +17601,24 @@
           "signature": "const FORM_SECRET_FIELD = new RegExp(String.raw`(?<![\\w-])(${SECRET_KEY}=)[^&\\s\"]*`, 'gi');"
         },
         {
+          "name": "OAUTH_ERROR_FIELDS",
+          "kind": "variable",
+          "line": 517,
+          "signature": "const OAUTH_ERROR_FIELDS: ReadonlySet<string> = new Set([ 'error', 'error_description', 'error_uri', ]);"
+        },
+        {
           "name": "formatBodySnippet",
           "kind": "function",
-          "line": 524,
-          "signature": "function formatBodySnippet(raw: string, secrets: readonly string[]): string",
-          "jsdoc": "Build a short diagnostic snippet of a token-endpoint response body. Before it truncates to 200 chars, it replaces with `***` the value of each token- or secret-named JSON or form field, then each known secret (raw, JSON-escaped and URL-encoded), so that a credential the endpoint echoes never reaches an error message or log. The fields go first: a known secret that is a substring of a key name would otherwise break the key match."
+          "line": 534,
+          "signature": "function formatBodySnippet(raw: string, body: unknown, secrets: readonly string[]): string",
+          "jsdoc": "Build a short diagnostic snippet of a token-endpoint response body, so that a credential the endpoint echoes never reaches an error message or log."
+        },
+        {
+          "name": "knownSecretPattern",
+          "kind": "function",
+          "line": 565,
+          "signature": "function knownSecretPattern(secrets: readonly unknown[]): RegExp | undefined",
+          "jsdoc": "One case-insensitive pattern for every form of every known secret, longest first, so that a secret that contains another is replaced whole. Returns `undefined` when there is no non-empty string secret (untyped JS callers can pass other values)."
         }
       ],
       "imports": [
