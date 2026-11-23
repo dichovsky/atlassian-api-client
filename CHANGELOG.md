@@ -2,6 +2,7 @@
 
 ## [Unreleased](https://github.com/dichovsky/atlassian-api-client/compare/v5.0.0...HEAD)
 
+- **Security:** `JSON.stringify`, `String()`, `console.log`, and `util.inspect` no longer show credentials for an auth provider from `createAuthProvider()`, an `HttpTransport`, a `JiraClient`, or a `ConfluenceClient`. Before this fix, they showed the `Authorization` value and the raw API token or bearer token, because TypeScript `private` fields are ordinary properties at runtime. These fields are now ES `#private`. Thus `request()` on a `Proxy` or an `Object.create()` copy of an `HttpTransport` now throws `TypeError`. This includes a deep-reactive wrapper, such as Vue `reactive()`, around a client. Keep clients and transports out of such wrappers (in Vue, use `markRaw()`).
 - Jira field context options accept an optional `query` filter (`atlas jira fields context-option-list --field-id <field> --context-id <id> --query <text>`). JQL suggestions accept Jira's experimental `maxResults` hint (`atlas jira jql autocomplete-suggestions --field-name <field> --max-results <n>`).
 - Jira plan scheduling accepts `AnySprintDates` in requests and responses. Atlassian now marks the plural field-context default-values GET operation experimental and documents a 422 limit-exceeded response when creating a project from a custom template.
 - Confluence task and data-policy ID filters accept exact decimal strings across the signed 64-bit range. Pass IDs too large for a safe JavaScript integer as strings. Blank space-role space IDs now fail before a request is sent.
