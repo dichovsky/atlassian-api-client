@@ -125,9 +125,18 @@ function assertJobGates(workflow: Workflow): void {
   expect(preflight.outputs?.['manifest-sha256']).toBe(
     '${{ steps.release.outputs.manifest_sha256 }}',
   );
-  expect(preflight.steps.map((s) => s.run?.trim())).toContain(
-    'node scripts/validate-release-tag.js "$GITHUB_REF_NAME"',
-  );
+  expect(preflight.steps).toMatchObject([
+    { uses: expect.stringMatching(/^actions\/checkout@/) },
+    { name: 'Require an annotated, verified tag' },
+    { name: 'Require the exact current main tip' },
+    { name: 'Require successful CI for this exact main push' },
+    {
+      uses: expect.stringMatching(/^actions\/setup-node@[a-f0-9]{40}$/),
+      with: { 'node-version-file': '.nvmrc' },
+    },
+    { run: 'npm ci --ignore-scripts' },
+    { run: 'node scripts/validate-release-tag.js "$GITHUB_REF_NAME"' },
+  ]);
 
   const build = job(workflow, 'build');
   expect(build.needs).toBe('preflight');
@@ -213,6 +222,7 @@ describe('publish workflow job gates', () => {
     ['publish not waiting for build', '    needs: [preflight, build]\n', '    needs: preflight\n'],
     ['lifecycle scripts enabled', '--provenance --ignore-scripts', '--provenance'],
     ['validation skipped', 'run: npm run validate', 'run: npm run build'],
+    ['preflight lifecycle scripts enabled', 'run: npm ci --ignore-scripts', 'run: npm ci'],
     [
       'devDependencies installed after approval',
       '      - name: Check the downloaded tarball\n',
@@ -279,13 +289,19 @@ describe('publish workflow signed-tag preflight', () => {
   });
   const VERIFIED = { verified: true, reason: 'valid' };
 
-  function runSignatureCheck(workflow: Workflow, ref: unknown, tag: unknown, head = RELEASE_SHA) {
+  function runSignatureCheck(
+    workflow: Workflow,
+    ref: unknown,
+    tag: unknown,
+    head = RELEASE_SHA,
+    tagName = 'v4.1.0',
+  ) {
     const { run } = step(workflow, 'preflight', 'Require an annotated, verified tag');
     return runStep(
       run,
       {
         GITHUB_REPOSITORY: 'dichovsky/atlassian-api-client',
-        GITHUB_REF_NAME: 'v4.1.0',
+        GITHUB_REF_NAME: tagName,
         FAKE_REF_JSON: JSON.stringify(ref),
         FAKE_TAG_JSON: JSON.stringify(tag),
         FAKE_TAG_OBJECT_SHA: TAG_OBJECT_SHA,
@@ -341,6 +357,9 @@ describe('publish workflow signed-tag preflight', () => {
       ),
       // the tag names a commit other than the checked-out one
       runSignatureCheck(workflow, ANNOTATED_REF, verifiedTag(VERIFIED), 'a'.repeat(40)),
+      // reject non-release refs before using their names in API paths or job outputs
+      runSignatureCheck(workflow, ANNOTATED_REF, verifiedTag(VERIFIED), RELEASE_SHA, 'v4.01.0'),
+      runSignatureCheck(workflow, ANNOTATED_REF, verifiedTag(VERIFIED), RELEASE_SHA, 'v4.1.0/test'),
     ];
     for (const result of rejected) {
       expect(result.status).not.toBe(0);
@@ -353,6 +372,11 @@ describe('publish workflow signed-tag preflight', () => {
   });
 
   it.each([
+    [
+      'the release tag format check bypassed',
+      '[[ "${GITHUB_REF_NAME}" =~ ',
+      '[[ true || "${GITHUB_REF_NAME}" =~ ',
+    ],
     [
       'the verification filter removed',
       '\'select(.object.type == "commit") | select(.verification.verified == true) | .object.sha\' \\',

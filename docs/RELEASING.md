@@ -60,9 +60,10 @@ The `Publish` preflight accepts a tag only when the GitHub API reports its signa
    - Move all entries out of `Unreleased` and into the new `X.Y.Z` section.
    - In the heading of the `X.Y.Z` section, write the date when you will make the tag.
    - Above the `X.Y.Z` section, keep an empty `Unreleased` section with a new compare link.
-4. Before the review, validate the release metadata:
+4. Before the review, install the dependencies from the lockfile. Then validate the release metadata.
 
    ```bash
+   npm ci
    npm run release:check -- vX.Y.Z
    ```
 
@@ -75,10 +76,9 @@ The `Publish` preflight accepts a tag only when the GitHub API reports its signa
 
    If you do not make the tag on that date, write a new date in the section. The new date makes a new release candidate. Validate the new release candidate.
 
-5. Install the dependencies from the lockfile. Then run the full repository gate:
+5. Run the full repository gate.
 
    ```bash
-   npm ci
    npm run validate
    ```
 

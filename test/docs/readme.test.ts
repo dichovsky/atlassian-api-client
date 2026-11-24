@@ -5,6 +5,10 @@ import { fileURLToPath } from 'node:url';
 
 const TEST_DIR = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(TEST_DIR, '..', '..');
+const validatorPath = resolve(REPO_ROOT, 'scripts', 'validate-release-tag.js');
+const { changelogSections } = (await import(validatorPath)) as {
+  changelogSections(markdown: string): { heading: string }[];
+};
 const README = readFileSync(resolve(REPO_ROOT, 'README.md'), 'utf8');
 const ARCHITECTURE = readFileSync(resolve(REPO_ROOT, 'docs', 'ARCHITECTURE.md'), 'utf8');
 const CONTRIBUTING = readFileSync(resolve(REPO_ROOT, 'CONTRIBUTING.md'), 'utf8');
@@ -76,6 +80,10 @@ describe('live documentation consistency', () => {
 
 - Correct an attachment response type.
 
+~~~markdown
+## [0.0.1] (2000-01-01)
+~~~
+
 ## [4.0.0] (2026-09-02)
 `,
     ],
@@ -95,7 +103,7 @@ describe('live documentation consistency', () => {
 `,
     ],
   ])('keeps Unreleased linked to the latest release (%s)', (_name, changelog) => {
-    const headings = changelog.match(/^## .+$/gm) ?? [];
+    const headings = changelogSections(changelog).map((section) => section.heading);
     const latestVersion = /^## \[(\d+\.\d+\.\d+)\]/.exec(headings[1] ?? '')?.[1];
 
     expect(latestVersion).toBeDefined();

@@ -172,6 +172,73 @@ describe('validate-release-tag in-process', () => {
       'has unreleased entries',
     ],
     ['no release section', '## [3.9.0](x) (2026-08-01)\n', 'has no release section for 4.0.0'],
+    [
+      'a release heading only in a backtick fence',
+      ['```markdown', RELEASE, '```'].join('\n'),
+      'has no release section for 4.0.0',
+    ],
+    [
+      'a release heading in an unterminated tilde fence',
+      ['~~~', RELEASE].join('\n'),
+      'has no release section for 4.0.0',
+    ],
+    [
+      'a tilde fence with a backtick after the apparent closer',
+      ['~~~markdown', 'sample', '~~~`', RELEASE, '~~~'].join('\n'),
+      'has no release section for 4.0.0',
+    ],
+    [
+      'a pending entry beneath an indented Unreleased heading',
+      [RELEASE, '   ## [Unreleased]', '- pending'].join('\n'),
+      'has unreleased entries',
+    ],
+    [
+      'a definition beneath a tab-separated Unreleased heading',
+      ['##\t[Unreleased]', '', '[example]: https://example.test', '', RELEASE].join('\n'),
+      'has unreleased entries',
+    ],
+    [
+      'a comment beneath a Setext Unreleased heading',
+      ['[Unreleased]', '---', '<!-- pending -->', RELEASE].join('\n'),
+      'has unreleased entries',
+    ],
+    [
+      'a duplicate version written as a Setext heading',
+      [RELEASE, '[4.0.0] (2026-09-02)', '---'].join('\n'),
+      'has 2 release sections for 4.0.0',
+    ],
+    [
+      'a fenced example under Unreleased',
+      ['## [Unreleased]', '```', '## [3.9.0]', '```', RELEASE].join('\n'),
+      'has unreleased entries',
+    ],
+    [
+      'a duplicate release after a fence on a list marker',
+      [RELEASE, '- ```md', '  ## example', '  ```', RELEASE].join('\n'),
+      'has 2 release sections for 4.0.0',
+    ],
+    [
+      'unreleased entries after a fence implicitly closed by the end of a list',
+      [RELEASE, '- Example', '  ~~~', '  text', '## [Unreleased]', '- pending'].join('\n'),
+      'has unreleased entries',
+    ],
+    [
+      'unreleased entries after an unindented list continuation and a nested fence',
+      [RELEASE, '- Example', 'continued', '  ~~~', '  text', '## [Unreleased]', '- pending'].join(
+        '\n',
+      ),
+      'has unreleased entries',
+    ],
+    [
+      'a release heading only in an indented top-level fence after a list',
+      ['- Example', '', ' ~~~md', RELEASE, ' ~~~'].join('\n'),
+      'has no release section for 4.0.0',
+    ],
+    [
+      'a top-level fence after a tab-padded ordered list marker',
+      ['1.\tExample', '\tcontinued', '   ~~~md', RELEASE, '~~~'].join('\n'),
+      'has no release section for 4.0.0',
+    ],
     ['two release sections', `${RELEASE}\n${RELEASE}\n`, 'has 2 release sections for 4.0.0'],
     [
       'a newer release above it',
@@ -190,6 +257,63 @@ describe('validate-release-tag in-process', () => {
       problem(['v4.0.0'], { 'CHANGELOG.md': `## [Unreleased]\n\n${RELEASE}\n` }),
     ).toBeUndefined();
   });
+
+  it.each([1, 2])('reads the linked release after %i leading byte order marks', (count) => {
+    const changelog = `${'\uFEFF'.repeat(count)}# Changelog\r\n\r\n${RELEASE}\r\n`;
+    expect(problem(['v4.0.0'], { 'CHANGELOG.md': changelog })).toBeUndefined();
+  });
+
+  it.each([
+    ['indented', '   ## [4.0.0](https://example.test/compare) (2026-09-02)'],
+    ['tab-separated', '##\t[4.0.0](https://example.test/compare) (2026-09-02)'],
+    ['closed with hashes', '## [4.0.0](https://example.test/compare) (2026-09-02) ###'],
+    ['Setext', '[4.0.0](https://example.test/compare) (2026-09-02)\n---'],
+  ])('reads a linked version and date (heading style: %s)', (_label, heading) => {
+    expect(problem(['v4.0.0'], { 'CHANGELOG.md': heading })).toBeUndefined();
+  });
+
+  it('keeps an empty level-two heading as a section boundary', () => {
+    const changelog = [RELEASE, '## [Unreleased]', '##', '- archived note'].join('\n');
+    expect(problem(['v4.0.0'], { 'CHANGELOG.md': changelog })).toBeUndefined();
+  });
+
+  it.each([
+    ['an ordered marker continuing a paragraph', 'notes\n2. item'],
+    ['a Setext heading with a single-dash underline', 'notes\n-'],
+    ['an empty list item and a blank line', '-\n'],
+  ])('ignores a fenced release heading after %s', (_label, prefix) => {
+    const changelog = [prefix, '   ~~~md', RELEASE, '~~~'].join('\n');
+    expect(problem(['v4.0.0'], { 'CHANGELOG.md': changelog })).toContain('has no release section');
+  });
+
+  it('resumes heading detection only after a matching closing fence', () => {
+    const changelog = [
+      '   ~~~~markdown',
+      '````',
+      '~~~',
+      '~~~~ still inside',
+      '## [Unreleased]',
+      '- example entry',
+      RELEASE,
+      '  ~~~~~ \t',
+      '## [Unreleased]',
+      RELEASE,
+    ].join('\r\n');
+
+    expect(problem(['v4.0.0'], { 'CHANGELOG.md': changelog })).toBeUndefined();
+  });
+
+  it.each(['    ~~~', '```language`example'])('still reads headings after %j', (line) => {
+    expect(problem(['v4.0.0'], { 'CHANGELOG.md': `${line}\n${RELEASE}` })).toBeUndefined();
+  });
+
+  it.each(['-   ', '-     indented code'])(
+    'reads the real release after a fence nested under list item %j',
+    (item) => {
+      const changelog = [item, '  ~~~md', '  sample', RELEASE].join('\n');
+      expect(problem(['v4.0.0'], { 'CHANGELOG.md': changelog })).toBeUndefined();
+    },
+  );
 
   it('main reports success on stdout and leaves the exit code alone', () => {
     const io = fakeIo();
