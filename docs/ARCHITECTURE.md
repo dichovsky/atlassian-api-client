@@ -283,16 +283,16 @@ delay = min(baseDelay * 2^attempt + random_jitter, maxDelay)
 
 **Retryable conditions:**
 
-- HTTP 429 (Too Many Requests) — If the response has a `Retry-After` header, the transport uses its value as the minimum delay. The transport adds a `0..retryDelay` jitter to this minimum. If `maxRetryDelay` is larger than the minimum, the jitter is not more than the difference between the two values. Thus, the delay is not more than `maxRetryDelay`. The jitter makes sure that many clients do not retry at the same time.
+- HTTP 429 (Too Many Requests) — For a `RateLimitError` with a `Retry-After` delay in seconds, the transport uses `maxRetryDelay` as the maximum delay. If the delay from the server is shorter than this maximum, the transport adds a random jitter of not more than `retryDelay`. The total wait is not more than `maxRetryDelay`.
 - HTTP 500, 502, 503, 504 (5xx responses).
 - Transient network errors (connection reset or refused, DNS failure, connect timeout, socket closed). A response-headers timeout (`UND_ERR_HEADERS_TIMEOUT`) and a failure while the transport reads the body of a 2xx response are retried only for GET. The transport also retries a write request that gets a 500, 502, 503, or 504 response. The transport also retries a write request with a connection failure before a response. Thus, the server can possibly get the write request more than one time.
-- `OAuthError` with a `refreshStatus` in the 5xx range (a transient failure of the token endpoint).
+- `OAuthError` if the token endpoint returns 429, 500, 502, 503, or 504. The retries for these errors use exponential backoff.
 
 **Non-retryable:**
 
 - HTTP 400, 401, 403, 404, 409 (4xx responses).
 - `TimeoutError` (the request timeout, because the client waited for a long time before this error).
-- `OAuthError` with a `refreshStatus` in the 4xx range (an incorrect OAuth configuration).
+- `OAuthError` with a different `refreshStatus`, or with no `refreshStatus`.
 - A write (POST, PUT, PATCH, DELETE) in these cases, because the server possibly processed the write request before the failure. These cases do not include a write request with a connection failure before a response, or with a 500, 502, 503, or 504 response. The transport retries these write requests (refer to the retryable conditions). The cases are:
   - A timeout occurred for the response headers of the write request.
   - A failure occurred while the transport read the body of the 2xx response to the write request.
@@ -315,9 +315,9 @@ The SDK has two mechanisms for rate limits. The two mechanisms operate independe
 
 **Reactive (`retry.ts`)** — This mechanism operates on a 429 response after the server returns it:
 
-1. `HttpTransport` reads the `Retry-After` response header (seconds) and puts its value in `RateLimitError.retryAfter`.
-2. `executeWithRetry` waits for that time (not more than `maxRetryDelay`, jitter included) before the next attempt.
-3. If the response has no `Retry-After` header, `executeWithRetry` uses exponential backoff.
+1. If `Retry-After` gives a correct delay in seconds, `HttpTransport` puts that value in `RateLimitError.retryAfter`. This field keeps the full delay, also if the delay is more than `maxRetryDelay`.
+2. `executeWithRetry` limits the wait before the next attempt to `maxRetryDelay`, jitter included.
+3. If the header is missing, or if the transport cannot parse the header as a correct delay, `executeWithRetry` uses exponential backoff.
 
 **Proactive (`rate-limiter.ts`)** — `createRateLimiterMiddleware` is an optional client-side token bucket. Before the transport sends a request, the middleware removes one unit from the bucket. If the bucket is empty, the middleware waits. If the middleware must wait longer than `maxWaitMs`, it throws `RateLimiterExhaustedError`. For the position of this middleware in the chain, refer to [Middleware](#middleware-layer).
 
@@ -385,8 +385,8 @@ The SDK has these built-in middleware factories:
 | `createOAuthRefreshMiddleware`   | `oauth.ts`           | It adds the OAuth access token to the `Authorization` header. After a 401 response, it refreshes the access token (the token endpoint must use HTTPS). All requests use one `refreshPromise`. Thus, when two or more requests get a 401 response at the same time, the middleware refreshes the access token only one time. |
 | `createConnectJwtMiddleware`     | `connect-jwt.ts`     | It signs each request with an HS256 JWT (QSH).                                                                                                                                                                                                                                                                              |
 | `createCacheMiddleware`          | `cache.ts`           | An in-memory cache for GET responses (LRU, TTL). It validates `maxSize` and `ttl` when you construct the middleware. The cache keys are different for each authentication identity. Each cache key encodes each query parameter with `encodeURIComponent` to prevent key-collision attacks.                                 |
-| `createBatchMiddleware`          | `batch.ts`           | If two or more requests in progress at the same time are the same, the batch middleware sends only one request. The key encoding with `encodeURIComponent` is the same as in the cache middleware.                                                                                                                          |
-| `createCircuitBreakerMiddleware` | `circuit-breaker.ts` | The circuit breaker opens after N transport failures in sequence (5xx response, network error, or timeout). Then it rejects requests with `CircuitBreakerOpenError`. After `resetTimeoutMs`, the next request is a half-open trial (B010).                                                                                  |
+| `createBatchMiddleware`          | `batch.ts`           | Only the same GET or HEAD requests can use one request in progress. Requests with `formData` or `binaryBody` always run independently. The key encoding with `encodeURIComponent` is the same as in the cache middleware.                                                                                                   |
+| `createCircuitBreakerMiddleware` | `circuit-breaker.ts` | The circuit breaker counts network errors, timeouts, 5xx HTTP errors, and `ResponseTooLargeError`. When the counter gets to the threshold, the circuit breaker opens. Then it rejects requests with `CircuitBreakerOpenError`. After `resetTimeoutMs`, the next request is a half-open trial (B010).                        |
 | `createRateLimiterMiddleware`    | `rate-limiter.ts`    | A proactive client-side token-bucket rate limiter. If the bucket is empty, it waits. If it must wait longer than `maxWaitMs`, it throws `RateLimiterExhaustedError` (B017).                                                                                                                                                 |
 
 The SDK also exports these functions:
@@ -411,8 +411,8 @@ response:  a ← b ← c ← fetch
 
 The sequence of the middleware is important:
 
-- **Caching wins _inside_ of auth.** `[oauth, cache, batch]` is correct for most apps. The cache stores only the response body. It does not store the `Authorization` header. Thus, the OAuth middleware always attaches the access token to each request, also when the cache has the response. If the cache is outermost (`[cache, oauth, batch]`), there is a risk that the cache returns a stale response when an access token refresh is _necessary_.
-- **Batching wins _innermost_ of the auth and cache layers.** If `batch` is after the authentication and cache middleware, the batch middleware compares requests only after the authentication middleware adds the `Authorization` header. Thus, two requests at the same time with the same credentials become one `fetch`. If `batch` is outermost, requests with different credentials can get the response of one request in progress.
+- **Caching wins _inside_ of auth.** `[oauth, cache, batch]` is correct for most apps. The OAuth middleware operates before the cache lookup for each request. If the cache is first, a cache hit returns the cached response before the OAuth middleware operates.
+- **Batching wins _innermost_ of the auth and cache layers.** The cache returns the response for a cache hit. For cache misses that occur at the same time with the same cache key, the cache sends only one request. Only the requests that the cache gives to the next middleware get to the batch middleware.
 - **Connect JWT replaces OAuth, not stacks with it.** The JWT signature uses the request URL and the HTTP method that the transport sends. Thus, the JWT middleware must be the innermost authentication middleware. For Connect apps, use `[connectJwt, cache, batch]`. Do _not_ use `oauth` and `connectJwt` together.
 
 The recommended sequences are:

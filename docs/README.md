@@ -15,7 +15,7 @@ This directory contains documentation for `atlassian-api-client`. This file also
 
 ## Other docs
 
-- [ATLASSIAN-API-REFRESH-2026-08-30.md](ATLASSIAN-API-REFRESH-2026-08-30.md) — the historical report of the 4.0.0 re-pin from the live specs. The 2026-11-08 re-pin replaces its spec hashes and counts (see `spec/README.md`).
+- [ATLASSIAN-API-REFRESH-2026-08-30.md](ATLASSIAN-API-REFRESH-2026-08-30.md) — the historical report of the 4.0.0 re-pin from the live specs. On 2026-11-08, the maintainer updated the Jira Platform v3 and Confluence v2 snapshots. The Jira Software snapshot of August did not change. Refer to the [current spec pins](../spec/README.md).
 - The backlog and its history are in the repository root: [`BACKLOG.md`](../BACKLOG.md) (work that is not complete) and [`BACKLOG-ARCHIVE.md`](../BACKLOG-ARCHIVE.md) (completed work).
 - The bundled Claude Code skill: [`skill/SKILL.md`](../skill/SKILL.md) and `skill/reference/**/*.md` (`confluence.md`, the `jira.md` index, and the `jira/<domain>.md` file for each domain).
 

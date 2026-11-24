@@ -519,7 +519,7 @@ const client = new JiraClient({
 });
 ```
 
-If callers start the same request at the same time, the middleware sends only one HTTP request. All of these callers get the response of that HTTP request.
+If callers send the same GET request while the first request is in progress, the middleware sends only one HTTP request. All of these callers get its response or its error. The same HEAD requests can also get one response at runtime, but the public TypeScript request type does not include HEAD. The middleware sends each write request independently. It also sends each request with `formData` or `binaryBody` independently.
 
 ### Circuit Breaker
 
@@ -541,18 +541,16 @@ try {
 }
 ```
 
-The circuit breaker prevents cascading failures when a server that the client uses does not operate correctly. After `failureThreshold` counted failures in sequence (5xx, network errors, timeouts), the circuit breaker opens. Then each subsequent request fails immediately with `CircuitBreakerOpenError`, and the transport does not send it.
+The circuit breaker prevents cascading failures when a server that the client uses does not operate correctly. If a request passes, the circuit breaker sets the failure counter to 0. If the counter gets to `failureThreshold`, the circuit breaker opens. Then each subsequent request fails immediately with `CircuitBreakerOpenError`, and the transport does not send it.
 
 After `resetTimeoutMs`, the circuit breaker does not change to half-open immediately. The change occurs **only** at the next request after the `resetTimeoutMs` interval, not with a background timer. That request is the only half-open trial. If the half-open trial passes, the circuit breaker changes to closed.
 
-**Failure classification:** The circuit breaker counts only `NetworkError`, `TimeoutError`, and `HttpError` with a 5xx status as failures. The counter does not change for the errors in the list that follows. These errors go to the caller:
+**Failure classification:** The circuit breaker counts `NetworkError`, `TimeoutError`, and `HttpError` with a 5xx status. It also counts `ResponseTooLargeError` at all HTTP status codes. While the circuit is closed, the errors in the list that follows go to the caller, and the counter does not change:
 
-- 4xx responses (429 also)
+- `HttpError` with a 4xx status (429 also)
 - `ValidationError`
 - Abort errors
 - Other errors that do not come from the transport
-
-Thus, the circuit opens only for failures of the server or the network.
 
 **Per-baseUrl semantics:** Each call to `createCircuitBreakerMiddleware()` makes an isolated state machine. To isolate each `baseUrl`, add one instance to each client:
 
@@ -1028,7 +1026,7 @@ For a dashboard that sends many GET requests, use this middleware sequence:
 
 1. Put the OAuth refresh middleware first.
 2. Put the cache middleware immediately after the OAuth refresh middleware. Thus, the OAuth refresh middleware adds the access token to each request, also when the cache has the response.
-3. Put the batch middleware last (the innermost position). Thus, the same requests at the same time become one `fetch` call.
+3. Put the batch middleware last (the innermost position). Then the batch middleware gets only the requests that the cache gives to the next middleware.
 
 For more information about this sequence, refer to [docs/ARCHITECTURE.md#middleware-ordering](docs/ARCHITECTURE.md#middleware-ordering).
 
