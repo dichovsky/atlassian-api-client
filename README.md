@@ -407,7 +407,7 @@ createOAuthRefreshMiddleware({
 });
 ```
 
-- `retryJitterMs` (default `100`, no jitter if `0`) adds a random interval before the middleware retries each request that waited for the new access token. Thus, if many requests wait for the new access token, the middleware does not retry all of them at the same time. The random interval prevents too many requests at the same time to a server that is available again. It also prevents new 429 responses.
+- `retryJitterMs` (default `100`, no jitter if `0`) adds a random interval before the middleware retries each request that waited for the new access token. Thus, if many requests wait for the new access token, the middleware does not retry all of them at the same time. The random interval puts the retries at different times, and it decreases the risk of a new 429 response.
 - `failureCooldownMs` (default `1000`, no cooldown if `0`) keeps the last **failure to refresh the access token** for the configured time. During that time, the middleware throws the kept error again for each 401 response. The error is the same `OAuthError` that the last failed refresh threw. Thus, you can debug the failure. The middleware does not send a new request to the token endpoint. Thus, if the authentication server is not available, the middleware does not try to refresh the access token in a loop without a limit.
 
 The middleware validates the two options when you call `createOAuthRefreshMiddleware`. Each option must be a finite number that is not less than `0`. During the jitter interval, the middleware obeys `RequestOptions.signal`. Thus, if the caller aborts the request, the caller does not wait for the jitter interval.
@@ -519,7 +519,14 @@ const client = new JiraClient({
 });
 ```
 
-If callers send the same GET request while the first request is in progress, the middleware sends only one HTTP request. All of these callers get its response or its error. The same HEAD requests can also get one response at runtime, but the public TypeScript request type does not include HEAD. The middleware sends each write request independently. It also sends each request with `formData` or `binaryBody` independently.
+If callers send the same GET request before the first request is completed, the middleware sends only one HTTP request. All of these callers get the response or the error of that HTTP request. HEAD requests that are the same can also use one HTTP request at runtime, but the public TypeScript request type does not include HEAD.
+
+This rule does not apply to the requests in the list that follows. The middleware sends each of these requests independently, also if two of them are the same:
+
+- A write request.
+- A request with `responseType: 'stream'`. Thus, each caller can read or cancel its own download.
+- A request with an `AbortSignal`. Thus, each caller can cancel its own request.
+- A request with `formData` or `binaryBody`.
 
 ### Circuit Breaker
 
@@ -1026,7 +1033,7 @@ For a dashboard that sends many GET requests, use this middleware sequence:
 
 1. Put the OAuth refresh middleware first.
 2. Put the cache middleware immediately after the OAuth refresh middleware. Thus, the OAuth refresh middleware adds the access token to each request, also when the cache has the response.
-3. Put the batch middleware last (the innermost position). Then the batch middleware gets only the requests that the cache gives to the next middleware.
+3. Put the batch middleware last (the innermost position). Thus, the batch middleware gets only the requests that the cache gives to the next middleware.
 
 For more information about this sequence, refer to [docs/ARCHITECTURE.md#middleware-ordering](docs/ARCHITECTURE.md#middleware-ordering).
 

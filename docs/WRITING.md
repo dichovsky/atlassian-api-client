@@ -67,7 +67,7 @@ The numbers in parentheses refer to the rules in ASD-STE100 Part 1.
 - Put each instruction in its own sentence (5.2). The exception is two or more actions that occur at the same time.
 - Write instructions in the imperative form (5.3). If the reader must know a condition first, put the condition before the command (5.4). For example, write "If you get a 401 error, refresh the token."
 - Write instructions and descriptive text in different sentences.
-- Write in the active voice (3.6). Use the passive voice only in descriptive text, and only when you do not know who or what does the action.
+- Write in the active voice (3.6). Use the passive voice only in descriptive text. Use it only when you do not know who or what does the action.
 - Keep the articles "the", "a", and "an" (4.2, 4.5). Do not use a telegraphic style.
 - Do not use semicolons (8.1). Write two sentences.
 
@@ -145,7 +145,7 @@ The categories are:
 | route                             | Technical name | The HTTP method and path that an SDK resource method sends. The API gap analyzer compares routes with OpenAPI operations.                                                                | "route" as a verb (write "send through")                          |
 | operation name                    | Technical name | A key in the OAuth scope registry, for example `jira.issues.create`.                                                                                                                     | "operation" alone                                                 |
 | transport                         | Technical name | The `Transport` object that sends requests. `HttpTransport` is the default transport.                                                                                                    | a network failure (write "network error")                         |
-| network error                     | Technical name | A failure of the network before the client gets a response.                                                                                                                              | "transport error", "connection error"                             |
+| network error                     | Technical name | A failure of the network while the client sends a request or receives the response. This includes a failure while the client reads the response body.                                    | "transport error", "connection error"                             |
 | middleware                        | Technical name | A function of the `Middleware` type that operates on a request before the transport sends it.                                                                                            | "interceptor", "plugin", "hook", "layer"                          |
 | middleware chain                  | Technical name | The ordered list of middleware in `ClientConfig.middleware`.                                                                                                                             | "middleware stack", "pipeline"                                    |
 | host                              | Technical name | The host name part of a URL.                                                                                                                                                             | a server that runs software                                       |
