@@ -62,6 +62,8 @@ export interface RequestOptions {
    * that a custom middleware writes here is used as is and is visible to all
    * later middleware. The last writer wins. To make one request use
    * `config.auth` again, pass `{ ...opts, authorizationOverride: undefined }`.
+   * A transport from a package version without this reference (5.0.0 or
+   * older) sends the reference itself, and the server rejects the request.
    *
    * This is a SEPARATE, trusted channel from caller-supplied
    * `headers.Authorization`: the latter is always stripped at the transport's

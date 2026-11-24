@@ -34,7 +34,9 @@ export function pickAuthorizationHeader(headers: RequestOptions['headers']): str
 /**
  * Prefix of the reference that the OAuth refresh and Connect JWT middleware
  * write to `RequestOptions.authorizationOverride` instead of the credential.
- * A reference is not a secret: it only names an entry in the registry below.
+ * A reference is a short-lived in-process handle, not the credential: code in
+ * the same process can resolve it while its request runs, so do not send it
+ * to other processes. After the request it resolves to nothing.
  */
 const REFERENCE_PREFIX = 'atlassian-api-client:authorization-override:';
 
