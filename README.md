@@ -484,6 +484,10 @@ For each failure, the function throws `ValidationError` with a different message
 
 ### Response Caching
 
+The cache does not operate on requests with `responseType: 'stream'`. Each caller can read or cancel its own stream. A request with an `AbortSignal` can use a cached response. If the cache does not have the response, that request starts its own `fetch` call.
+
+Each caller gets its own array buffer, also when the cache has the response. Do not change shared JSON data or response metadata. If you must change a JSON result, use `structuredClone(response.data)` to make a copy. Then change the copy.
+
 ```typescript
 import { createCacheMiddleware } from 'atlassian-api-client';
 
@@ -502,6 +506,8 @@ const client = new ConfluenceClient({
 The middleware keeps GET responses in memory. Keys include auth identity, method, path, and query string. Thus, the responses of different callers stay isolated. After the TTL of an entry, the middleware does not remove the entry immediately. The middleware removes an expired entry at the next access to its key, or when the cache is full. If the cache is full and has no expired entries, the middleware removes the LRU entry (the entry that was not used for the longest time).
 
 ### Request Batching / Deduplication
+
+The batch middleware does not use one HTTP request for requests that have `responseType: 'stream'`, an `AbortSignal`, `formData`, or `binaryBody`. It sends each of these requests independently. Each caller has its own array buffer. Do not change shared JSON data or response metadata.
 
 ```typescript
 import { createBatchMiddleware } from 'atlassian-api-client';
