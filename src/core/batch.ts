@@ -1,5 +1,6 @@
 import type { Middleware, RequestOptions, ApiResponse } from './types.js';
 import { resolveAuthIdentity, appendQueryKey } from './auth-identity.js';
+import { copyResponseBuffer } from './response.js';
 
 /**
  * Safe-idempotent methods eligible for request coalescing (B1039).
@@ -15,13 +16,15 @@ const IDEMPOTENT_METHODS = new Set<string>(['GET', 'HEAD']);
  * Creates a middleware that deduplicates concurrent identical in-flight requests.
  *
  * When multiple callers issue the same idempotent request (GET/HEAD) simultaneously,
- * only one underlying HTTP call is made and all callers receive the same resolved (or
- * rejected) response. Once the shared promise settles, subsequent identical requests
- * start a new call.
+ * only one underlying HTTP call is made. Each caller owns its ArrayBuffer bytes.
+ * JSON responses are shared and should be treated as read-only. Once the shared
+ * promise settles, subsequent identical requests start a new call.
  *
  * Non-idempotent methods (POST/PUT/PATCH/DELETE) always bypass dedup — each call
  * reaches the transport independently so no mutation is silently dropped.
  *
+ * Stream requests run independently so each caller can read or cancel its own response body.
+ * Requests with an AbortSignal also run independently so each caller controls its own fetch.
  * Requests carrying `formData` or `binaryBody` also bypass dedup unconditionally
  * because those values are not safely serialisable into a stable string key.
  *
@@ -50,9 +53,9 @@ export function createBatchMiddleware(): Middleware {
   const inflight = new Map<string, Promise<ApiResponse<unknown>>>();
 
   return (opts: RequestOptions, next): Promise<ApiResponse<unknown>> => {
-    // B1039 — only coalesce safe-idempotent reads; mutations and requests with
-    // non-serialisable bodies bypass dedup entirely so every call reaches the transport.
     if (
+      opts.responseType === 'stream' ||
+      opts.signal !== undefined ||
       !IDEMPOTENT_METHODS.has(opts.method) ||
       opts.formData !== undefined ||
       opts.binaryBody !== undefined
@@ -64,15 +67,16 @@ export function createBatchMiddleware(): Middleware {
 
     const existing = inflight.get(key);
     if (existing !== undefined) {
-      return existing;
+      return existing.then(copyResponseBuffer);
     }
 
-    const promise = next(opts).finally(() => {
+    const promise = next(opts);
+    inflight.set(key, promise);
+    // Followers copy from the origin promise before a caller awaiting this
+    // cleanup promise can transfer the leader's original buffer.
+    return promise.finally(() => {
       inflight.delete(key);
     });
-
-    inflight.set(key, promise);
-    return promise;
   };
 }
 
@@ -81,7 +85,7 @@ function buildRequestKey(opts: RequestOptions): string {
   const bodyStr = opts.body !== undefined ? JSON.stringify(opts.body) : '';
   const headersStr = serializeHeaders(opts.headers);
   // B1039: include responseType so GETs for the same URL but requesting
-  // different response shapes ('json' vs 'arrayBuffer' vs 'stream') are
+  // different buffered response shapes ('json' vs 'arrayBuffer') are
   // never collapsed — the transport returns fundamentally different data.
   const responseType = opts.responseType ?? 'json';
   // B024: prefix with an auth-identity hash (the `config.auth`-derived

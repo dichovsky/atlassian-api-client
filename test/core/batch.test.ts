@@ -109,6 +109,20 @@ describe('createBatchMiddleware', () => {
     expect(second.data).toBe(2);
   });
 
+  it('returns independently readable bodies for concurrent stream GETs to the same URL', async () => {
+    const next = vi.fn(async () => makeResponse(new Blob(['download']).stream()));
+    const mw = createBatchMiddleware();
+    const opts = makeOpts({ responseType: 'stream' });
+
+    const responses = await Promise.all([mw(opts, next), mw(opts, next)]);
+
+    expect(next).toHaveBeenCalledTimes(2);
+    const reads = responses.map(({ data }) =>
+      new Response(data as ReadableStream<Uint8Array>).text(),
+    );
+    expect(await Promise.all(reads)).toEqual(['download', 'download']);
+  });
+
   it('propagates errors to all concurrent callers', async () => {
     const err = new Error('fetch failed');
     const next = vi.fn(async (): Promise<ApiResponse<unknown>> => {
