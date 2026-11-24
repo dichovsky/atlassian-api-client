@@ -452,7 +452,7 @@ describe('publish workflow tarball integrity', () => {
   const bytes = 'the validated tarball';
   const integrity = `sha512-${createHash('sha512').update(bytes).digest('base64')}`;
 
-  it('packs the expected version with scripts disabled and records the tarball integrity', () => {
+  it('packs offline with lifecycle scripts disabled and verifies the downloaded tarball', () => {
     const root = mkdtempSync(join(tmpdir(), 'release-pack-'));
     try {
       const project = join(root, 'project');
@@ -474,7 +474,6 @@ describe('publish workflow tarball integrity', () => {
         .update(readFileSync(join(root, 'package.tgz')))
         .digest('base64');
       expect(result.output.trim()).toBe(`integrity=sha512-${digest}`);
-      expect(runStep(pack.run, { ...env, VERSION: '1.2.4' }, {}, project).status).not.toBe(0);
 
       const check = step(workflow, 'publish', 'Check the downloaded tarball');
       expect(check.env?.['EXPECTED_INTEGRITY']).toBe('${{ needs.build.outputs.integrity }}');
@@ -491,12 +490,42 @@ describe('publish workflow tarball integrity', () => {
       writeFileSync(target, readFileSync(join(root, 'package.tgz')));
       expect(runStep(check.run, checkEnv, {}).status).toBe(0);
       expect(runStep(check.run, { ...checkEnv, MANIFEST_SHA256: 'other' }, {}).status).not.toBe(0);
-      writeFileSync(target, 'changed');
-      expect(runStep(check.run, checkEnv, {}).status).not.toBe(0);
+      expect(
+        runStep(check.run, { ...checkEnv, EXPECTED_INTEGRITY: integrity }, {}).status,
+      ).not.toBe(0);
     } finally {
       rmSync(root, { recursive: true, force: true });
     }
-  });
+  }, 30_000);
+
+  it.each([
+    ['name', 'other-package', '1.2.3'],
+    ['version', PACKAGE_JSON.name, '1.2.4'],
+  ])(
+    'rejects pack metadata with the wrong %s before recording integrity',
+    (_field, name, version) => {
+      const root = mkdtempSync(join(tmpdir(), 'release-pack-'));
+      try {
+        const expectedVersion = '1.2.3';
+        // Leave the expected filename in place so mv would succeed if the metadata check were removed.
+        writeFileSync(join(root, `${PACKAGE_JSON.name}-${expectedVersion}.tgz`), bytes);
+        const pack = step(workflow, 'build', 'Pack the validated files');
+        const result = runStep(
+          pack.run,
+          {
+            VERSION: expectedVersion,
+            RUNNER_TEMP: root,
+            PACK_METADATA: JSON.stringify([{ name, version, integrity }]),
+          },
+          { npm: 'printf "%s\\n" "$PACK_METADATA"' },
+        );
+        expect(result.status).not.toBe(0);
+        expect(result.output).toBe('');
+      } finally {
+        rmSync(root, { recursive: true, force: true });
+      }
+    },
+  );
 
   it('requires the registry to serve the same package integrity', () => {
     const check = step(workflow, 'verify', 'Check the registry tarball integrity');
