@@ -669,6 +669,7 @@ The package uses only Node.js built-ins available in the supported runtime (Node
 | `oxlint`                                     | Linting for TypeScript and JavaScript.                                                                                                          |
 | `oxfmt`                                      | Formatting for source code, Markdown, and configuration files.                                                                                  |
 | `fast-check`                                 | Property-based testing.                                                                                                                         |
+| `marked`                                     | Reads Markdown sections during changelog validation.                                                                                            |
 | `conventional-changelog`                     | Generates changelog entries with `npm run changelog`.                                                                                           |
 | `conventional-changelog-conventionalcommits` | Parses Conventional Commits and formats their changelog entries.                                                                                |
 | `undici`                                     | Provides the HTTP dispatcher for transport timeout integration tests.                                                                           |

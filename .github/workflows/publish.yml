@@ -30,9 +30,6 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Match the tag to package metadata
-        run: node scripts/validate-release-tag.js "$GITHUB_REF_NAME"
-
       - name: Require an annotated, verified tag
         id: release
         env:
@@ -40,6 +37,10 @@ jobs:
         run: |
           set -euo pipefail
 
+          if ! [[ "${GITHUB_REF_NAME}" =~ ^v(0|[1-9][0-9]*)(\.(0|[1-9][0-9]*)){2}$ ]]; then
+            echo 'Expected a stable release tag in the form vX.Y.Z' >&2
+            exit 1
+          fi
           tag_object_sha="$(
             gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/${GITHUB_REF_NAME}" |
               jq -er 'select(.object.type == "tag") | .object.sha'
@@ -90,6 +91,16 @@ jobs:
               <<<"${runs}"
           )"
           test "${successful_runs}" -gt 0
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: '.nvmrc'
+
+      - name: Install release check dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Match the tag to package metadata
+        run: node scripts/validate-release-tag.js "$GITHUB_REF_NAME"
 
   build:
     name: Validate and pack the release

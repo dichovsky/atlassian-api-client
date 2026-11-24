@@ -5,6 +5,9 @@ import { createRequire } from 'node:module';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+// Resolve from the real script location when a release check runs through a symlink.
+const { Lexer } = createRequire(realpathSync(fileURLToPath(import.meta.url)))('marked');
+
 const USAGE = 'Usage: node scripts/validate-release-tag.js vX.Y.Z [--warn-date]';
 const STABLE_TAG = /^v((?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*))$/;
 
@@ -21,11 +24,17 @@ function escapeRegex(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-function changelogSections(changelog) {
+/** Read top-level release sections and preserve their original heading text for validation. */
+export function changelogSections(changelog) {
   const sections = [];
-  for (const line of changelog.split('\n')) {
-    if (line.startsWith('## ')) sections.push({ heading: line.trimEnd(), body: [] });
-    else sections.at(-1)?.body.push(line);
+  // Marked accepts spaces after a closing fence. Markdown also allows trailing tabs.
+  const markdown = changelog.replace(/^([ \t]*(?:`{3,}|~{3,}))[ \t]+$/gm, '$1');
+  for (const token of Lexer.lex(markdown)) {
+    if (token.type === 'heading' && token.raw.startsWith('## ')) {
+      sections.push({ heading: token.raw.trimEnd(), body: [] });
+    } else {
+      sections.at(-1)?.body.push(token.raw);
+    }
   }
   return sections;
 }
