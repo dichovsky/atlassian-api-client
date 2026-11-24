@@ -1,6 +1,8 @@
 import { inspect } from 'node:util';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { HttpTransport } from '../../src/core/transport.js';
+import { createCacheMiddleware } from '../../src/core/cache.js';
+import { createBatchMiddleware } from '../../src/core/batch.js';
 import { JiraClient } from '../../src/jira/client.js';
 import {
   AuthenticationError,
@@ -2004,6 +2006,46 @@ describe('HttpTransport', () => {
       // Caller receives the raw stream; body was not pre-read by the transport.
       expect(response.data).toBe(raw.body);
       expect(raw.bodyUsed).toBe(false);
+    });
+
+    it.each([
+      ['cache', createCacheMiddleware],
+      ['batch', createBatchMiddleware],
+    ] as const)(
+      'gives concurrent stream readers independent bodies with %s middleware',
+      async (_, createMiddleware) => {
+        const fetch = vi.fn(async () => new Response('download'));
+        const transport = makeTransport({
+          ...defaultConfig,
+          fetch,
+          middleware: [createMiddleware()],
+        });
+        const options = { method: 'GET', path: '/download', responseType: 'stream' } as const;
+        const [first, second] = await Promise.all([
+          transport.request<ReadableStream<Uint8Array>>(options),
+          transport.request<ReadableStream<Uint8Array>>(options),
+        ]);
+
+        await first.data.cancel();
+        expect(await new Response(second.data).text()).toBe('download');
+        expect(fetch).toHaveBeenCalledTimes(2);
+      },
+    );
+
+    it('fetches a fresh stream after a caller drains a download with cache middleware enabled', async () => {
+      const fetch = vi.fn(async () => new Response('download'));
+      const transport = makeTransport({
+        ...defaultConfig,
+        fetch,
+        middleware: [createCacheMiddleware()],
+      });
+      const options = { method: 'GET', path: '/download', responseType: 'stream' } as const;
+
+      const first = await transport.request<ReadableStream<Uint8Array>>(options);
+      expect(await new Response(first.data).text()).toBe('download');
+      const second = await transport.request<ReadableStream<Uint8Array>>(options);
+      expect(await new Response(second.data).text()).toBe('download');
+      expect(fetch).toHaveBeenCalledTimes(2);
     });
 
     it('returns undefined for 204 regardless of responseType', async () => {

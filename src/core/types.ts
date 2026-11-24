@@ -28,7 +28,7 @@ export interface RequestOptions {
    * - `'json'` (default) — body is parsed as JSON.
    * - `'arrayBuffer'` — body is returned as `ArrayBuffer` (binary downloads).
    * - `'stream'` — body is returned as a `ReadableStream<Uint8Array>` without
-   *   buffering. Caller is responsible for consuming or cancelling the stream.
+   *   buffering. Each caller must consume or cancel its own stream, even with cache or batch middleware.
    *
    * 204 responses always return `undefined` regardless of `responseType`.
    */

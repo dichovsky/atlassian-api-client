@@ -561,7 +561,7 @@ describe('createCacheMiddleware — B1065 responseType in cache key', () => {
     expect(second).toBe(first);
   });
 
-  it('treats an arrayBuffer GET then a stream GET for the same URL as separate cache entries', async () => {
+  it('bypasses an existing arrayBuffer cache entry when the caller requests a stream', async () => {
     let counter = 0;
     const next = vi.fn(async (): Promise<ApiResponse<unknown>> => makeResponse(++counter));
     const mw = createCacheMiddleware();
@@ -570,5 +570,32 @@ describe('createCacheMiddleware — B1065 responseType in cache key', () => {
     await mw(makeOpts({ responseType: 'stream' }), next);
 
     expect(next).toHaveBeenCalledTimes(2);
+  });
+
+  it('fetches a fresh body for sequential stream GETs after the first body is consumed', async () => {
+    const next = vi.fn(async () => makeResponse(new Blob(['download']).stream()));
+    const mw = createCacheMiddleware();
+    const opts = makeOpts({ responseType: 'stream' });
+
+    const first = await mw(opts, next);
+    expect(await new Response(first.data as ReadableStream<Uint8Array>).text()).toBe('download');
+    const second = await mw(opts, next);
+
+    expect(next).toHaveBeenCalledTimes(2);
+    expect(await new Response(second.data as ReadableStream<Uint8Array>).text()).toBe('download');
+  });
+
+  it('returns independently readable bodies for concurrent stream GETs to the same URL', async () => {
+    const next = vi.fn(async () => makeResponse(new Blob(['download']).stream()));
+    const mw = createCacheMiddleware();
+    const opts = makeOpts({ responseType: 'stream' });
+
+    const responses = await Promise.all([mw(opts, next), mw(opts, next)]);
+
+    expect(next).toHaveBeenCalledTimes(2);
+    const reads = responses.map(({ data }) =>
+      new Response(data as ReadableStream<Uint8Array>).text(),
+    );
+    expect(await Promise.all(reads)).toEqual(['download', 'download']);
   });
 });
