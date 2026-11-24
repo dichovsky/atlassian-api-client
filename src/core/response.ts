@@ -1,5 +1,23 @@
+import { isArrayBuffer } from 'node:util/types';
 import type { ApiResponse, RateLimitInfo, RequestOptions } from './types.js';
 import { ResponseTooLargeError, ValidationError } from './errors.js';
+
+/** Give a cache entry or coalesced caller its own transferable bytes. */
+export function copyResponseBuffer(response: ApiResponse<unknown>): ApiResponse<unknown> {
+  // HttpTransport validates the middleware result after the chain returns.
+  const data = response?.data;
+  if (!isArrayBuffer(data)) return response;
+
+  // Custom middleware can expose ApiResponse fields through prototype getters.
+  return {
+    ...response,
+    data: data.slice(0),
+    status: response.status,
+    headers: response.headers,
+    ...('rateLimit' in response ? { rateLimit: response.rateLimit } : {}),
+    ...('requestId' in response ? { requestId: response.requestId } : {}),
+  };
+}
 
 /** JSON-serialisable projection of {@link ApiResponse}. */
 export interface SerializableApiResponse<T> {

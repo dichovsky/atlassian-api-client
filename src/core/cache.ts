@@ -1,6 +1,7 @@
 import type { Middleware, RequestOptions, ApiResponse, HttpMethod } from './types.js';
 import { ValidationError } from './errors.js';
 import { resolveAuthIdentity, appendQueryKey } from './auth-identity.js';
+import { copyResponseBuffer } from './response.js';
 
 /** Options for the response caching middleware. */
 export interface CacheOptions {
@@ -51,6 +52,9 @@ interface CacheEntry {
  *   an omitted `responseType` map to the same key. Array buffers use a separate key.
  *
  * Stream requests bypass both the cache and in-flight sharing. Each caller owns its response body.
+ * Requests with an AbortSignal can use cached responses, but fetch cache misses independently.
+ * Each caller owns its ArrayBuffer bytes. Cached JSON responses are shared and
+ * should be treated as read-only.
  *
  * Headers OTHER than `Authorization` do NOT contribute to the cache key —
  * a value variant like `Accept-Language: fr` will hit a cache entry stored
@@ -75,9 +79,8 @@ export function createCacheMiddleware(options?: CacheOptions): Middleware {
   const cache = new Map<string, CacheEntry>();
   // B1041(3): single-flight (request coalescing). Tracks the in-flight origin
   // request per cache key so N concurrent misses for the same key share ONE
-  // call to `next` instead of stampeding the origin. Followers await the leader
-  // and receive the same response. A rejected in-flight is removed (in the
-  // leader's `finally`) so a transient failure never poisons future requests.
+  // call to `next` instead of stampeding the origin. A rejected in-flight is
+  // removed in the leader's `finally` so a transient failure never poisons future requests.
   const inFlight = new Map<string, Promise<ApiResponse<unknown>>>();
 
   return async (opts, next) => {
@@ -85,6 +88,7 @@ export function createCacheMiddleware(options?: CacheOptions): Middleware {
       return next(opts);
     }
 
+    opts.signal?.throwIfAborted();
     const key = buildCacheKey(opts);
     const now = Date.now();
     const cached = cache.get(key);
@@ -96,30 +100,31 @@ export function createCacheMiddleware(options?: CacheOptions): Middleware {
         // delete + re-insert is the canonical LRU bump.
         cache.delete(key);
         cache.set(key, cached);
-        return cached.response;
+        return copyResponseBuffer(cached.response);
       }
       cache.delete(key);
     }
 
-    // Coalesce concurrent misses: if a request for this key is already in
-    // flight, await it instead of issuing a second origin call.
-    const pending = inFlight.get(key);
-    if (pending !== undefined) {
-      return pending;
-    }
-
-    const requestPromise = next(opts);
-    inFlight.set(key, requestPromise);
-
     let response: ApiResponse<unknown>;
-    try {
-      response = await requestPromise;
-    } finally {
-      // Always clear the in-flight slot once settled (success OR failure) so a
-      // failed request does not poison the key for future callers.
-      inFlight.delete(key);
+    if (opts.signal !== undefined) {
+      response = await next(opts);
+    } else {
+      const pending = inFlight.get(key);
+      if (pending !== undefined) {
+        return copyResponseBuffer(await pending);
+      }
+
+      const requestPromise = next(opts);
+      inFlight.set(key, requestPromise);
+      try {
+        response = await requestPromise;
+      } finally {
+        inFlight.delete(key);
+      }
     }
 
+    // An independent miss may have filled this key while the fetch was pending.
+    cache.delete(key);
     if (cache.size >= maxSize) {
       sweepExpired(cache, Date.now());
     }
@@ -129,7 +134,8 @@ export function createCacheMiddleware(options?: CacheOptions): Middleware {
       cache.delete(oldestKey);
     }
 
-    cache.set(key, { response, expiresAt: Date.now() + ttl });
+    // Keep a private copy before the leader can transfer or mutate its buffer.
+    cache.set(key, { response: copyResponseBuffer(response), expiresAt: Date.now() + ttl });
     return response;
   };
 }

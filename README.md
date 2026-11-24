@@ -446,6 +446,10 @@ signature, and key material are never echoed).
 
 ### Response Caching
 
+The cache bypasses requests with `responseType: 'stream'`. Each caller can read or cancel its own stream. A request with an `AbortSignal` can use a cached response. On a miss, it starts its own fetch.
+
+Callers receive independent array buffers, including on cache hits. Treat shared JSON data and response metadata as read-only. Use `structuredClone(response.data)` if you need to modify a JSON result.
+
 ```typescript
 import { createCacheMiddleware } from 'atlassian-api-client';
 
@@ -465,7 +469,7 @@ Caches GET responses in memory. Keys include auth identity, method, path, and qu
 
 ### Request Batching / Deduplication
 
-Both cache and batch middleware send a separate request for each caller that sets `responseType: 'stream'`. Each caller can read or cancel its own response body.
+Requests with `responseType: 'stream'`, an `AbortSignal`, `formData`, or `binaryBody` run separately. Each caller owns its array buffer. Treat shared JSON data and response metadata as read-only.
 
 ```typescript
 import { createBatchMiddleware } from 'atlassian-api-client';

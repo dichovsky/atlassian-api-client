@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "5.0.0"
   },
-  "sourceHash": "65a08299feaa4cfb81b8eb69c6900f142e90df6a9e09a099306a6b69e11d851c",
+  "sourceHash": "eb1bd12d4e68240e762937e615db9dd46d959ef45150a5890b03ded6cb3d42a7",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -530,7 +530,7 @@
       "name": "CacheOptions",
       "kind": "interface",
       "file": "src/core/cache.ts",
-      "line": 6,
+      "line": 7,
       "signature": "export interface CacheOptions { readonly maxSize?: number; readonly ttl?: number; readonly methods?: readonly HttpMethod…",
       "jsdoc": "Options for the response caching middleware.",
       "typeOnly": true
@@ -4035,7 +4035,7 @@
       "name": "SerializableApiResponse",
       "kind": "interface",
       "file": "src/core/response.ts",
-      "line": 5,
+      "line": 23,
       "signature": "export interface SerializableApiResponse<T> { readonly data: T; readonly status: number; readonly headers: Record<string…",
       "jsdoc": "JSON-serialisable projection of {@link ApiResponse}.",
       "typeOnly": true
@@ -4806,7 +4806,7 @@
       "name": "createBatchMiddleware",
       "kind": "function",
       "file": "src/core/batch.ts",
-      "line": 50,
+      "line": 52,
       "signature": "export function createBatchMiddleware(): Middleware",
       "jsdoc": "Creates a middleware that deduplicates concurrent identical in-flight requests."
     },
@@ -4814,7 +4814,7 @@
       "name": "createCacheMiddleware",
       "kind": "function",
       "file": "src/core/cache.ts",
-      "line": 63,
+      "line": 67,
       "signature": "export function createCacheMiddleware(options?: CacheOptions): Middleware",
       "jsdoc": "Creates a middleware that caches API responses in memory."
     },
@@ -4950,7 +4950,7 @@
       "name": "toJSON",
       "kind": "function",
       "file": "src/core/response.ts",
-      "line": 42,
+      "line": 60,
       "signature": "export function toJSON<T>(response: ApiResponse<T>): SerializableApiResponse<T>",
       "jsdoc": "Convert an {@link ApiResponse} into a plain JSON-serialisable object."
     },
@@ -16214,14 +16214,14 @@
         {
           "name": "IDEMPOTENT_METHODS",
           "kind": "variable",
-          "line": 12,
+          "line": 13,
           "signature": "const IDEMPOTENT_METHODS = new Set<string>(['GET', 'HEAD']);",
           "jsdoc": "Safe-idempotent methods eligible for request coalescing (B1039)."
         },
         {
           "name": "createBatchMiddleware",
           "kind": "function",
-          "line": 50,
+          "line": 52,
           "exported": true,
           "signature": "export function createBatchMiddleware(): Middleware",
           "jsdoc": "Creates a middleware that deduplicates concurrent identical in-flight requests."
@@ -16229,19 +16229,20 @@
         {
           "name": "buildRequestKey",
           "kind": "function",
-          "line": 79,
+          "line": 83,
           "signature": "function buildRequestKey(opts: RequestOptions): string"
         },
         {
           "name": "serializeHeaders",
           "kind": "function",
-          "line": 104,
+          "line": 108,
           "signature": "function serializeHeaders(headers: RequestOptions['headers']): string",
           "jsdoc": "Build a deterministic string representation of request headers for use in the dedupe key. `Authorization` is excluded from this section because the auth identity is already captured by {@link authIdentity} and prefixed onto the key; including the raw value here would leak the credential into any place the key is logged or dumped. Any other custom header (e.g. `X-Atlassian-Token`, `Accept-Language`) MUST keep them separate."
         }
       ],
       "imports": [
         "./auth-identity.js",
+        "./response.js",
         "./types.js"
       ]
     },
@@ -16251,7 +16252,7 @@
         {
           "name": "CacheOptions",
           "kind": "interface",
-          "line": 6,
+          "line": 7,
           "exported": true,
           "signature": "export interface CacheOptions { readonly maxSize?: number; readonly ttl?: number; readonly methods?: readonly HttpMethod…",
           "jsdoc": "Options for the response caching middleware."
@@ -16259,13 +16260,13 @@
         {
           "name": "CacheEntry",
           "kind": "interface",
-          "line": 28,
+          "line": 29,
           "signature": "interface CacheEntry { readonly response: ApiResponse<unknown>; readonly expiresAt: number; }"
         },
         {
           "name": "createCacheMiddleware",
           "kind": "function",
-          "line": 63,
+          "line": 67,
           "exported": true,
           "signature": "export function createCacheMiddleware(options?: CacheOptions): Middleware",
           "jsdoc": "Creates a middleware that caches API responses in memory."
@@ -16273,20 +16274,21 @@
         {
           "name": "sweepExpired",
           "kind": "function",
-          "line": 143,
+          "line": 149,
           "signature": "function sweepExpired(cache: Map<string, CacheEntry>, now: number): void",
           "jsdoc": "Delete every expired entry from the cache. Called on eviction to reclaim TTL-expired slots before resorting to LRU, so that a still-valid entry is not pushed out by a dead one that happened to be inserted earlier."
         },
         {
           "name": "buildCacheKey",
           "kind": "function",
-          "line": 151,
+          "line": 157,
           "signature": "function buildCacheKey(opts: RequestOptions): string"
         }
       ],
       "imports": [
         "./auth-identity.js",
         "./errors.js",
+        "./response.js",
         "./types.js"
       ]
     },
@@ -18062,9 +18064,17 @@
       "path": "src/core/response.ts",
       "symbols": [
         {
+          "name": "copyResponseBuffer",
+          "kind": "function",
+          "line": 6,
+          "exported": true,
+          "signature": "export function copyResponseBuffer(response: ApiResponse<unknown>): ApiResponse<unknown>",
+          "jsdoc": "Give a cache entry or coalesced caller its own transferable bytes."
+        },
+        {
           "name": "SerializableApiResponse",
           "kind": "interface",
-          "line": 5,
+          "line": 23,
           "exported": true,
           "signature": "export interface SerializableApiResponse<T> { readonly data: T; readonly status: number; readonly headers: Record<string…",
           "jsdoc": "JSON-serialisable projection of {@link ApiResponse}."
@@ -18072,7 +18082,7 @@
         {
           "name": "toJSON",
           "kind": "function",
-          "line": 42,
+          "line": 60,
           "exported": true,
           "signature": "export function toJSON<T>(response: ApiResponse<T>): SerializableApiResponse<T>",
           "jsdoc": "Convert an {@link ApiResponse} into a plain JSON-serialisable object."
@@ -18080,7 +18090,7 @@
         {
           "name": "safeParseBody",
           "kind": "function",
-          "line": 80,
+          "line": 98,
           "exported": true,
           "signature": "export async function safeParseBody(response: Response, maxBytes?: number): Promise<unknown>",
           "jsdoc": "Parse a response body as JSON, swallowing parse failures."
@@ -18088,13 +18098,13 @@
         {
           "name": "isAbortError",
           "kind": "function",
-          "line": 97,
+          "line": 115,
           "signature": "function isAbortError(error: unknown): boolean"
         },
         {
           "name": "parseResponseBody",
           "kind": "function",
-          "line": 116,
+          "line": 134,
           "exported": true,
           "signature": "export async function parseResponseBody( response: Response, responseType: RequestOptions['responseType'], maxBytes?: nu…",
           "jsdoc": "Parse a successful response body according to the caller-supplied `responseType`."
@@ -18102,14 +18112,14 @@
         {
           "name": "parseJsonOrThrow",
           "kind": "function",
-          "line": 168,
+          "line": 186,
           "signature": "function parseJsonOrThrow(text: string): unknown",
           "jsdoc": "Parse a 2xx body as JSON, wrapping a malformed-JSON failure in the taxonomy {@link ValidationError} (B1041(2))."
         },
         {
           "name": "buildApiResponse",
           "kind": "function",
-          "line": 189,
+          "line": 207,
           "exported": true,
           "signature": "export function buildApiResponse( response: Response, data: unknown, rateLimit: RateLimitInfo, requestId?: string, ): Ap…",
           "jsdoc": "Assemble an {@link ApiResponse} from a successful `fetch` Response and the parsed body."
@@ -18117,21 +18127,21 @@
         {
           "name": "readBodyWithCap",
           "kind": "function",
-          "line": 220,
+          "line": 238,
           "signature": "async function readBodyWithCap(response: Response, maxBytes?: number): Promise<Uint8Array>",
           "jsdoc": "Read the response body as bytes under an optional size cap (B026)."
         },
         {
           "name": "readBodyAsText",
           "kind": "function",
-          "line": 303,
+          "line": 321,
           "signature": "async function readBodyAsText(response: Response, maxBytes?: number): Promise<string>",
           "jsdoc": "Read the response body as a UTF-8 string under an optional size cap."
         },
         {
           "name": "cancelBodyQuietly",
           "kind": "function",
-          "line": 318,
+          "line": 336,
           "exported": true,
           "signature": "export async function cancelBodyQuietly(body: ReadableStream<Uint8Array> | null): Promise<void>",
           "jsdoc": "Best-effort `ReadableStream.cancel()` that never throws. Used to release the socket of a body nobody will read: the content-length fast-fail path before throwing `ResponseTooLargeError`, and the transport when it follows a redirect itself. Rejections from buggy custom streams must not mask the documented overflow contract (PR #21 review)."
@@ -18139,14 +18149,15 @@
         {
           "name": "parseContentLength",
           "kind": "function",
-          "line": 334,
+          "line": 352,
           "signature": "function parseContentLength(value: string | null): number | undefined",
           "jsdoc": "Parse a `Content-Length` header value into a non-negative finite integer."
         }
       ],
       "imports": [
         "./errors.js",
-        "./types.js"
+        "./types.js",
+        "node:util/types"
       ]
     },
     {
