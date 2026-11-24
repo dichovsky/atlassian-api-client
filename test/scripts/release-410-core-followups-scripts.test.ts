@@ -183,6 +183,31 @@ describe('validate-release-tag in-process', () => {
       'has no release section for 4.0.0',
     ],
     [
+      'a tilde fence with a backtick after the apparent closer',
+      ['~~~markdown', 'sample', '~~~`', RELEASE, '~~~'].join('\n'),
+      'has no release section for 4.0.0',
+    ],
+    [
+      'a pending entry beneath an indented Unreleased heading',
+      [RELEASE, '   ## [Unreleased]', '- pending'].join('\n'),
+      'has unreleased entries',
+    ],
+    [
+      'a definition beneath a tab-separated Unreleased heading',
+      ['##\t[Unreleased]', '', '[example]: https://example.test', '', RELEASE].join('\n'),
+      'has unreleased entries',
+    ],
+    [
+      'a comment beneath a Setext Unreleased heading',
+      ['[Unreleased]', '---', '<!-- pending -->', RELEASE].join('\n'),
+      'has unreleased entries',
+    ],
+    [
+      'a duplicate version written as a Setext heading',
+      [RELEASE, '[4.0.0] (2026-09-02)', '---'].join('\n'),
+      'has 2 release sections for 4.0.0',
+    ],
+    [
       'a fenced example under Unreleased',
       ['## [Unreleased]', '```', '## [3.9.0]', '```', RELEASE].join('\n'),
       'has unreleased entries',
@@ -231,6 +256,25 @@ describe('validate-release-tag in-process', () => {
     expect(
       problem(['v4.0.0'], { 'CHANGELOG.md': `## [Unreleased]\n\n${RELEASE}\n` }),
     ).toBeUndefined();
+  });
+
+  it.each([1, 2])('reads the linked release after %i leading byte order marks', (count) => {
+    const changelog = `${'\uFEFF'.repeat(count)}# Changelog\r\n\r\n${RELEASE}\r\n`;
+    expect(problem(['v4.0.0'], { 'CHANGELOG.md': changelog })).toBeUndefined();
+  });
+
+  it.each([
+    ['indented', '   ## [4.0.0](https://example.test/compare) (2026-09-02)'],
+    ['tab-separated', '##\t[4.0.0](https://example.test/compare) (2026-09-02)'],
+    ['closed with hashes', '## [4.0.0](https://example.test/compare) (2026-09-02) ###'],
+    ['Setext', '[4.0.0](https://example.test/compare) (2026-09-02)\n---'],
+  ])('reads a linked version and date (heading style: %s)', (_label, heading) => {
+    expect(problem(['v4.0.0'], { 'CHANGELOG.md': heading })).toBeUndefined();
+  });
+
+  it('keeps an empty level-two heading as a section boundary', () => {
+    const changelog = [RELEASE, '## [Unreleased]', '##', '- archived note'].join('\n');
+    expect(problem(['v4.0.0'], { 'CHANGELOG.md': changelog })).toBeUndefined();
   });
 
   it.each([

@@ -6,7 +6,9 @@ import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 // Resolve from the real script location when a release check runs through a symlink.
-const { Lexer } = createRequire(realpathSync(fileURLToPath(import.meta.url)))('marked');
+const { fromMarkdown } = createRequire(realpathSync(fileURLToPath(import.meta.url)))(
+  'mdast-util-from-markdown',
+);
 
 const USAGE = 'Usage: node scripts/validate-release-tag.js vX.Y.Z [--warn-date]';
 const STABLE_TAG = /^v((?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*))$/;
@@ -27,13 +29,22 @@ function escapeRegex(value) {
 /** Read top-level release sections and preserve their original heading text for validation. */
 export function changelogSections(changelog) {
   const sections = [];
-  // Marked accepts spaces after a closing fence. Markdown also allows trailing tabs.
-  const markdown = changelog.replace(/^([ \t]*(?:`{3,}|~{3,}))[ \t]+$/gm, '$1');
-  for (const token of Lexer.lex(markdown)) {
-    if (token.type === 'heading' && token.raw.startsWith('## ')) {
-      sections.push({ heading: token.raw.trimEnd(), body: [] });
+  // The parser omits a single initial BOM when counting source offsets.
+  const source = changelog.replace(/^\uFEFF/, '');
+  for (const block of fromMarkdown(changelog).children) {
+    if (block.type === 'heading' && block.depth === 2) {
+      // Inline positions exclude ATX markers and Setext underlines but retain link and date syntax.
+      const title = block.children.length
+        ? source.slice(
+            block.children[0].position.start.offset,
+            block.children.at(-1).position.end.offset,
+          )
+        : '';
+      sections.push({ heading: `## ${title}`.trimEnd(), body: [] });
     } else {
-      sections.at(-1)?.body.push(token.raw);
+      sections
+        .at(-1)
+        ?.body.push(source.slice(block.position.start.offset, block.position.end.offset));
     }
   }
   return sections;
