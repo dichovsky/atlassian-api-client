@@ -682,6 +682,11 @@ function assertOverrideBaseUrl(baseUrl: string, allowedHosts: readonly string[])
     throw new ValidationError(`HttpTransport baseUrl override is not a valid URL: <unparseable>`);
   }
   const safeOrigin = `${parsed.protocol}//${parsed.hostname}`;
+  if (parsed.username !== '' || parsed.password !== '') {
+    throw new ValidationError(
+      `HttpTransport baseUrl override must not embed userinfo credentials: ${safeOrigin}`,
+    );
+  }
   if (parsed.protocol !== 'https:') {
     throw new ValidationError(`HttpTransport baseUrl override must use HTTPS: ${safeOrigin}`);
   }

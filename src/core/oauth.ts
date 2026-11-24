@@ -324,7 +324,7 @@ export async function fetchRefreshedTokens(
   }
 
   if (!response.ok) {
-    const snippet = formatBodySnippet(rawText);
+    const snippet = formatBodySnippet(rawText, body, [refreshToken, config.clientSecret]);
     const detail = snippet === '' ? '' : `: ${snippet}`;
     throw new OAuthError(
       `Token refresh failed with HTTP ${response.status}${detail}`,
@@ -339,7 +339,7 @@ export async function fetchRefreshedTokens(
     typeof (body as Record<string, unknown>)['access_token'] !== 'string' ||
     (body as Record<string, unknown>)['access_token'] === ''
   ) {
-    const snippet = formatBodySnippet(rawText);
+    const snippet = formatBodySnippet(rawText, body, [refreshToken, config.clientSecret]);
     const detail = snippet === '' ? '' : `: ${snippet}`;
     throw new OAuthError(
       `Token refresh response missing access_token (HTTP ${response.status})${detail}`,
@@ -502,18 +502,88 @@ function validateAllowedTokenEndpointHosts(hosts: readonly string[]): readonly s
   return hosts;
 }
 
+// Any key that ends in `token` or `secret`: access_token, refreshToken, client-secret, …
+const SECRET_KEY = String.raw`[\w-]*(?:token|secret)`;
+// JSON `"key": "value"`. The value may hold escaped quotes or be unterminated.
+const JSON_SECRET_FIELD = new RegExp(
+  String.raw`("${SECRET_KEY}"\s*:\s*")(?:[^"\\]|\\[\s\S])*`,
+  'gi',
+);
+// Form-encoded `key=value`. The lookbehind starts a match only at the start of
+// a key, so a long run of word characters cannot backtrack quadratically.
+const FORM_SECRET_FIELD = new RegExp(String.raw`(?<![\w-])(${SECRET_KEY}=)[^&\s"]*`, 'gi');
+
+// RFC 6749 §5.2 error fields: the only JSON values that a snippet shows.
+const OAUTH_ERROR_FIELDS: ReadonlySet<string> = new Set([
+  'error',
+  'error_description',
+  'error_uri',
+]);
+
 /**
- * Build a short diagnostic snippet of a token-endpoint response body.
- * Truncates to 200 chars after replacing any token values with `***` so that
- * an accidentally-echoed credential never reaches an error message or log.
+ * Build a short diagnostic snippet of a token-endpoint response body, so that
+ * a credential the endpoint echoes never reaches an error message or log.
+ *
+ * A JSON object shows its keys, but only the values of the RFC 6749 §5.2 error
+ * fields. Each other value, and any other JSON value, becomes `***`. A body
+ * that is not JSON shows its text, with the value of each token- or
+ * secret-named JSON or form field replaced. In all shown text, each known
+ * secret is then replaced in each of its forms (raw, JSON-escaped, URL- or
+ * form-encoded, any case). Truncation to 200 chars comes last.
  */
-function formatBodySnippet(raw: string): string {
+function formatBodySnippet(raw: string, body: unknown, secrets: readonly string[]): string {
   if (raw === '') return '';
-  const redacted = raw.replace(
-    /("(?:access_token|refresh_token|id_token|client_secret)"\s*:\s*")[^"]*(")/gi,
-    '$1***$2',
-  );
-  const trimmed = redacted.trim();
+  const knownSecret = knownSecretPattern(secrets);
+  // Fields go first: a known secret inside a key name would break the key match.
+  const redact = (text: string): string => {
+    const fields = text.replace(JSON_SECRET_FIELD, '$1***').replace(FORM_SECRET_FIELD, '$1***');
+    return knownSecret === undefined ? fields : fields.replace(knownSecret, '***');
+  };
+  let shown: string;
+  if (body === undefined) {
+    shown = redact(raw);
+  } else if (typeof body === 'object' && body !== null && !Array.isArray(body)) {
+    const entries = Object.entries(body).map(([key, value]) => [
+      redact(key),
+      OAUTH_ERROR_FIELDS.has(key) && typeof value === 'string' ? redact(value) : '***',
+    ]);
+    shown = JSON.stringify(Object.fromEntries(entries));
+  } else {
+    shown = '***';
+  }
+  // Again on the output: JSON.stringify can rebuild a secret that holds `\` or `"`.
+  if (knownSecret !== undefined) shown = shown.replace(knownSecret, '***');
+  const trimmed = shown.trim();
   if (trimmed.length <= 200) return trimmed;
   return trimmed.slice(0, 200) + '…';
+}
+
+/**
+ * One case-insensitive pattern for every form of every known secret, longest
+ * first, so that a secret that contains another is replaced whole. Returns
+ * `undefined` when there is no non-empty string secret (untyped JS callers can
+ * pass other values).
+ */
+function knownSecretPattern(secrets: readonly unknown[]): RegExp | undefined {
+  const forms = new Set<string>();
+  for (const secret of secrets) {
+    if (typeof secret !== 'string' || secret === '') continue;
+    const json = JSON.stringify(secret).slice(1, -1);
+    forms
+      .add(secret)
+      .add(json)
+      .add(json.replaceAll('/', '\\/'))
+      .add(new URLSearchParams([['', secret]]).toString().slice(1));
+    try {
+      forms.add(encodeURIComponent(secret));
+    } catch {
+      // A lone surrogate makes encodeURIComponent throw, which would replace
+      // the OAuthError. The URLSearchParams form above still covers it.
+    }
+  }
+  if (forms.size === 0) return undefined;
+  const alternatives = [...forms]
+    .sort((a, b) => b.length - a.length)
+    .map((form) => form.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+  return new RegExp(alternatives.join('|'), 'gi');
 }
