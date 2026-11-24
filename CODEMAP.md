@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "5.0.0"
   },
-  "sourceHash": "71a94b1479e426ce3b957730b6760a284b5ce46273c73c93da70c58cccee420c",
+  "sourceHash": "59811c49b3f281f90d253b65e1c0b7c17ad0fa5953f7960da438dcb6aa2a0ac5",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -530,7 +530,7 @@
       "name": "CacheOptions",
       "kind": "interface",
       "file": "src/core/cache.ts",
-      "line": 6,
+      "line": 7,
       "signature": "export interface CacheOptions { readonly maxSize?: number; readonly ttl?: number; readonly methods?: readonly HttpMethod…",
       "jsdoc": "Options for the response caching middleware.",
       "typeOnly": true
@@ -2277,7 +2277,7 @@
       "name": "HttpTransport",
       "kind": "class",
       "file": "src/core/transport.ts",
-      "line": 64,
+      "line": 66,
       "signature": "export class HttpTransport implements Transport",
       "jsdoc": "HTTP transport using native `fetch` with auth, retry, rate-limit, and timeout support. @example ```ts import { HttpTransport, resolveConfig } from 'atlassian-api-client'; const…"
     },
@@ -4035,7 +4035,7 @@
       "name": "SerializableApiResponse",
       "kind": "interface",
       "file": "src/core/response.ts",
-      "line": 5,
+      "line": 23,
       "signature": "export interface SerializableApiResponse<T> { readonly data: T; readonly status: number; readonly headers: Record<string…",
       "jsdoc": "JSON-serialisable projection of {@link ApiResponse}.",
       "typeOnly": true
@@ -4806,7 +4806,7 @@
       "name": "createBatchMiddleware",
       "kind": "function",
       "file": "src/core/batch.ts",
-      "line": 49,
+      "line": 52,
       "signature": "export function createBatchMiddleware(): Middleware",
       "jsdoc": "Creates a middleware that deduplicates concurrent identical in-flight requests."
     },
@@ -4814,7 +4814,7 @@
       "name": "createCacheMiddleware",
       "kind": "function",
       "file": "src/core/cache.ts",
-      "line": 62,
+      "line": 67,
       "signature": "export function createCacheMiddleware(options?: CacheOptions): Middleware",
       "jsdoc": "Creates a middleware that caches API responses in memory."
     },
@@ -4950,7 +4950,7 @@
       "name": "toJSON",
       "kind": "function",
       "file": "src/core/response.ts",
-      "line": 42,
+      "line": 60,
       "signature": "export function toJSON<T>(response: ApiResponse<T>): SerializableApiResponse<T>",
       "jsdoc": "Convert an {@link ApiResponse} into a plain JSON-serialisable object."
     },
@@ -16253,55 +16253,15 @@
         {
           "name": "assertNonEmptyCredential",
           "kind": "function",
-          "line": 59,
+          "line": 60,
           "signature": "function assertNonEmptyCredential(value: string, fieldName: string): void",
           "jsdoc": "B1041(6): reject an absent or empty credential field with a typed {@link ValidationError} so a misconfigured client fails at construction with a clear message rather than emitting a broken `Authorization` header."
         },
         {
-          "name": "BasicAuthProvider",
-          "kind": "class",
-          "line": 65,
-          "signature": "class BasicAuthProvider implements AuthProvider",
-          "members": [
-            {
-              "name": "headerValue",
-              "kind": "property",
-              "line": 66
-            },
-            {
-              "name": "constructor",
-              "kind": "constructor",
-              "line": 68
-            },
-            {
-              "name": "getHeaders",
-              "kind": "method",
-              "line": 73
-            }
-          ]
-        },
-        {
-          "name": "BearerAuthProvider",
-          "kind": "class",
-          "line": 78,
-          "signature": "class BearerAuthProvider implements AuthProvider",
-          "members": [
-            {
-              "name": "headerValue",
-              "kind": "property",
-              "line": 79
-            },
-            {
-              "name": "constructor",
-              "kind": "constructor",
-              "line": 81
-            },
-            {
-              "name": "getHeaders",
-              "kind": "method",
-              "line": 85
-            }
-          ]
+          "name": "providerForHeader",
+          "kind": "function",
+          "line": 66,
+          "signature": "function providerForHeader(value: string): AuthProvider"
         }
       ],
       "imports": [
@@ -16315,14 +16275,14 @@
         {
           "name": "IDEMPOTENT_METHODS",
           "kind": "variable",
-          "line": 12,
+          "line": 13,
           "signature": "const IDEMPOTENT_METHODS = new Set<string>(['GET', 'HEAD']);",
           "jsdoc": "Safe-idempotent methods eligible for request coalescing (B1039)."
         },
         {
           "name": "createBatchMiddleware",
           "kind": "function",
-          "line": 49,
+          "line": 52,
           "exported": true,
           "signature": "export function createBatchMiddleware(): Middleware",
           "jsdoc": "Creates a middleware that deduplicates concurrent identical in-flight requests."
@@ -16330,19 +16290,20 @@
         {
           "name": "buildRequestKey",
           "kind": "function",
-          "line": 79,
+          "line": 83,
           "signature": "function buildRequestKey(opts: RequestOptions): string"
         },
         {
           "name": "serializeHeaders",
           "kind": "function",
-          "line": 104,
+          "line": 108,
           "signature": "function serializeHeaders(headers: RequestOptions['headers']): string",
           "jsdoc": "Build a deterministic string representation of request headers for use in the dedupe key. `Authorization` is excluded from this section because the auth identity is already captured by {@link authIdentity} and prefixed onto the key; including the raw value here would leak the credential into any place the key is logged or dumped. Any other custom header (e.g. `X-Atlassian-Token`, `Accept-Language`) MUST keep them separate."
         }
       ],
       "imports": [
         "./auth-identity.js",
+        "./response.js",
         "./types.js"
       ]
     },
@@ -16352,7 +16313,7 @@
         {
           "name": "CacheOptions",
           "kind": "interface",
-          "line": 6,
+          "line": 7,
           "exported": true,
           "signature": "export interface CacheOptions { readonly maxSize?: number; readonly ttl?: number; readonly methods?: readonly HttpMethod…",
           "jsdoc": "Options for the response caching middleware."
@@ -16360,13 +16321,13 @@
         {
           "name": "CacheEntry",
           "kind": "interface",
-          "line": 28,
+          "line": 29,
           "signature": "interface CacheEntry { readonly response: ApiResponse<unknown>; readonly expiresAt: number; }"
         },
         {
           "name": "createCacheMiddleware",
           "kind": "function",
-          "line": 62,
+          "line": 67,
           "exported": true,
           "signature": "export function createCacheMiddleware(options?: CacheOptions): Middleware",
           "jsdoc": "Creates a middleware that caches API responses in memory."
@@ -16374,20 +16335,21 @@
         {
           "name": "sweepExpired",
           "kind": "function",
-          "line": 142,
+          "line": 149,
           "signature": "function sweepExpired(cache: Map<string, CacheEntry>, now: number): void",
           "jsdoc": "Delete every expired entry from the cache. Called on eviction to reclaim TTL-expired slots before resorting to LRU, so that a still-valid entry is not pushed out by a dead one that happened to be inserted earlier."
         },
         {
           "name": "buildCacheKey",
           "kind": "function",
-          "line": 150,
+          "line": 157,
           "signature": "function buildCacheKey(opts: RequestOptions): string"
         }
       ],
       "imports": [
         "./auth-identity.js",
         "./errors.js",
+        "./response.js",
         "./types.js"
       ]
     },
@@ -18165,9 +18127,17 @@
       "path": "src/core/response.ts",
       "symbols": [
         {
+          "name": "copyResponseBuffer",
+          "kind": "function",
+          "line": 6,
+          "exported": true,
+          "signature": "export function copyResponseBuffer(response: ApiResponse<unknown>): ApiResponse<unknown>",
+          "jsdoc": "Give a cache entry or coalesced caller its own transferable bytes."
+        },
+        {
           "name": "SerializableApiResponse",
           "kind": "interface",
-          "line": 5,
+          "line": 23,
           "exported": true,
           "signature": "export interface SerializableApiResponse<T> { readonly data: T; readonly status: number; readonly headers: Record<string…",
           "jsdoc": "JSON-serialisable projection of {@link ApiResponse}."
@@ -18175,7 +18145,7 @@
         {
           "name": "toJSON",
           "kind": "function",
-          "line": 42,
+          "line": 60,
           "exported": true,
           "signature": "export function toJSON<T>(response: ApiResponse<T>): SerializableApiResponse<T>",
           "jsdoc": "Convert an {@link ApiResponse} into a plain JSON-serialisable object."
@@ -18183,7 +18153,7 @@
         {
           "name": "safeParseBody",
           "kind": "function",
-          "line": 80,
+          "line": 98,
           "exported": true,
           "signature": "export async function safeParseBody(response: Response, maxBytes?: number): Promise<unknown>",
           "jsdoc": "Parse a response body as JSON, swallowing parse failures."
@@ -18191,13 +18161,13 @@
         {
           "name": "isAbortError",
           "kind": "function",
-          "line": 97,
+          "line": 115,
           "signature": "function isAbortError(error: unknown): boolean"
         },
         {
           "name": "parseResponseBody",
           "kind": "function",
-          "line": 116,
+          "line": 134,
           "exported": true,
           "signature": "export async function parseResponseBody( response: Response, responseType: RequestOptions['responseType'], maxBytes?: nu…",
           "jsdoc": "Parse a successful response body according to the caller-supplied `responseType`."
@@ -18205,14 +18175,14 @@
         {
           "name": "parseJsonOrThrow",
           "kind": "function",
-          "line": 168,
+          "line": 186,
           "signature": "function parseJsonOrThrow(text: string): unknown",
           "jsdoc": "Parse a 2xx body as JSON, wrapping a malformed-JSON failure in the taxonomy {@link ValidationError} (B1041(2))."
         },
         {
           "name": "buildApiResponse",
           "kind": "function",
-          "line": 189,
+          "line": 207,
           "exported": true,
           "signature": "export function buildApiResponse( response: Response, data: unknown, rateLimit: RateLimitInfo, requestId?: string, ): Ap…",
           "jsdoc": "Assemble an {@link ApiResponse} from a successful `fetch` Response and the parsed body."
@@ -18220,21 +18190,21 @@
         {
           "name": "readBodyWithCap",
           "kind": "function",
-          "line": 220,
+          "line": 238,
           "signature": "async function readBodyWithCap(response: Response, maxBytes?: number): Promise<Uint8Array>",
           "jsdoc": "Read the response body as bytes under an optional size cap (B026)."
         },
         {
           "name": "readBodyAsText",
           "kind": "function",
-          "line": 303,
+          "line": 321,
           "signature": "async function readBodyAsText(response: Response, maxBytes?: number): Promise<string>",
           "jsdoc": "Read the response body as a UTF-8 string under an optional size cap."
         },
         {
           "name": "cancelBodyQuietly",
           "kind": "function",
-          "line": 318,
+          "line": 336,
           "exported": true,
           "signature": "export async function cancelBodyQuietly(body: ReadableStream<Uint8Array> | null): Promise<void>",
           "jsdoc": "Best-effort `ReadableStream.cancel()` that never throws. Used to release the socket of a body nobody will read: the content-length fast-fail path before throwing `ResponseTooLargeError`, and the transport when it follows a redirect itself. Rejections from buggy custom streams must not mask the documented overflow contract (PR #21 review)."
@@ -18242,14 +18212,15 @@
         {
           "name": "parseContentLength",
           "kind": "function",
-          "line": 334,
+          "line": 352,
           "signature": "function parseContentLength(value: string | null): number | undefined",
           "jsdoc": "Parse a `Content-Length` header value into a non-negative finite integer."
         }
       ],
       "imports": [
         "./errors.js",
-        "./types.js"
+        "./types.js",
+        "node:util/types"
       ]
     },
     {
@@ -18524,142 +18495,153 @@
       "path": "src/core/transport.ts",
       "symbols": [
         {
+          "name": "sendRequest",
+          "kind": "variable",
+          "line": 40,
+          "signature": "const sendRequest = Symbol('HttpTransport.sendRequest');"
+        },
+        {
           "name": "HttpTransport",
           "kind": "class",
-          "line": 64,
+          "line": 66,
           "exported": true,
           "signature": "export class HttpTransport implements Transport",
           "jsdoc": "HTTP transport using native `fetch` with auth, retry, rate-limit, and timeout support. @example ```ts import { HttpTransport, resolveConfig } from 'atlassian-api-client'; const…",
           "members": [
             {
-              "name": "config",
+              "name": "#config",
               "kind": "property",
-              "line": 65
+              "line": 67
             },
             {
               "name": "authProvider",
               "kind": "property",
-              "line": 66
+              "line": 68
             },
             {
-              "name": "authHeaders",
+              "name": "#authHeaders",
               "kind": "property",
-              "line": 76
+              "line": 78
             },
             {
               "name": "authIdentity",
               "kind": "property",
-              "line": 84
+              "line": 86
             },
             {
               "name": "requestHandler",
               "kind": "property",
-              "line": 85
+              "line": 87
             },
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 93
+              "line": 95
             },
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 101
+              "line": 103
             },
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 102
+              "line": 104
             },
             {
               "name": "request",
               "kind": "method",
-              "line": 147
+              "line": 149
+            },
+            {
+              "name": "[sendRequest]",
+              "kind": "property",
+              "line": 155
             },
             {
               "name": "injectAuthIdentity",
               "kind": "method",
-              "line": 238
+              "line": 246
             },
             {
               "name": "executeFetch",
               "kind": "method",
-              "line": 258
+              "line": 266
             }
           ]
         },
         {
           "name": "isHeadersLike",
           "kind": "function",
-          "line": 431,
+          "line": 439,
           "signature": "function isHeadersLike(value: unknown): value is Headers",
           "jsdoc": "Duck-type check for a WHATWG `Headers`-shaped value."
         },
         {
           "name": "DEFAULT_INBOUND_HEADERS",
           "kind": "variable",
-          "line": 453,
+          "line": 461,
           "signature": "const DEFAULT_INBOUND_HEADERS: readonly string[] = ['X-AREQUESTID', 'X-Request-Id'];",
           "jsdoc": "Default inbound response headers to check for a server-assigned request id (B011). `X-AREQUESTID` is Atlassian's actual header; `X-Request-Id` is the conventional RFC draft / de-facto standard fallback."
         },
         {
           "name": "captureRequestId",
           "kind": "function",
-          "line": 460,
+          "line": 468,
           "signature": "function captureRequestId(headers: Headers, candidates: readonly string[]): string | undefined",
           "jsdoc": "Read the first matching request-id header from the response. Returns the header value, or `undefined` when none of the candidates are present. `Headers.get()` is case-insensitive per the WHATWG Fetch spec."
         },
         {
           "name": "parseBodyWithTimeoutHandling",
           "kind": "function",
-          "line": 468,
+          "line": 476,
           "signature": "async function parseBodyWithTimeoutHandling<T>( parse: () => Promise<T>, timeoutSignal: AbortSignal, timeoutMs: number, …"
         },
         {
           "name": "toNetworkError",
           "kind": "function",
-          "line": 500,
+          "line": 508,
           "signature": "function toNetworkError(error: unknown, retryable: boolean): NetworkError",
           "jsdoc": "Wrap a transport failure in the taxonomy. {@link isTransportFailure} also matches non-Error shapes (a thrown `{ code }` object), whose `.message` is `undefined`, so fall back to the class default and keep the original value as `cause` without claiming it is an Error."
         },
         {
           "name": "REDIRECT_STATUSES",
           "kind": "variable",
-          "line": 506,
+          "line": 514,
           "signature": "const REDIRECT_STATUSES: ReadonlySet<number> = new Set([301, 302, 303, 307, 308]);",
           "jsdoc": "Statuses `fetch` treats as redirects (WHATWG Fetch \"redirect status\")."
         },
         {
           "name": "MAX_REDIRECTS",
           "kind": "variable",
-          "line": 509,
+          "line": 517,
           "signature": "const MAX_REDIRECTS = 20;",
           "jsdoc": "The hop limit `fetch` applies when it follows redirects itself."
         },
         {
           "name": "OutgoingRequest",
           "kind": "interface",
-          "line": 511,
+          "line": 519,
           "signature": "interface OutgoingRequest { readonly method: string; readonly headers: Record<string, string>; readonly body: FormData |…"
         },
         {
           "name": "fetchWithCheckedRedirects",
           "kind": "function",
-          "line": 550,
+          "line": 558,
           "signature": "async function fetchWithCheckedRedirects( doFetch: typeof fetch, url: string, request: OutgoingRequest, allowedHosts: re…",
           "jsdoc": "Send a request, following a redirect only to a target the request could have been sent to directly."
         },
         {
           "name": "computeAuthIdentity",
           "kind": "function",
-          "line": 632,
+          "line": 640,
           "signature": "function computeAuthIdentity(authHeaders: Record<string, string>): string",
           "jsdoc": "Hash the auth provider's `Authorization` header value into the short stable identifier exposed as {@link RequestOptions.authIdentity}. Uses the first 16 hex chars (64 bits) of SHA-256 — wide enough for accidental collisions to vanish in practice, narrow enough to keep cache/batch keys compact, and one-way so a logging/metrics middleware that persists `RequestOptions` never accidentally writes the credential to a log sink."
         },
         {
           "name": "assertOverrideBaseUrl",
           "kind": "function",
-          "line": 651,
+          "line": 659,
           "signature": "function assertOverrideBaseUrl(baseUrl: string, allowedHosts: readonly string[]): void",
           "jsdoc": "Validate a baseUrl override (deprecated constructor overload) against the same `allowedHosts` policy `resolveConfig` already applied to `config.baseUrl`. Without this, an override could silently relocate every relative-path request to a foreign host with the configured `Authorization` header attached. PR review of round 3."
         }
