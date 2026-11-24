@@ -18,7 +18,7 @@ import {
 import { ValidationError } from '../../src/core/errors.js';
 import { JiraClient } from '../../src/jira/client.js';
 import { ConfluenceClient } from '../../src/confluence/client.js';
-import { readAuthorizationOverride } from '../../src/core/auth-identity.js';
+import { resolveAuthorizationOverride } from '../../src/core/auth-identity.js';
 
 const makeOpts = (overrides?: Partial<RequestOptions>): RequestOptions => ({
   method: 'GET',
@@ -228,7 +228,8 @@ describe('createConnectJwtMiddleware', () => {
   it('adds Authorization: JWT <token> header', async () => {
     const captured: Partial<RequestOptions>[] = [];
     const next = vi.fn(async (opts: RequestOptions): Promise<ApiResponse<unknown>> => {
-      captured.push(opts);
+      // A reference is valid only during the call, so snapshot the resolved value.
+      captured.push({ ...opts, authorizationOverride: resolveAuthorizationOverride(opts) });
       return makeResponse();
     });
 
@@ -237,21 +238,22 @@ describe('createConnectJwtMiddleware', () => {
 
     // #243: the JWT is set on the trusted `authorizationOverride` channel, not
     // `headers.Authorization` (which the transport strips as a caller header).
-    const auth = readAuthorizationOverride(captured[0] as RequestOptions);
+    const auth = resolveAuthorizationOverride(captured[0] as RequestOptions);
     expect(auth).toMatch(/^JWT /);
   });
 
   it('preserves other headers alongside the JWT', async () => {
     const captured: RequestOptions[] = [];
     const next = vi.fn(async (opts: RequestOptions): Promise<ApiResponse<unknown>> => {
-      captured.push(opts);
+      // A reference is valid only during the call, so snapshot the resolved value.
+      captured.push({ ...opts, authorizationOverride: resolveAuthorizationOverride(opts) });
       return makeResponse();
     });
 
     const mw = createConnectJwtMiddleware(BASE_CONFIG);
     await mw(makeOpts({ headers: { 'X-Trace': 'abc' } }), next);
 
-    expect(readAuthorizationOverride(captured[0] as RequestOptions)).toMatch(/^JWT /);
+    expect(resolveAuthorizationOverride(captured[0] as RequestOptions)).toMatch(/^JWT /);
     const headers = captured[0]?.headers as Record<string, string>;
     expect(headers?.['X-Trace']).toBe('abc');
   });
@@ -271,7 +273,8 @@ describe('createConnectJwtMiddleware', () => {
   it('includes the correct qsh for the actual request path and query', async () => {
     const captured: RequestOptions[] = [];
     const next = vi.fn(async (opts: RequestOptions): Promise<ApiResponse<unknown>> => {
-      captured.push(opts);
+      // A reference is valid only during the call, so snapshot the resolved value.
+      captured.push({ ...opts, authorizationOverride: resolveAuthorizationOverride(opts) });
       return makeResponse();
     });
 
@@ -279,7 +282,7 @@ describe('createConnectJwtMiddleware', () => {
     const mw = createConnectJwtMiddleware(BASE_CONFIG);
     await mw(opts, next);
 
-    const auth = readAuthorizationOverride(captured[0] as RequestOptions) ?? '';
+    const auth = resolveAuthorizationOverride(captured[0] as RequestOptions) ?? '';
     const token = auth.replace('JWT ', '');
     const { payload } = decodeJwt(token);
     const expectedQsh = computeQsh('GET', '/rest/api/3/issue', { expand: 'names' });

@@ -45,6 +45,7 @@ export { HttpTransport } from './transport.js';
 
 // Middleware composition
 export { createMiddlewareChain } from './middleware.js';
+export { resolveAuthorizationOverride } from './auth-identity.js';
 
 // Retry
 export type { RetryConfig } from './retry.js';

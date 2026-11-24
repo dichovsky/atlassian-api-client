@@ -587,7 +587,7 @@ export type {
   RequestIdOptions,
 } from './core/index.js';
 
-export { resolveConfig, HttpTransport, executeWithRetry, createMiddlewareChain } from './core/index.js';
+export { resolveConfig, HttpTransport, executeWithRetry, createMiddlewareChain, resolveAuthorizationOverride } from './core/index.js';
 export type { RetryConfig } from './core/index.js';
 
 export { extractCursor, paginateCursor, paginateOffset, paginateSearch } from './core/index.js';

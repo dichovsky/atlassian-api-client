@@ -55,13 +55,13 @@ export interface RequestOptions {
    *
    * The library's own auth middleware ({@link createOAuthRefreshMiddleware},
    * {@link createConnectJwtMiddleware}) do not write their credential to this
-   * field. They use a hidden channel that `JSON.stringify` and `util.inspect`
-   * do not show, so a later middleware that logs `RequestOptions` cannot print
-   * the token. For those middleware, this field stays `undefined`. A value
-   * that a custom middleware writes here is visible to all later middleware.
-   * The last writer wins: a defined value written here after the OAuth or
-   * Connect middleware replaces their credential, and theirs replaces a value
-   * written here before them. `undefined` here does not clear their credential.
+   * field. They write a reference string that is valid only while the request
+   * runs, so a later middleware that logs `RequestOptions` cannot print the
+   * token. A custom terminal handler of {@link createMiddlewareChain} calls
+   * {@link resolveAuthorizationOverride} to get the value to send. A value
+   * that a custom middleware writes here is used as is and is visible to all
+   * later middleware. The last writer wins. To make one request use
+   * `config.auth` again, pass `{ ...opts, authorizationOverride: undefined }`.
    *
    * This is a SEPARATE, trusted channel from caller-supplied
    * `headers.Authorization`: the latter is always stripped at the transport's

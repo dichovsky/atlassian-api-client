@@ -1,5 +1,6 @@
-import { createHash } from 'node:crypto';
-import type { RequestOptions } from './types.js';
+import { createHash, randomUUID } from 'node:crypto';
+import { ValidationError } from './errors.js';
+import type { ApiResponse, RequestOptions } from './types.js';
 
 /**
  * One-way hash of an `Authorization` value into the short, stable identifier
@@ -31,78 +32,93 @@ export function pickAuthorizationHeader(headers: RequestOptions['headers']): str
 }
 
 /**
- * Holds a middleware credential in an ES `#private` field, so `JSON.stringify`
- * prints `{}` and `util.inspect` prints `RedactedAuthorization {}`.
+ * Prefix of the reference that the OAuth refresh and Connect JWT middleware
+ * write to `RequestOptions.authorizationOverride` instead of the credential.
+ * A reference is not a secret: it only names an entry in the registry below.
  */
-class RedactedAuthorization {
-  readonly #value: string;
-  constructor(value: string) {
-    this.#value = value;
+const REFERENCE_PREFIX = 'atlassian-api-client:authorization-override:';
+
+/**
+ * Key of the process-wide credential registry. `Symbol.for` gives every
+ * installed copy of this package the same key, so a reference that one copy
+ * writes resolves in another copy. Each entry is a function that returns the
+ * credential, so `util.inspect(globalThis)` shows `[Function]`, not the value.
+ */
+const REGISTRY_KEY: unique symbol = Symbol.for('atlassian-api-client.authorizationOverrides');
+
+type CredentialRegistry = Map<string, () => string>;
+
+function credentialRegistry(): CredentialRegistry {
+  const registryHolder = globalThis as { [REGISTRY_KEY]?: CredentialRegistry };
+  const existing = registryHolder[REGISTRY_KEY];
+  if (existing !== undefined) return existing;
+  const created: CredentialRegistry = new Map();
+  // Not enumerable, not writable, not configurable.
+  Object.defineProperty(globalThis, REGISTRY_KEY, { value: created });
+  return created;
+}
+
+/**
+ * Call `next` with a copy of `options` whose `authorizationOverride` is a new
+ * reference to `value`. The registry entry exists only until `next` settles.
+ *
+ * The reference is a plain string, so it stays in the options through spread,
+ * `Object.assign`, `structuredClone` and a JSON round trip, and a later
+ * middleware that logs the options prints the reference, not the credential.
+ */
+export async function nextWithAuthorizationOverride(
+  options: RequestOptions,
+  value: string,
+  next: (options: RequestOptions) => Promise<ApiResponse<unknown>>,
+): Promise<ApiResponse<unknown>> {
+  const reference = `${REFERENCE_PREFIX}${randomUUID()}`;
+  const registry = credentialRegistry();
+  registry.set(reference, () => value);
+  try {
+    return await next({ ...options, authorizationOverride: reference });
+  } finally {
+    registry.delete(reference);
   }
-  /**
-   * Return the held value, or `undefined` when `holder` is not a real
-   * instance (for example, a deep clone made with `Object.create`). The brand
-   * check makes sure that this function never throws.
-   */
-  static read(holder: unknown): string | undefined {
-    return typeof holder === 'object' && holder !== null && #value in holder
-      ? holder.#value
-      : undefined;
+}
+
+/**
+ * Return the `Authorization` value that the middleware chain selected for a
+ * request, or `undefined` when the configured `config.auth` applies.
+ *
+ * {@link createOAuthRefreshMiddleware} and {@link createConnectJwtMiddleware}
+ * do not write their credential to `RequestOptions.authorizationOverride`.
+ * They write a reference, so a middleware that logs the options does not print
+ * the token. Call this function in a custom terminal handler of
+ * {@link createMiddlewareChain} to get the value to send. A value that a custom
+ * middleware wrote to the field is returned unchanged.
+ *
+ * A reference is valid only while its request runs.
+ *
+ * @param options - The options that the terminal handler received.
+ * @returns The `Authorization` header value, or `undefined`.
+ * @throws {ValidationError} if the field holds a reference whose request has
+ *   finished. The request must not be sent with a different credential.
+ *
+ * @example
+ * ```ts
+ * import { createMiddlewareChain, resolveAuthorizationOverride } from 'atlassian-api-client';
+ *
+ * const chain = createMiddlewareChain([oauthMiddleware], async (opts) => {
+ *   const authorization = resolveAuthorizationOverride(opts) ?? defaultAuthorization;
+ *   return sendRequest(opts, { Authorization: authorization });
+ * });
+ * ```
+ */
+export function resolveAuthorizationOverride(options: RequestOptions): string | undefined {
+  const value = options.authorizationOverride;
+  if (typeof value !== 'string' || !value.startsWith(REFERENCE_PREFIX)) return value;
+  const credential = credentialRegistry().get(value);
+  if (credential === undefined) {
+    throw new ValidationError(
+      'authorizationOverride refers to a credential whose request has finished',
+    );
   }
-}
-
-/**
- * Module-private key of the library's in-chain `Authorization` channel. The
- * key is a symbol, so `JSON.stringify` ignores it. Object spread and rest
- * copy it, so a later middleware that copies the options keeps the credential.
- */
-const AUTHORIZATION_OVERRIDE = Symbol('authorizationOverride');
-
-type WithHiddenOverride = RequestOptions & {
-  readonly [AUTHORIZATION_OVERRIDE]?: RedactedAuthorization;
-};
-
-/**
- * Return a copy of `options` that sends `value` as the `Authorization` header.
- * The OAuth refresh and Connect JWT middleware use this instead of the public
- * `authorizationOverride` string, so a later middleware that logs the options
- * cannot print the credential. The copy has no public `authorizationOverride`
- * key, so a value that a later middleware writes there wins.
- */
-export function withAuthorizationOverride(options: RequestOptions, value: string): RequestOptions {
-  const { authorizationOverride: _replaced, ...rest } = options;
-  const result: WithHiddenOverride = {
-    ...rest,
-    [AUTHORIZATION_OVERRIDE]: new RedactedAuthorization(value),
-  };
-  return result;
-}
-
-/**
- * Return the in-chain `Authorization` override: the public
- * `authorizationOverride` string when it is defined, else the hidden value,
- * else `undefined`. {@link withAuthorizationOverride} removes the public key,
- * so a defined public value was written after it, and the last writer wins.
- */
-export function readAuthorizationOverride(options: RequestOptions): string | undefined {
-  return (
-    options.authorizationOverride ??
-    RedactedAuthorization.read((options as WithHiddenOverride)[AUTHORIZATION_OVERRIDE])
-  );
-}
-
-/**
- * Return a plain copy of `options` without either override channel. The copy
- * is always new, so a getter or `Proxy` on the caller's object is read only
- * once and cannot return a different value later.
- */
-export function stripAuthorizationOverride(options: RequestOptions): RequestOptions {
-  const {
-    authorizationOverride: _public,
-    [AUTHORIZATION_OVERRIDE]: _hidden,
-    ...rest
-  } = options as WithHiddenOverride;
-  return rest;
+  return credential();
 }
 
 /**
@@ -121,7 +137,7 @@ export function resolveAuthIdentity(opts: RequestOptions): string {
   if (typeof opts.authIdentity === 'string' && opts.authIdentity !== '') {
     return opts.authIdentity;
   }
-  const auth = readAuthorizationOverride(opts) ?? pickAuthorizationHeader(opts.headers);
+  const auth = resolveAuthorizationOverride(opts) ?? pickAuthorizationHeader(opts.headers);
   if (auth === undefined || auth === '') return 'no-auth';
   return hashAuthValue(auth);
 }

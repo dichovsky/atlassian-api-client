@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "5.0.0"
   },
-  "sourceHash": "936dc338a7a54a9dbf6f29b7ca56fe8f92530bf2062b18bc59e2cfa007b37d3d",
+  "sourceHash": "ae9aff8e428c946bec47b9dedd99b1726119c3168c94eaceb022494249adf1cb",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -82,7 +82,7 @@
       "name": "AsymmetricJwtVerifyOptions",
       "kind": "interface",
       "file": "src/core/connect-jwt.ts",
-      "line": 274,
+      "line": 275,
       "signature": "export interface AsymmetricJwtVerifyOptions { readonly publicKey?: string | KeyObject; readonly publicKeyResolver?: (kid…",
       "jsdoc": "Options for {@link verifyConnectAsymmetricJwt}.",
       "typeOnly": true
@@ -2277,7 +2277,7 @@
       "name": "HttpTransport",
       "kind": "class",
       "file": "src/core/transport.ts",
-      "line": 66,
+      "line": 81,
       "signature": "export class HttpTransport implements Transport",
       "jsdoc": "HTTP transport using native `fetch` with auth, retry, rate-limit, and timeout support. @example ```ts import { HttpTransport, resolveConfig } from 'atlassian-api-client'; const…"
     },
@@ -4798,7 +4798,7 @@
       "name": "computeQsh",
       "kind": "function",
       "file": "src/core/connect-jwt.ts",
-      "line": 97,
+      "line": 98,
       "signature": "export function computeQsh( method: HttpMethod, path: string, query?: Readonly<Record<string, string | number | boolean …",
       "jsdoc": "Computes the Query String Hash (QSH) per the Atlassian Connect specification."
     },
@@ -4838,7 +4838,7 @@
       "name": "createMiddlewareChain",
       "kind": "function",
       "file": "src/core/middleware.ts",
-      "line": 32,
+      "line": 37,
       "signature": "export function createMiddlewareChain( middlewares: readonly Middleware[], terminal: (options: RequestOptions) => Promis…",
       "jsdoc": "Compose a middleware chain wrapping a terminal request handler. @example ```ts const chain = createMiddlewareChain( [authMiddleware, cacheMiddleware], (o…"
     },
@@ -4886,7 +4886,7 @@
       "name": "fetchRefreshedTokens",
       "kind": "function",
       "file": "src/core/oauth.ts",
-      "line": 291,
+      "line": 294,
       "signature": "export async function fetchRefreshedTokens( config: Pick< OAuthRefreshConfig, 'clientId' | 'clientSecret' | 'tokenEndpoi…",
       "jsdoc": "Calls the token endpoint with the refresh token and returns new {@link OAuthTokens}. Exported for direct use in advanced scenarios (e.g. proactive token refresh)."
     },
@@ -4931,6 +4931,14 @@
       "jsdoc": "Async generator for Jira search pagination (uses 'issues' key). Yields individual items across all pages."
     },
     {
+      "name": "resolveAuthorizationOverride",
+      "kind": "function",
+      "file": "src/core/auth-identity.ts",
+      "line": 112,
+      "signature": "export function resolveAuthorizationOverride(options: RequestOptions): string | undefined",
+      "jsdoc": "Return the `Authorization` value that the middleware chain selected for a request, or `undefined` when the configured `config.auth` applies. @example ```ts import { createMiddlewareChain, resolveAuthorizationOverride } from 'atlas…"
+    },
+    {
       "name": "resolveConfig",
       "kind": "function",
       "file": "src/core/config.ts",
@@ -4942,7 +4950,7 @@
       "name": "signConnectJwt",
       "kind": "function",
       "file": "src/core/connect-jwt.ts",
-      "line": 64,
+      "line": 65,
       "signature": "export function signConnectJwt(config: ConnectJwtConfig, options: RequestOptions): string",
       "jsdoc": "Signs a Connect JWT for the given request options. Exported for testing and advanced scenarios (e.g. signing outside middleware)."
     },
@@ -4958,7 +4966,7 @@
       "name": "verifyConnectAsymmetricJwt",
       "kind": "function",
       "file": "src/core/connect-jwt.ts",
-      "line": 369,
+      "line": 370,
       "signature": "export async function verifyConnectAsymmetricJwt( token: string, options: AsymmetricJwtVerifyOptions, ): Promise<Record<…",
       "jsdoc": "Verifies an inbound Atlassian Connect asymmetric (RS256) JWT and returns its claims. @example ```ts const claims = await verifyConnectAsymmetricJwt(token, { publicKeyResolver…"
     }
@@ -16127,7 +16135,7 @@
         {
           "name": "hashAuthValue",
           "kind": "function",
-          "line": 12,
+          "line": 13,
           "exported": true,
           "signature": "export function hashAuthValue(authValue: string): string",
           "jsdoc": "One-way hash of an `Authorization` value into the short, stable identifier used to partition cache/batch keys (and exposed as {@link RequestOptions.authIdentity}). Uses the first 16 hex chars (64 bits) of SHA-256 — wide enough that accidental collisions vanish in practice, narrow enough to keep keys compact, and one-way so a logging/metrics middleware that persists `RequestOptions` never writes the raw credential."
@@ -16135,76 +16143,57 @@
         {
           "name": "pickAuthorizationHeader",
           "kind": "function",
-          "line": 22,
+          "line": 23,
           "exported": true,
           "signature": "export function pickAuthorizationHeader(headers: RequestOptions['headers']): string | undefined",
           "jsdoc": "Return the effective `Authorization` header value from a plain-object headers map, or `undefined` when none is present. When multiple Authorization-like keys exist, the LAST occurrence in iteration order wins — matching `fetch` last-write-wins semantics for duplicate-key headers."
         },
         {
-          "name": "RedactedAuthorization",
-          "kind": "class",
-          "line": 37,
-          "signature": "class RedactedAuthorization",
-          "jsdoc": "Holds a middleware credential in an ES `#private` field, so `JSON.stringify` prints `{}` and `util.inspect` prints `RedactedAuthorization {}`.",
-          "members": [
-            {
-              "name": "#value",
-              "kind": "property",
-              "line": 38
-            },
-            {
-              "name": "constructor",
-              "kind": "constructor",
-              "line": 39
-            },
-            {
-              "name": "read",
-              "kind": "method",
-              "line": 47
-            }
-          ]
-        },
-        {
-          "name": "AUTHORIZATION_OVERRIDE",
+          "name": "REFERENCE_PREFIX",
           "kind": "variable",
-          "line": 59,
-          "signature": "const AUTHORIZATION_OVERRIDE = Symbol('authorizationOverride');",
-          "jsdoc": "Module-private key of the library's in-chain `Authorization` channel. The key is a symbol, so `JSON.stringify` ignores it. Object spread and rest copy it, so a later middleware that copies the options keeps the credential."
+          "line": 39,
+          "signature": "const REFERENCE_PREFIX = 'atlassian-api-client:authorization-override:';",
+          "jsdoc": "Prefix of the reference that the OAuth refresh and Connect JWT middleware write to `RequestOptions.authorizationOverride` instead of the credential. A reference is not a secret: it only names an entry in the registry below."
         },
         {
-          "name": "WithHiddenOverride",
+          "name": "REGISTRY_KEY",
+          "kind": "variable",
+          "line": 47,
+          "signature": "const REGISTRY_KEY: unique symbol = Symbol.for('atlassian-api-client.authorizationOverrides');",
+          "jsdoc": "Key of the process-wide credential registry. `Symbol.for` gives every installed copy of this package the same key, so a reference that one copy writes resolves in another copy. Each entry is a function that returns the credential, so `util.inspect(globalThis)` shows `[Function]`, not the value."
+        },
+        {
+          "name": "CredentialRegistry",
           "kind": "type",
-          "line": 61,
-          "signature": "type WithHiddenOverride = RequestOptions & { readonly [AUTHORIZATION_OVERRIDE]?: RedactedAuthorization; };"
+          "line": 49,
+          "signature": "type CredentialRegistry = Map<string, () => string>;"
         },
         {
-          "name": "withAuthorizationOverride",
+          "name": "credentialRegistry",
           "kind": "function",
-          "line": 72,
-          "exported": true,
-          "signature": "export function withAuthorizationOverride(options: RequestOptions, value: string): RequestOptions",
-          "jsdoc": "Return a copy of `options` that sends `value` as the `Authorization` header. The OAuth refresh and Connect JWT middleware use this instead of the public `authorizationOverride` string, so a later middleware that logs the options cannot print the credential. The copy has no public `authorizationOverride` key, so a value that a later middleware writes there wins."
+          "line": 51,
+          "signature": "function credentialRegistry(): CredentialRegistry"
         },
         {
-          "name": "readAuthorizationOverride",
+          "name": "nextWithAuthorizationOverride",
           "kind": "function",
-          "line": 87,
+          "line": 69,
           "exported": true,
-          "signature": "export function readAuthorizationOverride(options: RequestOptions): string | undefined",
-          "jsdoc": "Return the in-chain `Authorization` override: the public `authorizationOverride` string when it is defined, else the hidden value, else `undefined`. {@link withAuthorizationOverride} removes the public key, so a defined public value was written after it, and the last writer wins."
+          "signature": "export async function nextWithAuthorizationOverride( options: RequestOptions, value: string, next: (options: RequestOpti…",
+          "jsdoc": "Call `next` with a copy of `options` whose `authorizationOverride` is a new reference to `value`. The registry entry exists only until `next` settles."
         },
         {
-          "name": "stripAuthorizationOverride",
+          "name": "resolveAuthorizationOverride",
           "kind": "function",
-          "line": 99,
+          "line": 112,
           "exported": true,
-          "signature": "export function stripAuthorizationOverride(options: RequestOptions): RequestOptions",
-          "jsdoc": "Return a plain copy of `options` without either override channel. The copy is always new, so a getter or `Proxy` on the caller's object is read only once and cannot return a different value later."
+          "signature": "export function resolveAuthorizationOverride(options: RequestOptions): string | undefined",
+          "jsdoc": "Return the `Authorization` value that the middleware chain selected for a request, or `undefined` when the configured `config.auth` applies. @example ```ts import { createMiddlewareChain, resolveAuthorizationOverride } from 'atlas…"
         },
         {
           "name": "resolveAuthIdentity",
           "kind": "function",
-          "line": 120,
+          "line": 136,
           "exported": true,
           "signature": "export function resolveAuthIdentity(opts: RequestOptions): string",
           "jsdoc": "Derive the stable identifier that cache/batch keys partition on, so a shared transport never serves or coalesces one tenant's authenticated response for another's request."
@@ -16212,7 +16201,7 @@
         {
           "name": "serializeQueryKey",
           "kind": "function",
-          "line": 134,
+          "line": 150,
           "exported": true,
           "signature": "export function serializeQueryKey(query: RequestOptions['query']): string",
           "jsdoc": "Canonical query-string serialization for cache/batch keys: `undefined` values dropped, keys sorted, both key and value URI-encoded. Returns the empty string when there is no query, otherwise a leading `?`."
@@ -16220,13 +16209,14 @@
         {
           "name": "appendQueryKey",
           "kind": "function",
-          "line": 153,
+          "line": 169,
           "exported": true,
           "signature": "export function appendQueryKey(path: string, query: RequestOptions['query']): string",
           "jsdoc": "Append the canonical query-key serialization to a path that may itself already carry a query string (e.g. resources that embed repeated query params like `?accountId=a&accountId=b` directly into the path because the transport's `query` map collapses duplicate keys). Yields exactly one `?` separator regardless of which side holds query params."
         }
       ],
       "imports": [
+        "./errors.js",
         "./types.js",
         "node:crypto"
       ]
@@ -16500,7 +16490,7 @@
         {
           "name": "signConnectJwt",
           "kind": "function",
-          "line": 64,
+          "line": 65,
           "exported": true,
           "signature": "export function signConnectJwt(config: ConnectJwtConfig, options: RequestOptions): string",
           "jsdoc": "Signs a Connect JWT for the given request options. Exported for testing and advanced scenarios (e.g. signing outside middleware)."
@@ -16508,7 +16498,7 @@
         {
           "name": "computeQsh",
           "kind": "function",
-          "line": 97,
+          "line": 98,
           "exported": true,
           "signature": "export function computeQsh( method: HttpMethod, path: string, query?: Readonly<Record<string, string | number | boolean …",
           "jsdoc": "Computes the Query String Hash (QSH) per the Atlassian Connect specification."
@@ -16516,61 +16506,61 @@
         {
           "name": "canonicalizePath",
           "kind": "function",
-          "line": 185,
+          "line": 186,
           "signature": "function canonicalizePath(pathWithoutQuery: string, contextPath?: string): string",
           "jsdoc": "Canonical URI per the Connect spec: discard protocol/server/port (every resource passes an absolute `https://host/rest/...` URL as `path`) and the product context path, strip a trailing `/` unless it is the only character, never emit an empty path, and percent-encode `&`."
         },
         {
           "name": "normalizeContextPath",
           "kind": "function",
-          "line": 200,
+          "line": 201,
           "signature": "function normalizeContextPath(contextPath: string | undefined): string",
           "jsdoc": "`'wiki'` / `'/wiki/'` / `'https://site.atlassian.net/wiki'` → `'/wiki'`; `undefined` / `''` / `'/'` → `''` (nothing to strip)."
         },
         {
           "name": "ABSOLUTE_URL_RE",
           "kind": "variable",
-          "line": 209,
+          "line": 210,
           "signature": "const ABSOLUTE_URL_RE = /^https?:\\/\\//i;"
         },
         {
           "name": "parsePathname",
           "kind": "function",
-          "line": 212,
+          "line": 213,
           "signature": "function parsePathname(url: string, what: 'path' | 'contextPath'): string",
           "jsdoc": "`URL.pathname` of an absolute URL, in the taxonomy; the raw value is never echoed."
         },
         {
           "name": "encodeRfc3986",
           "kind": "function",
-          "line": 232,
+          "line": 233,
           "signature": "function encodeRfc3986(value: string): string",
           "jsdoc": "RFC-3986 percent-encoding for QSH canonicalization."
         },
         {
           "name": "base64UrlEncode",
           "kind": "function",
-          "line": 239,
+          "line": 240,
           "signature": "function base64UrlEncode(input: string): string"
         },
         {
           "name": "ASYMMETRIC_JWT_ALG",
           "kind": "variable",
-          "line": 254,
+          "line": 255,
           "signature": "const ASYMMETRIC_JWT_ALG = 'RS256';",
           "jsdoc": "The only signing algorithm Atlassian uses for asymmetric Connect JWTs."
         },
         {
           "name": "DEFAULT_MAX_CLOCK_SKEW_SECONDS",
           "kind": "variable",
-          "line": 264,
+          "line": 265,
           "signature": "const DEFAULT_MAX_CLOCK_SKEW_SECONDS = 30;",
           "jsdoc": "Default clock-skew tolerance (seconds) for `exp`/`iat`/`nbf` validation."
         },
         {
           "name": "AsymmetricJwtVerifyOptions",
           "kind": "interface",
-          "line": 274,
+          "line": 275,
           "exported": true,
           "signature": "export interface AsymmetricJwtVerifyOptions { readonly publicKey?: string | KeyObject; readonly publicKeyResolver?: (kid…",
           "jsdoc": "Options for {@link verifyConnectAsymmetricJwt}."
@@ -16578,7 +16568,7 @@
         {
           "name": "verifyConnectAsymmetricJwt",
           "kind": "function",
-          "line": 369,
+          "line": 370,
           "exported": true,
           "signature": "export async function verifyConnectAsymmetricJwt( token: string, options: AsymmetricJwtVerifyOptions, ): Promise<Record<…",
           "jsdoc": "Verifies an inbound Atlassian Connect asymmetric (RS256) JWT and returns its claims. @example ```ts const claims = await verifyConnectAsymmetricJwt(token, { publicKeyResolver…"
@@ -16586,77 +16576,77 @@
         {
           "name": "parseJwt",
           "kind": "function",
-          "line": 426,
+          "line": 427,
           "signature": "function parseJwt(token: string): { signingInput: string; header: Record<string, unknown>; payload: Record<string, unkno…",
           "jsdoc": "Splits and decodes a compact JWT, validating structural shape only."
         },
         {
           "name": "decodeJsonSegment",
           "kind": "function",
-          "line": 448,
+          "line": 449,
           "signature": "function decodeJsonSegment(segment: string, name: string): Record<string, unknown>",
           "jsdoc": "Decodes a base64url JSON segment into a plain object."
         },
         {
           "name": "resolvePublicKey",
           "kind": "function",
-          "line": 462,
+          "line": 463,
           "signature": "async function resolvePublicKey( header: Record<string, unknown>, options: AsymmetricJwtVerifyOptions, ): Promise<KeyObj…",
           "jsdoc": "Resolves the verifying key from an injected key or the caller's resolver."
         },
         {
           "name": "toKeyObject",
           "kind": "function",
-          "line": 489,
+          "line": 490,
           "signature": "function toKeyObject(key: string | KeyObject): KeyObject",
           "jsdoc": "Normalises a PEM string or KeyObject into a public KeyObject."
         },
         {
           "name": "validateTimeClaims",
           "kind": "function",
-          "line": 501,
+          "line": 502,
           "signature": "function validateTimeClaims( payload: Record<string, unknown>, options: AsymmetricJwtVerifyOptions, ): void",
           "jsdoc": "Validates `exp`, `iat`, and `nbf` with the configured clock-skew tolerance."
         },
         {
           "name": "resolveClockSkewSeconds",
           "kind": "function",
-          "line": 537,
+          "line": 538,
           "signature": "function resolveClockSkewSeconds(value: number | undefined): number",
           "jsdoc": "Resolve the clock-skew tolerance, rejecting values that would silently disable the time checks entirely."
         },
         {
           "name": "MAX_CLOCK_SKEW_CEILING_SECONDS",
           "kind": "variable",
-          "line": 558,
+          "line": 559,
           "signature": "const MAX_CLOCK_SKEW_CEILING_SECONDS = 86_400;",
           "jsdoc": "One day. Beyond this, `exp + skew` outruns any plausible clock difference."
         },
         {
           "name": "readNumericClaim",
           "kind": "function",
-          "line": 561,
+          "line": 562,
           "signature": "function readNumericClaim(payload: Record<string, unknown>, name: string): number | undefined",
           "jsdoc": "Reads a numeric claim, rejecting present-but-non-numeric values."
         },
         {
           "name": "validateIssuer",
           "kind": "function",
-          "line": 571,
+          "line": 572,
           "signature": "function validateIssuer( payload: Record<string, unknown>, options: AsymmetricJwtVerifyOptions, ): void",
           "jsdoc": "Enforces `iss === options.issuer` when an expected issuer is configured."
         },
         {
           "name": "validateAudience",
           "kind": "function",
-          "line": 582,
+          "line": 583,
           "signature": "function validateAudience( payload: Record<string, unknown>, options: AsymmetricJwtVerifyOptions, ): void",
           "jsdoc": "Enforces `options.audience` membership in `aud` (string or string[])."
         },
         {
           "name": "validateQsh",
           "kind": "function",
-          "line": 598,
+          "line": 599,
           "signature": "function validateQsh(payload: Record<string, unknown>, options: AsymmetricJwtVerifyOptions): void",
           "jsdoc": "Enforces the `qsh` claim against the expected hash when configured."
         }
@@ -16992,6 +16982,17 @@
     {
       "path": "src/core/index.ts",
       "reExports": [
+        {
+          "kind": "named",
+          "from": "./auth-identity.js",
+          "typeOnly": false,
+          "names": [
+            {
+              "exported": "resolveAuthorizationOverride",
+              "original": "resolveAuthorizationOverride"
+            }
+          ]
+        },
         {
           "kind": "named",
           "from": "./auth.js",
@@ -17507,7 +17508,7 @@
         {
           "name": "createMiddlewareChain",
           "kind": "function",
-          "line": 32,
+          "line": 37,
           "exported": true,
           "signature": "export function createMiddlewareChain( middlewares: readonly Middleware[], terminal: (options: RequestOptions) => Promis…",
           "jsdoc": "Compose a middleware chain wrapping a terminal request handler. @example ```ts const chain = createMiddlewareChain( [authMiddleware, cacheMiddleware], (o…"
@@ -17574,20 +17575,20 @@
         {
           "name": "resolveNonNegFiniteNumber",
           "kind": "function",
-          "line": 263,
+          "line": 261,
           "signature": "function resolveNonNegFiniteNumber( value: number | undefined, dflt: number, fieldName: string, ): number",
           "jsdoc": "Validate a non-negative finite number field on `OAuthRefreshConfig`. Used for both `retryJitterMs` and `failureCooldownMs`. `0` is accepted and documented to disable the feature; negatives, `NaN`, `Infinity`, and non-number runtime values produce `ValidationError`."
         },
         {
-          "name": "injectBearerToken",
+          "name": "sendWithBearerToken",
           "kind": "function",
-          "line": 275,
-          "signature": "function injectBearerToken(options: RequestOptions, token: string): RequestOptions"
+          "line": 273,
+          "signature": "function sendWithBearerToken( options: RequestOptions, token: string, next: (options: RequestOptions) => Promise<ApiResp…"
         },
         {
           "name": "fetchRefreshedTokens",
           "kind": "function",
-          "line": 291,
+          "line": 294,
           "exported": true,
           "signature": "export async function fetchRefreshedTokens( config: Pick< OAuthRefreshConfig, 'clientId' | 'clientSecret' | 'tokenEndpoi…",
           "jsdoc": "Calls the token endpoint with the refresh token and returns new {@link OAuthTokens}. Exported for direct use in advanced scenarios (e.g. proactive token refresh)."
@@ -17595,52 +17596,52 @@
         {
           "name": "validateTokenEndpoint",
           "kind": "function",
-          "line": 395,
+          "line": 398,
           "signature": "function validateTokenEndpoint( configured: string | undefined, allowedHosts: readonly string[] | undefined, ): string",
           "jsdoc": "Validate a `tokenEndpoint` URL against the host allowlist and return the normalised endpoint string for downstream `fetch` calls. Throws `ValidationError` on: - malformed URL - non-HTTPS scheme - host not on the allowlist - embedded userinfo (`https://user:pw@host/…`) - a non-default port (`https://host:8443/…`) - invalid `allowedTokenEndpointHosts` entries (empty, port-bearing, whitespace, slashes, control chars, IPv6 brackets)"
         },
         {
           "name": "validateAllowedTokenEndpointHosts",
           "kind": "function",
-          "line": 470,
+          "line": 473,
           "signature": "function validateAllowedTokenEndpointHosts(hosts: readonly string[]): readonly string[]",
           "jsdoc": "Validate user-supplied `allowedTokenEndpointHosts`. Same rules as `validateAllowedHosts` in config.ts (non-empty array, non-empty strings, no port, no whitespace/slashes/control chars/IPv6 brackets). The shared character policy lives in `isInvalidBareHostChar` (atlassian-hosts.ts) so both validators stay in sync."
         },
         {
           "name": "SECRET_KEY",
           "kind": "variable",
-          "line": 504,
+          "line": 507,
           "signature": "const SECRET_KEY = String.raw`[\\w-]*(?:token|secret)`;"
         },
         {
           "name": "JSON_SECRET_FIELD",
           "kind": "variable",
-          "line": 506,
+          "line": 509,
           "signature": "const JSON_SECRET_FIELD = new RegExp( String.raw`(\"${SECRET_KEY}\"\\s*:\\s*\")(?:[^\"\\\\]|\\\\[\\s\\S])*`, 'gi', );"
         },
         {
           "name": "FORM_SECRET_FIELD",
           "kind": "variable",
-          "line": 512,
+          "line": 515,
           "signature": "const FORM_SECRET_FIELD = new RegExp(String.raw`(?<![\\w-])(${SECRET_KEY}=)[^&\\s\"]*`, 'gi');"
         },
         {
           "name": "OAUTH_ERROR_FIELDS",
           "kind": "variable",
-          "line": 515,
+          "line": 518,
           "signature": "const OAUTH_ERROR_FIELDS: ReadonlySet<string> = new Set([ 'error', 'error_description', 'error_uri', ]);"
         },
         {
           "name": "formatBodySnippet",
           "kind": "function",
-          "line": 532,
+          "line": 535,
           "signature": "function formatBodySnippet(raw: string, body: unknown, secrets: readonly string[]): string",
           "jsdoc": "Build a short diagnostic snippet of a token-endpoint response body, so that a credential the endpoint echoes never reaches an error message or log."
         },
         {
           "name": "knownSecretPattern",
           "kind": "function",
-          "line": 565,
+          "line": 568,
           "signature": "function knownSecretPattern(secrets: readonly unknown[]): RegExp | undefined",
           "jsdoc": "One case-insensitive pattern for every form of every known secret, longest first, so that a secret that contains another is replaced whole. Returns `undefined` when there is no non-empty string secret (untyped JS callers can pass other values)."
         }
@@ -18528,13 +18529,20 @@
         {
           "name": "sendRequest",
           "kind": "variable",
-          "line": 40,
+          "line": 36,
           "signature": "const sendRequest = Symbol('HttpTransport.sendRequest');"
+        },
+        {
+          "name": "stripCallerAuthorizationOverride",
+          "kind": "function",
+          "line": 52,
+          "signature": "function stripCallerAuthorizationOverride(options: RequestOptions): RequestOptions",
+          "jsdoc": "Drop a caller-supplied `authorizationOverride` at the request boundary."
         },
         {
           "name": "HttpTransport",
           "kind": "class",
-          "line": 66,
+          "line": 81,
           "exported": true,
           "signature": "export class HttpTransport implements Transport",
           "jsdoc": "HTTP transport using native `fetch` with auth, retry, rate-limit, and timeout support. @example ```ts import { HttpTransport, resolveConfig } from 'atlassian-api-client'; const…",
@@ -18542,137 +18550,137 @@
             {
               "name": "#config",
               "kind": "property",
-              "line": 67
+              "line": 82
             },
             {
               "name": "authProvider",
               "kind": "property",
-              "line": 68
+              "line": 83
             },
             {
               "name": "#authHeaders",
               "kind": "property",
-              "line": 78
+              "line": 93
             },
             {
               "name": "authIdentity",
               "kind": "property",
-              "line": 86
+              "line": 101
             },
             {
               "name": "requestHandler",
               "kind": "property",
-              "line": 87
+              "line": 102
             },
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 95
+              "line": 110
             },
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 103
+              "line": 118
             },
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 104
+              "line": 119
             },
             {
               "name": "request",
               "kind": "method",
-              "line": 149
+              "line": 164
             },
             {
               "name": "[sendRequest]",
               "kind": "property",
-              "line": 155
+              "line": 170
             },
             {
               "name": "injectAuthIdentity",
               "kind": "method",
-              "line": 246
+              "line": 259
             },
             {
               "name": "executeFetch",
               "kind": "method",
-              "line": 266
+              "line": 279
             }
           ]
         },
         {
           "name": "isHeadersLike",
           "kind": "function",
-          "line": 439,
+          "line": 452,
           "signature": "function isHeadersLike(value: unknown): value is Headers",
           "jsdoc": "Duck-type check for a WHATWG `Headers`-shaped value."
         },
         {
           "name": "DEFAULT_INBOUND_HEADERS",
           "kind": "variable",
-          "line": 461,
+          "line": 474,
           "signature": "const DEFAULT_INBOUND_HEADERS: readonly string[] = ['X-AREQUESTID', 'X-Request-Id'];",
           "jsdoc": "Default inbound response headers to check for a server-assigned request id (B011). `X-AREQUESTID` is Atlassian's actual header; `X-Request-Id` is the conventional RFC draft / de-facto standard fallback."
         },
         {
           "name": "captureRequestId",
           "kind": "function",
-          "line": 468,
+          "line": 481,
           "signature": "function captureRequestId(headers: Headers, candidates: readonly string[]): string | undefined",
           "jsdoc": "Read the first matching request-id header from the response. Returns the header value, or `undefined` when none of the candidates are present. `Headers.get()` is case-insensitive per the WHATWG Fetch spec."
         },
         {
           "name": "parseBodyWithTimeoutHandling",
           "kind": "function",
-          "line": 476,
+          "line": 489,
           "signature": "async function parseBodyWithTimeoutHandling<T>( parse: () => Promise<T>, timeoutSignal: AbortSignal, timeoutMs: number, …"
         },
         {
           "name": "toNetworkError",
           "kind": "function",
-          "line": 508,
+          "line": 521,
           "signature": "function toNetworkError(error: unknown, retryable: boolean): NetworkError",
           "jsdoc": "Wrap a transport failure in the taxonomy. {@link isTransportFailure} also matches non-Error shapes (a thrown `{ code }` object), whose `.message` is `undefined`, so fall back to the class default and keep the original value as `cause` without claiming it is an Error."
         },
         {
           "name": "REDIRECT_STATUSES",
           "kind": "variable",
-          "line": 514,
+          "line": 527,
           "signature": "const REDIRECT_STATUSES: ReadonlySet<number> = new Set([301, 302, 303, 307, 308]);",
           "jsdoc": "Statuses `fetch` treats as redirects (WHATWG Fetch \"redirect status\")."
         },
         {
           "name": "MAX_REDIRECTS",
           "kind": "variable",
-          "line": 517,
+          "line": 530,
           "signature": "const MAX_REDIRECTS = 20;",
           "jsdoc": "The hop limit `fetch` applies when it follows redirects itself."
         },
         {
           "name": "OutgoingRequest",
           "kind": "interface",
-          "line": 519,
+          "line": 532,
           "signature": "interface OutgoingRequest { readonly method: string; readonly headers: Record<string, string>; readonly body: FormData |…"
         },
         {
           "name": "fetchWithCheckedRedirects",
           "kind": "function",
-          "line": 558,
+          "line": 571,
           "signature": "async function fetchWithCheckedRedirects( doFetch: typeof fetch, url: string, request: OutgoingRequest, allowedHosts: re…",
           "jsdoc": "Send a request, following a redirect only to a target the request could have been sent to directly."
         },
         {
           "name": "computeAuthIdentity",
           "kind": "function",
-          "line": 640,
+          "line": 653,
           "signature": "function computeAuthIdentity(authHeaders: Record<string, string>): string",
           "jsdoc": "Hash the auth provider's `Authorization` header value into the short stable identifier exposed as {@link RequestOptions.authIdentity}. Uses the first 16 hex chars (64 bits) of SHA-256 — wide enough for accidental collisions to vanish in practice, narrow enough to keep cache/batch keys compact, and one-way so a logging/metrics middleware that persists `RequestOptions` never accidentally writes the credential to a log sink."
         },
         {
           "name": "assertOverrideBaseUrl",
           "kind": "function",
-          "line": 659,
+          "line": 672,
           "signature": "function assertOverrideBaseUrl(baseUrl: string, allowedHosts: readonly string[]): void",
           "jsdoc": "Validate a baseUrl override (deprecated constructor overload) against the same `allowedHosts` policy `resolveConfig` already applied to `config.baseUrl`. Without this, an override could silently relocate every relative-path request to a foreign host with the configured `Authorization` header attached. PR review of round 3."
         }
@@ -20367,6 +20375,10 @@
             {
               "exported": "createMiddlewareChain",
               "original": "createMiddlewareChain"
+            },
+            {
+              "exported": "resolveAuthorizationOverride",
+              "original": "resolveAuthorizationOverride"
             }
           ]
         },
