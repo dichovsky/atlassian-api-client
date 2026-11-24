@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "5.0.0"
   },
-  "sourceHash": "cf0c6a7999d85b89dc01195df82851e82c691d48db2b5beb3e1b7b3a3c2e748a",
+  "sourceHash": "4fe84575544629d724948fc49b473f98205b97af51fa196834457c905eabf96f",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -17578,7 +17578,7 @@
         {
           "name": "knownSecretPattern",
           "kind": "function",
-          "line": 565,
+          "line": 567,
           "signature": "function knownSecretPattern(secrets: readonly unknown[]): RegExp | undefined",
           "jsdoc": "One case-insensitive pattern for every form of every known secret, longest first, so that a secret that contains another is replaced whole. Returns `undefined` when there is no non-empty string secret (untyped JS callers can pass other values)."
         }

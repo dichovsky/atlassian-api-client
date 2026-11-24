@@ -800,6 +800,40 @@ describe('fetchRefreshedTokens', () => {
       expect(message).toContain('oops');
     });
 
+    it('redacts a known secret that re-serializing a kept value rebuilds', async () => {
+      // JSON.parse turns the raw echo `\\"` into `"`; JSON.stringify turns it back.
+      await messageFor(
+        { ok: false, status: 400, text: String.raw`{"error_description":"bad CS_live\"q"}` },
+        String.raw`CS_live\"q`,
+      );
+    });
+
+    it('redacts the \\/ form of a known secret in a body that is not JSON', async () => {
+      await messageFor(
+        { ok: false, status: 500, text: String.raw`oops CS_live\/x is bad` },
+        'CS_live/x',
+      );
+    });
+
+    it('replaces a secret that starts with the other secret whole', async () => {
+      const message = await messageFor(
+        { ok: false, status: 400, text: `secret is ${RT}yy` },
+        `${RT}yy`,
+      );
+      expect(message).toBe('Token refresh failed with HTTP 400: secret is ***');
+    });
+
+    it('redacts a known secret used as a JSON key', async () => {
+      const message = await messageFor({
+        ok: false,
+        status: 400,
+        text: JSON.stringify({ [RT]: true, error: 'invalid_grant' }),
+      });
+      expect(message).toBe(
+        'Token refresh failed with HTTP 400: {"***":"***","error":"invalid_grant"}',
+      );
+    });
+
     it('leaves the snippet intact when no secret is a non-empty string', async () => {
       // Untyped JS callers can pass a non-string clientSecret.
       const message = await messageFor(

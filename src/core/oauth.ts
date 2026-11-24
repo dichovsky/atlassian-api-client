@@ -551,6 +551,8 @@ function formatBodySnippet(raw: string, body: unknown, secrets: readonly string[
   } else {
     shown = '***';
   }
+  // Again on the output: JSON.stringify can rebuild a secret that holds `\` or `"`.
+  if (knownSecret !== undefined) shown = shown.replace(knownSecret, '***');
   const trimmed = shown.trim();
   if (trimmed.length <= 200) return trimmed;
   return trimmed.slice(0, 200) + '…';
