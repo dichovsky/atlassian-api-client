@@ -76,15 +76,27 @@ function validateConfig(config: ClientConfig): void {
     throw new ValidationError('baseUrl is required');
   }
 
+  // Never echo the raw `baseUrl`: a pasted URL may carry userinfo or a query
+  // token, and the CLI prints these messages to stderr. Same policy as
+  // `assertOverrideBaseUrl` (transport.ts) and `validateTokenEndpoint` (oauth.ts).
   let parsedUrl: URL;
   try {
     parsedUrl = new URL(config.baseUrl);
   } catch {
-    throw new ValidationError(`baseUrl is not a valid URL: ${config.baseUrl}`);
+    throw new ValidationError('baseUrl is not a valid URL: <unparseable>');
+  }
+  const safeOrigin = `${parsedUrl.protocol}//${parsedUrl.hostname}`;
+
+  // `https://email:TOKEN@host` would otherwise put the credential into every
+  // resource's `baseUrl` and into `fetch`'s TypeError, which echoes the URL.
+  if (parsedUrl.username !== '' || parsedUrl.password !== '') {
+    throw new ValidationError(
+      `baseUrl must not embed userinfo credentials: ${safeOrigin}. Pass credentials via auth instead.`,
+    );
   }
 
   if (parsedUrl.protocol !== 'https:') {
-    throw new ValidationError(`baseUrl must use HTTPS: ${config.baseUrl}`);
+    throw new ValidationError(`baseUrl must use HTTPS: ${safeOrigin}`);
   }
 
   // PR review (round 4): `buildUrl` rejects any resolved URL whose `URL.port`

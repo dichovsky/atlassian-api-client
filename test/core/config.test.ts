@@ -88,7 +88,50 @@ describe('resolveConfig', () => {
         ValidationError,
       );
       expect(() => resolveConfig({ ...validBasicConfig, baseUrl: 'not-a-url' })).toThrow(
-        'baseUrl is not a valid URL: not-a-url',
+        'baseUrl is not a valid URL: <unparseable>',
+      );
+    });
+
+    // The messages below reach stderr in the CLI and are commonly logged, so a
+    // credential pasted into baseUrl must never be echoed back.
+    const messageOf = (baseUrl: string): string => {
+      try {
+        resolveConfig({ ...validBasicConfig, baseUrl });
+      } catch (err) {
+        expect(err).toBeInstanceOf(ValidationError);
+        return (err as Error).message;
+      }
+      throw new Error(`expected resolveConfig to reject ${baseUrl}`);
+    };
+
+    it('rejects userinfo credentials in baseUrl without echoing them', () => {
+      const message = messageOf('https://me%40example.com:S3CRET_TOKEN@mycompany.atlassian.net');
+      expect(message).toBe(
+        'baseUrl must not embed userinfo credentials: https://mycompany.atlassian.net. ' +
+          'Pass credentials via auth instead.',
+      );
+    });
+
+    it('rejects a username-only userinfo segment in baseUrl', () => {
+      expect(messageOf('https://someone@mycompany.atlassian.net')).toMatch(/userinfo/);
+    });
+
+    it('does not echo an unparseable baseUrl that carries a credential', () => {
+      const message = messageOf('https://u:S3CRET_TOKEN@exa mple.com');
+      expect(message).not.toContain('S3CRET_TOKEN');
+      expect(message).toContain('<unparseable>');
+    });
+
+    it('echoes only scheme://host when baseUrl is not HTTPS', () => {
+      const message = messageOf('http://u:S3CRET_TOKEN@mycompany.atlassian.net/?token=Q_SECRET');
+      expect(message).not.toContain('S3CRET_TOKEN');
+      expect(message).not.toContain('Q_SECRET');
+      expect(message).toContain('http://mycompany.atlassian.net');
+    });
+
+    it('echoes only scheme://host in the HTTPS error for a plain http baseUrl', () => {
+      expect(messageOf('http://mycompany.atlassian.net/path?token=Q_SECRET')).toBe(
+        'baseUrl must use HTTPS: http://mycompany.atlassian.net',
       );
     });
 

@@ -1,12 +1,12 @@
 # atlassian-api-client
 
-Typed Node.js/TypeScript clients and CLI for Atlassian Cloud APIs.
+`atlassian-api-client` contains Node.js clients with TypeScript types, and a CLI, for the Atlassian Cloud APIs. The clients and the CLI send requests to these APIs:
 
 - **Confluence Cloud REST API v2** — Pages, Spaces, Blog Posts, Comments, Attachments, Labels, Content Properties, Custom Content, Whiteboards, Tasks, Versions
 - **Jira Cloud Platform REST API v3** — Issues, Projects, Search (JQL), Users, workflows, schemes, fields, and administration
 - **Jira Software/Agile and DevOps APIs** — Boards, sprints, epics, enhanced issue pagination and counts, builds, deployments, development information, feature flags, operations, remote links, and security information
 
-Zero runtime dependencies. Uses native `fetch` (Node.js 24+).
+The package has no runtime dependencies. It uses the `fetch` function of Node.js (Node.js 24+).
 
 ## Contents
 
@@ -28,7 +28,7 @@ Zero runtime dependencies. Uses native `fetch` (Node.js 24+).
 npm install atlassian-api-client
 ```
 
-TypeScript projects also need the Node.js declarations for their runtime version, for example `npm install --save-dev @types/node@24` for Node.js 24. Include `"node"` in `compilerOptions.types` if you use TypeScript 6.0 or later, or if your project explicitly lists ambient types.
+A TypeScript project must also have the Node.js type declarations for the Node.js version that it uses. For example, for Node.js 24, run `npm install --save-dev @types/node@24`. If you use TypeScript 6.0 or a subsequent version, put `"node"` in `compilerOptions.types`. Also do this if your project gives a list of its ambient types.
 
 ## Supported Runtimes
 
@@ -36,7 +36,13 @@ TypeScript projects also need the Node.js declarations for their runtime version
 
 ## Use with coding agents
 
-A Claude Code-compatible skill named **`atlassian-api-client-cli`** ships inside this package and teaches coding agents how to drive the `atlas` CLI safely (env-only auth, first-try gotchas, JQL quoting, pagination, output formats).
+This package contains a skill with the name **`atlassian-api-client-cli`**. The skill is compatible with Claude Code. It tells coding agents how to use the `atlas` CLI safely. The skill gives this information:
+
+- Authentication only with environment variables
+- Frequent problems when you use the CLI for the first time
+- Quotation marks in JQL
+- Pagination
+- Output formats
 
 ```bash
 # User-wide install, into ~/.claude/skills/atlassian-api-client-cli
@@ -52,11 +58,11 @@ npx --package atlassian-api-client -- atlas install-skill --print
 npx --package atlassian-api-client -- atlas install-skill --dry-run
 ```
 
-`install-skill` is a top-level utility command with an options-only shape: run it as `atlas install-skill [options]`.
+`install-skill` is a top-level utility command. It accepts only flags, without a resource or a CLI action. Run it as `atlas install-skill [options]`.
 
-If `atlassian-api-client` is already a dependency in your project, the shorter `npx atlas install-skill` form resolves to `node_modules/.bin/atlas` and works the same way. The explicit `--package` form is safer when calling from a clean shell because it pins the source package and won't accidentally resolve an unrelated `atlas` package from the registry.
+If `atlassian-api-client` is a dependency of your project, you can use the shorter command `npx atlas install-skill`. This command resolves to `node_modules/.bin/atlas` and gives the same result. If you run the command in a directory where `atlassian-api-client` is not a dependency, the command with the `--package` flag is safer. The `--package` flag identifies the source package. Thus, `npx` cannot resolve a different `atlas` package from the registry.
 
-The skill source lives at [`skill/SKILL.md`](skill/SKILL.md) with deeper resource matrices in [`skill/reference/`](skill/reference). It's versioned alongside the npm package: every install stamps the destination `SKILL.md` with the package version it was copied from.
+The source of the skill is in [`skill/SKILL.md`](skill/SKILL.md). The resource tables with more information are in [`skill/reference/`](skill/reference). The skill has the same version as the npm package. Each time `install-skill` installs the skill, it writes the version of the source package into the installed `SKILL.md`.
 
 ## Quick Start
 
@@ -123,7 +129,7 @@ const client = new ConfluenceClient({
 });
 ```
 
-Generate an API token at: https://id.atlassian.com/manage-profile/security/api-tokens
+To make an API token, go to this page: https://id.atlassian.com/manage-profile/security/api-tokens
 
 ### Bearer Auth (OAuth 2.0 / PAT)
 
@@ -139,10 +145,7 @@ const client = new JiraClient({
 
 ### Jira Software on-premises OAuth integrations
 
-Atlassian's system-to-system OAuth proxy is opt-in. Set
-`softwareIntegrationProxy.cloudId` to route Jira Software Development
-Information, Builds, Deployments, and Feature Flag ingestion through
-`api.atlassian.com`:
+By default, the client does not use the system-to-system OAuth integration proxy of Atlassian. To send Jira Software Development Information, Builds, Deployments, and Feature Flag ingestion through `api.atlassian.com`, set `softwareIntegrationProxy.cloudId`:
 
 ```typescript
 const client = new JiraClient({
@@ -172,24 +175,23 @@ await client.bulk.submitBuilds({
 });
 ```
 
-Builds, Deployments, and Feature Flag ingestion use proxy version `0.1`.
-Development Information changes from the site route `/rest/devinfo/0.10` to the
-proxy route `/jira/devinfo/0.1/cloud/{cloudId}`. In particular,
-`bulk.submitFeatureFlags` uses
-`/jira/featureflags/0.1/cloud/{cloudId}/bulk`. Deployment gating-status is not
-available through the integration proxy, so that request remains on the tenant
-`/rest/deployments/0.1` route. Feature Flag lookup/deletion and every other Jira
-resource continue to use `baseUrl`. The option requires bearer auth and does not
-activate merely because bearer auth is configured. The built-in transport
-authorizes exactly `api.atlassian.com` in addition to the existing
-`allowedHosts`; custom injected transports receive the fully-qualified proxy
-URLs and remain responsible for their own credential-boundary enforcement.
+With this option, the client uses these routes:
 
-See Atlassian's [guide to integrating Jira Software Cloud with on-premises tools](https://developer.atlassian.com/cloud/jira/software/integrate-jsw-cloud-with-onpremises-tools/).
+- Builds, Deployments, and Feature Flag ingestion use the proxy version `0.1`.
+- Development Information changes from the site route `/rest/devinfo/0.10` to the proxy route `/jira/devinfo/0.1/cloud/{cloudId}`.
+- `bulk.submitFeatureFlags` uses `/jira/featureflags/0.1/cloud/{cloudId}/bulk`.
+- Deployment gating-status is not available through the integration proxy. Thus, that request stays on the tenant route `/rest/deployments/0.1`.
+- The requests that get or delete Feature Flags continue to use `baseUrl`. All other Jira resources also continue to use `baseUrl`.
+
+Bearer authentication is necessary for this option. But bearer authentication without `softwareIntegrationProxy.cloudId` does not make the client use the integration proxy. The default transport adds only the host `api.atlassian.com` to the configured `allowedHosts`. A custom transport gets the fully-qualified proxy URLs.
+
+If you use a custom transport, make sure that it sends credentials only to the correct hosts.
+
+For more information, refer to the Atlassian [guide to integrating Jira Software Cloud with on-premises tools](https://developer.atlassian.com/cloud/jira/software/integrate-jsw-cloud-with-onpremises-tools/).
 
 ### Self-hosted / non-Atlassian baseUrl
 
-By default, only baseUrls whose host ends in `.atlassian.{net,com}`, `.jira-dev.com`, or `.jira.com` are accepted — the transport refuses to send the configured `Authorization` header to any other host. For self-hosted Jira / Confluence or a reverse proxy in front of Atlassian, pass `allowedHosts` (bare hostnames, no port) to opt in:
+By default, the client accepts a `baseUrl` only if the last part of its host is `.atlassian.{net,com}`, `.jira-dev.com`, or `.jira.com`. The transport does not send the configured `Authorization` header to a different host. If you use a self-hosted Jira or Confluence, or a reverse proxy that sends requests to Atlassian, set `allowedHosts` (only hostnames, without ports):
 
 ```typescript
 const client = new JiraClient({
@@ -199,7 +201,7 @@ const client = new JiraClient({
 });
 ```
 
-The list must include the `baseUrl` host itself; resource paths that resolve to a host outside the list throw `ValidationError` before any HTTP call is made.
+The list must include the host of `baseUrl`. If a resource path resolves to a host that is not in the list, the request throws `ValidationError` before the transport sends it.
 
 ## Pagination
 
@@ -245,7 +247,7 @@ do {
 } while (nextPageToken !== undefined);
 ```
 
-The current Jira search endpoint (`/rest/api/3/search/jql`) is token-paginated and has no async-iterator helper. The legacy `search`, `searchGet` and `searchAll` methods target `/rest/api/3/search`, which Atlassian is removing, and are marked `@deprecated`.
+The new Jira search endpoint (`/rest/api/3/search/jql`) uses cursor pagination. The SDK does not have an async iterator for this endpoint. The previous resource methods `search`, `searchGet`, and `searchAll` send requests to `/rest/api/3/search`. Atlassian will remove that endpoint. The SDK identifies these resource methods as `@deprecated`.
 
 ## Error Handling
 
@@ -285,13 +287,35 @@ const client = new JiraClient({
 });
 ```
 
-Retries use exponential backoff with jitter. Retryable: 429, 500, 502, 503, 504, and transient network errors (connection reset or refused, DNS failure, connect timeout, socket closed; for GET also a response-headers or body timeout). A write (POST, PUT, PATCH, DELETE) is not sent again in these cases, where the server may already have applied it: its success response is cut off mid-body, its response headers time out, or anything fails on the GET that follows its 303 (or a POST's 301/302). A write answered 500, 502, 503 or 504, or whose connection fails before any response (connection reset, socket closed), is still retried as in 4.0.0, so the server may receive it more than once. Client-side `fetch` argument errors, TLS errors, the request timeout (`TimeoutError`) and refused redirects are not retried.
+The client uses exponential backoff with jitter between attempts.
 
-GET requests follow redirects natively. A POST, PUT, PATCH or DELETE is sent with `redirect: 'manual'`, and the client follows its redirect only to an `https://` URL on the default port, whose host passes `allowedHosts`, with no username or password. A refused 303 (or a POST's 301/302) throws `HttpError` with the 3xx `status` and the `ValidationError` as `cause`: the server may already have applied the write, so check its state before sending it again. A refused 307/308 (or a 301/302 on PUT, PATCH or DELETE) throws `ValidationError`, and nothing was applied. A custom `config.fetch` must honour `RequestInit.redirect`.
+Retryable: 429, 500, 502, 503, 504, and transient network errors (connection reset or refused, DNS failure, connect timeout, socket closed, and for GET also a response-headers or body timeout).
+
+This information is applicable to a write request (POST, PUT, PATCH, DELETE):
+
+- The client does not send the write request again in these conditions: its success response is cut off mid-body, its response headers time out, or anything fails on the GET that follows its 303 (or a POST's 301/302). In these conditions, the server possibly made the changes of the write request.
+- A write answered 500, 502, 503 or 504 is still retried as in 4.0.0, so the server may receive it more than once.
+- If the connection of a write request fails before a response (connection reset, socket closed), the client also retries the write request, as in 4.0.0. Thus, the server can get the write request more than one time.
+
+Client-side `fetch` argument errors, TLS errors, the request timeout (`TimeoutError`) and refused redirects are not retried.
+
+GET requests follow redirects natively. A POST, PUT, PATCH or DELETE request is sent with `redirect: 'manual'`. The client follows the redirect of a write request only to a URL that agrees with all these conditions:
+
+- The URL starts with `https://`.
+- The URL uses the default port.
+- `allowedHosts` accepts the host of the URL.
+- The URL does not contain a username or a password.
+
+These are the results of a refused redirect:
+
+- A refused 303 (or a POST's 301/302) throws `HttpError` with the 3xx `status` and the `ValidationError` as `cause`. The server possibly made the changes of the write request. Before you send the write request again, find if the server made these changes.
+- A refused 307/308 (or a 301/302 on PUT, PATCH or DELETE) throws `ValidationError`. The server did not make changes.
+
+A custom `config.fetch` must honour `RequestInit.redirect`.
 
 ## Response Body Size Cap
 
-`ClientConfig.maxResponseBytes` (default: unset, no cap) bounds the size of any single buffered response body the transport will materialise. When a body exceeds the cap, the request throws `ResponseTooLargeError` (`code: 'RESPONSE_TOO_LARGE_ERROR'`) instead of loading it into memory.
+`ClientConfig.maxResponseBytes` (default: not set, no cap) sets the maximum number of bytes in one buffered response body that the transport reads. If a response body is larger than the cap, the request throws `ResponseTooLargeError` (`code: 'RESPONSE_TOO_LARGE_ERROR'`). The transport does not read all of that body into memory.
 
 ```typescript
 import { ConfluenceClient, ResponseTooLargeError } from 'atlassian-api-client';
@@ -311,11 +335,21 @@ try {
 }
 ```
 
-Enforcement applies to `responseType: 'json'` and `'arrayBuffer'` AND to the error-response body parsed for error-message extraction — so a misconfigured upstream returning a multi-gigabyte 5xx body cannot exhaust the Node heap on a single request. `responseType: 'stream'` is exempt by design: the caller owns drain/abort of the `ReadableStream`. Detection combines a `Content-Length` fast-fail with a running stream-read tally that cancels the body mid-read on overflow.
+The transport uses the cap for these response bodies:
+
+- `responseType: 'json'` and `'arrayBuffer'`
+- The error-response body that the client parses to get the error message
+
+Thus, an incorrectly configured server cannot use all of the Node heap with one 5xx response body of many gigabytes. The transport does not use the cap for `responseType: 'stream'`, because the caller controls the `ReadableStream`. The caller must read the stream to the end or abort it.
+
+The transport uses two procedures to find an overflow:
+
+- If the `Content-Length` response header is larger than the cap, the request fails immediately.
+- While the transport reads the body, it counts the bytes. If the count becomes larger than the cap, the transport cancels the body before the end.
 
 ## Middleware
 
-`HttpTransport` accepts an optional middleware chain for cross-cutting concerns.
+`HttpTransport` accepts an optional middleware chain for tasks that are the same for all requests.
 
 ### OAuth 2.0 Token Refresh
 
@@ -340,9 +374,11 @@ const client = new ConfluenceClient({
 });
 ```
 
-Automatically injects `Authorization: Bearer` and silently refreshes on 401 responses.
+The middleware automatically adds `Authorization: Bearer` to each request. After a 401 response, it refreshes the access token automatically. The caller does not have to start the procedure.
 
-**Token endpoint allowlist (security):** `tokenEndpoint` defaults to `https://auth.atlassian.com/oauth/token`, and only that host is accepted by default. The validation happens at `createOAuthRefreshMiddleware` construction time — a misconfigured endpoint (typo, poisoned env var) throws `ValidationError` before any HTTP traffic, instead of POSTing `client_id` + `client_secret` + `refresh_token` to an attacker host on the first 401. For self-hosted IdPs, proxied auth, or staging endpoints, opt in explicitly:
+**Token endpoint allowlist (security):** The default `tokenEndpoint` is `https://auth.atlassian.com/oauth/token`. By default, the middleware accepts only that host. `createOAuthRefreshMiddleware` validates the token endpoint when you call the function. If the token endpoint is incorrect (for example, because you wrote the URL incorrectly, or because an attacker changed an environment variable), the function throws `ValidationError` before the middleware sends HTTP traffic. Thus, the middleware does not send `client_id` + `client_secret` + `refresh_token` to the host of an attacker after the first 401 response.
+
+If you use a self-hosted IdP, a proxy for authentication, or a staging token endpoint, set `allowedTokenEndpointHosts`. The list must contain the host of your token endpoint:
 
 ```typescript
 createOAuthRefreshMiddleware({
@@ -356,9 +392,9 @@ createOAuthRefreshMiddleware({
 });
 ```
 
-This is a separate allowlist from `ClientConfig.allowedHosts` because the OAuth refresh code path calls `fetch` directly and bypasses the transport-side check by design.
+`allowedTokenEndpointHosts` is a different allowlist from `ClientConfig.allowedHosts`. This different allowlist is necessary, because the OAuth refresh code calls `fetch` directly and does not go through the transport. Thus, the refresh code does not use the host allowlist of the transport.
 
-**Herd protection (stability):** when many concurrent requests hit a 401 at the same time, the middleware already deduplicates the token exchange to a single in-flight refresh. Two additional knobs flatten the surrounding failure modes:
+**Herd protection (stability):** If many requests get a 401 response at the same time, the middleware refreshes the access token only one time. Two more options decrease the effect of two related failures:
 
 ```typescript
 createOAuthRefreshMiddleware({
@@ -371,10 +407,10 @@ createOAuthRefreshMiddleware({
 });
 ```
 
-- `retryJitterMs` (default `100`, `0` disables) staggers each waiter's retry after the shared refresh resolves, so N concurrent requests don't dispatch N simultaneous retried API calls and stampede a just-recovered backend or re-trigger upstream rate-limits.
-- `failureCooldownMs` (default `1000`, `0` disables) caches the most recent **refresh failure** for the configured duration. Subsequent 401s during the window replay the cached error (preserving the original `OAuthError` for debugging) without firing a new token-endpoint call — so an auth-server outage no longer becomes an unbounded refresh loop.
+- `retryJitterMs` (default `100`, no jitter if `0`) adds a random interval before the middleware retries each request that waited for the new access token. Thus, if many requests wait for the new access token, the middleware does not retry all of them at the same time. The random interval puts the retries at different times, and it decreases the risk of a new 429 response.
+- `failureCooldownMs` (default `1000`, no cooldown if `0`) keeps the last **failure to refresh the access token** for the configured time. During that time, the middleware throws the kept error again for each 401 response. The error is the same `OAuthError` that the last failed refresh threw. Thus, you can debug the failure. The middleware does not send a new request to the token endpoint. Thus, if the authentication server is not available, the middleware does not try to refresh the access token in a loop without a limit.
 
-Both are validated as non-negative finite numbers at construction; the jitter sleep honours `RequestOptions.signal` so an aborted caller doesn't pay the delay.
+The middleware validates the two options when you call `createOAuthRefreshMiddleware`. Each option must be a finite number that is not less than `0`. During the jitter interval, the middleware obeys `RequestOptions.signal`. Thus, if the caller aborts the request, the caller does not wait for the jitter interval.
 
 ### Atlassian Connect JWT
 
@@ -409,21 +445,25 @@ const confluence = new ConfluenceClient({
 });
 ```
 
-Signs every request with an HS256 JWT per the Atlassian Connect spec (QSH, iss, iat, exp claims).
-The QSH canonical URI is the request path relative to the product base URL: protocol, host, port, `contextPath`, and query string are discarded, a trailing slash is stripped, and `&` is percent-encoded.
-The middleware hashes `RequestOptions.path` before the transport resolves it against `baseUrl`.
-Every library resource passes the absolute request URL, so this matters only when you call `HttpTransport.request()` yourself: pass an absolute URL there too.
-A relative path such as `'/pages'` is hashed as-is, not as the `/api/v2/pages` the request is sent to, and Atlassian rejects the token with a 401.
+The middleware signs each request with an HS256 JWT that obeys the Atlassian Connect specification (QSH, iss, iat, and exp claims).
+The QSH canonical URI is the request path relative to the base URL of Jira or Confluence.
+In the canonical URI, protocol, host, port, `contextPath`, and query string are discarded, a trailing slash is stripped, and `&` is percent-encoded.
 
-The `atlas` CLI authenticates only with basic or bearer credentials, so it cannot call the 22 Jira operations the pinned specs reserve for Connect apps (for example `incidents get` / `delete`, the `linked-workspaces` `*-operations` actions, `webhooks list-failed` and `app get-dynamic-modules`). The CLI still sends a correct request, but Jira rejects the credentials. Call those operations through the SDK with `createConnectJwtMiddleware`. The bundled skill marks each one **Connect app (JWT) only**.
+The middleware hashes `RequestOptions.path` before the transport resolves it against `baseUrl`.
+All resource methods of the SDK give the absolute request URL. Thus, the hash is correct.
+A relative path such as `'/pages'` is hashed as-is, not as the `/api/v2/pages` the request is sent to.
+Thus, Atlassian rejects the token with a 401 response.
+
+If you call `HttpTransport.request()` directly, give an absolute URL as the path.
+
+The `atlas` CLI uses only basic or bearer authentication. Thus, it cannot use the 22 Jira operations that the pinned specs keep for Connect apps. Examples are `incidents get` / `delete`, the `linked-workspaces` `*-operations` actions, `webhooks list-failed`, and `app get-dynamic-modules`. For these operations, the CLI sends a correct request, but Jira rejects the credentials. To send requests to the endpoints of these operations, use the SDK with `createConnectJwtMiddleware`. The bundled skill identifies each of these operations with **Connect app (JWT) only**.
 
 #### Verifying inbound asymmetric (RS256) JWTs
 
-Atlassian signs lifecycle callbacks (installed/uninstalled) and context/iframe
-tokens with **RS256** using a per-install key pair. Apps verify those tokens
-against the matching public key — `verifyConnectAsymmetricJwt` does exactly
-that, with strict algorithm pinning (only `RS256` is accepted; `none` and
-`HS256` are rejected to defeat algorithm-confusion attacks).
+Atlassian signs lifecycle callbacks (installed/uninstalled) and context/iframe tokens with **RS256**. For each installation of an app, Atlassian uses a different key pair. An app validates these tokens with the public key of the same key pair. `verifyConnectAsymmetricJwt` validates these tokens for the app. The function has these limits for the algorithm:
+
+- It accepts only `RS256`.
+- It rejects `none` and `HS256`, to prevent algorithm-confusion attacks.
 
 ```typescript
 import { verifyConnectAsymmetricJwt } from 'atlassian-api-client';
@@ -438,17 +478,15 @@ const claims = await verifyConnectAsymmetricJwt(token, {
 });
 ```
 
-The verifier checks the signature **before** trusting any claim, then validates
-`exp`/`iat`/`nbf` (with a 30s default clock skew, configurable via
-`maxClockSkewSeconds`), and optionally `iss`, `aud`, and `qsh`. All failures
-throw `ValidationError` with a distinct, non-leaking message (the token,
-signature, and key material are never echoed).
+The function validates the signature **before** it uses a claim. Then it validates `exp`/`iat`/`nbf`, with a default clock skew of 30s. The `maxClockSkewSeconds` option sets a different clock skew. If you set the `issuer`, `audience`, or `qsh` option, the function also validates the applicable claim (`iss`, `aud`, or `qsh`).
+
+For each failure, the function throws `ValidationError` with a different message. The messages do not include the token, the signature, or the key material.
 
 ### Response Caching
 
-The cache bypasses requests with `responseType: 'stream'`. Each caller can read or cancel its own stream. A request with an `AbortSignal` can use a cached response. On a miss, it starts its own fetch.
+The cache does not operate on requests with `responseType: 'stream'`. Each caller can read or cancel its own stream. A request with an `AbortSignal` can use a cached response. If the cache does not have the response, that request starts its own `fetch` call.
 
-Callers receive independent array buffers, including on cache hits. Treat shared JSON data and response metadata as read-only. Use `structuredClone(response.data)` if you need to modify a JSON result.
+Each caller gets its own array buffer, also when the cache has the response. Do not change shared JSON data or response metadata. If you must change a JSON result, use `structuredClone(response.data)` to make a copy. Then change the copy.
 
 ```typescript
 import { createCacheMiddleware } from 'atlassian-api-client';
@@ -465,11 +503,11 @@ const client = new ConfluenceClient({
 });
 ```
 
-Caches GET responses in memory. Keys include auth identity, method, path, and query string so responses remain partitioned by caller. Expired entries are lazily evicted; capacity pressure evicts the least recently used entry.
+The middleware keeps GET responses in memory. Keys include auth identity, method, path, and query string. Thus, the responses of different callers stay isolated. After the TTL of an entry, the middleware does not remove the entry immediately. The middleware removes an expired entry at the next access to its key, or when the cache is full. If the cache is full and has no expired entries, the middleware removes the LRU entry (the entry that was not used for the longest time).
 
 ### Request Batching / Deduplication
 
-Requests with `responseType: 'stream'`, an `AbortSignal`, `formData`, or `binaryBody` run separately. Each caller owns its array buffer. Treat shared JSON data and response metadata as read-only.
+The batch middleware does not use one HTTP request for requests that have `responseType: 'stream'`, an `AbortSignal`, `formData`, or `binaryBody`. It sends each of these requests independently. Each caller has its own array buffer. Do not change shared JSON data or response metadata.
 
 ```typescript
 import { createBatchMiddleware } from 'atlassian-api-client';
@@ -481,7 +519,14 @@ const client = new JiraClient({
 });
 ```
 
-Coalesces concurrent identical in-flight requests so only one HTTP call is made.
+If callers send the same GET request before the first request is completed, the middleware sends only one HTTP request. All of these callers get the response or the error of that HTTP request. HEAD requests that are the same can also use one HTTP request at runtime, but the public TypeScript request type does not include HEAD.
+
+This rule does not apply to the requests in the list that follows. The middleware sends each of these requests independently, also if two of them are the same:
+
+- A write request.
+- A request with `responseType: 'stream'`. Thus, each caller can read or cancel its own download.
+- A request with an `AbortSignal`. Thus, each caller can cancel its own request.
+- A request with `formData` or `binaryBody`.
 
 ### Circuit Breaker
 
@@ -503,11 +548,18 @@ try {
 }
 ```
 
-Protects against cascading failures from an unhealthy downstream. After `failureThreshold` consecutive qualifying failures (5xx, network errors, timeouts) the breaker opens and subsequent requests are rejected immediately with `CircuitBreakerOpenError` — no HTTP calls are made. After `resetTimeoutMs` elapses, the transition to half-open is **lazy**: it occurs on the next incoming request after the timeout expires, not via a background timer. That request becomes the single trial; a successful trial resets the breaker to closed.
+The circuit breaker prevents cascading failures when a server that the client uses does not operate correctly. If a request passes, the circuit breaker sets the failure counter to 0. If the counter gets to `failureThreshold`, the circuit breaker opens. Then each subsequent request fails immediately with `CircuitBreakerOpenError`, and the transport does not send it.
 
-**Failure classification:** only `NetworkError`, `TimeoutError`, and `HttpError` with a 5xx status count as failures. 4xx responses (including 429), `ValidationError`, abort errors, and other non-transport errors pass through without affecting the counter — the circuit only opens on infrastructure-level failures.
+After `resetTimeoutMs`, the circuit breaker does not change to half-open immediately. The change occurs **only** at the next request after the `resetTimeoutMs` interval, not with a background timer. That request is the only half-open trial. If the half-open trial passes, the circuit breaker changes to closed.
 
-**Per-baseUrl semantics:** each `createCircuitBreakerMiddleware()` call creates an isolated state machine. Install one instance per client to get per-baseUrl isolation:
+**Failure classification:** The circuit breaker counts `NetworkError`, `TimeoutError`, and `HttpError` with a 5xx status. It also counts `ResponseTooLargeError` at all HTTP status codes. While the circuit is closed, the errors in the list that follows go to the caller, and the counter does not change:
+
+- `HttpError` with a 4xx status (429 also)
+- `ValidationError`
+- Abort errors
+- Other errors that do not come from the transport
+
+**Per-baseUrl semantics:** Each call to `createCircuitBreakerMiddleware()` makes an isolated state machine. To isolate each `baseUrl`, add one instance to each client:
 
 ```typescript
 // Isolated breakers: a Confluence outage does not block Jira calls.
@@ -519,7 +571,7 @@ const confluenceClient = new ConfluenceClient({ ...config, middleware: [confluen
 const jiraClient = new JiraClient({ ...config, middleware: [jiraBreaker] });
 ```
 
-**Recommended compose order:** place the circuit breaker outermost (first in the array) so an open breaker short-circuits before spending a rate-limit token or running OAuth refresh logic:
+**Recommended compose order:** Put the circuit breaker first in the array (the outermost position). Thus, an open circuit breaker stops the request before the request uses a unit of the rate limiter or starts the OAuth refresh code:
 
 ```typescript
 const client = new JiraClient({
@@ -533,13 +585,16 @@ const client = new JiraClient({
 });
 ```
 
-**Retry interaction:** `executeWithRetry` never retries a `CircuitBreakerOpenError`. There are two reasons: (a) burning through retry attempts wastes quota before surfacing the open state to the caller, and (b) if the reset timer elapses mid-retry-loop, the first retry after timeout would consume the single HALF_OPEN trial attempt.
+**Retry interaction:** `executeWithRetry` does not retry a `CircuitBreakerOpenError`. There are two causes:
 
-**Interaction with `retries` option:** the circuit breaker middleware runs _inside_ `executeWithRetry`, so each retry attempt counts as an independent qualifying failure. With the default `retries: 3`, a single logical user request can contribute up to 4 qualifying failures (initial attempt + 3 retries). Choose `failureThreshold` relative to your `retries` setting — for example, `failureThreshold: 5` with `retries: 3` means the breaker can open after as few as 2 logical requests that each exhaust all retries.
+- More attempts use quota before the caller gets the information that the circuit is open.
+- If the `resetTimeoutMs` interval is completed during the retry loop, the first attempt after the interval uses the only HALF_OPEN trial attempt.
+
+**Interaction with `retries` option:** `executeWithRetry` calls the middleware chain, with the circuit breaker middleware, for each attempt. Thus, each attempt that fails with a counted failure adds one to the counter, independently of the other attempts. With the default `retries: 3`, one request of the caller can cause a maximum of 4 counted failures (the first attempt and 3 more attempts). Select a `failureThreshold` that agrees with your `retries` value. For example, with `failureThreshold: 5` and `retries: 3`, the circuit breaker can open after only 2 requests that use all their attempts.
 
 ### Proactive Rate Limiting (Token Bucket)
 
-Smooth outbound traffic before it reaches the Atlassian API with a client-side token-bucket limiter. Unlike the reactive `RateLimitError` path (which fires after the server returns HTTP 429), this middleware enforces a local quota and **waits** when the bucket is empty instead of dispatching the request and letting the server reject it.
+Use a client-side token-bucket rate limiter to make the requests regular before they go to the Atlassian API. A `RateLimitError` occurs after the server sends HTTP 429. This middleware is different, because it uses a local limit. When the bucket is empty, the middleware **waits** before the request goes to the transport. Without this middleware, the transport sends the request immediately, and the server can reject it.
 
 ```typescript
 import { JiraClient, createRateLimiterMiddleware } from 'atlassian-api-client';
@@ -557,19 +612,19 @@ const client = new JiraClient({
 });
 ```
 
-Key behaviours:
+These are the important properties of the rate limiter:
 
-- **Bucket starts full** — an initial burst up to `tokensPerInterval` requests is allowed without any delay.
-- **Waits, never rejects by default** — when the bucket is empty the middleware sleeps until the next token is available, smoothing traffic rather than failing fast. Set `maxWaitMs` to cap the wait and throw `RateLimiterExhaustedError` instead.
-- **Abort-aware** — the wait honours `RequestOptions.signal`, so caller-initiated cancellations and transport timeouts still work correctly during a wait.
-- **Retry interaction** — each retry attempt re-enters the middleware and consumes a token. This is intentional: retried requests represent real outbound traffic and should be rate-limited just like first attempts.
-- **Recommended ordering** — place this middleware after the circuit breaker (when present) so a tripped circuit short-circuits without burning tokens, and after (inside) cache/batch so cached/deduped hits don't burn a token. The first array entry is the outermost wrapper, so for example `[breaker, oauth, cache, batch, rateLimiter]` lets a cache hit return before the limiter runs.
+- **Bucket starts full** — At the start, the middleware lets a maximum of `tokensPerInterval` requests continue immediately.
+- **Waits, never rejects by default** — When the bucket is empty, the middleware waits until the next unit is available in the bucket. Thus, the traffic stays regular, and the request does not fail immediately. To set a maximum time to wait, set `maxWaitMs`. If the necessary time to wait is longer than `maxWaitMs`, the middleware throws `RateLimiterExhaustedError` and does not wait.
+- **Abort-aware** — While the middleware waits, it obeys `RequestOptions.signal`. Thus, if the caller cancels the request or the transport timeout occurs, the request stops correctly.
+- **Retry interaction** — If the client retries a request, the request goes through the middleware again. The middleware removes one unit from the bucket for each attempt, because the server gets each attempt. Thus, the rate limiter uses the same limit for all attempts.
+- **Recommended ordering** — Put this middleware after the circuit breaker (if you use one). Thus, an open circuit stops the request before the request uses a unit of the bucket. Also put this middleware after (inside) cache/batch. Thus, a request does not use a unit of the bucket if the cache has the response or the batch middleware gives the response. The first entry in the array operates first on each request. For example, with `[breaker, oauth, cache, batch, rateLimiter]`, if the cache has the response, the cache gives the response before the rate limiter operates.
 
-`RateLimiterExhaustedError` (code `'RATE_LIMITER_EXHAUSTED'`) is a client-side error, distinct from the server-side `RateLimitError` (HTTP 429).
+`RateLimiterExhaustedError` (code `'RATE_LIMITER_EXHAUSTED'`) is a client-side error. It is different from the server-side `RateLimitError` (HTTP 429).
 
 ## OAuth Scope Detection
 
-Map Atlassian operation names to the required Cloud OAuth 2.0 scopes:
+Use these functions to find the necessary Cloud OAuth 2.0 scopes for Atlassian operation names:
 
 ```typescript
 import { detectRequiredScopes, listKnownOperations } from 'atlassian-api-client';
@@ -587,13 +642,16 @@ const allOps = listKnownOperations();
 // → sorted operation names: ['confluence.attachments.delete', 'confluence.attachments.get', 'confluence.attachments.list', ...]
 ```
 
-The operation annotations contain 38 Confluence v2 scopes, 33 Jira Software scopes, and 180 Jira Platform Beta scopes (247 unique granular strings after overlap). Validation also recognizes 10 granular catalog entries not referenced by current operations (including `read:bulk-job:jira` and `write:bulk-job:jira`, which appear only in the OAuth 2.0 security scheme) and 16 classic or Jira Software compatibility scopes, for 273 accepted strings in total. `detectRequiredScopes()` continues to recommend granular scopes; the operation registry remains a selected convenience mapping rather than a claim that every SDK method has been mapped. `atlas scopes validate <scope>...` validates scope strings without making a network request.
+The operation annotations contain 38 Confluence v2 scopes, 33 Jira Software scopes, and 180 Jira Platform Beta scopes (247 unique granular strings after overlap). When the SDK validates scope strings, it also accepts these strings:
+
+- 10 granular catalog entries that no operation in the pinned specs uses. Two of these entries are `read:bulk-job:jira` and `write:bulk-job:jira`. They occur only in the OAuth 2.0 security scheme.
+- 16 classic or Jira Software compatibility scopes.
+
+The total is 273 accepted strings. `detectRequiredScopes()` recommends only granular scopes. The operation registry contains a selected set of operation names. Some resource methods of the SDK possibly do not have an entry in the registry. `atlas scopes validate <scope>...` validates scope strings and does not send a network request.
 
 ## OpenAPI Type Generation
 
-`generateTypes(spec)` is a public utility that turns an OpenAPI 3.x spec object into TypeScript
-`interface` and `type` declarations. Call it on **your own specs** — this library does not
-vendor or commit any generated types.
+`generateTypes(spec)` is a public utility function. It generates TypeScript `interface` and `type` declarations from an OpenAPI 3.x spec object. Call it with **your specs**. The package and the repository do not contain generated types.
 
 ```typescript
 import { generateTypes } from 'atlassian-api-client';
@@ -623,16 +681,19 @@ const { source, typeNames } = generateTypes(spec);
 // typeNames → ['Issue']
 ```
 
-Supports `$ref`, `allOf`, `oneOf`, `anyOf`, enum, nullable, and `additionalProperties`.
+The function accepts schemas that use these OpenAPI items: `$ref`, `allOf`, `oneOf`, `anyOf`, enum, nullable, and `additionalProperties`.
 
 ### Spec Drift Guard
 
-A CI script (`scripts/regenerate-types.ts`) monitors three upstream Atlassian OpenAPI specs. It
-fetches each live spec, verifies type generation, and compares its canonical contract fingerprint
-with the pinned snapshot in `spec/`. Routes, parameters, request/response schemas, and security
-metadata are included; prose-only descriptions and examples are ignored.
+A CI script (`scripts/regenerate-types.ts`) monitors three Atlassian OpenAPI specs. For each spec, the script does these steps:
 
-**The script commits nothing** — it is a read-only smoke-test.
+1. It downloads the live spec.
+2. It makes sure that `generateTypes()` can generate types from the live spec.
+3. It compares the canonical contract fingerprint of the live spec with the pinned snapshot in `spec/`.
+
+The fingerprint includes OpenAPI paths and HTTP methods, parameters, request schemas, response schemas, and security metadata. It ignores the text that is only for documentation, for example descriptions and examples.
+
+**The script does not make commits.** It is a read-only check.
 
 ```bash
 # Run locally
@@ -640,7 +701,7 @@ npm run spec-drift
 npm run api-coverage
 ```
 
-Example output:
+This is an example of the output:
 
 ```
 ✓ jiraPlatform: 1000 types; contract c72f7509a6c6 (https://developer.atlassian.com/cloud/.../swagger-v3.v3.json)
@@ -648,24 +709,37 @@ Example output:
 ✓ confluence: 221 types; contract ad6d0bc5ad1f (https://developer.atlassian.com/cloud/.../openapi-v2.v3.json)
 ```
 
-`api-coverage` compares executable SDK routes with the pinned snapshots and fails on unresolved
-route extraction, a missing non-deprecated operation, or an unexpected in-scope SDK route. Its lexical pass uses a code-token-only
-view to locate client declarations, resource wiring, resource-local path assignments, helper
-returns, and call sites, then an aligned literal view to resolve their values and paths. Comments,
-quoted/template examples, and regex literals cannot satisfy coverage or shadow runtime wiring or
-path discovery. Runtime path transformations, unsafe reassignments, computed request properties,
-shadowed pagination/query imports, uncalled or non-public request callables, unwired or duplicate
-resource classes, statically dead calls, and unresolved OpenAPI Path Item references fail closed;
-nested resource modules are included and all eight OpenAPI HTTP operation keys are audited.
-Deprecated omissions remain visible in the report without failing the check.
+`api-coverage` compares the executable SDK routes with the pinned snapshots. The check fails in these conditions:
 
-In CI, both guards run on a **weekly schedule and on manual dispatch only** (`.github/workflows/spec-drift.yml`).
-It deliberately does **not** run on `push` or `pull_request` — a transient upstream outage must never
-block contributor PRs. A scheduled-job failure is the intended signal that a spec has drifted.
+- The script cannot resolve a route that it finds in the source code.
+- A non-deprecated OpenAPI operation has no SDK route.
+- An SDK route has no OpenAPI operation, and the route is not on the list of reviewed routes that are not in the specs.
+
+The lexical pass of the script uses two aligned views of the source code:
+
+1. A view that contains only the executable code. The script uses this view to find client declarations, resource wiring, resource-local path assignments, helper returns, and call sites.
+2. A view that also contains the literals. The script uses this view to resolve the values and paths of these items.
+
+Comments, quoted examples, template examples, and regex literals do not count as coverage. The script does not use them as runtime wiring or for path discovery.
+
+If the script finds one of these items, the check fails (fail closed):
+
+- Runtime path transformations
+- Reassignments that are not safe
+- Computed request properties
+- Shadowed pagination/query imports
+- Uncalled or non-public request callables
+- Unwired or duplicate resource classes
+- Statically dead calls
+- Unresolved OpenAPI Path Item references
+
+The script includes nested resource modules, and it examines all eight OpenAPI HTTP operation keys. The report shows the deprecated OpenAPI operations that the SDK does not have, but these operations do not cause the check to fail.
+
+In CI, the two checks run **only on a schedule (one time each week) and when a person starts them manually** (`.github/workflows/spec-drift.yml`). A temporary failure of the Atlassian servers must not stop the pull requests of contributors. Thus, the GitHub Actions workflow does **not** run on `push` or `pull_request`. The project uses the failure of a scheduled job to show that a live spec is different from its snapshot.
 
 ## CLI
 
-The `atlas` CLI provides command-line access to both APIs.
+The `atlas` CLI gives command-line access to the Confluence and Jira APIs.
 
 ```bash
 # Install globally
@@ -683,7 +757,7 @@ atlas <api> <resource> <action> [args] [options]
 
 ### Auth
 
-Use environment variables so credentials do not leak through shell history or process listings:
+Use environment variables for the credentials. Then, the credentials do not show in the shell history or in process lists:
 
 ```bash
 export ATLASSIAN_BASE_URL=https://yourcompany.atlassian.net
@@ -695,13 +769,11 @@ export ATLASSIAN_AUTH_TYPE=bearer
 export ATLASSIAN_API_TOKEN=your-bearer-token
 ```
 
-`ATLASSIAN_AUTH_TYPE` defaults to `basic`. Bearer mode does not require `ATLASSIAN_EMAIL`.
-Credential flags remain available for backward compatibility, but do not use them in interactive shells, scripts, CI logs, or chat transcripts.
+The default value of `ATLASSIAN_AUTH_TYPE` is `basic`. For the bearer mode, `ATLASSIAN_EMAIL` is not necessary.
 
-For Jira Software on-premises integrations, add the Jira-only cloud ID option.
-It routes Development Information, Builds, Deployments, and Feature Flag
-ingestion through Atlassian's OAuth proxy; bearer auth alone keeps the normal
-site routes:
+Credential flags remain available for backward compatibility. Do not use them in interactive shells, scripts, CI logs, or chat transcripts.
+
+For Jira Software on-premises integrations, add the cloud ID. Use the `ATLASSIAN_SOFTWARE_CLOUD_ID` environment variable or the `--software-cloud-id` flag. The CLI uses the cloud ID only for Jira. With the cloud ID, the CLI sends Development Information, Builds, Deployments, and Feature Flag ingestion through the integration proxy of Atlassian. Bearer authentication without the cloud ID uses the usual site routes:
 
 ```bash
 export ATLASSIAN_AUTH_TYPE=bearer
@@ -720,11 +792,11 @@ atlas jira bulk submit-feature-flags \
   --value '{"flags":[{"id":"flag-1","key":"new-checkout","updateSequenceId":1700000000000,"summary":{"status":{"enabled":true},"lastUpdated":"2026-11-08T10:00:00Z"},"details":[{"url":"https://flags.example.com/new-checkout","lastUpdated":"2026-11-08T10:00:00Z","environment":{"name":"production"},"status":{"enabled":true}}],"associations":[{"associationType":"issueIdOrKeys","values":["PROJ-1"]}]}]}'
 ```
 
-Full payload schemas for these and the other DevOps submit actions are in the bundled skill (`skill/reference/jira/admin-devops.md`).
+The bundled skill (`skill/reference/jira/admin-devops.md`) gives the full request body schemas for these CLI actions and for the other DevOps `submit-*` CLI actions.
 
 ### Self-hosted / non-Atlassian baseUrl
 
-For security, the CLI's default host allowlist only accepts `*.atlassian.{net,com}`, `*.jira-dev.com`, and `*.jira.com` — calls outside that suffix list fail with `ValidationError`. Self-hosted or proxied deployments must opt in with `--allowed-hosts` (or the `ATLASSIAN_ALLOWED_HOSTS` env var). Entries are bare hostnames (no scheme, no port) and must include the `baseUrl` host itself:
+For security, the default host allowlist of the CLI accepts only `*.atlassian.{net,com}`, `*.jira-dev.com`, and `*.jira.com`. A request to a different host fails with `ValidationError`. If you use a self-hosted Jira or Confluence, or a reverse proxy, set `--allowed-hosts` (or the `ATLASSIAN_ALLOWED_HOSTS` environment variable). Each entry is only a hostname, without a URL scheme or a port. The list must include the host of `baseUrl`:
 
 ```bash
 atlas confluence spaces list \
@@ -753,18 +825,18 @@ atlas jira projects list --format minimal
 
 ### Scope validation
 
-Check whether OAuth 2.0 scope strings are recognised Atlassian Cloud scopes — auth-free, no network calls. Prints a JSON `{ valid, unknown, allValid }` report; exits `0` when every scope is valid and `1` when any are unknown (handy in CI before requesting consent):
+Use `atlas scopes validate` to find if OAuth 2.0 scope strings are known Atlassian Cloud scopes. Authentication is not necessary for this command, and it does not send network requests. It prints a JSON `{ valid, unknown, allValid }` report. The exit code is `0` if all scopes are known, and `1` if one or more scopes are unknown. You can use the command in CI before you get OAuth consent:
 
 ```bash
 atlas scopes validate read:issue:jira write:issue:jira
 # → { "valid": ["read:issue:jira", "write:issue:jira"], "unknown": [], "allValid": true }
 ```
 
-Invoking `atlas scopes validate` with no scope arguments prints the full known-scope catalog (to stderr) as a usage hint.
+If you run `atlas scopes validate` without scope arguments, it prints the full catalog of known scopes (to stderr) to help you.
 
 ## Selected Resource Map
 
-The clients expose a broad Atlassian API surface. The tables below highlight common entry points rather than every available resource and method. Use TypeScript autocomplete for the complete client API, or run `atlas confluence --help` and `atlas jira --help` for the complete CLI resource lists.
+The clients give access to a large part of the Atlassian APIs. These tables show only frequently used resources and resource methods, not all of them. To see the full client API, use TypeScript autocomplete. To see the full lists of CLI resources, run `atlas confluence --help` and `atlas jira --help`.
 
 ### ConfluenceClient
 
@@ -807,11 +879,11 @@ The clients expose a broad Atlassian API surface. The tables below highlight com
 
 ## Recipes
 
-Copy-paste snippets for common setups. Each recipe is self-contained.
+This section gives snippets for frequent configurations. You can put a copy of each snippet in your code. You can use each recipe without the other recipes.
 
 ### Custom logger
 
-Warnings the client emits through its configured logger, such as rate-limit proximity and deprecated constructor usage, are routed through the logger you provide.
+The client sends its warnings to the logger that you give. For example, the client writes a warning when the requests are near the rate limit, or when you use a deprecated constructor.
 
 ```typescript
 import { ConfluenceClient, type Logger } from 'atlassian-api-client';
@@ -834,9 +906,12 @@ const client = new ConfluenceClient({
 
 ### X-Request-Id propagation
 
-The client always captures the server-assigned request id from response headers (`X-AREQUESTID` first, then `X-Request-Id`). On error responses the id is available as `error.requestId` (also serialised by `error.toJSON()` for structured logging). On success it is the `requestId` field of the transport-level `ApiResponse`; resource methods such as `client.pages.get()` return only the unwrapped `data`, so read it from a [middleware](#middleware) that sees the `ApiResponse`.
+The client always records the request ID that the server gives in the response headers. It reads `X-AREQUESTID` first, then `X-Request-Id`.
 
-Outbound id generation is opt-in. Set `requestId: { generate: true }` to attach a UUID to every request. The **same id is reused across all retry attempts** so the server can correlate a logical request regardless of how many tries it took.
+- For an error response, the ID is in `error.requestId`. `error.toJSON()` also includes the ID, for structured logging.
+- For a success response, the ID is in the `requestId` field of the transport-level `ApiResponse`. Resource methods such as `client.pages.get()` return only the unwrapped `data`. To read the ID, use a [middleware](#middleware) that gets the `ApiResponse`.
+
+By default, the client does not add a request ID to the requests that it sends. To attach a UUID to each request, set `requestId: { generate: true }`. The client uses the **same ID for all attempts of a request**. Thus, the server can identify all attempts of one request, independently of the number of attempts.
 
 ```typescript
 import { ConfluenceClient, HttpError, type Middleware } from 'atlassian-api-client';
@@ -876,7 +951,12 @@ try {
 
 ### Proxy / custom `fetch` dispatcher
 
-Install [`undici`](https://www.npmjs.com/package/undici), then inject an `undici`-powered `fetch` to route transport requests through a proxy or tune keep-alive. OAuth token refresh has a separate `fetch` option; pass the same function to `createOAuthRefreshMiddleware` when refresh calls should use the proxy too.
+To send transport requests through a proxy or to adjust keep-alive, do these steps:
+
+1. Install [`undici`](https://www.npmjs.com/package/undici).
+2. Give the client a `fetch` function that uses `undici`.
+
+OAuth token refresh has a separate `fetch` option. If the refresh requests must also go through the proxy, give the same function to `createOAuthRefreshMiddleware`.
 
 ```typescript
 import { ConfluenceClient } from 'atlassian-api-client';
@@ -892,13 +972,18 @@ const client = new ConfluenceClient({
 });
 ```
 
-For OAuth refresh, also pass `fetch: proxyFetch` inside `createOAuthRefreshMiddleware({ ... })`.
+To refresh the access token through the proxy, also give `fetch: proxyFetch` in `createOAuthRefreshMiddleware({ ... })`.
 
-A custom `fetch` must pass `RequestInit.redirect` through, as this one does: the transport sends writes with `redirect: 'manual'` and checks each redirect itself (see [Retry & Timeout](#retry--timeout)).
+A custom `fetch` must give the same `RequestInit.redirect` to the `fetch` that it calls, as this example does. The transport sends write requests with `redirect: 'manual'`, and the transport, not `fetch`, examines each redirect (see [Retry & Timeout](#retry--timeout)).
 
 ### OAuth 2.0 with token persistence
 
-`createOAuthRefreshMiddleware` injects the access token on every request and refreshes automatically on a 401. A shared in-flight refresh promise prevents token-endpoint stampedes; the `retryJitterMs` and `failureCooldownMs` knobs (see the [OAuth 2.0 Token Refresh](#oauth-20-token-refresh) section) extend that protection to the post-refresh retry burst and the auth-server-outage loop. Use `onTokenRefreshed` to persist new tokens so worker restarts don't lose them.
+`createOAuthRefreshMiddleware` adds the access token to each request. After a 401 response, it refreshes the access token automatically. All requests that wait for the new access token use one promise. Thus, the token endpoint does not get too many requests at the same time. The `retryJitterMs` and `failureCooldownMs` options (see the [OAuth 2.0 Token Refresh](#oauth-20-token-refresh) section) give the same protection in two more conditions:
+
+- The requests that the middleware retries after it refreshes the access token
+- The loop of attempts to refresh the access token while the authentication server is not available
+
+Use `onTokenRefreshed` to save the new access token and the new refresh token. Then, a worker that starts again can use these tokens.
 
 ```typescript
 import { JiraClient, createOAuthRefreshMiddleware } from 'atlassian-api-client';
@@ -929,7 +1014,7 @@ const client = new JiraClient({
 
 ### Retry tuning
 
-Override the defaults per client. Non-retryable statuses (4xx except 429) are never retried regardless of `retries`.
+To change the default values, set these options for each client. The client does not retry non-retryable statuses (all 4xx statuses other than 429). The `retries` value does not change this rule.
 
 ```typescript
 const client = new JiraClient({
@@ -944,7 +1029,13 @@ const client = new JiraClient({
 
 ### Caching + batching
 
-For a read-heavy dashboard, layer the cache outermost _under_ auth so every request still carries a fresh token, and batch innermost so concurrent identical requests collapse into one fetch. See [docs/ARCHITECTURE.md#middleware-ordering](docs/ARCHITECTURE.md#middleware-ordering) for the full ordering rationale.
+For a dashboard that sends many GET requests, use this middleware sequence:
+
+1. Put the OAuth refresh middleware first.
+2. Put the cache middleware immediately after the OAuth refresh middleware. Thus, the OAuth refresh middleware adds the access token to each request, also when the cache has the response.
+3. Put the batch middleware last (the innermost position). Thus, the batch middleware gets only the requests that the cache gives to the next middleware.
+
+For more information about this sequence, refer to [docs/ARCHITECTURE.md#middleware-ordering](docs/ARCHITECTURE.md#middleware-ordering).
 
 ```typescript
 import {
@@ -967,7 +1058,7 @@ const client = new JiraClient({
 
 ## Architecture
 
-See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for a detailed description of the layered design, core infrastructure, and key design decisions.
+For a full description of the layers, the core layer, and the important decisions about the structure, refer to [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ## Project Links
 

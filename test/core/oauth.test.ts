@@ -579,7 +579,9 @@ describe('fetchRefreshedTokens', () => {
 
     let capturedErr: OAuthError | undefined;
     try {
-      await fetchRefreshedTokens({ clientId: 'c', clientSecret: 's' }, 'r');
+      // Realistic secrets: the snippet also redacts the exact secret values, so a
+      // one-character secret would mask every matching character of the body.
+      await fetchRefreshedTokens({ clientId: 'c', clientSecret: 'cs-0123456789' }, 'rt-0123456789');
     } catch (e) {
       capturedErr = e as OAuthError;
     }
@@ -603,7 +605,9 @@ describe('fetchRefreshedTokens', () => {
 
     let capturedErr: OAuthError | undefined;
     try {
-      await fetchRefreshedTokens({ clientId: 'c', clientSecret: 's' }, 'r');
+      // Realistic secrets: the snippet also redacts the exact secret values, so a
+      // one-character secret would mask every matching character of the body.
+      await fetchRefreshedTokens({ clientId: 'c', clientSecret: 'cs-0123456789' }, 'rt-0123456789');
     } catch (e) {
       capturedErr = e as OAuthError;
     }
@@ -612,6 +616,239 @@ describe('fetchRefreshedTokens', () => {
     expect(capturedErr?.message).not.toContain('SHOULD_BE_REDACTED_RT');
     expect(capturedErr?.message).toContain('***');
     expect(capturedErr?.message).toContain('server_error');
+  });
+
+  describe('snippet redaction of credentials the token endpoint echoes back', () => {
+    const RT = 'RT_live_9f8e7d6c5b4a';
+    const CS = 'CS_live_1a2b3c4d5e6f';
+
+    const messageFor = async (
+      reply: { ok: boolean; status: number; text: string },
+      clientSecret = CS,
+      refreshToken = RT,
+    ): Promise<string> => {
+      global.fetch = vi.fn().mockResolvedValue(fakeFetchResponse(reply)) as unknown as typeof fetch;
+      const err = await fetchRefreshedTokens({ clientId: 'c', clientSecret }, refreshToken).catch(
+        (e: unknown) => e,
+      );
+      expect(err).toBeInstanceOf(OAuthError);
+      const message = (err as OAuthError).message;
+      expect(JSON.stringify({ message, stack: (err as OAuthError).stack })).not.toMatch(
+        /RT_live|CS_live/,
+      );
+      return message;
+    };
+
+    it('redacts the refresh token quoted inside error_description', async () => {
+      const message = await messageFor({
+        ok: false,
+        status: 400,
+        text: JSON.stringify({
+          error: 'invalid_grant',
+          error_description: `refresh token ${RT} is invalid`,
+        }),
+      });
+      expect(message).toContain('invalid_grant');
+      expect(message).toContain('refresh token *** is invalid');
+    });
+
+    it('redacts a form-encoded echo of the request credentials', async () => {
+      const message = await messageFor({
+        ok: false,
+        status: 400,
+        text: `grant_type=refresh_token&refresh_token=${RT}&client_secret=${CS}`,
+      });
+      expect(message).toContain('grant_type=refresh_token');
+    });
+
+    it('redacts camelCase credential keys', async () => {
+      await messageFor({
+        ok: false,
+        status: 401,
+        text: JSON.stringify({ refreshToken: RT, clientSecret: CS }),
+      });
+    });
+
+    it('redacts a newly issued token whose value contains an escaped quote', async () => {
+      const message = await messageFor({
+        ok: false,
+        status: 500,
+        text: '{"refresh_token":"NEW\\"TAIL_SECRET_X","error":"server_error"}',
+      });
+      expect(message).not.toContain('TAIL_SECRET_X');
+      expect(message).toContain('server_error');
+    });
+
+    it('redacts a camelCase access token from a 200 reply that lacks access_token', async () => {
+      const message = await messageFor({
+        ok: true,
+        status: 200,
+        text: JSON.stringify({ accessToken: 'AT_NEW_SECRET_X', token_type: 'Bearer' }),
+      });
+      expect(message).toContain('missing access_token');
+      expect(message).not.toContain('AT_NEW_SECRET_X');
+      expect(message).toContain('"token_type":"***"');
+    });
+
+    it('redacts a form-encoded access token from a 200 reply', async () => {
+      const message = await messageFor({
+        ok: true,
+        status: 200,
+        text: 'access_token=AT_NEW_SECRET_X&token_type=bearer',
+      });
+      expect(message).not.toContain('AT_NEW_SECRET_X');
+    });
+
+    it('redacts a JSON-escaped or URL-encoded echo of a secret', async () => {
+      const secret = 'CS_live/with"quote';
+      await messageFor(
+        {
+          ok: false,
+          status: 400,
+          text:
+            JSON.stringify({ error_description: `bad secret ${secret}` }) +
+            ` ${encodeURIComponent(secret)}`,
+        },
+        secret,
+      );
+    });
+
+    it('redacts a secret that straddles the 200-char truncation point', async () => {
+      const message = await messageFor({ ok: false, status: 400, text: 'x'.repeat(190) + RT });
+      expect(message).not.toContain(RT.slice(0, 8));
+    });
+
+    it('redacts a token field even when a known secret is a substring of its key', async () => {
+      const message = await messageFor(
+        { ok: false, status: 500, text: JSON.stringify({ access_token: 'AT_NEW_SECRET_X' }) },
+        'cess_to',
+      );
+      expect(message).not.toContain('AT_NEW_SECRET_X');
+    });
+
+    it('redacts a large body without quadratic backtracking', async () => {
+      // Without the key-start lookbehind, 200k word characters take minutes
+      // to scan and this test would time out.
+      const message = await messageFor({ ok: false, status: 500, text: 'a'.repeat(200_000) });
+      expect(message).toContain('…');
+    });
+
+    it("redacts a known secret in other serializers' JSON escapes", async () => {
+      // PHP escapes `/` as `\/`; System.Text.Json escapes `+` as `\u002B`.
+      const secret = 'CS_live/Sec+ret==';
+      await messageFor(
+        {
+          ok: false,
+          status: 400,
+          text: String.raw`{"error_description":"bad CS_live\/Sec\u002Bret\u003d\u003d"}`,
+        },
+        secret,
+      );
+    });
+
+    it('redacts a known secret in lowercase percent-hex or form encoding', async () => {
+      const secret = 'CS_live/Sec+ret~x';
+      const message = await messageFor(
+        { ok: false, status: 502, text: 'bad CS_live%2fSec%2bret~x and CS_live%2FSec%2Bret%7Ex' },
+        secret,
+      );
+      expect(message).toBe('Token refresh failed with HTTP 502: bad *** and ***');
+    });
+
+    it('replaces a secret that contains the other secret whole', async () => {
+      const message = await messageFor(
+        { ok: false, status: 400, text: `secret is xx${RT}yy` },
+        `xx${RT}yy`,
+      );
+      expect(message).toBe('Token refresh failed with HTTP 400: secret is ***');
+    });
+
+    it('still throws OAuthError when a secret holds a lone surrogate', async () => {
+      await messageFor({ ok: false, status: 400, text: 'RT_live_\ud800x' }, CS, 'RT_live_\ud800x');
+    });
+
+    it('shows only the RFC 6749 error fields of a JSON object body', async () => {
+      const message = await messageFor({
+        ok: false,
+        status: 400,
+        text: JSON.stringify({
+          error: 'invalid_grant',
+          error_description: 'see access_token=AT_NEW_SECRET_X',
+          error_uri: 'https://example.com/e',
+          data: { access: 'AT_NEW_SECRET_X' },
+          'access token': ['AT_NEW_SECRET_X'],
+        }),
+      });
+      expect(message).toBe(
+        'Token refresh failed with HTTP 400: {"error":"invalid_grant",' +
+          '"error_description":"see access_token=***","error_uri":"https://example.com/e",' +
+          '"data":"***","access token":"***"}',
+      );
+    });
+
+    it('masks a JSON body that is not an object', async () => {
+      const message = await messageFor({ ok: true, status: 200, text: '["AT_NEW_SECRET_X"]' });
+      expect(message).toBe('Token refresh response missing access_token (HTTP 200): ***');
+    });
+
+    it('redacts token fields in a body that is not valid JSON', async () => {
+      const message = await messageFor({
+        ok: false,
+        status: 500,
+        text: '{"refresh_token":"NEW\\"TAIL_SECRET_X", "error": oops',
+      });
+      expect(message).not.toContain('TAIL_SECRET_X');
+      expect(message).toContain('oops');
+    });
+
+    it('redacts a known secret that re-serializing a kept value rebuilds', async () => {
+      // JSON.parse turns the raw echo `\\"` into `"`; JSON.stringify turns it back.
+      await messageFor(
+        { ok: false, status: 400, text: String.raw`{"error_description":"bad CS_live\"q"}` },
+        String.raw`CS_live\"q`,
+      );
+    });
+
+    it('redacts the \\/ form of a known secret in a body that is not JSON', async () => {
+      await messageFor(
+        { ok: false, status: 500, text: String.raw`oops CS_live\/x is bad` },
+        'CS_live/x',
+      );
+    });
+
+    it('replaces a secret that starts with the other secret whole', async () => {
+      const message = await messageFor(
+        { ok: false, status: 400, text: `secret is ${RT}yy` },
+        `${RT}yy`,
+      );
+      expect(message).toBe('Token refresh failed with HTTP 400: secret is ***');
+    });
+
+    it('redacts a known secret used as a JSON key', async () => {
+      const message = await messageFor({
+        ok: false,
+        status: 400,
+        text: JSON.stringify({ [RT]: true, error: 'invalid_grant' }),
+      });
+      expect(message).toBe(
+        'Token refresh failed with HTTP 400: {"***":"***","error":"invalid_grant"}',
+      );
+    });
+
+    it('leaves the snippet intact when no secret is a non-empty string', async () => {
+      // Untyped JS callers can pass a non-string clientSecret.
+      const message = await messageFor(
+        { ok: false, status: 400, text: 'plain_error' },
+        {} as unknown as string,
+        '',
+      );
+      expect(message).toBe('Token refresh failed with HTTP 400: plain_error');
+    });
+
+    it('leaves the snippet intact when the client secret is empty', async () => {
+      const message = await messageFor({ ok: false, status: 400, text: 'plain_error' }, '');
+      expect(message).toContain(': plain_error');
+    });
   });
 
   it('truncates body snippets longer than 200 chars with an ellipsis', async () => {
