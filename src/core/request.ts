@@ -349,10 +349,11 @@ const FORBIDDEN_CALLER_HEADERS: ReadonlySet<string> = new Set([
  * `X-Atlassian-Token`) pass through. The auth provider's headers are applied
  * over the caller's so they always win.
  *
- * `authorizationOverride`, when set by the library's own auth middleware
- * (OAuth refresh / Connect JWT, via {@link RequestOptions.authorizationOverride}),
- * is applied AFTER the auth provider's header so a refreshed/signed credential
- * is what reaches the wire (#243). It is a trusted in-chain channel distinct
+ * `authorizationOverride`, when set by an auth middleware in the chain (via
+ * {@link RequestOptions.authorizationOverride}, already resolved by the
+ * transport with {@link resolveAuthorizationOverride}), is applied AFTER the auth
+ * provider's header so a refreshed/signed credential is what reaches the wire
+ * (#243). It is a trusted in-chain channel distinct
  * from the stripped caller `Authorization` header, so B029's protection is
  * preserved while the library's middleware stays functional.
  *

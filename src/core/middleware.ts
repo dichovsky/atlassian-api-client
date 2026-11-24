@@ -20,11 +20,16 @@ import type { ApiResponse, Middleware, RequestOptions } from './types.js';
  * @param terminal - Handler invoked when every middleware delegates to `next`.
  * @returns The composed handler with the same shape as `terminal`.
  *
+ * The OAuth refresh and Connect JWT middleware put a reference, not the
+ * credential, in `RequestOptions.authorizationOverride`. A terminal handler
+ * that sends the request calls {@link resolveAuthorizationOverride} to get the
+ * `Authorization` value.
+ *
  * @example
  * ```ts
  * const chain = createMiddlewareChain(
  *   [authMiddleware, cacheMiddleware],
- *   (opts) => fetchExecutor(opts),
+ *   (opts) => fetchExecutor(opts, resolveAuthorizationOverride(opts)),
  * );
  * const response = await chain({ method: 'GET', path: '/issue/AC-1' });
  * ```

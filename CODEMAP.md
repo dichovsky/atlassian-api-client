@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "5.0.0"
   },
-  "sourceHash": "4fe84575544629d724948fc49b473f98205b97af51fa196834457c905eabf96f",
+  "sourceHash": "09c71cceacebe6d55eed684e5ff3416d5ceffcc2b8848c9bb8956389e97905c4",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -37,7 +37,7 @@
       "name": "ApiResponse",
       "kind": "interface",
       "file": "src/core/types.ts",
-      "line": 69,
+      "line": 81,
       "signature": "export interface ApiResponse<T> { readonly data: T; readonly status: number; readonly headers: Headers; readonly rateLim…",
       "jsdoc": "Parsed API response.",
       "typeOnly": true
@@ -189,7 +189,7 @@
       "name": "AuthConfig",
       "kind": "type",
       "file": "src/core/types.ts",
-      "line": 146,
+      "line": 158,
       "signature": "export type AuthConfig = BasicAuthConfig | BearerAuthConfig;",
       "jsdoc": "Discriminated union of supported auth strategies. @example ```ts // Basic auth const basicAuth: AuthConfig = { type: 'basic', email: 'user@…",
       "typeOnly": true
@@ -206,7 +206,7 @@
       "name": "BasicAuthConfig",
       "kind": "interface",
       "file": "src/core/types.ts",
-      "line": 112,
+      "line": 124,
       "signature": "export interface BasicAuthConfig { readonly type: 'basic'; readonly email: string; readonly apiToken: string; }",
       "jsdoc": "Basic auth config (email + API token). @example ```ts const config: ClientConfig = { baseUrl: 'https://mycompany.atlassian.net',…",
       "typeOnly": true
@@ -215,7 +215,7 @@
       "name": "BearerAuthConfig",
       "kind": "interface",
       "file": "src/core/types.ts",
-      "line": 129,
+      "line": 141,
       "signature": "export interface BearerAuthConfig { readonly type: 'bearer'; readonly token: string; }",
       "jsdoc": "Bearer auth config (OAuth 2.0 access token or PAT). @example ```ts const config: ClientConfig = { baseUrl: 'https://mycompany.atlassian.net',…",
       "typeOnly": true
@@ -610,7 +610,7 @@
       "name": "ClientConfig",
       "kind": "interface",
       "file": "src/core/types.ts",
-      "line": 164,
+      "line": 176,
       "signature": "export interface ClientConfig { readonly baseUrl: string; readonly auth: AuthConfig; readonly timeout?: number; readonly…",
       "jsdoc": "Client configuration. @example ```ts const config: ClientConfig = { baseUrl: 'https://mycompany.atlassian.net',…",
       "typeOnly": true
@@ -758,7 +758,7 @@
       "name": "ConnectJwtConfig",
       "kind": "interface",
       "file": "src/core/connect-jwt.ts",
-      "line": 14,
+      "line": 15,
       "signature": "export interface ConnectJwtConfig { readonly issuer: string; readonly sharedSecret: string; readonly tokenLifetimeSecond…",
       "jsdoc": "Configuration for the Atlassian Connect JWT middleware.",
       "typeOnly": true
@@ -3421,7 +3421,7 @@
       "name": "Logger",
       "kind": "interface",
       "file": "src/core/types.ts",
-      "line": 351,
+      "line": 363,
       "signature": "export interface Logger { debug(message: string, context?: Record<string, unknown>): void; info(message: string, context…",
       "jsdoc": "Logger interface for request/response observability. Compatible with console, pino, winston, and any structured logger.",
       "typeOnly": true
@@ -3430,7 +3430,7 @@
       "name": "Middleware",
       "kind": "type",
       "file": "src/core/types.ts",
-      "line": 366,
+      "line": 378,
       "signature": "export type Middleware = ( options: RequestOptions, next: (options: RequestOptions) => Promise<ApiResponse<unknown>>, ) …",
       "jsdoc": "Middleware function for intercepting and transforming requests. Call next(options) to pass control to the next middleware or the transport.",
       "typeOnly": true
@@ -3455,7 +3455,7 @@
       "name": "OAuthError",
       "kind": "class",
       "file": "src/core/oauth.ts",
-      "line": 125,
+      "line": 126,
       "signature": "export class OAuthError extends HttpError",
       "jsdoc": "Thrown when the token refresh request itself fails."
     },
@@ -3463,7 +3463,7 @@
       "name": "OAuthRefreshConfig",
       "kind": "interface",
       "file": "src/core/oauth.ts",
-      "line": 26,
+      "line": 27,
       "signature": "export interface OAuthRefreshConfig { readonly accessToken: string; readonly refreshToken: string; readonly clientId: st…",
       "jsdoc": "Configuration for the OAuth 2.0 token refresh middleware.",
       "typeOnly": true
@@ -3472,7 +3472,7 @@
       "name": "OAuthTokens",
       "kind": "interface",
       "file": "src/core/oauth.ts",
-      "line": 14,
+      "line": 15,
       "signature": "export interface OAuthTokens { readonly accessToken: string; readonly refreshToken: string; readonly expiresIn?: number;…",
       "jsdoc": "Tokens returned by the OAuth 2.0 token endpoint.",
       "typeOnly": true
@@ -3758,7 +3758,7 @@
       "name": "RateLimitInfo",
       "kind": "interface",
       "file": "src/core/types.ts",
-      "line": 340,
+      "line": 352,
       "signature": "export interface RateLimitInfo { readonly limit?: number; readonly remaining?: number; readonly reset?: string; readonly…",
       "jsdoc": "Rate limit information parsed from response headers.",
       "typeOnly": true
@@ -3883,7 +3883,7 @@
       "name": "RequestIdOptions",
       "kind": "interface",
       "file": "src/core/types.ts",
-      "line": 310,
+      "line": 322,
       "signature": "export interface RequestIdOptions { readonly generate?: boolean; readonly header?: string; readonly generator?: () => st…",
       "jsdoc": "Options controlling X-Request-Id propagation (B011). @example ```ts const config: ClientConfig = { baseUrl: 'https://mycompany.atlassian.net',…",
       "typeOnly": true
@@ -4376,7 +4376,7 @@
       "name": "Transport",
       "kind": "interface",
       "file": "src/core/types.ts",
-      "line": 96,
+      "line": 108,
       "signature": "export interface Transport { request<T>(options: RequestOptions): Promise<ApiResponse<T>>; }",
       "jsdoc": "Transport abstraction — the only interface resource modules depend on.",
       "typeOnly": true
@@ -4830,7 +4830,7 @@
       "name": "createConnectJwtMiddleware",
       "kind": "function",
       "file": "src/core/connect-jwt.ts",
-      "line": 49,
+      "line": 50,
       "signature": "export function createConnectJwtMiddleware(config: ConnectJwtConfig): Middleware",
       "jsdoc": "Creates middleware that signs every request with an Atlassian Connect JWT."
     },
@@ -4838,7 +4838,7 @@
       "name": "createMiddlewareChain",
       "kind": "function",
       "file": "src/core/middleware.ts",
-      "line": 32,
+      "line": 37,
       "signature": "export function createMiddlewareChain( middlewares: readonly Middleware[], terminal: (options: RequestOptions) => Promis…",
       "jsdoc": "Compose a middleware chain wrapping a terminal request handler. @example ```ts const chain = createMiddlewareChain( [authMiddleware, cacheMiddleware], (o…"
     },
@@ -4846,7 +4846,7 @@
       "name": "createOAuthRefreshMiddleware",
       "kind": "function",
       "file": "src/core/oauth.ts",
-      "line": 152,
+      "line": 153,
       "signature": "export function createOAuthRefreshMiddleware(config: OAuthRefreshConfig): Middleware",
       "jsdoc": "Creates middleware that automatically refreshes an OAuth 2.0 access token on 401 responses."
     },
@@ -4886,7 +4886,7 @@
       "name": "fetchRefreshedTokens",
       "kind": "function",
       "file": "src/core/oauth.ts",
-      "line": 293,
+      "line": 294,
       "signature": "export async function fetchRefreshedTokens( config: Pick< OAuthRefreshConfig, 'clientId' | 'clientSecret' | 'tokenEndpoi…",
       "jsdoc": "Calls the token endpoint with the refresh token and returns new {@link OAuthTokens}. Exported for direct use in advanced scenarios (e.g. proactive token refresh)."
     },
@@ -4929,6 +4929,14 @@
       "line": 363,
       "signature": "export async function* paginateSearch<T>( transport: Transport, basePath: string, body: Record<string, unknown>, pageSiz…",
       "jsdoc": "Async generator for Jira search pagination (uses 'issues' key). Yields individual items across all pages."
+    },
+    {
+      "name": "resolveAuthorizationOverride",
+      "kind": "function",
+      "file": "src/core/auth-identity.ts",
+      "line": 114,
+      "signature": "export function resolveAuthorizationOverride(options: RequestOptions): string | undefined",
+      "jsdoc": "Return the `Authorization` value that the middleware chain selected for a request, or `undefined` when the configured `config.auth` applies. @example ```ts import { createMiddlewareChain, resolveAuthorizationOverride } from 'atlas…"
     },
     {
       "name": "resolveConfig",
@@ -16127,7 +16135,7 @@
         {
           "name": "hashAuthValue",
           "kind": "function",
-          "line": 12,
+          "line": 13,
           "exported": true,
           "signature": "export function hashAuthValue(authValue: string): string",
           "jsdoc": "One-way hash of an `Authorization` value into the short, stable identifier used to partition cache/batch keys (and exposed as {@link RequestOptions.authIdentity}). Uses the first 16 hex chars (64 bits) of SHA-256 — wide enough that accidental collisions vanish in practice, narrow enough to keep keys compact, and one-way so a logging/metrics middleware that persists `RequestOptions` never writes the raw credential."
@@ -16135,15 +16143,57 @@
         {
           "name": "pickAuthorizationHeader",
           "kind": "function",
-          "line": 22,
+          "line": 23,
           "exported": true,
           "signature": "export function pickAuthorizationHeader(headers: RequestOptions['headers']): string | undefined",
           "jsdoc": "Return the effective `Authorization` header value from a plain-object headers map, or `undefined` when none is present. When multiple Authorization-like keys exist, the LAST occurrence in iteration order wins — matching `fetch` last-write-wins semantics for duplicate-key headers."
         },
         {
+          "name": "REFERENCE_PREFIX",
+          "kind": "variable",
+          "line": 41,
+          "signature": "const REFERENCE_PREFIX = 'atlassian-api-client:authorization-override:';",
+          "jsdoc": "Prefix of the reference that the OAuth refresh and Connect JWT middleware write to `RequestOptions.authorizationOverride` instead of the credential. A reference is a short-lived in-process handle, not the credential: code in the same process can resolve it while its request runs, so do not send it to other processes. After the request it resolves to nothing."
+        },
+        {
+          "name": "REGISTRY_KEY",
+          "kind": "variable",
+          "line": 49,
+          "signature": "const REGISTRY_KEY: unique symbol = Symbol.for('atlassian-api-client.authorizationOverrides');",
+          "jsdoc": "Key of the process-wide credential registry. `Symbol.for` gives every installed copy of this package the same key, so a reference that one copy writes resolves in another copy. Each entry is a function that returns the credential, so `util.inspect(globalThis)` shows `[Function]`, not the value."
+        },
+        {
+          "name": "CredentialRegistry",
+          "kind": "type",
+          "line": 51,
+          "signature": "type CredentialRegistry = Map<string, () => string>;"
+        },
+        {
+          "name": "credentialRegistry",
+          "kind": "function",
+          "line": 53,
+          "signature": "function credentialRegistry(): CredentialRegistry"
+        },
+        {
+          "name": "nextWithAuthorizationOverride",
+          "kind": "function",
+          "line": 71,
+          "exported": true,
+          "signature": "export async function nextWithAuthorizationOverride( options: RequestOptions, value: string, next: (options: RequestOpti…",
+          "jsdoc": "Call `next` with a copy of `options` whose `authorizationOverride` is a new reference to `value`. The registry entry exists only until `next` settles."
+        },
+        {
+          "name": "resolveAuthorizationOverride",
+          "kind": "function",
+          "line": 114,
+          "exported": true,
+          "signature": "export function resolveAuthorizationOverride(options: RequestOptions): string | undefined",
+          "jsdoc": "Return the `Authorization` value that the middleware chain selected for a request, or `undefined` when the configured `config.auth` applies. @example ```ts import { createMiddlewareChain, resolveAuthorizationOverride } from 'atlas…"
+        },
+        {
           "name": "resolveAuthIdentity",
           "kind": "function",
-          "line": 45,
+          "line": 138,
           "exported": true,
           "signature": "export function resolveAuthIdentity(opts: RequestOptions): string",
           "jsdoc": "Derive the stable identifier that cache/batch keys partition on, so a shared transport never serves or coalesces one tenant's authenticated response for another's request."
@@ -16151,7 +16201,7 @@
         {
           "name": "serializeQueryKey",
           "kind": "function",
-          "line": 59,
+          "line": 152,
           "exported": true,
           "signature": "export function serializeQueryKey(query: RequestOptions['query']): string",
           "jsdoc": "Canonical query-string serialization for cache/batch keys: `undefined` values dropped, keys sorted, both key and value URI-encoded. Returns the empty string when there is no query, otherwise a leading `?`."
@@ -16159,13 +16209,14 @@
         {
           "name": "appendQueryKey",
           "kind": "function",
-          "line": 78,
+          "line": 171,
           "exported": true,
           "signature": "export function appendQueryKey(path: string, query: RequestOptions['query']): string",
           "jsdoc": "Append the canonical query-key serialization to a path that may itself already carry a query string (e.g. resources that embed repeated query params like `?accountId=a&accountId=b` directly into the path because the transport's `query` map collapses duplicate keys). Yields exactly one `?` separator regardless of which side holds query params."
         }
       ],
       "imports": [
+        "./errors.js",
         "./types.js",
         "node:crypto"
       ]
@@ -16423,7 +16474,7 @@
         {
           "name": "ConnectJwtConfig",
           "kind": "interface",
-          "line": 14,
+          "line": 15,
           "exported": true,
           "signature": "export interface ConnectJwtConfig { readonly issuer: string; readonly sharedSecret: string; readonly tokenLifetimeSecond…",
           "jsdoc": "Configuration for the Atlassian Connect JWT middleware."
@@ -16431,7 +16482,7 @@
         {
           "name": "createConnectJwtMiddleware",
           "kind": "function",
-          "line": 49,
+          "line": 50,
           "exported": true,
           "signature": "export function createConnectJwtMiddleware(config: ConnectJwtConfig): Middleware",
           "jsdoc": "Creates middleware that signs every request with an Atlassian Connect JWT."
@@ -16601,6 +16652,7 @@
         }
       ],
       "imports": [
+        "./auth-identity.js",
         "./errors.js",
         "./path.js",
         "./types.js",
@@ -16930,6 +16982,17 @@
     {
       "path": "src/core/index.ts",
       "reExports": [
+        {
+          "kind": "named",
+          "from": "./auth-identity.js",
+          "typeOnly": false,
+          "names": [
+            {
+              "exported": "resolveAuthorizationOverride",
+              "original": "resolveAuthorizationOverride"
+            }
+          ]
+        },
         {
           "kind": "named",
           "from": "./auth.js",
@@ -17445,7 +17508,7 @@
         {
           "name": "createMiddlewareChain",
           "kind": "function",
-          "line": 32,
+          "line": 37,
           "exported": true,
           "signature": "export function createMiddlewareChain( middlewares: readonly Middleware[], terminal: (options: RequestOptions) => Promis…",
           "jsdoc": "Compose a middleware chain wrapping a terminal request handler. @example ```ts const chain = createMiddlewareChain( [authMiddleware, cacheMiddleware], (o…"
@@ -17461,14 +17524,14 @@
         {
           "name": "DEFAULT_OAUTH_TOKEN_ENDPOINT",
           "kind": "variable",
-          "line": 11,
+          "line": 12,
           "signature": "const DEFAULT_OAUTH_TOKEN_ENDPOINT = 'https://auth.atlassian.com/oauth/token';",
           "jsdoc": "Default OAuth 2.0 3LO token endpoint URL for Atlassian Cloud."
         },
         {
           "name": "OAuthTokens",
           "kind": "interface",
-          "line": 14,
+          "line": 15,
           "exported": true,
           "signature": "export interface OAuthTokens { readonly accessToken: string; readonly refreshToken: string; readonly expiresIn?: number;…",
           "jsdoc": "Tokens returned by the OAuth 2.0 token endpoint."
@@ -17476,7 +17539,7 @@
         {
           "name": "OAuthRefreshConfig",
           "kind": "interface",
-          "line": 26,
+          "line": 27,
           "exported": true,
           "signature": "export interface OAuthRefreshConfig { readonly accessToken: string; readonly refreshToken: string; readonly clientId: st…",
           "jsdoc": "Configuration for the OAuth 2.0 token refresh middleware."
@@ -17484,7 +17547,7 @@
         {
           "name": "OAuthError",
           "kind": "class",
-          "line": 125,
+          "line": 126,
           "exported": true,
           "signature": "export class OAuthError extends HttpError",
           "jsdoc": "Thrown when the token refresh request itself fails.",
@@ -17492,19 +17555,19 @@
             {
               "name": "refreshStatus",
               "kind": "property",
-              "line": 127
+              "line": 128
             },
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 129
+              "line": 130
             }
           ]
         },
         {
           "name": "createOAuthRefreshMiddleware",
           "kind": "function",
-          "line": 152,
+          "line": 153,
           "exported": true,
           "signature": "export function createOAuthRefreshMiddleware(config: OAuthRefreshConfig): Middleware",
           "jsdoc": "Creates middleware that automatically refreshes an OAuth 2.0 access token on 401 responses."
@@ -17512,20 +17575,20 @@
         {
           "name": "resolveNonNegFiniteNumber",
           "kind": "function",
-          "line": 262,
+          "line": 261,
           "signature": "function resolveNonNegFiniteNumber( value: number | undefined, dflt: number, fieldName: string, ): number",
           "jsdoc": "Validate a non-negative finite number field on `OAuthRefreshConfig`. Used for both `retryJitterMs` and `failureCooldownMs`. `0` is accepted and documented to disable the feature; negatives, `NaN`, `Infinity`, and non-number runtime values produce `ValidationError`."
         },
         {
-          "name": "injectBearerToken",
+          "name": "sendWithBearerToken",
           "kind": "function",
-          "line": 274,
-          "signature": "function injectBearerToken(options: RequestOptions, token: string): RequestOptions"
+          "line": 273,
+          "signature": "function sendWithBearerToken( options: RequestOptions, token: string, next: (options: RequestOptions) => Promise<ApiResp…"
         },
         {
           "name": "fetchRefreshedTokens",
           "kind": "function",
-          "line": 293,
+          "line": 294,
           "exported": true,
           "signature": "export async function fetchRefreshedTokens( config: Pick< OAuthRefreshConfig, 'clientId' | 'clientSecret' | 'tokenEndpoi…",
           "jsdoc": "Calls the token endpoint with the refresh token and returns new {@link OAuthTokens}. Exported for direct use in advanced scenarios (e.g. proactive token refresh)."
@@ -17533,58 +17596,59 @@
         {
           "name": "validateTokenEndpoint",
           "kind": "function",
-          "line": 397,
+          "line": 398,
           "signature": "function validateTokenEndpoint( configured: string | undefined, allowedHosts: readonly string[] | undefined, ): string",
           "jsdoc": "Validate a `tokenEndpoint` URL against the host allowlist and return the normalised endpoint string for downstream `fetch` calls. Throws `ValidationError` on: - malformed URL - non-HTTPS scheme - host not on the allowlist - embedded userinfo (`https://user:pw@host/…`) - a non-default port (`https://host:8443/…`) - invalid `allowedTokenEndpointHosts` entries (empty, port-bearing, whitespace, slashes, control chars, IPv6 brackets)"
         },
         {
           "name": "validateAllowedTokenEndpointHosts",
           "kind": "function",
-          "line": 472,
+          "line": 473,
           "signature": "function validateAllowedTokenEndpointHosts(hosts: readonly string[]): readonly string[]",
           "jsdoc": "Validate user-supplied `allowedTokenEndpointHosts`. Same rules as `validateAllowedHosts` in config.ts (non-empty array, non-empty strings, no port, no whitespace/slashes/control chars/IPv6 brackets). The shared character policy lives in `isInvalidBareHostChar` (atlassian-hosts.ts) so both validators stay in sync."
         },
         {
           "name": "SECRET_KEY",
           "kind": "variable",
-          "line": 506,
+          "line": 507,
           "signature": "const SECRET_KEY = String.raw`[\\w-]*(?:token|secret)`;"
         },
         {
           "name": "JSON_SECRET_FIELD",
           "kind": "variable",
-          "line": 508,
+          "line": 509,
           "signature": "const JSON_SECRET_FIELD = new RegExp( String.raw`(\"${SECRET_KEY}\"\\s*:\\s*\")(?:[^\"\\\\]|\\\\[\\s\\S])*`, 'gi', );"
         },
         {
           "name": "FORM_SECRET_FIELD",
           "kind": "variable",
-          "line": 514,
+          "line": 515,
           "signature": "const FORM_SECRET_FIELD = new RegExp(String.raw`(?<![\\w-])(${SECRET_KEY}=)[^&\\s\"]*`, 'gi');"
         },
         {
           "name": "OAUTH_ERROR_FIELDS",
           "kind": "variable",
-          "line": 517,
+          "line": 518,
           "signature": "const OAUTH_ERROR_FIELDS: ReadonlySet<string> = new Set([ 'error', 'error_description', 'error_uri', ]);"
         },
         {
           "name": "formatBodySnippet",
           "kind": "function",
-          "line": 534,
+          "line": 535,
           "signature": "function formatBodySnippet(raw: string, body: unknown, secrets: readonly string[]): string",
           "jsdoc": "Build a short diagnostic snippet of a token-endpoint response body, so that a credential the endpoint echoes never reaches an error message or log."
         },
         {
           "name": "knownSecretPattern",
           "kind": "function",
-          "line": 567,
+          "line": 568,
           "signature": "function knownSecretPattern(secrets: readonly unknown[]): RegExp | undefined",
           "jsdoc": "One case-insensitive pattern for every form of every known secret, longest first, so that a secret that contains another is replaced whole. Returns `undefined` when there is no non-empty string secret (untyped JS callers can pass other values)."
         }
       ],
       "imports": [
         "./atlassian-hosts.js",
+        "./auth-identity.js",
         "./errors.js",
         "./retry.js",
         "./types.js"
@@ -18063,7 +18127,7 @@
         {
           "name": "buildHeaders",
           "kind": "function",
-          "line": 375,
+          "line": 376,
           "exported": true,
           "signature": "export function buildHeaders( callerHeaders: Readonly<Record<string, string>> | undefined, authHeaders: Readonly<Record<…",
           "jsdoc": "Merge caller-supplied headers with the auth provider's headers."
@@ -18071,7 +18135,7 @@
         {
           "name": "FetchBody",
           "kind": "interface",
-          "line": 428,
+          "line": 429,
           "exported": true,
           "signature": "export interface FetchBody { readonly body: FormData | Blob | string | undefined; readonly withJsonBody: boolean; readon…",
           "jsdoc": "Outcome of {@link buildFetchBody}."
@@ -18079,7 +18143,7 @@
         {
           "name": "buildFetchBody",
           "kind": "function",
-          "line": 444,
+          "line": 445,
           "exported": true,
           "signature": "export function buildFetchBody(options: RequestOptions): FetchBody",
           "jsdoc": "Resolve `RequestOptions.body` / `formData` / `binaryBody` into a `fetch`-ready body."
@@ -18471,7 +18535,7 @@
         {
           "name": "stripCallerAuthorizationOverride",
           "kind": "function",
-          "line": 51,
+          "line": 52,
           "signature": "function stripCallerAuthorizationOverride(options: RequestOptions): RequestOptions",
           "jsdoc": "Drop a caller-supplied `authorizationOverride` at the request boundary."
         },
@@ -18656,7 +18720,7 @@
         {
           "name": "ApiResponse",
           "kind": "interface",
-          "line": 69,
+          "line": 81,
           "exported": true,
           "signature": "export interface ApiResponse<T> { readonly data: T; readonly status: number; readonly headers: Headers; readonly rateLim…",
           "jsdoc": "Parsed API response."
@@ -18664,7 +18728,7 @@
         {
           "name": "Transport",
           "kind": "interface",
-          "line": 96,
+          "line": 108,
           "exported": true,
           "signature": "export interface Transport { request<T>(options: RequestOptions): Promise<ApiResponse<T>>; }",
           "jsdoc": "Transport abstraction — the only interface resource modules depend on."
@@ -18672,7 +18736,7 @@
         {
           "name": "BasicAuthConfig",
           "kind": "interface",
-          "line": 112,
+          "line": 124,
           "exported": true,
           "signature": "export interface BasicAuthConfig { readonly type: 'basic'; readonly email: string; readonly apiToken: string; }",
           "jsdoc": "Basic auth config (email + API token). @example ```ts const config: ClientConfig = { baseUrl: 'https://mycompany.atlassian.net',…"
@@ -18680,7 +18744,7 @@
         {
           "name": "BearerAuthConfig",
           "kind": "interface",
-          "line": 129,
+          "line": 141,
           "exported": true,
           "signature": "export interface BearerAuthConfig { readonly type: 'bearer'; readonly token: string; }",
           "jsdoc": "Bearer auth config (OAuth 2.0 access token or PAT). @example ```ts const config: ClientConfig = { baseUrl: 'https://mycompany.atlassian.net',…"
@@ -18688,7 +18752,7 @@
         {
           "name": "AuthConfig",
           "kind": "type",
-          "line": 146,
+          "line": 158,
           "exported": true,
           "signature": "export type AuthConfig = BasicAuthConfig | BearerAuthConfig;",
           "jsdoc": "Discriminated union of supported auth strategies. @example ```ts // Basic auth const basicAuth: AuthConfig = { type: 'basic', email: 'user@…"
@@ -18696,7 +18760,7 @@
         {
           "name": "ClientConfig",
           "kind": "interface",
-          "line": 164,
+          "line": 176,
           "exported": true,
           "signature": "export interface ClientConfig { readonly baseUrl: string; readonly auth: AuthConfig; readonly timeout?: number; readonly…",
           "jsdoc": "Client configuration. @example ```ts const config: ClientConfig = { baseUrl: 'https://mycompany.atlassian.net',…"
@@ -18704,7 +18768,7 @@
         {
           "name": "ResolvedConfig",
           "kind": "interface",
-          "line": 258,
+          "line": 270,
           "exported": true,
           "signature": "export interface ResolvedConfig { readonly baseUrl: string; readonly auth: AuthConfig; readonly timeout: number; readonl…",
           "jsdoc": "Internal resolved config with defaults applied."
@@ -18712,7 +18776,7 @@
         {
           "name": "RequestIdOptions",
           "kind": "interface",
-          "line": 310,
+          "line": 322,
           "exported": true,
           "signature": "export interface RequestIdOptions { readonly generate?: boolean; readonly header?: string; readonly generator?: () => st…",
           "jsdoc": "Options controlling X-Request-Id propagation (B011). @example ```ts const config: ClientConfig = { baseUrl: 'https://mycompany.atlassian.net',…"
@@ -18720,7 +18784,7 @@
         {
           "name": "RateLimitInfo",
           "kind": "interface",
-          "line": 340,
+          "line": 352,
           "exported": true,
           "signature": "export interface RateLimitInfo { readonly limit?: number; readonly remaining?: number; readonly reset?: string; readonly…",
           "jsdoc": "Rate limit information parsed from response headers."
@@ -18728,7 +18792,7 @@
         {
           "name": "Logger",
           "kind": "interface",
-          "line": 351,
+          "line": 363,
           "exported": true,
           "signature": "export interface Logger { debug(message: string, context?: Record<string, unknown>): void; info(message: string, context…",
           "jsdoc": "Logger interface for request/response observability. Compatible with console, pino, winston, and any structured logger."
@@ -18736,7 +18800,7 @@
         {
           "name": "Middleware",
           "kind": "type",
-          "line": 366,
+          "line": 378,
           "exported": true,
           "signature": "export type Middleware = ( options: RequestOptions, next: (options: RequestOptions) => Promise<ApiResponse<unknown>>, ) …",
           "jsdoc": "Middleware function for intercepting and transforming requests. Call next(options) to pass control to the next middleware or the transport."
@@ -20311,6 +20375,10 @@
             {
               "exported": "createMiddlewareChain",
               "original": "createMiddlewareChain"
+            },
+            {
+              "exported": "resolveAuthorizationOverride",
+              "original": "resolveAuthorizationOverride"
             }
           ]
         },

@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import type { Transport, RequestOptions, ApiResponse, ResolvedConfig } from './types.js';
-import { hashAuthValue } from './auth-identity.js';
+import { hashAuthValue, resolveAuthorizationOverride } from './auth-identity.js';
 import type { AuthProvider } from './auth.js';
 import { createAuthProvider } from './auth.js';
 import {
@@ -44,12 +44,12 @@ const sendRequest = Symbol('HttpTransport.sendRequest');
  * shape only because middleware passes options through `next()`. A direct
  * `transport.request()` caller must never set it — doing so would bypass the
  * B029 guard that strips caller `Authorization` and let user code override the
- * configured auth. Returns `options` unchanged (same reference) when the field
- * is absent, otherwise a new object without it. Middleware adds its own
- * override after this point, so the credential path on the wire is unchanged.
+ * configured auth. Always returns a new plain object without the field, so a
+ * getter or `Proxy` on the caller's object is read only once and cannot return
+ * a credential on a later read. Middleware adds its own override after this
+ * point, so the credential path on the wire is unchanged.
  */
 function stripCallerAuthorizationOverride(options: RequestOptions): RequestOptions {
-  if (options.authorizationOverride === undefined) return options;
   const { authorizationOverride: _stripped, ...rest } = options;
   return rest;
 }
@@ -297,7 +297,7 @@ export class HttpTransport implements Transport {
       this.#authHeaders,
       withJsonBody,
       binaryContentType,
-      options.authorizationOverride,
+      resolveAuthorizationOverride(options),
     );
 
     const timeoutController = new AbortController();

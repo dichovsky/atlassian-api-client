@@ -1,10 +1,11 @@
-import type { Middleware, RequestOptions } from './types.js';
+import type { ApiResponse, Middleware, RequestOptions } from './types.js';
 import { AuthenticationError, HttpError, ValidationError } from './errors.js';
 import {
   DEFAULT_ATLASSIAN_OAUTH_TOKEN_HOSTS,
   hostMatchesExact,
   isInvalidBareHostChar,
 } from './atlassian-hosts.js';
+import { nextWithAuthorizationOverride } from './auth-identity.js';
 import { isNotRetryable, sleepWithAbort } from './retry.js';
 
 /** Default OAuth 2.0 3LO token endpoint URL for Atlassian Cloud. */
@@ -173,10 +174,8 @@ export function createOAuthRefreshMiddleware(config: OAuthRefreshConfig): Middle
   let lastFailure: { readonly error: unknown; readonly at: number } | null = null;
 
   return async (options: RequestOptions, next) => {
-    const authedOptions = injectBearerToken(options, currentTokens.accessToken);
-
     try {
-      return await next(authedOptions);
+      return await sendWithBearerToken(options, currentTokens.accessToken, next);
     } catch (error) {
       if (!(error instanceof AuthenticationError)) throw error;
       // A 401 on the GET a write was redirected to: the server may have applied
@@ -248,7 +247,7 @@ export function createOAuthRefreshMiddleware(config: OAuthRefreshConfig): Middle
         await sleepWithAbort(jitterMs, options.signal);
       }
 
-      return next(injectBearerToken(options, newTokens.accessToken));
+      return sendWithBearerToken(options, newTokens.accessToken, next);
     }
   };
 }
@@ -271,14 +270,16 @@ function resolveNonNegFiniteNumber(
   return value;
 }
 
-function injectBearerToken(options: RequestOptions, token: string): RequestOptions {
+function sendWithBearerToken(
+  options: RequestOptions,
+  token: string,
+  next: (options: RequestOptions) => Promise<ApiResponse<unknown>>,
+): Promise<ApiResponse<unknown>> {
   // Set the trusted in-chain override (not `headers.Authorization`, which the
   // transport strips as a caller header) so the refreshed token reaches the
-  // wire (#243).
-  return {
-    ...options,
-    authorizationOverride: `Bearer ${token}`,
-  };
+  // wire (#243). The field holds a reference, not the token, so a later
+  // middleware that logs the options cannot print it.
+  return nextWithAuthorizationOverride(options, `Bearer ${token}`, next);
 }
 
 /**

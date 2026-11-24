@@ -39,7 +39,7 @@ export { executeWithRetry } from './core/index.js';
 export type { RetryConfig } from './core/index.js';
 
 // Middleware composition (matches HttpTransport's internal composition)
-export { createMiddlewareChain } from './core/index.js';
+export { createMiddlewareChain, resolveAuthorizationOverride } from './core/index.js';
 
 // Pagination helpers (cursor / offset / search)
 export { extractCursor, paginateCursor, paginateOffset, paginateSearch } from './core/index.js';
